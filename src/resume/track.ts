@@ -53,7 +53,9 @@ export function trackResumeEvent(name: ResumeEvent, payload: TrackPayload = {}):
       safe[k] = typeof v === "string" ? v.slice(0, 80) : v;
     }
     console.info(`[track] ${name}`, safe);
-    // Future: forward to PostHog / Amplitude here. Single switch:
-    // if (window.posthog) window.posthog.capture(name, safe);
+    // Forward to PostHog when available (browser-only, best-effort).
+    if (typeof window !== "undefined" && (window as unknown as Record<string, unknown>).posthog) {
+      try { ((window as unknown as Record<string, unknown>).posthog as { capture: (n: string, p: unknown) => void }).capture(name, safe); } catch { /* never throw from telemetry */ }
+    }
   } catch { /* never throw from telemetry */ }
 }

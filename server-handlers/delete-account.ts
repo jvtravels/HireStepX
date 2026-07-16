@@ -239,19 +239,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Delete all user data in parallel with timeout (order doesn't matter — all keyed by user_id)
+    // Delete all user data in parallel with timeout (order doesn't matter — all keyed by user_id).
+    // DPDP Act 2023 requires complete erasure: every table that stores PII or
+    // user-generated content must be covered here. Gaps were identified in the
+    // 2026-07-16 legal audit — resumes, question_feedback, credibility_disputes,
+    // referrals (as referrer), report_shares, user_outcomes, llm_usage, and
+    // google_calendar_sync were previously left behind on hard delete.
+    // Note: resume_versions cascade-deletes with resumes (ON DELETE CASCADE in DDL).
     const ac = new AbortController();
-    const acTimer = setTimeout(() => ac.abort(), 8_000);
+    const acTimer = setTimeout(() => ac.abort(), 12_000);
     const results = await Promise.allSettled([
       fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/calendar_events?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
-      fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/resumes?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/question_feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/credibility_disputes?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/referrals?referrer_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/report_shares?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/user_outcomes?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/llm_usage?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/google_calendar_sync?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
     ]);
     clearTimeout(acTimer);
 
-    const tableNames = ["sessions", "events", "payments", "profile", "feedback"];
+    const tableNames = [
+      "sessions", "calendar_events", "payments", "feedback",
+      "resumes", "question_feedback", "credibility_disputes",
+      "referrals", "report_shares", "user_outcomes", "llm_usage",
+      "google_calendar_sync", "profiles",
+    ];
     const failures = results
       .map((r, i) => (r.status === "rejected" || (r.status === "fulfilled" && !r.value.ok)) ? tableNames[i] : null)
       .filter(Boolean);

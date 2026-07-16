@@ -952,7 +952,7 @@ export default function CalendarPage() {
               </Field>
 
               {/* reminders — app-standard indigo toggle */}
-              <div role="switch" aria-checked={formReminders} tabIndex={0} className="cpr-tap" onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }}
+              <div role="switch" aria-label="Toggle reminders" aria-checked={formReminders} tabIndex={0} className="cpr-tap" onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }}
                 style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: radius.md, border: `1px solid ${c.border}`, background: c.obsidian, cursor: "pointer" }}>
                 <span style={{ width: 44, height: 24, borderRadius: 12, padding: 3, flexShrink: 0, background: formReminders ? c.slate : c.borderHover, transition: "background 0.2s" }}>
                   <span style={{ display: "block", width: 18, height: 18, borderRadius: "50%", background: c.carbon, transform: formReminders ? "translateX(20px)" : "translateX(0)", transition: "transform 0.2s", boxShadow: shadow.sm }} />

@@ -208,6 +208,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               // the message should read "10 sessions added", not "12 sessions added".
               const purchased = typeof verifyData.quantity === "number" ? verifyData.quantity : null;
               captureClientEvent("payment_success", { plan: "single", quantity: purchased ?? 1 });
+              // GA4 ecommerce — revenue visibility independent of PostHog
+              if (typeof window !== "undefined" && (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag) {
+                (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: 9 * (purchased ?? 1), items: [{ item_id: "single_session", item_name: "Single Interview Session", price: 9, quantity: purchased ?? 1 }] });
+              }
               setCreditSuccess(purchased);
               setLoading(null);
               // Update sidebar balance immediately from the server's reported new
@@ -223,6 +227,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               tier: verifyData?.subscriptionTier,
               plan: pendingVerification?.plan,
             });
+            // GA4 ecommerce — revenue visibility independent of PostHog
+            if (typeof window !== "undefined" && (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag) {
+              const planId = pendingVerification?.plan ?? "";
+              const planValue = planId === "monthly" ? 149 : 39;
+              (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: planValue, items: [{ item_id: planId, item_name: planId === "monthly" ? "Monthly Plan" : "Sprint Pack", price: planValue, quantity: 1 }] });
+            }
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
             setError(verifyData.error || "Payment verification failed. Please try again or contact hello@hirestepx.com");

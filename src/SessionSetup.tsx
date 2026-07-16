@@ -1391,6 +1391,7 @@ export default function SessionSetup() {
       role: targetRole || null,
       company: targetCompany || null,
       session_minutes: sessionMinutes,
+      difficulty: "standard",
     });
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);

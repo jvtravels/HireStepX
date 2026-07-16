@@ -1033,7 +1033,7 @@ export const SessionReport = memo(function SessionReport({
 
   const onUsefulAnswer = useCallback(
     (value: "yes" | "no") => {
-      track("report_usefulness_poll_submitted", {
+      captureClientEvent("report_usefulness_poll_submitted", {
         sessionId: session.id,
         useful: value === "yes",
         view: "main",

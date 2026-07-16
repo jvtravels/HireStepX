@@ -143,9 +143,12 @@ export async function createDeepgramSTT(
   let audioCtx: AudioContext | null = null;
   let processorNode: AudioWorkletNode | ScriptProcessorNode | null = null;
   let sourceNode: MediaStreamAudioSourceNode | null = null;
+  // Cleared on successful open or on abort.
+  let connectTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
   function cleanup() {
     aborted = true;
+    clearTimeout(connectTimeoutId);
     processorNode?.disconnect();
     sourceNode?.disconnect();
     audioCtx?.close().catch(() => {});
@@ -254,7 +257,18 @@ registerProcessor('pcm-processor', PCMProcessor);
     console.warn("[Deepgram] Using ScriptProcessorNode fallback for audio capture");
   }
 
+  // Hard connection timeout: if ws.onopen never fires (Deepgram auth tier
+  // throttling or network stall), abort and surface as "timeout" so the
+  // STT fallback chain can promote the next provider.
+  connectTimeoutId = setTimeout(() => {
+    if (aborted) return;
+    console.warn("[Deepgram] WebSocket connection timeout — no onopen after 15s");
+    abortNow();
+    callbacks.onError("timeout");
+  }, 15_000);
+
   ws.onopen = () => {
+    clearTimeout(connectTimeoutId);
     if (aborted) { ws.close(); return; }
 
     audioCtx = new AudioContext({ sampleRate });

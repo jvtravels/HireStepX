@@ -1472,6 +1472,18 @@ export function HeroV2() {
             <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 17 }}>→</span>
           </a>
         </div>
+        <p
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: 12.5,
+            color: t.inkSoft,
+            textAlign: "center",
+            marginTop: 12,
+            letterSpacing: "0.01em",
+          }}
+        >
+          2 sessions free · no credit card required
+        </p>
 
       </div>
 
@@ -3476,6 +3488,10 @@ export function FAQV2() {
     {
       q: "Do you share my data with my employer or target company?",
       a: "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant.",
+    },
+    {
+      q: "How is this different from just asking ChatGPT?",
+      a: "ChatGPT agrees with you. HireStepX disagrees — constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions.",
     },
   ];
   return (

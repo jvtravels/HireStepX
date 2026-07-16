@@ -78,8 +78,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* ─── Skip to Content ─── */
 .skip-to-content {
   position: absolute;
-  left: -9999px;
   top: 8px;
+  left: 16px;
   z-index: 9999;
   padding: 12px 24px;
   background: #B45309;
@@ -89,9 +89,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 600;
   border-radius: 10px;
   text-decoration: none;
+  /* Visually hidden until focused. clip-path is more reliable than
+     left:-9999px — avoids phantom scroll areas in some browsers. */
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .skip-to-content:focus {
-  left: 16px;
+  clip: auto;
+  clip-path: none;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  white-space: normal;
 }
 
 html {

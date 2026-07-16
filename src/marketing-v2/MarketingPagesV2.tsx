@@ -475,7 +475,7 @@ export function PricingPageV2() {
     ],
     [
       "What happens to unused Sprint Pack sessions?",
-      "You get 5 fresh sessions each 30-day billing cycle — they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 24 hours of purchase.",
+      "You get 5 fresh sessions each 30-day billing cycle — they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 7 days of purchase.",
     ],
     [
       "Can I switch plans?",
@@ -497,7 +497,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. Students with .ac.in / .edu.in email get 30% off. UPI, cards, and netbanking accepted. 24h refund if unused."
+        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. Students with .ac.in / .edu.in email get 30% off. UPI, cards, and netbanking accepted. 7-day refund if unused."
       />
 
       {/* Tier cards */}
@@ -644,7 +644,7 @@ export function PricingPageV2() {
                 </a>
                 {tier.name !== "Free" && (
                   <p style={{ margin: "10px 0 0", fontFamily: fonts.sans, fontSize: 11, textAlign: "center", color: tier.featured ? t.creamFaded : t.inkSoft }}>
-                    24h refund if unused · cancel anytime
+                    7-day refund if unused · cancel anytime
                   </p>
                 )}
               </div>
@@ -1144,6 +1144,12 @@ export function ContactV2() {
       detail: "Account, billing, technical issues. We reply within 1 business day.",
       contact: "hello@hirestepx.com",
       href: "mailto:hello@hirestepx.com",
+    },
+    {
+      name: "Grievance Officer",
+      detail: "Data privacy concerns, DPDP Act 2023 requests, or unresolved complaints. Jay Vyas, Founder — we acknowledge within 24 hours and resolve within 15 working days, as required under IT Rules 2021 Rule 4(1)(d).",
+      contact: "grievance@hirestepx.com",
+      href: "mailto:grievance@hirestepx.com?subject=Grievance",
     },
     {
       name: "Press + media",
@@ -1717,7 +1723,22 @@ export function PrivacyV2() {
       <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
 
       <h2>Who we share with</h2>
-      <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use third-party sub-processors for database hosting, AI inference, and voice transcription, each under data-processing agreements that prevent retention beyond what we authorize. A current list of sub-processors is available on request at <code>hello@hirestepx.com</code>.</p>
+      <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>
+      <ul>
+        <li><strong>Supabase</strong> — database, authentication, and file storage (Ireland / US-East)</li>
+        <li><strong>Vercel</strong> — serverless hosting and edge functions (global CDN)</li>
+        <li><strong>Groq</strong> — primary AI inference for interview scoring and question generation (US)</li>
+        <li><strong>Google (Gemini)</strong> — secondary AI inference fallback (US)</li>
+        <li><strong>Deepgram</strong> — primary speech-to-text transcription of voice answers (US)</li>
+        <li><strong>Sarvam AI</strong> — Indian-English text-to-speech and speech-to-text fallback (India)</li>
+        <li><strong>Cartesia</strong> — secondary text-to-speech (US)</li>
+        <li><strong>Microsoft Azure</strong> — tertiary text-to-speech fallback (global)</li>
+        <li><strong>Resend</strong> — transactional email delivery (US)</li>
+        <li><strong>Razorpay</strong> — payment processing and subscription billing (India)</li>
+        <li><strong>PostHog</strong> — product analytics (US); only loaded after explicit cookie consent</li>
+        <li><strong>Upstash</strong> — Redis-based rate limiting and caching (US)</li>
+      </ul>
+      <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash.</p>
 
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
@@ -1752,7 +1773,7 @@ export function TermsV2() {
       <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) renews automatically each month; cancel any time before the next billing cycle to stop renewal. No other plan auto-renews.</p>
 
       <h2>Refunds</h2>
-      <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits are refundable within 24 hours of purchase if the session has not started. Sprint Pack refunds depend on usage; cancel before the next cycle to avoid the next charge.</p>
+      <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits are refundable within 7 days of purchase if the session has not started. Sprint Pack refunds depend on usage; cancel before the next cycle to avoid the next charge.</p>
 
       <h2>Acceptable use</h2>
       <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>
@@ -1776,10 +1797,10 @@ export function RefundPolicyV2() {
       <p>Nothing to refund; you didn't pay anything.</p>
 
       <h2>Per-session purchase (₹9)</h2>
-      <p>Refundable up to 24 hours after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
+      <p>Refundable up to 7 days after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
 
       <h2>Sprint Pack (₹39 / month)</h2>
-      <p>Full refund within 24 hours of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge — your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
+      <p>Full refund within 7 days of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge — your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
 
       <h2>How to request a refund</h2>
       <p>Email <code>hello@hirestepx.com</code> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
