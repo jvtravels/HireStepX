@@ -75,52 +75,119 @@ export interface NextMove {
   /**
    * The gap that drove the CTA, when a known gap from topGaps matched.
    * null when no recognised gap fired (falls back to skill-based CTA).
-   * UI uses this to render "From your last HR round: <label>" sublabel.
+   * UI uses this to render "From your last <sessionType>: <label>" sublabel.
    */
   coachingFocus: CoachingFocus | null;
+  /**
+   * Which session focus the matched gap came from (e.g. "hr-round",
+   * "campus-placement", "salary-negotiation"). null when no gap fired.
+   * Dashboard subtitle uses this to say the right session type name.
+   */
+  coachingSessionFocus: string | null;
 }
 
 /**
- * Map known HR-round (v4.2/v4.3) gap codes to a coaching CTA. The deep
- * link carries `?focus=hr-round&drill=<key>` so the session-setup
- * page can later route into drill mode (when it ships); today the
- * unrecognised `drill` query param is harmless and the page boots
- * into the standard hr-round flow.
+ * Map known gap codes (HR-round v4.2/v4.3 + campus-placement v6.x) to a
+ * coaching CTA. The deep link `ctaHref` defaults to the hr-round drill
+ * URL; entries from other focus types override it explicitly.
  *
  * Order in this map doesn't drive priority — `topGaps[0]` does (the
  * caller is responsible for severity-sorting). The map is exported
  * so tests can iterate without re-declaring strings.
+ *
+ * `sessionFocus` tags which session type the gap came from — used by the
+ * dashboard subtitle to say "From your last Campus Placement session:"
+ * instead of the hardcoded "HR round".
  */
-export const GAP_CTA_MAP: Record<string, { label: string; headline: string; drill: string }> = {
+export const GAP_CTA_MAP: Record<string, {
+  label: string;
+  headline: string;
+  drill: string;
+  /** Which session focus this gap belongs to. Drives the subtitle copy. */
+  sessionFocus?: string;
+  /** Override the CTA href. When absent, defaults to hr-round drill URL. */
+  ctaHref?: string;
+}> = {
+  /* ── HR round (v4.2/v4.3 resume cross-checks) ── */
   resume_transcript_mismatch: {
     label: "Reconcile your resume + interview story",
     headline: "Your last HR round named an employer that isn't on your resume — BGV will catch that. Practice the reconciliation.",
     drill: "resume_facts",
+    sessionFocus: "hr-round",
   },
   resume_gap_unaddressed: {
     label: "Practice your career-gap one-liner",
     headline: "Your resume has an unaddressed gap. Drill the one-line answer before the real recruiter asks.",
     drill: "career_gap",
+    sessionFocus: "hr-round",
   },
   inflated_seniority_claim: {
     label: "Practice owning your seniority story",
     headline: "Your title reads senior but your years don't yet — drill the honest framing before HR cross-checks.",
     drill: "seniority",
+    sessionFocus: "hr-round",
   },
   under_titled_candidate: {
     label: "Practice defending your scope at offer time",
     headline: "Your title under-sells your scope — drill the scope-over-title framing so HR doesn't anchor comp low.",
     drill: "under_titled",
+    sessionFocus: "hr-round",
   },
+  /* ── Salary negotiation ── */
   floor_collapse: {
     label: "Drill the floor-and-rationale comp answer",
     headline: "You collapsed to 'whatever you can offer' last time. Drill holding a floor with rationale.",
     drill: "comp_floor",
+    sessionFocus: "salary-negotiation",
   },
   user_anchor_leaked_salary: {
     label: "Practice deflecting comp-first questions",
     headline: "You named a salary before HR asked — that costs leverage. Drill the deflection script.",
     drill: "comp_deflect",
+    sessionFocus: "salary-negotiation",
+  },
+  /* ── Campus placement (v6.x analyzer flags) ── */
+  no_academic_project_discussed: {
+    label: "Practice your academic project deep-dive",
+    headline: "You didn't discuss any academic projects last session — every campus screener will ask. Drill one project end-to-end.",
+    drill: "academic_project",
+    sessionFocus: "campus-placement",
+    ctaHref: "/interview?type=behavioral&focus=campus-placement",
+  },
+  generic_passion_no_substance: {
+    label: "Substantiate your passion with specifics",
+    headline: "Your passion statement had no evidence behind it — recruiters probe for specifics. Drill one concrete proof point.",
+    drill: "passion_substance",
+    sessionFocus: "campus-placement",
+    ctaHref: "/interview?type=behavioral&focus=campus-placement",
+  },
+  cgpa_low_no_framing: {
+    label: "Prepare your CGPA framing story",
+    headline: "Your CGPA came up without a framing narrative — a solid one-liner on trajectory turns a liability into a signal. Drill it.",
+    drill: "cgpa_framing",
+    sessionFocus: "campus-placement",
+    ctaHref: "/interview?type=behavioral&focus=campus-placement",
+  },
+  no_company_specific_research: {
+    label: "Research your target company and practice 'why us'",
+    headline: "You had no company-specific insight last session — every HR will ask 'why us?' Drill your research and answer.",
+    drill: "why_company",
+    sessionFocus: "campus-placement",
+    ctaHref: "/interview?type=behavioral&focus=campus-placement",
+  },
+  bond_refusal: {
+    label: "Prepare your bond/service agreement response",
+    headline: "You refused the bond question outright — that's an instant red flag. Drill the diplomatic 'willing-to-discuss' framing.",
+    drill: "bond_handling",
+    sessionFocus: "campus-placement",
+    ctaHref: "/interview?type=behavioral&focus=campus-placement",
+  },
+  bond_unprepared: {
+    label: "Prepare your stance on the bond/service agreement",
+    headline: "Bond agreements are standard at this tier — having no answer reads as uninformed. Drill the confident, positive-intent response.",
+    drill: "bond_stance",
+    sessionFocus: "campus-placement",
+    ctaHref: "/interview?type=behavioral&focus=campus-placement",
   },
 };
 
@@ -175,8 +242,11 @@ export function pickNextMove(input: NextMoveInput): NextMove {
       : currentStreak > 0
         ? "Keep the streak going"
         : "Start a session";
+  /* Gap entries may carry their own ctaHref (e.g. campus-placement gaps
+   * go to /interview?type=behavioral&focus=campus-placement, not hr-round).
+   * HR-round and salary-negotiation gaps fall back to the drill URL. */
   const ctaHref = matchedGap
-    ? `/session/new?focus=hr-round&drill=${encodeURIComponent(matchedGap.cta.drill)}`
+    ? (matchedGap.cta.ctaHref ?? `/session/new?focus=hr-round&drill=${encodeURIComponent(matchedGap.cta.drill)}`)
     : weakestSkillName
       ? `/session/new?focus=${encodeURIComponent(weakestSkillName)}`
       : "/session/new";
@@ -191,6 +261,9 @@ export function pickNextMove(input: NextMoveInput): NextMove {
 
   const coachingFocus: CoachingFocus | null = matchedGap
     ? { gapCode: matchedGap.code, label: matchedGap.cta.label }
+    : null;
+  const coachingSessionFocus: string | null = matchedGap
+    ? (matchedGap.cta.sessionFocus ?? "hr-round")
     : null;
 
   const chips: NextMoveChip[] = [];
@@ -214,5 +287,6 @@ export function pickNextMove(input: NextMoveInput): NextMove {
     chips,
     nextStreakMilestone,
     coachingFocus,
+    coachingSessionFocus,
   };
 }

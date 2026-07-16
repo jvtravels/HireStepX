@@ -498,9 +498,18 @@ export default function DashboardHome() {
     topGaps: core.topGaps,
   }), [core.skills, core.currentStreak, core.topGaps]);
 
-  /* Supporting line under the hero headline, derived from what drove the CTA. */
+  /* Supporting line under the hero headline, derived from what drove the CTA.
+   * The session-type label uses coachingSessionFocus so campus-placement and
+   * salary-negotiation sessions say the right thing instead of "HR round". */
+  const coachingSessionLabel = (() => {
+    switch (nextMove.coachingSessionFocus) {
+      case "campus-placement": return "Campus Placement session";
+      case "salary-negotiation": return "Salary Negotiation session";
+      default: return "HR round";
+    }
+  })();
   const nextMoveSubtitle = nextMove.coachingFocus
-    ? `From your last HR round we flagged: ${nextMove.coachingFocus.label}.`
+    ? `From your last ${coachingSessionLabel} we flagged: ${nextMove.coachingFocus.label}.`
     : nextMove.weakestSkillLabel
       ? `A focused 25-minute drill on ${nextMove.weakestSkillLabel} moves your readiness fastest.`
       : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns.";

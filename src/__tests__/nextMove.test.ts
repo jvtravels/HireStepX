@@ -276,4 +276,88 @@ describe("pickNextMove", () => {
       expect(GAP_CTA_MAP).toHaveProperty("under_titled_candidate");
     });
   });
+
+  describe("campus-placement gap-aware CTA (v6.x analyzer flags)", () => {
+    it("cgpa_low_no_framing fires a campus-specific CTA pointing to the campus-placement flow", () => {
+      const out = pickNextMove({
+        skills: [{ name: "leverageUse", score: 30 }],
+        currentStreak: 0,
+        topGaps: ["cgpa_low_no_framing"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("cgpa_low_no_framing");
+      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.coachingSessionFocus).toBe("campus-placement");
+      // generic behavioral skill is still exposed but doesn't win the CTA
+      expect(out.weakestSkillName).toBe("leverageUse");
+    });
+
+    it("no_academic_project_discussed produces campus CTA and correct label", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["no_academic_project_discussed"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("no_academic_project_discussed");
+      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.ctaLabel).toContain("academic project");
+    });
+
+    it("bond_refusal fires campus-placement CTA", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["bond_refusal"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("bond_refusal");
+      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.coachingSessionFocus).toBe("campus-placement");
+    });
+
+    it("coachingSessionFocus is 'hr-round' for HR gap codes (backward compat)", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["resume_transcript_mismatch"],
+      });
+      expect(out.coachingSessionFocus).toBe("hr-round");
+    });
+
+    it("coachingSessionFocus is 'salary-negotiation' for salary gap codes", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["floor_collapse"],
+      });
+      expect(out.coachingSessionFocus).toBe("salary-negotiation");
+    });
+
+    it("coachingSessionFocus is null when no gap matched", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 0 });
+      expect(out.coachingSessionFocus).toBe(null);
+    });
+
+    it("campus gap takes priority over a behavioral skill weakness", () => {
+      const out = pickNextMove({
+        skills: [{ name: "Communication", score: 20 }],
+        currentStreak: 5,
+        topGaps: ["generic_passion_no_substance"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("generic_passion_no_substance");
+      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+    });
+
+    it("all six campus-placement gap codes are registered", () => {
+      const CAMPUS_CODES = [
+        "no_academic_project_discussed",
+        "generic_passion_no_substance",
+        "cgpa_low_no_framing",
+        "no_company_specific_research",
+        "bond_refusal",
+        "bond_unprepared",
+      ];
+      for (const code of CAMPUS_CODES) {
+        expect(GAP_CTA_MAP, `campus code missing: ${code}`).toHaveProperty(code);
+      }
+    });
+  });
 });
