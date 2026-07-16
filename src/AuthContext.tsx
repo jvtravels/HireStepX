@@ -629,22 +629,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabaseConfigured) return;
 
-    // Start loading the Supabase SDK — defer on marketing domain to avoid blocking FCP
-    const isMarketing = typeof window !== "undefined" &&
-      !window.location.hostname.includes("app.") &&
-      !window.location.hostname.includes("staging.") &&
-      !window.location.hostname.includes("localhost") &&
-      !window.location.hostname.includes("127.0.0.1") &&
-      !window.location.hostname.includes("vercel.app");
-    if (isMarketing) {
-      // On marketing domain, defer Supabase load until browser is idle — avoids blocking FCP/LCP
+    // Start loading the Supabase SDK eagerly when an app route is active (dashboard,
+    // session, interview, onboarding, settings, login/signup). The SDK (~191KB) dynamic
+    // import must be underway BEFORE getSession() is awaited — otherwise the import
+    // itself consumes most of the 7s getSession timeout on slow Indian mobile connections.
+    //
+    // On pure marketing paths (homepage, pricing, blog …) with no authenticated route
+    // in the URL, defer until browser idle to avoid blocking FCP/LCP.
+    const isAppRoute = typeof window !== "undefined" && (
+      window.location.hostname.includes("staging.") ||
+      window.location.hostname.includes("localhost") ||
+      window.location.hostname.includes("127.0.0.1") ||
+      window.location.hostname.includes("vercel.app") ||
+      window.location.pathname.startsWith("/dashboard") ||
+      window.location.pathname.startsWith("/session") ||
+      window.location.pathname.startsWith("/interview") ||
+      window.location.pathname.startsWith("/onboarding") ||
+      window.location.pathname.startsWith("/settings") ||
+      window.location.pathname.startsWith("/login") ||
+      window.location.pathname.startsWith("/signup") ||
+      window.location.pathname.startsWith("/auth/")
+    );
+    if (isAppRoute) {
+      preloadSupabase();
+    } else {
+      // Pure marketing page — defer until browser is idle to avoid blocking FCP/LCP
       if (typeof requestIdleCallback !== "undefined") {
         requestIdleCallback(() => preloadSupabase());
       } else {
         setTimeout(preloadSupabase, 4000);
       }
-    } else {
-      preloadSupabase();
     }
 
     // Helper: build a new user from session metadata and seed the profiles table
@@ -770,9 +784,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           session = await Promise.race([
             client.auth.getSession().then(r => r.data.session ?? null),
             new Promise<null>((resolve) => setTimeout(() => {
-              console.warn("[auth] getSession() exceeded 3s — treating as no session (browser extension may be blocking fetch)");
+              console.warn("[auth] getSession() exceeded 7s — treating as no session (browser extension may be blocking fetch)");
               resolve(null);
-            }, 3000)),
+            }, 7000)),
           ]);
         } else {
           // Background refresh — fire-and-forget. If the SDK manages to

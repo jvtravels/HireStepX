@@ -67,11 +67,12 @@ export function decideDeviceAction(args: {
 
 export const DEVICE_GRACE_KEY = "hirestepx_device_grace";
 /** How long after a fresh auth we suppress eviction while the new device token
- *  propagates from updateUser()→refreshSession() into the JWT. Generous on
- *  purpose: a false eviction locks a legitimate user out of the whole app; a
- *  too-long window only delays kicking a genuinely-displaced device, which the
- *  60s periodic check and next restore still catch. */
-export const DEVICE_GRACE_MS = 20_000;
+ *  propagates from updateUser()→refreshSession() into the JWT. Set to 60s to
+ *  cover slow Indian mobile connections where SDK load + getSession + profile
+ *  fetch can cumulatively exceed the old 20s window and trigger false eviction.
+ *  A too-long window only delays kicking a genuinely-displaced device, which
+ *  the 60s periodic checkExpiry and next restore still catch. */
+export const DEVICE_GRACE_MS = 60_000;
 
 /** Open the grace window for `ttlMs` from `now`. Call BEFORE the optimistic
  *  setUser() at login so the value is already persisted when the `(app)`
