@@ -29,6 +29,20 @@ jobs:
         # as X`). Ratchet downward as we fix each hit.
         run: npx eslint . --max-warnings 200
 
+  security-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest

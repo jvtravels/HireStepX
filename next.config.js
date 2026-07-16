@@ -44,6 +44,17 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      // Old URL with wrong year that users bookmarked or linked; 2 GA4 hits/day.
+      {
+        source: "/blog/tcs-interview-questions-freshers-2025",
+        destination: "/blog/tcs-interview-questions-freshers-2026",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     // Content-Security-Policy is intentionally absent here.
     // It is generated per-request with a unique nonce in middleware.ts, which
