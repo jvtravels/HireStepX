@@ -189,8 +189,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Capture user email & name BEFORE deletion (data will be gone after)
-    let userEmail: string | undefined;
+    // Capture user email & name BEFORE deletion (data will be gone after).
+    // userEmail is already set from the auth token above; the profiles fetch
+    // may provide a more complete address or add userName. Fall back to auth
+    // email if the profiles read fails or returns nothing.
     let userName: string | undefined;
     try {
       const profileRes = await fetch(
@@ -200,7 +202,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (profileRes.ok) {
         const profiles = await profileRes.json();
         const profile = Array.isArray(profiles) && profiles[0];
-        userEmail = profile?.email;
+        userEmail = profile?.email ?? userEmail;
         userName = profile?.name;
       }
     } catch {

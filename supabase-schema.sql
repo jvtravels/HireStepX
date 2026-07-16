@@ -715,7 +715,7 @@ create table if not exists credit_ledger (
   balance_before integer     not null,
   balance_after  integer     not null,
   payment_id     text,                           -- razorpay_payment_id for grants
-  session_id     uuid,                           -- sessions.id for consumes
+  session_id     text references sessions(id) on delete set null, -- sessions.id for consumes
   note           text,                           -- human-readable context
   created_at     timestamptz not null default now()
 );
@@ -763,7 +763,7 @@ revoke all on function grant_session_credits(uuid, integer, text, text) from pub
 grant execute on function grant_session_credits(uuid, integer, text, text) to service_role;
 
 -- ── Updated consume function — writes ledger row ──────────────────────────────
-create or replace function consume_session_credit(p_user_id uuid, p_session_id uuid default null)
+create or replace function consume_session_credit(p_user_id uuid, p_session_id text default null)
 returns boolean
 language plpgsql
 security definer

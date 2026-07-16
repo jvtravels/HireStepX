@@ -77,6 +77,8 @@ async function logUsage(entry: {
   await emitAiGeneration(entry);
   if (!USAGE_LOGGING_ENABLED) return;
   try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 5000);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/llm_usage`, {
       method: "POST",
       headers: {
@@ -85,6 +87,7 @@ async function logUsage(entry: {
         Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         Prefer: "return=minimal",
       },
+      signal: ac.signal,
       body: JSON.stringify({
         user_id: entry.userId || null,
         endpoint: entry.endpoint || "unknown",
@@ -99,6 +102,7 @@ async function logUsage(entry: {
         session_id: entry.sessionId || null,
       }),
     });
+    clearTimeout(timer);
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.error(`[logUsage] HTTP ${res.status} writing llm_usage: ${body.slice(0, 200)}`);

@@ -40,7 +40,8 @@ export function ReferralInviteSection({
   const linkedInTarget = shareUrl || link;
 
   const onWhatsApp = () => {
-    const text = `I just scored ${score}/100 on a HireStepX AI mock interview. Sign up with my link and we each get a free practice session: ${link}`;
+    const reportPart = shareUrl ? ` See my full report: ${shareUrl}` : "";
+    const text = `I just scored ${score}/100 on a HireStepX AI mock interview.${reportPart} Sign up with my link and we each get a free practice session: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
     captureClientEvent("referral_invite_sent", { surface: "session_report", channel: "whatsapp", score });
   };

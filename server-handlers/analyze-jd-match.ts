@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-import { corsHeaders, handleCorsPreflightOrMethod, verifyAuth, unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse, checkBodySize, sanitizeForLLM, withRequestId, checkLLMQuota } from "./_shared";
+import { corsHeaders, handleCorsPreflightOrMethod, verifyAuth, unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse, checkBodySize, sanitizeForLLM, withRequestId, checkLLMQuota, validateOrigin, forbiddenResponse } from "./_shared";
 import { callLLM, extractJSON } from "./_llm";
 
 export default async function handler(req: Request): Promise<Response> {
@@ -10,6 +10,8 @@ export default async function handler(req: Request): Promise<Response> {
   if (preflight) return preflight;
 
   const headers = withRequestId(corsHeaders(req));
+
+  if (!validateOrigin(req)) return forbiddenResponse(headers);
 
   if (checkBodySize(req, 200_000)) {
     return new Response(JSON.stringify({ error: "Request too large" }), { status: 413, headers });
