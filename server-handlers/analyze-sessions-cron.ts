@@ -47,6 +47,16 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+/* Campus-placement sessions have type="behavioral" and focus="campus-placement"
+ * because the sessions.type column stores the base interview type. The dispatch
+ * registry maps by focus key, so we must prefer session.focus when it names a
+ * registered analyzer (e.g. "campus-placement") and fall back to session.type
+ * only when focus is absent or not registered (e.g. focus="general"). */
+const _registeredSet = new Set(registeredFocuses());
+function analyzerFocus(session: Pick<SessionRowForAnalysis, "type" | "focus">): string {
+  return (session.focus && _registeredSet.has(session.focus)) ? session.focus : session.type;
+}
+
 function authHeaders(): Record<string, string> {
   return {
     apikey: SUPABASE_SERVICE_KEY,
@@ -111,7 +121,7 @@ async function fetchUnanalyzedSessions(overrideHours?: number, forceReanalyze = 
       // analyzer version. pickAnalyzer().version is the current code-level
       // version — if the row's stored version differs, code has shipped
       // since and the row's findings are stale.
-      const currentVersion = pickAnalyzer(r.type).version;
+      const currentVersion = pickAnalyzer(analyzerFocus(r)).version;
       const storedVersion = insights[0]?.analyzer_version || "";
       return storedVersion !== currentVersion;
     })
@@ -257,7 +267,7 @@ export default async function handler(req: Request): Promise<Response> {
   const feedbackBySession = await fetchFeedbackBySession(sessions.map((s) => s.id));
 
   for (const session of sessions) {
-    const analyzer = pickAnalyzer(session.type);
+    const analyzer = pickAnalyzer(analyzerFocus(session));
     const turnT0 = Date.now();
     let row: InsightRow;
     try {
@@ -275,7 +285,7 @@ export default async function handler(req: Request): Promise<Response> {
       if (session.resume_version_id && !resume) {
         void captureServerEvent("analyzer_resume_fetch_miss", session.user_id, {
           session_id: session.id,
-          focus: session.type,
+          focus: analyzerFocus(session),
           resume_version_id: session.resume_version_id,
           analyzer_version: analyzer.version,
         });
@@ -319,7 +329,7 @@ export default async function handler(req: Request): Promise<Response> {
       row = {
         session_id: session.id,
         user_id: session.user_id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         analyzer_version: analyzer.version,
         rescore,
         score_drift: scoreDrift,
@@ -339,7 +349,7 @@ export default async function handler(req: Request): Promise<Response> {
       row = {
         session_id: session.id,
         user_id: session.user_id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         analyzer_version: analyzer.version,
         rescore: null,
         score_drift: null,
@@ -360,7 +370,7 @@ export default async function handler(req: Request): Promise<Response> {
       // gives us a real-time signal in PostHog.
       void captureServerEvent("analyzer_error", session.user_id, {
         session_id: session.id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         analyzer_version: analyzer.version,
         error_message: errMsg,
       });
@@ -372,7 +382,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (row.flags.length > 0 || (row.hallucinations as unknown[]).length > 0) {
       void captureServerEvent("session_quality_analyzed", session.user_id, {
         session_id: session.id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         severity: row.severity,
         flag_count: row.flags.length,
         flags_csv: row.flags.join(","),
@@ -390,7 +400,7 @@ export default async function handler(req: Request): Promise<Response> {
       for (const flag of row.flags) {
         void captureServerEvent("analyzer_flag_fired", session.user_id, {
           session_id: session.id,
-          focus: session.type,
+          focus: analyzerFocus(session),
           flag,
           severity: row.severity,
           analyzer_version: row.analyzer_version,
@@ -405,7 +415,7 @@ export default async function handler(req: Request): Promise<Response> {
     const key = `${day}::${session.type}`;
     const agg = aggregates.get(key) || {
       day,
-      focus: session.type,
+      focus: analyzerFocus(session),
       sessions_analyzed: 0,
       drift_sum: 0,
       drift_count: 0,
