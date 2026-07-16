@@ -131,7 +131,7 @@ describe("quota exhaustion 429", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.model).toBe("llama-3.3-70b-versatile");
+    expect(result.model).toBe("llama-3.3-70b-specdec");
     expect(geminiCallCount).toBe(1); // quota exhaustion = no retry
   });
 
@@ -195,7 +195,7 @@ describe("transient rate limiting", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.model).toBe("llama-3.3-70b-versatile");
+    expect(result.model).toBe("llama-3.3-70b-specdec");
     expect(geminiCallCount).toBe(2); // 1 initial + 1 retry, then fail over
     expect(groqCallCount).toBe(1);
   });
