@@ -2375,11 +2375,14 @@ export function FeatureGridV2() {
       style={{ position: "relative", background: t.cream, paddingTop: "clamp(20px,3vh,36px)", paddingBottom: "clamp(20px,3vh,36px)" }}
     >
       <div style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: "clamp(14px,2vh,22px)" }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 40 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
           </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "10px auto 0", lineHeight: 1.55, maxWidth: 520 }}>
+            Your resume. Your voice. The exact moment you lost the room. None of it surfaces in a generic prep sheet.
+          </p>
         </MotionReveal>
 
         {/* Grid fills remaining viewport height: rows grow with available space */}
