@@ -270,6 +270,7 @@ const focusToType: Record<string, string> = {
 const COMING_SOON_FOCUSES = new Set<InterviewFocus>([
   "Strategic",
   "Technical Leadership",
+  "Case Study",
   "Management",
   "Panel Interview",
   "Government / PSU",
