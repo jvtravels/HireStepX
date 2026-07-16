@@ -1254,6 +1254,12 @@ export async function evaluateSessionWithAI(
     if (res.status === 401) {
       throw new EvaluateSessionError("Session expired — please refresh and sign in again.", { status: 401, retryable: false });
     }
+    if (res.status === 422) {
+      const body = res.data as { error?: string; message?: string } | null;
+      if (body?.error === "no_candidate_answers") {
+        throw new EvaluateSessionError("no_candidate_answers", { status: 422, retryable: false });
+      }
+    }
     if (res.status === 429) {
       const retryAfter = (res.data as { retryAfter?: number } | null)?.retryAfter;
       throw new EvaluateSessionError(

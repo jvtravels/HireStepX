@@ -676,7 +676,7 @@ function InterviewInner() {
             our equivalent. Wired to engine.retakeLastAnswer which
             cancels the pending follow-up, drops the last user message,
             and reverts phase=listening. */}
-        {phase === "thinking" && (
+        {phase === "thinking" && transcript.some(t => t.speaker === "user") && (
           <button
             type="button"
             onClick={() => {

@@ -610,6 +610,15 @@ export const SessionReport = memo(function SessionReport({
 
       // All retries exhausted (or non-transient failure)
       const raw = lastErr instanceof Error ? lastErr.message : "Failed to generate report";
+      // Dead session: no answers were recorded (mic/STT failure). Show a
+      // targeted message instead of the generic report-error UI.
+      if (raw === "no_candidate_answers") {
+        if (!cancelled && !silentRefresh) {
+          setErrorMsg("no_candidate_answers");
+          setLoading(false);
+        }
+        return;
+      }
       const looksTransient = isTransient(raw);
       const msg = looksTransient
         ? "Our scoring service is taking longer than usual. Please try again in a moment — your transcript is safe and nothing was lost."
@@ -1081,6 +1090,33 @@ export const SessionReport = memo(function SessionReport({
   /* ── Render gates ── */
   if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} />;
   if (errorMsg && !report) {
+    // Dead session: no answers were recorded — mic/STT never captured anything.
+    // Show a focused "check your mic" prompt instead of the generic error UI.
+    // Retrying would produce the same 422, so we skip the retry CTA.
+    if (errorMsg === "no_candidate_answers") {
+      return (
+        <div style={{ background: t.cream, minHeight: "100vh", fontFamily: f.sans, color: t.coal, padding: "20px 32px" }}>
+          <button type="button" onClick={onBack} style={{ background: "transparent", border: "none", fontFamily: f.sans, fontSize: 14, color: t.coal, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            ← {backLabel}
+          </button>
+          <div style={{ maxWidth: 480, margin: "80px auto 0", textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🎙️</div>
+            <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>No answers were recorded</h1>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.6 }}>
+              It looks like your microphone wasn&apos;t captured during this session — the interview ran but no candidate audio reached our system.
+              Check that your browser has mic permission, or use <strong>Text mode</strong> to type your answers instead.
+            </p>
+            <button
+              type="button"
+              onClick={onBack}
+              style={{ background: t.indigo, color: t.cream, border: "none", padding: "10px 20px", borderRadius: 10, fontFamily: f.sans, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
     /* Degrade gracefully: when the rich LLM report can't be generated,
        fall back to the preliminary scores the interview engine already
        computed and persisted on the session, rather than a dead-end error.

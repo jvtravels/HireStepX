@@ -485,6 +485,18 @@ export default async function handler(req: Request): Promise<Response> {
     if (!Array.isArray(transcript) || transcript.length === 0) {
       return new Response(JSON.stringify({ error: "transcript required" }), { status: 400, headers });
     }
+    // Dead-session guard: transcript exists but the candidate never answered
+    // (mic permission denied, STT failed, or page was closed before replying).
+    // Running the LLM evaluation on interviewer-only transcripts produces a
+    // misleading score around 30 with fabricated critique. Return a typed error
+    // instead so the client can show a "mic not working" message.
+    const candidateTurns = transcript.filter((t) => t.role === "candidate" && t.text?.trim().length > 0);
+    if (candidateTurns.length === 0) {
+      return new Response(JSON.stringify({
+        error: "no_candidate_answers",
+        message: "No answers were recorded. Check your microphone or switch to text mode and try again.",
+      }), { status: 422, headers });
+    }
     if (transcript.length > 200) {
       return new Response(JSON.stringify({ error: "transcript too long" }), { status: 413, headers });
     }
