@@ -366,6 +366,8 @@ export interface SessionReportViewProps {
     targetCompany?: string | null;
     archetype?: string;
     archetypeLabel?: string;
+    bondProbeCount?: number;
+    aptitudeProbeExpectedType?: string;
   };
   /** Salary-negotiation: tier-aware compensation bucket the analyzer
    *  scored against + CTC take-home breakdown for the closing offer.

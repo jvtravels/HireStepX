@@ -393,6 +393,10 @@ export const SessionReport = memo(function SessionReport({
     adjustedCgpaCutoff: number;
     statedCgpa: number | null;
     targetCompany?: string | null;
+    archetype?: string;
+    archetypeLabel?: string;
+    bondProbeCount?: number;
+    aptitudeProbeExpectedType?: string;
   } | undefined>(undefined);
   /* Salary-negotiation: tier-aware compensation bucket the analyzer
    * scored against + CTC take-home breakdown for the closing offer.
@@ -724,6 +728,10 @@ export const SessionReport = memo(function SessionReport({
                 adjustedCgpaCutoff: adjN,
                 statedCgpa: typeof c.statedCgpa === "number" ? c.statedCgpa : null,
                 targetCompany: typeof c.targetCompany === "string" ? c.targetCompany : null,
+                archetype: typeof c.archetype === "string" ? c.archetype : undefined,
+                archetypeLabel: typeof c.archetypeLabel === "string" ? c.archetypeLabel : undefined,
+                bondProbeCount: typeof c.bondProbeCount === "number" ? c.bondProbeCount : undefined,
+                aptitudeProbeExpectedType: typeof c.aptitudeProbeExpectedType === "string" ? c.aptitudeProbeExpectedType : undefined,
               });
             }
           }

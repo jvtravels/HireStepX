@@ -16,9 +16,11 @@ export function CampusCgpaCalibrationNote({
     targetCompany?: string | null;
     archetype?: string;
     archetypeLabel?: string;
+    bondProbeCount?: number;
+    aptitudeProbeExpectedType?: string;
   };
 }) {
-  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany, archetypeLabel } = meta;
+  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany, archetypeLabel, bondProbeCount, aptitudeProbeExpectedType } = meta;
   const adjustmentDelta = adjustedCgpaCutoff - baseCgpaCutoff;
   const tierLabel = (() => {
     if (companyTier === "product-global") return "Tier-1 global product";
@@ -86,6 +88,24 @@ export function CampusCgpaCalibrationNote({
           ? "IIT / NIT / BITS / IIIT / IISc receive a 0.5 point adjustment reflecting their harder grading curves."
           : "Your score is benchmarked against the company's standard fresher baseline. IIT / NIT / BITS / IIIT graduates receive a 0.5 adjustment for harder grading curves."}
       </p>
+      {(aptitudeProbeExpectedType && aptitudeProbeExpectedType !== "none") || (bondProbeCount !== undefined && bondProbeCount > 0) ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+          {aptitudeProbeExpectedType && aptitudeProbeExpectedType !== "none" && (
+            <span style={{ fontSize: 12, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
+              {aptitudeProbeExpectedType === "coding"
+                ? "DSA / coding aptitude expected"
+                : aptitudeProbeExpectedType === "puzzle"
+                ? "Logical / puzzle aptitude expected"
+                : "Coding or logical aptitude expected"}
+            </span>
+          )}
+          {bondProbeCount !== undefined && bondProbeCount > 0 && (
+            <span style={{ fontSize: 12, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
+              {bondProbeCount === 1 ? "Bond / location commitment probed" : `Bond / location commitment probed (${bondProbeCount}×)`}
+            </span>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }
