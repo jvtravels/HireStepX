@@ -1511,11 +1511,20 @@ export async function speak(
     console.warn("Trying Cartesia TTS fallback");
     // Pin an Indian-English Cartesia voice so the accent doesn't shift
     // jarringly when Sarvam fails over.
+    // DEFAULT_VOICE_ID is female — only override it when we find an exact
+    // gender match from the dynamic list. Falling back to enInVoices[0]
+    // without a gender check caused jarring female→male voice switches
+    // when Sarvam failed and Cartesia's first en_IN voice happened to be male.
     let cartesiaVoice = DEFAULT_VOICE_ID;
     try {
       const enInVoices = await fetchCartesiaVoices("en_IN");
-      const preferred = (gender && enInVoices.find(v => v.gender === gender)) || enInVoices[0];
-      if (preferred?.id) cartesiaVoice = preferred.id;
+      const genderMatch = gender && enInVoices.find(v => v.gender === gender);
+      if (genderMatch?.id) {
+        cartesiaVoice = genderMatch.id;
+      } else if (!gender) {
+        cartesiaVoice = enInVoices[0]?.id || DEFAULT_VOICE_ID;
+      }
+      // No gender match: keep DEFAULT_VOICE_ID (female) to avoid a jarring cross-gender switch.
     } catch { /* keep default voice on fetch failure */ }
     const prefetchEntry = _prefetchCache.get(text);
     const hasPrefetch = !!prefetchEntry && Date.now() - prefetchEntry.createdAt < PREFETCH_TTL;
