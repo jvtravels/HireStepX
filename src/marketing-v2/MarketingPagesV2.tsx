@@ -497,7 +497,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. Students with .ac.in / .edu.in email get 30% off. UPI, cards, and netbanking accepted. 7-day refund if unused."
+        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. UPI, cards, and netbanking accepted. 7-day refund if unused."
       />
 
       {/* Tier cards */}
