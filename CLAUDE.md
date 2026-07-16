@@ -255,3 +255,61 @@ if you need to confirm readiness — do not re-trigger.
   `_subscription-actions.ts` example.
 - The git workflow: small focused commits on `main` with imperative
   subject lines. Don't amend published commits.
+
+## Audit Department Registry
+
+When the user asks for "all departments" or "the audit list", pull this section.
+34 departments applicable to HireStepX, grouped by tier. Status column tracks
+what has been audited + fixed.
+
+**TIER 1 — Highest business impact**
+| # | Department | Status |
+|---|---|---|
+| 1 | Y Combinator Partner | pending |
+| 2 | CPO (Chief Product Officer) | pending |
+| 3 | CRO (Chief Revenue Officer) | pending |
+| 4 | India Market Expert | pending |
+| 5 | HR / Recruiting Industry Expert | pending |
+| 6 | Voice / AI Quality | pending |
+| 7 | Competitive Intelligence | pending |
+
+**TIER 2 — Important, do soon**
+| # | Department | Status |
+|---|---|---|
+| 8 | CFO (Chief Financial Officer) | pending |
+| 9 | CTO (Chief Technology Officer) | pending |
+| 10 | CMO (Chief Marketing Officer) | pending |
+| 11 | Pricing Strategy | pending |
+| 12 | Retention / Habit Loop | pending |
+| 13 | Onboarding / Activation | pending |
+| 14 | EdTech Industry Expert | pending |
+| 15 | Performance | pending |
+
+**TIER 3 — Solid product hygiene**
+| # | Department | Status |
+|---|---|---|
+| 16 | CEO (Strategic Focus) | pending |
+| 17 | CISO / Security | done ✅ |
+| 18 | CLO / Legal & Compliance | done ✅ |
+| 19 | Head of Design | pending |
+| 20 | Growth / Acquisition | pending |
+| 21 | Email / Notifications | pending |
+| 22 | Payments / Revenue | done ✅ (partial) |
+| 23 | Customer Support | pending |
+| 24 | Database / Data Layer | pending |
+| 25 | Mobile / Responsive | pending |
+| 26 | Error Handling / Observability | pending |
+| 27 | Privacy / Data Governance | done ✅ |
+| 28 | Content / Copy | pending |
+
+**TIER 4 — Later stage / launch readiness**
+| # | Department | Status |
+|---|---|---|
+| 29 | Product Hunt Reviewer | pending |
+| 30 | SEO | done ✅ |
+| 31 | Testing / QA | done ✅ |
+| 32 | CI/CD | done ✅ |
+| 33 | Analytics | done ✅ |
+| 34 | Accessibility (WCAG 2.1 AA) | done ✅ |
+
+**Summary:** 10 done ✅ · 24 pending · 34 total
