@@ -78,14 +78,14 @@ export default defineConfig({
       thresholds: {
         // Global gate — see comment above for the rationale (60% of
         // the codebase is JSX UI we don't unit-test).
-        // Current actuals (9227 tests, 2026-06-27): lines 50.04% /
-        // statements 48.53% / functions 42.96% / branches 44.26%.
+        // Current actuals (11701 tests, 2026-07-16): lines 51.4% /
+        // statements 49.92% / functions 44.55% / branches 45.81%.
         // Floors set ~2pt below to lock the gains while tolerating
         // minor run-to-run variance.
-        lines: 48,
-        statements: 46,
-        functions: 41,
-        branches: 42,
+        lines: 49,
+        statements: 47,
+        functions: 42,
+        branches: 43,
         // ─── Per-folder gate: server-handlers ───
         // server-handlers/ is pure server-side logic — payment flows,
         // session scoring, auth rate limits, email signing. A bug
