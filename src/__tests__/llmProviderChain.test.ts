@@ -80,24 +80,26 @@ afterEach(() => {
 });
 
 /* ── Happy path ─────────────────────────────────────────────────────── */
+/* Provider order (e3e634b): non-fast → Gemini primary, Groq fallback.
+ *                           fast    → Groq primary, Gemini fallback. */
 
 describe("happy path", () => {
-  it("returns Groq result and does not fall over when Groq succeeds", async () => {
+  it("returns Gemini result and does not fall over when Gemini succeeds", async () => {
     fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) return groqOk('{"score":85}');
+      if (String(url).includes("generativelanguage")) return geminiOk('{"score":85}');
       return new Response("{}", { status: 200 });
     });
 
     const result = await callLLM({ prompt: "Evaluate." });
 
-    expect(result.model).toBe("llama-3.3-70b-versatile");
+    expect(result.model).toBe("gemini-2.5-flash");
     expect(result.text).toBe('{"score":85}');
     expect(result.fallback).toBe(false);
-    const groqCalls = fetchSpy.mock.calls.filter((args: unknown[]) => String(args[0]).includes("api.groq.com"));
-    expect(groqCalls).toHaveLength(1);
+    const geminiCalls = fetchSpy.mock.calls.filter((args: unknown[]) => String(args[0]).includes("generativelanguage"));
+    expect(geminiCalls).toHaveLength(1);
   });
 
-  it("uses llama-3.1-8b-instant when opts.fast is true", async () => {
+  it("uses llama-3.1-8b-instant when opts.fast is true (Groq primary for fast calls)", async () => {
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("api.groq.com")) return groqOk("quick");
       return new Response("{}", { status: 200 });
@@ -114,14 +116,14 @@ describe("happy path", () => {
 /* ── Quota exhaustion (permanent — fail over immediately, no retry) ── */
 
 describe("quota exhaustion 429", () => {
-  it("fails over to Gemini immediately — does NOT retry Groq on quota exhaustion", async () => {
-    let groqCallCount = 0;
+  it("fails over to Groq immediately — does NOT retry Gemini on quota exhaustion", async () => {
+    let geminiCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) {
-        groqCallCount++;
-        return groqErr(429, 'Groq error 429: You exceeded your current quota, please check your plan and billing details.');
+      if (String(url).includes("generativelanguage")) {
+        geminiCallCount++;
+        return geminiErr(429, "RESOURCE_EXHAUSTED: You exceeded your quota, check your plan and billing details.");
       }
-      if (String(url).includes("generativelanguage")) return geminiOk('{"score":72}');
+      if (String(url).includes("api.groq.com")) return groqOk('{"score":72}');
       return new Response("{}", { status: 200 });
     });
 
@@ -129,18 +131,18 @@ describe("quota exhaustion 429", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.model).toBe("gemini-2.5-flash");
-    expect(groqCallCount).toBe(1); // quota exhaustion = no retry
+    expect(result.model).toBe("llama-3.3-70b-versatile");
+    expect(geminiCallCount).toBe(1); // quota exhaustion = no retry
   });
 
   it("fails over on RESOURCE_EXHAUSTED (Gemini quota format)", async () => {
-    let groqCallCount = 0;
+    let geminiCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) {
-        groqCallCount++;
-        return groqErr(429, "RESOURCE_EXHAUSTED: daily quota exceeded");
+      if (String(url).includes("generativelanguage")) {
+        geminiCallCount++;
+        return geminiErr(429, "RESOURCE_EXHAUSTED: daily quota exceeded");
       }
-      if (String(url).includes("generativelanguage")) return geminiOk("ok");
+      if (String(url).includes("api.groq.com")) return groqOk("ok");
       return new Response("{}", { status: 200 });
     });
 
@@ -148,20 +150,20 @@ describe("quota exhaustion 429", () => {
     await vi.runAllTimersAsync();
     await promise;
 
-    expect(groqCallCount).toBe(1);
+    expect(geminiCallCount).toBe(1);
   });
 });
 
 /* ── Transient errors (retries once on same provider before failover) ─ */
 
 describe("transient rate limiting", () => {
-  it("retries Groq once on a per-second rate-limit 429, then succeeds", async () => {
-    let groqCallCount = 0;
+  it("retries Gemini once on a per-second rate-limit 429, then succeeds", async () => {
+    let geminiCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) {
-        groqCallCount++;
-        if (groqCallCount === 1) return groqErr(429, "rate limit reached, retry in 1s");
-        return groqOk('{"ok":true}');
+      if (String(url).includes("generativelanguage")) {
+        geminiCallCount++;
+        if (geminiCallCount === 1) return geminiErr(429, "rate limit reached, retry in 1s");
+        return geminiOk('{"ok":true}');
       }
       return new Response("{}", { status: 200 });
     });
@@ -170,21 +172,41 @@ describe("transient rate limiting", () => {
     await vi.runAllTimersAsync(); // advance past 800ms retry delay
     const result = await promise;
 
-    expect(result.model).toBe("llama-3.3-70b-versatile");
-    expect(groqCallCount).toBe(2); // 1 fail + 1 retry on same provider
+    expect(result.model).toBe("gemini-2.5-flash");
+    expect(geminiCallCount).toBe(2); // 1 fail + 1 retry on same provider
   });
 
-  it("falls over to Gemini after Groq exhausts both attempts on transient errors", async () => {
-    let groqCallCount = 0;
+  it("falls over to Groq after Gemini exhausts both attempts on transient errors", async () => {
     let geminiCallCount = 0;
+    let groqCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) {
-        groqCallCount++;
-        return groqErr(429, "rate limit reached");
-      }
       if (String(url).includes("generativelanguage")) {
         geminiCallCount++;
-        return geminiOk('{"score":60}');
+        return geminiErr(429, "rate limit reached");
+      }
+      if (String(url).includes("api.groq.com")) {
+        groqCallCount++;
+        return groqOk('{"score":60}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(result.model).toBe("llama-3.3-70b-versatile");
+    expect(geminiCallCount).toBe(2); // 1 initial + 1 retry, then fail over
+    expect(groqCallCount).toBe(1);
+  });
+
+  it("retries on 503 overload errors", async () => {
+    let geminiCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        geminiCallCount++;
+        if (geminiCallCount === 1) return geminiErr(503, "model overloaded, retry later");
+        return geminiOk("success after retry");
       }
       return new Response("{}", { status: 200 });
     });
@@ -194,37 +216,17 @@ describe("transient rate limiting", () => {
     const result = await promise;
 
     expect(result.model).toBe("gemini-2.5-flash");
-    expect(groqCallCount).toBe(2); // 1 initial + 1 retry, then fail over
-    expect(geminiCallCount).toBe(1);
-  });
-
-  it("retries on 503 overload errors", async () => {
-    let groqCallCount = 0;
-    fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) {
-        groqCallCount++;
-        if (groqCallCount === 1) return groqErr(503, "model overloaded, retry later");
-        return groqOk("success after retry");
-      }
-      return new Response("{}", { status: 200 });
-    });
-
-    const promise = callLLM({ prompt: "Test." });
-    await vi.runAllTimersAsync();
-    const result = await promise;
-
-    expect(result.model).toBe("llama-3.3-70b-versatile");
-    expect(groqCallCount).toBe(2);
+    expect(geminiCallCount).toBe(2);
   });
 });
 
 /* ── All providers fail ─────────────────────────────────────────────── */
 
 describe("all providers fail", () => {
-  it("throws when Groq and Gemini both return 500", async () => {
+  it("throws when Gemini and Groq both return 500", async () => {
     fetchSpy.mockImplementation(async (url: string) => {
-      if (String(url).includes("api.groq.com")) return groqErr(500, "Groq error 500: Internal Server Error");
       if (String(url).includes("generativelanguage")) return geminiErr(500, "Gemini error 500: Internal Server Error");
+      if (String(url).includes("api.groq.com")) return groqErr(500, "Groq error 500: Internal Server Error");
       return new Response("{}", { status: 200 });
     });
 
@@ -248,26 +250,26 @@ describe("all providers fail", () => {
 /* ── jsonMode ───────────────────────────────────────────────────────── */
 
 describe("jsonMode", () => {
-  it("sets response_format: json_object on the Groq request body", async () => {
+  it("sets response_format: json_object on the Groq request body (fast=true, Groq primary)", async () => {
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("api.groq.com")) return groqOk('{"x":1}');
       return new Response("{}", { status: 200 });
     });
 
-    await callLLM({ prompt: "Return JSON.", jsonMode: true });
+    await callLLM({ prompt: "Return JSON.", jsonMode: true, fast: true });
 
     const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
     const body = JSON.parse(groqCall?.[1]?.body as string);
     expect(body.response_format).toEqual({ type: "json_object" });
   });
 
-  it("omits response_format when jsonMode is false", async () => {
+  it("omits response_format when jsonMode is false (fast=true, Groq primary)", async () => {
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("api.groq.com")) return groqOk("plain text response");
       return new Response("{}", { status: 200 });
     });
 
-    await callLLM({ prompt: "Answer in prose.", jsonMode: false });
+    await callLLM({ prompt: "Answer in prose.", jsonMode: false, fast: true });
 
     const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
     const body = JSON.parse(groqCall?.[1]?.body as string);

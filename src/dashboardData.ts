@@ -146,6 +146,10 @@ function normalizeType(type: string): string {
   const map: Record<string, string> = {
     behavioral: "Behavioral", strategic: "Strategic",
     "technical-leadership": "Technical Leadership", "case-study": "Case Study",
+    "campus-placement": "Campus Placement", "hr-round": "HR Round",
+    "salary-negotiation": "Salary Negotiation", technical: "Technical",
+    "system-design": "System Design", panel: "Panel",
+    management: "Management", "government-psu": "Government & PSU",
   };
   return map[type] || type;
 }
@@ -175,7 +179,11 @@ function pickByScore(arr: string[], score: number): string {
 
 function realSessionsToDashboard(realSessions: RealSession[], targetRole: string) {
   return realSessions.map((rs, i, all) => {
-    const type = normalizeType(rs.type);
+    /* Prefer focus when it maps to a known display name (e.g. focus=
+     * "campus-placement" on a type="behavioral" session → "Campus Placement").
+     * Falls back to type when focus is absent, "general", or unrecognised. */
+    const focusDisplay = rs.focus ? normalizeType(rs.focus) : "";
+    const type = (focusDisplay && focusDisplay !== rs.focus) ? focusDisplay : normalizeType(rs.type);
     const prevScore = i < all.length - 1 ? all[i + 1].score : rs.score;
     const dateObj = new Date(rs.date);
     const dateLabel = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -235,7 +243,7 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
   const scoreTrend = real.slice().reverse().map(rs => ({
     score: rs.score,
     date: new Date(rs.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    type: normalizeType(rs.type),
+    type: (() => { const fd = rs.focus ? normalizeType(rs.focus) : ""; return (fd && fd !== rs.focus) ? fd : normalizeType(rs.type); })(),
   }));
 
   const skills: SkillData[] = [];
