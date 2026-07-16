@@ -152,6 +152,9 @@ const ResponsiveSheet = () => (
     .mv2-marquee-mask { mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); overflow: hidden; content-visibility: auto; contain-intrinsic-size: 1px 96px; }
     .mv2-marquee-mask:hover .mv2-marquee-track { animation-play-state: paused; }
     @media (prefers-reduced-motion: reduce) { .mv2-marquee-track { animation: none; } }
+    /* Bento card animations */
+    @keyframes mv2-dot-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+    @media (prefers-reduced-motion: reduce) { [style*="mv2-dot-bounce"] { animation: none !important; } }
     /* Skip paint + pause CSS animations on off-screen sections (battery on low-end mobile) */
     .mv2-cv-auto { content-visibility: auto; contain-intrinsic-size: 1px 700px; }
     /* Hero load cascade — stepped entrance, one orchestrated moment */
@@ -2021,39 +2024,138 @@ export function ProductStoryV2() {
 /* ─────────────────────────── 5. FEATURE BENTO ─────────────────────────── */
 
 /* Voice Follow-up visual: transcript with a follow-up question surfacing */
-function VoiceFollowUpVisual() {
+/* Shared hook: Intersection Observer that fires once when element enters view.
+   Returns a ref to attach and a boolean `inView`. */
+function useInViewOnce<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setInView(true); return; }
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); io.disconnect(); } },
+      { threshold: 0.25 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, inView] as const;
+}
+
+/* Shared hook: looping animation driver.
+   Calls `runFrame` with the current frame index (0 = reset) on a schedule.
+   Only runs while `active` is true. Cleans up on unmount. */
+function useBentoLoop(
+  active: boolean,
+  frames: number[],   /* ms delays from frame 0 */
+  loopMs: number,     /* total cycle duration before restart */
+  onFrame: (frame: number) => void,
+) {
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    if (!active) return;
+    function runCycle() {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      onFrame(0);
+      frames.forEach((delay, i) => {
+        timers.current.push(setTimeout(() => onFrame(i + 1), delay));
+      });
+      timers.current.push(setTimeout(runCycle, loopMs));
+    }
+    runCycle();
+    return () => timers.current.forEach(clearTimeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+}
+
+/* Reveal transition helper: items snap-to-hidden on reset (frame 0), animate in after */
+function revealStyle(visible: boolean, resetting: boolean): CSSProperties {
+  return {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(8px)",
+    transition: resetting ? "none" : "opacity 0.38s cubic-bezier(0.16,1,0.3,1), transform 0.38s cubic-bezier(0.16,1,0.3,1)",
+  };
+}
+
+/* Resume-aware visual: personalized question chip — staggered reveal */
+function ResumeAwareVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [step, setStep] = useState(0);
+  const resetting = useRef(false);
+
+  useBentoLoop(inView && !reduced, [200, 950, 1750], 5200, (frame) => {
+    resetting.current = frame === 0;
+    setStep(frame);
+  });
+
   return (
-    <div
-      style={{
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        overflow: "hidden",
-        fontFamily: fonts.sans,
-        fontSize: 13,
-      }}
-    >
-      {/* Transcript lines */}
-      <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
+    <div ref={ref} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={revealStyle(step >= 1, resetting.current)}>
+        <div style={{ padding: "10px 12px", background: t.copper100, borderRadius: 8, fontFamily: fonts.sans, fontSize: 12, color: t.copperDark, lineHeight: 1.4 }}>
+          <span style={{ fontWeight: 600 }}>From your resume →</span>
+          <p style={{ margin: "4px 0 0" }}>Python · Razorpay internship · Final year</p>
+        </div>
+      </div>
+      <div style={revealStyle(step >= 2, resetting.current)}>
+        <div style={{ padding: "10px 12px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 8, fontFamily: fonts.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
+          "Walk me through the specific bug you fixed in the Razorpay payment gateway."
+        </div>
+      </div>
+      <div style={revealStyle(step >= 3, resetting.current)}>
+        <div style={{ padding: "10px 12px", background: t.indigoMist, borderRadius: 8, fontFamily: fonts.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
+          <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.indigo, display: "block", marginBottom: 4 }}>Follow-up</span>
+          "What was the transaction volume affected? Did you escalate to senior engineers?"
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Voice follow-up visual: user → typing dots → AI reply → listening waveform */
+function VoiceFollowUpVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [phase, setPhase] = useState(0);
+  const resetting = useRef(false);
+
+  /* frames: user(200ms) → typing(1000ms) → reply(2350ms) → wave(3150ms) */
+  useBentoLoop(inView && !reduced, [200, 1000, 2350, 3150], 6200, (frame) => {
+    resetting.current = frame === 0;
+    setPhase(frame);
+  });
+
+  return (
+    <div ref={ref} style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12, overflow: "hidden", fontFamily: fonts.sans, fontSize: 13 }}>
+      {/* User message */}
+      <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}`, ...revealStyle(phase >= 1, resetting.current) }}>
         <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint }}>YOU</span>
         <p style={{ margin: "4px 0 0", color: t.inkSoft, lineHeight: 1.45 }}>
           "I improved team communication by setting up weekly syncs…"
         </p>
       </div>
-      {/* Follow-up highlight */}
-      <div
-        style={{
-          padding: "14px 16px",
-          background: t.indigoMist,
-        }}
-      >
+      {/* AI row: typing dots fade out, message fades in */}
+      <div style={{ padding: "14px 16px", background: t.indigoMist, minHeight: 60, ...revealStyle(phase >= 2, resetting.current) }}>
         <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigoGray }}>AI INTERVIEWER</span>
-        <p style={{ margin: "4px 0 0", color: t.coal, lineHeight: 1.45, fontWeight: 500 }}>
+        {/* Typing dots — shown in phase 2, hidden in phase 3+ */}
+        <div style={{ marginTop: 6, display: "flex", gap: 5, alignItems: "center", height: 18,
+          opacity: phase === 2 ? 1 : 0, transition: phase > 2 ? "opacity 0.2s ease" : "none" }}>
+          {[0, 150, 300].map((delay) => (
+            <span key={delay} style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, opacity: 0.6,
+              animation: `mv2-dot-bounce 1.1s ${delay}ms ease-in-out infinite` }} />
+          ))}
+        </div>
+        {/* AI reply text — fades in at phase 3 */}
+        <p style={{ margin: "-18px 0 0", color: t.coal, lineHeight: 1.45, fontWeight: 500,
+          opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "translateY(0)" : "translateY(4px)",
+          transition: resetting.current ? "none" : "opacity 0.3s ease, transform 0.3s cubic-bezier(0.16,1,0.3,1)" }}>
           "What metric did you track to know the syncs were working?"
         </p>
       </div>
       {/* Waveform row */}
-      <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderTop: `1px solid ${t.line}` }}>
+      <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderTop: `1px solid ${t.line}`,
+        ...revealStyle(phase >= 4, resetting.current) }}>
         <Waveform />
         <span style={{ marginLeft: "auto", fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 600 }}>listening…</span>
       </div>
@@ -2061,41 +2163,49 @@ function VoiceFollowUpVisual() {
   );
 }
 
-/* Salary negotiation visual: counter-offer exchange */
+/* Salary negotiation visual: slide-in rows + integer counter ₹12→₹14 */
 function SalaryNegVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [step, setStep] = useState(0);
+  const [counter, setCounter] = useState(12);
+  const resetting = useRef(false);
+  const counterTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useBentoLoop(inView && !reduced, [200, 1050], 5500, (frame) => {
+    resetting.current = frame === 0;
+    setStep(frame);
+    if (frame === 0) {
+      counterTimers.current.forEach(clearTimeout);
+      setCounter(12);
+    }
+    if (frame === 2) {
+      /* counter row just appeared showing ₹12 — tick to 14 */
+      counterTimers.current.push(setTimeout(() => setCounter(13), 600));
+      counterTimers.current.push(setTimeout(() => setCounter(14), 950));
+      /* show delta after counter settles */
+      counterTimers.current.push(setTimeout(() => setStep(3), 1300));
+    }
+  });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* Company offer */}
-      <div
-        style={{
-          padding: "12px 14px",
-          background: t.cream,
-          border: `1px solid ${t.line}`,
-          borderRadius: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>HR's offer</span>
-        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.coal }}>₹12 LPA</span>
+    <div ref={ref} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ padding: "12px 14px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        ...revealStyle(step >= 1, resetting.current) }}>
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>HR&apos;s offer</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.coal, fontVariantNumeric: "tabular-nums" }}>₹12 LPA</span>
       </div>
-      {/* Your counter */}
-      <div
-        style={{
-          padding: "12px 14px",
-          background: t.indigoDeep,
-          borderRadius: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div style={{ padding: "12px 14px", background: t.indigoDeep, borderRadius: 10,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        ...revealStyle(step >= 2, resetting.current) }}>
         <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted }}>Your counter</span>
-        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.copper100 }}>₹14 LPA</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.copper100, fontVariantNumeric: "tabular-nums" }}>
+          ₹{counter} LPA
+        </span>
       </div>
-      {/* Delta callout */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2,
+        ...revealStyle(step >= 3, resetting.current) }}>
         <span style={{ fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 700 }}>+₹2L/yr</span>
         <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>recovered in 4 minutes of practice</span>
       </div>
@@ -2103,138 +2213,50 @@ function SalaryNegVisual() {
   );
 }
 
-/* Resume-aware visual: personalized question chip */
-function ResumeAwareVisual() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div
-        style={{
-          padding: "10px 12px",
-          background: t.copper100,
-          borderRadius: 8,
-          fontFamily: fonts.sans,
-          fontSize: 12,
-          color: t.copperDark,
-          lineHeight: 1.4,
-        }}
-      >
-        <span style={{ fontWeight: 600 }}>From your resume →</span>
-        <p style={{ margin: "4px 0 0" }}>Python · Razorpay internship · Final year</p>
-      </div>
-      <div
-        style={{
-          padding: "10px 12px",
-          background: t.white,
-          border: `1px solid ${t.line}`,
-          borderRadius: 8,
-          fontFamily: fonts.sans,
-          fontSize: 12,
-          color: t.coal,
-          lineHeight: 1.4,
-        }}
-      >
-        "Walk me through the specific bug you fixed in the Razorpay payment gateway."
-      </div>
-      <div
-        style={{
-          padding: "10px 12px",
-          background: t.indigoMist,
-          borderRadius: 8,
-          fontFamily: fonts.sans,
-          fontSize: 12,
-          color: t.coal,
-          lineHeight: 1.4,
-        }}
-      >
-        <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.indigo, display: "block", marginBottom: 4 }}>
-          Follow-up
-        </span>
-        "What was the transaction volume affected? Did you escalate to senior engineers?"
-      </div>
-    </div>
-  );
-}
-
-/* Bias detector visual: flagged phrases with crisp rewrite */
+/* Bias detector visual: cascading word highlights → slide-up crisp rewrite */
 function BiasDetectorVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [marks, setMarks] = useState(0);
+  const [showRewrite, setShowRewrite] = useState(false);
+  const resetting = useRef(false);
+
+  useBentoLoop(inView && !reduced, [800, 1300, 1800, 2600], 5800, (frame) => {
+    resetting.current = frame === 0;
+    if (frame === 0) { setMarks(0); setShowRewrite(false); }
+    else if (frame <= 3) setMarks(frame);
+    else setShowRewrite(true);
+  });
+
+  const markStyle = (n: number): CSSProperties => ({
+    background: marks >= n ? "rgba(180,83,9,0.14)" : "transparent",
+    color: marks >= n ? t.copper : "inherit",
+    borderRadius: 3,
+    padding: "1px 4px",
+    fontWeight: marks >= n ? 600 : "inherit" as CSSProperties["fontWeight"],
+    fontStyle: "normal" as const,
+    transition: resetting.current ? "none" : "background 0.28s ease, color 0.28s ease",
+  });
+
   return (
-    <div
-      style={{
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 10,
-        overflow: "hidden",
-        fontFamily: fonts.sans,
-        fontSize: 13,
-      }}
-    >
-      {/* Transcript with highlighted phrases */}
+    <div ref={ref} style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10, overflow: "hidden", fontFamily: fonts.sans, fontSize: 13 }}>
       <div style={{ padding: "12px 14px", lineHeight: 1.7, color: t.inkSoft }}>
         {"I "}
-        <mark
-          style={{
-            background: "rgba(180,83,9,0.14)",
-            color: t.copper,
-            borderRadius: 3,
-            padding: "1px 4px",
-            fontWeight: 600,
-            fontStyle: "normal",
-          }}
-        >
-          basically
-        </mark>
+        <mark style={markStyle(1)}>basically</mark>
         {" restructured the team and "}
-        <mark
-          style={{
-            background: "rgba(180,83,9,0.14)",
-            color: t.copper,
-            borderRadius: 3,
-            padding: "1px 4px",
-            fontWeight: 600,
-            fontStyle: "normal",
-          }}
-        >
-          I think
-        </mark>
+        <mark style={markStyle(2)}>I think</mark>
         {" it "}
-        <mark
-          style={{
-            background: "rgba(180,83,9,0.14)",
-            color: t.copper,
-            borderRadius: 3,
-            padding: "1px 4px",
-            fontWeight: 600,
-            fontStyle: "normal",
-          }}
-        >
-          probably
-        </mark>
+        <mark style={markStyle(3)}>probably</mark>
         {" helped…"}
       </div>
-      {/* Rewrite bar */}
-      <div
-        style={{
-          padding: "10px 14px",
-          background: t.indigoMist,
-          borderTop: `1px solid ${t.line}`,
-          display: "flex",
-          alignItems: "baseline",
-          gap: 10,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: t.indigo,
-            flexShrink: 0,
-          }}
-        >
-          Crisp
-        </span>
+      <div style={{
+        padding: "10px 14px", background: t.indigoMist, borderTop: `1px solid ${t.line}`,
+        display: "flex", alignItems: "baseline", gap: 10,
+        opacity: showRewrite ? 1 : 0,
+        transform: showRewrite ? "translateY(0)" : "translateY(10px)",
+        transition: resetting.current ? "none" : "opacity 0.35s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)",
+      }}>
+        <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.indigo, flexShrink: 0 }}>Crisp</span>
         <span style={{ fontSize: 12, color: t.coal, fontWeight: 500, lineHeight: 1.4 }}>
           "I restructured the team. Throughput rose 30% in Q3."
         </span>
@@ -2243,89 +2265,64 @@ function BiasDetectorVisual() {
   );
 }
 
-/* Thought Bubble visual: per-question engagement bars + trigger sentence */
+/* Thought Bubble visual: sequential bar fills, Q4 dramatic drop, trigger reveal */
 function ThoughtBubbleVisual() {
-  const qs = [
-    { q: "Q1", width: "88%", color: t.success },
-    { q: "Q2", width: "80%", color: t.success },
-    { q: "Q3", width: "66%", color: t.copper },
-    { q: "Q4", width: "22%", color: "#DC2626" },
-  ];
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [bars, setBars] = useState([0, 0, 0, 0]);
+  const [showTrigger, setShowTrigger] = useState(false);
+  const [q4Dropping, setQ4Dropping] = useState(false);
+  const resetting = useRef(false);
+  const barTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useBentoLoop(inView && !reduced, [350], 6400, (frame) => {
+    resetting.current = frame === 0;
+    barTimers.current.forEach(clearTimeout);
+    barTimers.current = [];
+    if (frame === 0) { setBars([0, 0, 0, 0]); setShowTrigger(false); setQ4Dropping(false); return; }
+    /* Stagger Q1-Q3 fills, then Q4 fills then drops */
+    barTimers.current.push(setTimeout(() => setBars([88, 0, 0, 0]), 0));
+    barTimers.current.push(setTimeout(() => setBars([88, 80, 0, 0]), 450));
+    barTimers.current.push(setTimeout(() => setBars([88, 80, 66, 0]), 900));
+    barTimers.current.push(setTimeout(() => { setQ4Dropping(false); setBars([88, 80, 66, 72]); }, 1350));
+    barTimers.current.push(setTimeout(() => { setQ4Dropping(true);  setBars([88, 80, 66, 22]); }, 1870));
+    barTimers.current.push(setTimeout(() => setShowTrigger(true), 2450));
+  });
+
+  const BAR_COLORS = [t.success, t.success, t.copper, "#DC2626"];
+
   return (
-    <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-      {/* Left: per-question engagement bars */}
+    <div ref={ref} style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
-        {qs.map(({ q, width, color }) => (
+        {["Q1", "Q2", "Q3", "Q4"].map((q, i) => (
           <div key={q} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                color: t.inkFaintWeak,
-                width: 18,
-                flexShrink: 0,
-              }}
-            >
-              {q}
-            </span>
-            <div
-              style={{
-                flex: 1,
-                height: 6,
-                background: t.line,
-                borderRadius: 3,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ width, height: "100%", background: color, borderRadius: 3 }} />
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.inkFaintWeak, width: 18, flexShrink: 0 }}>{q}</span>
+            <div style={{ flex: 1, height: 6, background: t.line, borderRadius: 3, overflow: "hidden" }}>
+              <div style={{
+                width: `${bars[i]}%`, height: "100%", background: BAR_COLORS[i], borderRadius: 3,
+                transition: resetting.current ? "none"
+                  : i === 3 && q4Dropping
+                    ? "width 0.22s cubic-bezier(0.6,0,1,1)"
+                    : "width 0.45s cubic-bezier(0.16,1,0.3,1)",
+              }} />
             </div>
           </div>
         ))}
       </div>
-      {/* Right: trigger sentence */}
-      <div
-        style={{
-          flex: 1,
-          padding: "10px 12px",
-          background: "rgba(220, 38, 38, 0.05)",
-          border: "1px solid rgba(220, 38, 38, 0.14)",
-          borderRadius: 8,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 9,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "#DC2626",
-            opacity: 0.75,
-            display: "block",
-            marginBottom: 4,
-          }}
-        >
+      <div style={{
+        flex: 1, padding: "10px 12px",
+        background: "rgba(220, 38, 38, 0.05)", border: "1px solid rgba(220, 38, 38, 0.14)", borderRadius: 8,
+        opacity: showTrigger ? 1 : 0,
+        transform: showTrigger ? "translateY(0)" : "translateY(6px)",
+        transition: resetting.current ? "none" : "opacity 0.38s ease, transform 0.38s cubic-bezier(0.16,1,0.3,1)",
+      }}>
+        <span style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#DC2626", opacity: 0.75, display: "block", marginBottom: 4 }}>
           Trigger · Q4
         </span>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 12,
-            color: t.coal,
-            margin: 0,
-            lineHeight: 1.4,
-            fontStyle: "italic",
-          }}
-        >
+        <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.coal, margin: 0, lineHeight: 1.4, fontStyle: "italic" }}>
           "It was a learning experience."
         </p>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 11,
-            color: t.inkFaint,
-            margin: "4px 0 0",
-          }}
-        >
+        <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, margin: "4px 0 0" }}>
           90 words at Q3 → 6 words. The room shifted here.
         </p>
       </div>
