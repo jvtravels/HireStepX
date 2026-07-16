@@ -323,8 +323,6 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
-    ["Questions", "/questions"],
-    ["Companies", "/companies"],
     ["Blog", "/blog"],
     ["Pricing", "/#hd-pricing"],
     ["Contact", "/contact"],
@@ -1469,27 +1467,6 @@ export function HeroV2() {
           >
             Start free session
             <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 17 }}>→</span>
-          </a>
-          <a
-            href="/how-it-works"
-            className="mv2-tap-44 mv2-cta-secondary"
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 16,
-              fontWeight: 500,
-              color: t.indigo,
-              padding: "15px 26px",
-              borderRadius: 999,
-              textDecoration: "none",
-              border: `1px solid ${t.indigo}`,
-              background: "transparent",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              whiteSpace: "nowrap",
-            }}
-          >
-            See how it works
           </a>
         </div>
 
@@ -3182,7 +3159,7 @@ export function PricingV2() {
             </h2>
           </MotionReveal>
           <MotionReveal delay={160}>
-            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, textAlign: "center" }}>
+            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, margin: "16px auto 0", textAlign: "center" }}>
               Pay when a round is coming. Stop when you&apos;re ready. No subscription, no monthly guilt.
             </p>
           </MotionReveal>
