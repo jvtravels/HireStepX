@@ -102,7 +102,12 @@ export interface NextMove {
 export const GAP_CTA_MAP: Record<string, {
   label: string;
   headline: string;
-  drill: string;
+  /**
+   * Micro-drill skill key forwarded to `generate-questions?drill=<key>` and
+   * used to seed the banner in SessionSetup. Optional: campus-placement entries
+   * bypass drill mode and go directly to the setup page instead.
+   */
+  drill?: string;
   /** Which session focus this gap belongs to. Drives the subtitle copy. */
   sessionFocus?: string;
   /** Override the CTA href. When absent, defaults to hr-round drill URL. */
@@ -146,46 +151,44 @@ export const GAP_CTA_MAP: Record<string, {
     drill: "comp_deflect",
     sessionFocus: "salary-negotiation",
   },
-  /* ── Campus placement (v6.x analyzer flags) ── */
+  /* ── Campus placement (v6.x analyzer flags) ──
+   * No drill key: campus-placement CTAs go to /session/new?focus=campus-placement
+   * (setup page) rather than a micro-drill session. The contract test
+   * (drillCtaContract.test.ts) skips drill-chain assertions for entries
+   * where drill is absent. */
   no_academic_project_discussed: {
     label: "Practice your academic project deep-dive",
     headline: "You didn't discuss any academic projects last session — every campus screener will ask. Drill one project end-to-end.",
-    drill: "academic_project",
     sessionFocus: "campus-placement",
     ctaHref: "/session/new?focus=campus-placement",
   },
   generic_passion_no_substance: {
     label: "Substantiate your passion with specifics",
     headline: "Your passion statement had no evidence behind it — recruiters probe for specifics. Drill one concrete proof point.",
-    drill: "passion_substance",
     sessionFocus: "campus-placement",
     ctaHref: "/session/new?focus=campus-placement",
   },
   cgpa_low_no_framing: {
     label: "Prepare your CGPA framing story",
     headline: "Your CGPA came up without a framing narrative — a solid one-liner on trajectory turns a liability into a signal. Drill it.",
-    drill: "cgpa_framing",
     sessionFocus: "campus-placement",
     ctaHref: "/session/new?focus=campus-placement",
   },
   no_company_specific_research: {
     label: "Research your target company and practice 'why us'",
     headline: "You had no company-specific insight last session — every HR will ask 'why us?' Drill your research and answer.",
-    drill: "why_company",
     sessionFocus: "campus-placement",
     ctaHref: "/session/new?focus=campus-placement",
   },
   bond_refusal: {
     label: "Prepare your bond/service agreement response",
     headline: "You refused the bond question outright — that's an instant red flag. Drill the diplomatic 'willing-to-discuss' framing.",
-    drill: "bond_handling",
     sessionFocus: "campus-placement",
     ctaHref: "/session/new?focus=campus-placement",
   },
   bond_unprepared: {
     label: "Prepare your stance on the bond/service agreement",
     headline: "Bond agreements are standard at this tier — having no answer reads as uninformed. Drill the confident, positive-intent response.",
-    drill: "bond_stance",
     sessionFocus: "campus-placement",
     ctaHref: "/session/new?focus=campus-placement",
   },
@@ -242,11 +245,14 @@ export function pickNextMove(input: NextMoveInput): NextMove {
       : currentStreak > 0
         ? "Keep the streak going"
         : "Start a session";
-  /* Gap entries may carry their own ctaHref (e.g. campus-placement gaps
-   * go to /interview?type=behavioral&focus=campus-placement, not hr-round).
-   * HR-round and salary-negotiation gaps fall back to the drill URL. */
+  /* Gap entries may carry their own ctaHref (campus-placement entries do).
+   * HR-round and salary-negotiation gaps without a custom ctaHref fall back
+   * to the drill URL (drill is always set for those entries). */
   const ctaHref = matchedGap
-    ? (matchedGap.cta.ctaHref ?? `/session/new?focus=hr-round&drill=${encodeURIComponent(matchedGap.cta.drill)}`)
+    ? (matchedGap.cta.ctaHref
+        ?? (matchedGap.cta.drill
+          ? `/session/new?focus=hr-round&drill=${encodeURIComponent(matchedGap.cta.drill)}`
+          : `/session/new?focus=hr-round`))
     : weakestSkillName
       ? `/session/new?focus=${encodeURIComponent(weakestSkillName)}`
       : "/session/new";

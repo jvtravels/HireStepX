@@ -38,7 +38,9 @@ import { GAP_CTA_MAP } from "./nextMove";
  */
 const DRILL_TO_CTA: Record<string, { label: string; headline: string }> = Object.values(GAP_CTA_MAP).reduce(
   (acc, cta) => {
-    acc[cta.drill] = { label: cta.label, headline: cta.headline };
+    /* Campus-placement entries omit drill — they go to the setup page
+     * rather than a micro-drill session; skip them here. */
+    if (cta.drill) acc[cta.drill] = { label: cta.label, headline: cta.headline };
     return acc;
   },
   {} as Record<string, { label: string; headline: string }>,

@@ -260,12 +260,16 @@ describe("pickNextMove", () => {
       expect(out.ctaLabel).toBe("Keep the streak going");
     });
 
-    it("every gap in GAP_CTA_MAP produces a non-empty label + headline + drill key", () => {
+    it("every gap in GAP_CTA_MAP produces a non-empty label + headline; drill key must be valid when present", () => {
       // Regression guard: nobody adds a gap to the map without filling all fields.
+      // drill is optional — campus-placement entries omit it (they use a custom ctaHref
+      // that goes to the setup page, not a micro-drill session).
       for (const [code, cta] of Object.entries(GAP_CTA_MAP)) {
         expect(cta.label, `${code}.label`).toBeTruthy();
         expect(cta.headline, `${code}.headline`).toBeTruthy();
-        expect(cta.drill, `${code}.drill`).toMatch(/^[a-z_]+$/);
+        if (cta.drill !== undefined) {
+          expect(cta.drill, `${code}.drill`).toMatch(/^[a-z_]+$/);
+        }
       }
     });
 
