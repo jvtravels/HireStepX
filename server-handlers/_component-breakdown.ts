@@ -206,6 +206,18 @@ function extractAdjacentNumberBefore(
   return Math.round(raw * 10) / 10;
 }
 
+/** OA-B33 — blank one-time / signing bonus phrases (with any adjacent
+ *  LPA number) so annual-variable extraction never mis-binds them. A
+ *  joining/signing/sign-on/relocation/retention/referral/one-time bonus
+ *  is a lump-sum, not recurring variable pay. Whitespace-preserving so
+ *  downstream regex offsets stay stable. Matches the number on either
+ *  side ("₹2L joining bonus", "joining bonus of 2L"). */
+function maskOneTimeBonus(text: string): string {
+  const ONE_TIME_BONUS_RE =
+    /(?:₹?\s*\d{1,3}(?:\.\d+)?\s*(?:lpa|lakhs?|l|k|cr)?\s+)?(?:joining|signing|sign[-\s]?on|relocation|retention|referral|one[-\s]?time|onetime)\s+bonus(?:\s+of\s+₹?\s*\d{1,3}(?:\.\d+)?\s*(?:lpa|lakhs?|l|k|cr)?)?/gi;
+  return text.replace(ONE_TIME_BONUS_RE, (m) => " ".repeat(m.length));
+}
+
 /** Extract component breakdown from candidate text. Returns an
  *  object with `hasAny: false` and all-null components when no
  *  components are named.
@@ -352,21 +364,32 @@ export function extractComponentBreakdown(
     extractNumberBefore(a, "base(?:\\s+(?:salary|pay))?") ??
     extractNumberBefore(a, "basic");
 
+  /* OA-B33 (2026-07-18) — a JOINING / SIGNING / relocation / retention
+   * bonus is a ONE-TIME component, categorically NOT annual variable
+   * pay. The loose "bonus" cue arms below (esp. extractNumberBefore)
+   * otherwise bind "₹2L joining bonus" into `variable`, corrupting the
+   * component record on multi-component demands ("₹65L base + 15%
+   * variable + ₹2L joining bonus"). Blank the one-time-bonus span (with
+   * its adjacent number) before variable extraction so only genuine
+   * annual variable/incentive/performance pay reaches the arms. Base and
+   * equity cues never live inside a "joining bonus" phrase, so masking
+   * for the variable arms only is safe. */
+  const varInput = maskOneTimeBonus(a);
   let variable =
-    extractAdjacentNumberBefore(a, "variable") ??
-    extractAdjacentNumberBefore(a, "bonus") ??
-    extractAdjacentNumberBefore(a, "incentive") ??
-    extractNumberAfter(a, "performance\\s+bonus") ??
-    extractNumberAfter(a, "performance\\s+pay") ??
-    extractNumberAfter(a, "target\\s+bonus") ??
-    extractNumberAfter(a, "variable\\s+pay") ??
-    extractNumberAfter(a, "variable\\s+comp(?:onent)?") ??
-    extractNumberAfter(a, "variable") ??
-    extractNumberAfter(a, "incentive") ??
-    extractNumberAfter(a, "bonus") ??
-    extractNumberBefore(a, "variable") ??
-    extractNumberBefore(a, "bonus") ??
-    extractNumberBefore(a, "incentive");
+    extractAdjacentNumberBefore(varInput, "variable") ??
+    extractAdjacentNumberBefore(varInput, "bonus") ??
+    extractAdjacentNumberBefore(varInput, "incentive") ??
+    extractNumberAfter(varInput, "performance\\s+bonus") ??
+    extractNumberAfter(varInput, "performance\\s+pay") ??
+    extractNumberAfter(varInput, "target\\s+bonus") ??
+    extractNumberAfter(varInput, "variable\\s+pay") ??
+    extractNumberAfter(varInput, "variable\\s+comp(?:onent)?") ??
+    extractNumberAfter(varInput, "variable") ??
+    extractNumberAfter(varInput, "incentive") ??
+    extractNumberAfter(varInput, "bonus") ??
+    extractNumberBefore(varInput, "variable") ??
+    extractNumberBefore(varInput, "bonus") ??
+    extractNumberBefore(varInput, "incentive");
 
   /* PDF#38 BUG-E (2026-05-20) — explicit zero-variable parse. When the
    * candidate's reply is a DEFINITIVE negation tied to a variable

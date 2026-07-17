@@ -145,6 +145,10 @@ const RIGID_PATTERNS: RegExp[] = [
   /\bhard\s+(?:floor|number|ask)\b/i,
   /\bno\s+(?:compromise|flexibility|wiggle\s+room|negotiation)\s+on\s+(?:salary|the\s+number|comp|ctc)/i,
   /\btake\s+it\s+or\s+leave\s+it\b/i,
+  /* OA-B33 — "all or nothing" is a take-it-or-leave-it hardline stance
+   * on a multi-component demand ("₹65L + 15% variable + ₹2L JB — all or
+   * nothing"). Matches "all-or-nothing" and "all or nothing". */
+  /\ball[-\s]or[-\s]nothing\b/i,
   /* Corpus-derived (Phase 19): "I will not join below ₹14L" /
    * "won't join below 20" — the candidate is naming a hard floor as
    * a take-it-or-leave-it stance, not a flexible floor. */

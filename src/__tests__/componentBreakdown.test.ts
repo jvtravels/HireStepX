@@ -264,3 +264,40 @@ describe("summarizeBreakdown", () => {
     expect(s).toBe("base ₹28 LPA");
   });
 });
+
+describe("extractComponentBreakdown — OA-B33 one-time bonus is not annual variable", () => {
+  /* A joining/signing/relocation bonus is a lump-sum, categorically NOT
+     recurring variable pay. The loose "bonus" cue arms otherwise bound
+     "₹2L joining bonus" into `variable`, corrupting the component record
+     on a multi-component demand. The mask blanks the one-time-bonus span
+     (with its adjacent number) before variable extraction. */
+  it("does NOT bind a ₹2L joining bonus into variable on a multi-component demand", () => {
+    const cb = extractComponentBreakdown(
+      "i need ₹65l base plus 15% variable plus a ₹2l joining bonus — all or nothing",
+      65,
+    );
+    expect(cb.base).toBe(65);
+    expect(cb.variable).toBeNull();          // ₹2L JB masked out, not mis-bound
+    expect(cb.variablePercent).toBe(15);      // genuine 15% variable preserved
+  });
+
+  it("masks joining bonus stated as 'joining bonus of 2L' (number-after form)", () => {
+    const cb = extractComponentBreakdown("30 base and a joining bonus of 2L");
+    expect(cb.base).toBe(30);
+    expect(cb.variable).toBeNull();
+  });
+
+  it("still binds a genuine annual variable/bonus when NOT one-time-qualified", () => {
+    const cb = extractComponentBreakdown("20 base and 6 bonus");
+    expect(cb.base).toBe(20);
+    expect(cb.variable).toBe(6);
+  });
+
+  it("masks signing / sign-on / relocation bonuses too", () => {
+    for (const u of ["25 base plus a 3L signing bonus", "25 base plus a 3L sign-on bonus", "25 base plus a 3L relocation bonus"]) {
+      const cb = extractComponentBreakdown(u);
+      expect(cb.base, u).toBe(25);
+      expect(cb.variable, u).toBeNull();
+    }
+  });
+});
