@@ -181,6 +181,7 @@ export interface UserDetailData {
   payments: Record<string, unknown>[];
   llmUsage: Record<string, unknown>[];
   feedback: Record<string, unknown>[];
+  creditBalance?: number;
   costSummary?: {
     totalLlmCostInr: number;
     totalPromptTokens: number;
@@ -1404,22 +1405,37 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div style={{ ...card, marginBottom: 20 }}>
-          <p style={{ ...labelStyle, marginBottom: 16 }}>Quick Actions</p>
-          {qaStatus && (
-            <div style={{
-              padding: "8px 14px", borderRadius: 6, marginBottom: 14, fontSize: 13,
-              background: qaStatus.ok ? "rgba(22,101,52,0.25)" : "rgba(153,27,27,0.25)",
-              color: qaStatus.ok ? "rgb(74,222,128)" : "rgb(248,113,113)",
-              border: `1px solid ${qaStatus.ok ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
-            }}>
-              {qaStatus.msg}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            {/* Extend subscription */}
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Extend / Change Plan</p>
+        <div style={{ ...card, marginBottom: 20, padding: 0, overflow: "hidden" }}>
+          {/* Header row */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 20px", borderBottom: `1px solid ${c.border}`,
+          }}>
+            <p style={{ ...labelStyle, margin: 0 }}>Quick Actions</p>
+            {qaStatus && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 7,
+                padding: "5px 12px", borderRadius: 20, fontSize: 12,
+                background: qaStatus.ok ? "rgba(22,101,52,0.2)" : "rgba(153,27,27,0.2)",
+                color: qaStatus.ok ? "rgb(74,222,128)" : "rgb(248,113,113)",
+                border: `1px solid ${qaStatus.ok ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
+                fontFamily: font.ui, maxWidth: 480,
+              }}>
+                <span style={{ fontSize: 14, lineHeight: 1 }}>{qaStatus.ok ? "✓" : "✕"}</span>
+                <span>{qaStatus.msg}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Three-column action grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0 }}>
+
+            {/* ── Extend / Change Plan ── */}
+            <div style={{ padding: "16px 20px", borderRight: `1px solid ${c.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 3, height: 14, borderRadius: 2, background: c.gilt, flexShrink: 0 }} />
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Change Plan</span>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <select
@@ -1427,12 +1443,13 @@ export default function AdminDashboard() {
                     onChange={(e) => setQaExtendTier(e.target.value)}
                     disabled={qaBusy}
                     style={{
-                      flex: 1, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
-                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                      flex: 1, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                     }}
                   >
                     <option value="free">Free</option>
                     <option value="starter">Sprint Pack</option>
+                    <option value="pro">Pro</option>
                   </select>
                   <input
                     type="number"
@@ -1443,8 +1460,8 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     placeholder="days"
                     style={{
-                      width: 80, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
-                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.mono,
+                      width: 70, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
                     }}
                   />
                 </div>
@@ -1462,11 +1479,11 @@ export default function AdminDashboard() {
                       const res = await fetchSection("extend-subscription", { userId: selectedUserId, tier: qaExtendTier, days }, true);
                       const r = res as { ok?: boolean; error?: string; tier?: string; days?: number; newEnd?: string } | null;
                       if (r?.ok) {
-                        setQaStatus({ ok: true, msg: `Plan updated to ${r.tier} for ${r.days}d — expires ${r.newEnd ? new Date(r.newEnd).toLocaleDateString("en-IN") : "—"}.` });
+                        setQaStatus({ ok: true, msg: `Plan → ${r.tier} for ${r.days}d, expires ${r.newEnd ? new Date(r.newEnd).toLocaleDateString("en-IN") : "—"}` });
                         setUserDetail(null);
                         await fetchSection("user-detail", { userId: selectedUserId }, true).then((d) => setUserDetail(d as UserDetailData));
                       } else {
-                        setQaStatus({ ok: false, msg: r?.error ?? "Supabase PATCH failed." });
+                        setQaStatus({ ok: false, msg: r?.error ?? "PATCH failed" });
                       }
                     } catch (err) {
                       setQaStatus({ ok: false, msg: String(err) });
@@ -1476,8 +1493,9 @@ export default function AdminDashboard() {
                   }}
                   style={{
                     background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
-                    padding: "7px 18px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                    padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
                     cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                    width: "100%",
                   }}
                 >
                   {qaBusy ? "…" : "Apply Plan Change"}
@@ -1485,9 +1503,23 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Grant credits */}
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Grant Session Credits</p>
+            {/* ── Grant Session Credits ── */}
+            <div style={{ padding: "16px 20px", borderRight: `1px solid ${c.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 3, height: 14, borderRadius: 2, background: "rgb(74,222,128)", flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Session Credits</span>
+                </div>
+                <span style={{
+                  fontSize: 11, fontFamily: font.mono, fontWeight: 600,
+                  color: (userDetail.creditBalance ?? 0) > 0 ? "rgb(74,222,128)" : c.stone,
+                  background: (userDetail.creditBalance ?? 0) > 0 ? "rgba(74,222,128,0.1)" : `${c.stone}18`,
+                  border: `1px solid ${(userDetail.creditBalance ?? 0) > 0 ? "rgba(74,222,128,0.25)" : `${c.stone}30`}`,
+                  padding: "2px 8px", borderRadius: 10,
+                }}>
+                  {userDetail.creditBalance ?? 0} balance
+                </span>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
@@ -1499,8 +1531,8 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     placeholder="qty"
                     style={{
-                      width: 80, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
-                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.mono,
+                      width: 70, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
                     }}
                   />
                   <input
@@ -1508,11 +1540,11 @@ export default function AdminDashboard() {
                     value={qaGrantNote}
                     onChange={(e) => setQaGrantNote(e.target.value)}
                     disabled={qaBusy}
-                    placeholder="note (optional)"
+                    placeholder="reason (optional)"
                     maxLength={200}
                     style={{
-                      flex: 1, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
-                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                      flex: 1, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                     }}
                   />
                 </div>
@@ -1528,13 +1560,14 @@ export default function AdminDashboard() {
                     setQaStatus(null);
                     try {
                       const res = await fetchSection("grant-credits", { userId: selectedUserId, qty, note: qaGrantNote || "admin grant" }, true);
-                      const r = res as { ok?: boolean; error?: string; qty?: number } | null;
+                      const r = res as { ok?: boolean; error?: string; qty?: number; newBalance?: number } | null;
                       if (r?.ok) {
-                        setQaStatus({ ok: true, msg: `${r.qty} session credit${(r.qty ?? 0) > 1 ? "s" : ""} granted.` });
+                        setQaStatus({ ok: true, msg: `+${r.qty} credit${(r.qty ?? 0) > 1 ? "s" : ""} granted${r.newBalance != null ? ` · balance now ${r.newBalance}` : ""}` });
                         setQaGrantQty("5");
                         setQaGrantNote("");
+                        setUserDetail(prev => prev ? { ...prev, creditBalance: r.newBalance ?? (prev.creditBalance ?? 0) + qty } : prev);
                       } else {
-                        setQaStatus({ ok: false, msg: r?.error ?? "RPC call failed." });
+                        setQaStatus({ ok: false, msg: r?.error ?? "RPC call failed" });
                       }
                     } catch (err) {
                       setQaStatus({ ok: false, msg: String(err) });
@@ -1543,9 +1576,9 @@ export default function AdminDashboard() {
                     }
                   }}
                   style={{
-                    background: "rgb(22,101,52)", color: "rgb(240,253,244)", border: "none", borderRadius: 6,
-                    padding: "7px 18px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
-                    cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                    background: "rgba(22,101,52,0.9)", color: "rgb(240,253,244)", border: "1px solid rgba(74,222,128,0.2)",
+                    borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
+                    cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1, width: "100%",
                   }}
                 >
                   {qaBusy ? "…" : "Grant Credits"}
@@ -1553,9 +1586,12 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Ban / Delete */}
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Account Control</p>
+            {/* ── Account Control ── */}
+            <div style={{ padding: "16px 20px", background: "rgba(127,29,29,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 3, height: 14, borderRadius: 2, background: "rgb(248,113,113)", flexShrink: 0 }} />
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Account Control</span>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
@@ -1571,9 +1607,9 @@ export default function AdminDashboard() {
                       finally { setQaBusy(false); }
                     }}
                     style={{
-                      flex: 1, background: "rgba(180,83,9,0.15)", color: "rgb(251,191,36)",
-                      border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6,
-                      padding: "7px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                      flex: 1, background: "rgba(180,83,9,0.12)", color: "rgb(251,191,36)",
+                      border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6,
+                      padding: "8px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
                       cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
                     }}
                   >
@@ -1592,9 +1628,9 @@ export default function AdminDashboard() {
                       finally { setQaBusy(false); }
                     }}
                     style={{
-                      flex: 1, background: "rgba(22,101,52,0.15)", color: "rgb(74,222,128)",
-                      border: "1px solid rgba(74,222,128,0.3)", borderRadius: 6,
-                      padding: "7px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                      flex: 1, background: "rgba(22,101,52,0.12)", color: "rgb(74,222,128)",
+                      border: "1px solid rgba(74,222,128,0.25)", borderRadius: 6,
+                      padding: "8px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
                       cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
                     }}
                   >
@@ -1607,10 +1643,10 @@ export default function AdminDashboard() {
                       disabled={qaBusy}
                       onClick={() => setQaDeleteConfirm(true)}
                       style={{
-                        background: "rgba(127,29,29,0.2)", color: "rgb(248,113,113)",
-                        border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6,
-                        padding: "7px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
-                        cursor: "pointer",
+                        background: "rgba(127,29,29,0.15)", color: "rgb(248,113,113)",
+                        border: "1px solid rgba(248,113,113,0.25)", borderRadius: 6,
+                        padding: "8px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                        cursor: "pointer", width: "100%",
                       }}
                     >
                       Delete Account
@@ -1636,17 +1672,17 @@ export default function AdminDashboard() {
                         }}
                         style={{
                           flex: 1, background: "rgb(127,29,29)", color: "rgb(254,202,202)",
-                          border: "none", borderRadius: 6, padding: "7px 10px", fontSize: 12,
+                          border: "none", borderRadius: 6, padding: "8px 10px", fontSize: 12,
                           fontWeight: 700, fontFamily: font.ui, cursor: "pointer",
                         }}
                       >
-                        Yes, permanently delete
+                        Yes, delete permanently
                       </button>
                       <button
                         onClick={() => setQaDeleteConfirm(false)}
                         style={{
-                          background: c.obsidian, color: c.stone, border: `1px solid ${c.borderSubtle}`,
-                          borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: font.ui, cursor: "pointer",
+                          background: c.obsidian, color: c.stone, border: `1px solid ${c.border}`,
+                          borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: font.ui, cursor: "pointer",
                         }}
                       >
                         Cancel
@@ -1656,11 +1692,16 @@ export default function AdminDashboard() {
                 }
               </div>
             </div>
+          </div>
 
-            {/* Send Email */}
-            <div style={{ flex: "1 1 100%", minWidth: 0 }}>
-              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Send Email to User</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Send Email — full-width row below the grid */}
+          <div style={{ padding: "16px 20px", borderTop: `1px solid ${c.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 3, height: 14, borderRadius: 2, background: c.slate, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Send Email to User</span>
+            </div>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
                 <input
                   type="text"
                   value={qaEmailSubject}
@@ -1669,8 +1710,8 @@ export default function AdminDashboard() {
                   placeholder="Subject"
                   maxLength={200}
                   style={{
-                    background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
-                    borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                    background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                    borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                   }}
                 />
                 <textarea
@@ -1678,45 +1719,45 @@ export default function AdminDashboard() {
                   onChange={(e) => setQaEmailBody(e.target.value)}
                   disabled={qaBusy}
                   placeholder="Email body (HTML supported)"
-                  rows={4}
+                  rows={3}
                   maxLength={20000}
                   style={{
-                    background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
-                    borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
-                    resize: "vertical",
+                    background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                    borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui,
+                    resize: "vertical", outline: "none",
                   }}
                 />
-                <button
-                  disabled={qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()}
-                  onClick={async () => {
-                    setQaBusy(true); setQaStatus(null);
-                    try {
-                      const res = await fetchSection("send-email", {
-                        userId: selectedUserId,
-                        subject: qaEmailSubject.trim(),
-                        htmlBody: qaEmailBody.trim(),
-                      }, true);
-                      const r = res as { ok?: boolean; error?: string; to?: string; emailId?: string } | null;
-                      if (r?.ok) {
-                        setQaStatus({ ok: true, msg: `Email sent to ${r.to} (ID: ${r.emailId})` });
-                        setQaEmailSubject(""); setQaEmailBody("");
-                      } else {
-                        setQaStatus({ ok: false, msg: r?.error ?? "Send failed" });
-                      }
-                    } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
-                    finally { setQaBusy(false); }
-                  }}
-                  style={{
-                    background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
-                    padding: "7px 18px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
-                    cursor: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? "not-allowed" : "pointer",
-                    opacity: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? 0.5 : 1,
-                    alignSelf: "flex-start",
-                  }}
-                >
-                  {qaBusy ? "Sending…" : "Send Email"}
-                </button>
               </div>
+              <button
+                disabled={qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()}
+                onClick={async () => {
+                  setQaBusy(true); setQaStatus(null);
+                  try {
+                    const res = await fetchSection("send-email", {
+                      userId: selectedUserId,
+                      subject: qaEmailSubject.trim(),
+                      htmlBody: qaEmailBody.trim(),
+                    }, true);
+                    const r = res as { ok?: boolean; error?: string; to?: string; emailId?: string } | null;
+                    if (r?.ok) {
+                      setQaStatus({ ok: true, msg: `Email sent to ${r.to}` });
+                      setQaEmailSubject(""); setQaEmailBody("");
+                    } else {
+                      setQaStatus({ ok: false, msg: r?.error ?? "Send failed" });
+                    }
+                  } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
+                  finally { setQaBusy(false); }
+                }}
+                style={{
+                  background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
+                  padding: "8px 20px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
+                  cursor: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? "not-allowed" : "pointer",
+                  opacity: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? 0.45 : 1,
+                  flexShrink: 0, alignSelf: "flex-end",
+                }}
+              >
+                {qaBusy ? "Sending…" : "Send Email"}
+              </button>
             </div>
           </div>
         </div>

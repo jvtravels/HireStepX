@@ -351,12 +351,13 @@ async function getUsers(search?: string, offset = 0, limit = 50) {
 
 async function getUserDetail(userId: string) {
   const encoded = encodeURIComponent(userId);
-  const [profile, sessions, payments, llmUsage, feedback] = await Promise.all([
+  const [profile, sessions, payments, llmUsage, feedback, credits] = await Promise.all([
     fetchJSON(`profiles?id=eq.${encoded}&select=id,name,email,subscription_tier,target_role,target_company,experience_level,industry,subscription_start,subscription_end,cancel_at_period_end,has_completed_onboarding,created_at&limit=1`),
     fetchJSON<{ id: string; date: string; type: string; difficulty: string; duration: number; score: number; skill_scores: Record<string, unknown> | null; created_at: string; llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null }>(`sessions?user_id=eq.${encoded}&select=id,date,type,difficulty,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens&order=created_at.desc&limit=50`),
     fetchJSON(`payments?user_id=eq.${encoded}&select=id,razorpay_payment_id,amount,currency,status,plan,tier,created_at&order=created_at.desc&limit=30`),
     fetchJSON(`llm_usage?user_id=eq.${encoded}&select=endpoint,model,total_tokens,latency_ms,status,created_at&order=created_at.desc&limit=100`),
     fetchJSON(`feedback?user_id=eq.${encoded}&select=id,rating,comment,session_score,session_type,created_at&order=created_at.desc&limit=20`),
+    fetchJSON<{ balance: number }>(`session_credits?user_id=eq.${encoded}&select=balance&limit=1`),
   ]);
 
   // Compute total LLM cost across this user's sessions
@@ -377,6 +378,7 @@ async function getUserDetail(userId: string) {
     payments,
     llmUsage,
     feedback,
+    creditBalance: Array.isArray(credits) && credits.length > 0 ? (credits[0].balance ?? 0) : 0,
     costSummary: {
       totalLlmCostInr: Math.round(totalLlmCostInr * 100) / 100,
       totalPromptTokens,
@@ -1771,7 +1773,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const body2 = await rpcRes.text().catch(() => "");
             return { ok: false, error: `RPC failed: HTTP ${rpcRes.status}: ${body2.slice(0, 200)}` };
           }
-          return { ok: true, qty, note };
+          const newBalance = await rpcRes.json().catch(() => null);
+          return { ok: true, qty, note, newBalance: typeof newBalance === "number" ? newBalance : null };
         }
         case "ban-user": {
           if (!body?.userId) throw new Error("userId required");
