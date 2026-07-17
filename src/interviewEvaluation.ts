@@ -63,7 +63,19 @@ export function computeFallbackScores(params: EvalParams): FallbackResult {
   const fillerCount = userAnswers.reduce((s, t) =>
     s + (t.text.match(/\b(um|uh|like|basically|actually|you know)\b/gi) || []).length, 0);
 
-  const clamp = (v: number) => Math.max(40, Math.min(95, v));
+  /* OA-B41 — the skill dimensions must build on the SAME reality as the
+     overall score. `fallbackScore` is floored at 60 (above), but when the
+     candidate never actually answered, the overall `score` is capped at 30.
+     Building the dimensions off the uncapped `fallbackScore` — and flooring
+     each at 40 — renders every dimension ABOVE the 30 overall it aggregates
+     into, an internal contradiction the report shows verbatim ("30 overall,
+     but 55 on Anchoring"?). When there are no answers, dimensions build off
+     the capped `score` and the floor drops so an empty transcript can read
+     honestly low. When answers exist, dimBase === fallbackScore and
+     dimFloor === 40, so the scored path is byte-identical to before. */
+  const dimBase = hasAnyAnswers ? fallbackScore : score;
+  const dimFloor = hasAnyAnswers ? 40 : 15;
+  const clamp = (v: number) => Math.max(dimFloor, Math.min(95, v));
 
   if (interviewType === "salary-negotiation") {
     // Negotiation-specific skill dimensions
@@ -135,13 +147,13 @@ export function computeFallbackScores(params: EvalParams): FallbackResult {
     const capOutcome = (v: number) => outcomeCeiling === null ? v : Math.min(v, outcomeCeiling);
 
     const skillScores: Record<string, number> = {
-      anchoring: capOutcome(clamp(fallbackScore + anchoringBonus)),
-      packageThinking: capOutcome(clamp(fallbackScore + packageBonus)),
-      leverageUse: capOutcome(clamp(fallbackScore + (facts.hasCompetingOffers ? 10 : 0) + (facts.mentionedBATNA ? 8 : 0) + (facts.deflectedNumbers ? 3 : 0) + (usedMarketData ? 5 : -3))),
-      concessionStrategy: capOutcome(clamp(fallbackScore + concessionBonus)),
-      closingTechnique: capOutcome(clamp(fallbackScore + (facts.askedForTime ? 5 : 0) + (confirmedPackage ? 8 : 0) + (completionRatio > 0.8 ? 5 : -5))),
-      composure: clamp(fallbackScore + (fillerCount < 2 ? 5 : -8) + (facts.expressedSurprise ? 3 : 0) + (facts.usedTacticalSilence ? 5 : 0)),
-      professionalTone: clamp(fallbackScore + (fillerCount < 3 ? 5 : -5) + (avgAnswerLen > 30 ? 3 : -5)),
+      anchoring: capOutcome(clamp(dimBase + anchoringBonus)),
+      packageThinking: capOutcome(clamp(dimBase + packageBonus)),
+      leverageUse: capOutcome(clamp(dimBase + (facts.hasCompetingOffers ? 10 : 0) + (facts.mentionedBATNA ? 8 : 0) + (facts.deflectedNumbers ? 3 : 0) + (usedMarketData ? 5 : -3))),
+      concessionStrategy: capOutcome(clamp(dimBase + concessionBonus)),
+      closingTechnique: capOutcome(clamp(dimBase + (facts.askedForTime ? 5 : 0) + (confirmedPackage ? 8 : 0) + (completionRatio > 0.8 ? 5 : -5))),
+      composure: clamp(dimBase + (fillerCount < 2 ? 5 : -8) + (facts.expressedSurprise ? 3 : 0) + (facts.usedTacticalSilence ? 5 : 0)),
+      professionalTone: clamp(dimBase + (fillerCount < 3 ? 5 : -5) + (avgAnswerLen > 30 ? 3 : -5)),
     };
     // A folded outcome must not headline as "Hire". Pull the overall score
     // toward the ceiling so it can't outrun the skills it's built from.
@@ -153,17 +165,17 @@ export function computeFallbackScores(params: EvalParams): FallbackResult {
     /\d+%|\d+x|\$[\d,]+|\d+ (users|customers|months|days|hours|team|people)/.test(t.text));
   const usesI = userAnswers.some(t => /\bI\b/.test(t.text));
 
-  const structureScore = Math.min(100, fallbackScore + (avgAnswerLen > 200 ? 5 : -5) + (hasMetrics ? 8 : -3));
-  const commScore = Math.min(100, fallbackScore + (fillerCount < 3 ? 5 : -5) + (avgAnswerLen > 100 ? 3 : -5));
+  const structureScore = Math.min(100, dimBase + (avgAnswerLen > 200 ? 5 : -5) + (hasMetrics ? 8 : -3));
+  const commScore = Math.min(100, dimBase + (fillerCount < 3 ? 5 : -5) + (avgAnswerLen > 100 ? 3 : -5));
 
   const skillScores: Record<string, number> = {
     communication: clamp(commScore),
     structure: clamp(structureScore),
-    technicalDepth: clamp(fallbackScore + (avgAnswerLen > 300 ? 5 : -5)),
-    leadership: clamp(fallbackScore + (usesI ? 3 : -5)),
-    problemSolving: clamp(fallbackScore),
-    confidence: clamp(fallbackScore + (fillerCount < 2 ? 5 : -8)),
-    specificity: clamp(fallbackScore + (hasMetrics ? 10 : -10)),
+    technicalDepth: clamp(dimBase + (avgAnswerLen > 300 ? 5 : -5)),
+    leadership: clamp(dimBase + (usesI ? 3 : -5)),
+    problemSolving: clamp(dimBase),
+    confidence: clamp(dimBase + (fillerCount < 2 ? 5 : -8)),
+    specificity: clamp(dimBase + (hasMetrics ? 10 : -10)),
   };
 
   return { score, skillScores, hasAnyAnswers };
