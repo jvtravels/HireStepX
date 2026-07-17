@@ -300,8 +300,11 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * runs first in BOTH the medium gate (classifyAcceptance) and the strict gate
    * (HEDGE_VETO_PATTERNS), so "where do I sign once we sort the base" / "count me
    * in if you can do 40" stay rejected. */
-  /* 6. "where do I sign (up)" — asking to sign IS consent to sign. */
-  /\bwhere\s+do\s+i\s+sign(?:\s+up)?\b/i,
+  /* 6. "where do I sign (up)" / "where do I e-sign" — asking to sign IS consent
+   *    to sign. The optional "e[-\s]?" covers the digital-signature idiom
+   *    ("where do I e-sign?", "where do I esign") an offline recall sweep
+   *    (2026-07-17) surfaced as a NO-CLOSE. */
+  /\bwhere\s+do\s+i\s+(?:e[-\s]?)?sign(?:\s+up)?\b/i,
   /* 7. "count me in" — unambiguous opt-in commit. */
   /\bcount\s+me\s+in\b/i,
   /* 8. "you've / we've got a deal" — the deal-struck idiom. Excludes the
@@ -397,6 +400,13 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * "I'm ready to sign" / "Okay — ready to sign" close but "I'm not ready to
    * sign" (no boundary before "ready") does not. */
   new RegExp(CLAUSE_START + /(?:i'?m\s+)?ready\s+to\s+sign\b/.source, "i"),
+  /* "ready to join" — readiness-to-join is as strong a commit as "ready to
+   * sign" (mirrors the "I'll join" verb in COMMIT_TO_JOIN). Clause-anchored via
+   * CLAUSE_START for the same reason as "ready to sign": "I'm NOT ready to join
+   * at this number" attaches the negation to "ready" (no boundary before it), so
+   * the affirmative "I'm ready to join" / "ready to join the team" closes while
+   * the negated form cannot match (offline recall sweep, 2026-07-17). */
+  new RegExp(CLAUSE_START + /(?:i'?m\s+)?ready\s+to\s+join(?:\s+(?:the\s+)?(?:company|team|firm|role))?\b/.source, "i"),
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -421,6 +431,14 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * exists to prevent. Mirror it into the commitment bank; offer-reference is
    * implicit, HEDGE/CONDITIONAL vetoes still run first. */
   /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment)\b/i,
+  /* Positive-affect sibling of the "let's move forward with this offer" arm —
+   * "I'm happy/glad/ready/keen to move forward with this offer" (offline recall
+   * sweep, 2026-07-17). The affect verb (happy/…) must directly abut "I'm" (the
+   * `.?` matches only an apostrophe, not " not "), so "I'm not happy to move
+   * forward with this offer" cannot match — same negation-safe scaffold as the
+   * "new hire" arm. The "with (this|the) offer/…" object keeps ordinary
+   * "let's move forward" chatter out. */
+  /\bi.?m\s+(?:happy|glad|ready|keen|excited|pleased)\s+to\s+move\s+forward\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment)\b/i,
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
   /\blet.?s\s+(?:go\s+ahead|do\s+(?:it|this)|lock\s+it\s+in|proceed)\b/i,

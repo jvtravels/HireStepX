@@ -48,6 +48,9 @@ const HOSTILE_MUST_VETO: string[] = [
   "Come back with a revised number and I'm in.",
   "Match my counter and I'll sign today.",
   "Match my ask and we have a deal.",
+  // Negation counterparts of the 2026-07-17 recall additions must NOT close.
+  "I'm not ready to join at this number.",
+  "I'm not happy to move forward with this offer.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [
@@ -68,6 +71,12 @@ const GENUINE_MUST_ACCEPT: string[] = [
   "Let's sign.",
   "Ready to sign.",
   "I'm ready to sign.",
+  // Recall sweep 2026-07-17 — e-sign idiom, positive-affect move-forward, and
+  // readiness-to-join, each negation-safe at its single source.
+  "Where do I e-sign?",
+  "I'm happy to move forward with this offer.",
+  "I'm ready to join.",
+  "I'm ready to join the team.",
 ];
 
 describe("PRI-86 — negative-object & temporal-precondition leaks stay vetoed", () => {
