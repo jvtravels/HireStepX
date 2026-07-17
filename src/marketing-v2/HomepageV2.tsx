@@ -3334,10 +3334,11 @@ export function PricingV2() {
               {tier.price === "₹9" && (
                 <>
                   <style>{`
-                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;align-self:center;}
-                    .pricing-session-slider::-webkit-slider-runnable-track{height:3px;border-radius:2px;}
+                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;outline:none;cursor:pointer;}
+                    .pricing-session-slider::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(to right,#B45309 0%,#B45309 var(--fill,0%),#EBE5D2 var(--fill,0%),#EBE5D2 100%);}
                     .pricing-session-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);cursor:pointer;margin-top:-7.5px;}
-                    .pricing-session-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;cursor:pointer;}
+                    .pricing-session-slider::-moz-range-track{height:3px;border-radius:2px;background:linear-gradient(to right,#B45309 0%,#B45309 var(--fill,0%),#EBE5D2 var(--fill,0%),#EBE5D2 100%);}
+                    .pricing-session-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;cursor:pointer;box-sizing:border-box;}
                     .pricing-session-slider:focus-visible::-webkit-slider-thumb{outline:2px solid #B45309;outline-offset:2px;}
                   `}</style>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -3359,7 +3360,7 @@ export function PricingV2() {
                         aria-label="Number of sessions"
                         aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10}
                         className="pricing-session-slider"
-                        style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${t.line} ${((singleQty - 1) / 9) * 100}%, ${t.line} 100%)` }}
+                        style={{ flex: 1, "--fill": `${((singleQty - 1) / 9) * 100}%` } as React.CSSProperties}
                       />
                       <button
                         onClick={() => setSingleQty(q => Math.min(10, q + 1))}
