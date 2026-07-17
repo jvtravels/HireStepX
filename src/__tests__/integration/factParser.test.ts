@@ -100,12 +100,47 @@ describe("_fact-parser — parseSalaryFacts", () => {
     expect(f).toHaveLength(2);
   });
 
-  it("strips thousand separators in ₹-prefixed bare numbers", () => {
-    /* Edge case: "₹22,00,000" — Indian comma style. We still treat as
-     * LPA-scale (matches legacy RUPEE_NUM_RE behaviour). */
-    const f = parseSalaryFacts("₹22,00,000");
-    expect(f).toHaveLength(1);
-    expect(f[0].rawDigits).toBe("2200000");
+  /* Family A / OA-B1 / OA-B29 (CRITICAL) — absolute-rupee resolution.
+   *
+   * A ₹-prefixed integer of ≥1 lakh rupees is an ABSOLUTE RUPEE amount,
+   * not an LPA shorthand: ₹22,00,000 = 22 lakh p.a. = 22 LPA, and
+   * ₹1,20,00,000 = 1.2 crore p.a. = 120 LPA. The old parser returned the
+   * bare rupee count as "LPA" (2,200,000 LPA / 12,000,000 LPA), poisoning
+   * every downstream hike/band/score computation. Indian comma grouping
+   * makes the magnitude unambiguous, so this is a deterministic conversion,
+   * not a guess. */
+  describe("Family A — absolute-rupee (Indian grouping) resolution", () => {
+    it("₹22,00,000 (22 lakh) → 22 LPA, not 2.2M LPA", () => {
+      const f = parseSalaryFacts("₹22,00,000");
+      expect(f).toHaveLength(1);
+      expect(f[0].rawDigits).toBe("2200000");
+      expect(f[0].value).toBe(22);
+    });
+
+    it("₹1,20,00,000 (1.2 crore) → 120 LPA, not 12M LPA (the CRITICAL case)", () => {
+      const f = parseSalaryFacts("My current CTC is ₹1,20,00,000");
+      expect(f).toHaveLength(1);
+      expect(f[0].value).toBe(120);
+    });
+
+    it("₹2500000 without commas (25 lakh) → 25 LPA", () => {
+      expect(parseSalaryFacts("₹2500000")[0].value).toBe(25);
+    });
+
+    it("small ₹ shorthand is still LPA (₹25 base → 25 LPA)", () => {
+      const f = parseSalaryFacts("₹25 base");
+      expect(f[0].value).toBe(25);
+      expect(f[0].confidence).toBe("medium");
+    });
+
+    it("a mid-range ₹ amount too big for LPA but too small for absolute is flagged low-confidence", () => {
+      /* ₹35,000 — ambiguous (monthly? noise?). Not silently stored as
+       * 35,000 LPA with false confidence; carried as low so the downstream
+       * plausibility band can drop it. */
+      const f = parseSalaryFacts("₹35,000 joining");
+      expect(f).toHaveLength(1);
+      expect(f[0].confidence).toBe("low");
+    });
   });
 
   it("₹-prefixed without unit token gets medium confidence", () => {

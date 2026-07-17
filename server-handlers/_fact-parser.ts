@@ -218,6 +218,32 @@ function toLpa(value: number, unit: SalaryUnit): number {
   return value;
 }
 
+/* ── Family A / OA-B1 / OA-B29 (CRITICAL): absolute-rupee resolution ──
+ *
+ * A ₹-prefixed number carrying NO unit token is ambiguous between two
+ * conventions in the Indian-HR register:
+ *   1. LPA shorthand      — "₹25 base"        → 25 LPA
+ *   2. absolute rupees     — "₹22,00,000"      → 22 lakh p.a. = 22 LPA
+ *      (Indian comma grouping: "₹1,20,00,000" = 1.2 crore = 120 LPA)
+ *
+ * The OLD code returned the bare rupee count AS LPA (2,200,000 / 12,000,000
+ * "LPA"), poisoning every hike/band/score computation downstream. Magnitude
+ * disambiguates deterministically — nobody quotes annual comp as "100000
+ * LPA", and no plausible LPA figure exceeds a few thousand — so:
+ *   - value ≥ 1 lakh rupees  → absolute rupees, LPA = value / 100,000 (high)
+ *   - value ≤ MAX plausible LPA → LPA shorthand (medium)
+ *   - in-between (e.g. ₹35,000) → too big for LPA, too small for absolute:
+ *       ambiguous (monthly? noise?) → keep value, mark LOW so the
+ *       downstream plausibility band can drop it rather than trust it. */
+const RUPEES_PER_LAKH = 100_000;
+const MAX_PLAUSIBLE_LPA = 5000;
+
+function resolveBareRupee(value: number): { lpa: number; confidence: "high" | "medium" | "low" } {
+  if (value >= RUPEES_PER_LAKH) return { lpa: value / RUPEES_PER_LAKH, confidence: "high" };
+  if (value > MAX_PLAUSIBLE_LPA) return { lpa: value, confidence: "low" };
+  return { lpa: value, confidence: "medium" };
+}
+
 /** Strip "," thousand separators and parse. */
 function digitsToNumber(raw: string): number {
   return Number(raw.replace(/,/g, ""));
@@ -314,15 +340,18 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
     const unit = unitTok ? normaliseUnit(unitTok) : "rupee";
     const raw = digitsToNumber(digits);
     if (!Number.isFinite(raw)) continue;
+    /* Bare ₹ number (no unit): resolve absolute-rupees vs LPA-shorthand by
+     * magnitude (Family A). ₹ WITH a unit token normalises through toLpa. */
+    const resolved = unitTok ? null : resolveBareRupee(raw);
     facts.push({
-      value: toLpa(raw, unit),
+      value: resolved ? resolved.lpa : toLpa(raw, unit),
       unit,
       rawSpan: [start, end],
       rawDigits: digits.replace(/,/g, ""),
       isRangeLower: false,
       isRangeUpper: false,
       rangePeer: null,
-      confidence: unitTok ? "high" : "medium",
+      confidence: resolved ? resolved.confidence : "high",
     });
     consumed.push([start, end]);
   }
