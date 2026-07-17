@@ -239,3 +239,36 @@ describe("classifyAcceptance — Audit Pass 2 Fix D: curly-quote normalization",
     expect(r.accepted).toBe(true);
   });
 });
+
+describe("classifyAcceptance — OA-B68 deictic-noun-phrase accept over standing offer", () => {
+  /* A candidate accepts by pointing at the recruiter's own last figure — "I'll
+     take that number", "I accept that figure", "let's go with that amount",
+     "that number works". The take/accept arms recognised only "it"/"the offer"
+     as the accept OBJECT, and the propositional-veto's bare "accept that …" arm
+     even mis-vetoed "I accept that offer" as accepting a proposition — so a
+     clear acceptance was re-countered (NO-CLOSE). Gated post-offer. */
+  const opt = { offerOnTable: true, highestOfferMade: 35 };
+
+  for (const u of [
+    "I'll take that number",
+    "I accept that number",
+    "I accept that figure",
+    "let's go with that amount",
+    "that number works",
+    "I accept that offer", // pre-existing false-veto in the propositional guard
+  ]) {
+    it(`accepts deictic close: "${u}"`, () => {
+      expect(classifyAcceptance(u, opt).accepted).toBe(true);
+    });
+  }
+
+  it("still vetoes a propositional 'accept that <clause>' concession", () => {
+    expect(classifyAcceptance("I accept that the company is good but the number is low", opt).accepted).toBe(false);
+    expect(classifyAcceptance("I accept that budget is tight", opt).accepted).toBe(false);
+    expect(classifyAcceptance("I accept that number is low", opt).accepted).toBe(false);
+  });
+
+  it("does NOT close a match REQUEST (a question, not consent)", () => {
+    expect(classifyAcceptance("can you match what you mentioned earlier?", opt).accepted).toBe(false);
+  });
+});

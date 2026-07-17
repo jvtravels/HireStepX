@@ -260,6 +260,17 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    excludes. */
   /\bwhatever\s+you\s+(?:just\s+)?(?:said|offered|quoted|proposed|mentioned)\s+(?:works|is\s+(?:fine|good|ok(?:ay)?)|sounds\s+good)\b/i,
   /\bwhatever\s+works\b/i,
+  /* OA-B68 (2026-07-18, offline deictic-accept sweep) — a deictic noun-phrase
+   *    referent for the STANDING offer: "I'll take that number", "I accept that
+   *    figure", "let's go with that amount", "that number works". The take/accept
+   *    arms above only recognised "it"/"the offer" as the accept OBJECT, so a
+   *    candidate who accepts by pointing at the recruiter's own last figure ("that
+   *    number") was re-countered instead of closed — a NO-CLOSE on an unambiguous
+   *    acceptance. Gated post-offer (step 5 / strictBoost highestOfferMade>0), so
+   *    "that number" pre-offer stays filler, and a match REQUEST ("can you match
+   *    what you mentioned?") is a question, not this consent form. */
+  /\b(?:i(?:'ll|\s+will)\s+take|i\s+accept|i(?:'ll|\s+will)\s+go\s+with|let'?s\s+go\s+with)\s+(?:that|this)\s+(?:number|figure|amount)\b/i,
+  /\b(?:that|this)\s+(?:number|figure|amount)\s+(?:works|is\s+(?:fine|good|ok(?:ay)?)|sounds\s+good)\b/i,
   /* 3. "send it" family — a finalize-the-offer instruction over a standing
    *    offer ("yes send it", "send it over", "send across the letter"). The
    *    strict gate already owns "send the offer letter"; these are the terser
@@ -730,7 +741,7 @@ const IM_IN_HEDGE_PATTERN =
  *  arm; a genuine Hinglish close ("haan theek hai, i accept the offer") has no
  *  "ki" clause and is untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:(?:that|ki)\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|that|the)\s+(?:\w+\s+)?(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?)\b|(?:it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:(?:that|ki)\b(?!\s+(?:number|figure|amount|offer|package|deal|comp(?:ensation)?)\b)|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|that|the)\s+(?:\w+\s+)?(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?)\b|(?:it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
 
 /** Veto (PRI-74, 2026-07-10, offline hostile close battery — round-6) — an
  *  accept verb whose OBJECT is explicitly contrasted AWAY from the offer: "I'd

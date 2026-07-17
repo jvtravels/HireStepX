@@ -86,6 +86,37 @@ describe("#92 — competing-offer acknowledge + match", () => {
   });
 });
 
+describe("OA-B28/B64 — two rival offers in one utterance bind the MAX (order-independent)", () => {
+  const SMALLER_FIRST =
+    "I have an offer from Zomato at 38 and an offer from Swiggy at 40, can you match?";
+  const LARGER_FIRST =
+    "I have an offer from Swiggy at 40 and an offer from Zomato at 38, can you match?";
+
+  it("binds the larger figure when the smaller is stated first", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, SMALLER_FIRST);
+    expect(s.competingOffer).toBe(40);
+  });
+
+  it("binds the same MAX when the larger is stated first (order-independent)", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, LARGER_FIRST);
+    expect(s.competingOffer).toBe(40);
+  });
+
+  it("the counter-match floor is the true BATNA regardless of word order", () => {
+    for (const utterance of [SMALLER_FIRST, LARGER_FIRST]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utterance);
+      const move = actionToLever(planNextAction(s), s);
+      expect(move.newTotalLpa).not.toBeNull();
+      // Must meet the stronger ₹40L BATNA, never under-cut to the ₹38L offer.
+      expect(move.newTotalLpa as number).toBeGreaterThanOrEqual(40);
+      expect(move.newTotalLpa as number).toBeLessThanOrEqual(42);
+    }
+  });
+});
+
 describe("OA-B65 — competing-offer revocation clears the scalar leverage", () => {
   it("a revoked offer clears state.competingOffer (was monotone-sticky)", () => {
     let s = anchoredAt35();

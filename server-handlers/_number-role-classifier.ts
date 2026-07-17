@@ -1287,8 +1287,13 @@ export function classifyNumberRoles(
       target = span.value;
       targetFromRange = span.isRangeUpper;
       targetComponent = detectTargetComponentScope(text, span);
-    } else if (role === "competing" && competing == null) {
-      competing = span.value;
+    } else if (role === "competing") {
+      /* OA-B28/B64: bind the BEST (max) in-utterance competing figure, not the
+       * first-stated one. The candidate's leverage is their strongest credible
+       * BATNA, so "Zomato 38 and Swiggy 40" and its reverse must both bind 40.
+       * First-wins made the counter-match floor order-dependent — the recruiter
+       * would meet ₹38L or ₹40L for the *same* two offers purely on word order. */
+      competing = competing == null ? span.value : Math.max(competing, span.value);
     }
   }
   /* Disambiguation: a single number shouldn't be both current and
