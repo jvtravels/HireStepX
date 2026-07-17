@@ -90,7 +90,7 @@ const ResponsiveSheet = () => (
     }
     /* ── Small laptops (lg) ── */
     @media (max-width: 1100px) and (min-width: 881px) {
-      .mv2-pricing-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .mv2-pricing-grid { grid-template-columns: repeat(3, 1fr) !important; }
       .mv2-why-row { grid-template-columns: 56px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
       .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
       .mv2-trust-row { flex-direction: column !important; gap: 16px !important; align-items: flex-start !important; }
@@ -3688,7 +3688,7 @@ const rpt_STYLES = `
   /* Hide side cards on mobile; only the center report card stays */
   .mv2-rpt-side { display: none !important; }
   /* Make the center card fluid so it fits within the mobile viewport */
-  .mv2-rpt-center-card { width: min(520px, calc(100vw - 48px)) !important; }
+  .mv2-rpt-center-card { width: min(520px, calc(100% - 48px)) !important; }
   /* Shrink top padding and headline for mobile */
   .mv2-rpt-section { padding-top: 60px !important; padding-bottom: 48px !important; }
   .mv2-rpt-h2 { letter-spacing: -1px !important; }
