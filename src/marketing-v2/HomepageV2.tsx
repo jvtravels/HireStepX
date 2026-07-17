@@ -477,9 +477,9 @@ export function NavV2() {
         <div
           style={{
             ...container,
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "1fr auto 1fr",
             alignItems: "center",
-            justifyContent: "space-between",
             height: 68,
           }}
         >
@@ -517,7 +517,7 @@ export function NavV2() {
             })}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end" }}>
             {showDashboard ? (
               <a
                 href="/dashboard"
