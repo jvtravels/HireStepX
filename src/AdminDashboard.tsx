@@ -24,9 +24,10 @@ interface AnomaliesData {
 }
 
 interface OverviewData {
-  users: { total: number; today: number; thisWeek: number; activeLastWeek: number; tierBreakdown: Record<string, number> };
+  users: { total: number; today: number; thisWeek: number; activeLastWeek: number; tierBreakdown: Record<string, number>; churningThisWeek: number; conversionRate: number; paidUserCount: number };
   sessions: { total: number; today: number; thisWeek: number; avgScore: number; perDay: Record<string, number> };
   revenue: { totalPaise: number; thisMonthPaise: number; paymentCount: number };
+  activation?: { signups30d: number; activatedCount: number; activationRate: number; convertedCount: number; paidConversionRate: number };
   llm: { tokensToday: number; fallbackRate: number; errorRate: number; totalCalls: number };
   cost?: {
     perSessionInr: number; todayInr: number; estimate: boolean;
@@ -37,7 +38,7 @@ interface OverviewData {
 
 interface UserRow {
   id: string; name: string; email: string; tier: string; sessionsCount: number;
-  lastActive: string | null; onboarded: boolean; joined: string; subscriptionEnd: string | null;
+  sessionsLast7d: number; lastActive: string | null; onboarded: boolean; joined: string; subscriptionEnd: string | null;
 }
 
 interface FinancialsData {
@@ -52,6 +53,8 @@ interface FinancialsData {
   avgTransactionPaise: number;
   paidUserCount: number;
   arpuPaise: number;
+  estimatedMrrPaise: number;
+  activeSubsCount: number;
   byPlan: Record<string, { revenue: number; count: number }>;
   perDay: Record<string, number>;
   perMonth: Record<string, number>;
@@ -90,7 +93,42 @@ interface SessionsData {
   total: number; avgScore: number; avgDuration: number;
   scoreDistribution: Record<string, number>; byType: Record<string, number>;
   byDifficulty: Record<string, number>; avgSkillScores: Record<string, number>;
-  recent: Array<{ id: string; userId: string; type: string; difficulty: string; score: number; duration: number; date: string }>;
+  recent: Array<{ id: string; userId: string; type: string; difficulty: string; focus?: string; score: number; duration: number; date: string; llmCostInr?: number | null; promptTokens?: number | null; completionTokens?: number | null; isFallback?: boolean }>;
+}
+
+interface CostData {
+  totalLlmInr: number;
+  avgCostPerSession: number;
+  highestSessionCostInr: number;
+  sessionCount: number;
+  totalSessions30d: number;
+  nullCostCount: number;
+  dataCoveragePercent: number;
+  thisWeekInr: number;
+  lastWeekInr: number;
+  wowDeltaPct: number | null;
+  todayCostInr: number;
+  dailyAvgInr: number;
+  isCostSpike: boolean;
+  byFocus: Record<string, { totalInr: number; sessions: number; avgInr: number }>;
+  perDay: Record<string, number>;
+  byEndpoint: Record<string, { estimatedInr: number; tokens: number; calls: number }>;
+  topUsersByCost: Array<{ userId: string; name: string; email: string; totalLlmInr: number; sessions: number; avgInr: number }>;
+  topExpensiveSessions: Array<{
+    id: string; userId: string; focus: string; score: number; duration: number;
+    llmCostInr: number; promptTokens: number; completionTokens: number; date: string;
+  }>;
+}
+
+interface HealthAlert {
+  severity: "critical" | "warning";
+  code: string;
+  message: string;
+  action: string;
+}
+interface HealthData {
+  alerts: HealthAlert[];
+  checkedAt: string;
 }
 
 interface FeedbackData {
@@ -203,13 +241,14 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics";
+type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
   { key: "users", label: "Users", icon: "👤" },
   { key: "sessions", label: "Sessions", icon: "🎯" },
   { key: "financials", label: "Financials", icon: "💰" },
+  { key: "costs", label: "Cost Monitor", icon: "💸" },
   { key: "llm", label: "AI / Services", icon: "🤖" },
   { key: "analytics", label: "Analytics", icon: "📈" },
   { key: "feedback", label: "Feedback", icon: "💬" },
@@ -542,7 +581,13 @@ export default function AdminDashboard() {
   }, []);
 
   /* ── Dashboard state ── */
-  const [tab, setTab] = useState<Tab>("overview");
+  // Read initial tab + userId from URL so refresh/back-button restores context
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "overview";
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get("tab") as Tab | null;
+    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","referrals","promo-codes","calendar","outcomes","analytics"].includes(t)) ? t : "overview";
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -551,7 +596,10 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [userSearch, setUserSearch] = useState("");
   const [userDetail, setUserDetail] = useState<UserDetailData | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("userId");
+  });
   const [financials, setFinancials] = useState<FinancialsData | null>(null);
   const [llm, setLlm] = useState<LLMData | null>(null);
   const [sessions, setSessions] = useState<SessionsData | null>(null);
@@ -561,8 +609,16 @@ export default function AdminDashboard() {
   const [promoCodes, setPromoCodes] = useState<PromoCodesData | null>(null);
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
   const [outcomes, setOutcomes] = useState<OutcomesData | null>(null);
+  const [costData, setCostData] = useState<CostData | null>(null);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [sessionDetail, setSessionDetail] = useState<SessionDetailData | null>(null);
+  const [qaExtendTier, setQaExtendTier] = useState("pro");
+  const [qaExtendDays, setQaExtendDays] = useState("30");
+  const [qaGrantQty, setQaGrantQty] = useState("5");
+  const [qaGrantNote, setQaGrantNote] = useState("");
+  const [qaStatus, setQaStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [qaBusy, setQaBusy] = useState(false);
 
   const fetchSection = useCallback(async (section: string, extra?: Record<string, unknown>, skipCache = false): Promise<unknown> => {
     if (!authed) return null;
@@ -684,10 +740,41 @@ export default function AdminDashboard() {
           if (d) setOutcomes(d);
           break;
         }
+        case "costs": {
+          const d = await fetchSection("costs") as CostData | null;
+          if (d) setCostData(d);
+          break;
+        }
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, authed]);
+
+  // Sync tab + selectedUserId to URL so refresh/back-button restores the view
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams();
+    if (tab !== "overview") p.set("tab", tab);
+    if (selectedUserId) p.set("userId", selectedUserId);
+    const qs = p.toString();
+    const next = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    if (window.location.href !== window.location.origin + next) {
+      window.history.replaceState(null, "", next);
+    }
+  }, [tab, selectedUserId]);
+
+  // Health alerts — load on mount + refresh every 5 minutes
+  useEffect(() => {
+    if (!authed) return;
+    const loadHealth = async () => {
+      const d = await fetchSection("health", undefined, true) as HealthData | null;
+      if (d) setHealthData(d);
+    };
+    void loadHealth();
+    const interval = setInterval(() => void loadHealth(), 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed]);
 
   // Search users (debounced)
   useEffect(() => {
@@ -703,6 +790,7 @@ export default function AdminDashboard() {
   // Load user detail
   useEffect(() => {
     if (!selectedUserId || !authed) return;
+    setQaStatus(null);
     (async () => {
       const d = await fetchSection("user-detail", { userId: selectedUserId }, true) as UserDetailData | null;
       if (d) setUserDetail(d);
@@ -778,6 +866,11 @@ export default function AdminDashboard() {
         if (d) setOutcomes(d);
         break;
       }
+      case "costs": {
+        const d = await fetchSection("costs", undefined, true) as CostData | null;
+        if (d) setCostData(d);
+        break;
+      }
     }
   }, [tab, fetchSection, userSearch]);
 
@@ -785,7 +878,7 @@ export default function AdminDashboard() {
 
   const renderOverview = () => {
     if (!overview) return <EmptyState title="No overview data available" />;
-    const { users: u, sessions: s, revenue: r, llm: l } = overview;
+    const { users: u, sessions: s, revenue: r, llm: l, activation } = overview;
     const anom = overview.anomalies;
     const hasAnomalies = (anom?.highSpendUsers?.length ?? 0) > 0 || (anom?.runawayCallsToday ?? 0) > 0;
 
@@ -821,12 +914,19 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Churn warning */}
+        {u.churningThisWeek > 0 && (
+          <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "#F87171" }}>
+            ⏰ <strong>{u.churningThisWeek} paid subscription{u.churningThisWeek > 1 ? "s" : ""}</strong> expire this week — check the Users tab (filter by tier) to reach out before they churn.
+          </div>
+        )}
+
         {/* Stat Cards */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}>
             <p style={labelStyle}>Total Users</p>
             <p style={bigNum}>{formatNum(u.total)}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 12, color: c.sage }}>+{u.thisWeek} this week</p>
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: c.sage }}>+{u.today} today · +{u.thisWeek} this week</p>
           </div>
           <div style={statCard}>
             <p style={labelStyle}>Active (7d)</p>
@@ -834,9 +934,16 @@ export default function AdminDashboard() {
             <p style={{ margin: "4px 0 0", fontSize: 12, color: c.stone }}>{u.total > 0 ? Math.round((u.activeLastWeek / u.total) * 100) : 0}% of total</p>
           </div>
           <div style={statCard}>
+            <p style={labelStyle}>Free → Paid</p>
+            <p style={{ ...bigNum, color: u.conversionRate >= 5 ? c.sage : u.conversionRate >= 2 ? c.gilt : c.ember }}>
+              {u.conversionRate}%
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: c.stone }}>{u.paidUserCount} paid of {u.total} total</p>
+          </div>
+          <div style={statCard}>
             <p style={labelStyle}>Total Sessions</p>
             <p style={bigNum}>{formatNum(s.total)}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 12, color: c.sage }}>+{s.thisWeek} this week</p>
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: c.sage }}>+{s.today} today · +{s.thisWeek} this week</p>
           </div>
           <div style={statCard}>
             <p style={labelStyle}>Avg Score</p>
@@ -871,6 +978,34 @@ export default function AdminDashboard() {
             </>
           )}
         </div>
+
+        {/* Activation Funnel (30d) */}
+        {activation && (
+          <div style={{ ...card, marginBottom: 24 }}>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Activation Funnel — Last 30 Days</p>
+            <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+              {[
+                { label: "Signed Up", value: activation.signups30d, color: c.stone, pct: 100 },
+                { label: "Completed ≥1 Session", value: activation.activatedCount, color: c.gilt, pct: activation.signups30d > 0 ? Math.round((activation.activatedCount / activation.signups30d) * 100) : 0 },
+                { label: "Converted to Paid", value: activation.convertedCount, color: c.sage, pct: activation.signups30d > 0 ? Math.round((activation.convertedCount / activation.signups30d) * 100) : 0 },
+              ].map((step, i) => (
+                <div key={step.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative" }}>
+                  {i > 0 && <div style={{ position: "absolute", left: -8, top: 18, fontSize: 14, color: c.stone, zIndex: 1 }}>→</div>}
+                  <div style={{ fontSize: 22, fontWeight: 700, color: step.color, fontFamily: font.mono }}>{step.value}</div>
+                  <div style={{ fontSize: 11, color: c.stone, textAlign: "center" }}>{step.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: step.color }}>{step.pct}%</div>
+                  <div style={{ width: "80%", height: 4, background: c.onyx, borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: `${step.pct}%`, background: step.color, borderRadius: 2 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: "12px 0 0", fontSize: 11, color: c.stone }}>
+              Activation rate: <strong style={{ color: c.gilt }}>{activation.activationRate}%</strong> of signups started a session ·
+              Paid conversion (from activated): <strong style={{ color: c.sage }}>{activation.paidConversionRate}%</strong>
+            </p>
+          </div>
+        )}
 
         {/* Tier Breakdown */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
@@ -940,13 +1075,18 @@ export default function AdminDashboard() {
                 <th style={thStyle}>User</th>
                 <th style={thStyle}>Tier</th>
                 <th style={thStyle}>Sessions</th>
+                <th style={thStyle}>7d Sessions</th>
                 <th style={thStyle}>Last Active</th>
-                <th style={thStyle}>Onboarded</th>
+                <th style={thStyle}>Sub Expires</th>
                 <th style={thStyle}>Joined</th>
               </tr>
             </thead>
             <tbody>
-              {users.map(u => (
+              {users.map(u => {
+                const subExpiring = u.subscriptionEnd && u.tier !== "free"
+                  ? Math.ceil((new Date(u.subscriptionEnd).getTime() - Date.now()) / 86400000)
+                  : null;
+                return (
                 <tr
                   key={u.id}
                   onClick={() => { setSelectedUserId(u.id); setUserDetail(null); }}
@@ -960,11 +1100,21 @@ export default function AdminDashboard() {
                   </td>
                   <td style={tdStyle}><TierBadge tier={u.tier} /></td>
                   <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.sessionsCount}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono, color: u.sessionsLast7d === 0 && u.sessionsCount > 0 ? c.ember : u.sessionsLast7d > 0 ? c.sage : c.stone }}>
+                    {u.sessionsLast7d}
+                  </td>
                   <td style={{ ...tdStyle, fontSize: 12 }}>{timeAgo(u.lastActive)}</td>
-                  <td style={tdStyle}><StatusDot ok={u.onboarded} />{u.onboarded ? "Yes" : "No"}</td>
+                  <td style={{ ...tdStyle, fontSize: 12 }}>
+                    {subExpiring != null ? (
+                      <span style={{ color: subExpiring <= 3 ? c.ember : subExpiring <= 7 ? c.gilt : c.stone }}>
+                        {subExpiring <= 0 ? "Expired" : `${subExpiring}d`}
+                      </span>
+                    ) : u.tier === "free" ? <span style={{ color: c.stone }}>—</span> : <span style={{ color: c.stone }}>—</span>}
+                  </td>
                   <td style={{ ...tdStyle, fontSize: 12 }}>{formatDate(u.joined)}</td>
                 </tr>
-              ))}
+                );
+              })}
               {users.length === 0 && !loading && (
                 <tr><td colSpan={6} style={{ ...tdStyle, textAlign: "center", padding: 40, color: c.stone }}>
                   {userSearch ? "No users match your search" : "No users found"}
@@ -1223,6 +1373,160 @@ export default function AdminDashboard() {
           )}
         </div>
 
+        {/* Quick Actions */}
+        <div style={{ ...card, marginBottom: 20 }}>
+          <p style={{ ...labelStyle, marginBottom: 16 }}>Quick Actions</p>
+          {qaStatus && (
+            <div style={{
+              padding: "8px 14px", borderRadius: 6, marginBottom: 14, fontSize: 13,
+              background: qaStatus.ok ? "rgba(22,101,52,0.25)" : "rgba(153,27,27,0.25)",
+              color: qaStatus.ok ? "rgb(74,222,128)" : "rgb(248,113,113)",
+              border: `1px solid ${qaStatus.ok ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
+            }}>
+              {qaStatus.msg}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            {/* Extend subscription */}
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Extend / Change Plan</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <select
+                    value={qaExtendTier}
+                    onChange={(e) => setQaExtendTier(e.target.value)}
+                    disabled={qaBusy}
+                    style={{
+                      flex: 1, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
+                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                    }}
+                  >
+                    <option value="free">Free</option>
+                    <option value="starter">Starter</option>
+                    <option value="pro">Pro</option>
+                    <option value="team">Team</option>
+                  </select>
+                  <input
+                    type="number"
+                    min={1}
+                    max={366}
+                    value={qaExtendDays}
+                    onChange={(e) => setQaExtendDays(e.target.value)}
+                    disabled={qaBusy}
+                    placeholder="days"
+                    style={{
+                      width: 80, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
+                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.mono,
+                    }}
+                  />
+                </div>
+                <button
+                  disabled={qaBusy}
+                  onClick={async () => {
+                    const days = parseInt(qaExtendDays, 10);
+                    if (!qaExtendTier || isNaN(days) || days < 1 || days > 366) {
+                      setQaStatus({ ok: false, msg: "Enter a valid tier and days (1–366)." });
+                      return;
+                    }
+                    setQaBusy(true);
+                    setQaStatus(null);
+                    try {
+                      const res = await fetchSection("extend-subscription", { userId: selectedUserId, tier: qaExtendTier, days }, true);
+                      const r = res as { ok?: boolean; error?: string; tier?: string; days?: number; newEnd?: string } | null;
+                      if (r?.ok) {
+                        setQaStatus({ ok: true, msg: `Plan updated to ${r.tier} for ${r.days}d — expires ${r.newEnd ? new Date(r.newEnd).toLocaleDateString("en-IN") : "—"}.` });
+                        setUserDetail(null);
+                        await fetchSection("user-detail", { userId: selectedUserId }, true).then((d) => setUserDetail(d as UserDetailData));
+                      } else {
+                        setQaStatus({ ok: false, msg: r?.error ?? "Supabase PATCH failed." });
+                      }
+                    } catch (err) {
+                      setQaStatus({ ok: false, msg: String(err) });
+                    } finally {
+                      setQaBusy(false);
+                    }
+                  }}
+                  style={{
+                    background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
+                    padding: "7px 18px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                    cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                  }}
+                >
+                  {qaBusy ? "…" : "Apply Plan Change"}
+                </button>
+              </div>
+            </div>
+
+            {/* Grant credits */}
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Grant Session Credits</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={qaGrantQty}
+                    onChange={(e) => setQaGrantQty(e.target.value)}
+                    disabled={qaBusy}
+                    placeholder="qty"
+                    style={{
+                      width: 80, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
+                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.mono,
+                    }}
+                  />
+                  <input
+                    type="text"
+                    value={qaGrantNote}
+                    onChange={(e) => setQaGrantNote(e.target.value)}
+                    disabled={qaBusy}
+                    placeholder="note (optional)"
+                    maxLength={200}
+                    style={{
+                      flex: 1, background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
+                      borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                    }}
+                  />
+                </div>
+                <button
+                  disabled={qaBusy}
+                  onClick={async () => {
+                    const qty = parseInt(qaGrantQty, 10);
+                    if (isNaN(qty) || qty < 1 || qty > 100) {
+                      setQaStatus({ ok: false, msg: "Qty must be 1–100." });
+                      return;
+                    }
+                    setQaBusy(true);
+                    setQaStatus(null);
+                    try {
+                      const res = await fetchSection("grant-credits", { userId: selectedUserId, qty, note: qaGrantNote || "admin grant" }, true);
+                      const r = res as { ok?: boolean; error?: string; qty?: number } | null;
+                      if (r?.ok) {
+                        setQaStatus({ ok: true, msg: `${r.qty} session credit${(r.qty ?? 0) > 1 ? "s" : ""} granted.` });
+                        setQaGrantQty("5");
+                        setQaGrantNote("");
+                      } else {
+                        setQaStatus({ ok: false, msg: r?.error ?? "RPC call failed." });
+                      }
+                    } catch (err) {
+                      setQaStatus({ ok: false, msg: String(err) });
+                    } finally {
+                      setQaBusy(false);
+                    }
+                  }}
+                  style={{
+                    background: "rgb(22,101,52)", color: "rgb(240,253,244)", border: "none", borderRadius: 6,
+                    padding: "7px 18px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                    cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                  }}
+                >
+                  {qaBusy ? "…" : "Grant Credits"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Top expensive sessions */}
         {userDetail.costSummary && userDetail.costSummary.top3ExpensiveSessions.length > 0 && (
           <div style={{ ...card, marginBottom: 20 }}>
@@ -1254,6 +1558,7 @@ export default function AdminDashboard() {
                   <th style={thStyle}>Difficulty</th>
                   <th style={thStyle}>Score</th>
                   <th style={thStyle}>Duration</th>
+                  <th style={thStyle}>LLM Cost</th>
                   <th style={thStyle}>Date</th>
                   <th style={thStyle}></th>
                 </tr>
@@ -1274,6 +1579,9 @@ export default function AdminDashboard() {
                       {String(s.score ?? "—")}
                     </td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration as number / 60)}m` : "—"}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.llm_cost_inr != null ? c.gilt : c.stone }}>
+                      {s.llm_cost_inr != null ? `₹${(s.llm_cost_inr as number).toFixed(3)}` : "—"}
+                    </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.created_at as string)}</td>
                     <td style={{ ...tdStyle, color: c.gilt, fontSize: 11 }}>View →</td>
                   </tr>
@@ -1385,6 +1693,11 @@ export default function AdminDashboard() {
             <p style={labelStyle}>Paid Users</p>
             <p style={bigNum}>{financials.paidUserCount}</p>
             <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>lifetime unique buyers</p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Est. MRR</p>
+            <p style={bigNum}>{paise(financials.estimatedMrrPaise)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>{financials.activeSubsCount} active subs · list-rate est.</p>
           </div>
         </div>
 
@@ -1894,6 +2207,253 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderCosts = () => {
+    if (!costData) return <EmptyState title="No cost data available" />;
+    const cd = costData;
+
+    const focusLabel = (f: string) => f.replace(/-/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+
+    // Gross margin per session = revenue/session (rough monthly estimate) - LLM cost/session
+    // thisMonthPaise / 100 → INR; divide by total sessions as a proxy (month sessions not available on overview)
+    const thisMonthRevInr = overview?.revenue ? overview.revenue.thisMonthPaise / 100 : 0;
+    const paidRevPerSession = (thisMonthRevInr > 0 && cd.totalSessions30d > 0)
+      ? Math.round((thisMonthRevInr / cd.totalSessions30d) * 100) / 100
+      : null;
+    const grossMarginPerSession = paidRevPerSession != null
+      ? Math.round((paidRevPerSession - cd.avgCostPerSession) * 100) / 100
+      : null;
+
+    const wowBadge = cd.wowDeltaPct != null
+      ? (cd.wowDeltaPct > 0
+          ? <span style={{ fontSize: 11, color: c.ember, marginLeft: 6 }}>▲ {cd.wowDeltaPct}% WoW</span>
+          : <span style={{ fontSize: 11, color: c.sage, marginLeft: 6 }}>▼ {Math.abs(cd.wowDeltaPct)}% WoW</span>)
+      : null;
+
+    return (
+      <div>
+        {/* Data quality banner */}
+        {cd.dataCoveragePercent < 70 && (
+          <div style={{ background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: c.ember }}>
+            ⚠️ Cost data coverage is only {cd.dataCoveragePercent}% ({cd.nullCostCount} of {cd.totalSessions30d} sessions missing
+            <code style={{ fontFamily: font.mono, marginLeft: 4 }}>llm_cost_inr</code>). Averages below are computed only on sessions
+            that have data — actual per-session cost may be higher. Check <code style={{ fontFamily: font.mono }}>save-session.ts</code> fire-and-forget PATCH for silent failures.
+          </div>
+        )}
+
+        {/* Cost spike warning */}
+        {cd.isCostSpike && (
+          <div style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "#DC2626" }}>
+            🚨 Cost spike today: ₹{cd.todayCostInr.toFixed(2)} vs ₹{cd.dailyAvgInr.toFixed(2)} daily avg (30d). Verify for anomalous session volume or runaway prompts.
+          </div>
+        )}
+
+        {/* Headline unit economics */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+          <div style={statCard}>
+            <p style={labelStyle}>Avg Cost / Session</p>
+            <p style={bigNum}>₹{cd.avgCostPerSession.toFixed(2)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
+              LLM only · {cd.dataCoveragePercent}% coverage · {cd.sessionCount}/{cd.totalSessions30d} sessions
+            </p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Total LLM Cost (30d)</p>
+            <p style={bigNum}>₹{cd.totalLlmInr.toFixed(2)}{wowBadge}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
+              This week ₹{cd.thisWeekInr.toFixed(2)} · Prior ₹{cd.lastWeekInr.toFixed(2)}
+            </p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Most Expensive Session</p>
+            <p style={{ ...bigNum, color: cd.highestSessionCostInr > 2 ? c.ember : c.gilt }}>₹{cd.highestSessionCostInr.toFixed(3)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>Today ₹{cd.todayCostInr.toFixed(2)} · Avg/day ₹{cd.dailyAvgInr.toFixed(2)}</p>
+          </div>
+          {grossMarginPerSession != null && (
+            <div style={statCard}>
+              <p style={labelStyle}>Gross Margin / Session</p>
+              <p style={{ ...bigNum, color: grossMarginPerSession >= 0 ? c.sage : c.ember }}>
+                {grossMarginPerSession >= 0 ? "+" : ""}₹{grossMarginPerSession.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
+                Revenue ₹{paidRevPerSession!.toFixed(2)} − LLM ₹{cd.avgCostPerSession.toFixed(2)}
+              </p>
+            </div>
+          )}
+          {overview?.cost && (
+            <div style={statCard}>
+              <p style={labelStyle}>Voice Cost (30d)</p>
+              <p style={{ ...bigNum, fontSize: 20 }}>₹{(overview.cost.month.ttsInr + overview.cost.month.sttInr).toFixed(2)}</p>
+              <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>TTS ₹{overview.cost.month.ttsInr} · STT ₹{overview.cost.month.sttInr}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Daily cost trend */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>LLM Cost / Day — ₹ (30d)</p>
+          <MiniBarChart data={cd.perDay} color="#B45309" height={100} />
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 10, color: c.stone }}>
+            <span>{Object.keys(cd.perDay)[0]}</span>
+            <span>Today</span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+          {/* Cost by focus */}
+          <div style={{ ...card, flex: 1, minWidth: 280 }}>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Cost by Interview Focus (30d)</p>
+            {Object.keys(cd.byFocus).length === 0
+              ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
+              : <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Focus</th>
+                      <th style={thStyle}>Sessions</th>
+                      <th style={thStyle}>Total ₹</th>
+                      <th style={thStyle}>Avg ₹</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(cd.byFocus).sort(([, a], [, b]) => b.totalInr - a.totalInr).map(([focus, d]) => (
+                      <tr key={focus}>
+                        <td style={{ ...tdStyle, fontSize: 12 }}>{focusLabel(focus)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.sessions}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: c.gilt }}>₹{d.totalInr.toFixed(2)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: d.avgInr > 1 ? c.ember : c.sage }}>₹{d.avgInr.toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+            }
+          </div>
+
+          {/* Cost by endpoint */}
+          <div style={{ ...card, flex: 1, minWidth: 280 }}>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Estimated Cost by API Endpoint (30d)</p>
+            {Object.keys(cd.byEndpoint).length === 0
+              ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
+              : <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Endpoint</th>
+                      <th style={thStyle}>Calls</th>
+                      <th style={thStyle}>Tokens</th>
+                      <th style={thStyle}>Est. ₹</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(cd.byEndpoint).sort(([, a], [, b]) => b.estimatedInr - a.estimatedInr).map(([ep, d]) => (
+                      <tr key={ep}>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{ep}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.calls}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(d.tokens)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: c.gilt }}>₹{d.estimatedInr.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+            }
+          </div>
+        </div>
+
+        {/* Top users by LLM spend */}
+        {cd.topUsersByCost.length > 0 && (
+          <div style={{ ...card, marginBottom: 24 }}>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Top 5 Users by LLM Spend (30d)</p>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>User</th>
+                  <th style={thStyle}>Sessions</th>
+                  <th style={thStyle}>Total ₹</th>
+                  <th style={thStyle}>Avg ₹</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cd.topUsersByCost.map((u) => (
+                  <tr
+                    key={u.userId}
+                    onClick={() => { setSelectedUserId(u.userId); setUserDetail(null); }}
+                    style={{ cursor: "pointer", transition: "background 120ms" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <td style={{ ...tdStyle, fontSize: 12 }}>
+                      <div style={{ fontWeight: 600 }}>{u.name}</div>
+                      <div style={{ color: c.stone, fontSize: 10 }}>{u.email}</div>
+                    </td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.sessions}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: c.gilt, fontWeight: 700 }}>₹{u.totalLlmInr.toFixed(2)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: u.avgInr > 1 ? c.ember : "inherit" }}>₹{u.avgInr.toFixed(3)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Top expensive sessions */}
+        {cd.topExpensiveSessions.length > 0 && (
+          <div style={{ ...card, padding: 0, overflow: "auto" }}>
+            <div style={{ padding: "16px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>Top 30 Most Expensive Sessions (all-time)</p>
+              <button
+                onClick={() => exportCsv("expensive-sessions.csv", cd.topExpensiveSessions)}
+                style={{ fontSize: 11, color: c.gilt, background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}
+              >
+                Export CSV
+              </button>
+            </div>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Session ID</th>
+                  <th style={thStyle}>Focus</th>
+                  <th style={thStyle}>Score</th>
+                  <th style={thStyle}>Duration</th>
+                  <th style={thStyle}>Prompt tok</th>
+                  <th style={thStyle}>Compl tok</th>
+                  <th style={thStyle}>Cost ₹</th>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {cd.topExpensiveSessions.map((s, i) => (
+                  <tr
+                    key={i}
+                    onClick={() => { setSelectedSessionId(s.id); setSessionDetail(null); }}
+                    style={{ cursor: "pointer", transition: "background 120ms" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{s.id.slice(0, 8)}…</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{focusLabel(s.focus)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.score >= 65 ? c.sage : s.score >= 40 ? c.gilt : c.ember }}>{s.score}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration / 60)}m` : "—"}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(s.promptTokens)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(s.completionTokens)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: s.llmCostInr > 1.5 ? c.ember : c.gilt }}>
+                      ₹{s.llmCostInr.toFixed(3)}
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.date)}</td>
+                    <td style={{ ...tdStyle, color: c.gilt, fontSize: 11 }}>View →</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <p style={{ marginTop: 16, fontSize: 11, color: c.stone }}>
+          LLM costs: list-rate estimates (Groq Llama 70B ~$0.70/M tok, Gemini Flash ~$0.30/M tok · 1 USD = ₹84).
+          Voice costs (TTS/STT) are aggregate rate-card estimates with no per-session breakdown.
+          Reconcile against actual Groq/Azure/Deepgram invoices before any pricing decision.
+        </p>
+      </div>
+    );
+  };
+
   const renderSessions = () => {
     if (!sessions) return <EmptyState title="No session data available" />;
 
@@ -1983,16 +2543,33 @@ export default function AdminDashboard() {
                   <th style={thStyle}>Difficulty</th>
                   <th style={thStyle}>Score</th>
                   <th style={thStyle}>Duration</th>
+                  <th style={thStyle}>LLM Cost</th>
                   <th style={thStyle}>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {sessions.recent.map((s, i) => (
-                  <tr key={i}>
-                    <td style={tdStyle}>{s.type}</td>
+                  <tr key={i}
+                    onClick={() => { setSelectedSessionId(s.id); setSessionDetail(null); setTab("sessions"); }}
+                    style={{ cursor: "pointer", transition: "background 0.15s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = c.onyx; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
+                    <td style={tdStyle}>
+                      {s.type}
+                      {s.isFallback && (
+                        <span style={{ marginLeft: 6, fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(124,110,230,0.2)", color: "#a5b4fc", fontWeight: 700 }}>FALLBACK</span>
+                      )}
+                      {(s.score === 0 || s.score == null) && (
+                        <span style={{ marginLeft: 6, fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(239,68,68,0.15)", color: c.ember, fontWeight: 700 }}>FAILED</span>
+                      )}
+                    </td>
                     <td style={tdStyle}>{s.difficulty}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: s.score >= 65 ? c.sage : s.score >= 40 ? c.gilt : c.ember }}>{s.score}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: s.score >= 65 ? c.sage : s.score >= 40 ? c.gilt : c.ember }}>{s.score ?? "—"}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration / 60)}m` : "—"}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.llmCostInr != null ? c.gilt : c.stone }}>
+                      {s.llmCostInr != null ? `₹${s.llmCostInr.toFixed(3)}` : "—"}
+                    </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.date)}</td>
                   </tr>
                 ))}
@@ -2041,16 +2618,24 @@ export default function AdminDashboard() {
                   <th style={thStyle}>Session Type</th>
                   <th style={thStyle}>Score</th>
                   <th style={thStyle}>Date</th>
+                  <th style={thStyle}></th>
                 </tr>
               </thead>
               <tbody>
                 {feedback.recent.map((f, i) => (
-                  <tr key={i}>
+                  <tr key={i}
+                    onClick={() => { if (f.user_id) { setSelectedUserId(f.user_id); setUserDetail(null); setTab("users"); } }}
+                    style={{ cursor: f.user_id ? "pointer" : "default", transition: "background 0.15s" }}
+                    onMouseEnter={e => { if (f.user_id) (e.currentTarget as HTMLElement).style.background = c.onyx; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    title={f.user_id ? "Click to view user" : ""}
+                  >
                     <td style={{ ...tdStyle, color: ratingColors[f.rating] || c.chalk }}>{f.rating?.replace(/_/g, " ")}</td>
                     <td style={{ ...tdStyle, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{f.comment || "—"}</td>
                     <td style={tdStyle}>{f.session_type || "—"}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{f.session_score ?? "—"}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(f.created_at)}</td>
+                    <td style={{ ...tdStyle, fontSize: 11, color: c.gilt }}>{f.user_id ? "View user →" : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -2216,7 +2801,11 @@ export default function AdminDashboard() {
                   return (
                     <tr key={m.id}>
                       <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
-                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{m.email || "—"}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>
+                        {m.email
+                          ? <a href={`mailto:${m.email}?subject=Re: Your HireStepX support message`} style={{ color: c.gilt, textDecoration: "none" }} title="Reply via email">{m.email}</a>
+                          : "—"}
+                      </td>
                       <td style={{ ...tdStyle, fontSize: 11, whiteSpace: "nowrap" as const }}>
                         {m.plan_tier ? (
                           <span style={{
@@ -2251,7 +2840,14 @@ export default function AdminDashboard() {
                       <td style={{ ...tdStyle, fontSize: 11, whiteSpace: "nowrap" as const }}>
                         {responseHr !== null
                           ? <span style={{ color: responseHr < 24 ? c.sage : c.ember }}>{formatHours(Math.round(responseHr * 10) / 10)}</span>
-                          : st === "new" ? <span style={{ color: c.ember }}>pending</span> : "—"}
+                          : (() => {
+                              const ageHr = (Date.now() - new Date(m.created_at).getTime()) / 3_600_000;
+                              return st === "new"
+                                ? <span style={{ color: ageHr > 48 ? c.ember : c.gilt, fontWeight: ageHr > 48 ? 700 : 400 }}>
+                                    {ageHr > 48 ? "⚠ overdue" : "pending"}
+                                  </span>
+                                : <span>—</span>;
+                            })()}
                       </td>
                       <td style={{ ...tdStyle, whiteSpace: "nowrap" as const }}>
                         <div style={{ display: "flex", gap: 6 }}>
@@ -2334,6 +2930,7 @@ export default function AdminDashboard() {
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();
       case "outcomes": return renderOutcomes();
+      case "costs": return renderCosts();
       case "analytics": return renderAnalytics();
     }
   };
@@ -3020,6 +3617,37 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+
+      {/* System Health Bar — always visible, auto-refreshes every 5 min */}
+      {healthData && healthData.alerts.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {healthData.alerts.map((alert) => (
+            <div
+              key={alert.code}
+              style={{
+                display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 24px",
+                background: alert.severity === "critical" ? "rgba(220,38,38,0.12)" : "rgba(217,119,6,0.10)",
+                borderBottom: `1px solid ${alert.severity === "critical" ? "rgba(220,38,38,0.3)" : "rgba(217,119,6,0.3)"}`,
+              }}
+            >
+              <span style={{ fontSize: 15, flexShrink: 0, paddingTop: 1 }}>
+                {alert.severity === "critical" ? "🚨" : "⚠️"}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                  color: alert.severity === "critical" ? "#F87171" : "#FCD34D",
+                  marginRight: 8, textTransform: "uppercase",
+                }}>
+                  {alert.severity === "critical" ? "Critical" : "Warning"}
+                </span>
+                <span style={{ fontSize: 12, color: c.ivory }}>{alert.message}</span>
+                <span style={{ fontSize: 11, color: c.stone, marginLeft: 12 }}>→ {alert.action}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="admin-shell" style={{ display: "flex", minHeight: "calc(100vh - 57px)" }}>
         {/* Sidebar — collapses to a horizontal tab strip on narrow screens. */}

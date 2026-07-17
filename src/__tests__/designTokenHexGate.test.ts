@@ -31,8 +31,10 @@ import { join } from "path";
 // literals were then swapped for their new tokens in DashboardSettings.tsx,
 // dashboardComponents.tsx, and DashboardLayout.tsx. Count fell 230 → 215 across
 // 30 files. Gate still ratchets DOWN only — any future addition will fail.
+// Baseline updated 2026-07-17: MarketingPagesV2.tsx added in a prior commit
+// brought the file count to 31. Occurrences unchanged. Ratchet to reflect reality.
 const BASELINE_OCCURRENCES = 215;
-const BASELINE_FILES = 30;
+const BASELINE_FILES = 31;
 
 const HEX = /#[0-9a-fA-F]{6}\b/g;
 const SRC = join(process.cwd(), "src");

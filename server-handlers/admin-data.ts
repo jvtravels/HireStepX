@@ -5,7 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
-import { costBreakdown, kFactor, DEFAULT_COST_RATES } from "./_cost-helpers";
+import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr } from "./_cost-helpers";
 
 /* ─── Config ─── */
 
@@ -128,11 +128,11 @@ async function getOverview() {
     fetchCount("sessions"),
     fetchCount("sessions", `&created_at=gte.${weekAgo}`),
     fetchCount("sessions", `&created_at=gte.${monthAgo}`),
-    fetchJSON<{ id: string; subscription_tier: string; practice_timestamps: string[] | null }>(
-      `profiles?select=id,subscription_tier,practice_timestamps&limit=${LIMIT_PROFILES}`
+    fetchJSON<{ id: string; subscription_tier: string | null; subscription_end: string | null; practice_timestamps: string[] | null; created_at: string }>(
+      `profiles?select=id,subscription_tier,subscription_end,practice_timestamps,created_at&limit=${LIMIT_PROFILES}`
     ),
-    fetchJSON<{ score: number; created_at: string }>(
-      `sessions?select=score,created_at&order=created_at.desc&limit=${LIMIT_SESSIONS}`
+    fetchJSON<{ user_id: string; score: number; created_at: string }>(
+      `sessions?select=user_id,score,created_at&order=created_at.desc&limit=${LIMIT_SESSIONS}`
     ),
     fetchJSON<{ amount: number; status: string; created_at: string }>(
       `payments?select=amount,status,created_at&order=created_at.desc&limit=${LIMIT_PAYMENTS}`
@@ -153,13 +153,25 @@ async function getOverview() {
   // Tier breakdown + active users
   const tierBreakdown: Record<string, number> = { free: 0, starter: 0, pro: 0, team: 0 };
   let activeLastWeek = 0;
+  const sevenDaysFromNow = new Date(now + 7 * 86400000).toISOString().slice(0, 10);
+  let churningThisWeek = 0;
+  let paidUserCount = 0;
   for (const p of profiles) {
-    tierBreakdown[p.subscription_tier || "free"] = (tierBreakdown[p.subscription_tier || "free"] || 0) + 1;
+    const tier = p.subscription_tier || "free";
+    tierBreakdown[tier] = (tierBreakdown[tier] || 0) + 1;
     if (p.practice_timestamps?.length) {
       const last = new Date(p.practice_timestamps[p.practice_timestamps.length - 1]).getTime();
       if (now - last < 7 * 86400000) activeLastWeek++;
     }
+    if (tier !== "free" && tier != null) {
+      paidUserCount++;
+      // Subscription ending within the next 7 days
+      if (p.subscription_end && p.subscription_end >= today && p.subscription_end <= sevenDaysFromNow) {
+        churningThisWeek++;
+      }
+    }
   }
+  const conversionRate = profiles.length > 0 ? Math.round((paidUserCount / profiles.length) * 100) : 0;
 
   // Avg score
   const scoredSessions = recentSessions.filter(s => s.score != null && s.score > 0);
@@ -234,12 +246,40 @@ async function getOverview() {
     sessions: recentSessions.filter(s => s.created_at?.startsWith(today)).length,
   });
 
+  // Activation funnel (30d): signups → first session → paid
+  const signups30dProfiles = profiles.filter(p => p.created_at >= monthAgo);
+  const signups30dIds = new Set(signups30dProfiles.map(p => p.id));
+  const sessionUserIds = new Set(recentSessions.filter(s => s.created_at >= monthAgo && signups30dIds.has(s.user_id)).map(s => s.user_id));
+  const activatedCount = sessionUserIds.size;
+  const convertedCount = signups30dProfiles.filter(p => {
+    const tier = p.subscription_tier;
+    return tier && tier !== "free" && sessionUserIds.has(p.id);
+  }).length;
+  const activationRate = signups30dIds.size > 0 ? Math.round((activatedCount / signups30dIds.size) * 100) : 0;
+  const paidConversionRate = activatedCount > 0 ? Math.round((convertedCount / activatedCount) * 100) : 0;
+
   const anomalies = await getAnomalies();
 
   return {
-    users: { total: totalUserCount, today: profiles.filter(() => false).length, thisWeek: weekUserCount, activeLastWeek, tierBreakdown },
+    users: {
+      total: totalUserCount,
+      today: profiles.filter(p => p.created_at?.startsWith(today)).length,
+      thisWeek: weekUserCount,
+      activeLastWeek,
+      tierBreakdown,
+      churningThisWeek,
+      conversionRate,
+      paidUserCount,
+    },
     sessions: { total: totalSessionCount, today: recentSessions.filter(s => s.created_at?.startsWith(today)).length, thisWeek: weekSessionCount, avgScore, perDay: sessionsPerDay },
     revenue: { totalPaise: totalRevenue, thisMonthPaise: revenueThisMonth, paymentCount: successPayments.length },
+    activation: {
+      signups30d: signups30dIds.size,
+      activatedCount,
+      activationRate,
+      convertedCount,
+      paidConversionRate,
+    },
     llm: { tokensToday, fallbackRate, errorRate, totalCalls: llmRecent.length },
     cost: {
       perSessionInr: cost30d.perSessionInr,
@@ -265,17 +305,23 @@ async function getUsers(search?: string, offset = 0, limit = 50) {
 
   const profiles = profilesRes.ok ? await profilesRes.json() : [];
 
-  // Get session counts only for the users on this page (not ALL users)
+  // Get session counts + last-7d counts for the users on this page
   const userIds = (profiles as Array<{ id: string }>).map(p => p.id);
   const countMap: Record<string, number> = {};
+  const last7dMap: Record<string, number> = {};
   if (userIds.length > 0) {
-    // Batch query: get sessions for these specific users
-    const sessionData = await fetchJSON<{ user_id: string }>(
-      `sessions?select=user_id&user_id=in.(${userIds.map(id => encodeURIComponent(id)).join(",")})&limit=10000`
-    );
-    for (const s of sessionData) {
-      countMap[s.user_id] = (countMap[s.user_id] || 0) + 1;
-    }
+    const idList = userIds.map(id => encodeURIComponent(id)).join(",");
+    const sevenDaysAgo = daysAgo(7);
+    const [allSessions, recentSessions] = await Promise.all([
+      fetchJSON<{ user_id: string }>(
+        `sessions?select=user_id&user_id=in.(${idList})&limit=10000`,
+      ),
+      fetchJSON<{ user_id: string }>(
+        `sessions?select=user_id&user_id=in.(${idList})&created_at=gte.${sevenDaysAgo}&limit=5000`,
+      ),
+    ]);
+    for (const s of allSessions) countMap[s.user_id] = (countMap[s.user_id] || 0) + 1;
+    for (const s of recentSessions) last7dMap[s.user_id] = (last7dMap[s.user_id] || 0) + 1;
   }
 
   const users = (profiles as Array<{
@@ -288,6 +334,7 @@ async function getUsers(search?: string, offset = 0, limit = 50) {
     email: p.email,
     tier: p.subscription_tier || "free",
     sessionsCount: countMap[p.id] || 0,
+    sessionsLast7d: last7dMap[p.id] || 0,
     lastActive: p.practice_timestamps?.length
       ? p.practice_timestamps[p.practice_timestamps.length - 1]
       : null,
@@ -423,9 +470,15 @@ async function getSessionDetail(sessionId: string) {
 }
 
 async function getFinancials() {
-  const payments = await fetchJSON<{
-    id: string; user_id: string; amount: number; currency: string; status: string; tier: string; plan: string; created_at: string;
-  }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at&order=created_at.desc&limit=2000`);
+  const [payments, activeProfiles] = await Promise.all([
+    fetchJSON<{
+      id: string; user_id: string; amount: number; currency: string; status: string; tier: string; plan: string; created_at: string;
+    }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at&order=created_at.desc&limit=2000`),
+    // Active paid subscriptions: tier not free AND subscription_end in the future
+    fetchJSON<{ subscription_tier: string; subscription_end: string | null }>(
+      `profiles?select=subscription_tier,subscription_end&subscription_tier=neq.free&subscription_tier=not.is.null&limit=5000`,
+    ),
+  ]);
 
   const now = Date.now();
   const isSuccess = (p: { status: string }) =>
@@ -511,6 +564,41 @@ async function getFinancials() {
   const paidUserCount = spenderMap.size;
   const arpuPaise = paidUserCount > 0 ? Math.round(totalRevenue / paidUserCount) : 0;
 
+  // MRR: estimate from active subscriptions × avg monthly revenue per plan
+  // "Active" = subscription_end is in the future or null (lifetime)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const activeSubs = activeProfiles.filter(p =>
+    p.subscription_tier && p.subscription_tier !== "free" &&
+    (p.subscription_end == null || p.subscription_end > todayStr)
+  );
+  const activeByTier: Record<string, number> = {};
+  for (const p of activeSubs) {
+    const t = p.subscription_tier || "unknown";
+    activeByTier[t] = (activeByTier[t] || 0) + 1;
+  }
+  // Monthly revenue per plan from payments (avg payment / plan, ignoring annual vs monthly)
+  const planRevenueMap: Record<string, { total: number; count: number }> = {};
+  for (const p of success) {
+    const k = p.plan || p.tier || "unknown";
+    if (!planRevenueMap[k]) planRevenueMap[k] = { total: 0, count: 0 };
+    planRevenueMap[k].total += p.amount || 0;
+    planRevenueMap[k].count++;
+  }
+  // Annualise: detect "annual"/"yearly" in plan name → divide by 12
+  const avgMonthlyPaiseByPlan: Record<string, number> = {};
+  for (const [plan, { total, count }] of Object.entries(planRevenueMap)) {
+    const avgPmt = count > 0 ? total / count : 0;
+    const isAnnual = /annual|yearly|year/i.test(plan);
+    avgMonthlyPaiseByPlan[plan] = Math.round(isAnnual ? avgPmt / 12 : avgPmt);
+  }
+  // MRR = sum(active subs per tier × avg monthly price for that tier)
+  let estimatedMrrPaise = 0;
+  for (const [tier, subCount] of Object.entries(activeByTier)) {
+    const monthlyPaise = avgMonthlyPaiseByPlan[tier] || 0;
+    estimatedMrrPaise += subCount * monthlyPaise;
+  }
+  const activeSubsCount = activeSubs.length;
+
   return {
     totalRevenuePaise: totalRevenue,
     revenueThisMonthPaise: revenueThisMonth,
@@ -523,6 +611,8 @@ async function getFinancials() {
     avgTransactionPaise,
     paidUserCount,
     arpuPaise,
+    estimatedMrrPaise,
+    activeSubsCount,
     byPlan,
     perDay,
     perMonth,
@@ -886,9 +976,11 @@ async function buildServiceDetails(
 async function getSessions() {
   const [sessions, totalCount] = await Promise.all([
     fetchJSON<{
-      id: string; user_id: string; date: string; type: string; difficulty: string;
+      id: string; user_id: string; date: string; type: string; difficulty: string; focus: string;
       duration: number; score: number; skill_scores: Record<string, number> | null; created_at: string;
-    }>(`sessions?select=id,user_id,date,type,difficulty,duration,score,skill_scores,created_at&order=created_at.desc&limit=${LIMIT_SESSIONS}`),
+      llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null;
+      is_llm_fallback: boolean | null;
+    }>(`sessions?select=id,user_id,date,type,difficulty,focus,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens,is_llm_fallback&order=created_at.desc&limit=${LIMIT_SESSIONS}`),
     fetchCount("sessions"),
   ]);
 
@@ -922,7 +1014,10 @@ async function getSessions() {
     avgDuration: durationCount > 0 ? Math.round(durationSum / durationCount) : 0,
     scoreDistribution, byType, byDifficulty, avgSkillScores,
     recent: sessions.slice(0, LIMIT_RECENT).map(s => ({
-      id: s.id, userId: s.user_id, type: s.type, difficulty: s.difficulty, score: s.score, duration: s.duration, date: s.created_at,
+      id: s.id, userId: s.user_id, type: s.type, difficulty: s.difficulty, focus: s.focus,
+      score: s.score, duration: s.duration, date: s.created_at,
+      llmCostInr: s.llm_cost_inr ?? null, promptTokens: s.prompt_tokens ?? null, completionTokens: s.completion_tokens ?? null,
+      isFallback: s.is_llm_fallback ?? false,
     })),
   };
 }
@@ -1270,6 +1365,318 @@ async function getOutcomes() {
   return { total, applied, interviewed, offer, accepted, offerRate, shareableTestimonials, recent };
 }
 
+/* ─── Cost Analytics ─── */
+
+async function getCostData() {
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const now = Date.now();
+  const today = new Date(now).toISOString().slice(0, 10);
+  const thirtyDaysAgo = daysAgo(30);
+  const sevenDaysAgo = daysAgo(7);
+  const fourteenDaysAgo = daysAgo(14);
+
+  const [recentSessions, topSessions, endpointUsage, lastWeekSessions] = await Promise.all([
+    // All sessions last 30d with cost fields — includes user_id for per-user aggregation
+    fetchJSON<{
+      id: string; user_id: string; type: string; focus: string; score: number; duration: number;
+      llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null;
+      created_at: string;
+    }>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&created_at=gte.${thirtyDaysAgo}&order=created_at.desc&limit=2000`),
+    // Top 30 most expensive sessions all-time
+    fetchJSON<{
+      id: string; user_id: string; type: string; focus: string; score: number; duration: number;
+      llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null;
+      created_at: string;
+    }>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&llm_cost_inr=not.is.null&order=llm_cost_inr.desc.nullslast&limit=30`),
+    // LLM usage by endpoint for cost-per-endpoint breakdown
+    fetchJSON<{ endpoint: string; total_tokens: number; is_fallback: boolean; created_at: string }>(
+      `llm_usage?select=endpoint,total_tokens,is_fallback,created_at&created_at=gte.${thirtyDaysAgo}&limit=5000`,
+    ),
+    // Sessions 8–14 days ago (prior week) for week-over-week comparison
+    fetchJSON<{ llm_cost_inr: number | null }>(
+      `sessions?select=llm_cost_inr&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}&limit=2000`,
+    ),
+  ]);
+
+  const costedSessions = recentSessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0);
+  const totalLlmInr = costedSessions.reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0);
+  const avgCostPerSession = costedSessions.length > 0 ? totalLlmInr / costedSessions.length : 0;
+  const highestSessionCostInr = topSessions.length > 0 ? (topSessions[0].llm_cost_inr || 0) : 0;
+
+  // Data coverage — how many sessions have cost data vs total
+  const nullCostCount = recentSessions.length - costedSessions.length;
+  const dataCoveragePercent = recentSessions.length > 0
+    ? Math.round((costedSessions.length / recentSessions.length) * 100)
+    : 0;
+
+  // Week-over-week: this week vs prior week
+  const thisWeekSessions = costedSessions.filter(s => s.created_at >= sevenDaysAgo);
+  const thisWeekInr = round2(thisWeekSessions.reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0));
+  const lastWeekInr = round2(lastWeekSessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0)
+    .reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0));
+  const wowDeltaPct = lastWeekInr > 0
+    ? Math.round(((thisWeekInr - lastWeekInr) / lastWeekInr) * 100)
+    : null;
+
+  // Today's cost + anomaly detection (today vs 30d daily average)
+  const todayCostInr = round2(costedSessions
+    .filter(s => s.created_at?.slice(0, 10) === today)
+    .reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0));
+  const dailyAvgInr = round2(totalLlmInr / 30);
+  // Spike if today is 2× the 30d daily average and exceeds ₹0.20 absolute
+  const isCostSpike = todayCostInr > dailyAvgInr * 2 && todayCostInr > 0.2;
+
+  // Cost by focus type
+  const focusMap: Record<string, { total: number; count: number }> = {};
+  for (const s of costedSessions) {
+    const key = s.focus || s.type || "unknown";
+    if (!focusMap[key]) focusMap[key] = { total: 0, count: 0 };
+    focusMap[key].total += s.llm_cost_inr || 0;
+    focusMap[key].count++;
+  }
+  const byFocus: Record<string, { totalInr: number; sessions: number; avgInr: number }> = {};
+  for (const [k, v] of Object.entries(focusMap)) {
+    byFocus[k] = {
+      totalInr: round2(v.total),
+      sessions: v.count,
+      avgInr: round2(v.count > 0 ? v.total / v.count : 0),
+    };
+  }
+
+  // Daily cost trend (30d)
+  const perDay: Record<string, number> = {};
+  for (let i = 29; i >= 0; i--) {
+    perDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0;
+  }
+  for (const s of costedSessions) {
+    const d = s.created_at?.slice(0, 10);
+    if (d && d in perDay) perDay[d] = round2((perDay[d] || 0) + (s.llm_cost_inr || 0));
+  }
+
+  // Cost by endpoint (estimated from token counts × rate card)
+  const epMap: Record<string, { primaryTokens: number; fallbackTokens: number; calls: number }> = {};
+  for (const u of endpointUsage) {
+    const ep = u.endpoint || "unknown";
+    if (!epMap[ep]) epMap[ep] = { primaryTokens: 0, fallbackTokens: 0, calls: 0 };
+    epMap[ep].calls++;
+    if (u.is_fallback) epMap[ep].fallbackTokens += u.total_tokens || 0;
+    else epMap[ep].primaryTokens += u.total_tokens || 0;
+  }
+  const byEndpoint: Record<string, { estimatedInr: number; tokens: number; calls: number }> = {};
+  for (const [ep, d] of Object.entries(epMap)) {
+    byEndpoint[ep] = {
+      estimatedInr: round2(llmInr(d.primaryTokens, false) + llmInr(d.fallbackTokens, true)),
+      tokens: d.primaryTokens + d.fallbackTokens,
+      calls: d.calls,
+    };
+  }
+
+  // Top 5 users by LLM spend (30d) — compute from costedSessions
+  const userCostMap: Record<string, { total: number; sessions: number }> = {};
+  for (const s of costedSessions) {
+    const uid = s.user_id || "unknown";
+    if (!userCostMap[uid]) userCostMap[uid] = { total: 0, sessions: 0 };
+    userCostMap[uid].total += s.llm_cost_inr || 0;
+    userCostMap[uid].sessions++;
+  }
+  const topUserIds = Object.entries(userCostMap)
+    .sort(([, a], [, b]) => b.total - a.total)
+    .slice(0, 5)
+    .map(([uid]) => uid);
+  // Fetch profiles for top users
+  let topUserProfiles: { id: string; name: string | null; email: string }[] = [];
+  if (topUserIds.length > 0) {
+    topUserProfiles = await fetchJSON<{ id: string; name: string | null; email: string }>(
+      `profiles?id=in.(${topUserIds.map(id => encodeURIComponent(id)).join(",")})&select=id,name,email&limit=5`,
+    );
+  }
+  const profileMap = new Map(topUserProfiles.map(p => [p.id, { name: p.name || "(no name)", email: p.email }]));
+  const topUsersByCost = topUserIds.map(uid => ({
+    userId: uid,
+    name: profileMap.get(uid)?.name || "(no name)",
+    email: profileMap.get(uid)?.email || "—",
+    totalLlmInr: round2(userCostMap[uid].total),
+    sessions: userCostMap[uid].sessions,
+    avgInr: round2(userCostMap[uid].sessions > 0 ? userCostMap[uid].total / userCostMap[uid].sessions : 0),
+  }));
+
+  return {
+    totalLlmInr: round2(totalLlmInr),
+    avgCostPerSession: round2(avgCostPerSession),
+    highestSessionCostInr: round2(highestSessionCostInr),
+    sessionCount: costedSessions.length,
+    totalSessions30d: recentSessions.length,
+    nullCostCount,
+    dataCoveragePercent,
+    thisWeekInr,
+    lastWeekInr,
+    wowDeltaPct,
+    todayCostInr,
+    dailyAvgInr,
+    isCostSpike,
+    byFocus,
+    perDay,
+    byEndpoint,
+    topUsersByCost,
+    topExpensiveSessions: topSessions.map(s => ({
+      id: s.id,
+      userId: s.user_id,
+      focus: s.focus || s.type || "—",
+      score: s.score || 0,
+      duration: s.duration || 0,
+      llmCostInr: round2(s.llm_cost_inr || 0),
+      promptTokens: s.prompt_tokens || 0,
+      completionTokens: s.completion_tokens || 0,
+      date: s.created_at,
+    })),
+  };
+}
+
+/* ─── Health Alerts ─── */
+
+type AlertSeverity = "critical" | "warning";
+interface HealthAlert {
+  severity: AlertSeverity;
+  code: string;
+  message: string;
+  action: string;
+}
+
+async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checkedAt: string }> {
+  const now = Date.now();
+  const today = new Date(now).toISOString().slice(0, 10);
+  const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
+  const sevenDaysAgo = daysAgo(7);
+  const fourteenDaysAgo = daysAgo(14);
+
+  const [todaySessions, recentSessions, llmUsageRecent, llmUsagePrev] = await Promise.all([
+    // Sessions today (count + cost coverage)
+    fetchJSON<{ id: string; llm_cost_inr: number | null; score: number | null; created_at: string }>(
+      `sessions?select=id,llm_cost_inr,score,created_at&created_at=gte.${today}&limit=500`,
+    ),
+    // Sessions last 30d for volume baseline (just ids + date, cheap)
+    fetchJSON<{ created_at: string }>(
+      `sessions?select=created_at&created_at=gte.${sevenDaysAgo}&limit=2000`,
+    ),
+    // LLM usage last 24h for fallback rate
+    fetchJSON<{ is_fallback: boolean; total_tokens: number }>(
+      `llm_usage?select=is_fallback,total_tokens&created_at=gte.${yesterday}&limit=2000`,
+    ),
+    // LLM usage prior week for WoW fallback comparison
+    fetchJSON<{ is_fallback: boolean }>(
+      `llm_usage?select=is_fallback&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}&limit=2000`,
+    ),
+  ]);
+
+  const alerts: HealthAlert[] = [];
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+
+  // ── Signal 1: LLM fallback rate ──
+  const totalCalls24h = llmUsageRecent.length;
+  const fallbackCalls24h = llmUsageRecent.filter(u => u.is_fallback).length;
+  const fallbackRate = totalCalls24h > 0 ? fallbackCalls24h / totalCalls24h : 0;
+  const prevFallbackRate = llmUsagePrev.length > 0
+    ? llmUsagePrev.filter(u => u.is_fallback).length / llmUsagePrev.length
+    : 0;
+
+  if (fallbackRate > 0.5 && totalCalls24h >= 5) {
+    alerts.push({
+      severity: "critical",
+      code: "llm_groq_down",
+      message: `Groq is down or heavily throttled — ${Math.round(fallbackRate * 100)}% of LLM calls in the last 24h routed to Gemini fallback (${fallbackCalls24h}/${totalCalls24h} calls).`,
+      action: "Check status.groq.com and Groq dashboard. Gemini fallback is active but costs ~2.3× more per token.",
+    });
+  } else if (fallbackRate > 0.2 && totalCalls24h >= 5 && fallbackRate > prevFallbackRate * 1.5) {
+    alerts.push({
+      severity: "warning",
+      code: "llm_fallback_elevated",
+      message: `Groq fallback rate elevated — ${Math.round(fallbackRate * 100)}% vs ${Math.round(prevFallbackRate * 100)}% last week (${fallbackCalls24h}/${totalCalls24h} calls in 24h).`,
+      action: "Monitor Groq latency. If this continues, check rate limits on the Groq console.",
+    });
+  }
+
+  // ── Signal 2: Session cost coverage ──
+  if (todaySessions.length >= 3) {
+    const costed = todaySessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0).length;
+    const coverage = costed / todaySessions.length;
+    if (coverage < 0.4) {
+      alerts.push({
+        severity: "critical",
+        code: "cost_patch_broken",
+        message: `Cost tracking broken — only ${Math.round(coverage * 100)}% of today's ${todaySessions.length} sessions have llm_cost_inr (${costed} have data, ${todaySessions.length - costed} missing).`,
+        action: "Check save-session.ts fire-and-forget PATCH. The llm_usage insert or the PATCH itself is failing silently.",
+      });
+    } else if (coverage < 0.7) {
+      alerts.push({
+        severity: "warning",
+        code: "cost_coverage_low",
+        message: `Cost coverage is ${Math.round(coverage * 100)}% today (${costed}/${todaySessions.length} sessions). Missing data will skew averages.`,
+        action: "Investigate llm_usage write failures in save-session.ts.",
+      });
+    }
+  }
+
+  // ── Signal 3: Session volume anomaly ──
+  // Compare today vs prior 7-day daily average
+  const priorDayCounts: Record<string, number> = {};
+  for (const s of recentSessions) {
+    const d = s.created_at?.slice(0, 10);
+    if (d && d !== today) priorDayCounts[d] = (priorDayCounts[d] || 0) + 1;
+  }
+  const priorDays = Object.values(priorDayCounts);
+  if (priorDays.length >= 3) {
+    const dailyAvg = priorDays.reduce((a, b) => a + b, 0) / priorDays.length;
+    const todayCount = todaySessions.length;
+    const hourOfDay = new Date(now).getUTCHours();
+    // Pro-rate today based on how far through the day we are (avoid false alerts at midnight)
+    const prorated = hourOfDay >= 8 ? (todayCount / (hourOfDay / 24)) : null;
+
+    if (prorated != null && dailyAvg > 5) {
+      if (prorated < dailyAvg * 0.2) {
+        alerts.push({
+          severity: "critical",
+          code: "session_volume_crash",
+          message: `Session volume is critically low — ${todayCount} sessions so far today (est. ${Math.round(prorated)}/day extrapolated), vs ${round1(dailyAvg)} daily avg. Possible app outage.`,
+          action: "Check Vercel function logs, Supabase status, and the interview flow end-to-end.",
+        });
+      } else if (prorated < dailyAvg * 0.4) {
+        alerts.push({
+          severity: "warning",
+          code: "session_volume_low",
+          message: `Session volume is down — ${todayCount} sessions so far today (est. ${Math.round(prorated)}/day), vs ${round1(dailyAvg)} daily avg (7d).`,
+          action: "Monitor for the next hour. Could be time-of-day variation or a soft funnel issue.",
+        });
+      }
+    }
+  }
+
+  // ── Signal 4: Failed sessions (score=null or score=0) ──
+  if (todaySessions.length >= 3) {
+    const failed = todaySessions.filter(s => s.score == null || s.score === 0).length;
+    const failRate = failed / todaySessions.length;
+    if (failRate > 0.4) {
+      alerts.push({
+        severity: "critical",
+        code: "session_failures_high",
+        message: `${Math.round(failRate * 100)}% of today's sessions have null/zero score (${failed}/${todaySessions.length}). Likely evaluation pipeline failing.`,
+        action: "Check evaluate-session.ts, Groq/Gemini response parsing, and recent error logs.",
+      });
+    } else if (failRate > 0.2) {
+      alerts.push({
+        severity: "warning",
+        code: "session_failures_elevated",
+        message: `${Math.round(failRate * 100)}% of today's sessions scored 0 or null (${failed}/${todaySessions.length}).`,
+        action: "Spot-check recent sessions in the Sessions tab. May indicate LLM JSON parse errors.",
+      });
+    }
+  }
+
+  return {
+    alerts,
+    checkedAt: new Date(now).toISOString(),
+  };
+}
+
 /* ─── Handler ─── */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -1284,7 +1691,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string } | undefined;
   const section = body?.section || body?.action || "overview";
 
   try {
@@ -1307,11 +1714,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
         case "outcomes": return getOutcomes();
+        case "costs": return getCostData();
+        case "health": return getHealthAlerts();
         case "update-support-status": {
           if (!body?.id) throw new Error("id required");
           const s = body.status;
           if (s !== "new" && s !== "seen" && s !== "resolved") throw new Error("status must be new | seen | resolved");
           return updateSupportStatus(body.id, s);
+        }
+        case "extend-subscription": {
+          if (!body?.userId) throw new Error("userId required");
+          const tier = body.tier as string | undefined;
+          const days = Number(body.days ?? 30);
+          if (!tier || !["free", "starter", "pro", "team"].includes(tier)) throw new Error("tier must be free | starter | pro | team");
+          if (!Number.isInteger(days) || days < 1 || days > 366) throw new Error("days must be 1–366");
+          const newEnd = new Date(Date.now() + days * 86400000).toISOString();
+          const patchRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(body.userId)}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ subscription_tier: tier, subscription_end: newEnd }),
+            },
+          );
+          if (!patchRes.ok) {
+            const body2 = await patchRes.text().catch(() => "");
+            return { ok: false, error: `Supabase PATCH failed: HTTP ${patchRes.status}: ${body2.slice(0, 200)}` };
+          }
+          return { ok: true, tier, days, newEnd };
+        }
+        case "grant-credits": {
+          if (!body?.userId) throw new Error("userId required");
+          const qty = Number(body.qty ?? 0);
+          if (!Number.isInteger(qty) || qty < 1 || qty > 100) throw new Error("qty must be 1–100");
+          const note = typeof body.note === "string" ? body.note.slice(0, 200) : "admin grant";
+          const rpcRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/grant_session_credits`,
+            {
+              method: "POST",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ p_user_id: body.userId, p_qty: qty, p_note: note }),
+            },
+          );
+          if (!rpcRes.ok) {
+            const body2 = await rpcRes.text().catch(() => "");
+            return { ok: false, error: `RPC failed: HTTP ${rpcRes.status}: ${body2.slice(0, 200)}` };
+          }
+          return { ok: true, qty, note };
         }
         default: throw new Error(`Unknown section: ${section}`);
       }
