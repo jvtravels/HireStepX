@@ -684,7 +684,7 @@ export default function DashboardHome() {
           {/* Next move, single emphasized card. No KPI grid above it; one focal point. */}
           <Card pad={28} labelledBy="dh-next">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <Eyebrow tone="copper" as="h2"><span id="dh-next">Your next move</span></Eyebrow>
                 <p className="hsx-dh-next-heading" style={{
                   fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,

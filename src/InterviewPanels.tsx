@@ -1509,7 +1509,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
           /* Narrow-viewport rescue: under 380px the two side-by-side modal
              buttons overflow the cream card. Stack vertically and pull
              padding in so the modal still breathes on a 320-360px phone. */
-          @media (max-width: 380px) {
+          @media (max-width: 400px) {
             .hsx-end-modal { padding: 16px !important; }
             .hsx-end-modal .hsx-end-modal-actions { flex-direction: column-reverse !important; }
             .hsx-end-modal .hsx-end-modal-actions button { width: 100% !important; }

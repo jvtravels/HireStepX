@@ -96,6 +96,7 @@ function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: ()
     <div
       role="complementary"
       aria-label="Upgrade to keep practising"
+      className="hsx-upgrade-strip"
       style={{
         display: "flex",
         alignItems: "center",
@@ -108,6 +109,12 @@ function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: ()
         padding: "14px 20px",
       }}
     >
+      <style>{`
+        @media (max-width: 480px) {
+          .hsx-upgrade-strip { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .hsx-upgrade-strip button { width: 100% !important; justify-content: center !important; }
+        }
+      `}</style>
       <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
           {copy.headline}
