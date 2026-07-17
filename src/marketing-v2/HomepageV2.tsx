@@ -3329,8 +3329,9 @@ export function PricingV2() {
               {tier.price === "₹9" && (
                 <>
                   <style>{`
-                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;}
-                    .pricing-session-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);cursor:pointer;}
+                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;align-self:center;}
+                    .pricing-session-slider::-webkit-slider-runnable-track{height:3px;border-radius:2px;}
+                    .pricing-session-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);cursor:pointer;margin-top:-7.5px;}
                     .pricing-session-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;cursor:pointer;}
                     .pricing-session-slider:focus-visible::-webkit-slider-thumb{outline:2px solid #B45309;outline-offset:2px;}
                   `}</style>
