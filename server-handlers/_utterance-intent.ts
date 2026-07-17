@@ -442,6 +442,25 @@ const DEMAND_CORES: DemandCore[] = [
       "i",
     ),
   },
+  /* Quantity + LEADING increase word + unit: "one more lakh", "two more lakhs",
+   * "a couple more lakhs", "3 more percent". The increase token ("more/extra/
+   * additional/further") sits BETWEEN the quantity and the unit — the mirror of
+   * word-more ("a lakh more", unit-then-more) and relative-more (digit + unit +
+   * more). A bare WORD-quantity in this order ("one MORE lakh") slipped all
+   * three cores (relative-more needs a digit, word-more needs unit-before-more,
+   * another-more's lead set is another/an-extra/an-additional/a-further) and
+   * "One more lakh and I'm in." false-closed at the un-bumped offer (offline
+   * hostile hunt, 2026-07-17). Unit-restricted to cash/percent so non-comp
+   * counts ("one more round", "a few more weeks") never match; always an upward
+   * ask, so no offer gate. The global dismissal-tail guard covers "I don't need
+   * one more lakh, I accept". */
+  {
+    reason: "quantity-more-unit",
+    re: new RegExp(
+      `\\b(?:\\d+(?:\\.\\d+)?|${VERBAL_QTY}|two|three|four|five|six|seven|eight|nine|ten)\\s+(?:more|extra|additional|further)\\s+(?:${UNIT})\\b`,
+      "i",
+    ),
+  },
   /* Leading INCREASE word directly on a comp lever, no figure: "give me more
    * RSUs", "more equity", "extra stock", "additional base". another-more requires
    * a cash/percent unit after the increase word, and demand-for-more needs a

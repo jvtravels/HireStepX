@@ -51,6 +51,13 @@ const HOSTILE_MUST_VETO: string[] = [
   // Negation counterparts of the 2026-07-17 recall additions must NOT close.
   "I'm not ready to join at this number.",
   "I'm not happy to move forward with this offer.",
+  // LEAK 4 — "<quantity> MORE <unit>" conditional bump (increase word leads the
+  // unit): word-quantity form slipped relative-more/word-more/another-more
+  // (offline hostile hunt, 2026-07-17). Vetoed at the demand-intent source
+  // (_utterance-intent.ts: quantity-more-unit core).
+  "One more lakh and I'm in.",
+  "Two more lakhs and I'll sign.",
+  "A couple more lakhs and we have a deal.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [
