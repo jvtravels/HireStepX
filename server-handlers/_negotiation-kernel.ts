@@ -108,6 +108,7 @@ import {
 import {
   extractCompetingOfferDetail,
   mergeCompetingOfferDetail,
+  isCompetingOfferRevoked,
   type CompetingOfferDetail,
 } from "./_competing-offer-detail";
 import {
@@ -5600,6 +5601,38 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       state.competingOfferDetail,
       parsed.competingOfferDetail,
     );
+  }
+  /* OA-B65 — competing-offer REVOCATION. state.competingOffer is a
+   * monotone-sticky scalar (set at the parsed.competing site, never
+   * cleared) and mergeCompetingOfferDetail folds onHold/amount monotone-up,
+   * so "actually that offer fell through" would otherwise leave the
+   * candidate's leverage permanently on record. A revoked offer carries
+   * ZERO leverage — distinct from onHold (delayed but real). Clear the
+   * numeric scalar, blank the detail's amount, and drop the userClaims
+   * entry so no downstream reader (planner leverage gate, report) still
+   * sees a live alternative. Single source of truth: isCompetingOfferRevoked.
+   * Gated on an offer actually being on record so a stray match on a turn
+   * with no prior offer is a harmless no-op. */
+  if (
+    isCompetingOfferRevoked(answer) &&
+    (state.competingOffer != null ||
+      state.competingOfferDetail?.hasAny ||
+      next.competingOfferDetail?.hasAny)
+  ) {
+    next.competingOffer = null;
+    const priorDetail = next.competingOfferDetail ?? state.competingOfferDetail;
+    if (priorDetail) {
+      next.competingOfferDetail = {
+        ...priorDetail,
+        amount: null,
+        onHold: true,
+      };
+    }
+    if (next.userClaims?.competingOffer) {
+      const cleared = { ...next.userClaims };
+      delete cleared.competingOffer;
+      next.userClaims = cleared;
+    }
   }
 
   /* Phase 17 — fold deadline + profile + misc scalars. Same

@@ -161,6 +161,29 @@ const ON_HOLD_PATTERNS: RegExp[] = [
   /\b(?:they.?ve\s+(?:put|placed)\s+(?:my\s+)?(?:offer|joining)\s+on\s+hold|put\s+on\s+hold)\b/i,
 ];
 
+/* OA-B65 — competing-offer REVOCATION (the candidate withdraws their own
+ * BATNA: "that offer fell through", "they backed out", "it's off the table
+ * now"). Distinct from ON_HOLD (delayed / frozen but still real): a revoked
+ * offer carries NO leverage, so the kernel must clear the numeric
+ * competingOffer entirely, not merely flag it weakened. Kept revocation-
+ * specific in wording; the kernel additionally gates the clear on an offer
+ * actually being on record, so a stray match is a harmless no-op. */
+const REVOKED_PATTERNS: RegExp[] = [
+  /\b(?:offer|it|that|they|the\s+other\s+one)\s+(?:has\s+|had\s+|just\s+|'s\s+|s\s+)?(?:fell|fallen|falls)\s+(?:through|apart|out)\b/i,
+  /\b(?:offer\s+)?(?:fell|fallen)\s+(?:through|apart)\b/i,
+  /\b(?:no\s+longer\s+(?:on\s+the\s+table|valid|available|an\s+option)|off\s+the\s+table(?:\s+now)?|not\s+(?:happening|going\s+(?:ahead|through))(?:\s+anymore)?)\b/i,
+  /\b(?:they|recruiter|company)\s+(?:backed|pulled|dropped)\s+out\b/i,
+  /\b(?:backed|pulled|dropped)\s+out\s+(?:of\s+)?(?:the\s+|that\s+|their\s+)?offer\b/i,
+  /\b(?:offer\s+(?:got\s+|was\s+|has\s+been\s+)?(?:rescinded|revoked|withdrawn|cancell?ed|retracted|pulled))\b/i,
+];
+
+/** OA-B65 — true when this utterance withdraws a previously-stated competing
+ *  offer. Single source of truth for the kernel's leverage-clear. */
+export function isCompetingOfferRevoked(text: string): boolean {
+  if (!text) return false;
+  return REVOKED_PATTERNS.some((p) => p.test(text));
+}
+
 /* Recognized India-market hiring brands. Patterns require word boundaries
  * to avoid catching substrings (e.g. "tcs" inside other words). */
 const COMPANY_PATTERNS: { canonical: string; pattern: RegExp }[] = [

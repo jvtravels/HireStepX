@@ -4,6 +4,7 @@ import {
   mergeCompetingOfferDetail,
   hasConcreteTell,
   displayCompany,
+  isCompetingOfferRevoked,
 } from "../../server-handlers/_competing-offer-detail";
 
 describe("extractCompetingOfferDetail — company", () => {
@@ -287,4 +288,39 @@ describe("hasConcreteTell — arming condition (distinct from proofProvided)", (
     );
     expect(m2.amount).toBe(32);
   });
+});
+
+describe("OA-B65 — isCompetingOfferRevoked", () => {
+  const revoked = [
+    "actually that offer fell through",
+    "the other offer fell apart",
+    "their offer got rescinded yesterday",
+    "that offer was withdrawn",
+    "it's no longer on the table",
+    "the competing offer is off the table now",
+    "they pulled out of the offer",
+    "the company backed out",
+    "that offer is not happening anymore",
+    "the offer was cancelled",
+    "their offer has been revoked",
+  ];
+  for (const t of revoked) {
+    it(`detects revocation: "${t}"`, () => {
+      expect(isCompetingOfferRevoked(t)).toBe(true);
+    });
+  }
+
+  const notRevoked = [
+    "",
+    "the offer is on hold for now",
+    "they offered me 30 LPA",
+    "I'm still waiting to hear back from them",
+    "the offer is delayed but still coming",
+    "I have another offer at 32 LPA",
+  ];
+  for (const t of notRevoked) {
+    it(`does not fire on: "${t}"`, () => {
+      expect(isCompetingOfferRevoked(t)).toBe(false);
+    });
+  }
 });

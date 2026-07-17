@@ -85,3 +85,32 @@ describe("#92 — competing-offer acknowledge + match", () => {
     expect(action.kind).toBe("reactive-followup");
   });
 });
+
+describe("OA-B65 — competing-offer revocation clears the scalar leverage", () => {
+  it("a revoked offer clears state.competingOffer (was monotone-sticky)", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I have an offer from Zomato at 38, can you match it?");
+    expect(s.competingOffer).toBe(38);
+    // Candidate later concedes the rival offer collapsed — leverage gone.
+    s = applyCandidateAnswer(s, "actually that Zomato offer fell through");
+    expect(s.competingOffer).toBeNull();
+    expect(s.competingOfferDetail?.amount ?? null).toBeNull();
+    expect(s.competingOfferDetail?.onHold).toBe(true);
+    expect(s.userClaims?.competingOffer).toBeUndefined();
+  });
+
+  it("on-hold (delayed but real) does NOT clear the scalar — distinct from revoked", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I have an offer from Zomato at 38, can you match it?");
+    expect(s.competingOffer).toBe(38);
+    s = applyCandidateAnswer(s, "the Zomato offer is on hold for a couple of weeks");
+    expect(s.competingOffer).toBe(38);
+  });
+
+  it("revocation with no offer on record is a harmless no-op", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "the offer fell through");
+    // Never had a competing offer → nothing to clear, scalar stays null.
+    expect(s.competingOffer ?? null).toBeNull();
+  });
+});
