@@ -145,6 +145,7 @@ function PageHero({
   meta,
   narrow,
   center,
+  compact,
 }: {
   eyebrow: string;
   title: string;
@@ -153,14 +154,15 @@ function PageHero({
   meta?: ReactNode;
   narrow?: boolean;
   center?: boolean;
+  compact?: boolean;
 }) {
   return (
     <section
       className="mv2p-page-hero"
       style={{
         position: "relative",
-        paddingTop: 80,
-        paddingBottom: 60,
+        paddingTop: compact ? 48 : 80,
+        paddingBottom: compact ? 36 : 60,
         background: t.cream,
         borderBottom: `1px solid ${t.line}`,
       }}
@@ -1178,9 +1180,10 @@ export function ContactV2() {
         accent="real replies."
         lead="No ticket systems. No autoresponders. A real person reads every message and replies within one business day."
         center
+        compact
       />
 
-      <section style={{ ...sectionBase, background: t.cream, paddingTop: 64, paddingBottom: 96 }}>
+      <section style={{ ...sectionBase, background: t.cream, paddingTop: 40, paddingBottom: 56 }}>
         <div style={{ ...containerNarrow, maxWidth: 900 }}>
 
           {/* Single white card — info left, form right */}
