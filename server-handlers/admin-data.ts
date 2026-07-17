@@ -1730,9 +1730,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (!body?.userId) throw new Error("userId required");
           const tier = body.tier as string | undefined;
           const days = Number(body.days ?? 30);
-          if (!tier || !["free", "starter"].includes(tier)) throw new Error("tier must be free | starter");
+          if (!tier || !["free", "starter", "pro"].includes(tier)) throw new Error("tier must be free | starter | pro");
           if (!Number.isInteger(days) || days < 1 || days > 366) throw new Error("days must be 1–366");
-          const newEnd = new Date(Date.now() + days * 86400000).toISOString();
+          const now = new Date();
+          const newEnd = new Date(now.getTime() + days * 86400000).toISOString();
+          // For starter (Sprint Pack): the session limit counts sessions since subscription_start,
+          // NOT since subscription_end. If the user has exhausted their 5 sessions, only resetting
+          // subscription_start opens a fresh window — pushing subscription_end alone does nothing.
+          const patchPayload: Record<string, string> = {
+            subscription_tier: tier,
+            subscription_end: newEnd,
+          };
+          if (tier === "starter") {
+            patchPayload.subscription_start = now.toISOString();
+          }
           const patchRes = await fetch(
             `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(body.userId)}`,
             {
@@ -1743,7 +1754,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 "Content-Type": "application/json",
                 Prefer: "return=minimal",
               },
-              body: JSON.stringify({ subscription_tier: tier, subscription_end: newEnd }),
+              body: JSON.stringify(patchPayload),
             },
           );
           if (!patchRes.ok) {
