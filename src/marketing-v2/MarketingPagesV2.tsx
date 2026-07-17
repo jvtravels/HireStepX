@@ -144,6 +144,7 @@ function PageHero({
   lead: leadText,
   meta,
   narrow,
+  center,
 }: {
   eyebrow: string;
   title: string;
@@ -151,6 +152,7 @@ function PageHero({
   lead?: string;
   meta?: ReactNode;
   narrow?: boolean;
+  center?: boolean;
 }) {
   return (
     <section
@@ -174,7 +176,7 @@ function PageHero({
           pointerEvents: "none",
         }}
       />
-      <div className="mv2-container" style={{ ...(narrow ? containerNarrow : container), position: "relative" }}>
+      <div className="mv2-container" style={{ ...(narrow ? containerNarrow : container), position: "relative", ...(center ? { textAlign: "center" } : {}) }}>
         <p style={{ ...eyebrow, marginBottom: 18 }}>{eb}</p>
         <h1 style={h1Display}>
           {title}
@@ -185,7 +187,7 @@ function PageHero({
             </>
           )}
         </h1>
-        {leadText && <p style={{ ...lead, marginTop: 28 }}>{leadText}</p>}
+        {leadText && <p style={{ ...lead, marginTop: 28, ...(center ? { margin: "28px auto 0" } : {}) }}>{leadText}</p>}
         {meta && <div style={{ marginTop: 32 }}>{meta}</div>}
       </div>
     </section>
@@ -1175,6 +1177,7 @@ export function ContactV2() {
         title="Real humans,"
         accent="real replies."
         lead="No ticket systems. No autoresponders. A real person reads every message and replies within one business day."
+        center
       />
 
       <section style={{ ...sectionBase, background: t.cream, paddingTop: 64, paddingBottom: 96 }}>
