@@ -465,6 +465,7 @@ export function NavV2() {
           border: `1px solid ${scrolled ? t.line : "transparent"}`,
           boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
           overflow: "hidden",
+          position: "relative",
           /* Different easing per direction: the CSS transition on the destination
              state is what the browser uses. Shrink → snappy expo ease-out (400ms).
              Expand → relaxed standard ease (550ms) so the nav opens gracefully
@@ -477,7 +478,6 @@ export function NavV2() {
         <div
           style={{
             ...container,
-            position: "relative",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
