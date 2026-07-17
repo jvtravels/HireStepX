@@ -323,17 +323,19 @@ function FooterDomeMobile() {
               textTransform: "uppercase",
               margin: "0 0 16px",
             }}>{col.title}</p>
-            {col.links.map(([label, href]) => (
-              <a key={label} href={href} style={{
-                display: "flex",
-                alignItems: "center",
-                minHeight: 44,
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                color: t.inkSoft,
-                textDecoration: "none",
-              }}>{label}</a>
-            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {col.links.map(([label, href]) => (
+                <a key={label} href={href} style={{
+                  display: "flex",
+                  alignItems: "center",
+                  minHeight: 44,
+                  fontFamily: fonts.sans,
+                  fontSize: 14,
+                  color: t.inkSoft,
+                  textDecoration: "none",
+                }}>{label}</a>
+              ))}
+            </div>
           </div>
         ))}
       </div>
