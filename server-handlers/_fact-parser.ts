@@ -66,7 +66,7 @@ export interface SalaryFact {
  * means "N LPA in cash comp" (distinguishing from equity/ESOP). Bare
  * numeric extraction maps it to LPA same as "lakhs". Surfaced by the
  * esop-heavy-comp scenario. */
-const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|crores?|cr|lacs?|lacks|lax|cash|L";
+const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|laakhs?|laaks?|crores?|cr|lacs?|lacks|lax|cash|L";
 
 /* STT fragility audit (2026-05-22) — follow-up to LPE fix.
  *
@@ -201,7 +201,7 @@ function normaliseUnit(raw: string | undefined): SalaryUnit {
   const u = raw.toLowerCase();
   if (u === "lpa") return "LPA";
   if (u.startsWith("crore") || u === "cr") return "crore";
-  if (u.startsWith("lakh") || u.startsWith("lac") || u === "lacks" || u === "lax" || u === "l") return "lakh";
+  if (u.startsWith("lakh") || u.startsWith("laakh") || u.startsWith("laak") || u.startsWith("lac") || u === "lacks" || u === "lax" || u === "l") return "lakh";
   /* AUDIT-2 (2026-06-08): "cash" maps to lakh-equivalent. "36 cash"
    * in an equity-heavy comp disclosure means "36 LPA cash component". */
   if (u === "cash") return "lakh";

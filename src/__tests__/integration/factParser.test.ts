@@ -45,6 +45,15 @@ describe("_fact-parser — parseSalaryFacts", () => {
     expect(parseSalaryFacts("22 lacs")[0].value).toBe(22);
   });
 
+  /* B38 — elongated "laakh"/"laaks" STT typo for lakh (verified real: the
+   * old UNIT_TOKEN missed the double-a spelling). */
+  it("handles laakh/laaks elongated spellings (B38)", () => {
+    expect(parseSalaryFacts("22 laakh")[0].value).toBe(22);
+    expect(parseSalaryFacts("22 laaks")[0].value).toBe(22);
+    expect(parseSalaryFacts("22 laakhs")[0].value).toBe(22);
+    expect(parseSalaryFacts("22 laakh")[0].unit).toBe("lakh");
+  });
+
   it("range '22-24 LPA' produces two facts with isRangeLower/Upper flags", () => {
     const f = parseSalaryFacts("expecting ₹22-24 LPA total");
     expect(f).toHaveLength(2);
