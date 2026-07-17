@@ -6,7 +6,7 @@
  * When relocating, adds relocation context (notice buyout premium, HRA adjustment, relocation allowance).
  */
 
-import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
+import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, matchRoleKeyResolved, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
 import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES, COMPANY_META } from "./company-salary-overrides";
 import { resolveVestingSchedule } from "./company-vesting-overlay";
 
@@ -156,6 +156,13 @@ export interface NegotiationBand {
    * telemetry — repeatedly hitting this means the wrong band is
    * shipping for real companies (DocuSign→₹27 bug, Bugs (4).pdf). */
   companyTierResolved?: boolean;
+  /** True when `matchRoleKey(role)` actually matched a known role. False
+   * means the role fell through to the software-engineer catch-all, OR
+   * the role mapped but had no salary data and silently borrowed the
+   * software-engineer band cross-family (OA-B19 / OA-B22). Surfaced so
+   * call sites can emit telemetry and the report can disclose an
+   * estimated band rather than shipping a confident wrong number. */
+  roleResolved?: boolean;
   /** Number of independent sources that agreed on the override band, if
    * sourceVerifiedAt is populated. 2+ = verified, 1 = single-source. */
   sourceCount?: number;
@@ -846,7 +853,7 @@ function applyTitleExpFloor(role: string | undefined, baseExp: ExperienceLevel):
 
 /** Generate a negotiation band for a given role/company/experience/city combination */
 export function generateNegotiationBand(params: SalaryLookupParams): NegotiationBand {
-  const roleKey = matchRoleKey(params.role);
+  const { key: roleKey, matched: roleMatched } = matchRoleKeyResolved(params.role);
   const resolvedTier = getCompanyTier(params.company);
   const companyTier = resolvedTier ?? "indian-unicorn";
   // True when the company was found in COMPANY_TIER_MAP. False means we
@@ -1047,10 +1054,14 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       bandSource,
       sourceCount,
       companyTierResolved,
+      roleResolved: roleMatched,
     };
   }
 
-  const entry = findSalaryEntry(roleKey, companyTier, exp);
+  const { entry, crossFamilySwe } = findSalaryEntryTraced(roleKey, companyTier, exp);
+  // Role is only "resolved" if it matched a known role AND didn't silently
+  // borrow the software-engineer band cross-family (OA-B19 / OA-B22).
+  const roleResolved = roleMatched && !crossFamilySwe;
 
   // Fallback band if no salary data. Calibrate by experience level so
   // an unknown junior role doesn't default to a senior-IC band.
@@ -1085,6 +1096,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       bandSource: "fallback",
       sourceCount: 0,
       companyTierResolved,
+      roleResolved,
     };
   }
 
@@ -1211,9 +1223,13 @@ JOINING-BONUS / NOTICE-PERIOD INTELLIGENCE:
     initialOffer, minOffer, maxStretch, walkAway,
     joiningBonusRange, hasEquity, equityRange, bandContext,
     isSynthetic, syntheticSource: entry._synthetic_source,
-    bandSource: "tier-default",
+    // A cross-family SWE borrow (OA-B22) is not a real tier-default band for
+    // this role — mark it "fallback" so coverage telemetry and the report
+    // treat it as an estimate, not a researched number.
+    bandSource: crossFamilySwe ? "fallback" : "tier-default",
     sourceCount: isSynthetic ? 0 : 1,
     companyTierResolved,
+    roleResolved,
   };
 }
 
@@ -1322,12 +1338,28 @@ const EXP_LABELS: Record<ExperienceLevel, string> = {
  * Tries: exact role → alias → tier fallback → adjacent experience levels
  */
 function findSalaryEntry(roleKey: RoleKey, tier: CompanyTier, exp: ExperienceLevel): SalaryEntry | null {
+  return findSalaryEntryTraced(roleKey, tier, exp).entry;
+}
+
+/**
+ * findSalaryEntry, but also reports whether the returned entry came from
+ * the cross-family software-engineer last-resort borrow (`crossFamilySwe`)
+ * rather than the role's own (or an aliased) data. A `true` here for a
+ * non-SWE role means the band is effectively an SWE stand-in — a confident
+ * wrong number for e.g. a doctor or lawyer (OA-B22). Single source of
+ * truth: findSalaryEntry delegates here.
+ */
+function findSalaryEntryTraced(
+  roleKey: RoleKey,
+  tier: CompanyTier,
+  exp: ExperienceLevel,
+): { entry: SalaryEntry | null; crossFamilySwe: boolean } {
   const roleData = SALARY_DATA[roleKey];
   if (roleData) {
     const tierData = roleData[tier];
     if (tierData) {
       for (const fallbackExp of EXP_FALLBACK_ORDER[exp]) {
-        if (tierData[fallbackExp]) return tierData[fallbackExp]!;
+        if (tierData[fallbackExp]) return { entry: tierData[fallbackExp]!, crossFamilySwe: false };
       }
     }
     const fallbackTier = getSalaryTierFallback(tier);
@@ -1335,24 +1367,29 @@ function findSalaryEntry(roleKey: RoleKey, tier: CompanyTier, exp: ExperienceLev
       const fbTierData = roleData[fallbackTier];
       if (fbTierData) {
         for (const fallbackExp of EXP_FALLBACK_ORDER[exp]) {
-          if (fbTierData[fallbackExp]) return fbTierData[fallbackExp]!;
+          if (fbTierData[fallbackExp]) return { entry: fbTierData[fallbackExp]!, crossFamilySwe: false };
         }
       }
     }
     if (tier !== "faang" && roleData["faang"]) {
       for (const fallbackExp of EXP_FALLBACK_ORDER[exp]) {
-        if (roleData["faang"]![fallbackExp]) return roleData["faang"]![fallbackExp]!;
+        if (roleData["faang"]![fallbackExp]) return { entry: roleData["faang"]![fallbackExp]!, crossFamilySwe: false };
       }
     }
   }
   const alias = ROLE_ALIASES[roleKey];
   if (alias && alias !== roleKey) {
-    return findSalaryEntry(alias, tier, exp);
+    // Aliases stay within the same role family, so an aliased hit is not a
+    // cross-family borrow; propagate whatever the alias resolution reports.
+    return findSalaryEntryTraced(alias, tier, exp);
   }
   if (roleKey !== "software-engineer") {
-    return findSalaryEntry("software-engineer", tier, exp);
+    // Last-resort cross-family borrow: this role has no data of its own, so
+    // it inherits the software-engineer band. Better than null, but the
+    // number is an SWE stand-in — flag it (OA-B22).
+    return { entry: findSalaryEntryTraced("software-engineer", tier, exp).entry, crossFamilySwe: true };
   }
-  return null;
+  return { entry: null, crossFamilySwe: false };
 }
 
 /** Format LPA value: "₹12" or "₹1.5 Cr" */

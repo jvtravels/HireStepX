@@ -822,6 +822,28 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
         );
       }
 
+      /* Unmapped-role telemetry (OA-B19 / OA-B22). Mirrors the company case:
+         when the target role doesn't match a known RoleKey — or matches but
+         has no salary data and silently borrows the software-engineer band
+         cross-family — the shipped band is a confident stand-in, not a
+         researched number. Emit one event per affected session so we can
+         rank which unmapped roles to add data for next. */
+      if (negotiationBandData.roleResolved === false) {
+        void captureServerEvent(
+          "negotiation_band_role_unmapped",
+          distinctIdFrom(req, auth.userId),
+          {
+            company: (companyName || "").slice(0, 80),
+            role: (targetRole || "").slice(0, 80),
+            exp_level: typeof expLevel === "string" ? expLevel : null,
+            initial_offer: negotiationBandData.initialOffer,
+            max_stretch: negotiationBandData.maxStretch,
+            band_source: negotiationBandData.bandSource ?? null,
+          },
+          req,
+        );
+      }
+
       /* Live community aggregate: if K=5 contributors have opted in for
        * this exact (company, role, level) bucket, append their p25/p50/p75
        * to the prompt so the LLM weights real closes over static seeds.

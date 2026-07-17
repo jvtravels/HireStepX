@@ -3316,7 +3316,20 @@ _densifySalaryData();
  * Uses substring matching (same approach as getRoleCompetencies).
  */
 export function matchRoleKey(role: string): RoleKey {
-  if (!role) return "software-engineer";
+  return matchRoleKeyResolved(role).key;
+}
+
+/**
+ * Like matchRoleKey, but also reports whether the role string actually
+ * matched a known role (`matched: true`) or fell through to the
+ * software-engineer catch-all default (`matched: false`). This is the
+ * single source of truth for role resolution — matchRoleKey delegates
+ * here. Callers that must not silently trust a defaulted role (e.g. the
+ * negotiation-band derivation, which otherwise shows a confident but
+ * arbitrary band for an unmapped role — OA-B19) read `matched`.
+ */
+export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boolean } {
+  if (!role) return { key: "software-engineer", matched: false };
   /* Normalize for substring matching: lowercase, strip parens /
      ampersands / extra punctuation, collapse whitespace. So
      "R&D Manager (Consumer)" → "rd manager consumer", "Partner
@@ -3359,7 +3372,7 @@ export function matchRoleKey(role: string): RoleKey {
     sde: "software-engineer",
     swe: "software-engineer",
   };
-  if (acronymMap[normalized]) return acronymMap[normalized];
+  if (acronymMap[normalized]) return { key: acronymMap[normalized], matched: true };
 
   // Ordered from most specific to least specific to avoid false matches
   const patterns: [string[], RoleKey][] = [
@@ -3960,8 +3973,8 @@ export function matchRoleKey(role: string): RoleKey {
   ];
 
   for (const [keywords, key] of patterns) {
-    if (keywords.some(kw => lower.includes(kw) || normalized.includes(kw))) return key;
+    if (keywords.some(kw => lower.includes(kw) || normalized.includes(kw))) return { key, matched: true };
   }
 
-  return "software-engineer"; // default fallback
+  return { key: "software-engineer", matched: false }; // default fallback
 }
