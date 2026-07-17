@@ -1142,7 +1142,6 @@ export function ContactV2() {
   return (
     <PageShell>
       <style>{`
-        /* Underline-only fields for the contact form */
         .hsx-cf {
           width: 100%;
           background: transparent;
@@ -1161,128 +1160,109 @@ export function ContactV2() {
         }
         .hsx-cf::placeholder { color: ${t.inkFaintWeak}; }
         .hsx-cf:focus { border-bottom-color: ${t.copper}; }
-        .hsx-cf option { background: ${t.cream}; color: ${t.coal}; }
-        textarea.hsx-cf { resize: none; min-height: 68px; line-height: 1.55; padding-top: 6px; }
-        /* Mobile: stack panels */
+        .hsx-cf option { background: ${t.white}; color: ${t.coal}; }
+        textarea.hsx-cf { resize: none; min-height: 72px; line-height: 1.55; padding-top: 6px; }
         @media (max-width: 768px) {
-          .hsx-contact-grid { grid-template-columns: 1fr !important; }
-          .hsx-contact-left { min-height: 280px; padding: 48px 28px !important; }
-          .hsx-contact-right { padding: 40px 28px !important; }
+          .hsx-contact-cols { grid-template-columns: 1fr !important; gap: 0 !important; }
+          .hsx-contact-left { padding: 56px 24px 40px !important; }
+          .hsx-contact-card { padding: 32px 24px !important; margin: 0 24px 48px !important; }
           .hsx-cf-name-row { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
       <section
         aria-label="Contact"
-        style={{ minHeight: "calc(100vh - 68px)", display: "grid", gridTemplateColumns: "1fr", alignItems: "stretch" }}
+        style={{
+          minHeight: "calc(100vh - 68px)",
+          background: t.cream,
+          display: "flex",
+          alignItems: "center",
+        }}
       >
         <div
-          className="hsx-contact-grid"
-          style={{ display: "grid", gridTemplateColumns: "55fr 45fr", minHeight: "inherit" }}
+          className="hsx-contact-cols"
+          style={{
+            width: "100%",
+            maxWidth: 1120,
+            margin: "0 auto",
+            padding: "0 clamp(24px, 5vw, 64px)",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "clamp(40px, 6vw, 96px)",
+            alignItems: "center",
+          }}
         >
-          {/* ── LEFT — copper panel ── */}
-          <div
-            className="hsx-contact-left"
-            style={{
-              background: t.copper,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              padding: "clamp(48px,7vw,96px) clamp(36px,5.5vw,80px)",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {/* Depth wash */}
-            <div aria-hidden style={{
-              position: "absolute", inset: 0, pointerEvents: "none",
-              background: "radial-gradient(ellipse 90% 70% at 20% 30%, rgba(250,247,240,0.07) 0%, transparent 65%)",
-            }} />
-
+          {/* ── LEFT — hero text ── */}
+          <div className="hsx-contact-left" style={{ padding: 0 }}>
             <p style={{
               fontFamily: fonts.sans, fontSize: 11, fontWeight: 700,
               letterSpacing: "0.2em", textTransform: "uppercase",
-              color: "rgba(250,247,240,0.45)", margin: "0 0 32px", position: "relative",
+              color: t.copper, margin: "0 0 20px",
             }}>
-              Contact
+              Get in touch
             </p>
 
             <h1 style={{
               fontFamily: fonts.serif,
-              fontSize: "clamp(40px, 4.2vw, 60px)",
-              lineHeight: 1.02,
-              letterSpacing: "-0.03em",
-              color: t.cream,
-              margin: "0 0 24px",
+              fontSize: "clamp(36px, 4vw, 56px)",
+              lineHeight: 1.05,
+              letterSpacing: "-0.025em",
+              color: t.coal,
+              margin: "0 0 20px",
               fontWeight: 400,
-              maxWidth: "13ch",
-              position: "relative",
             }}>
               Real humans,{" "}
-              <em style={{ fontStyle: "italic" }}>real replies.</em>
+              <em style={{ color: t.copper }}>real replies.</em>
             </h1>
 
             <p style={{
-              fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65,
-              color: "rgba(250,247,240,0.72)", margin: "0 0 52px",
-              maxWidth: "34ch", position: "relative",
+              fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65,
+              color: t.inkFaint, margin: "0 0 40px", maxWidth: "36ch",
             }}>
-              No ticket systems. No autoresponders. A real person reads every message and replies within one business day.
+              No ticket queues. No autoresponders. A real person reads every message and replies within one business day.
             </p>
 
-            {/* Divider rule */}
-            <div style={{ width: 36, height: 1, background: "rgba(250,247,240,0.22)", marginBottom: 28, position: "relative" }} />
-
-            <p style={{
-              fontFamily: fonts.sans, fontSize: 11, fontWeight: 600,
-              letterSpacing: "0.16em", textTransform: "uppercase",
-              color: "rgba(250,247,240,0.45)", margin: "0 0 10px", position: "relative",
-            }}>
-              Or write directly
-            </p>
-
-            <a
-              href="mailto:hello@hirestepx.com"
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: "clamp(15px, 1.5vw, 18px)",
-                fontWeight: 600,
-                color: t.cream,
-                textDecoration: "none",
-                borderBottom: "1.5px solid rgba(250,247,240,0.38)",
-                paddingBottom: 4,
-                display: "inline-block",
-                position: "relative",
-                transition: "border-color 0.2s",
-              }}
-            >
-              hello@hirestepx.com
-            </a>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%",
+                background: t.line,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M2 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" stroke={t.inkFaint} strokeWidth="1.25" fill="none"/>
+                  <path d="M2 4.5l6 4 6-4" stroke={t.inkFaint} strokeWidth="1.25" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <a
+                href="mailto:hello@hirestepx.com"
+                style={{
+                  fontFamily: fonts.sans,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: t.indigo,
+                  textDecoration: "none",
+                  borderBottom: `1px solid ${t.line}`,
+                  paddingBottom: 2,
+                  transition: "border-color 0.18s",
+                }}
+              >
+                hello@hirestepx.com
+              </a>
+            </div>
           </div>
 
-          {/* ── RIGHT — cream panel, bare form ── */}
+          {/* ── RIGHT — white card form ── */}
           <div
-            className="hsx-contact-right"
+            className="hsx-contact-card"
             style={{
-              background: t.cream,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              padding: "clamp(48px,7vw,96px) clamp(36px,5.5vw,72px)",
+              background: t.white,
+              border: `1px solid ${t.line}`,
+              borderRadius: 20,
+              boxShadow: shadows.card,
+              padding: "clamp(28px, 4vw, 44px)",
             }}
           >
-            <h2 style={{
-              fontFamily: fonts.serif,
-              fontSize: "clamp(22px, 2.2vw, 30px)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-              color: t.coal,
-              fontWeight: 400,
-              margin: "0 0 36px",
-            }}>
-              Send a message
-            </h2>
-
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1308,11 +1288,10 @@ export function ContactV2() {
                   .catch(() => setStatus("error"));
               }}
               aria-describedby="contact-form-status"
-              style={{ display: "grid", gap: 28 }}
+              style={{ display: "grid", gap: 22 }}
             >
-              {/* Name + Email side by side */}
-              <div className="hsx-cf-name-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                <ContactField label="Your name" htmlFor="contact-name">
+              <div className="hsx-cf-name-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                <ContactField label="Name" htmlFor="contact-name">
                   <input id="contact-name" type="text" required placeholder="Aarav Mehta" className="hsx-cf" />
                 </ContactField>
                 <ContactField label="Email" htmlFor="contact-email">
@@ -1320,12 +1299,11 @@ export function ContactV2() {
                 </ContactField>
               </div>
 
-              <ContactField label="What's this about?" htmlFor="contact-topic">
+              <ContactField label="Topic" htmlFor="contact-topic">
                 <select id="contact-topic" required className="hsx-cf">
-                  <option value="">Pick one</option>
+                  <option value="">Select a topic</option>
                   <option>Account or billing</option>
                   <option>Bug or technical issue</option>
-                  <option>Press or media</option>
                   <option>Something else</option>
                 </select>
               </ContactField>
@@ -1340,13 +1318,13 @@ export function ContactV2() {
                 />
               </ContactField>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", paddingTop: 4 }}>
                 <button
                   type="submit"
                   disabled={status === "sending" || status === "sent"}
                   className="mv2-tap-44"
                   style={{
-                    ...ctaPrimary("lg"),
+                    ...ctaPrimary("md"),
                     opacity: status === "sending" || status === "sent" ? 0.6 : 1,
                     cursor: status === "sending" || status === "sent" ? "default" : "pointer",
                     flexShrink: 0,
