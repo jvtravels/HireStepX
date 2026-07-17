@@ -1161,10 +1161,10 @@ export function ContactV2() {
           <div
             className="mv2p-form"
             style={{
+              maxWidth: 640,
+              margin: "0 auto",
               display: "grid",
-              gridTemplateColumns: "1.2fr 1fr",
-              gap: 56,
-              alignItems: "start",
+              gap: 32,
             }}
           >
             {/* Form */}
@@ -1282,51 +1282,17 @@ export function ContactV2() {
               </p>
             </form>
 
-            {/* Channels + alt */}
-            <div style={{ display: "grid", gap: 20 }}>
-              <p style={{ ...eyebrow, margin: 0 }}>Direct channels</p>
-              {channels.map((c) => (
-                <div
-                  key={c.name}
-                  style={{
-                    padding: 20,
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 14,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontFamily: fonts.sans,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      color: t.copper,
-                      margin: 0,
-                      marginBottom: 8,
-                    }}
-                  >
-                    {c.name}
-                  </p>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, marginBottom: 12 }}>
-                    {c.detail}
-                  </p>
-                  <a
-                    href={c.href}
-                    style={{
-                      fontFamily: fonts.sans,
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: t.indigo,
-                      textDecoration: "none",
-                      borderBottom: `1px solid ${t.indigo}`,
-                    }}
-                  >
-                    {c.contact}
-                  </a>
-                </div>
-              ))}
+            {/* Direct channel — single row below the form */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12 }}>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flex: 1 }}>
+                Prefer email? Reach us directly —
+              </span>
+              <a
+                href={channels[0].href}
+                style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.indigo, textDecoration: "none", borderBottom: `1px solid ${t.indigo}`, whiteSpace: "nowrap" }}
+              >
+                {channels[0].contact}
+              </a>
             </div>
           </div>
         </div>
