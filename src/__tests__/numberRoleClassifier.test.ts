@@ -42,6 +42,21 @@ const ROWS: Row[] = [
   { label: "B71 EUR symbol current",     text: "my current CTC is €85,000 per annum",     expect: { currentCtc: 76.5 } },
   { label: "B71 GBP k-suffix target",    text: "I want £120k",   ctx: { phase: "probe-expectations", lastAiText: "expectations?" }, expect: { target: 126 } },
   { label: "B71 USD $ path preserved",   text: "I'm currently earning $120,000",          expect: { currentCtc: 99.6 } },
+  /* OA-B13: a trailing "thousand"/"grand" scale word normalises at the SAME
+   * shared boundary (substituteThousandScale) so a sub-lakh figure no longer
+   * false-binds as N LPA (the pre-fix "fifty thousand" → 50 LPA 100x error). */
+  { label: "B13 fifty thousand target dropped",  text: "my target is fifty thousand",       ctx: { phase: "probe-expectations", lastAiText: "expectations?" }, expect: { target: null } },
+  { label: "B13 50 thousand current dropped",    text: "my current is 50 thousand",          expect: { currentCtc: null } },
+  { label: "B13 lakh-scale thousand binds",      text: "my current is 500 thousand",         expect: { currentCtc: 5 } },
+  { label: "B13 grand variant dropped",          text: "I make eighty grand",                expect: { currentCtc: null, target: null } },
+  /* OA-B21: a "total"/"overall" scope cue that LEADS the figure ("...base is
+   * 20L, total is 80L") is now read symmetrically — the total is the full
+   * current package and supersedes the leading component, not the reverse. */
+  { label: "B21 left-total supersedes component",   text: "my current base is 20L, total is 80L",             expect: { currentCtc: 80 } },
+  { label: "B21 left-total with current cue",       text: "my current base is 20L, my current total is 80L",  expect: { currentCtc: 80 } },
+  { label: "B21 left-total 'comes to'",             text: "currently 20 fixed, total comes to 30",            expect: { currentCtc: 30 } },
+  { label: "B21 target total not mis-grabbed",      text: "I make 20L now, targeting a total of 80L",         expect: { currentCtc: 20, target: 80 } },
+  { label: "B21 want-total stays target",           text: "my base is 20L, but I want 80L total",             expect: { target: 80 } },
   { label: "I make N",                   text: "I make 15 LPA right now",               expect: { currentCtc: 15 } },
   { label: "drawing N",                  text: "drawing 19 LPA at present",             expect: { currentCtc: 19 } },
   { label: "I'm at N",                   text: "I'm at 12 LPA",                         expect: { currentCtc: 12 } },

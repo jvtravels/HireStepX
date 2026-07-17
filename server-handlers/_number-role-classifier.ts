@@ -52,7 +52,7 @@
  * Pure. No clock, no IO.
  */
 
-import { substituteAbsoluteRupees, substituteEnglishNumbers, substituteForeignCurrency, substituteVagueSalaryDecades, stripUrls } from "./_fact-parser";
+import { substituteAbsoluteRupees, substituteEnglishNumbers, substituteForeignCurrency, substituteThousandScale, substituteVagueSalaryDecades, stripUrls } from "./_fact-parser";
 
 /* ─── Type surface ─────────────────────────────────────────────────── */
 
@@ -1141,7 +1141,7 @@ export function classifyNumberRoles(
   /* OA-B55: strip URL-shaped tokens first so port/path/query digits
    * ("…example.com:8080/jobs/45") never reach span discovery and false-bind
    * as a salary figure. Shared single source with parseSalaryFacts. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn)))));
+  const text = substituteVagueSalaryDecades(substituteThousandScale(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn))))));
   const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
@@ -1193,6 +1193,27 @@ export function classifyNumberRoles(
      * current cue ("I get stock worth 5 LPA"). */
     if (isEquityLeftAdjacentSpan(text, span)) continue;
     const role = pickRole(scores, ctx, span, text);
+    /* OA-B21: a bare left-total span ("...base is 20L, total is 80L") carries
+     * no role cue of its own, so pickRole scores it null. But when an explicit
+     * COMPONENT current is already bound, that trailing total IS the candidate's
+     * full package and must supersede the component — the scoped branch below
+     * only runs for role==="current". Promote it here, tightly gated: a
+     * component current must already hold the slot, the span must be an explicit
+     * left-total, and no target/competing cue may sit anywhere in the utterance
+     * (so "my ask total is 45" or a BATNA total is never mis-grabbed). */
+    if (
+      role == null &&
+      currentCtc != null &&
+      currentScope === "component" &&
+      hasLeftTotalCue(text, span) &&
+      !TARGET_CUES.left.some((r) => r.test(text)) &&
+      !COMPETING_CUES.left.some((r) => r.test(text))
+    ) {
+      currentCtc = span.value;
+      currentFromRange = span.isRangeUpper;
+      currentScope = "total";
+      continue;
+    }
     if (role == null) continue;
     if (role === "current") {
       const scope = detectCurrentComponentScope(text, span);
@@ -1243,6 +1264,30 @@ export function classifyNumberRoles(
  * Indian-HR register). Left-context is deliberately ignored here: "current
  * is 32 fixed" has "current" on the LEFT but "fixed" on the RIGHT — the
  * right-adjacent scope word is what tags THIS number. */
+/* OA-B21: a "total"/"overall" scope cue can sit on EITHER side of the figure
+ * in spoken Indian-HR register — "80 total" (right-adjacent, read inline) OR
+ * "total is 80" (left-adjacent). This detects the left-adjacent case within
+ * the CURRENT clause only (bounded at the previous comma/semicolon) so a total
+ * cue from an earlier clause can't leak across, and requires tight adjacency —
+ * the cue word, an optional linking verb, then the number. Single source of
+ * truth for both role-scoring (pickRole) and scope-tagging
+ * (detectCurrentComponentScope). */
+const LEFT_TOTAL_ADJACENT_RE = /\b(?:total|overall)\s*(?:is|of|at|was|comes?\s+to)?\s*$/i;
+const LEFT_COMPONENT_ADJACENT_RE = /\b(?:fixed|base|basic|variable|bonus)\s*(?:is|of|at|was|comes?\s+to|:)?\s*$/i;
+/* Read the CURRENT clause to the left of the span (bounded at the previous
+ * comma/semicolon so a cue from an earlier clause can't leak across) and test
+ * whether it ends in the given adjacency cue. */
+function leftClauseEndsWith(text: string, span: SalarySpan, re: RegExp): boolean {
+  const clauseStart = Math.max(
+    text.lastIndexOf(",", span.start - 1),
+    text.lastIndexOf(";", span.start - 1),
+  ) + 1;
+  return re.test(text.slice(clauseStart, span.start));
+}
+function hasLeftTotalCue(text: string, span: SalarySpan): boolean {
+  return leftClauseEndsWith(text, span, LEFT_TOTAL_ADJACENT_RE);
+}
+
 function detectCurrentComponentScope(
   text: string,
   span: SalarySpan,
@@ -1250,6 +1295,11 @@ function detectCurrentComponentScope(
   const right = text.slice(span.end, Math.min(text.length, span.end + 14));
   if (/^\s*(?:fixed|base|basic|variable|bonus)\b/i.test(right)) return "component";
   if (/^\s*(?:total|overall)\b/i.test(right)) return "total";
+  /* OA-B21: the scope word can also LEAD the figure ("base is 20L", "total is
+   * 80L") — read the left clause symmetrically. Component first, mirroring the
+   * right-window order above. */
+  if (leftClauseEndsWith(text, span, LEFT_COMPONENT_ADJACENT_RE)) return "component";
+  if (hasLeftTotalCue(text, span)) return "total";
   return null;
 }
 

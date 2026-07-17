@@ -255,6 +255,21 @@ describe("_fact-parser — OA-B71 foreign currency", () => {
   });
 });
 
+describe("_fact-parser — OA-B13 thousand/grand scale word", () => {
+  it("drops sub-lakh 'fifty thousand' rather than binding 50 LPA (100x)", () => {
+    expect(parseSalaryFacts("I earn fifty thousand")).toHaveLength(0);
+  });
+  it("drops '50 thousand' (₹50k = 0.5 LPA, below the 1-LPA emit floor)", () => {
+    expect(parseSalaryFacts("my current is 50 thousand")).toHaveLength(0);
+  });
+  it("binds lakh-scale '500 thousand' as 5 LPA", () => {
+    expect(maxSalaryLpa("my current is 500 thousand")).toBe(5);
+  });
+  it("drops 'eighty grand' (sub-lakh grand variant)", () => {
+    expect(parseSalaryFacts("they offered eighty grand")).toHaveLength(0);
+  });
+});
+
 describe("_fact-parser — OA-B12 million unit", () => {
   it("parses '4.8 million' as 48 LPA", () => {
     expect(maxSalaryLpa("targeting 4.8 million")).toBe(48);

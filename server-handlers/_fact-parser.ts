@@ -145,6 +145,32 @@ export function substituteEnglishNumbers(s: string): string {
   });
 }
 
+/* OA-B13 — "fifty thousand" scale word. substituteEnglishNumbers resolves
+ * "fifty" → "50" but leaves the multiplier "thousand" as inert text, so a
+ * bare "50" then false-binds as 50 LPA — a 100x error (candidate meant
+ * ₹50,000). Handle the "<N> thousand|grand" shape explicitly: ₹N,000 is
+ * N/100 LPA. Sub-lakh figures (N < 100 → below ₹1 LPA annual) are an
+ * implausibly low annual CTC and almost always a mis-scaled/monthly figure,
+ * so we suppress them rather than let the bare number bind wrong. At or above
+ * ₹1 lakh it's a plausible annual figure — emit an explicit LPA token so both
+ * parsers bind the true value. */
+const THOUSAND_SCALE_RE = /\b(\d+(?:\.\d+)?)\s*(?:thousand|grand)\b/gi;
+
+/** Normalise a trailing "thousand"/"grand" scale word into its true LPA value
+ *  (or drop it when sub-lakh). Runs AFTER substituteEnglishNumbers so spelled
+ *  tens ("fifty") are already digits. Pure. Exposed so the number-role
+ *  classifier applies the identical normalization — single source of truth. */
+export function substituteThousandScale(s: string): string {
+  if (!s) return s;
+  return s.replace(THOUSAND_SCALE_RE, (whole, numStr: string) => {
+    const n = parseFloat(numStr);
+    if (!isFinite(n)) return whole;
+    const lpa = (n * 1000) / 100000; // ₹N,000 → LPA
+    if (lpa < 1) return " "; // sub-₹1L annual — suppress, don't false-bind
+    return ` ${Number.isInteger(lpa) ? lpa : Number(lpa.toFixed(2))} LPA `;
+  });
+}
+
 /* N-4 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
  * Studio) — vague decade-band CTC idiom. Indian candidates routinely disclose
  * comp as a fuzzy decade ("my current is in the low-to-mid 30s", "somewhere in
@@ -422,7 +448,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
    * Without this pre-pass, the entire downstream pipeline (kernel fact
    * binding, salary clamping, hike math, telemetry) silently drops
    * spelled-out salary disclosures. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn)))));
+  const text = substituteVagueSalaryDecades(substituteThousandScale(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn))))));
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */
