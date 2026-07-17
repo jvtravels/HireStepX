@@ -366,10 +366,15 @@ const PagesResponsiveSheet = () => (
       .mv2p-stat-row { grid-template-columns: repeat(2, 1fr) !important; }
       main, footer { padding-bottom: 96px !important; }
     }
+    @media (max-width: 1280px) and (min-width: 881px) {
+      /* Small laptop / large tablet landscape: cut the 80/60px default padding
+         so the hero doesn't consume the entire fold on a 1366×768 screen. */
+      .mv2p-page-hero { padding-top: 48px !important; padding-bottom: 36px !important; }
+    }
     @media (max-width: 880px) and (min-width: 641px) {
       /* Tablet: intermediate hero padding — keeps a clean editorial gap
          without the 140→80px cliff of the desktop default. */
-      .mv2p-page-hero { padding-top: 64px !important; padding-bottom: 48px !important; }
+      .mv2p-page-hero { padding-top: 40px !important; padding-bottom: 32px !important; }
       /* Container: tighten to 20px to mirror the landing-page tablet gutter. */
       .mv2-container { padding-left: 20px !important; padding-right: 20px !important; }
       .mv2p-grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
