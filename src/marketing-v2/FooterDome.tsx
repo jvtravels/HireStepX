@@ -287,7 +287,7 @@ function FooterDomeDesktop() {
 /* ── Mobile fallback (<880px) ── */
 function FooterDomeMobile() {
   return (
-    <div style={{ background: t.cream, padding: "48px 24px 96px" }}>
+    <div style={{ background: t.cream, padding: "48px 24px 40px" }}>
       {/* Wordmark */}
       <p style={{
         fontFamily: fonts.sans,
@@ -325,12 +325,13 @@ function FooterDomeMobile() {
             }}>{col.title}</p>
             {col.links.map(([label, href]) => (
               <a key={label} href={href} style={{
-                display: "block",
+                display: "flex",
+                alignItems: "center",
+                minHeight: 44,
                 fontFamily: fonts.sans,
                 fontSize: 14,
                 color: t.inkSoft,
                 textDecoration: "none",
-                marginBottom: 8,
               }}>{label}</a>
             ))}
           </div>

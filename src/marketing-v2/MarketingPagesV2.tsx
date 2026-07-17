@@ -364,7 +364,7 @@ const PagesResponsiveSheet = () => (
       .mv2p-compare-table th:first-child, .mv2p-compare-table td:first-child { padding-left: 12px !important; }
       .mv2p-form { grid-template-columns: 1fr !important; }
       .mv2p-stat-row { grid-template-columns: repeat(2, 1fr) !important; }
-      main, footer { padding-bottom: 96px !important; }
+      main { padding-bottom: 40px !important; }
     }
     @media (max-width: 880px) and (min-width: 641px) {
       /* Tablet: intermediate hero padding — keeps a clean editorial gap
@@ -1170,12 +1170,13 @@ export function ContactV2() {
         .hsx-cf::placeholder { color: ${t.inkFaintWeak}; }
         .hsx-cf:focus { border-bottom-color: ${t.copper}; }
         .hsx-cf option { background: ${t.white}; color: ${t.coal}; }
-        textarea.hsx-cf { resize: none; min-height: 80px; line-height: 1.55; padding-top: 6px; }
+        textarea.hsx-cf { resize: none; min-height: 120px; line-height: 1.55; padding-top: 6px; }
         @media (max-width: 680px) {
           .hsx-contact-inner { grid-template-columns: 1fr !important; gap: 0 !important; }
           .hsx-contact-info { border-right: none !important; border-bottom: 1px solid ${t.line} !important; padding: 32px 28px !important; }
           .hsx-contact-form { padding: 32px 28px !important; }
           .hsx-cf-name-row { grid-template-columns: 1fr !important; }
+          .hsx-contact-form button[type="submit"] { width: 100% !important; }
         }
       `}</style>
 

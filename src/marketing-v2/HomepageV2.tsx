@@ -37,10 +37,11 @@ const ResponsiveSheet = () => (
       /* Mosaic: single column on phones */
       .mv2-bento-mosaic { grid-template-columns: 1fr !important; }
       .mv2-bento-mosaic > *:first-child { grid-column: 1 !important; }
-      main, footer { padding-bottom: 96px !important; }
+      main { padding-bottom: 40px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
+      .mv2-hero-eyebrow { white-space: nowrap; letter-spacing: 0.07em !important; padding-left: 12px !important; padding-right: 12px !important; font-size: 10px !important; }
       /* Focus type icon grids: phone */
       .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
       .mv2-focus-soon-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 24px 16px !important; }
@@ -86,7 +87,7 @@ const ResponsiveSheet = () => (
          not under the number. Same pattern as the 881-1100px breakpoint. */
       .mv2-why-row { grid-template-columns: 40px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
       .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
-      main, footer { padding-bottom: 96px; }
+      main { padding-bottom: 48px; }
     }
     /* ── Small laptops (lg) ── */
     @media (max-width: 1100px) and (min-width: 881px) {
@@ -1381,7 +1382,7 @@ export function HeroV2() {
 
         {/* Positioning eyebrow */}
         <div
-          className="mv2-cascade mv2-cascade-1"
+          className="mv2-cascade mv2-cascade-1 mv2-hero-eyebrow"
           style={{
             display: "inline-flex",
             alignItems: "center",
