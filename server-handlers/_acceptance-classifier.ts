@@ -534,6 +534,18 @@ const HINDI_MIX_PATTERNS: RegExp[] = [
 const OFFER_REFERENCE_PATTERN =
   /\b(?:offer|deal|salary|ctc|package|lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l\b|cr|crore|k\b))\b/i;
 
+/* Family C — CONCRETE offer reference for the closed-by-default gate.
+ *  Deliberately NARROWER than OFFER_REFERENCE_PATTERN: it drops the bare
+ *  close-idiom word "deal", which self-satisfies the broad pattern and let a
+ *  pre-offer "Deal." false-close (OA-B1 class, verified 2026-07-17). The gate
+ *  escape must require a *concrete* offer signal — the nouns offer/salary/ctc/
+ *  package, a currency, or a number+unit — not a lone idiom that merely happens
+ *  to lexically overlap the offer vocabulary. Used ONLY to decide whether an
+ *  `offerOnTable === false` utterance is genuinely naming an offer the coarse
+ *  boolean missed; every offer-on-table upgrade path still uses the broad one. */
+const CONCRETE_OFFER_REFERENCE_PATTERN =
+  /\b(?:offer|salary|ctc|package|lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l\b|cr|crore|k\b))\b/i;
+
 /* Veto: walk-away or rejection — owned by the canonical single source
  * of truth `_walkaway-detection.ts` (isWalkAway), imported above. This
  * module previously carried a PRIVATE, divergent WALK_AWAY_PATTERN copy
@@ -1827,6 +1839,33 @@ export function classifyAcceptance(
     return { accepted: false, confidence: "none", reasons: ["weak-affirmative-only"] };
   }
 
+  /* Family C — closed-by-default acceptance gate (SINGLE SOURCE).
+     With NO offer on the table there is nothing to accept: even a strong
+     performative ("Deal.", "Yes, I accept.") or an offer-ref-upgraded idiom is
+     premature filler, not a close. Hoisted here so it applies UNIFORMLY before
+     every positive-return path (Step 2 performative, Step 2.4 numbered accept,
+     Step 2.5 split-clause, Step 3 soft-alignment, Step 4/5 idiom) — previously
+     the gate lived only in Step 4/5, so a strong verb or a bare "Deal." (whose
+     "deal" self-matched the broad offer-ref) sailed past it and false-closed
+     (OA-B1/B59, verified against ground truth 2026-07-17).
+
+     Only an EXPLICIT `offerOnTable === false` gates; `undefined` (legacy
+     whole-transcript callers with no phase context) stays permissive. A
+     CONCRETE offer reference — a number+unit, currency, or offer/salary/ctc/
+     package noun, but NOT the bare idiom "deal" — escapes the gate, preserving
+     the established "The offer works for me" contract where the coarse boolean
+     under-reports a genuinely-quoted package. */
+  if (
+    context.offerOnTable === false &&
+    !CONCRETE_OFFER_REFERENCE_PATTERN.test(a)
+  ) {
+    return {
+      accepted: false,
+      confidence: "none",
+      reasons: ["phase-gate-no-offer-veto"],
+    };
+  }
+
   /* Step 2: performative verb. Unambiguous speech act. */
   if (anyMatch(a, STRONG_PERFORMATIVE_PATTERNS)) {
     reasons.push("performative-verb");
@@ -1916,12 +1955,9 @@ export function classifyAcceptance(
       reasons.push("commitment-idiom", "offer-reference");
       return { accepted: true, confidence: "medium", reasons };
     }
-    /* Phase gate: caller told us no offer is on the table.
-       "Sounds good" before any number has been quoted is filler. */
-    if (context.offerOnTable === false) {
-      reasons.push("commitment-idiom", "phase-gate-no-offer-veto");
-      return { accepted: false, confidence: "none", reasons };
-    }
+    /* Phase gate now lives once, hoisted to the top (Family C closed-by-default
+       gate). By here `offerOnTable === false` cases without a concrete offer
+       reference have already returned; nothing to re-check. */
     reasons.push("commitment-idiom");
     return { accepted: true, confidence: "medium", reasons };
   }
