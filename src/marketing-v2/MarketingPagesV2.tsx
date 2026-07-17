@@ -147,7 +147,7 @@ function PageHero({
   center,
   compact,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   accent?: string;
   lead?: string;
@@ -161,8 +161,8 @@ function PageHero({
       className="mv2p-page-hero"
       style={{
         position: "relative",
-        paddingTop: compact ? 48 : 80,
-        paddingBottom: compact ? 36 : 60,
+        paddingTop: compact ? 32 : 80,
+        paddingBottom: compact ? 24 : 60,
         background: t.cream,
         borderBottom: `1px solid ${t.line}`,
       }}
@@ -179,7 +179,7 @@ function PageHero({
         }}
       />
       <div className="mv2-container" style={{ ...(narrow ? containerNarrow : container), position: "relative", ...(center ? { textAlign: "center" } : {}) }}>
-        <p style={{ ...eyebrow, marginBottom: 18 }}>{eb}</p>
+        {eb && <p style={{ ...eyebrow, marginBottom: 18 }}>{eb}</p>}
         <h1 style={h1Display}>
           {title}
           {accent && (
@@ -1175,7 +1175,6 @@ export function ContactV2() {
       `}</style>
 
       <PageHero
-        eyebrow="Contact"
         title="Real humans,"
         accent="real replies."
         lead="No ticket systems. No autoresponders. A real person reads every message and replies within one business day."
