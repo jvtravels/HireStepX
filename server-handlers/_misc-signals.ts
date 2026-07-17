@@ -68,7 +68,12 @@ const EMPTY: MiscSignalsResult = {
  * and "minimum 20 lakhs" both bind. */
 const FLOOR_PATTERNS = [
   /\b(?:my\s+)?(?:floor|minimum|min|lowest|lower\s+bound|absolute\s+(?:floor|minimum)|rock\s+bottom)\s+(?:(?:is|would\s+be|acceptable|acceptable\s+is|acceptable\s+at)\s+)?₹?\s*(\d{1,3}(?:[.,]\d+)?)\s*(lpa|lakhs?|l\b|cr|crore)?/i,
-  /\b(?:won.?t|wouldn.?t|can.?t|cannot)\s+(?:go|accept|consider|come\s+down)\s+below\s+₹?\s*(\d{1,3}(?:[.,]\d+)?)\s*(lpa|lakhs?|l\b|cr|crore)?/i,
+  /* OA-B16 (2026-07-17): "shouldn't" modal + "less than"/"under" comparator
+   * added. Third-party-relayed floors ("my wife says I shouldn't accept less
+   * than ₹70L") previously extracted NO floor — the modal/comparator gap, not a
+   * family-stall misclassification. The co-required ₹N digit keeps it tight so
+   * digit-less hypotheticals ("shouldn't accept less than market") never bind. */
+  /\b(?:won.?t|wouldn.?t|shouldn.?t|should\s+not|can.?t|cannot)\s+(?:go|accept|consider|come\s+down|settle|settle\s+for|take)\s+(?:below|under|less\s+than|lower\s+than)\s+₹?\s*(\d{1,3}(?:[.,]\d+)?)\s*(lpa|lakhs?|l\b|cr|crore)?/i,
   /\blowest\s+(?:i\s+can\s+do|i.?d\s+(?:accept|consider)|acceptable)\s+(?:(?:is|would\s+be)\s+)?₹?\s*(\d{1,3}(?:[.,]\d+)?)\s*(lpa|lakhs?|l\b|cr|crore)?/i,
   /\bpractical\s+(?:lower\s+)?range\s+(?:(?:is|of|around)\s+)?₹?\s*(\d{1,3}(?:[.,]\d+)?)\s*(lpa|lakhs?|l\b|cr|crore)?/i,
 ];

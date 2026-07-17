@@ -24,6 +24,23 @@ describe("extractMiscSignals — candidateFloor", () => {
   it("returns null when not stated", () => {
     expect(extractMiscSignals("hello").candidateFloor).toBe(null);
   });
+
+  /* OA-B16: "shouldn't" modal + "less than" comparator, incl. third-party relay. */
+  it("parses 'shouldn't accept less than ₹70L' (relayed floor)", () => {
+    expect(
+      extractMiscSignals("my wife says I shouldn't accept less than ₹70L").candidateFloor,
+    ).toBe(70);
+  });
+
+  it("parses 'should not take under 40 LPA'", () => {
+    expect(extractMiscSignals("I should not take under 40 LPA").candidateFloor).toBe(40);
+  });
+
+  it("does NOT bind a digit-less hypothetical", () => {
+    expect(
+      extractMiscSignals("you shouldn't accept less than market").candidateFloor,
+    ).toBe(null);
+  });
 });
 
 describe("extractMiscSignals — salaryReviewMonths", () => {

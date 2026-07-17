@@ -78,6 +78,16 @@ const WEEKDAY_DEADLINE_PATTERNS = [
   /\b(?:respond|decide|answer|need)\s+(?:by|before)\s+(today|tonight|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
 ];
 
+/* OA-B66 (2026-07-17): Indian candidates anchor decision deadlines to festivals
+ * ("I need to decide before Diwali", "have to respond by Eid") far more often
+ * than to weekday names. Festival dates float year-to-year, so we deliberately
+ * do NOT invent a day-count (a fabricated number would poison the shorter-wins
+ * merge in mergeDecisionDeadline). We treat a festival deadline as an EXPLICIT
+ * deadline signal (deadlineDays stays null) so the move-picker registers the
+ * pacing pressure without a bogus calendar. */
+const FESTIVAL_DEADLINE_RE =
+  /\b(?:by|before|until|till|ahead\s+of)\s+(?:the\s+)?(diwali|deepavali|holi|eid|dussehra|dasara|dashami|navratri|navaratri|onam|pongal|raksha\s?bandhan|rakhi|ganesh\s+chaturthi|christmas|new\s+year)\b/i;
+
 /* Commitment idioms that close the conditional ("if X, <commitment>").
  * Live-staging 2026-06-19 (Razorpay PM, #94): a candidate who frames the
  * conditional as "...that works for me" / "...I can make that work" /
@@ -198,7 +208,8 @@ export function extractDecisionDeadline(text: string): DecisionDeadlineResult {
   const deadlineDays = extractDeadlineDays(text);
   const deadlineExplicit =
     deadlineDays != null ||
-    DEADLINE_EXPLICIT_PATTERNS.some((p) => p.test(text));
+    DEADLINE_EXPLICIT_PATTERNS.some((p) => p.test(text)) ||
+    FESTIVAL_DEADLINE_RE.test(text);
 
   const conditionalEvidence = extractConditional(text);
   const conditionalAcceptance = conditionalEvidence != null;

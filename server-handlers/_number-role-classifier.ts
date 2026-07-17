@@ -457,7 +457,11 @@ interface SalarySpan {
  *  ("LPS", "LPP"). The unit shape `[Dd]igits + LP[A-Z]` is unambiguous
  *  in the Indian-HR register; accept the whole family as LPA so the
  *  role-classifier mirrors the fact-parser. */
-const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l|cr|crore|cash)";
+/* OA-B12 (2026-07-17): "million"/"mn" is a real INR-comp unit for returning-NRI
+ * and MNC candidates ("4.8 million" = 48 LPA). Mirrors the same synonym added to
+ * _fact-parser UNIT_TOKEN so both subsystems agree. Bare single-letter `m` is
+ * deliberately excluded (collides with stray tokens); only million/mn accepted. */
+const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crore|cash)";
 
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
@@ -509,7 +513,10 @@ function parseDigits(s: string): number {
 
 function unitMultiplier(unit: string): number {
   const u = unit.toLowerCase();
-  return u === "cr" || u === "crore" ? 100 : 1;
+  if (u === "cr" || u === "crore") return 100;
+  /* OA-B12: ₹N million = 10N LPA. */
+  if (u === "mn" || u.startsWith("million")) return 10;
+  return 1;
 }
 
 /** Scan the text and return every salary-shaped number, in left-to-right

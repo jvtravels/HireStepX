@@ -27,7 +27,7 @@
  * `extractNumbers`) can use `extractSalaryScalars()` which flattens
  * the typed result. */
 
-export type SalaryUnit = "LPA" | "lakh" | "crore" | "rupee" | "raw";
+export type SalaryUnit = "LPA" | "lakh" | "crore" | "million" | "rupee" | "raw";
 
 export interface SalaryFact {
   /** LPA-normalised value. crore → ×100, lakh/L/LPA → ×1, ₹ → assumed LPA. */
@@ -66,7 +66,14 @@ export interface SalaryFact {
  * means "N LPA in cash comp" (distinguishing from equity/ESOP). Bare
  * numeric extraction maps it to LPA same as "lakhs". Surfaced by the
  * esop-heavy-comp scenario. */
-const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|laakhs?|laaks?|crores?|cr|lacs?|lacks|lax|cash|L";
+/* OA-B12 (2026-07-17): "million"/"mn" added as a unit synonym. Returning-NRI
+ * and MNC candidates quote INR comp in millions ("4.8 million" = ₹48 lakh =
+ * 48 LPA), and `figureToLakhs` in _utterance-intent already maps million→×10 —
+ * so the two subsystems disagreed and parseSalaryFacts silently dropped it.
+ * Bare single-letter `m` is deliberately EXCLUDED (it collides with the far
+ * more common "48L"/stray "m" noise); only the unambiguous `million`/`mn`
+ * forms are accepted. */
+const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|laakhs?|laaks?|crores?|cr|lacs?|lacks|lax|cash|millions?|mn|L";
 
 /* STT fragility audit (2026-05-22) — follow-up to LPE fix.
  *
@@ -219,6 +226,7 @@ function normaliseUnit(raw: string | undefined): SalaryUnit {
   const u = raw.toLowerCase();
   if (u === "lpa") return "LPA";
   if (u.startsWith("crore") || u === "cr") return "crore";
+  if (u.startsWith("million") || u === "mn") return "million";
   if (u.startsWith("lakh") || u.startsWith("laakh") || u.startsWith("laak") || u.startsWith("lac") || u === "lacks" || u === "lax" || u === "l") return "lakh";
   /* AUDIT-2 (2026-06-08): "cash" maps to lakh-equivalent. "36 cash"
    * in an equity-heavy comp disclosure means "36 LPA cash component". */
@@ -232,6 +240,8 @@ function normaliseUnit(raw: string | undefined): SalaryUnit {
 
 function toLpa(value: number, unit: SalaryUnit): number {
   if (unit === "crore") return value * 100;
+  /* OA-B12: ₹N million = N × 10 lakh = 10N LPA. */
+  if (unit === "million") return value * 10;
   /* LPA, lakh, L, rupee-with-salary-context, raw → already LPA-scale. */
   return value;
 }
@@ -255,6 +265,20 @@ function toLpa(value: number, unit: SalaryUnit): number {
  *       downstream plausibility band can drop it rather than trust it. */
 const RUPEES_PER_LAKH = 100_000;
 const MAX_PLAUSIBLE_LPA = 5000;
+
+/* OA-B15 (2026-07-17): a unit-bearing figure whose LPA magnitude is absurd —
+ * "₹1 lakh crore" → 1 crore-of-lakh = 100,000 LPA, or "1000 crore" → 100,000
+ * LPA — must not be emitted as a HIGH-confidence salary fact. The
+ * number-role-classifier already rejects spans above MAX_LPA
+ * (_number-role-classifier.ts findSalarySpans), but parseSalaryFacts had no
+ * equivalent ceiling, so maxSalaryLpa/hasSalaryAbove could surface a garbage
+ * six-figure LPA. We reuse the SAME MAX_PLAUSIBLE_LPA ceiling (single source
+ * of truth) and drop — never push — a unit-derived value above it. The
+ * intentional bare-₹ LOW-confidence retention (resolveBareRupee) is untouched;
+ * this guards only the confident crore/million/lakh conversion paths. */
+function exceedsPlausibleLpa(lpa: number): boolean {
+  return lpa > MAX_PLAUSIBLE_LPA;
+}
 
 function resolveBareRupee(value: number): { lpa: number; confidence: "high" | "medium" | "low" } {
   if (value >= RUPEES_PER_LAKH) return { lpa: value / RUPEES_PER_LAKH, confidence: "high" };
@@ -321,6 +345,11 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
     if (!Number.isFinite(lowRaw) || !Number.isFinite(highRaw)) continue;
     const lowLpa = toLpa(lowRaw, unit);
     const highLpa = toLpa(highRaw, unit);
+    /* OA-B15: an absurd bound makes the whole range garbage — drop it. */
+    if (exceedsPlausibleLpa(lowLpa) || exceedsPlausibleLpa(highLpa)) {
+      consumed.push([start, end]);
+      continue;
+    }
     facts.push({
       value: lowLpa,
       unit,
@@ -355,8 +384,14 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
     const unit = normaliseUnit(unitTok);
     const raw = digitsToNumber(digits);
     if (!Number.isFinite(raw)) continue;
+    const lpa = toLpa(raw, unit);
+    /* OA-B15: drop an absurd unit-derived magnitude (e.g. "1 lakh crore"). */
+    if (exceedsPlausibleLpa(lpa)) {
+      consumed.push([start, end]);
+      continue;
+    }
     facts.push({
-      value: toLpa(raw, unit),
+      value: lpa,
       unit,
       rawSpan: [start, end],
       rawDigits: digits,

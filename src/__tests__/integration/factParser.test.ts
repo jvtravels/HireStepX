@@ -210,3 +210,34 @@ describe("_fact-parser — hasSalaryAbove / maxSalaryLpa", () => {
     expect(maxSalaryLpa("base 18 LPA, total 28 LPA, equity 0.5 crore")).toBe(50);
   });
 });
+
+describe("_fact-parser — OA-B12 million unit", () => {
+  it("parses '4.8 million' as 48 LPA", () => {
+    expect(maxSalaryLpa("targeting 4.8 million")).toBe(48);
+  });
+  it("parses the 'mn' abbreviation", () => {
+    expect(maxSalaryLpa("looking for 5 mn")).toBe(50);
+  });
+  it("parses '₹4.8 million' with rupee prefix", () => {
+    expect(maxSalaryLpa("current is ₹4.8 million")).toBe(48);
+  });
+  it("does NOT bind a bare 'm' (collision guard)", () => {
+    /* "48m" must not resolve as 480 LPA — bare single-letter m is excluded. */
+    expect(maxSalaryLpa("ping me at 48m")).not.toBe(480);
+  });
+});
+
+describe("_fact-parser — OA-B15 absurd-magnitude clamp", () => {
+  it("drops '₹1 lakh crore' (100000 LPA) rather than emitting garbage", () => {
+    expect(maxSalaryLpa("they said ₹1 lakh crore")).not.toBe(100000);
+  });
+  it("drops '1000 crore' (100000 LPA)", () => {
+    expect(maxSalaryLpa("our band tops at 1000 crore")).toBe(null);
+  });
+  it("still keeps a legitimate crore figure", () => {
+    expect(maxSalaryLpa("our band tops at 1.2 crore")).toBe(120);
+  });
+  it("drops an absurd range bound", () => {
+    expect(maxSalaryLpa("range is 500-2000 crore")).toBe(null);
+  });
+});
