@@ -507,7 +507,7 @@ const DEMAND_CORES: DemandCore[] = [
    * bias (an over-detect merely costs a turn). */
   {
     reason: "beat-match",
-    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer|[a-z][\w.-]*'s\s+(?:offer|number|figure|comp\w*|package|ctc))\b/i,
+    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer|counter|ask|demand)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer|[a-z][\w.-]*'s\s+(?:offer|number|figure|comp\w*|package|ctc))\b/i,
   },
   /* Beat/match a bare FIGURE ("beat the 47 Razorpay gave me", "match 46",
    * "exceed the 48 I have"). beat-match above only binds an OBJECT WORD
@@ -570,6 +570,23 @@ const DEMAND_CORES: DemandCore[] = [
         `[^.!?]{0,15}?\\b(?:${CORE_COMP}|${SWEETENER})\\b`,
       "i",
     ),
+  },
+  /* Imperative to REVISE the offer upward ("send me a better offer", "get me a
+   * higher offer", "come back with a revised number"). The verb set overlaps the
+   * legitimate procedural close "send me the offer letter and I'll sign" (pinned
+   * as a genuine accept in the improve-lever note), so this core is GATED on a
+   * comparative/revision ADJECTIVE (better/higher/improved/revised/stronger/
+   * bigger/sweeter/richer) sitting between the verb and the offer noun — "the
+   * offer letter" carries no such adjective and never matches, while "a better
+   * offer" is unambiguously a demand to raise it. Always unmet (asking for a
+   * better offer means the current one is not accepted), so no offer gate.
+   * Added after "Send me a better offer and I'll sign." false-accepted at the
+   * un-bumped offer (offline hostile battery, 2026-07-17): the object of the
+   * imperative was an improved OFFER rather than a named lever, so improve-lever
+   * (lever-anchored) and grant-perk (perk-anchored) both missed it. */
+  {
+    reason: "revise-offer-up",
+    re: /\b(?:send|get|give|bring|come\s+back\s+with|come\s+up\s+with|put\s+together)\s+(?:me\s+)?(?:a|an|the|another)?\s*(?:better|higher|improved|revised|stronger|bigger|sweeter|richer|fatter|beefier)\s+(?:offer|number|figure|package|comp\w*|ctc|deal|proposal)\b/i,
   },
   /* Named NON-COMP perk GRANT (imperative): "give me a corner office and I'll
    * sign", "throw in a parking spot", "include a company car". Sibling of

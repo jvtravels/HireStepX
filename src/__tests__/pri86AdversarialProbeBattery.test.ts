@@ -37,6 +37,17 @@ const HOSTILE_MUST_VETO: string[] = [
   "Before I accept, the number has to move.",
   "Until I accept, nothing is final.",
   "Prior to accepting, I need the base revised.",
+  // LEAK 3 — conditional "revise the offer / match my counter, THEN I'll sign"
+  // (offline hostile battery, 2026-07-17). The settle verb ("sign"/"accept") is
+  // real, but a demand to REVISE THE OFFER UPWARD ("a better offer") or MATCH MY
+  // COUNTER precedes it — an unmet demand, not a close. Vetoed at the demand-
+  // intent source (_utterance-intent.ts: revise-offer-up core + beat-match's new
+  // "counter/ask/demand" objects), not with a new accept-side gate.
+  "Send me a better offer and I'll sign.",
+  "Get me a higher offer and I'll accept.",
+  "Come back with a revised number and I'm in.",
+  "Match my counter and I'll sign today.",
+  "Match my ask and we have a deal.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [
