@@ -142,7 +142,7 @@ function FooterDomeDesktop() {
           textTransform: "uppercase",
           margin: "0 0 16px",
         }}>Product</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {PRODUCT_LINKS.map(([label, href]) => (
             <a key={label} href={href} style={{
               display: "block",
@@ -228,7 +228,7 @@ function FooterDomeDesktop() {
           textTransform: "uppercase",
           margin: "0 0 16px",
         }}>Company</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {COMPANY_LINKS.map(([label, href]) => (
             <a key={label} href={href} style={{
               display: "block",
