@@ -34,6 +34,7 @@ import {
   isDiscoveryComplete,
 } from "./_discovery-stage";
 import { buildHikeJustificationBrief } from "./_hike-justification-probe";
+import { hikeBriefToken, hikeCalibrationHint } from "./_hike-rationale";
 import { buildRangeDisclosureBrief } from "./_range-disclosure-phase";
 import { detectRangeDisclosure } from "./_trial-close-detector";
 import type { CandidateStanceResult } from "./_candidate-stance";
@@ -1635,16 +1636,7 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
      should engage that frame specifically rather than ask for one
      generically. */
   if (state.hikePercent != null) {
-    const pct = state.hikePercent;
-    if (pct >= 50) {
-      hints.push(`Hike is ${pct}% — extreme. Frame your pushback respectfully; ask for the justification before any concession.`);
-    } else if (pct >= 30) {
-      hints.push(`Hike is ${pct}% — aggressive. A justification probe is appropriate before counter-offering.`);
-    } else if (pct >= 15) {
-      hints.push(`Hike is ${pct}% — normal switch-job range. Probe lightly or proceed to counter.`);
-    } else if (pct >= 0) {
-      hints.push(`Hike is ${pct}% — conservative. The candidate's ask is well within market norms; consider matching.`);
-    }
+    hints.push(hikeCalibrationHint(state.hikePercent));
   }
   if (state.rationale) {
     const r = state.rationale;
@@ -2148,7 +2140,7 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
      sits"). Without these the LLM has to recompute hike% from
      target+currentCtc each turn and never sees the framing the
      candidate used. */
-  if (state.hikePercent != null) parts.push(`hike=${state.hikePercent}%`);
+  if (state.hikePercent != null) parts.push(hikeBriefToken(state.hikePercent));
   if (state.rationale) parts.push(`rationaleKind=${state.rationale.kind}`);
   /* Phase 13 — notice/joining-bonus economics. Days + buyout-ask +
      joining-bonus-ask are all separable chips the recruiter side

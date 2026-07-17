@@ -146,10 +146,48 @@ export function extractHikeRationale(
  *  intra-company appraisal). The move-picker doesn't use these
  *  thresholds directly — they exist for telemetry + the LLM brief
  *  framing hint. */
-export function categorizeHike(pct: number | null): "conservative" | "normal" | "aggressive" | "extreme" | null {
+export function categorizeHike(
+  pct: number | null,
+): "pay-cut" | "conservative" | "normal" | "aggressive" | "extreme" | null {
   if (pct == null) return null;
+  /* OA-B8 — a negative "hike" is a pay CUT, not a conservative raise. The
+   * old ladder bucketed anything < 15 as "conservative" and told the
+   * recruiter it was "well within market norms, consider matching" — the
+   * exact wrong frame for a candidate whose target sits BELOW their current
+   * CTC (a misstatement, or a genuine non-cash-priority move). It gets its
+   * own bucket so both the brief token and the calibration hint frame it
+   * as a cut, never as a raise. */
+  if (pct < 0) return "pay-cut";
   if (pct < 15) return "conservative";
   if (pct < 30) return "normal";
   if (pct < 50) return "aggressive";
   return "extreme";
+}
+
+/* Brief token fed to the recruiter LLM. A negative percent is emitted as an
+ * explicit `payCut=` chip (absolute magnitude) rather than the nonsensical
+ * `hike=-18%` — a "hike" is a raise by definition, so a negative one would
+ * read as garbage to the model and could produce confused prose (OA-B8). */
+export function hikeBriefToken(pct: number): string {
+  return pct < 0 ? `payCut=${Math.abs(pct)}%` : `hike=${pct}%`;
+}
+
+/* Single-source calibration hint for the recruiter LLM's pushback intensity.
+ * Replaces a duplicated inline ladder in _negotiate-turn-helpers. The
+ * non-negative branches are byte-identical to that prior ladder; the
+ * pay-cut branch is new (OA-B8 — previously a negative hike fell through
+ * every branch and produced no hint at all). */
+export function hikeCalibrationHint(pct: number): string {
+  switch (categorizeHike(pct)) {
+    case "pay-cut":
+      return `The candidate's target is BELOW their current CTC — a ${Math.abs(pct)}% pay cut, not a raise. Treat this as a likely misstatement or a non-cash-priority move: clarify what they actually want (WLB, role, location?) before countering. Do NOT frame it as them asking for a raise.`;
+    case "extreme":
+      return `Hike is ${pct}% — extreme. Frame your pushback respectfully; ask for the justification before any concession.`;
+    case "aggressive":
+      return `Hike is ${pct}% — aggressive. A justification probe is appropriate before counter-offering.`;
+    case "normal":
+      return `Hike is ${pct}% — normal switch-job range. Probe lightly or proceed to counter.`;
+    default:
+      return `Hike is ${pct}% — conservative. The candidate's ask is well within market norms; consider matching.`;
+  }
 }
