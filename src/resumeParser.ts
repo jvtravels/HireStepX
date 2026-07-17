@@ -231,12 +231,15 @@ export function isFallbackResume(r: StoredResume | null | undefined): r is Fallb
   return !!r && r._type === "fallback";
 }
 
+/* OA-B49: section headers on Hindi/Devanagari resumes. `\b` word boundaries
+ * don't apply to Devanagari (no ASCII word chars), so the Devanagari aliases
+ * are appended as bare alternatives outside the `\b(...)\b` Latin group. */
 const SECTION_PATTERNS: Record<string, RegExp> = {
-  summary: /\b(summary|profile|objective|about\s*me|professional\s*summary|career\s*summary|executive\s*summary)\b/i,
-  experience: /\b(experience|work\s*history|employment|professional\s*experience|work\s*experience|career\s*history)\b/i,
-  education: /\b(education|academic|qualifications|degrees?)\b/i,
-  skills: /\b(skills|technical\s*skills|core\s*competencies|competencies|technologies|tools|proficiencies|expertise)\b/i,
-  certifications: /\b(certifications?|licenses?|credentials|accreditations?|professional\s*development)\b/i,
+  summary: /\b(summary|profile|objective|about\s*me|professional\s*summary|career\s*summary|executive\s*summary)\b|सारांश|प्रोफ़ाइल|प्रोफाइल|परिचय|उद्देश्य/i,
+  experience: /\b(experience|work\s*history|employment|professional\s*experience|work\s*experience|career\s*history)\b|कार्य\s*अनुभव|कार्य-अनुभव|अनुभव|नौकरी/i,
+  education: /\b(education|academic|qualifications|degrees?)\b|शिक्षा|शैक्षणिक|शैक्षिक\s*योग्यता|योग्यता/i,
+  skills: /\b(skills|technical\s*skills|core\s*competencies|competencies|technologies|tools|proficiencies|expertise)\b|तकनीकी\s*कौशल|कौशल|दक्षता|प्रवीणता/i,
+  certifications: /\b(certifications?|licenses?|credentials|accreditations?|professional\s*development)\b|प्रमाणपत्र|प्रमाणन|प्रमाण-पत्र/i,
 };
 
 function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "phone" | "location" | "linkedin"> {
@@ -278,6 +281,13 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
     "tiruvallur", "vellore", "erode", "tirunelveli",
     "belgaum", "dharwad", "gulbarga", "kalaburagi",
     "kolhapur", "solapur", "sangli", "satara",
+    /* OA-B49: Devanagari spellings for the major metros so a Hindi resume's
+     * location line ("मुंबई", "नई दिल्ली") is detected. toLowerCase() is a
+     * no-op on Devanagari, so the includes()/has() checks match as-is. */
+    "मुंबई", "मुम्बई", "दिल्ली", "नई दिल्ली", "बेंगलुरु", "बैंगलोर", "बंगलौर",
+    "हैदराबाद", "पुणे", "चेन्नई", "कोलकाता", "अहमदाबाद", "जयपुर", "चंडीगढ़",
+    "गुरुग्राम", "गुड़गांव", "नोएडा", "लखनऊ", "इंदौर", "नागपुर", "भोपाल",
+    "कोच्चि", "सूरत", "वडोदरा", "ठाणे", "नवी मुंबई", "पटना", "कानपुर",
   ]);
 
   let resolvedLocation = locationMatch?.[1] || "";
@@ -312,7 +322,11 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   // Each token must start with a capital letter followed by lowercase, OR
   // be fully uppercase (allows "JAY VYAS"). Allows hyphenated and
   // apostrophe names ("Anne-Marie", "O'Brien"). Between 2 and 4 tokens.
-  const namePattern = /^(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})){1,3}$/;
+  /* OA-B49: accept Devanagari-script name tokens (U+0900–U+097F) alongside
+   * Latin so Hindi resumes ("राहुल शर्मा") aren't silently dropped. Devanagari
+   * has no letter case, so a token is simply 2+ consecutive Devanagari code
+   * points; the 2–4-token shape is unchanged. */
+  const namePattern = /^(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,}|[ऀ-ॿ]{2,})(?:\s+(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,}|[ऀ-ॿ]{2,})){1,3}$/;
   // Organisational / institutional / academic-degree keywords. If any
   // token in the line matches one of these, reject the line as a name
   // candidate. These are companies, universities, degrees, subjects,
@@ -441,7 +455,8 @@ function parseExperience(text: string): ResumeExperience[] {
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
   // Heuristic: a new entry starts with a line containing a date-like pattern or a title/company pair
-  const datePattern = /\b(19|20)\d{2}\b|present|current/i;
+  // OA-B49: वर्तमान / अभी = "present"/"now" on Hindi resumes (years stay Latin).
+  const datePattern = /\b(19|20)\d{2}\b|present|current|वर्तमान|अभी/i;
   const bulletPattern = /^[•·●►▸▪■◆★\-–—]\s*/;
 
   let current: ResumeExperience | null = null;

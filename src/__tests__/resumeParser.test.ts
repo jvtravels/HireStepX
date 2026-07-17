@@ -152,4 +152,42 @@ BS Computer Science, Stanford University`;
     expect(result.experience.length).toBeGreaterThan(0);
     expect(result.education.length).toBeGreaterThan(0);
   });
+
+  // OA-B49: Devanagari/Hindi resumes were silently dropped — the name shape
+  // only accepted Latin tokens, city detection only knew Latin spellings, and
+  // the section splitter only matched English headers. A Hindi resume must at
+  // minimum yield a name, a Devanagari-spelled Indian city, and split sections.
+  describe("OA-B49 Devanagari/Hindi resume", () => {
+    const hindiResume = `राहुल शर्मा
+सॉफ्टवेयर इंजीनियर
+मुंबई
+rahul@example.com
+
+अनुभव
+सॉफ्टवेयर इंजीनियर, Flipkart
+- REST APIs बनाए और तैनात किए
+- 5 इंजीनियरों की टीम का नेतृत्व किया
+
+कौशल
+JavaScript, Python, React, Node.js
+
+शिक्षा
+B.Tech Computer Science`;
+
+    it("extracts a Devanagari name", () => {
+      const result = parseResumeData(hindiResume);
+      expect(result.name).toBe("राहुल शर्मा");
+    });
+
+    it("detects a Devanagari-spelled Indian city", () => {
+      const result = parseResumeData(hindiResume);
+      expect(result.location).toContain("मुंबई");
+    });
+
+    it("splits sections via Devanagari headers (skills recognised)", () => {
+      const result = parseResumeData(hindiResume);
+      expect(result.skills).toContain("JavaScript");
+      expect(result.skills).toContain("Python");
+    });
+  });
 });
