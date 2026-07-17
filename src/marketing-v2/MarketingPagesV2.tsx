@@ -1138,36 +1138,151 @@ export function AboutV2() {
 export function ContactV2() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [ref, setRef] = useState<string | null>(null);
-  const channels = [
-    {
-      name: "General support",
-      detail: "Account, billing, technical issues. We reply within 1 business day.",
-      contact: "hello@hirestepx.com",
-      href: "mailto:hello@hirestepx.com",
-    },
-  ];
 
   return (
     <PageShell>
-      <PageHero
-        eyebrow="Contact"
-        title="Real humans,"
-        accent="real replies."
-        lead="No ticket systems, no autoresponders that pretend to care. Pick the channel that fits your question and we'll get back."
-      />
+      <style>{`
+        /* Underline-only fields for the contact form */
+        .hsx-cf {
+          width: 100%;
+          background: transparent;
+          border: none;
+          border-bottom: 1.5px solid ${t.lineStrong};
+          border-radius: 0;
+          padding: 9px 0;
+          font-family: ${fonts.sans};
+          font-size: 15px;
+          color: ${t.coal};
+          outline: none;
+          transition: border-color 0.18s ease;
+          min-height: 44px;
+          appearance: none;
+          -webkit-appearance: none;
+        }
+        .hsx-cf::placeholder { color: ${t.inkFaintWeak}; }
+        .hsx-cf:focus { border-bottom-color: ${t.copper}; }
+        .hsx-cf option { background: ${t.cream}; color: ${t.coal}; }
+        textarea.hsx-cf { resize: none; min-height: 68px; line-height: 1.55; padding-top: 6px; }
+        /* Mobile: stack panels */
+        @media (max-width: 768px) {
+          .hsx-contact-grid { grid-template-columns: 1fr !important; }
+          .hsx-contact-left { min-height: 280px; padding: 48px 28px !important; }
+          .hsx-contact-right { padding: 40px 28px !important; }
+          .hsx-cf-name-row { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-      <section className="mv2p-section" aria-label="Contact form and channels" style={{ ...sectionBase, paddingTop: 64 }}>
-        <div className="mv2-container" style={container}>
+      <section
+        aria-label="Contact"
+        style={{ minHeight: "calc(100vh - 68px)", display: "grid", gridTemplateColumns: "1fr", alignItems: "stretch" }}
+      >
+        <div
+          className="hsx-contact-grid"
+          style={{ display: "grid", gridTemplateColumns: "55fr 45fr", minHeight: "inherit" }}
+        >
+          {/* ── LEFT — copper panel ── */}
           <div
-            className="mv2p-form"
+            className="hsx-contact-left"
             style={{
-              maxWidth: 640,
-              margin: "0 auto",
-              display: "grid",
-              gap: 32,
+              background: t.copper,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: "clamp(48px,7vw,96px) clamp(36px,5.5vw,80px)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            {/* Form */}
+            {/* Depth wash */}
+            <div aria-hidden style={{
+              position: "absolute", inset: 0, pointerEvents: "none",
+              background: "radial-gradient(ellipse 90% 70% at 20% 30%, rgba(250,247,240,0.07) 0%, transparent 65%)",
+            }} />
+
+            <p style={{
+              fontFamily: fonts.sans, fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.2em", textTransform: "uppercase",
+              color: "rgba(250,247,240,0.45)", margin: "0 0 32px", position: "relative",
+            }}>
+              Contact
+            </p>
+
+            <h1 style={{
+              fontFamily: fonts.serif,
+              fontSize: "clamp(40px, 4.2vw, 60px)",
+              lineHeight: 1.02,
+              letterSpacing: "-0.03em",
+              color: t.cream,
+              margin: "0 0 24px",
+              fontWeight: 400,
+              maxWidth: "13ch",
+              position: "relative",
+            }}>
+              Real humans,{" "}
+              <em style={{ fontStyle: "italic" }}>real replies.</em>
+            </h1>
+
+            <p style={{
+              fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65,
+              color: "rgba(250,247,240,0.72)", margin: "0 0 52px",
+              maxWidth: "34ch", position: "relative",
+            }}>
+              No ticket systems. No autoresponders. A real person reads every message and replies within one business day.
+            </p>
+
+            {/* Divider rule */}
+            <div style={{ width: 36, height: 1, background: "rgba(250,247,240,0.22)", marginBottom: 28, position: "relative" }} />
+
+            <p style={{
+              fontFamily: fonts.sans, fontSize: 11, fontWeight: 600,
+              letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "rgba(250,247,240,0.45)", margin: "0 0 10px", position: "relative",
+            }}>
+              Or write directly
+            </p>
+
+            <a
+              href="mailto:hello@hirestepx.com"
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: "clamp(15px, 1.5vw, 18px)",
+                fontWeight: 600,
+                color: t.cream,
+                textDecoration: "none",
+                borderBottom: "1.5px solid rgba(250,247,240,0.38)",
+                paddingBottom: 4,
+                display: "inline-block",
+                position: "relative",
+                transition: "border-color 0.2s",
+              }}
+            >
+              hello@hirestepx.com
+            </a>
+          </div>
+
+          {/* ── RIGHT — cream panel, bare form ── */}
+          <div
+            className="hsx-contact-right"
+            style={{
+              background: t.cream,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: "clamp(48px,7vw,96px) clamp(36px,5.5vw,72px)",
+            }}
+          >
+            <h2 style={{
+              fontFamily: fonts.serif,
+              fontSize: "clamp(22px, 2.2vw, 30px)",
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+              color: t.coal,
+              fontWeight: 400,
+              margin: "0 0 36px",
+            }}>
+              Send a message
+            </h2>
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1193,107 +1308,69 @@ export function ContactV2() {
                   .catch(() => setStatus("error"));
               }}
               aria-describedby="contact-form-status"
-              style={{
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 20,
-                padding: 32,
-                boxShadow: shadows.card,
-                display: "grid",
-                gap: 18,
-              }}
+              style={{ display: "grid", gap: 28 }}
             >
-              <h2
-                style={{
-                  ...h3,
-                  fontSize: 28,
-                  margin: 0,
-                  marginBottom: 4,
-                }}
-              >
-                Send a message
-              </h2>
-              <p
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 14,
-                  color: t.inkSoft,
-                  margin: 0,
-                  marginBottom: 8,
-                }}
-              >
-                We reply within 1 business day (IST).
-              </p>
-              <FieldGroup label="Your name" htmlFor="contact-name">
-                <input id="contact-name" className="mv2p-input" type="text" required placeholder="Aarav Mehta" style={inputStyle} />
-              </FieldGroup>
-              <FieldGroup label="Email" htmlFor="contact-email">
-                <input id="contact-email" className="mv2p-input" type="email" required placeholder="you@example.com" style={inputStyle} />
-              </FieldGroup>
-              <FieldGroup label="What's this about?" htmlFor="contact-topic">
-                <select id="contact-topic" className="mv2p-input" required style={inputStyle}>
+              {/* Name + Email side by side */}
+              <div className="hsx-cf-name-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                <ContactField label="Your name" htmlFor="contact-name">
+                  <input id="contact-name" type="text" required placeholder="Aarav Mehta" className="hsx-cf" />
+                </ContactField>
+                <ContactField label="Email" htmlFor="contact-email">
+                  <input id="contact-email" type="email" required placeholder="you@example.com" className="hsx-cf" />
+                </ContactField>
+              </div>
+
+              <ContactField label="What's this about?" htmlFor="contact-topic">
+                <select id="contact-topic" required className="hsx-cf">
                   <option value="">Pick one</option>
                   <option>Account or billing</option>
                   <option>Bug or technical issue</option>
                   <option>Press or media</option>
                   <option>Something else</option>
                 </select>
-              </FieldGroup>
-              <FieldGroup label="Message" htmlFor="contact-message">
+              </ContactField>
+
+              <ContactField label="Message" htmlFor="contact-message">
                 <textarea
                   id="contact-message"
-                  className="mv2p-input"
                   required
-                  rows={5}
+                  rows={3}
                   placeholder="As specific as you can. Screenshots help if there's a bug."
-                  style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+                  className="hsx-cf"
                 />
-              </FieldGroup>
-              <button
-                type="submit"
-                disabled={status === "sending" || status === "sent"}
-                style={{
-                  ...ctaPrimary("lg"),
-                  justifySelf: "start",
-                  opacity: status === "sending" || status === "sent" ? 0.6 : 1,
-                  cursor: status === "sending" || status === "sent" ? "default" : "pointer",
-                }}
-                className="mv2-tap-44"
-              >
-                {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : "Send message"}
-              </button>
-              <p
-                id="contact-form-status"
-                role="status"
-                aria-live="polite"
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 13,
-                  margin: 0,
-                  minHeight: 18,
-                  color: status === "error" ? t.error : status === "sent" ? t.success : t.inkSoft,
-                }}
-              >
-                {status === "sent"
-                  ? `Got it${ref ? ` (ref: ${ref})` : ""}. Check your email for a confirmation — we'll reply within 1 business day.`
-                  : status === "error"
-                  ? "Couldn't send. Email hello@hirestepx.com directly instead."
-                  : ""}
-              </p>
-            </form>
+              </ContactField>
 
-            {/* Direct channel — single row below the form */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12 }}>
-              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flex: 1 }}>
-                Prefer email? Reach us directly —
-              </span>
-              <a
-                href={channels[0].href}
-                style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.indigo, textDecoration: "none", borderBottom: `1px solid ${t.indigo}`, whiteSpace: "nowrap" }}
-              >
-                {channels[0].contact}
-              </a>
-            </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                <button
+                  type="submit"
+                  disabled={status === "sending" || status === "sent"}
+                  className="mv2-tap-44"
+                  style={{
+                    ...ctaPrimary("lg"),
+                    opacity: status === "sending" || status === "sent" ? 0.6 : 1,
+                    cursor: status === "sending" || status === "sent" ? "default" : "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : "Send message"}
+                </button>
+                <p
+                  id="contact-form-status"
+                  role="status"
+                  aria-live="polite"
+                  style={{
+                    fontFamily: fonts.sans, fontSize: 13, margin: 0, minHeight: 20,
+                    color: status === "error" ? t.error : status === "sent" ? t.success : t.inkFaint,
+                  }}
+                >
+                  {status === "sent"
+                    ? `Got it${ref ? ` (ref: ${ref})` : ""}. We'll reply within 1 business day.`
+                    : status === "error"
+                    ? "Couldn't send — email hello@hirestepx.com instead."
+                    : "We reply within 1 business day (IST)."}
+                </p>
+              </div>
+            </form>
           </div>
         </div>
       </section>
@@ -1301,16 +1378,14 @@ export function ContactV2() {
   );
 }
 
-function FieldGroup({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
+function ContactField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
   return (
-    <div style={{ display: "grid", gap: 6 }}>
+    <div style={{ display: "grid", gap: 4 }}>
       <label
         htmlFor={htmlFor}
         style={{
-          fontFamily: fonts.sans,
-          fontSize: 13,
-          fontWeight: 600,
-          color: t.coal,
+          fontFamily: fonts.sans, fontSize: 11, fontWeight: 600,
+          letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint,
         }}
       >
         {label}
@@ -1320,18 +1395,6 @@ function FieldGroup({ label, htmlFor, children }: { label: string; htmlFor: stri
   );
 }
 
-const inputStyle: CSSProperties = {
-  fontFamily: fonts.sans,
-  fontSize: 15,
-  padding: "12px 14px",
-  background: t.cream,
-  border: `1px solid ${t.lineStrong}`,
-  borderRadius: 10,
-  color: t.coal,
-  outline: "none",
-  width: "100%",
-  minHeight: 44,
-};
 
 /* ════════════════════════════════════════════════════════════════════
    FOR STUDENTS — segment landing
