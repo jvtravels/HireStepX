@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NotFoundV2 } from "@/marketing-v2/MarketingPagesV2";
+import MarketingShell from "./(marketing)/MarketingShell";
 
 export const metadata: Metadata = {
   title: "Page Not Found | HireStepX",
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function NotFound() {
-  return <NotFoundV2 />;
+  return (
+    <MarketingShell>
+      <NotFoundV2 />
+    </MarketingShell>
+  );
 }

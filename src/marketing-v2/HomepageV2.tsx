@@ -1432,7 +1432,7 @@ export function HeroV2() {
             fontSize: 16,
             lineHeight: 1.62,
             color: t.inkSoft,
-            maxWidth: 500,
+            maxWidth: 620,
             margin: "22px auto 0",
           }}
         >
