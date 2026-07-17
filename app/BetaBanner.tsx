@@ -23,9 +23,8 @@ export function BetaBanner() {
     <div
       role="banner"
       style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 9999,
+        position: "relative",
+        zIndex: 1,
         background: "#B45309",
         color: "#FAF7F0",
         display: "flex",

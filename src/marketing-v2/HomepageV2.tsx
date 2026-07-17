@@ -1972,8 +1972,9 @@ export function ProductStoryV2() {
           style={{ display: "flex", alignItems: "start", gap: 32 }}
         >
           {steps.map((step, i) => (
-            <div
+            <MotionReveal
               key={step.kicker}
+              delay={i * 120}
               style={{
                 flex: 1,
                 minWidth: 0,
@@ -2025,7 +2026,7 @@ export function ProductStoryV2() {
                 </p>
               </div>
               <CompactStepMock step={i} />
-            </div>
+            </MotionReveal>
           ))}
         </div>
       </div>
