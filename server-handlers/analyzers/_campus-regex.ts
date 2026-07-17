@@ -29,7 +29,9 @@ export const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designe
  *   - a quantified outcome ("won", "ranked", "200+ problems", percentile)
  * Mirrors the GENERIC_WHY / SPECIFIC_WHY paired pattern from hr-round.ts.
  */
-export const SUBSTANTIATION_TOKEN = /\b(github\.com\/[\w-]+|github\.io|gitlab\.com\/[\w-]+|leetcode\.com\/[\w-]+|codeforces\.com\/profile|kaggle\.com\/[\w-]+|hackerrank\.com\/[\w-]+|hackathon|sih\b|smart india hackathon|coding contest|code[- ]?jam|hash[- ]?code|kickstart|internship|intern at|interned at|nptel|coursera|udemy|edx\b|cs50|striver(?:'s)?\s+sdc?\s*sheet|striver sde|neetcode|grokking|knight (?:badge|rated)|guardian rated|expert rated|specialist rated|top\s+\d+%?|\d{2,}\s*\+?\s*(?:problems|leetcode|questions|submissions))\b/i;
+// G3: added `(?:on\s+)?` before the platform names so "100 on LeetCode" /
+// "200 on Codeforces" match, not just "100 LeetCode" / "200 submissions".
+export const SUBSTANTIATION_TOKEN = /\b(github\.com\/[\w-]+|github\.io|gitlab\.com\/[\w-]+|leetcode\.com\/[\w-]+|codeforces\.com\/profile|kaggle\.com\/[\w-]+|hackerrank\.com\/[\w-]+|hackathon|sih\b|smart india hackathon|coding contest|code[- ]?jam|hash[- ]?code|kickstart|internship|intern at|interned at|nptel|coursera|udemy|edx\b|cs50|striver(?:'s)?\s+sdc?\s*sheet|striver sde|neetcode|grokking|knight (?:badge|rated)|guardian rated|expert rated|specialist rated|top\s+\d+%?|\d{2,}\s*\+?\s*(?:on\s+)?(?:problems|leetcode|questions|submissions))\b/i;
 export const AVAILABILITY = /\b(available (?:from|after)|join (?:by|in|on|after)|notice|graduation|exam|semester|joining date|relocat)\b/i;
 export const COLLEGE_BADMOUTH = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:professors|faculty) (?:are|were) (?:useless|incompetent|terrible)|nothing was taught|wasted (?:my )?time)\b/i;
 
@@ -63,7 +65,8 @@ export const TECH_APPLIED = /\b(?:(?:\d+\s+)?(?:rest|graphql|grpc)?\s*(?:api\s+)
  * to assume the most distant signal applies. We surface a flag when the
  * candidate cites only DISTANT markers (1st year / 2nd sem) for project
  * narration. The presence of any RECENT marker suppresses. */
-export const PROJECT_RECENT_MARKER = /\b(?:final[- ]?year(?:\s+project)?|fy(?:p|np)?\b|capstone|currently\s+(?:building|working\s+on|developing)|this\s+(?:semester|month|year|week)|last\s+(?:semester|month)|ongoing|in\s+progress|recently\s+(?:built|finished|completed|shipped|deployed)|8th\s+sem(?:ester)?|7th\s+sem(?:ester)?|final\s+sem(?:ester)?|pre[- ]?final|3rd\s+year|fourth\s+year|senior\s+year|major\s+project)\b/i;
+// C5: added "right now building/working/developing" as a recency anchor.
+export const PROJECT_RECENT_MARKER = /\b(?:final[- ]?year(?:\s+project)?|fy(?:p|np)?\b|capstone|(?:currently|right\s+now)\s+(?:building|working\s+on|developing)|this\s+(?:semester|month|year|week)|last\s+(?:semester|month)|ongoing|in\s+progress|recently\s+(?:built|finished|completed|shipped|deployed)|8th\s+sem(?:ester)?|7th\s+sem(?:ester)?|final\s+sem(?:ester)?|pre[- ]?final|3rd\s+year|fourth\s+year|senior\s+year|major\s+project)\b/i;
 export const PROJECT_DISTANT_MARKER = /\b(?:1st\s+year|first\s+year|2nd\s+year|second\s+year|1st\s+sem(?:ester)?|2nd\s+sem(?:ester)?|3rd\s+sem(?:ester)?|4th\s+sem(?:ester)?|first\s+sem(?:ester)?|second\s+sem(?:ester)?|freshman\s+year|sophomore\s+year|two\s+years\s+(?:ago|back)|three\s+years\s+(?:ago|back)|long\s+(?:time\s+)?ago)\b/i;
 
 /* Implausible team-size brag for a fresher / college context. */
@@ -129,7 +132,10 @@ export const FILLER_PER_100_WORDS_THRESHOLD = 4;
 
 /* Internship probe + content. */
 export const INTERNSHIP_CLAIM = /\b(internship|interned|intern at|summer intern|summer training|industrial training|6[- ]month\s+intern)\b/i;
-export const INTERNSHIP_DETAIL = /\b(intern(ship)?\s+at\s+\w|stipend|deliverable|reported to|mentor|onboarded|shipped|merged|in production)\b/i;
+// C4: broadened from "internship at X" to also catch "worked at X", "employed at X",
+// "placed at X" so candidates who summarize their internship without the word
+// "internship" still get detail credit.
+export const INTERNSHIP_DETAIL = /\b(intern(?:ship)?\s+at\s+\w|worked\s+(?:at|for|with)\s+[A-Z]|employed\s+at\s+\w|placed\s+at\s+\w|stipend|deliverable|reported to|mentor|onboarded|shipped|merged|in production)\b/i;
 
 /* Mother-Tongue-Influence (MTI) — high-frequency Indian-English deviations
  * that recruiters at TIER-1 firms (Google / MS / Goldman / McKinsey India)
@@ -163,8 +169,16 @@ export const MTI_PATTERNS: RegExp[] = [
   /\breach\s+(?:by|at|till)\s+\d/i,         // "reach by 5" vs "arrive by 5"
 ];
 
-/* Stated CGPA values — captures the numeric value so we can grade framing. */
+/* Stated CGPA values — captures the numeric value so we can grade framing.
+ * Group 1: numeric form  "my CGPA is 8.5"
+ * C1: also exported separately as CGPA_STATED_WORD_FORM for spoken forms
+ *     "my CGPA is eight point five" that the digit-only pattern misses. */
 export const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)/i;
+/* C1: word-form CGPA — "my CGPA is eight point five" / "seven point eight".
+ * The analyzer parses this with parseWordFormCgpa() and treats it identically
+ * to CGPA_STATED for framing checks + meta surfacing. Only covers common
+ * whole+decimal combos (e.g. "seven point five", not "seven and a half"). */
+export const CGPA_STATED_WORD_FORM = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*((?:ten|nine|eight|seven|six|five|four|three)(?:\s+point\s+(?:ten|nine|eight|seven|six|five|four|three|two|one|zero)(?:\s+(?:ten|nine|eight|seven|six|five|four|three|two|one|zero))?)?)\b/i;
 /* College / TPO internal CGPA gatekeeping. Many tier-2/3 colleges enforce
  * 6.5–7.0 internal bars even though TCS firm cutoff is 6.0. A candidate
  * stating their CGPA alongside "my college won't send me below 6.5" or
@@ -194,7 +208,14 @@ export const REVERSE_QUESTION_DECLINED = /\b(?:no\s*[,.]?\s*(?:i\s+(?:don'?t|do\
  * about bonds" or refuse outright disqualify themselves. */
 export const BOND_PROBE = /\b(?:service\s+agreement|service\s+bond|training\s+bond|two[- ]?year\s+bond|2[- ]?year\s+bond|1[- ]?year\s+bond|bond\s+(?:period|duration|amount)|sign\s+(?:the\s+|a\s+)?bond|notice\s+period\s+bond)\b/i;
 export const BOND_HEALTHY_RESPONSE = /\b(?:comfortable\s+(?:with|signing)|i'?m\s+aware|i\s+know\s+(?:the|about|of)\s+(?:the\s+)?(?:bond|service\s+agreement|2\s*year|1\s*year)|happy\s+to\s+sign|(?:2|two|1|one|15)\s*(?:[- ]?)(?:month|year)s?|standard\s+practice|fully\s+aware)\b/i;
-export const BOND_REFUSAL = /\b(?:i\s+won'?t\s+sign|absolutely\s+not|no\s+way|refuse|never\s+sign|i\s+don'?t\s+(?:sign|do)\s+bonds?)\b/i;
+// B1: removed bare `refuse` (false-positives on "I refuse to believe...",
+// "I refuse to accept less"). Refusal phrases now either:
+//   (a) contain "sign" — specific enough that "I won't sign" always means
+//       contract refusal in an interview context, OR
+//   (b) contain "bond" explicitly — anchors vague negatives like "no way".
+// The analyzer gates the whole block on BOND_PROBE firing first, which
+// provides additional context; BOND_REFUSAL is also self-contained.
+export const BOND_REFUSAL = /\b(?:i\s+won'?t\s+(?:sign|agree\s+to)\s+(?:any\s+|the\s+|a\s+)?(?:bond|service\s+agreement|contract)?|absolutely\s+not\s+(?:sign(?:ing)?|agree(?:ing)?)|no\s+way\s+(?:i'?(?:m|ll)\s+sign|i'?ll\s+agree)|refuse\s+to\s+sign\s+(?:any\s+|the\s+|a\s+)?(?:bond|service\s+agreement|contract)|never\s+sign(?:ing)?\s+(?:any\s+|a\s+|the\s+)?(?:bond|service\s+agreement|contract)|i\s+don'?t\s+(?:sign|do)\s+bonds?)\b/i;
 export const BOND_IGNORANCE = /\b(?:what'?s?\s+(?:a\s+)?bond|i\s+don'?t\s+know\s+(?:about|what)|never\s+heard\s+of|first\s+(?:time\s+)?hearing)\b/i;
 
 /* ── Wave 3: real-life campus edge cases ─────────────────────────────────
@@ -247,7 +268,11 @@ export const NEGATIVE_COMPARE = /\b(?:(?:tcs|infosys|wipro|cognizant|hcl|tech\s+
 
 /* Salary expectation probe + value extraction. */
 export const SALARY_EXPECTATION_PROBE = /\b(?:salary\s+expectation|expected\s+(?:ctc|salary|package|compensation)|what\s+(?:are|is)\s+your\s+(?:salary|ctc|package)\s+expectation|how\s+much\s+(?:are\s+you\s+expecting|do\s+you\s+want|salary)|expected\s+pay)\b/i;
-export const SALARY_NUMBER_LPA = /\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa|lakhs?\s*per\s*annum|l\.?p\.?a\.?)\b/i;
+// C3: added plain "lakhs?" (without "per annum" suffix) so "5 lakhs" / "6 lakh"
+// matches. The gate is already `aiAskedSalary`, so false positives from
+// non-salary "lakhs" (e.g. "my project served 5 lakh users") are acceptable;
+// that context would only be reached after AI explicitly asks about salary.
+export const SALARY_NUMBER_LPA = /\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa\b|lakhs?\s*(?:per\s*annum\b)?|l\.?p\.?a\.?)\b/i;
 
 /* User raised salary too early — in a technical / introductory round.
  * We flag if the user mentions CTC/salary before the AI has done so, AND
@@ -305,8 +330,9 @@ export const STIPEND_CONCRETE = /\b(?:\d{1,2},?\d{3}\s*(?:per\s+month|\/month|mo
 /* ── Wave-5 patterns — softer-signal Indian campus realism ────────── */
 
 /* Memorized self-intro — verbatim YouTube-template openers. Fires when
- * the candidate's response to TMAY contains 2+ canonical template phrases. */
-export const MEMORIZED_TEMPLATE = /\b(?:good\s+(?:morning|afternoon|evening)\s+(?:sir|ma'?am|mam|sir\s*\/\s*ma'?am)|first\s+of\s+all\s+(?:i'?d\s+like\s+to\s+)?thank\s+you\s+for\s+(?:this\s+(?:wonderful\s+)?opportunity|giving\s+me\s+this\s+(?:wonderful\s+)?opportunity)|coming\s+to\s+my\s+(?:introduction|family\s+background)|i\s+would\s+like\s+to\s+(?:introduce\s+myself|begin\s+(?:with|by))|talking\s+about\s+my\s+(?:family|hobbies|strengths)|on\s+a\s+concluding\s+note|that'?s\s+all\s+(?:about|from)\s+me|this\s+is\s+all\s+about\s+(?:me|myself)|myself\s+\w+\s+\w+(?:,|\s+and\s+i\s+am))/i;
+ * the candidate's response to TMAY contains 2+ canonical template phrases.
+ * C6: added "giving a brief introduction" / "begin with a brief" variants. */
+export const MEMORIZED_TEMPLATE = /\b(?:good\s+(?:morning|afternoon|evening)\s+(?:sir|ma'?am|mam|sir\s*\/\s*ma'?am)|first\s+of\s+all\s+(?:i'?d\s+like\s+to\s+)?thank\s+you\s+for\s+(?:this\s+(?:wonderful\s+)?opportunity|giving\s+me\s+this\s+(?:wonderful\s+)?opportunity)|coming\s+to\s+my\s+(?:introduction|family\s+background)|i\s+would\s+(?:like\s+to\s+|want\s+to\s+)?(?:introduce\s+myself|begin\s+(?:with|by)|give\s+(?:a\s+)?(?:brief\s+)?(?:introduction|intro))|talking\s+about\s+my\s+(?:family|hobbies|strengths)|on\s+a\s+concluding\s+note|that'?s\s+all\s+(?:about|from)\s+me|this\s+is\s+all\s+about\s+(?:me|myself)|myself\s+\w+\s+\w+(?:,|\s+and\s+i\s+am))/i;
 
 /* Aptitude / on-spot puzzle refusal — AI asks a live aptitude / DSA /
  * estimation question; user refuses or stalls. */
