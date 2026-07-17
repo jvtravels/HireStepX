@@ -311,6 +311,12 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    rejection sense "deal[- ]breaker" (the bare-"deal" arm #1 owns the
    *    walk-away). */
   /\b(?:you'?ve|you|we'?ve|we)\s+(?:got|have)\s+(?:yourself\s+|ourselves\s+)?(?:a\s+)?deal\b(?!\s*[-\s]?breaker)/i,
+  /* 8c. "that's a deal (then)" — the demonstrative sibling of arm 8. Requires
+   *     the apostrophe-s so the question "is that a deal?" (no 's) cannot match,
+   *     and excludes the rejection sense "that's a deal-breaker". Conditional
+   *     ("that's a deal if you fix base") is owned by CONDITIONAL_DEFERRAL in
+   *     both gates. Offline recall sweep (2026-07-17). */
+  /\bthat.?s\s+a\s+deal\b(?!\s*[-\s]?breaker)/i,
   /* 8b. "you've got yourself a new hire" — the hiring-idiom sibling of arm 8.
    *     Naming the speaker as the company's new hire IS accepting the job
    *     (surfaced as an OVERREACH miss by the 2026-07-10 adversarial probe).
@@ -337,9 +343,12 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * lesson). Anchored to a TERMINAL clause end (. ! ? or string end — NOT a
    * comma) so a hedged comma-tail ("I'm on board, but let me think") does not
    * match in the medium gate, which has no think-it-over veto; the strict gate's
-   * HEDGE_VETO owns the hedged tails regardless. The deferral veto owns "happy
-   * to proceed once you fix X". */
-  /\bi.?m\s+(?:fully\s+|totally\s+|completely\s+|absolutely\s+)?on\s+board\b\s*(?:[.!?]|$)/i,
+   * HEDGE_VETO owns the hedged tails regardless. An optional positive object
+   * ("on board with this/the offer/number/…") is allowed before the terminal
+   * anchor (offline recall sweep 2026-07-17) — the comma-hedge tail still fails,
+   * and "I'm not on board" breaks the i.?m adjacency. The deferral veto owns
+   * "happy to proceed once you fix X". */
+  /\bi.?m\s+(?:fully\s+|totally\s+|completely\s+|absolutely\s+)?on\s+board\b(?:\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment|role))?\s*(?:[.!?]|$)/i,
   /\bhappy\s+to\s+proceed\b\s*(?:[.!?]|$)/i,
   /* PRI-63 (2026-06-22, offline recall sweep) — "consider it accepted/done/a
    * deal" and "sign me up", unambiguous same-turn consent over a standing offer
@@ -349,8 +358,8 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * the imperative analogue of the existing "where do I sign"; deferral-gated
    * ("sign me up once you fix base") by CONDITIONAL_DEFERRAL_PATTERN in both
    * gates. */
-  /\bconsider\s+it\s+(?:accepted|done|a\s+deal|sealed|settled|signed|closed|final)\b/i,
-  /\bsign\s+me\s+up\b/i,
+  /\bconsider\s+(?:it|this)\s+(?:accepted|done|a\s+deal|sealed|settled|signed|closed|final)\b/i,
+  /\bsign\s+me\s+(?:up|on)\b/i,
   /* PRI-63c (2026-06-22, offline recall sweep) — three more unambiguous
    * same-turn consent idioms the bank missed (NO-CLOSE on a real accept). In
    * CLOSE_CONSENT so BOTH gates fire (the PRI-56 lesson: medium-only leaves them

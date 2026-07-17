@@ -77,6 +77,11 @@ const GENUINE_MUST_ACCEPT: string[] = [
   "I'm happy to move forward with this offer.",
   "I'm ready to join.",
   "I'm ready to join the team.",
+  // Recall sweep 2026-07-17 (batch 2) — mirror-extensions of existing arms.
+  "Sign me on.",
+  "You can consider this accepted.",
+  "That's a deal then.",
+  "I'm on board with this offer.",
 ];
 
 describe("PRI-86 — negative-object & temporal-precondition leaks stay vetoed", () => {
