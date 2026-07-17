@@ -18,6 +18,7 @@
 import { t, f } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
+import { upgradeNudgeCopy } from "./upgradeNudgeCopy";
 import BehavioralFullReport from "./BehavioralFullReport";
 import HrFullReport from "./HrFullReport";
 import type { BehavioralFullReportData } from "./types";
@@ -90,6 +91,7 @@ export type {
    session-limit gate when the user is already frustrated and blocked. */
 
 function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: () => void }) {
+  const copy = upgradeNudgeCopy(score);
   return (
     <div
       role="complementary"
@@ -108,10 +110,10 @@ function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: ()
     >
       <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
-          You scored {score}. Want to see if you can beat it?
+          {copy.headline}
         </p>
         <p style={{ margin: "3px 0 0", fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.45 }}>
-          Get 5 more sessions for ₹39 — track your improvement across a Sprint Pack.
+          {copy.subcopy}
         </p>
       </div>
       <button
