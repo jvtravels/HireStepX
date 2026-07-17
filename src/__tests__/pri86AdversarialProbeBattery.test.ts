@@ -49,6 +49,14 @@ const GENUINE_MUST_ACCEPT: string[] = [
   // TRAILING "before I sign" adverbial on a consummated accept still closes —
   // the fronted-only anchor keeps this genuine long acceptance intact.
   "I'd like to accept this offer formally — please share the benefits package before I sign.",
+  // Hortative / readiness SIGN frame (offline hostile-recall sweep 2026-07-17).
+  // The bank owned first-person-singular "I'll sign" but missed the plural
+  // hortative and the readiness idiom — "let's sign the paperwork" is about as
+  // unambiguous a close as exists.
+  "Let's sign the paperwork.",
+  "Let's sign.",
+  "Ready to sign.",
+  "I'm ready to sign.",
 ];
 
 describe("PRI-86 — negative-object & temporal-precondition leaks stay vetoed", () => {

@@ -375,6 +375,28 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *     so "let's finalize it once you confirm base" stays vetoed in both gates.
    *     Offline hostile sweep (2026-06-23). */
   /\b(?:let'?s\s+|let\s+us\s+|we\s+can\s+|happy\s+to\s+)?finali[sz]e\s+(?:it|this|that|the\s+(?:deal|offer))\b/i,
+  /* 16. Hortative / readiness SIGN frame — "let's sign", "let's sign the
+   *     paperwork/offer", "ready to sign", "I'm ready to sign". The bank
+   *     already owns first-person-singular "I'll sign" / "let me sign" /
+   *     "where do I sign" / "sign me up", but the first-person-PLURAL hortative
+   *     ("let's sign") and the readiness idiom ("ready to sign") were missed —
+   *     an offline hostile-recall sweep (2026-07-17) surfaced "let's sign the
+   *     paperwork" as a NO-CLOSE, about as unambiguous a yes as exists in a
+   *     negotiation. The NEGATION veto owns "I won't sign", the fronted
+   *     BEFORE_ACCEPT veto owns "before I sign the number has to move", and
+   *     CONDITIONAL_DEFERRAL owns "let's sign once you fix base" — all run
+   *     first in both gates, so this arm only fires on an unconditional sign
+   *     commit. The object is left open (\bsign\b) so bare "let's sign." and
+   *     "let's sign the offer/contract/papers" all close identically. */
+  /\b(?:let'?s|let\s+us|we\s+can|we\s+should)\s+sign\b/i,
+  /* "ready to sign" is clause-anchored via CLAUSE_START so a NEGATED readiness
+   * ("I'm NOT ready to sign this") cannot match — the general NEGATION veto keys
+   * on negation abutting the settle verb ("won't sign"), but here "not" attaches
+   * to "ready", so the bare "ready to sign" substring would otherwise slip
+   * through. Anchoring to clause start (^ or a separator) means the affirmative
+   * "I'm ready to sign" / "Okay — ready to sign" close but "I'm not ready to
+   * sign" (no boundary before "ready") does not. */
+  new RegExp(CLAUSE_START + /(?:i'?m\s+)?ready\s+to\s+sign\b/.source, "i"),
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
