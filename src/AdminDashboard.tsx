@@ -241,11 +241,12 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics";
+type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
   { key: "users", label: "Users", icon: "👤" },
+  { key: "live", label: "Live", icon: "🟢" },
   { key: "sessions", label: "Sessions", icon: "🎯" },
   { key: "financials", label: "Financials", icon: "💰" },
   { key: "costs", label: "Cost Monitor", icon: "💸" },
@@ -586,7 +587,7 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return "overview";
     const p = new URLSearchParams(window.location.search);
     const t = p.get("tab") as Tab | null;
-    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","referrals","promo-codes","calendar","outcomes","analytics"].includes(t)) ? t : "overview";
+    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","referrals","promo-codes","calendar","outcomes","analytics","live"].includes(t)) ? t : "overview";
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -617,8 +618,12 @@ export default function AdminDashboard() {
   const [qaExtendDays, setQaExtendDays] = useState("30");
   const [qaGrantQty, setQaGrantQty] = useState("5");
   const [qaGrantNote, setQaGrantNote] = useState("");
+  const [qaEmailSubject, setQaEmailSubject] = useState("");
+  const [qaEmailBody, setQaEmailBody] = useState("");
   const [qaStatus, setQaStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const [qaBusy, setQaBusy] = useState(false);
+  const [qaDeleteConfirm, setQaDeleteConfirm] = useState(false);
+  const [liveData, setLiveData] = useState<{ sessions: Array<{ id: string; user_id: string; type: string; difficulty: string; score: number | null; created_at: string }>; since: string } | null>(null);
 
   const fetchSection = useCallback(async (section: string, extra?: Record<string, unknown>, skipCache = false): Promise<unknown> => {
     if (!authed) return null;
@@ -745,6 +750,11 @@ export default function AdminDashboard() {
           if (d) setCostData(d);
           break;
         }
+        case "live": {
+          const d = await fetchSection("live") as typeof liveData | null;
+          if (d) setLiveData(d);
+          break;
+        }
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -776,6 +786,18 @@ export default function AdminDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed]);
 
+  // Live tab — auto-refresh every 30 seconds while on the tab
+  useEffect(() => {
+    if (tab !== "live" || !authed) return;
+    const poll = async () => {
+      const d = await fetchSection("live", undefined, true) as typeof liveData | null;
+      if (d) setLiveData(d);
+    };
+    const interval = setInterval(() => void poll(), 30 * 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, authed]);
+
   // Search users (debounced)
   useEffect(() => {
     if (tab !== "users" || !authed) return;
@@ -791,6 +813,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!selectedUserId || !authed) return;
     setQaStatus(null);
+    setQaDeleteConfirm(false);
+    setQaEmailSubject("");
+    setQaEmailBody("");
     (async () => {
       const d = await fetchSection("user-detail", { userId: selectedUserId }, true) as UserDetailData | null;
       if (d) setUserDetail(d);
@@ -871,8 +896,13 @@ export default function AdminDashboard() {
         if (d) setCostData(d);
         break;
       }
+      case "live": {
+        const d = await fetchSection("live", undefined, true) as typeof liveData | null;
+        if (d) setLiveData(d);
+        break;
+      }
     }
-  }, [tab, fetchSection, userSearch]);
+  }, [tab, fetchSection, userSearch, liveData]);
 
   /* ─── Render Helpers ─── */
 
@@ -1524,6 +1554,172 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
+
+            {/* Ban / Delete */}
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Account Control</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    disabled={qaBusy}
+                    onClick={async () => {
+                      setQaBusy(true); setQaStatus(null);
+                      try {
+                        const res = await fetchSection("ban-user", { userId: selectedUserId }, true);
+                        const r = res as { ok?: boolean; error?: string } | null;
+                        if (r?.ok) setQaStatus({ ok: true, msg: "User banned — they cannot sign in." });
+                        else setQaStatus({ ok: false, msg: r?.error ?? "Ban failed" });
+                      } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
+                      finally { setQaBusy(false); }
+                    }}
+                    style={{
+                      flex: 1, background: "rgba(180,83,9,0.15)", color: "rgb(251,191,36)",
+                      border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6,
+                      padding: "7px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                      cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                    }}
+                  >
+                    Ban
+                  </button>
+                  <button
+                    disabled={qaBusy}
+                    onClick={async () => {
+                      setQaBusy(true); setQaStatus(null);
+                      try {
+                        const res = await fetchSection("unban-user", { userId: selectedUserId }, true);
+                        const r = res as { ok?: boolean; error?: string } | null;
+                        if (r?.ok) setQaStatus({ ok: true, msg: "User unbanned — they can sign in again." });
+                        else setQaStatus({ ok: false, msg: r?.error ?? "Unban failed" });
+                      } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
+                      finally { setQaBusy(false); }
+                    }}
+                    style={{
+                      flex: 1, background: "rgba(22,101,52,0.15)", color: "rgb(74,222,128)",
+                      border: "1px solid rgba(74,222,128,0.3)", borderRadius: 6,
+                      padding: "7px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                      cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                    }}
+                  >
+                    Unban
+                  </button>
+                </div>
+                {!qaDeleteConfirm
+                  ? (
+                    <button
+                      disabled={qaBusy}
+                      onClick={() => setQaDeleteConfirm(true)}
+                      style={{
+                        background: "rgba(127,29,29,0.2)", color: "rgb(248,113,113)",
+                        border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6,
+                        padding: "7px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Delete Account
+                    </button>
+                  )
+                  : (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        disabled={qaBusy}
+                        onClick={async () => {
+                          setQaBusy(true); setQaStatus(null); setQaDeleteConfirm(false);
+                          try {
+                            const res = await fetchSection("delete-user", { userId: selectedUserId }, true);
+                            const r = res as { ok?: boolean; error?: string } | null;
+                            if (r?.ok) {
+                              setQaStatus({ ok: true, msg: "Account permanently deleted." });
+                              setSelectedUserId(null); setUserDetail(null);
+                            } else {
+                              setQaStatus({ ok: false, msg: r?.error ?? "Delete failed" });
+                            }
+                          } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
+                          finally { setQaBusy(false); }
+                        }}
+                        style={{
+                          flex: 1, background: "rgb(127,29,29)", color: "rgb(254,202,202)",
+                          border: "none", borderRadius: 6, padding: "7px 10px", fontSize: 12,
+                          fontWeight: 700, fontFamily: font.ui, cursor: "pointer",
+                        }}
+                      >
+                        Yes, permanently delete
+                      </button>
+                      <button
+                        onClick={() => setQaDeleteConfirm(false)}
+                        style={{
+                          background: c.obsidian, color: c.stone, border: `1px solid ${c.borderSubtle}`,
+                          borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: font.ui, cursor: "pointer",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )
+                }
+              </div>
+            </div>
+
+            {/* Send Email */}
+            <div style={{ flex: "1 1 100%", minWidth: 0 }}>
+              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: c.chalk }}>Send Email to User</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <input
+                  type="text"
+                  value={qaEmailSubject}
+                  onChange={(e) => setQaEmailSubject(e.target.value)}
+                  disabled={qaBusy}
+                  placeholder="Subject"
+                  maxLength={200}
+                  style={{
+                    background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
+                    borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                  }}
+                />
+                <textarea
+                  value={qaEmailBody}
+                  onChange={(e) => setQaEmailBody(e.target.value)}
+                  disabled={qaBusy}
+                  placeholder="Email body (HTML supported)"
+                  rows={4}
+                  maxLength={20000}
+                  style={{
+                    background: c.obsidian, color: c.ivory, border: `1px solid ${c.borderSubtle}`,
+                    borderRadius: 6, padding: "6px 10px", fontSize: 13, fontFamily: font.ui,
+                    resize: "vertical",
+                  }}
+                />
+                <button
+                  disabled={qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()}
+                  onClick={async () => {
+                    setQaBusy(true); setQaStatus(null);
+                    try {
+                      const res = await fetchSection("send-email", {
+                        userId: selectedUserId,
+                        subject: qaEmailSubject.trim(),
+                        htmlBody: qaEmailBody.trim(),
+                      }, true);
+                      const r = res as { ok?: boolean; error?: string; to?: string; emailId?: string } | null;
+                      if (r?.ok) {
+                        setQaStatus({ ok: true, msg: `Email sent to ${r.to} (ID: ${r.emailId})` });
+                        setQaEmailSubject(""); setQaEmailBody("");
+                      } else {
+                        setQaStatus({ ok: false, msg: r?.error ?? "Send failed" });
+                      }
+                    } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
+                    finally { setQaBusy(false); }
+                  }}
+                  style={{
+                    background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
+                    padding: "7px 18px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
+                    cursor: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? "not-allowed" : "pointer",
+                    opacity: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? 0.5 : 1,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  {qaBusy ? "Sending…" : "Send Email"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1604,6 +1800,7 @@ export default function AdminDashboard() {
                   <th style={thStyle}>Plan</th>
                   <th style={thStyle}>Status</th>
                   <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Refund</th>
                 </tr>
               </thead>
               <tbody>
@@ -1616,6 +1813,31 @@ export default function AdminDashboard() {
                       {String(p.status)}
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(p.created_at as string)}</td>
+                    <td style={tdStyle}>
+                      {(p.razorpay_payment_id as string | undefined) && (p.status === "captured" || p.status === "paid") && (
+                        <button
+                          disabled={qaBusy}
+                          onClick={async () => {
+                            if (!window.confirm(`Refund full ₹${((p.amount as number) / 100).toFixed(0)} for payment ${p.razorpay_payment_id}?`)) return;
+                            setQaBusy(true);
+                            setQaStatus(null);
+                            try {
+                              const res = await fetchSection("refund-payment", { paymentId: p.razorpay_payment_id }, true);
+                              const r = res as { ok?: boolean; error?: string; refundId?: string } | null;
+                              if (r?.ok) setQaStatus({ ok: true, msg: `Refund initiated — Razorpay ID: ${r.refundId}` });
+                              else setQaStatus({ ok: false, msg: r?.error ?? "Refund failed" });
+                            } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
+                            finally { setQaBusy(false); }
+                          }}
+                          style={{
+                            background: "rgba(180,83,9,0.2)", color: "rgb(251,191,36)", border: "1px solid rgba(251,191,36,0.3)",
+                            borderRadius: 4, padding: "3px 10px", fontSize: 11, cursor: qaBusy ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          Refund
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -2932,7 +3154,64 @@ export default function AdminDashboard() {
       case "outcomes": return renderOutcomes();
       case "costs": return renderCosts();
       case "analytics": return renderAnalytics();
+      case "live": return renderLive();
     }
+  };
+
+  const renderLive = () => {
+    const sessions = liveData?.sessions ?? [];
+    const since = liveData?.since ? new Date(liveData.since).toLocaleTimeString("en-IN") : "—";
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+          <h3 style={{ margin: 0, color: c.ivory, fontSize: 18 }}>Live — Last 30 Minutes</h3>
+          <span style={{ fontSize: 12, color: c.stone }}>Since {since} · auto-refreshes every 30s</span>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "rgb(74,222,128)", boxShadow: "0 0 6px rgb(74,222,128)" }} />
+        </div>
+        {sessions.length === 0
+          ? <EmptyState title="No sessions in the last 30 minutes" />
+          : (
+            <div style={{ ...card, padding: 0, overflow: "auto" }}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Session ID</th>
+                    <th style={thStyle}>User ID</th>
+                    <th style={thStyle}>Type</th>
+                    <th style={thStyle}>Difficulty</th>
+                    <th style={thStyle}>Score</th>
+                    <th style={thStyle}>Started</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map((s) => (
+                    <tr
+                      key={s.id}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => { setSelectedSessionId(s.id); setSessionDetail(null); }}
+                    >
+                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{s.id.slice(0, 8)}…</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedUserId(s.user_id); setUserDetail(null); setTab("users"); }}
+                          style={{ background: "none", border: "none", color: c.gilt, cursor: "pointer", fontSize: 11, fontFamily: font.mono, padding: 0 }}
+                        >
+                          {s.user_id.slice(0, 8)}…
+                        </button>
+                      </td>
+                      <td style={tdStyle}>{s.type || "—"}</td>
+                      <td style={tdStyle}>{s.difficulty || "—"}</td>
+                      <td style={tdStyle}>{s.score != null ? s.score : <span style={{ color: c.stone }}>in progress</span>}</td>
+                      <td style={{ ...tdStyle, fontSize: 11, color: c.stone }}>{new Date(s.created_at).toLocaleTimeString("en-IN")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+      </div>
+    );
   };
 
   const renderAnalytics = () => {

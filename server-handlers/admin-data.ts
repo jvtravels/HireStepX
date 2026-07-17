@@ -12,6 +12,9 @@ import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr } from "./_cost-help
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
+const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 
 /* Query limits — reasonable caps to prevent huge payloads */
 const LIMIT_PROFILES = 2000;
@@ -351,7 +354,7 @@ async function getUserDetail(userId: string) {
   const [profile, sessions, payments, llmUsage, feedback] = await Promise.all([
     fetchJSON(`profiles?id=eq.${encoded}&select=id,name,email,subscription_tier,target_role,target_company,experience_level,industry,subscription_start,subscription_end,cancel_at_period_end,has_completed_onboarding,created_at&limit=1`),
     fetchJSON<{ id: string; date: string; type: string; difficulty: string; duration: number; score: number; skill_scores: Record<string, unknown> | null; created_at: string; llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null }>(`sessions?user_id=eq.${encoded}&select=id,date,type,difficulty,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens&order=created_at.desc&limit=50`),
-    fetchJSON(`payments?user_id=eq.${encoded}&select=id,amount,currency,status,plan,tier,created_at&order=created_at.desc&limit=30`),
+    fetchJSON(`payments?user_id=eq.${encoded}&select=id,razorpay_payment_id,amount,currency,status,plan,tier,created_at&order=created_at.desc&limit=30`),
     fetchJSON(`llm_usage?user_id=eq.${encoded}&select=endpoint,model,total_tokens,latency_ms,status,created_at&order=created_at.desc&limit=100`),
     fetchJSON(`feedback?user_id=eq.${encoded}&select=id,rating,comment,session_score,session_type,created_at&order=created_at.desc&limit=20`),
   ]);
@@ -1691,7 +1694,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string } | undefined;
   const section = body?.section || body?.action || "overview";
 
   try {
@@ -1770,6 +1773,107 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return { ok: false, error: `RPC failed: HTTP ${rpcRes.status}: ${body2.slice(0, 200)}` };
           }
           return { ok: true, qty, note };
+        }
+        case "ban-user": {
+          if (!body?.userId) throw new Error("userId required");
+          const banRes = await fetch(
+            `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(body.userId)}`,
+            {
+              method: "PUT",
+              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ ban_duration: "876000h" }),
+            },
+          );
+          if (!banRes.ok) return { ok: false, error: `Auth ban failed: HTTP ${banRes.status}` };
+          return { ok: true };
+        }
+        case "unban-user": {
+          if (!body?.userId) throw new Error("userId required");
+          const unbanRes = await fetch(
+            `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(body.userId)}`,
+            {
+              method: "PUT",
+              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ ban_duration: "none" }),
+            },
+          );
+          if (!unbanRes.ok) return { ok: false, error: `Auth unban failed: HTTP ${unbanRes.status}` };
+          return { ok: true };
+        }
+        case "delete-user": {
+          if (!body?.userId) throw new Error("userId required");
+          const encoded2 = encodeURIComponent(body.userId);
+          // Hard-delete auth user; FK cascades delete sessions, payments, etc.
+          const delRes = await fetch(
+            `${SUPABASE_URL}/auth/v1/admin/users/${encoded2}`,
+            {
+              method: "DELETE",
+              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+            },
+          );
+          if (!delRes.ok) {
+            const txt = await delRes.text().catch(() => "");
+            return { ok: false, error: `Delete failed: HTTP ${delRes.status}: ${txt.slice(0, 200)}` };
+          }
+          return { ok: true };
+        }
+        case "refund-payment": {
+          if (!body?.paymentId) throw new Error("paymentId required");
+          if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return { ok: false, error: "Razorpay keys not configured" };
+          const amountPaise = body.amountPaise ? Number(body.amountPaise) : undefined;
+          if (amountPaise !== undefined && (!Number.isInteger(amountPaise) || amountPaise < 100)) {
+            throw new Error("amountPaise must be an integer ≥ 100");
+          }
+          const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+          const refundBody: Record<string, unknown> = {};
+          if (amountPaise) refundBody.amount = amountPaise;
+          const rzpRes = await fetch(
+            `https://api.razorpay.com/v1/payments/${encodeURIComponent(String(body.paymentId))}/refund`,
+            {
+              method: "POST",
+              headers: { Authorization: `Basic ${rzpAuth}`, "Content-Type": "application/json" },
+              body: JSON.stringify(refundBody),
+            },
+          );
+          if (!rzpRes.ok) {
+            const txt = await rzpRes.text().catch(() => "");
+            return { ok: false, error: `Razorpay refund failed: HTTP ${rzpRes.status}: ${txt.slice(0, 300)}` };
+          }
+          const refundData = await rzpRes.json() as { id?: string; amount?: number; status?: string };
+          return { ok: true, refundId: refundData.id, amount: refundData.amount, status: refundData.status };
+        }
+        case "send-email": {
+          if (!body?.userId || !body?.subject || !body?.htmlBody) throw new Error("userId, subject, and htmlBody required");
+          if (!RESEND_API_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
+          const subjectStr = String(body.subject).slice(0, 200);
+          const htmlStr = String(body.htmlBody).slice(0, 20000);
+          // Fetch user email from profiles
+          const prof = await fetchJSON<{ email: string }>(`profiles?id=eq.${encodeURIComponent(body.userId)}&select=email&limit=1`);
+          const toEmail = prof[0]?.email;
+          if (!toEmail) return { ok: false, error: "User email not found" };
+          const emailRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "HireStepX <noreply@hirestepx.com>",
+              to: [toEmail],
+              subject: subjectStr,
+              html: htmlStr,
+            }),
+          });
+          if (!emailRes.ok) {
+            const txt = await emailRes.text().catch(() => "");
+            return { ok: false, error: `Resend failed: HTTP ${emailRes.status}: ${txt.slice(0, 200)}` };
+          }
+          const emailData = await emailRes.json() as { id?: string };
+          return { ok: true, emailId: emailData.id, to: toEmail };
+        }
+        case "live": {
+          const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+          const liveSessions = await fetchJSON<{ id: string; user_id: string; type: string; difficulty: string; score: number | null; created_at: string }>(
+            `sessions?created_at=gte.${encodeURIComponent(since)}&select=id,user_id,type,difficulty,score,created_at&order=created_at.desc&limit=50`,
+          );
+          return { sessions: liveSessions, since };
         }
         default: throw new Error(`Unknown section: ${section}`);
       }
