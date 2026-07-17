@@ -178,6 +178,24 @@ export function substituteVagueSalaryDecades(s: string): string {
   });
 }
 
+/* OA-B55 (2026-07-17): a URL in the candidate's message carries digits in its
+ * port / path / query ("check https://example.com:8080/jobs/45") that are NOT
+ * salary figures. The bare-integer span path in the number-role-classifier
+ * would false-bind "8080" or "45" as a target/current CTC. Strip URL-shaped
+ * tokens to whitespace BEFORE any number extraction so their digits never
+ * reach the span scorer. Exposed so both parseSalaryFacts and
+ * classifyNumberRoles share ONE definition (single source of truth). Pure.
+ * Covers scheme-prefixed (`https://…`, `www.…`) and bare host+TLD forms with
+ * an optional port/path/query tail. Kept to common TLDs so a sentence-final
+ * "word.Something" idiom can't accidentally swallow real text. */
+const URL_RE =
+  /\b(?:https?:\/\/|www\.)\S+|\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.(?:com|in|io|org|net|co|dev|app|xyz|ai|gov|edu|info|biz|me|tech)\b(?:[/:?#]\S*)?/gi;
+
+export function stripUrls(s: string): string {
+  if (!s) return s;
+  return s.replace(URL_RE, " ");
+}
+
 /* Standalone salary-bearing tokens: 22 LPA / 22.5 lakhs / 1.2 crore / 22L.
  * Capture groups:
  *   1 → digits, 2 → unit token */
@@ -282,7 +300,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
    * Without this pre-pass, the entire downstream pipeline (kernel fact
    * binding, salary clamping, hike math, telemetry) silently drops
    * spelled-out salary disclosures. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(textIn));
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(stripUrls(textIn)));
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */

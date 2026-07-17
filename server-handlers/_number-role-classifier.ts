@@ -52,7 +52,7 @@
  * Pure. No clock, no IO.
  */
 
-import { substituteEnglishNumbers, substituteVagueSalaryDecades } from "./_fact-parser";
+import { substituteEnglishNumbers, substituteVagueSalaryDecades, stripUrls } from "./_fact-parser";
 
 /* ─── Type surface ─────────────────────────────────────────────────── */
 
@@ -1131,7 +1131,10 @@ export function classifyNumberRoles(
    * Without this, "my current CTC is thirty six LPA" silently returns
    * { currentCtc: null }, the kernel sees no disclosure, and the engine
    * falls through — exact same shape as the LPE bug f5289f3 fixed. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(textIn));
+  /* OA-B55: strip URL-shaped tokens first so port/path/query digits
+   * ("…example.com:8080/jobs/45") never reach span discovery and false-bind
+   * as a salary figure. Shared single source with parseSalaryFacts. */
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(stripUrls(textIn)));
   const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };

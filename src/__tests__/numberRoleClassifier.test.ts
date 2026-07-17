@@ -459,6 +459,11 @@ const ROWS: Row[] = [
    * cash tag stays suppressed (binds to nothing). */
   { label: "PRI-62/PRI-50: equity-only 'stock worth 5 LPA' stays null",    text: "I get stock worth 5 LPA",                    ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: null } },
   { label: "PRI-62/PRI-50: 'RSUs worth roughly 3 LPA' stays null",         text: "RSUs worth roughly 3 LPA a year.",           ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: null } },
+  /* OA-B55 (2026-07-17): URL port / path digits must NOT false-bind as a
+   * salary figure — stripUrls removes the URL before span discovery. */
+  { label: "OA-B55: URL port/path digits do NOT bind as target",           text: "check https://example.com:8080/jobs/45 for details", ctx: { lastAiText: "what's your target CTC?" }, expect: { target: null, currentCtc: null } },
+  { label: "OA-B55: bare host+path digits do NOT bind",                    text: "see careers.example.com/page/60 for the JD",       ctx: { lastAiText: "what's your target CTC?" }, expect: { target: null } },
+  { label: "OA-B55: a real salary alongside a URL still binds",            text: "see https://example.com/jobs/45 — I'm targeting 40 LPA", ctx: {}, expect: { target: 40 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {

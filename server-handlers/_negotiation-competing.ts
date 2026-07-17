@@ -31,11 +31,31 @@ export type CompetingGateContext = {
 // Conservative: requires either an explicit "I have / received / got" verb,
 // "in-hand offer", "another company offered me", OR a competing-offer
 // phrase that's directly attached to a rupee figure.
+// OA-B25 (2026-07-17): the possession-verb forms admit an OPTIONAL company /
+// qualifier word between the determiner and "offer" — "I have an Amazon offer",
+// "received a Google offer", "got another Flipkart offer". Previously the
+// determiner had to abut "offer" directly, so any named-company phrasing
+// ("an Amazon offer at ₹72L") slipped every branch and a real competing offer
+// went undetected → the AI's competing-offer reference was wrongly stripped.
+// Safe because it stays VERB-anchored (have/got/received/hold): a possession
+// claim of an offer is competing by construction, so an aspirational "happy
+// with an offer of ₹50L" (no possession verb) is still not matched.
 const CANDIDATE_AFFIRMATIVE_RE =
-  /\b(?:i\s+(?:have|got|received|hold)\s+(?:an?|another|a\s+competing)\s+offer|received\s+(?:an|another|a\s+competing)\s+offer|in[\s-]?hand\s+offer|another\s+company\s+(?:offered|has\s+offered)|got\s+(?:an|another)\s+offer\s+from)\b/i;
+  /\b(?:i\s+(?:have|got|received|hold)\s+(?:an?|another|a\s+competing)\s+(?:[a-z][\w'&.-]*\s+)?offer|received\s+(?:an|another|a\s+competing)\s+(?:[a-z][\w'&.-]*\s+)?offer|in[\s-]?hand\s+offer|another\s+company\s+(?:offered|has\s+offered)|got\s+(?:an|another)\s+offer\s+from)\b/i;
 
 const CANDIDATE_COMPETING_WITH_NUMBER_RE =
   /\b(?:competing|other|another)\s+offer\s+(?:of|at|for)\s+₹?\s*\d/i;
+
+// OA-B25 (2026-07-17): bare named-company offer welded to a rupee figure with
+// NO possession verb — "Amazon offer at ₹72L", "Google offer of 75 LPA". Kept
+// deliberately tight: a Capitalized proper-noun company token + "offer" + a
+// preposition + a number. Requiring the capitalized company AND the attached
+// figure keeps the false-positive surface tiny (an aspirational "an offer of
+// ₹50L" has no leading company and never matches), while the recruiter's own
+// on-table offer is referenced as "the/your/this offer", never "<Company>
+// offer at ₹N".
+const CANDIDATE_NAMED_COMPANY_OFFER_RE =
+  /\b[A-Z][A-Za-z][\w&.-]*\s+offer\s+(?:of|at|for)\s+₹?\s*\d/;
 
 // Negation guard: if the candidate explicitly denied a competing offer,
 // affirmative matches DON'T apply. Without this guard, "any competing
@@ -50,6 +70,10 @@ export function candidateMentionedCompetingOffer(text: string): boolean {
   // independent rupee-attached competing-offer phrase, treat as denied.
   const hasNumber = CANDIDATE_COMPETING_WITH_NUMBER_RE.test(text);
   if (hasNumber) return true; // "competing offer of ₹40 LPA" — explicit
+  // Named-company offer welded to a figure ("Amazon offer at ₹72L") — explicit
+  // competing signal (OA-B25). Like the number-attached branch, this wins
+  // before the negation guard: a rupee-attached company offer is unambiguous.
+  if (CANDIDATE_NAMED_COMPANY_OFFER_RE.test(text)) return true;
   const hasAffirmative = CANDIDATE_AFFIRMATIVE_RE.test(text);
   if (!hasAffirmative) return false;
   // Affirmative phrase exists. Check for a negation token nearby — if the

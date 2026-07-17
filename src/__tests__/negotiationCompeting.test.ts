@@ -30,6 +30,23 @@ describe("candidateMentionedCompetingOffer", () => {
     expect(candidateMentionedCompetingOffer("")).toBe(false);
     expect(candidateMentionedCompetingOffer("I'm currently with TCS, looking to move")).toBe(false);
   });
+
+  it("detects a named-company competing offer — OA-B25", () => {
+    // Verb-anchored possession with a company qualifier between the
+    // determiner and "offer".
+    expect(candidateMentionedCompetingOffer("I have an Amazon offer at ₹72L")).toBe(true);
+    expect(candidateMentionedCompetingOffer("I received a Google offer at 75 LPA")).toBe(true);
+    expect(candidateMentionedCompetingOffer("I got another Flipkart offer last week")).toBe(true);
+    // Bare named-company offer welded to a rupee figure (no possession verb).
+    expect(candidateMentionedCompetingOffer("Amazon offer at ₹72L")).toBe(true);
+    expect(candidateMentionedCompetingOffer("Google offer of 75 LPA")).toBe(true);
+  });
+
+  it("does NOT treat an aspirational offer wish as competing — OA-B25 guard", () => {
+    // No possession verb and no capitalized company → not a competing claim.
+    expect(candidateMentionedCompetingOffer("I'd be happy with an offer of ₹50L")).toBe(false);
+    expect(candidateMentionedCompetingOffer("I'm hoping for an offer around 50 LPA")).toBe(false);
+  });
 });
 
 describe("stripPhantomCompetingOffer", () => {
