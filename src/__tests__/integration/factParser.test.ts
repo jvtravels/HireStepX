@@ -211,6 +211,28 @@ describe("_fact-parser — hasSalaryAbove / maxSalaryLpa", () => {
   });
 });
 
+describe("_fact-parser — OA-B2 bare comma-grouped absolute rupees", () => {
+  it("binds Indian-grouped '48,00,000' with a money cue as 48 LPA", () => {
+    expect(maxSalaryLpa("my current CTC is 48,00,000")).toBe(48);
+  });
+  it("binds crore-scale '1,20,00,000' as 120 LPA", () => {
+    expect(maxSalaryLpa("current package 1,20,00,000")).toBe(120);
+  });
+  it("binds Western-grouped '4,800,000' as 48 LPA", () => {
+    expect(maxSalaryLpa("my salary is 4,800,000 per annum")).toBe(48);
+  });
+  it("keeps a leading ₹ prefix working", () => {
+    expect(maxSalaryLpa("I earn ₹48,00,000 currently")).toBe(48);
+  });
+  it("does NOT bind a comma-grouped count with no money cue", () => {
+    /* "1,50,000 users" is not pay — the money-cue gate keeps it out. */
+    expect(parseSalaryFacts("we serve 1,50,000 users")).toHaveLength(0);
+  });
+  it("leaves a context-free bare number unparsed (conservative)", () => {
+    expect(parseSalaryFacts("48,00,000")).toHaveLength(0);
+  });
+});
+
 describe("_fact-parser — OA-B12 million unit", () => {
   it("parses '4.8 million' as 48 LPA", () => {
     expect(maxSalaryLpa("targeting 4.8 million")).toBe(48);

@@ -27,6 +27,12 @@ const ROWS: Row[] = [
   /* ── Current-CTC cues ──────────────────────────────────────────── */
   { label: "currently earning N",        text: "I am currently earning 18 LPA",         expect: { currentCtc: 18 } },
   { label: "my current CTC",             text: "My current CTC is 22 LPA",              expect: { currentCtc: 22 } },
+  /* OA-B2: bare comma-grouped absolute rupees must bind through the same
+   * shared input normalisation (substituteAbsoluteRupees) as the fact parser. */
+  { label: "B2 Indian-grouped current", text: "My current CTC is 48,00,000",           expect: { currentCtc: 48 } },
+  { label: "B2 crore-scale current",    text: "current package 1,20,00,000",            expect: { currentCtc: 120 } },
+  { label: "B2 Western-grouped current",text: "my salary is 4,800,000 per annum",       expect: { currentCtc: 48 } },
+  { label: "B2 count is NOT pay",       text: "we serve 1,50,000 users",                expect: { currentCtc: null, target: null } },
   { label: "I make N",                   text: "I make 15 LPA right now",               expect: { currentCtc: 15 } },
   { label: "drawing N",                  text: "drawing 19 LPA at present",             expect: { currentCtc: 19 } },
   { label: "I'm at N",                   text: "I'm at 12 LPA",                         expect: { currentCtc: 12 } },

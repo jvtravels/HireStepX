@@ -286,6 +286,38 @@ function resolveBareRupee(value: number): { lpa: number; confidence: "high" | "m
   return { lpa: value, confidence: "medium" };
 }
 
+/* OA-B2 (2026-07-17): bare comma-grouped absolute-rupee amounts.
+ * "I earn 48,00,000 currently" — Indian (48,00,000) or Western
+ * (4,800,000) comma grouping with NO ₹ prefix and NO unit token — matched
+ * neither UNIT_NUM_RE (needs a unit) nor RUPEE_NUM_RE (needs ₹), so BOTH
+ * parseSalaryFacts AND the number-role-classifier's span bank silently
+ * dropped it: the disclosed CTC never bound and discovery re-probed. The
+ * comma grouping IS the absolute-rupee signal; we normalise it to a
+ * representative "NN LPA" token at the shared input boundary so both
+ * subsystems bind it identically (single source of truth — mirrors N-4 /
+ * stripUrls). Gated on a money-context cue in the same text so a
+ * comma-grouped user/view count in a non-salary sentence is never
+ * mis-read as pay; resolved through the SAME RUPEES_PER_LAKH divisor and
+ * MAX_PLAUSIBLE_LPA ceiling as resolveBareRupee. A trailing unit token is
+ * excluded by lookahead so an already-tagged figure is left for the unit
+ * pass. Pure. */
+/* A leading $/€/£/¥ (or an abutting digit) is excluded by lookbehind so a
+ * foreign-currency amount ("$120,000") stays intact for the USD→INR path and a
+ * sub-run of a longer number is never matched. */
+const GROUPED_ABSOLUTE_RUPEE_RE =
+  /(?<![$€£¥\d])(₹\s*)?(\d{1,3}(?:,\d{2,3})+)(?!\s*(?:lpa|lp[a-z]|lakhs?|lacs?|crores?|cr|millions?|mn|l)\b)/gi;
+
+export function substituteAbsoluteRupees(s: string): string {
+  if (!s || !VAGUE_DECADE_MONEY_CUE_RE.test(s)) return s;
+  return s.replace(GROUPED_ABSOLUTE_RUPEE_RE, (whole, rupeePfx: string | undefined, digits: string) => {
+    const raw = Number(digits.replace(/,/g, ""));
+    if (!Number.isFinite(raw) || raw < RUPEES_PER_LAKH) return whole;
+    const lpa = raw / RUPEES_PER_LAKH;
+    if (lpa > MAX_PLAUSIBLE_LPA) return whole;
+    return `${rupeePfx ? "₹" : ""}${Math.round(lpa * 10) / 10} LPA`;
+  });
+}
+
 /** Strip "," thousand separators and parse. */
 function digitsToNumber(raw: string): number {
   return Number(raw.replace(/,/g, ""));
@@ -324,7 +356,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
    * Without this pre-pass, the entire downstream pipeline (kernel fact
    * binding, salary clamping, hike math, telemetry) silently drops
    * spelled-out salary disclosures. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(stripUrls(textIn)));
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(stripUrls(textIn))));
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */
