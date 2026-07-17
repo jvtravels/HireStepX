@@ -104,6 +104,9 @@ describe("grantReferralReward", () => {
     const f = router([
       { match: (u) => u.includes("reward_granted_at=gte"), reply: () => res([]) }, // cap: 0
       { match: (u, i) => u.includes("/referrals") && i?.method === "PATCH", reply: () => res([{ id: "r1" }]) }, // claim wins
+      // RPC not yet deployed in test env — return 404 so grantSessionCredits falls back to the
+      // non-atomic upsert path. Supabase returns 404 for missing functions, not a network throw.
+      { match: (u) => u.includes("/rpc/"), reply: () => ({ ok: false, status: 404, json: async () => ({}) } as unknown as Response) },
       { match: (u, i) => u.includes("/session_credits") && (!i || i.method === undefined || i.method === "GET"), reply: () => res([{ balance: 0 }]) }, // balance read
       {
         match: (u, i) => u.includes("/session_credits") && i?.method === "POST",

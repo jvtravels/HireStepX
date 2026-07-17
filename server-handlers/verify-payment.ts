@@ -526,7 +526,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       // Money-critical: the payment is already captured, so retry the grant
       // through transient Supabase failures before giving up.
-      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch, 3);
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch, 3, { paymentId: razorpay_payment_id });
       if (newBalance === null) {
         console.error("[verify-payment] credit grant failed after retries for", userId.slice(0, 8));
         // The dedup row was inserted BEFORE this grant, so leaving it in place

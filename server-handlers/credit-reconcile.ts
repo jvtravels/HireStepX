@@ -75,8 +75,11 @@ export default async function handler(req: Request): Promise<Response> {
 
     // ── 2. Total credits consumed from ledger ─────────────────────────────────
     // Only count rows written by the SQL functions (operation = 'consume').
-    // If ledger doesn't exist yet (table newly added), fall back to 0.
+    // If ledger doesn't exist yet (PGRST205 / non-ok), refuse auto-reconcile:
+    // silently treating consumed=0 would over-credit (set balance = all grants
+    // ever, ignoring every session the user has already spent credits on).
     let consumedTotal = 0;
+    let ledgerAvailable = false;
     try {
       const ledgerRes = await fetch(
         `${SUPABASE_URL}/rest/v1/credit_ledger?user_id=eq.${encodeURIComponent(userId)}&operation=eq.consume&select=quantity`,
@@ -86,8 +89,24 @@ export default async function handler(req: Request): Promise<Response> {
         const rows = await ledgerRes.json() as Array<{ quantity: number }>;
         // quantity is negative for consume rows (e.g. -1); sum and negate.
         consumedTotal = rows.reduce((sum, r) => sum + Math.abs(r.quantity), 0);
+        ledgerAvailable = true;
       }
-    } catch { /* ledger table may not exist yet — treat as 0 consumed */ }
+    } catch { /* network error — treat as unavailable */ }
+
+    // If the ledger table hasn't been migrated yet, report what we know but
+    // do NOT auto-write a balance (it would ignore consumed credits entirely).
+    if (!ledgerAvailable) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "ledger_unavailable",
+          message: "credit_ledger table not found — run the SQL migration first. Auto-reconcile disabled to prevent over-crediting.",
+          granted_total: grantedTotal,
+          payment_count: payments.length,
+        }),
+        { status: 409, headers: getHeaders },
+      );
+    }
 
     // ── 3. Computed correct balance ───────────────────────────────────────────
     const computedBalance = Math.max(0, grantedTotal - consumedTotal);

@@ -52,9 +52,16 @@ export async function getSessionCredits(
  *  where two concurrent purchases both read balance=3, both write balance=4
  *  (one credit lost) is eliminated.
  *
- *  Fallback: if the RPC is unavailable (function not deployed, migration
- *  pending), falls back to the read-then-upsert approach. Each retry re-reads
- *  the balance so a partial prior write self-corrects.
+ *  Fallback: ONLY fires when the RPC returns 404/405 (function not yet deployed
+ *  in the target environment). Any other failure retries the atomic RPC instead
+ *  of falling back — this is intentional. Using the non-atomic read-then-upsert
+ *  path on transient RPC errors is what caused credits to be silently lost when
+ *  the Razorpay webhook and the client verify-payment both fell into the fallback
+ *  simultaneously (both read the same stale balance, both wrote balance+qty, net
+ *  result: one payment's grant was clobbered).
+ *
+ *  `opts.paymentId`: passed to the RPC so the `credit_ledger` table records which
+ *  Razorpay payment triggered each grant (immutable audit trail).
  *
  *  `retries` covers transient Supabase blips. This is money-critical — the
  *  caller has already taken payment.  Default 0 keeps unit tests unchanged. */
@@ -65,41 +72,60 @@ export async function grantSessionCredits(
   qty: number,
   fetchImpl: FetchImpl = fetch,
   retries = 0,
+  opts?: { paymentId?: string },
 ): Promise<number | null> {
   const safeQty = Math.min(Math.max(Math.trunc(Number(qty)) || 0, 1), 10);
+  // Set once on first 404/405; all subsequent attempts skip the RPC and go
+  // straight to the fallback (no point retrying a missing function).
+  let rpcMissing = false;
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // ── Primary: atomic RPC ──────────────────────────────────────────
-      const rpcRes = await fetchImpl(`${baseUrl}/rest/v1/rpc/grant_session_credits`, {
-        method: "POST",
-        headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
-        body: JSON.stringify({ p_user_id: userId, p_qty: safeQty }),
-      });
-      if (rpcRes.ok) {
-        const newBalance = await rpcRes.json();
-        if (typeof newBalance === "number") return newBalance;
+      if (!rpcMissing) {
+        // ── Primary: atomic RPC ────────────────────────────────────────
+        const rpcBody: Record<string, unknown> = { p_user_id: userId, p_qty: safeQty };
+        if (opts?.paymentId) rpcBody.p_payment_id = opts.paymentId;
+        const rpcRes = await fetchImpl(`${baseUrl}/rest/v1/rpc/grant_session_credits`, {
+          method: "POST",
+          headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
+          body: JSON.stringify(rpcBody),
+        });
+        if (rpcRes.ok) {
+          const newBalance = await rpcRes.json();
+          if (typeof newBalance === "number") return newBalance;
+          // Unexpected response shape — treat as transient and retry RPC only.
+          console.error(`grant_session_credits RPC ok but non-numeric response for ${userId}, will retry`);
+        } else if (rpcRes.status === 404 || rpcRes.status === 405) {
+          // Function not deployed in this environment — use non-atomic fallback.
+          rpcMissing = true;
+        } else {
+          // Transient RPC error (5xx, auth issue, etc.). Retry the atomic path;
+          // do NOT fall back to non-atomic upsert — that's what caused credit
+          // loss under concurrent webhook + client-callback delivery.
+          console.error(`grant_session_credits RPC error (${rpcRes.status}) for ${userId}, will retry`);
+          if (attempt < retries) await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+          continue;
+        }
       }
-      // ── Fallback: read-then-upsert (non-atomic, but safe under retries) ──
-      // Reached when the SQL function isn't deployed yet (404/405) or on
-      // unexpected RPC errors. Each attempt re-reads the balance so a
-      // partial prior write is self-correcting.
-      if (rpcRes.status !== 404 && rpcRes.status !== 405) {
-        console.error(`grant_session_credits RPC error (${rpcRes.status}) for ${userId}, falling back to upsert`);
+
+      if (rpcMissing) {
+        // ── Fallback: read-then-upsert (non-atomic, 404/405 only) ─────
+        // Each attempt re-reads the live balance so a partial prior write
+        // self-corrects, but concurrent concurrent calls CAN still race.
+        // Deploy the SQL migration to eliminate this path entirely.
+        const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
+        const next = current + safeQty;
+        const upsertRes = await fetchImpl(`${baseUrl}/rest/v1/session_credits`, {
+          method: "POST",
+          headers: authHeaders(serviceKey, {
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          }),
+          body: JSON.stringify({ user_id: userId, balance: next, updated_at: new Date().toISOString() }),
+        });
+        if (upsertRes.ok) return next;
       }
-    } catch { /* transient — try fallback */ }
-    try {
-      const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
-      const next = current + safeQty;
-      const upsertRes = await fetchImpl(`${baseUrl}/rest/v1/session_credits`, {
-        method: "POST",
-        headers: authHeaders(serviceKey, {
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal",
-        }),
-        body: JSON.stringify({ user_id: userId, balance: next, updated_at: new Date().toISOString() }),
-      });
-      if (upsertRes.ok) return next;
-    } catch { /* transient — fall through to retry */ }
+    } catch { /* transient network error — fall through to retry */ }
     if (attempt < retries) await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
   }
   return null;

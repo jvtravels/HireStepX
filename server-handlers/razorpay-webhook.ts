@@ -876,7 +876,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Money-critical: payment is captured, so retry the grant through transient
       // Supabase failures. On total failure, release the dedup claim so a Razorpay
       // re-delivery re-processes instead of short-circuiting as "duplicate".
-      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, quantity, fetch, 3);
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, quantity, fetch, 3, { paymentId: paymentId });
       if (newBalance === null) {
         console.error("[webhook] Credit grant failed after retries for", userId.slice(0, 8));
         await releasePaymentClaim(paymentId);
