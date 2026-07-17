@@ -33,6 +33,15 @@ const ROWS: Row[] = [
   { label: "B2 crore-scale current",    text: "current package 1,20,00,000",            expect: { currentCtc: 120 } },
   { label: "B2 Western-grouped current",text: "my salary is 4,800,000 per annum",       expect: { currentCtc: 48 } },
   { label: "B2 count is NOT pay",       text: "we serve 1,50,000 users",                expect: { currentCtc: null, target: null } },
+  /* OA-B71: foreign-currency disclosures normalise to LPA at the SAME shared
+   * input boundary (substituteForeignCurrency) so both subsystems bind them —
+   * and the pre-fix confident-wrong binds (AED→₹4L, £/€ raw→LPA) are gone.
+   * Values use the fixed FX table (USD 83 / GBP 105 / EUR 90 / AED 22.6). */
+  { label: "B71 AED code current",       text: "my current is AED 400,000",              expect: { currentCtc: 90.4 } },
+  { label: "B71 GBP symbol current",     text: "my current salary is £90,000",           expect: { currentCtc: 94.5 } },
+  { label: "B71 EUR symbol current",     text: "my current CTC is €85,000 per annum",     expect: { currentCtc: 76.5 } },
+  { label: "B71 GBP k-suffix target",    text: "I want £120k",   ctx: { phase: "probe-expectations", lastAiText: "expectations?" }, expect: { target: 126 } },
+  { label: "B71 USD $ path preserved",   text: "I'm currently earning $120,000",          expect: { currentCtc: 99.6 } },
   { label: "I make N",                   text: "I make 15 LPA right now",               expect: { currentCtc: 15 } },
   { label: "drawing N",                  text: "drawing 19 LPA at present",             expect: { currentCtc: 19 } },
   { label: "I'm at N",                   text: "I'm at 12 LPA",                         expect: { currentCtc: 12 } },

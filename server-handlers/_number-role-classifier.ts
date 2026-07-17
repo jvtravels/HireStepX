@@ -52,7 +52,7 @@
  * Pure. No clock, no IO.
  */
 
-import { substituteAbsoluteRupees, substituteEnglishNumbers, substituteVagueSalaryDecades, stripUrls } from "./_fact-parser";
+import { substituteAbsoluteRupees, substituteEnglishNumbers, substituteForeignCurrency, substituteVagueSalaryDecades, stripUrls } from "./_fact-parser";
 
 /* ─── Type surface ─────────────────────────────────────────────────── */
 
@@ -1141,7 +1141,7 @@ export function classifyNumberRoles(
   /* OA-B55: strip URL-shaped tokens first so port/path/query digits
    * ("…example.com:8080/jobs/45") never reach span discovery and false-bind
    * as a salary figure. Shared single source with parseSalaryFacts. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(stripUrls(textIn))));
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn)))));
   const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };

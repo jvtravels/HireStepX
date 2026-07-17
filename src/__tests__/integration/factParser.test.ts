@@ -233,6 +233,28 @@ describe("_fact-parser — OA-B2 bare comma-grouped absolute rupees", () => {
   });
 });
 
+describe("_fact-parser — OA-B71 foreign currency", () => {
+  it("binds 'AED 400,000' as 90.4 LPA (was ₹4L)", () => {
+    expect(maxSalaryLpa("my current is AED 400,000")).toBe(90.4);
+  });
+  it("binds '£90,000' as 94.5 LPA (was raw 90 LPA)", () => {
+    expect(maxSalaryLpa("salary £90,000")).toBe(94.5);
+  });
+  it("binds '€85,000' as 76.5 LPA", () => {
+    expect(maxSalaryLpa("earning €85,000 per year")).toBe(76.5);
+  });
+  it("binds a k-suffixed '£120k' as 126 LPA", () => {
+    expect(maxSalaryLpa("I want £120k")).toBe(126);
+  });
+  it("binds amount-before-code '90,000 AED'", () => {
+    expect(maxSalaryLpa("offered 90,000 AED")).toBe(20.3);
+  });
+  it("leaves a tiny sub-salary foreign amount untouched", () => {
+    /* "€5 coffee" is not a salary — below the 1-LPA emit floor. */
+    expect(parseSalaryFacts("grabbed a €5 coffee")).toHaveLength(0);
+  });
+});
+
 describe("_fact-parser — OA-B12 million unit", () => {
   it("parses '4.8 million' as 48 LPA", () => {
     expect(maxSalaryLpa("targeting 4.8 million")).toBe(48);

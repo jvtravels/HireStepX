@@ -2349,6 +2349,23 @@ export function validateRestyle(
       return { valid: false, reason: "compound-probe-introduced" };
     }
   }
+  /* LN2 / Audit Pass 4 (PDF#27, 2026-05-17) — Indian currency / unit
+   * lock. Indian recruiters quote compensation in ₹ + LPA, never in
+   * USD / EUR / GBP / "annual salary" / "per year" / "dollars" /
+   * "euros". The canonical-prose surface never emits these tokens
+   * (all money-bearing templates are ₹+LPA); any occurrence in the
+   * restyle is the LLM regressing to US-tech-recruiter framing.
+   *
+   * The check is structural (vocab tokens), not semantic — we trust
+   * the canonical to have used the right currency and the validator
+   * to enforce it. This runs BEFORE the number-subset check because
+   * OA-B71's shared input normaliser now folds a foreign-currency
+   * amount ("31000 euros") to an LPA scalar during scalar extraction,
+   * which would otherwise trip the generic new-number reason first and
+   * mask the more specific, actionable currency-lock diagnosis. */
+  if (NON_INDIAN_CURRENCY_VOCAB_RE.test(restyled)) {
+    return { valid: false, reason: "non-indian-currency-vocab" };
+  }
   /* Numbers in restyle must be a subset of numbers in canonical. */
   const canonicalNums = new Set(extractNumbers(canonical));
   const restyleNums = extractNumbers(restyled);
@@ -2413,19 +2430,6 @@ export function validateRestyle(
    * directive. Fall back to canonical verbatim. */
   if (BANNED_RECRUITER_IDIOM_RE.test(restyled)) {
     return { valid: false, reason: "banned-idiom-leaked" };
-  }
-  /* LN2 / Audit Pass 4 (PDF#27, 2026-05-17) — Indian currency / unit
-   * lock. Indian recruiters quote compensation in ₹ + LPA, never in
-   * USD / EUR / GBP / "annual salary" / "per year" / "dollars" /
-   * "euros". The canonical-prose surface never emits these tokens
-   * (all money-bearing templates are ₹+LPA); any occurrence in the
-   * restyle is the LLM regressing to US-tech-recruiter framing.
-   *
-   * The check is structural (vocab tokens), not semantic — we trust
-   * the canonical to have used the right currency and the validator
-   * to enforce it. */
-  if (NON_INDIAN_CURRENCY_VOCAB_RE.test(restyled)) {
-    return { valid: false, reason: "non-indian-currency-vocab" };
   }
   /* F7 / Audit Pass 2 (PDF#25, 2026-05-16) — ack-without-disclosure.
    *

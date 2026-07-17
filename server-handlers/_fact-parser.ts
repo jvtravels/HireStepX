@@ -318,6 +318,72 @@ export function substituteAbsoluteRupees(s: string): string {
   });
 }
 
+/* OA-B71 (2026-07-17): foreign-currency salary disclosures. A returning-NRI or
+ * MNC candidate quotes comp in AED / GBP / EUR / JPY / USD ("my current is AED
+ * 400,000", "£90,000 base", "€85k"). The OLD chain had NO foreign-currency
+ * handling except the classifier's $-only Pass 3, so these produced CONFIDENT
+ * WRONG binds — worse than dropping: substituteAbsoluteRupees treated "AED
+ * 400,000" as ₹400,000 → ₹4L (real ~₹90L), and a £/€ symbol (excluded by the
+ * rupee lookbehind) leaked its digits so bare "90" bound as 90 LPA. We convert
+ * every foreign-currency amount to a representative "NN LPA" token at the shared
+ * input boundary — BEFORE substituteAbsoluteRupees — via a fixed FX table (the
+ * same fixed-FX convention the classifier's USD path already uses: this is a
+ * mock-interview sim, ballpark parity is sufficient and deterministic). The
+ * currency symbol/code IS the money cue, so this is not gated on the vague-cue
+ * RE. Emitted only when the resulting LPA is salary-plausible (≥1, ≤ ceiling) so
+ * "€5" / "¥500" are left untouched. The USD $-symbol form is deliberately left
+ * to the classifier's dedicated Pass 3 (tested, kernel-relied-upon); we handle
+ * the word-form "USD" and the £/€/¥ symbols + AED/GBP/EUR/JPY codes it misses.
+ * Exposed so parseSalaryFacts and classifyNumberRoles share ONE definition. */
+const FX_TO_INR: Record<string, number> = {
+  usd: 83, gbp: 105, eur: 90, aed: 22.6, jpy: 0.55,
+};
+function fxRateForToken(token: string): number | null {
+  const t = token.toLowerCase().replace(/s$/, "");
+  if (t === "£" || t === "gbp" || t === "pound") return FX_TO_INR.gbp;
+  if (t === "€" || t === "eur" || t === "euro") return FX_TO_INR.eur;
+  if (t === "¥" || t === "jpy") return FX_TO_INR.jpy;
+  if (t === "aed" || t === "dirham") return FX_TO_INR.aed;
+  if (t === "usd") return FX_TO_INR.usd;
+  return null;
+}
+function scaleSuffix(sfx: string | undefined): number {
+  if (!sfx) return 1;
+  const s = sfx.toLowerCase();
+  if (s === "k") return 1_000;
+  if (s === "m") return 1_000_000;
+  return 1;
+}
+function foreignToLpaToken(currencyTok: string, digits: string, sfx: string | undefined, whole: string): string {
+  const rate = fxRateForToken(currencyTok);
+  if (rate == null) return whole;
+  const amount = Number(digits.replace(/,/g, "")) * scaleSuffix(sfx);
+  if (!Number.isFinite(amount) || amount <= 0) return whole;
+  const lpa = (amount * rate) / RUPEES_PER_LAKH;
+  if (lpa < 1 || lpa > MAX_PLAUSIBLE_LPA) return whole;
+  return `${Math.round(lpa * 10) / 10} LPA`;
+}
+/* Symbol/code BEFORE the amount: "AED 400,000", "£90,000", "€85k", "USD 1.2m".
+ * The k/m suffix abuts the digits (no separating whitespace consumed) so a
+ * trailing " per annum" is left intact — otherwise "€85,000 per annum" would
+ * collapse to "LPAper annum" and lose the unit's word boundary. */
+const FOREIGN_CURRENCY_PREFIX_RE =
+  /(£|€|¥|\bAED\b|\bGBP\b|\bEUR\b|\bJPY\b|\bUSD\b)\s*(\d[\d,]*(?:\.\d+)?)(k|m)?/gi;
+/* Amount BEFORE the code/word: "90,000 AED", "1.2m GBP", "85000 euros". */
+const FOREIGN_CURRENCY_SUFFIX_RE =
+  /(\d[\d,]*(?:\.\d+)?)\s*(k|m)?\s*(\bAED\b|\bGBP\b|\bEUR\b|\bJPY\b|\bUSD\b|dirhams?|pounds?|euros?)/gi;
+
+export function substituteForeignCurrency(s: string): string {
+  if (!s) return s;
+  let out = s.replace(FOREIGN_CURRENCY_PREFIX_RE, (whole, cur: string, digits: string, sfx: string | undefined) =>
+    foreignToLpaToken(cur, digits, sfx, whole),
+  );
+  out = out.replace(FOREIGN_CURRENCY_SUFFIX_RE, (whole, digits: string, sfx: string | undefined, cur: string) =>
+    foreignToLpaToken(cur, digits, sfx, whole),
+  );
+  return out;
+}
+
 /** Strip "," thousand separators and parse. */
 function digitsToNumber(raw: string): number {
   return Number(raw.replace(/,/g, ""));
@@ -356,7 +422,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
    * Without this pre-pass, the entire downstream pipeline (kernel fact
    * binding, salary clamping, hike math, telemetry) silently drops
    * spelled-out salary disclosures. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(stripUrls(textIn))));
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn)))));
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */
