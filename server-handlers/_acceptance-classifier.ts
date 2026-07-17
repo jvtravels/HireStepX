@@ -1835,12 +1835,30 @@ function normalizeQuotesLocal(s: string): string {
     .replace(/[\u201C\u201D]/g, '"');
 }
 
+/** Fold EXPANDED first-person auxiliaries back to the contracted form the
+ *  idiom banks are written against ("i am" \u2192 "i'm", "i will" \u2192 "i'll"). STT
+ *  engines and formal typing routinely emit the expanded form, so accept
+ *  idioms keyed on `i.?m` / `i.?ll` ("I'm in", "I'll take the offer") were
+ *  silently missing "i am in" / "i will take the offer" (offline hostile hunt,
+ *  2026-07-17). Applied at the single entry seam so every downstream gate \u2014
+ *  accept idioms, walk-away, and the conditional/negation vetoes \u2014 sees one
+ *  canonical form; folding toward the contraction only ever helps the veto
+ *  patterns (they too are written against `i.?ll` / `i.?m`). Semantically
+ *  neutral: "i am not going to sign" \u2192 "i'm not going to sign" still vetoes. */
+function normalizeContractionsLocal(s: string): string {
+  return s
+    .replace(/\bi\s+am\b/gi, "I'm")
+    .replace(/\bi\s+will\b/gi, "I'll")
+    .replace(/\bi\s+would\b/gi, "I'd")
+    .replace(/\bi\s+have\b/gi, "I've");
+}
+
 export function classifyAcceptance(
   text: string,
   context: AcceptanceContext = {},
 ): AcceptanceResult {
   const reasons: string[] = [];
-  const a = normalizeQuotesLocal(text || "").trim();
+  const a = normalizeContractionsLocal(normalizeQuotesLocal(text || "")).trim();
   if (!a) return { accepted: false, confidence: "none", reasons: ["empty"] };
 
   /* Step 1: vetoes. Each veto is structural — even if every other

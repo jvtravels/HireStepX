@@ -58,6 +58,14 @@ const HOSTILE_MUST_VETO: string[] = [
   "One more lakh and I'm in.",
   "Two more lakhs and I'll sign.",
   "A couple more lakhs and we have a deal.",
+  // Expanded-contraction forms must still veto after the entry-seam fold.
+  "I am not going to sign.",
+  "I will walk away from this.",
+  "I will sign if you bump the base.",
+  // LEAK 5 — Hindi / code-switched increase imperative welded to an English
+  // close (2026-07-17). Vetoed at the demand source (hindi-increase core).
+  "Thoda aur badha do, phir I'll sign.",
+  "Salary badha dijiye, then I accept.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [
@@ -89,6 +97,12 @@ const GENUINE_MUST_ACCEPT: string[] = [
   "You can consider this accepted.",
   "That's a deal then.",
   "I'm on board with this offer.",
+  // Expanded-contraction STT forms (2026-07-17) — the banks are written against
+  // i.?m / i.?ll; the entry seam now folds "i am"→"i'm", "i will"→"i'll" so
+  // these close instead of silently missing.
+  "I am in.",
+  "I will take the offer.",
+  "I would love to accept this offer.",
 ];
 
 describe("PRI-86 — negative-object & temporal-precondition leaks stay vetoed", () => {

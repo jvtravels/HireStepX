@@ -482,6 +482,19 @@ const DEMAND_CORES: DemandCore[] = [
       "i",
     ),
   },
+  /* Hindi / code-switched increase imperative: "badha do", "thoda aur badha
+   * do", "upar karo", "zyada kar do", "aur badhao". A bilingual candidate
+   * routinely conditions a close in Hindi on more money, then switches to
+   * English to sign ("Thoda aur badha do, phir I'll sign.") — a false-close the
+   * English demand cores can't see (offline hostile hunt, 2026-07-17). Anchored
+   * on the increase VERB (badha/badhao/upar-karo/zyada-karo); bare "aur"
+   * (Hindi "and"/"more") is too common to key on alone. Always an upward ask,
+   * so no offer gate. Genuine Hindi closes ("kar do", "bhej do", "theek hai",
+   * "haan") lack the increase verb and never match. */
+  {
+    reason: "hindi-increase",
+    re: /\b(?:badha\s*d(?:o|e|ijiye|ena|ijye)|badha[a]?o|(?:thoda\s+)?upar\s+(?:karo|le\s+jao|kar\s+do|uthao)|zyada\s+(?:karo|kar\s+do|do|chahiye))\b/i,
+  },
   /* Verb-fronted cash/percent bump whose increase intent lives in the
    * verb: "bump it 5%", "push the base up by a few percent". Ported
    * from VERB_MAGNITUDE_THEN_CLOSE_PATTERN, bridge dropped. */
