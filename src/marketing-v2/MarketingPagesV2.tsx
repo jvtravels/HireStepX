@@ -1162,210 +1162,186 @@ export function ContactV2() {
         .hsx-cf:focus { border-bottom-color: ${t.copper}; }
         .hsx-cf option { background: ${t.white}; color: ${t.coal}; }
         textarea.hsx-cf { resize: none; min-height: 80px; line-height: 1.55; padding-top: 6px; }
-        @media (max-width: 768px) {
-          .hsx-contact-grid { grid-template-columns: 1fr !important; }
-          .hsx-contact-left { padding: 56px 28px !important; min-height: auto !important; }
-          .hsx-contact-right { padding: 44px 28px !important; }
+        @media (max-width: 680px) {
+          .hsx-contact-inner { grid-template-columns: 1fr !important; gap: 0 !important; }
+          .hsx-contact-info { border-right: none !important; border-bottom: 1px solid ${t.line} !important; padding: 32px 28px !important; }
+          .hsx-contact-form { padding: 32px 28px !important; }
           .hsx-cf-name-row { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      <section
-        aria-label="Contact"
-        style={{ minHeight: "calc(100vh - 68px)", display: "grid", gridTemplateColumns: "1fr", alignItems: "stretch" }}
-      >
-        <div
-          className="hsx-contact-grid"
-          style={{ display: "grid", gridTemplateColumns: "48fr 52fr", minHeight: "inherit" }}
-        >
-          {/* ── LEFT — warm ivory, hero text ── */}
+      <PageHero
+        eyebrow="Contact"
+        title="Real humans,"
+        accent="real replies."
+        lead="No ticket systems. No autoresponders. A real person reads every message and replies within one business day."
+      />
+
+      <section style={{ ...sectionBase, background: t.cream, paddingTop: 64, paddingBottom: 96 }}>
+        <div style={{ ...containerNarrow, maxWidth: 900 }}>
+
+          {/* Single white card — info left, form right */}
           <div
-            className="hsx-contact-left"
             style={{
-              background: "#EDE7D4",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              padding: "clamp(56px,8vw,112px) clamp(36px,5.5vw,80px)",
-              position: "relative",
+              background: t.white,
+              border: `1px solid ${t.line}`,
+              borderRadius: 20,
+              boxShadow: shadows.card,
               overflow: "hidden",
             }}
           >
-            {/* Subtle radial warmth */}
-            <div aria-hidden style={{
-              position: "absolute", inset: 0, pointerEvents: "none",
-              background: "radial-gradient(ellipse 80% 60% at 15% 25%, rgba(255,255,255,0.35) 0%, transparent 60%)",
-            }} />
-
-            <p style={{
-              fontFamily: fonts.sans, fontSize: 11, fontWeight: 700,
-              letterSpacing: "0.2em", textTransform: "uppercase",
-              color: t.copper, margin: "0 0 28px", position: "relative",
-            }}>
-              Contact
-            </p>
-
-            <h1 style={{
-              fontFamily: fonts.serif,
-              fontSize: "clamp(42px, 4.5vw, 64px)",
-              lineHeight: 1.02,
-              letterSpacing: "-0.03em",
-              color: t.coal,
-              margin: "0 0 24px",
-              fontWeight: 400,
-              maxWidth: "13ch",
-              position: "relative",
-            }}>
-              Real humans,{" "}
-              <em style={{ color: t.copper, fontStyle: "italic" }}>real replies.</em>
-            </h1>
-
-            <p style={{
-              fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65,
-              color: t.inkFaint, margin: "0 0 52px",
-              maxWidth: "34ch", position: "relative",
-            }}>
-              No ticket systems. No autoresponders. A real person reads every message and replies within one business day.
-            </p>
-
-            <div style={{ width: 36, height: 1, background: t.lineStrong, marginBottom: 28, position: "relative" }} />
-
-            <p style={{
-              fontFamily: fonts.sans, fontSize: 11, fontWeight: 600,
-              letterSpacing: "0.16em", textTransform: "uppercase",
-              color: t.inkFaint, margin: "0 0 10px", position: "relative",
-            }}>
-              Or write directly
-            </p>
-
-            <a
-              href="mailto:hello@hirestepx.com"
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: "clamp(15px, 1.5vw, 17px)",
-                fontWeight: 600,
-                color: t.indigo,
-                textDecoration: "none",
-                borderBottom: `1.5px solid ${t.lineStrong}`,
-                paddingBottom: 3,
-                display: "inline-block",
-                position: "relative",
-                transition: "border-color 0.2s",
-              }}
+            <div
+              className="hsx-contact-inner"
+              style={{ display: "grid", gridTemplateColumns: "2fr 3fr" }}
             >
-              hello@hirestepx.com
-            </a>
-          </div>
+              {/* ── LEFT — contact info ── */}
+              <div
+                className="hsx-contact-info"
+                style={{
+                  padding: "48px 40px",
+                  borderRight: `1px solid ${t.line}`,
+                  background: t.creamSoft,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 32,
+                }}
+              >
+                <div>
+                  <p style={{ ...eyebrow, marginBottom: 12 }}>Email us</p>
+                  <a
+                    href="mailto:hello@hirestepx.com"
+                    style={{
+                      fontFamily: fonts.sans,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: t.indigo,
+                      textDecoration: "none",
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    hello@hirestepx.com
+                  </a>
+                </div>
 
-          {/* ── RIGHT — white, bare form ── */}
-          <div
-            className="hsx-contact-right"
-            style={{
-              background: t.white,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              padding: "clamp(56px,8vw,112px) clamp(36px,5.5vw,80px)",
-            }}
-          >
-            <h2 style={{
-              fontFamily: fonts.serif,
-              fontSize: "clamp(24px, 2.4vw, 32px)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-              color: t.coal,
-              fontWeight: 400,
-              margin: "0 0 40px",
-            }}>
-              Send a message
-            </h2>
+                <div>
+                  <p style={{ ...eyebrow, marginBottom: 12 }}>Response time</p>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
+                    Within 1 business day (IST). We read and reply to every message personally.
+                  </p>
+                </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (status === "sending" || status === "sent") return;
-                setStatus("sending");
-                const form = e.currentTarget as HTMLFormElement;
-                const data = {
-                  name: (form.querySelector("#contact-name") as HTMLInputElement)?.value ?? "",
-                  email: (form.querySelector("#contact-email") as HTMLInputElement)?.value ?? "",
-                  topic: (form.querySelector("#contact-topic") as HTMLSelectElement)?.value ?? "",
-                  message: (form.querySelector("#contact-message") as HTMLTextAreaElement)?.value ?? "",
-                };
-                fetch("/api/contact", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(data),
-                })
-                  .then(r => r.json())
-                  .then((d: { ok?: boolean; ref?: string }) => {
-                    if (d.ok) { setRef(d.ref ?? null); setStatus("sent"); }
-                    else setStatus("error");
-                  })
-                  .catch(() => setStatus("error"));
-              }}
-              aria-describedby="contact-form-status"
-              style={{ display: "grid", gap: 30 }}
-            >
-              <div className="hsx-cf-name-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                <ContactField label="Your name" htmlFor="contact-name">
-                  <input id="contact-name" type="text" required placeholder="Aarav Mehta" className="hsx-cf" />
-                </ContactField>
-                <ContactField label="Email" htmlFor="contact-email">
-                  <input id="contact-email" type="email" required placeholder="you@example.com" className="hsx-cf" />
-                </ContactField>
+                <div>
+                  <p style={{ ...eyebrow, marginBottom: 12 }}>Topics</p>
+                  <ul style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.8, margin: 0, paddingLeft: 16 }}>
+                    <li>Account &amp; billing</li>
+                    <li>Bug reports</li>
+                    <li>General feedback</li>
+                  </ul>
+                </div>
               </div>
 
-              <ContactField label="What's this about?" htmlFor="contact-topic">
-                <select id="contact-topic" required className="hsx-cf">
-                  <option value="">Pick one</option>
-                  <option>Account or billing</option>
-                  <option>Bug or technical issue</option>
-                  <option>Something else</option>
-                </select>
-              </ContactField>
+              {/* ── RIGHT — form ── */}
+              <div className="hsx-contact-form" style={{ padding: "48px 44px" }}>
+                <h2 style={{
+                  fontFamily: fonts.serif,
+                  fontSize: "clamp(22px, 2.2vw, 28px)",
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.02em",
+                  color: t.coal,
+                  fontWeight: 400,
+                  margin: "0 0 36px",
+                }}>
+                  Send a message
+                </h2>
 
-              <ContactField label="Message" htmlFor="contact-message">
-                <textarea
-                  id="contact-message"
-                  required
-                  rows={4}
-                  placeholder="As specific as you can. Screenshots help if there's a bug."
-                  className="hsx-cf"
-                />
-              </ContactField>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (status === "sending" || status === "sent") return;
+                    setStatus("sending");
+                    const form = e.currentTarget as HTMLFormElement;
+                    const data = {
+                      name: (form.querySelector("#contact-name") as HTMLInputElement)?.value ?? "",
+                      email: (form.querySelector("#contact-email") as HTMLInputElement)?.value ?? "",
+                      topic: (form.querySelector("#contact-topic") as HTMLSelectElement)?.value ?? "",
+                      message: (form.querySelector("#contact-message") as HTMLTextAreaElement)?.value ?? "",
+                    };
+                    fetch("/api/contact", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(data),
+                    })
+                      .then(r => r.json())
+                      .then((d: { ok?: boolean; ref?: string }) => {
+                        if (d.ok) { setRef(d.ref ?? null); setStatus("sent"); }
+                        else setStatus("error");
+                      })
+                      .catch(() => setStatus("error"));
+                  }}
+                  aria-describedby="contact-form-status"
+                  style={{ display: "grid", gap: 28 }}
+                >
+                  <div className="hsx-cf-name-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <ContactField label="Your name" htmlFor="contact-name">
+                      <input id="contact-name" type="text" required placeholder="Aarav Mehta" className="hsx-cf" />
+                    </ContactField>
+                    <ContactField label="Email" htmlFor="contact-email">
+                      <input id="contact-email" type="email" required placeholder="you@example.com" className="hsx-cf" />
+                    </ContactField>
+                  </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                <button
-                  type="submit"
-                  disabled={status === "sending" || status === "sent"}
-                  className="mv2-tap-44"
-                  style={{
-                    ...ctaPrimary("lg"),
-                    opacity: status === "sending" || status === "sent" ? 0.6 : 1,
-                    cursor: status === "sending" || status === "sent" ? "default" : "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : "Send message"}
-                </button>
-                <p
-                  id="contact-form-status"
-                  role="status"
-                  aria-live="polite"
-                  style={{
-                    fontFamily: fonts.sans, fontSize: 13, margin: 0, minHeight: 20,
-                    color: status === "error" ? t.error : status === "sent" ? t.success : t.inkFaint,
-                  }}
-                >
-                  {status === "sent"
-                    ? `Got it${ref ? ` (ref: ${ref})` : ""}. We'll reply within 1 business day.`
-                    : status === "error"
-                    ? "Couldn't send — email hello@hirestepx.com instead."
-                    : "We reply within 1 business day (IST)."}
-                </p>
+                  <ContactField label="What's this about?" htmlFor="contact-topic">
+                    <select id="contact-topic" required className="hsx-cf">
+                      <option value="">Pick one</option>
+                      <option>Account or billing</option>
+                      <option>Bug or technical issue</option>
+                      <option>Something else</option>
+                    </select>
+                  </ContactField>
+
+                  <ContactField label="Message" htmlFor="contact-message">
+                    <textarea
+                      id="contact-message"
+                      required
+                      rows={4}
+                      placeholder="As specific as you can. Screenshots help if there's a bug."
+                      className="hsx-cf"
+                    />
+                  </ContactField>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", paddingTop: 4 }}>
+                    <button
+                      type="submit"
+                      disabled={status === "sending" || status === "sent"}
+                      className="mv2-tap-44"
+                      style={{
+                        ...ctaPrimary("lg"),
+                        opacity: status === "sending" || status === "sent" ? 0.6 : 1,
+                        cursor: status === "sending" || status === "sent" ? "default" : "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : "Send message"}
+                    </button>
+                    <p
+                      id="contact-form-status"
+                      role="status"
+                      aria-live="polite"
+                      style={{
+                        fontFamily: fonts.sans, fontSize: 13, margin: 0, minHeight: 20,
+                        color: status === "error" ? t.error : status === "sent" ? t.success : t.inkFaint,
+                      }}
+                    >
+                      {status === "sent"
+                        ? `Got it${ref ? ` (ref: ${ref})` : ""}. We'll reply within 1 business day.`
+                        : status === "error"
+                        ? "Couldn't send — email hello@hirestepx.com instead."
+                        : "We reply within 1 business day (IST)."}
+                    </p>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </section>
