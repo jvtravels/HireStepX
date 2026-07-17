@@ -260,6 +260,7 @@ import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
 import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
 import { RouteFocusManager } from "./RouteFocusManager";
+import { BetaBanner } from "./BetaBanner";
 import { headers } from "next/headers";
 
 export default async function RootLayout({
@@ -322,6 +323,7 @@ export default async function RootLayout({
           className="sr-only"
         />
 
+        <BetaBanner />
         <OfflineBanner />
 
         <RouteFocusManager />

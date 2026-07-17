@@ -615,7 +615,8 @@ export default function AdminDashboard() {
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [sessionDetail, setSessionDetail] = useState<SessionDetailData | null>(null);
-  const [qaExtendTier, setQaExtendTier] = useState("pro");
+  const [userDetailLoading, setUserDetailLoading] = useState(false);
+  const [qaExtendTier, setQaExtendTier] = useState("starter");
   const [qaExtendDays, setQaExtendDays] = useState("30");
   const [qaGrantQty, setQaGrantQty] = useState("5");
   const [qaGrantNote, setQaGrantNote] = useState("");
@@ -813,13 +814,19 @@ export default function AdminDashboard() {
   // Load user detail
   useEffect(() => {
     if (!selectedUserId || !authed) return;
+    setUserDetailLoading(true);
+    setUserDetail(null);
     setQaStatus(null);
     setQaDeleteConfirm(false);
     setQaEmailSubject("");
     setQaEmailBody("");
     (async () => {
-      const d = await fetchSection("user-detail", { userId: selectedUserId }, true) as UserDetailData | null;
-      if (d) setUserDetail(d);
+      try {
+        const d = await fetchSection("user-detail", { userId: selectedUserId }, true) as UserDetailData | null;
+        if (d) setUserDetail(d);
+      } finally {
+        setUserDetailLoading(false);
+      }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUserId]);
@@ -1072,7 +1079,30 @@ export default function AdminDashboard() {
 
   const renderUsers = () => {
     if (selectedSessionId && sessionDetail) return renderSessionDetail();
-    if (selectedUserId && userDetail) return renderUserDetail();
+    if (selectedUserId) {
+      if (userDetail) return renderUserDetail();
+      // Loading or fetch failed — show inline spinner; never flash the list back
+      return (
+        <div style={{ textAlign: "center", padding: 80 }}>
+          {userDetailLoading ? (
+            <>
+              <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <p style={{ color: c.stone, fontSize: 14, margin: 0 }}>Loading user…</p>
+            </>
+          ) : (
+            <>
+              <p style={{ color: c.ember, fontSize: 14, margin: "0 0 12px" }}>Could not load user detail.</p>
+              <button
+                onClick={() => { setSelectedUserId(null); setUserDetail(null); }}
+                style={{ background: "none", border: `1px solid ${c.border}`, color: c.ivory, borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 13, fontFamily: font.ui }}
+              >
+                ← Back to users
+              </button>
+            </>
+          )}
+        </div>
+      );
+    }
     return (
       <div>
         {/* Search + export */}
@@ -1443,13 +1473,12 @@ export default function AdminDashboard() {
                     onChange={(e) => setQaExtendTier(e.target.value)}
                     disabled={qaBusy}
                     style={{
-                      flex: 1, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      flex: 1, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                     }}
                   >
                     <option value="free">Free</option>
                     <option value="starter">Sprint Pack</option>
-                    <option value="pro">Pro</option>
                   </select>
                   <input
                     type="number"
@@ -1460,7 +1489,7 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     placeholder="days"
                     style={{
-                      width: 70, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      width: 70, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
                     }}
                   />
@@ -1492,7 +1521,8 @@ export default function AdminDashboard() {
                     }
                   }}
                   style={{
-                    background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
+                    background: "rgba(180,83,9,0.12)", color: "#923F07",
+                    border: "1px solid rgba(180,83,9,0.25)", borderRadius: 6,
                     padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
                     cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
                     width: "100%",
@@ -1507,14 +1537,14 @@ export default function AdminDashboard() {
             <div style={{ padding: "16px 20px", borderRight: `1px solid ${c.border}` }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 3, height: 14, borderRadius: 2, background: "rgb(74,222,128)", flexShrink: 0 }} />
+                  <div style={{ width: 3, height: 14, borderRadius: 2, background: "#15803D", flexShrink: 0 }} />
                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Session Credits</span>
                 </div>
                 <span style={{
                   fontSize: 11, fontFamily: font.mono, fontWeight: 600,
-                  color: (userDetail.creditBalance ?? 0) > 0 ? "rgb(74,222,128)" : c.stone,
-                  background: (userDetail.creditBalance ?? 0) > 0 ? "rgba(74,222,128,0.1)" : `${c.stone}18`,
-                  border: `1px solid ${(userDetail.creditBalance ?? 0) > 0 ? "rgba(74,222,128,0.25)" : `${c.stone}30`}`,
+                  color: (userDetail.creditBalance ?? 0) > 0 ? "#166534" : c.stone,
+                  background: (userDetail.creditBalance ?? 0) > 0 ? "rgba(21,128,61,0.1)" : "rgba(14,12,8,0.05)",
+                  border: `1px solid ${(userDetail.creditBalance ?? 0) > 0 ? "rgba(21,128,61,0.25)" : "rgba(14,12,8,0.12)"}`,
                   padding: "2px 8px", borderRadius: 10,
                 }}>
                   {userDetail.creditBalance ?? 0} balance
@@ -1531,7 +1561,7 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     placeholder="qty"
                     style={{
-                      width: 70, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      width: 70, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
                     }}
                   />
@@ -1543,7 +1573,7 @@ export default function AdminDashboard() {
                     placeholder="reason (optional)"
                     maxLength={200}
                     style={{
-                      flex: 1, background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
+                      flex: 1, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                     }}
                   />
@@ -1576,8 +1606,9 @@ export default function AdminDashboard() {
                     }
                   }}
                   style={{
-                    background: "rgba(22,101,52,0.9)", color: "rgb(240,253,244)", border: "1px solid rgba(74,222,128,0.2)",
-                    borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
+                    background: "rgba(21,128,61,0.12)", color: "#166534",
+                    border: "1px solid rgba(21,128,61,0.25)", borderRadius: 6,
+                    padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
                     cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1, width: "100%",
                   }}
                 >

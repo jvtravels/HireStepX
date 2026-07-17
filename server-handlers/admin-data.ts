@@ -1730,7 +1730,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (!body?.userId) throw new Error("userId required");
           const tier = body.tier as string | undefined;
           const days = Number(body.days ?? 30);
-          if (!tier || !["free", "starter", "pro"].includes(tier)) throw new Error("tier must be free | starter | pro");
+          if (!tier || !["free", "starter"].includes(tier)) throw new Error("tier must be free | starter");
           if (!Number.isInteger(days) || days < 1 || days > 366) throw new Error("days must be 1–366");
           const now = new Date();
           const newEnd = new Date(now.getTime() + days * 86400000).toISOString();
