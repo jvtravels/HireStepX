@@ -1230,14 +1230,6 @@ export function ContactV2() {
                   </p>
                 </div>
 
-                <div>
-                  <p style={{ ...eyebrow, marginBottom: 12 }}>Topics</p>
-                  <ul style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.8, margin: 0, paddingLeft: 16 }}>
-                    <li>Account &amp; billing</li>
-                    <li>Bug reports</li>
-                    <li>General feedback</li>
-                  </ul>
-                </div>
               </div>
 
               {/* ── RIGHT — form ── */}
