@@ -1049,8 +1049,12 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
  * …); these reject by NEGATING the money or calling it unacceptable, which that
  * pattern misses. Shared single-source between both gates via FALSE_CLOSE. */
 const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
-  /* "… but/except NOT <money noun>" — "but not at this comp", "except for the base" */
-  /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\bnot\s+(?:at\s+|for\s+|on\s+|with\s+)?(?:this|that|the|these|those|such\s+a)?\s*(?:comp(?:ensation)?|number|figure|salary|package|ctc|price|amount|level|rate|pay|money|base|terms?)\b/i,
+  /* "… but/except NOT <money noun>" — "but not at this comp", "except for the base".
+   * Money-noun list includes the individual COMP COMPONENTS a candidate can
+   * partially reject while accepting the rest ("I accept the base but not the
+   * variable component", "… but not the joining bonus") — B82, verified
+   * 2026-07-17. Rejecting a named component means the package isn't closed. */
+  /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\bnot\s+(?:at\s+|for\s+|on\s+|with\s+)?(?:this|that|the|these|those|such\s+a)?\s*(?:comp(?:ensation)?|number|figure|salary|package|ctc|price|amount|level|rate|pay|money|base|terms?|variable|equity|esops?|rsus?|stock|bonus(?:es)?|joining)\b/i,
   /* "… but/except <too low / unacceptable / unworkable>" */
   /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\b(?:un(?:acceptable|workable|reasonable)|too\s+(?:low|little|less|small|tight))\b/i,
 ];
