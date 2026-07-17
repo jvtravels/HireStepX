@@ -1432,8 +1432,7 @@ export default function AdminDashboard() {
                     }}
                   >
                     <option value="free">Free</option>
-                    <option value="starter">Sprint Pack (starter)</option>
-                    <option value="pro">Monthly (pro)</option>
+                    <option value="starter">Sprint Pack</option>
                   </select>
                   <input
                     type="number"
