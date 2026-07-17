@@ -330,7 +330,7 @@ function FooterDomeMobile() {
                 fontSize: 14,
                 color: t.inkSoft,
                 textDecoration: "none",
-                marginBottom: 14,
+                marginBottom: 8,
               }}>{label}</a>
             ))}
           </div>

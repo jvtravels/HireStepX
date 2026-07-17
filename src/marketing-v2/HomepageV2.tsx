@@ -477,16 +477,17 @@ export function NavV2() {
         <div
           style={{
             ...container,
-            display: "grid",
-            gridTemplateColumns: "1fr auto 1fr",
+            position: "relative",
+            display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             height: 68,
           }}
         >
           <a
             href="/"
             aria-label="HireStepX home"
-            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
           >
             <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority style={{ height: scrolled ? 21 : 26, width: "auto", transition: "height 0.2s ease" }} />
           </a>
@@ -494,6 +495,10 @@ export function NavV2() {
           <div
             className="mv2-nav-links"
             style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
               display: "flex",
               alignItems: "center",
               gap: 32,
@@ -517,7 +522,7 @@ export function NavV2() {
             })}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
             {showDashboard ? (
               <a
                 href="/dashboard"
