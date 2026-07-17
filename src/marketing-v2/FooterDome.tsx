@@ -132,41 +132,43 @@ function FooterDomeDesktop() {
       </div>
 
       {/* Left column */}
-      <div style={{ position: "absolute", left: 96, top: 76 }}>
+      <div style={{ position: "absolute", left: 96, top: 64 }}>
         <p style={{
           fontFamily: fonts.sans,
           fontSize: 11,
           fontWeight: 600,
-          letterSpacing: "0.16em",
+          letterSpacing: "0.14em",
           color: t.copper,
           textTransform: "uppercase",
-          margin: "0 0 24px",
+          margin: "0 0 16px",
         }}>Product</p>
-        {PRODUCT_LINKS.map(([label, href]) => (
-          <a key={label} href={href} style={{
-            display: "block",
-            fontFamily: fonts.sans,
-            fontSize: 15,
-            fontWeight: 400,
-            color: t.inkSoft,
-            textDecoration: "none",
-            marginBottom: 20,
-            letterSpacing: "-0.01em",
-            transition: "color 0.15s",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = t.coal)}
-          onMouseLeave={e => (e.currentTarget.style.color = t.inkSoft)}
-          >{label}</a>
-        ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+          {PRODUCT_LINKS.map(([label, href]) => (
+            <a key={label} href={href} style={{
+              display: "block",
+              fontFamily: fonts.sans,
+              fontSize: 14,
+              fontWeight: 400,
+              color: t.inkSoft,
+              textDecoration: "none",
+              letterSpacing: "-0.01em",
+              lineHeight: 1,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = t.coal)}
+            onMouseLeave={e => (e.currentTarget.style.color = t.inkSoft)}
+            >{label}</a>
+          ))}
+        </div>
       </div>
 
       {/* © 2026 bottom-left */}
       <div style={{
         position: "absolute",
         left: 96,
-        bottom: 40,
+        bottom: 36,
         fontFamily: fonts.sans,
-        fontSize: 13,
+        fontSize: 12,
         color: t.inkFaint,
         letterSpacing: "0.01em",
       }}>© 2026 HireStepX</div>
@@ -216,32 +218,34 @@ function FooterDomeDesktop() {
       </div>
 
       {/* Right column */}
-      <div style={{ position: "absolute", right: 96, top: 76 }}>
+      <div style={{ position: "absolute", right: 96, top: 64 }}>
         <p style={{
           fontFamily: fonts.sans,
           fontSize: 11,
           fontWeight: 600,
-          letterSpacing: "0.16em",
+          letterSpacing: "0.14em",
           color: t.copper,
           textTransform: "uppercase",
-          margin: "0 0 24px",
+          margin: "0 0 16px",
         }}>Company</p>
-        {COMPANY_LINKS.map(([label, href]) => (
-          <a key={label} href={href} style={{
-            display: "block",
-            fontFamily: fonts.sans,
-            fontSize: 15,
-            fontWeight: 400,
-            color: t.inkSoft,
-            textDecoration: "none",
-            marginBottom: 20,
-            letterSpacing: "-0.01em",
-            transition: "color 0.15s",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = t.coal)}
-          onMouseLeave={e => (e.currentTarget.style.color = t.inkSoft)}
-          >{label}</a>
-        ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+          {COMPANY_LINKS.map(([label, href]) => (
+            <a key={label} href={href} style={{
+              display: "block",
+              fontFamily: fonts.sans,
+              fontSize: 14,
+              fontWeight: 400,
+              color: t.inkSoft,
+              textDecoration: "none",
+              letterSpacing: "-0.01em",
+              lineHeight: 1,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = t.coal)}
+            onMouseLeave={e => (e.currentTarget.style.color = t.inkSoft)}
+            >{label}</a>
+          ))}
+        </div>
       </div>
 
       {/* Social icons bottom-right */}
