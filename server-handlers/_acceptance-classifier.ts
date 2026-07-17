@@ -385,8 +385,13 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *     negotiating the breakdown, NOT consent — does NOT false-close.
    *     CONDITIONAL_DEFERRAL_PATTERN already owns "finalize" as a settle-verb,
    *     so "let's finalize it once you confirm base" stays vetoed in both gates.
-   *     Offline hostile sweep (2026-06-23). */
-  /\b(?:let'?s\s+|let\s+us\s+|we\s+can\s+|happy\s+to\s+)?finali[sz]e\s+(?:it|this|that|the\s+(?:deal|offer))\b/i,
+   *     Offline hostile sweep (2026-06-23). The object also admits the EXECUTION-
+   *     NOUN class (paperwork / contract / offer letter / papers / docs) — the
+   *     same nouns the send-paperwork (#3) and start-paperwork (#10) arms already
+   *     treat as unambiguous finalize objects — so "let's finalize the paperwork"
+   *     closes like "let's sign the paperwork" (PRI-97, 2026-07-17). Breakdown
+   *     nouns (base/numbers/split/details) remain excluded. */
+  /\b(?:let'?s\s+|let\s+us\s+|we\s+can\s+|happy\s+to\s+)?finali[sz]e\s+(?:it|this|that|the\s+(?:deal|offer|paperwork|paper\s*work|contract|papers|docs?|offer\s+letter|formalities|documentation))\b/i,
   /* 16. Hortative / readiness SIGN frame — "let's sign", "let's sign the
    *     paperwork/offer", "ready to sign", "I'm ready to sign". The bank
    *     already owns first-person-singular "I'll sign" / "let me sign" /
@@ -629,8 +634,17 @@ const CONCRETE_OFFER_REFERENCE_PATTERN =
  * CLEARING it is not a present accept; adding the clearance verbs to the same
  * single-source deferral pattern both gates share closes the gap. A genuine
  * accept carries no "once/as soon as <gatekeeper> clears" head. */
+/* PRI-97 (2026-07-17, round-18 offline hostile sweep) — ARRIVAL / FULFILLMENT
+ * deferral. The settle-verb list carried sign-off / clearance / vest verbs but
+ * not the "lands / arrives" ARRIVAL class or the "covered" FULFILLMENT verb —
+ * so "Consider it accepted once the equity refresh LANDS." and "Happy to join
+ * the day my relocation is fully COVERED." FALSE-CLOSED (the accept idiom fired
+ * while the commit was deferred to an unrealized future event). These verbs are
+ * already blessed as future-event heads in FUTURE_EVENT_CLOSE_PATTERN; adding
+ * them to the shared deferral pattern both gates read closes the gap at one
+ * source. A genuine accept carries no "once/the day <X> lands/is covered" head. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|counsel|procurement|compliance|the\s+(?:board|committee|lawyers?|team)|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|clear(?:s|ed)?|greenlights?|green-?lights?|okays?|vest(?:s|ed|ing)?|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|counsel|procurement|compliance|the\s+(?:board|committee|lawyers?|team)|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|clear(?:s|ed)?|greenlights?|green-?lights?|okays?|vest(?:s|ed|ing)?|cover(?:s|ed)?|lands?|arrives?|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring

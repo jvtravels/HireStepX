@@ -73,6 +73,14 @@ const HOSTILE_MUST_VETO: string[] = [
   "Sure, I'll sign the moment the ESOP doubles.",
   "The day the base increases, deal.",
   "The minute the equity goes up, I'm in.",
+  // LEAK 7 (PRI-97) — ARRIVAL / FULFILLMENT deferral: the accept idiom fires but
+  // the commit is deferred to an unrealized future event via the "lands/arrives"
+  // arrival class or the "covered" fulfillment verb. CONDITIONAL_DEFERRAL owned
+  // sign-off/clearance/vest but not these (2026-07-17 round-18 hostile sweep).
+  "Consider it accepted once the equity refresh lands.",
+  "Happy to join the day my relocation is fully covered.",
+  "I'll accept once the joining bonus lands.",
+  "Count me in the moment the revised letter arrives.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [
@@ -110,6 +118,12 @@ const GENUINE_MUST_ACCEPT: string[] = [
   "I am in.",
   "I will take the offer.",
   "I would love to accept this offer.",
+  // PRI-97 (2026-07-17) — "finalize the paperwork" is as unambiguous a close as
+  // "sign the paperwork"; arm-15's finalize object now admits the execution-noun
+  // class (paperwork/contract/offer letter), while breakdown nouns stay excluded.
+  "Great, let's finalize the paperwork.",
+  "Let's finalize the offer letter.",
+  "Happy to finalize the contract.",
 ];
 
 describe("PRI-86 — negative-object & temporal-precondition leaks stay vetoed", () => {
