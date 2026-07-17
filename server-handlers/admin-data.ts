@@ -982,8 +982,7 @@ async function getSessions() {
       id: string; user_id: string; date: string; type: string; difficulty: string; focus: string;
       duration: number; score: number; skill_scores: Record<string, number> | null; created_at: string;
       llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null;
-      is_llm_fallback: boolean | null;
-    }>(`sessions?select=id,user_id,date,type,difficulty,focus,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens,is_llm_fallback&order=created_at.desc&limit=${LIMIT_SESSIONS}`),
+    }>(`sessions?select=id,user_id,date,type,difficulty,focus,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens&order=created_at.desc&limit=${LIMIT_SESSIONS}`),
     fetchCount("sessions"),
   ]);
 
@@ -1020,7 +1019,7 @@ async function getSessions() {
       id: s.id, userId: s.user_id, type: s.type, difficulty: s.difficulty, focus: s.focus,
       score: s.score, duration: s.duration, date: s.created_at,
       llmCostInr: s.llm_cost_inr ?? null, promptTokens: s.prompt_tokens ?? null, completionTokens: s.completion_tokens ?? null,
-      isFallback: s.is_llm_fallback ?? false,
+      isFallback: false,
     })),
   };
 }
