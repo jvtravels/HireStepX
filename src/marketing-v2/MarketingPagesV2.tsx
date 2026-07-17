@@ -377,6 +377,11 @@ const PagesResponsiveSheet = () => (
       .mv2p-form { grid-template-columns: 1fr !important; }
       .mv2p-pricing-row { grid-template-columns: repeat(2, 1fr) !important; }
     }
+    /* 881–950px: pricing 3-col is too cramped at this width — force 2-col.
+       Grids, hero, and container padding stay at desktop defaults in this range. */
+    @media (max-width: 950px) and (min-width: 881px) {
+      .mv2p-pricing-row { grid-template-columns: repeat(2, 1fr) !important; }
+    }
   `}</style>
 );
 

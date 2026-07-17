@@ -150,9 +150,11 @@ export default async function CompaniesIndexPage() {
         </header>
 
         {/* ── Category nav strip ────────────────────────────────────── */}
-        <div style={{ borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
+        {/* overflowX on the outer div (not the nav) so the constrained block
+            width triggers horizontal scroll when 5 tabs exceed the viewport. */}
+        <div style={{ borderBottom: `1px solid ${t.line}`, background: t.creamSoft, overflowX: "auto" as const }}>
           <div className="ed-container">
-            <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0, overflowX: "auto" as const }}>
+            <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0 }}>
               {([
                 { group: GROUPS[0], hint: "TCS · Infosys · Wipro" },
                 { group: GROUPS[1], hint: "Flipkart · Razorpay · Swiggy" },
