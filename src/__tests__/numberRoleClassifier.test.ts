@@ -494,6 +494,23 @@ const ROWS: Row[] = [
   { label: "OA-B55: URL port/path digits do NOT bind as target",           text: "check https://example.com:8080/jobs/45 for details", ctx: { lastAiText: "what's your target CTC?" }, expect: { target: null, currentCtc: null } },
   { label: "OA-B55: bare host+path digits do NOT bind",                    text: "see careers.example.com/page/60 for the JD",       ctx: { lastAiText: "what's your target CTC?" }, expect: { target: null } },
   { label: "OA-B55: a real salary alongside a URL still binds",            text: "see https://example.com/jobs/45 — I'm targeting 40 LPA", ctx: {}, expect: { target: 40 } },
+
+  /* ── OA-B3 (2026-07-18): a target expressed as a PERCENTAGE HIKE over the
+   *    candidate's current CTC. The "%"/"percent" span is discarded before
+   *    span discovery (a percentage is not a salary unit), so without the
+   *    resolvePercentHikeTarget resolver the target stays null and discovery
+   *    stalls. base = this-turn disclosed current ?? ctx.currentCtc. ────── */
+  { label: "OA-B3: '20% above my CTC' resolves off carried-in base 30 → 36", text: "I'm looking for 20% above my current CTC",  ctx: { currentCtc: 30 }, expect: { target: 36, targetComponent: "total" } },
+  { label: "OA-B3: 'a 30% hike' off base 40 → 52",                          text: "I want a 30% hike",                          ctx: { currentCtc: 40 }, expect: { target: 52 } },
+  { label: "OA-B3: '25% more than I make now' off base 20 → 25",            text: "25% more than what I make now",            ctx: { currentCtc: 20 }, expect: { target: 25 } },
+  { label: "OA-B3: 'hike of 50%' (trailing form) off base 30 → 45",         text: "I'd expect a hike of 50%",                 ctx: { currentCtc: 30 }, expect: { target: 45 } },
+  { label: "OA-B3: same-turn disclosed current wins over ctx base",         text: "I make 20 LPA, want 30% more",             ctx: { currentCtc: 99 }, expect: { currentCtc: 20, target: 26 } },
+  { label: "OA-B3: fractional pct '12.5% jump' off base 40 → 45",           text: "even a 12.5% jump would work",             ctx: { currentCtc: 40 }, expect: { target: 45 } },
+  /* Guards — must NOT false-bind */
+  { label: "OA-B3 guard: no base → percent hike stays null",                text: "I want a 30% hike",                         ctx: {},                 expect: { target: null } },
+  { label: "OA-B3 guard: '20% variable' is a component, not a target",      text: "my comp is 20% variable",                  ctx: { currentCtc: 30 }, expect: { target: null } },
+  { label: "OA-B3 guard: '10% bump on the joining bonus' scoped to JB",     text: "give me a 10% bump on the joining bonus",  ctx: { currentCtc: 30 }, expect: { target: null } },
+  { label: "OA-B3 guard: absolute target still wins over percent phrasing", text: "I make 30, targeting 45 which is a 50% hike", ctx: { currentCtc: 30 }, expect: { target: 45 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {

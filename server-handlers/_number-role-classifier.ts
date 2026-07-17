@@ -66,6 +66,11 @@ export interface NumberRoleContext {
    *  AND the candidate replies with a bare number, the default role
    *  is `target` (the bot just asked for it). */
   phase?: string;
+  /** OA-B3 — the candidate's already-established current CTC (LPA) from
+   *  prior state. Used as the base for resolving a percentage-expressed
+   *  target ("20% above my CTC") when no current-CTC figure is disclosed
+   *  in the same utterance. Null/undefined when unknown. */
+  currentCtc?: number | null;
 }
 
 export interface NumberRoleResult {
@@ -1126,6 +1131,47 @@ function isBeatByReferenceSpan(text: string, span: SalarySpan): boolean {
  *       happen after scoring, but defence-in-depth).
  *    5. `targetAsRange` is true when ANY salary span is a range upper
  *       AND a target was bound. */
+/* ─── OA-B3 · percentage-expressed target resolver ───────────────────────
+ *
+ * A candidate can state a target as a HIKE relative to their current CTC —
+ * "20% above my CTC", "I want a 30% hike", "25% more than what I make now" —
+ * instead of an absolute LPA figure. The "%"/"percent" span is (correctly)
+ * discarded by NON_SALARY_UNIT_RE before span discovery — a percentage is not
+ * itself a salary unit — so without this resolver the target stays null and
+ * discovery stalls. When a current-CTC base is known (disclosed this turn or
+ * carried in from prior state via ctx.currentCtc), resolve
+ *   target = round(base × (1 + pct/100)).
+ * Single, conservative entry point; gated on an explicit hike/above-CTC intent
+ * so a component percentage ("20% variable", "10% joining bonus") never
+ * false-binds a target.
+ *
+ * Two surface forms are recognised:
+ *   A. percent THEN a hike/above word — "20% above|over|more|hike|raise|…"
+ *   B. a hike word THEN percent      — "a hike|raise|increment|jump of 20%"
+ * A component noun (variable/bonus/esop/stock/joining/…) abutting the match
+ * suppresses resolution — that percentage is scoped to a component, not CTC. */
+const PERCENT_HIKE_LEADING_RE =
+  /(?:^|[^.\d])(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)\s*(?:hike|raise|increment|increase|jump|bump|more|above|over|higher|on\s+top)\b/i;
+const PERCENT_HIKE_TRAILING_RE =
+  /\b(?:hike|raise|increment|increase|jump|bump|higher)\s+(?:of\s+)?(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)(?![a-z0-9])/i;
+const PERCENT_COMPONENT_GUARD_RE =
+  /\b(?:variable|bonus|esop|stock|equity|joining|jb|pf|hra|gratuity|retention|sign[-\s]?on|relocation|joining\s+bonus)\b/i;
+
+function resolvePercentHikeTarget(text: string, base: number | null): number | null {
+  if (base == null || !(base > 0)) return null;
+  const m = PERCENT_HIKE_LEADING_RE.exec(text) ?? PERCENT_HIKE_TRAILING_RE.exec(text);
+  if (!m) return null;
+  const pct = parseFloat(m[1]);
+  if (!Number.isFinite(pct) || pct <= 0 || pct > 200) return null;
+  /* Component guard: reject if a non-CTC component noun sits right after the
+   * matched phrase ("10% bump on the joining bonus" → scoped to the JB). */
+  const tail = text.slice(m.index + m[0].length, m.index + m[0].length + 24);
+  if (PERCENT_COMPONENT_GUARD_RE.test(tail)) return null;
+  const resolved = base * (1 + pct / 100);
+  if (!(resolved >= 1) || resolved > 5000) return null;
+  return Math.round(resolved * 100) / 100;
+}
+
 export function classifyNumberRoles(
   textIn: string,
   ctx: NumberRoleContext = {},
@@ -1144,7 +1190,17 @@ export function classifyNumberRoles(
   const text = substituteVagueSalaryDecades(substituteThousandScale(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn))))));
   const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
-    return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
+    /* OA-B3: the percent span is discarded before span discovery, so a pure
+     * "20% above my CTC" utterance yields no salary span. Resolve the hike
+     * against the carried-in current-CTC base before bailing. */
+    const pctTarget = resolvePercentHikeTarget(text, ctx.currentCtc ?? null);
+    return {
+      currentCtc: null,
+      target: pctTarget,
+      competing: null,
+      targetAsRange: false,
+      targetComponent: pctTarget != null ? "total" : null,
+    };
   }
   let currentCtc: number | null = null;
   let target: number | null = null;
@@ -1243,6 +1299,16 @@ export function classifyNumberRoles(
     target = null;
     targetFromRange = false;
     targetComponent = null;
+  }
+  /* OA-B3: no absolute target bound from a span, but the candidate may have
+   * expressed it as a percentage hike ("I make 20L, want 30% more"). Resolve
+   * against this turn's disclosed current, else the carried-in base. */
+  if (target == null) {
+    const pctTarget = resolvePercentHikeTarget(text, currentCtc ?? ctx.currentCtc ?? null);
+    if (pctTarget != null && pctTarget !== currentCtc && pctTarget !== competing) {
+      target = pctTarget;
+      targetComponent = "total";
+    }
   }
   const targetAsRange = targetFromRange || (target != null && currentFromRange === false && spans.some((s) => s.isRangeUpper));
   return {

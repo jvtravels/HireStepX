@@ -4001,7 +4001,7 @@ export function parseCandidateAnswer(
    * The 200 lines this block used to occupy now live in a 350-line
    * module with explicit precedence, a single decision point, and a
    * table-driven test surface. */
-  const roles = classifyNumberRoles(a, { lastAiText, phase });
+  const roles = classifyNumberRoles(a, { lastAiText, phase, currentCtc: priorTotalCtc });
   const currentCtc = roles.currentCtc;
   const competing = roles.competing;
   const target = roles.target;
