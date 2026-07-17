@@ -1145,18 +1145,6 @@ export function ContactV2() {
       contact: "hello@hirestepx.com",
       href: "mailto:hello@hirestepx.com",
     },
-    {
-      name: "Grievance Officer",
-      detail: "Data privacy concerns, DPDP Act 2023 requests, or unresolved complaints. Jay Vyas, Founder — we acknowledge within 24 hours and resolve within 15 working days, as required under IT Rules 2021 Rule 4(1)(d).",
-      contact: "grievance@hirestepx.com",
-      href: "mailto:grievance@hirestepx.com?subject=Grievance",
-    },
-    {
-      name: "Press + media",
-      detail: "Interviews, data requests, founder availability.",
-      contact: "hello@hirestepx.com",
-      href: "mailto:hello@hirestepx.com?subject=Press%20inquiry",
-    },
   ];
 
   return (
@@ -1339,33 +1327,6 @@ export function ContactV2() {
                   </a>
                 </div>
               ))}
-              <div
-                style={{
-                  padding: 20,
-                  background: t.creamSoft,
-                  border: `1px solid ${t.line}`,
-                  borderRadius: 14,
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: t.coal,
-                    margin: 0,
-                    marginBottom: 8,
-                  }}
-                >
-                  Based in
-                </p>
-                <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-                  India<br />
-                  Remote-first team, no physical office
-                </p>
-              </div>
             </div>
           </div>
         </div>
