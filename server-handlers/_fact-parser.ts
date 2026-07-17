@@ -249,6 +249,26 @@ function digitsToNumber(raw: string): number {
   return Number(raw.replace(/,/g, ""));
 }
 
+/* Family A / OA-B14 — unary-negation guard. The number-capture regexes
+ * start at the first digit, so a leading minus in "-5 lakhs" is never
+ * captured and the sign is silently stripped, storing +5 at HIGH
+ * confidence and poisoning every downstream hike/band/score computation.
+ * A negative salary is *implausible*, not a positive one — so we detect a
+ * unary minus immediately preceding the matched digit and drop the fact
+ * (design: implausible → no fact, never a confident wrong value). The
+ * minus must be a genuine sign — abutting the digit and itself preceded by
+ * whitespace or string start — so a compound hyphen inside a word can't
+ * trip it. Range spans are consumed in PASS 1 before this runs, so a "-"
+ * used as a range separator ("22-24 LPA") never reaches here as a sign. */
+function isUnaryNegated(text: string, start: number): boolean {
+  if (start === 0) return false;
+  const prev = text[start - 1];
+  if (prev !== "-" && prev !== "–" && prev !== "−" && prev !== "‑") {
+    return false;
+  }
+  return start - 1 === 0 || /\s/.test(text[start - 2]);
+}
+
 /* ─────────────── public API ─────────────── */
 
 /** Extract typed salary facts from arbitrary text. Range-aware:
@@ -313,6 +333,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
     const start = m.index;
     const end = start + whole.length;
     if (overlaps(start, end)) continue;
+    if (isUnaryNegated(text, start)) continue;
     const unit = normaliseUnit(unitTok);
     const raw = digitsToNumber(digits);
     if (!Number.isFinite(raw)) continue;
@@ -337,6 +358,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
     const start = m.index;
     const end = start + whole.length;
     if (overlaps(start, end)) continue;
+    if (isUnaryNegated(text, start)) continue;
     const unit = unitTok ? normaliseUnit(unitTok) : "rupee";
     const raw = digitsToNumber(digits);
     if (!Number.isFinite(raw)) continue;
