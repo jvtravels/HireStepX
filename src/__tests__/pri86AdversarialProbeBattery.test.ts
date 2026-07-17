@@ -66,6 +66,13 @@ const HOSTILE_MUST_VETO: string[] = [
   // close (2026-07-17). Vetoed at the demand source (hindi-increase core).
   "Thoda aur badha do, phir I'll sign.",
   "Salary badha dijiye, then I accept.",
+  // LEAK 6 (PRI-96) — future-event close frame with a MAGNITUDE-INCREASE arrival
+  // verb: the commit is deferred to an unrealized rise, so closing now is a
+  // FALSE-CLOSE. FUTURE_EVENT_CLOSE_PATTERN carried only arrival/settlement
+  // verbs; widened to cover doubles/increases/goes-up (2026-07-17).
+  "Sure, I'll sign the moment the ESOP doubles.",
+  "The day the base increases, deal.",
+  "The minute the equity goes up, I'm in.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [

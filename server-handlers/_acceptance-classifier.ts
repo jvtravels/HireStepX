@@ -1320,8 +1320,17 @@ const TEMPORAL_DEFERRAL_PATTERN =
  *  lands" slipped them. Scoped to a temporal head noun + a settlement/arrival
  *  verb within 40 chars; genuine accepts never use this frame. Shared
  *  single-source so BOTH gates reject in lockstep. */
+/* PRI-96 (2026-07-17, offline conditional-demand probe) — the same future-event
+ * frame with a MAGNITUDE-INCREASE arrival verb instead of an arrival/settlement
+ * verb: "I'll sign the moment the ESOP doubles", "the day the base increases,
+ * deal", "the minute the equity goes up, I'm in". The commit is still deferred
+ * to an unrealized event — the offer is un-bumped NOW — so it is a FALSE-CLOSE
+ * exactly like "the moment the equity clears". The arrival-verb list carried
+ * only lands/clears/hits-class verbs, so a rise/double/increase event slipped.
+ * A genuine accept never defers its close to a future increase (that IS a
+ * conditional demand), so widening the verb set is safe. */
 const FUTURE_EVENT_CLOSE_PATTERN =
-  /\bthe\s+(?:day|moment|minute|second|instant|hour)\b[^.!?\n]{0,40}?\b(?:lands?|arrives?|comes?\s+(?:in|through)|clears?|hits?|shows?\s+up|is\s+(?:confirmed|sorted|done|in|finalized|settled|through|paid|approved)|goes?\s+through)\b/i;
+  /\bthe\s+(?:day|moment|minute|second|instant|hour)\b[^.!?\n]{0,40}?\b(?:lands?|arrives?|comes?\s+(?:in|through)|clears?|hits?|shows?\s+up|is\s+(?:confirmed|sorted|done|in|finalized|settled|through|paid|approved)|goes?\s+through|doubles?|triples?|quadruples?|increases?|rises?|grows?|improves?|climbs?|jumps?|goes?\s+up|moves?\s+up|bumps?\s+up)\b/i;
 
 /** Veto (offline future-deferral battery, 2026-07-09) — a commit gated on first
  *  receiving a CHANGED document: "Send the revised letter and I'll sign then",
