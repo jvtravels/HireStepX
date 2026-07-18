@@ -124,6 +124,17 @@
  */
 
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
+
+// D2: exhaustive union of dimension keys used by this analyzer. Narrows the
+// gaps array so a mistyped dimension string is a compile-time error.
+type CampusDimension =
+  | "credibility"
+  | "preparation"
+  | "specificity"
+  | "framing"
+  | "professionalism"
+  | "communication clarity"
+  | "fresher_relevance";
 import { classifyCompanyTier } from "../_company-tier";
 import { classifyCollegeTier, cgpaCutoffAdjustment } from "../_college-tier";
 import { classifyCampusArchetype, archetypeCgpaCutoff, archetypeLabel } from "../_campus-archetype";
@@ -220,7 +231,13 @@ function canonicalizeBranch(raw: string | undefined): string | undefined {
 }
 
 /** Normalize a company string for cross-check comparison. Drops
- *  Pvt Ltd / Inc / Technologies suffixes, lowercases, strips punctuation. */
+ *  Pvt Ltd / Inc / Technologies suffixes, lowercases, strips punctuation.
+ *
+ *  I5: there is a second, simpler `normalize()` in `_campus-archetype.ts`
+ *  that only lowercases + strips non-alphanumeric — it's scoped to archetype
+ *  look-up where suffix-stripping would break exact keyword matching (e.g.
+ *  "tcs" must match "TCS" not "TCS Technologies Services"). These two
+ *  functions serve different purposes and are NOT consolidation candidates. */
 function normalizeCompanyName(raw: string | undefined): string {
   if (!raw) return "";
   return raw
@@ -260,7 +277,15 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (transcript.length === 0) { result.flags.push("empty_transcript"); return result; }
 
     const flags = new Set<string>();
-    const gaps: RubricGap[] = [];
+    // D1 (architectural): positive flags (bond_prepared, college_cgpa_policy_acknowledged,
+    // shipped_to_prod_context, …) co-exist with their negative counterparts rather than
+    // suppressing them. This is intentional: the report shows both, letting the
+    // candidate see they did ONE thing right alongside what still needs work. The
+    // exceptions — positive flag suppresses the negative — are narrow and explicit in
+    // the code (e.g. portfolio_satisfied_by_resume suppresses portfolio_absent_for_claim,
+    // COMPANY_SPECIFIC_SIGNAL presence suppresses no_company_specific_research). Adding
+    // general suppression logic would silently hide real coaching feedback.
+    const gaps: Array<Omit<RubricGap, "dimension"> & { dimension: CampusDimension }> = [];
 
     const aiText = transcript.filter(isAi).map((t) => t.text || "").join(" ");
     const userText = transcript.filter(isUser).map((t) => t.text || "").join(" ");
@@ -467,7 +492,12 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
-    // Mother-Tongue-Influence (MTI) deviations — count distinct pattern hits
+    // Mother-Tongue-Influence (MTI) deviations — count distinct pattern hits.
+    // H4: all 10 MTI_PATTERNS are equally weighted (each counts as 1 hit).
+    // Severity scales at the call-site: mtiHits >= 3 → "medium", else "low".
+    // Finer per-pattern weighting (e.g. "myself Rahul" > "kindly note") is
+    // left as a future refinement — the current corpus doesn't have enough
+    // MTI-flagged transcripts to reliably calibrate per-phrase severity.
     const mtiHits = MTI_PATTERNS.filter((rx) => rx.test(userText)).length;
     if (mtiHits >= 1) {
       flags.add("mti_pattern_detected");
@@ -505,6 +535,12 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         : 7.0);
     // Tier-1 colleges (IIT/NIT/BITS/IIIT/IISc) get -0.5 leniency due to
     // harder grading curves. Tier-2 + unknown apply the baseline.
+    // E4: cognizant-genc archetype sets its own CGPA cutoff via
+    // archetypeCgpaCutoff() (currently 6.0 for GenC, 6.5 for GenC Next).
+    // cgpaCutoffAdjustment() is then composed on top — so a tier-1 candidate
+    // targeting Cognizant GenC pays 6.0 - 0.5 = 5.5 as their effective floor.
+    // This compound is intentional: Cognizant's GenC program is volume-hire
+    // and their real CGPA bar is lower than Infosys/TCS at similar tiers.
     const cgpaCutoff = baseCgpaCutoff + cgpaCutoffAdjustment(collegeTier);
     const cgpaMatch = userText.match(CGPA_STATED);
     // C1: also check word-form CGPA ("eight point five") when no digit form found.
@@ -1391,6 +1427,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           const y = parseInt(ym[1] || ym[2], 10);
           if (y >= 2015 && y <= 2030) spokenYears.add(y);
         }
+        // F3: ±1 tolerance is intentional — extended / supplementary semesters
+        // commonly shift passout by one year relative to the original expected
+        // year printed on the degree certificate.  Flagging ±1 would produce
+        // noise for this large cohort without meaningful credibility signal.
         const driftedYears = Array.from(spokenYears).filter((y) => Math.abs(y - resumeYear) > 1);
         if (driftedYears.length > 0) {
           flags.add("grad_year_mismatch_with_resume");

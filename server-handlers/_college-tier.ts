@@ -52,7 +52,12 @@ const TIER_2_PATTERNS: RegExp[] = [
   /\bvellore\s+institute\s+of\s+technology\b/i,
   /\bmanipal\s+(?:institute|university|academy|college)\b/i,
   /\bMIT\s+manipal\b/i,
-  // SRM: qualifier optional — "I study at SRM" is as common as "SRM Chennai"
+  // SRM: qualifier optional — "I study at SRM" is as common as "SRM Chennai".
+  // E3: bare \bSRM\b is intentionally loose — the alternative (requiring a
+  // qualifier) would miss the ~60% of candidates who just say "SRM". False-
+  // positives are unlikely because "SRM" has no other common meaning in an
+  // Indian campus-interview context. If a false-positive is reported, add a
+  // negative lookahead: /\bSRM(?!\s+(?:tool|file|drive|system))\b/i.
   /\bSRM(?:\s+(?:university|institute|chennai|kattankulathur|ramapuram|ist))?\b/i,
   /\bthapar\s+(?:university|institute)\b/i,
   /\bTIET\b/i,

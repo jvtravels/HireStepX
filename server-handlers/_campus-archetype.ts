@@ -57,6 +57,11 @@ const COMPANY_COGNIZANT = ["cognizant", "capgemini"];
 const COMPANY_WIPRO_NLTH = ["wipro", "hcl", "tech mahindra"];
 const COMPANY_INFOSYS = ["infosys", "infy"];
 
+// I5: intentionally simpler than normalizeCompanyName() in campus-placement.ts —
+// suffix-stripping ("technologies", "pvt", "ltd") would break the keyword
+// look-up below (e.g. stripping "technologies" from "HCL Technologies" would
+// leave "hcl", which is already in the list, but stripping from "Mindtree
+// Ltd" leaves "mindtree" which might not match). Keep them separate.
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
