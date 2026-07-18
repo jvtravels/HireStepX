@@ -5807,6 +5807,40 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       maxStretch: Math.max(rebased.maxStretch, floor),
     };
   }
+  /* S4-B1 (2026-07-18) — CTC-aware upward band lift.
+   * When the candidate first discloses a current CTC that exceeds the
+   * resolved band's ceiling there is NO win state: the best the recruiter
+   * can ever offer is below what the candidate already earns. This happens
+   * because salary data lags at the tail of experience ranges — a "senior"
+   * band calibrated to 4-6yr earners under-calls an 8yr candidate's real
+   * market (Flipkart Senior PD at ₹45L with band max ₹42L is the trigger).
+   * On the FIRST CTC disclosure, lift the band so there is always a win
+   * state to negotiate toward:
+   *   initialOffer = ctc × 0.87  (realistic 13%-below-CTC lowball)
+   *   maxStretch   = ctc × 1.12  (12% above CTC — a real win exists)
+   * Guards: first disclosure only; only lifts, never compresses; never
+   * below highestOfferMade (close-floor invariant). */
+  if (
+    state.candidateCurrentCtc == null &&
+    next.candidateCurrentCtc != null &&
+    next.candidateCurrentCtc > 0 &&
+    next.candidateCurrentCtc > next.band.maxStretch
+  ) {
+    const ctc = next.candidateCurrentCtc;
+    const curBand = next.band;
+    const liftedInitial = Math.max(
+      state.highestOfferMade ?? 0,
+      Math.round(ctc * 0.87 * 10) / 10,
+    );
+    const liftedMax = Math.round(ctc * 1.12 * 10) / 10;
+    const rawWalkAway = Math.max(curBand.walkAway, Math.round(ctc * 0.80 * 10) / 10);
+    (next as { band: NegotiationBand }).band = {
+      ...curBand,
+      initialOffer: liftedInitial,
+      maxStretch: liftedMax,
+      walkAway: Math.min(rawWalkAway, Math.max(liftedInitial - 0.5, 0.5)),
+    };
+  }
   if (parsed.miscSignals.hasAny) {
     next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
   }
