@@ -60,6 +60,7 @@ import {
 } from "./_move-spec";
 import { validateMoveSpecRestyle, type SlotValidationResult } from "./_move-spec-validator";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
+import { COMPANY_LABEL } from "../data/company-labels";
 import { sessionJitter } from "./_session-jitter";
 import {
   CompoundMoveSpec,
@@ -2155,6 +2156,70 @@ function hasPronounDrift(s: string): boolean {
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
  *  >2x length blow-up is rejected. */
+/* RC-3 (2026-07-18) — FABRICATED-EMPLOYER GATE support.
+ *
+ * The number-subset rule (restyleNums ⊆ canonicalNums) hard-binds every
+ * figure the recruiter speaks to the kernel's this-turn canonical. Employer
+ * proper nouns had only prompt-level discouragement ("NEVER guess or invent
+ * a current employer name") plus a possessive self-ref gate — nothing stopped
+ * the LLM inventing a THIRD company ("unlike your stint at Infosys, we can…")
+ * that neither the seat, the candidate, nor the kernel ever named. This closes
+ * that gap with the same single-source principle: the only employers nameable
+ * this turn are the seat/target company, the candidate's stated current
+ * employer, a disclosed competing-offer company, or any company the kernel
+ * itself named in THIS-turn canonical. A known-company label the restyle adds
+ * outside that allow-set is fabricated.
+ *
+ * Match is case-SENSITIVE on the curated proper-label form so lowercase
+ * common words ("apple" the fruit, "meta" the prefix, "oracle" the noun)
+ * never false-trip; recruiter prose naming an employer always uses the
+ * proper capitalised form. Custom (non-curated) companies are outside the
+ * gate entirely — they can be neither fabricated-flagged nor false-blocked. */
+const KNOWN_COMPANY_LABELS: readonly string[] = Object.values(COMPANY_LABEL);
+
+/** Map a free-form company string to its canonical proper-case label, or
+ *  null if it is not a curated company. Accepts either the slug key
+ *  ("google") or the label value ("Google"), case-insensitively. */
+function canonicalCompanyLabel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const t = raw.trim().toLowerCase();
+  if (!t) return null;
+  if (COMPANY_LABEL[t]) return COMPANY_LABEL[t];
+  for (const label of KNOWN_COMPANY_LABELS) {
+    if (label.toLowerCase() === t) return label;
+  }
+  return null;
+}
+
+/** Returns the offending curated-company label if the restyle names a known
+ *  employer outside the allow-set (seat/current/competing + any company the
+ *  kernel named in `canonical`), else null. Pure — unit-tested directly. */
+export function detectFabricatedEmployer(
+  canonical: string,
+  restyled: string,
+  allow: ReadonlyArray<string | null | undefined>,
+): string | null {
+  const allowSet = new Set<string>();
+  for (const a of allow) {
+    const lbl = canonicalCompanyLabel(a);
+    if (lbl) allowSet.add(lbl);
+  }
+  for (const label of KNOWN_COMPANY_LABELS) {
+    const re = new RegExp(
+      `\\b${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+    );
+    if (re.test(canonical)) allowSet.add(label);
+  }
+  for (const label of KNOWN_COMPANY_LABELS) {
+    if (allowSet.has(label)) continue;
+    const re = new RegExp(
+      `\\b${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+    );
+    if (re.test(restyled)) return label;
+  }
+  return null;
+}
+
 export function validateRestyle(
   canonical: string,
   restyled: string,
@@ -2423,6 +2488,26 @@ export function validateRestyle(
   const CLAWBACK_RE = /\bclawback\b/i;
   if (CLAWBACK_RE.test(restyled) && !CLAWBACK_RE.test(canonical)) {
     return { valid: false, reason: "clawback-hallucination" };
+  }
+  /* RC-3 (2026-07-18) — FABRICATED-EMPLOYER GATE. Company proper-noun
+   * analogue of the number-subset rule above: the recruiter may name only
+   * the seat/target company, the candidate's stated current employer, a
+   * disclosed competing-offer company, or any company the kernel already
+   * named in this-turn canonical. A curated-company label introduced outside
+   * that set is an invented employer → canonical fallback. */
+  {
+    const competing =
+      action != null && "competingCompany" in action
+        ? (action as { competingCompany?: string | null }).competingCompany
+        : null;
+    const fabricated = detectFabricatedEmployer(canonical, restyled, [
+      state.company,
+      state.currentEmployer,
+      competing,
+    ]);
+    if (fabricated) {
+      return { valid: false, reason: `fabricated-employer:${fabricated}` };
+    }
   }
   /* Closing vocab is allowed only when the canonical itself has it OR
    * the phase is a close phase. */
