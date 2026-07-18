@@ -142,17 +142,17 @@ function FooterDomeDesktop() {
           textTransform: "uppercase",
           margin: "0 0 16px",
         }}>Product</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {PRODUCT_LINKS.map(([label, href]) => (
             <a key={label} href={href} style={{
               display: "block",
               fontFamily: fonts.sans,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 400,
               color: t.inkSoft,
               textDecoration: "none",
               letterSpacing: "-0.01em",
-              lineHeight: 1,
+              lineHeight: 1.5,
               transition: "color 0.15s",
             }}
             onMouseEnter={e => (e.currentTarget.style.color = t.coal)}
@@ -228,17 +228,17 @@ function FooterDomeDesktop() {
           textTransform: "uppercase",
           margin: "0 0 16px",
         }}>Company</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {COMPANY_LINKS.map(([label, href]) => (
             <a key={label} href={href} style={{
               display: "block",
               fontFamily: fonts.sans,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 400,
               color: t.inkSoft,
               textDecoration: "none",
               letterSpacing: "-0.01em",
-              lineHeight: 1,
+              lineHeight: 1.5,
               transition: "color 0.15s",
             }}
             onMouseEnter={e => (e.currentTarget.style.color = t.coal)}
