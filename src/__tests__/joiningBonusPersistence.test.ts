@@ -149,7 +149,7 @@ describe("S4S5-B3 — computeNegotiationMetrics surfaces lastJoiningBonusOffered
     const metrics = computeNegotiationMetrics({
       finalState,
       moves: [
-        { lever: "initial-offer" as const, newTotalLpa: 30, turnIndex: 1, candidateTargetAtTurn: null },
+        { lever: "open-with-offer" as const, newTotalLpa: 30, turnIndex: 1, candidateTargetAtTurn: null },
         { lever: "joining-bonus" as const, newTotalLpa: null, turnIndex: 2, candidateTargetAtTurn: null },
       ],
     });
@@ -171,7 +171,7 @@ describe("S4S5-B3 — computeNegotiationMetrics surfaces lastJoiningBonusOffered
     const metrics = computeNegotiationMetrics({
       finalState,
       moves: [
-        { lever: "initial-offer" as const, newTotalLpa: 30, turnIndex: 1, candidateTargetAtTurn: null },
+        { lever: "open-with-offer" as const, newTotalLpa: 30, turnIndex: 1, candidateTargetAtTurn: null },
       ],
     });
 

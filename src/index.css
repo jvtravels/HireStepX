@@ -1328,6 +1328,21 @@ input[type="range"]::-moz-range-thumb {
   .iv-canvas-selfview { width: 110px !important; height: 72px !important; right: 12px !important; bottom: 92px !important; }
 }
 
+/* ── Forced-colors (Windows High Contrast) ──────────────────────────────── */
+/* Recording and status pips are pure background-color circles with no text
+   content. In forced-colors mode the OS replaces all author backgrounds with
+   Canvas, making the pip invisible. forced-color-adjust: none preserves the
+   author color so the pip remains a meaningful red/green state indicator; the
+   adjacent text label ("Listening", "Muted") also carries the semantic state
+   for users who rely on text rather than color. */
+@media (forced-colors: active) {
+  .hsx-rec-pip {
+    forced-color-adjust: none;
+    outline: 1px solid ButtonText;
+    outline-offset: 1px;
+  }
+}
+
 @media print {
   body { background: #fff !important; color: #111 !important; }
   aside, .mobile-nav-toggle, [role="dialog"], [role="status"],

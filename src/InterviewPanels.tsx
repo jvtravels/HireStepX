@@ -161,7 +161,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
             </button>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "done" ? e.inkSoft : e.success, animation: phase !== "done" ? "recordPulse 1.5s ease-in-out infinite" : "none" }} />
+            <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "done" ? e.inkSoft : e.success, animation: phase !== "done" ? "recordPulse 1.5s ease-in-out infinite" : "none" }} />
             <span style={{ fontFamily: ef.mono, fontSize: 12, fontWeight: 500, color: e.coal }}>{formatTime(elapsed)}</span>
           </div>
         </div>
@@ -280,7 +280,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
           animation: "fadeUp 0.3s ease",
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
+          <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
           <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
@@ -427,7 +427,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
           borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
           animation: "fadeUp 0.3s ease",
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
+          <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
           <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
@@ -598,7 +598,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: isMuted ? e.error : e.success, animation: isMuted ? "none" : "recordPulse 1s ease-in-out infinite" }} />
+          <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: isMuted ? e.error : e.success, animation: isMuted ? "none" : "recordPulse 1s ease-in-out infinite" }} />
           <span style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 600, color: e.success }}>
             {speechUnavailable ? "Type your answer" : isMuted ? "Muted" : "Your answer"}
           </span>

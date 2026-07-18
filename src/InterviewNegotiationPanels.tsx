@@ -976,7 +976,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
               <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(20,17,10,0.04)", display: "flex", flexDirection: "column", gap: 4 }}>
                 {turn.annotations.map((a, ai) => (
                   <div key={ai} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <span style={{
+                    <span className="hsx-rec-pip" style={{
                       width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
                       background: a.type === "positive" ? e.success : a.type === "negative" ? e.error : e.inkSoft,
                     }} />
