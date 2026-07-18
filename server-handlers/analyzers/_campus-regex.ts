@@ -17,7 +17,10 @@
 
 export const ACADEMIC_PROJECT = /\b(capstone|final[- ]?year project|btech project|major project|college project|coursework|cgpa|gpa|sgpa|kt\b|backlog)\b/i;
 export const FRESHER_LEXICON = /\b(fresher|just graduated|final year|recent graduate|college senior|placement|on[- ]campus|btech|b\.?tech|bca|mca|m\.?tech)\b/i;
-export const GENERIC_PASSION = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?learn)\b/i;
+// B3: narrowed `love (?:to )?learn` — bare "I love to learn" without a tech
+// subject is too broad (matches learning music / cooking / anything). Require
+// a tech object after "learn" OR replace with direct tech verbs "code/build/create".
+export const GENERIC_PASSION = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?(?:learn\s+(?:(?:new\s+)?tech(?:nolog(?:y|ies))?|coding|programming|to\s+code)|code|build|create))\b/i;
 export const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designed|trained|integrated|published)\s+\w+/i;
 /* Substantiation tokens — any one of these next to a "passionate"
  * claim turns the claim from cliché into a defendable answer. We
@@ -31,6 +34,8 @@ export const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designe
  */
 // G3: added `(?:on\s+)?` before the platform names so "100 on LeetCode" /
 // "200 on Codeforces" match, not just "100 LeetCode" / "200 submissions".
+// G4 note: `\w+` in SPECIFIC_PROJECT intentionally matches digits (\w=[a-zA-Z0-9_])
+// so "I built 2048 Game" or "I coded 15Puzzle" correctly trigger the pattern.
 export const SUBSTANTIATION_TOKEN = /\b(github\.com\/[\w-]+|github\.io|gitlab\.com\/[\w-]+|leetcode\.com\/[\w-]+|codeforces\.com\/profile|kaggle\.com\/[\w-]+|hackerrank\.com\/[\w-]+|hackathon|sih\b|smart india hackathon|coding contest|code[- ]?jam|hash[- ]?code|kickstart|internship|intern at|interned at|nptel|coursera|udemy|edx\b|cs50|striver(?:'s)?\s+sdc?\s*sheet|striver sde|neetcode|grokking|knight (?:badge|rated)|guardian rated|expert rated|specialist rated|top\s+\d+%?|\d{2,}\s*\+?\s*(?:on\s+)?(?:problems|leetcode|questions|submissions))\b/i;
 export const AVAILABILITY = /\b(available (?:from|after)|join (?:by|in|on|after)|notice|graduation|exam|semester|joining date|relocat)\b/i;
 export const COLLEGE_BADMOUTH = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:professors|faculty) (?:are|were) (?:useless|incompetent|terrible)|nothing was taught|wasted (?:my )?time)\b/i;
@@ -79,7 +84,11 @@ export const WHY_COMPANY_PROBE = /\b(?:why\b[^?.!]{0,80}?\b(?:join us|work (?:he
  * the candidate did real research, not generic filler. Avoid generic
  * words like "team" / "product" / "values" — those false-positive on
  * unrelated answers. */
-export const COMPANY_GENERIC_FILLER = /\b(great culture|good culture|brand value|brand name|great brand|big company|good company|great company|reputation|growth opportunit|learning opportunit|big mnc)\b/i;
+// B5: removed `brand name` — "brand name" false-positives on negation counter-
+// examples like "I'm not a brand-name person; I care about the product". The
+// distinct alternatives `brand value` + `great brand` already cover genuine
+// brand-appeal filler without the negation risk. (Parity: update CP_COMPANY_GENERIC.)
+export const COMPANY_GENERIC_FILLER = /\b(great culture|good culture|brand value|great brand|big company|good company|great company|reputation|growth opportunit|learning opportunit|big mnc)\b/i;
 export const COMPANY_SPECIFIC_SIGNAL = /\b(trailhead|nqt|infytq|techbee|genc|engage|step program|leadership principles?|customer obsession|day\s*1|crucible|future leaders|gennxt|peak|spirit of wipro|infosys lex|tata code of conduct|your (?:founder|ceo|cofounder|recent|latest|q[1-4]|fy\d|launch|ipo|acquisition|investment|hiring plan|product line|ai strategy|tech stack)|i (?:read|saw|noticed|came across|listened to))\b/i;
 /* Service-tier acceptable narrative — TCS / Infosys / Wipro / Cognizant
  * recruiters EXPECT freshers to anchor on stability, structured training,
@@ -91,6 +100,20 @@ export const COMPANY_SPECIFIC_SIGNAL = /\b(trailhead|nqt|infytq|techbee|genc|eng
  * the candidate gave a context-appropriate answer. Product-co loops
  * (Google / Flipkart / Razorpay) still demand specific signal — the
  * archetype gate handles that asymmetry below. */
+// I6: split inline into named clusters so future edits touch one group at
+// a time without risk of breaking neighbouring alternatives.
+//   Group A — training / onboarding vocabulary
+//     structured training | training program | ilp | initial learning program
+//     onboarding program/process/cohort | fresher training/cohort/program
+//   Group B — stability / growth vocabulary
+//     stable career/growth/environment/long-term | long-term career/growth/stability
+//   Group C — scale / delivery vocabulary
+//     proven client/track record/delivery | client base/portfolio/delivery
+//     service-led | services model/business/firm | global delivery/footprint/presence
+//     scale of operations/delivery | established firm/company/leader/player
+//   Group D — brand / domain vocabulary
+//     brand maturity | industry leader | Fortune N
+//     domain exposure | industry exposure | breadth of projects/domains
 export const COMPANY_SERVICE_TIER_NARRATIVE = /\b(?:structured\s+training|training\s+program|stable\s+(?:career|growth|environment|long[- ]term)|long[- ]term\s+(?:career|growth|stability)|proven\s+(?:client|track\s+record|delivery)|client\s+(?:base|portfolio|delivery)|service[- ]led|services?\s+(?:model|business|firm)|global\s+(?:delivery|footprint|presence)|scale\s+of\s+(?:operations?|delivery)|established\s+(?:firm|company|leader|player)|brand\s+maturity|industry\s+leader|fortune\s+\d+|domain\s+exposure|industry\s+exposure|breadth\s+of\s+(?:projects?|domains?)|onboarding\s+(?:program|process|cohort)|fresher\s+(?:training|cohort|program)|ilp\b|initial\s+learning\s+program)\b/i;
 
 /* v6.7 — Cognizant GenC / Capgemini Exceller specifically reward a
@@ -173,7 +196,11 @@ export const MTI_PATTERNS: RegExp[] = [
  * Group 1: numeric form  "my CGPA is 8.5"
  * C1: also exported separately as CGPA_STATED_WORD_FORM for spoken forms
  *     "my CGPA is eight point five" that the digit-only pattern misses. */
-export const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)/i;
+// C2: added optional `\/10` and `out of 10/ten` suffix so "My CGPA is 9/10"
+// and "My CGPA is 8.5 out of 10" match with group-1 capturing the numeric
+// part (9 and 8.5 respectively). The suffix is non-capturing so existing
+// `cgpaMatch[1]` callers are unaffected.
+export const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)(?:\s*\/\s*10|\s+out\s+of\s+(?:10|ten))?\b/i;
 /* C1: word-form CGPA — "my CGPA is eight point five" / "seven point eight".
  * The analyzer parses this with parseWordFormCgpa() and treats it identically
  * to CGPA_STATED for framing checks + meta surfacing. Only covers common

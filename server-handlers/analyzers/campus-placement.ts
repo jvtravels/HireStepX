@@ -406,7 +406,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // (stability/training/scale); product-tier candidates still need
     // SPECIFIC_SIGNAL.
     const aiAskedWhyCompany = transcript.some((t) => isAi(t) && WHY_COMPANY_PROBE.test(t.text || ""));
-    if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText)) {
+    // B4: PPT_REFERENCE is a prep signal — "the great culture the speaker described
+    // in the PPT" is context-specific answer, not generic filler. Suppress the
+    // filler flag whenever the candidate actually referenced the PPT/presentation.
+    if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText) && !PPT_REFERENCE.test(userText)) {
       const whyArchetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
       const serviceTier = whyArchetype === "tcs-ninja" || whyArchetype === "wipro-nlth" || whyArchetype === "cognizant-genc";
       // v6.7 — Cognizant GenC / Capgemini Exceller specifically reward
@@ -702,7 +705,13 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           observed: "User refused the service agreement outright — at service-tier firms this ends the interview",
           severity: "high",
         });
-      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText) && !isShortScreeningSession) {
+      } else if (BOND_HEALTHY_RESPONSE.test(userBondText)) {
+        // A4: positive counterpart to bond_unprepared — candidate showed
+        // awareness of the bond terms. A single probe + good response already
+        // deserves credit (the ≥2 threshold for bond_unprepared is intentionally
+        // lenient for ignorance; awareness earns a green signal at any count).
+        flags.add("bond_prepared");
+      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !isShortScreeningSession) {
         // v6.7 — Short-screening sessions are excluded; a sub-10-turn
         // HR skim doesn't always reach a second bond probe meaningfully.
         flags.add("bond_unprepared");
@@ -1024,7 +1033,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // PPT recall absent — substantial transcript with no PPT/launch reference.
-    if (userTurnCount >= MIN_TURNS_STRICT && !PPT_REFERENCE.test(userText) && (companyTier === "service" || companyTier === "product-india" || companyTier === "product-global")) {
+    // A5: short-screening sessions don't always reach a PPT recall probe —
+    // suppress consistently with the reverse_questions_declined gate above.
+    if (userTurnCount >= MIN_TURNS_STRICT && !isShortScreeningSession && !PPT_REFERENCE.test(userText) && (companyTier === "service" || companyTier === "product-india" || companyTier === "product-global")) {
       flags.add("ppt_recall_absent");
       gaps.push({
         dimension: "preparation",
@@ -1137,6 +1148,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         const reply = transcript.slice(i + 1, i + 5).find(isUser);
         if (reply && reply.text && APTITUDE_REFUSAL.test(reply.text)) {
           aptitudeRefusedAt = i;
+          // H2: the flag name is always "aptitude_puzzle_refusal" regardless of
+          // severity; the archetype-aware severity lives on the gap object below.
+          // Consumers that need the severity must read gaps[], not the flag name.
           flags.add("aptitude_puzzle_refusal");
           // v6.7 — tcs-digital is offline-coding-format (the live loop
           // doesn't dwell on classical puzzles); downgrade severity so
@@ -1331,7 +1345,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       // but the candidate consistently says "I'm in CSE", that's a
       // bigger tell than the transcript-only branch-drift check —
       // the resume is the authoritative source.
-      const resumeBranch = canonicalizeBranch(resume.degree);
+      // F2: explicit null-guard — resume.degree may be undefined when the
+      // parser didn't find a degree field. canonicalizeBranch("") returns ""
+      // which the `if (resumeBranch)` below handles safely.
+      const resumeBranch = canonicalizeBranch(resume.degree ?? "");
       if (resumeBranch) {
         // Reuse the BRANCH_NAME regex collected earlier in the Wave-5
         // block by scanning userText. Canonicalize each hit with the
@@ -1447,7 +1464,11 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       if (resume.cgpa) {
         const resumeCgpa = parseFloat(resume.cgpa);
         if (!Number.isNaN(resumeCgpa) && resumeCgpa > 0) {
-          const isPercentScale = resumeCgpa > 10;
+          // E2: use 12 as the cutoff, not 10. A CGPA of 10.5 on a 10-point
+          // scale (data-entry rounding) would be incorrectly treated as 10.5%
+          // (which makes no sense). No legitimate 10-point scale CGPA exceeds
+          // 10, and no percentage CGPA sits below ~12 in Indian fresher context.
+          const isPercentScale = resumeCgpa > 12;
           const tolerance = isPercentScale ? 5 : 0.5;
           // Patterns: "my CGPA is 8.2", "I have 7.4 CGPA", "8.7 out of 10",
           // "scored 84%". Plausibility-filter to the resume's own scale.
