@@ -69,9 +69,14 @@ export const TOTAL_PHASES = 5;
 export function derivePhases(outcome: NegotiationOutcome) {
   const tactics = outcome.tacticsUsed ?? [];
   const info = outcome.infoAsked ?? [];
-  const levers = outcome.leverDiversity ?? 0;
   const heldPushback =
     outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
+  // A "counter" semantically requires a recruiter offer to counter. When no
+  // offer ever landed (offers === []), the candidate's stated number is an
+  // OPENING ANCHOR, not a counter — labelling it "counter" is the S16-B7 /
+  // S1-B1 mislabel. Same single source (outcome.offers) as the hero.
+  const offers = outcome.offers ?? [];
+  const hasPriorOffer = offers.length > 0;
 
   const reachedCounter = outcome.candidateAsk !== null;
   // Justified — defended the number with a range, a tactic, or structural
@@ -81,21 +86,31 @@ export function derivePhases(outcome: NegotiationOutcome) {
     (outcome.anchorBracket?.type === "range_with_justification" ||
       tactics.length > 0 ||
       info.length > 0);
-  // Handled pushback — a held/deflected classifier event or a Voss tactic
-  // the candidate played; passively absorbing offers does not count.
-  const reachedPushback = tactics.length > 0 || heldPushback;
-  // Explored levers — kernel lever-diversity or a structural question asked.
-  const reachedLevers = levers >= 1 || info.length > 0;
+  // Handled pushback — a held/deflected classifier event or a Voss tactic the
+  // candidate played. S16-B4: gated on reachedCounter — you cannot "handle
+  // pushback on your number" without having named one, so a lone calibrated
+  // question on a pure-discovery session must NOT credit this stage.
+  const reachedPushback = reachedCounter && (tactics.length > 0 || heldPushback);
+  // Explored levers — S16-B5: `leverDiversity` counts the RECRUITER's move
+  // levers (always ≥1 once any turn occurs), so it must NOT credit the
+  // candidate. The candidate "explores levers" only by asking about a non-cash
+  // component (infoAsked) — a candidate action.
+  const reachedLevers = info.length > 0;
   const reachedClose =
     outcome.outcome === "accepted" || outcome.outcome === "walked_away";
   return [
     {
       num: 1,
-      name: "You named a counter number",
+      // S16-B7 / S1-B1: the STAGE NAME "counter" presumes a recruiter offer to
+      // counter — with offers === [] the candidate's number is an OPENING
+      // anchor. The NOTE stays the neutral "Asked for ₹X LPA" (true either way).
+      name: hasPriorOffer ? "You named a counter number" : "You named your opening number",
       reached: reachedCounter,
       note: outcome.candidateAsk
         ? `Asked for ₹${outcome.candidateAsk} LPA`
-        : "No counter named yet",
+        : hasPriorOffer
+          ? "No counter named yet"
+          : "No number named yet",
     },
     {
       num: 2,
@@ -123,11 +138,7 @@ export function derivePhases(outcome: NegotiationOutcome) {
       num: 4,
       name: "You explored package levers",
       reached: reachedLevers,
-      note: reachedLevers
-        ? levers >= 1
-          ? `Raised ${levers} lever${levers === 1 ? "" : "s"} beyond base`
-          : "Asked about non-cash components"
-        : undefined,
+      note: reachedLevers ? "Asked about non-cash components" : undefined,
     },
     {
       num: 5,
@@ -252,10 +263,12 @@ export function negotiationHeadlineVerdict(outcome: NegotiationOutcome): string 
       ? "You walked away rather than settle below your counter."
       : "You walked away without naming a counter.";
   }
-  // no_agreement — nothing closed.
-  return counterNamed
-    ? "You countered, but the deal never closed."
-    : "No counter named — the recruiter's first number stood.";
+  // no_agreement — nothing closed. S17-B2: "the recruiter's number stood" is
+  // false when no offer was ever on the table (offers === []); say so honestly.
+  if (counterNamed) return "You countered, but the deal never closed.";
+  return offers.length > 0
+    ? "No counter named — the recruiter's number stood."
+    : "The conversation ended before any number was on the table.";
 }
 
 export function computeNpvRows(outcome: NegotiationOutcome) {

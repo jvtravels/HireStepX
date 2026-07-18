@@ -9,13 +9,21 @@ export function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome })
    * instead of inventing a "you named a single number" verdict. */
   if (!bracket) {
     if (outcome.candidateAsk === null) return null;
+    /* S16-B7 / S1-B1 (2026-07-18 audit) — "countered" presumes a recruiter
+     * offer preceded the number. With offers === [] the candidate's number is
+     * an OPENING ANCHOR, not a counter; label it accordingly. */
+    const hasPriorOffer = (outcome.offers ?? []).length > 0;
     return (
       <PanelEmptyState
         index="03"
         title="The way you named your number"
-        subtitle={`You countered with ₹${outcome.candidateAsk} LPA.`}
+        subtitle={
+          hasPriorOffer
+            ? `You countered with ₹${outcome.candidateAsk} LPA.`
+            : `You opened with ₹${outcome.candidateAsk} LPA.`
+        }
       >
-        We logged your counter but don't have a transcript-grounded
+        We logged your {hasPriorOffer ? "counter" : "opening number"} but don't have a transcript-grounded
         read on how you framed it (single number, range, or range
         with justification). The strongest move next round: name a
         defended range, e.g. "I was anchoring at ₹X-Y based on what

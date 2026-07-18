@@ -157,10 +157,12 @@ describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
     expect(phases[2].reached).toBe(true);
   });
 
-  it("leverDiversity >= 1 reaches phase 4 (levers explored)", () => {
-    const phases = derivePhases(makeOutcome({ candidateAsk: 30, leverDiversity: 2 }));
-    expect(phases[3].reached).toBe(true);
-    expect(phases[3].note).toBe("Raised 2 levers beyond base");
+  it("S16-B5: leverDiversity alone (a RECRUITER-side signal) does NOT reach phase 4", () => {
+    // `leverDiversity` counts the recruiter's move levers and is ≥1 once any
+    // turn occurs — it must not credit the candidate for exploring levers.
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, leverDiversity: 2, infoAsked: [] }));
+    expect(phases[3].reached).toBe(false);
+    expect(phases[3].note).toBeUndefined();
   });
 
   it("infoAsked reaches phases 2 (justified) + 4 (levers)", () => {
@@ -287,8 +289,17 @@ describe("negotiationHeadlineVerdict — kernel-grounded, never a false success 
   const BEHAVIOURAL_LEAK = /quantif|STAR|results|situation|task/i;
 
   it("no-deal, no counter (the live bug) states the miss plainly", () => {
+    // Live REPORT-3e shape: the recruiter DID put a number on the table; the
+    // candidate never countered, so their opening stood. (S17-B2: the empty-
+    // offers variant now reads "before any number was on the table" — covered
+    // in negotiationReportSurfaceRegression.test.ts.)
     const v = negotiationHeadlineVerdict(
-      makeOutcome({ outcome: "no_agreement", candidateAsk: null, offers: [], finalTotal: null }),
+      makeOutcome({
+        outcome: "no_agreement",
+        candidateAsk: null,
+        offers: [{ turn: 1, total: 50, question: "" }],
+        finalTotal: null,
+      }),
     );
     expect(v).not.toMatch(NEGOTIATED_WELL);
     expect(v).not.toMatch(BEHAVIOURAL_LEAK);

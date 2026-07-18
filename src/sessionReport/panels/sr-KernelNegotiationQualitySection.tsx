@@ -123,7 +123,11 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     "accepted": "Accepted",
     "walked-away": "Walked away",
     "stalemate": "Stalemate",
-    "in-progress": "In progress",
+    // S16-B8 (2026-07-18 audit) — this tile renders on a CONCLUDED report; a
+    // non-terminal kernel phase means the candidate abandoned mid-flow, so
+    // "In progress" reads as a live session that never ended. "Ended early" is
+    // the honest label for a report surface.
+    "in-progress": "Ended early",
   }[m.outcome];
   const outcomeColor = m.outcome === "accepted" ? t.goodInk
     : m.outcome === "walked-away" ? t.badInk

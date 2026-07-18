@@ -65,9 +65,17 @@ export function TLDRHero({
      * in. Name the no-deal plainly — nothing was secured — then point at the
      * recovery play. Distinguish "countered but it never closed" from "never
      * even named a number", since the coaching differs. */
-    verdict = counterNamed
-      ? `No deal closed. You countered at ₹${outcome.candidateAsk} LPA${opening !== null ? ` against their ₹${opening} LPA opening` : ""}, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
-      : `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. Part 2 has the email draft to restart the conversation.`;
+    /* S16-B9 (2026-07-18 audit) — "reopen it before the offer lapses" and the
+     * email-draft pointer are only honest when an offer actually landed. With
+     * offers === [] there is nothing to reopen (and CounterOfferLetterPanel
+     * renders the re-anchor letter, not an acceptance), so a countered-but-no-
+     * offer session must point at RESTARTING the conversation, not reopening a
+     * non-existent offer. */
+    verdict = !counterNamed
+      ? `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. Part 2 has the email draft to restart the conversation.`
+      : offers.length > 0
+        ? `No deal closed. You countered at ₹${outcome.candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
+        : `No deal closed. You named ₹${outcome.candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. Part 2 has the email draft to restart the conversation.`;
   }
 
   type StatTone = "good" | "bad" | "warn" | "neutral";
@@ -193,7 +201,11 @@ export function TLDRHero({
           : phaseCount >= 4 ? "one short of the close" :
             phaseCount >= 2 ? "made it past the counter" :
             phaseCount === 1 ? "you named a counter. Part 2 below shows the next move" :
-            "you didn't push past the first offer. Part 2 has the email draft",
+            /* S17-B3 (2026-07-18 audit) — "past the first offer" presumes an
+             * offer landed; with offers === [] none did, so name it honestly. */
+            offers.length > 0
+              ? "you didn't push past the first offer. Part 2 has the email draft"
+              : "the conversation ended before any offer landed. Part 2 has the email draft",
     tone: dealClosed ? "good" : walkedAway ? "warn" : phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {

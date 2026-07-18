@@ -1067,6 +1067,35 @@ function isComponentBonusScopedSpan(text: string, span: SalarySpan): boolean {
   return COMPONENT_BONUS_RIGHT_ANCHORED.test(rightWindow);
 }
 
+/* Non-CTC perk-component guard (OA-B63, 2026-07-18 audit). A number scoped to
+ * a recurring/perk allowance — WFH / home-office / setup / internet / remote /
+ * wellness / L&D / learning / meal / travel allowance, stipend, or budget — is
+ * a benefit ASK, not the candidate's CTC target/current/competing TOTAL. Before
+ * this guard, "I'd like a 1 lakh work-from-home setup allowance" bound
+ * target=1 (the WFH amount read as a ₹1 LPA total target — a harmful mis-bind),
+ * and "26 LPA plus a 2 lakh WFH stipend" silently dropped the stipend. The
+ * kernel tracks such perks separately (or not at all); this span binds to NO
+ * role. Right-anchored (number then the perk noun) AND left-anchored (perk noun
+ * then the number, e.g. "WFH stipend of 50k") so both surface forms are caught,
+ * while a genuine total ("26 LPA plus …") keeps binding 26 — its right context
+ * starts with "plus", not a perk noun. Mirrors isCashComponentScopedSpan. */
+const PERK_NOUN =
+  "(?:wfh|work[-\\s]?from[-\\s]?home|remote(?:\\s+work)?|home[-\\s]?office|internet|broadband|setup|set[-\\s]?up|wellness|well[-\\s]?being|learning|l\\s*&\\s*d|l\\s+and\\s+d|upskilling|education|meal|food|travel|commute|gym|fitness)\\s+(?:setup\\s+)?(?:allowance|stipend|budget|reimbursement|perk|benefit)";
+const PERK_COMPONENT_RIGHT = new RegExp(
+  `^\\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\\.?\\s*(?:for\\s+)?(?:a\\s+)?${PERK_NOUN}\\b`,
+  "i",
+);
+const PERK_COMPONENT_LEFT = new RegExp(
+  `\\b${PERK_NOUN}\\s+(?:of\\s+|is\\s+|at\\s+|around\\s+|roughly\\s+|about\\s+|worth\\s+)?$`,
+  "i",
+);
+function isPerkComponentScopedSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 40));
+  if (PERK_COMPONENT_RIGHT.test(rightWindow)) return true;
+  const leftWindow = text.slice(Math.max(0, span.start - 40), span.start);
+  return PERK_COMPONENT_LEFT.test(leftWindow);
+}
+
 /* Relative-increase scope (§9d / PRI-69b, 2026-07-08). A number whose
  * IMMEDIATE right context is an increase marker — "2L more", "2 higher",
  * "3 lakh extra", "5 on top" — is a RELATIVE delta the candidate wants
@@ -1226,6 +1255,10 @@ export function classifyNumberRoles(
     /* Component-bonus guard (#94): a JB / sign-on / relocation amount
      * binds to NO role regardless of any cue leaking into its window. */
     if (isComponentBonusScopedSpan(text, span)) continue;
+    /* OA-B63: a WFH/setup/wellness/L&D/etc. allowance or stipend amount binds
+     * to NO role regardless of any cue leaking into its window — it's a perk
+     * ask, not the candidate's CTC. */
+    if (isPerkComponentScopedSpan(text, span)) continue;
     const scores = scoreRolesForSpan(text, span);
     /* Equity-scope guard (L1 / PRI-50): an equity/RSU/ESOP/stock-framed
      * number with NO explicit current/target/competing cue is an equity

@@ -134,7 +134,7 @@ describe("report currency leaks (pre-launch audit)", () => {
       candidateAsk: 52, // > opening (42): counter named (stage 1)
       anchorBracket: { type: "range_with_justification", quote: "", verdict: "" }, // stage 2
       tacticsUsed: ["calibrated-question"], // stage 3
-      leverDiversity: 2, // stage 4
+      infoAsked: ["comp structure"], // stage 4 (candidate action, S16-B5)
       // stage 5 = walked_away → all five reached
     });
     const { container } = render(
