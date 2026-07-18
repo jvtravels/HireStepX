@@ -292,6 +292,12 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     const fullText = `${aiText} ${userText}`;
     const userTurnCount = transcript.filter(isUser).filter((t) => (t.text || "").length > 50).length;
 
+    // A6 fix: hoist archetype classification here — single source of truth for
+    // the whole analyzer. Previously classifyCampusArchetype was called twice
+    // (once as `whyArchetype` at the "why company" block and again as `archetype`
+    // in Phase-3). Hoisting eliminates the duplicate call and the desync risk.
+    const archetype = classifyCampusArchetype(session.target_company, fullText);
+
     // No academic project / coursework / CGPA discussed at all
     if (userTurnCount >= MIN_TURNS && !ACADEMIC_PROJECT.test(fullText)) {
       flags.add("no_academic_project_discussed");
@@ -435,15 +441,14 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // in the PPT" is context-specific answer, not generic filler. Suppress the
     // filler flag whenever the candidate actually referenced the PPT/presentation.
     if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText) && !PPT_REFERENCE.test(userText)) {
-      const whyArchetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
-      const serviceTier = whyArchetype === "tcs-ninja" || whyArchetype === "wipro-nlth" || whyArchetype === "cognizant-genc";
+      const serviceTier = archetype === "tcs-ninja" || archetype === "wipro-nlth" || archetype === "cognizant-genc";
       // v6.7 — Cognizant GenC / Capgemini Exceller specifically reward
       // a client-rotation / domain-breadth narrative. Either the
       // generic service-tier narrative OR the Cognizant-specific one
       // counts as a context-appropriate answer for that archetype.
       const serviceTierNarrativePresent = serviceTier && (
         COMPANY_SERVICE_TIER_NARRATIVE.test(userText) ||
-        (whyArchetype === "cognizant-genc" && COGNIZANT_CLIENT_ROTATION_NARRATIVE.test(userText))
+        (archetype === "cognizant-genc" && COGNIZANT_CLIENT_ROTATION_NARRATIVE.test(userText))
       );
 
       if (serviceTierNarrativePresent) {
@@ -525,8 +530,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
      * interview from TCS Digital (CGPA 7.5, deep DSA, 3x comp) even
      * though both classify as "service". The archetype overrides the
      * tier-derived CGPA cutoff when known and surfaces a label the
-     * report can render ("TCS NQT (Ninja) / Infosys SE"). */
-    const archetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
+     * report can render ("TCS NQT (Ninja) / Infosys SE").
+     * A6 fix: `archetype` is now hoisted to the top of the analyzer — see
+     * the declaration near `userText`. No second call here. */
     const archetypeCutoff = archetypeCgpaCutoff(archetype);
     const baseCgpaCutoff = archetypeCutoff !== null
       ? archetypeCutoff
