@@ -126,6 +126,9 @@ export interface DashboardSession {
       posture: "strong" | "neutral" | "hungry";
       candidateLeverage: "low" | "neutral" | "high";
     };
+    /* S4S5-B3 (2026-07-18) — one-time joining bonus the recruiter offered (LPA).
+       Optional so rows persisted before this field shipped deserialize cleanly. */
+    lastJoiningBonusOffered?: number | null;
   };
 }
 

@@ -338,6 +338,11 @@ export interface InterviewResultData {
       context: string;
       healthy: boolean;
     }>;
+    /** S4S5-B3 — one-time joining bonus the recruiter offered (LPA).
+     *  Null/absent when no joining bonus was part of the deal.
+     *  Distinct from `finalTotal` (annual CTC) — used by
+     *  CounterOfferLetterPanel and OfferEconomicsPanel. */
+    joiningBonusLpa?: number | null;
     /** Levers the candidate didn't ask about that strong negotiators
      *  always probe — each tagged with what it's worth. Optional —
      *  backend derives from transcript-question-classifier. */

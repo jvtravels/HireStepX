@@ -146,6 +146,9 @@ export function useInterviewEngine() {
    * kernel metrics land / for non-kernel sessions → card falls back to
    * transcript extraction. */
   const [negotiationCandidateAskLpa, setNegotiationCandidateAskLpa] = useState<number | null>(null);
+  /* S4S5-B3 — joining bonus offered by recruiter; surfaced to DealSummaryCard
+   * so "Final Package" shows "₹X CTC + ₹Y joining bonus" on the done screen. */
+  const [negotiationJoiningBonusLpa, setNegotiationJoiningBonusLpa] = useState<number | null>(null);
   /* Canonical negotiation kernel: serialized state passed back to the
      server on each turn. Null until the kernel path initialises it
      on first follow-up. */
@@ -3721,6 +3724,9 @@ export function useInterviewEngine() {
         /* Surface the kernel-authoritative ask to the transient DealSummaryCard
          * so its "Your Ask" tile matches the durable report (I-10). */
         setNegotiationCandidateAskLpa(m.candidateAskLpa ?? null);
+        /* S4S5-B3 — surface joining bonus (if any) for the DealSummaryCard
+         * "Final Package" tile so it reads "₹X CTC + ₹Y joining bonus". */
+        setNegotiationJoiningBonusLpa(m.lastJoiningBonusOffered ?? null);
         negotiationMetrics = {
           ...m,
           score: scoreNegotiationBehaviour(m),
@@ -4164,6 +4170,7 @@ export function useInterviewEngine() {
     negotiationStyle: negotiationStyle || undefined,
     negotiationBand: negotiationBandRef.current,
     negotiationCandidateAskLpa,
+    negotiationJoiningBonusLpa,
     targetSalary,
     setTargetSalary,
     highestOffer: highestOfferRef.current,

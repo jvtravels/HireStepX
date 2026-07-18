@@ -97,13 +97,24 @@ export function CounterOfferLetterPanel({
 
   if (closing === null) return null;
 
+  /* S4S5-B4 — joining bonus (if any) belongs in the acceptance letter so
+     the email matches the actual deal. It is a one-time payment distinct
+     from the annual CTC, so it's called out separately rather than added
+     into the headline number. */
+  const jb = typeof outcome.joiningBonusLpa === "number" && outcome.joiningBonusLpa > 0
+    ? outcome.joiningBonusLpa
+    : null;
+  const closingLine = jb
+    ? `₹${closing} LPA total CTC plus a one-time joining bonus of ₹${jb}L`
+    : `₹${closing} LPA total CTC`;
+
   let letter: string;
   let commentary: string[];
 
   if (outcome.outcome === "accepted") {
     letter = `Hi <Recruiter>,
 
-Thank you for the offer for the ${role} role at ${company}. I'm happy to formally accept the package at ₹${closing} LPA total CTC.
+Thank you for the offer for the ${role} role at ${company}. I'm happy to formally accept the package at ${closingLine}.
 
 Could you send the formal offer letter at your convenience? Happy to confirm notice period and start date once that's in hand.
 
@@ -111,6 +122,7 @@ Best,
 <Your name>`;
     commentary = [
       "Confirms acceptance in plain language, no ambiguity for the recruiter",
+      ...(jb ? [`Explicitly names the joining bonus of ₹${jb}L so the offer letter can't omit it`] : []),
       "Asks for the formal letter without making it adversarial",
       "Closes with notice period, surfaces the next concrete step",
     ];

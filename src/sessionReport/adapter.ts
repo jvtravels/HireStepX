@@ -805,6 +805,11 @@ function adoptKernelOutcome(
     ...(tacticsUsed ? { tacticsUsed } : {}),
     ...(infoAsked ? { infoAsked } : {}),
     ...(infoAskedInitiated ? { infoAskedInitiated } : {}),
+    /* S4S5-B3 — surface joining bonus so report panels (email letter,
+       OfferEconomicsPanel) can display "₹X CTC + ₹Y joining bonus". */
+    ...(typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0
+      ? { joiningBonusLpa: km.lastJoiningBonusOffered }
+      : {}),
   };
 }
 

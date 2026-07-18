@@ -182,7 +182,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
 
 /* ─── Post-Interview Deal Summary (shown after salary negotiation) ─── */
 
-export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote, candidateAskLpa }: {
+export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote, candidateAskLpa, joiningBonusLpa }: {
   transcript: { speaker: string; text: string; time: string }[];
   negotiationBand?: { initialOffer: number; maxStretch: number; walkAway: number } | null;
   onReplay?: (style: string) => void;
@@ -196,6 +196,10 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
    *  the two surfaces never disagree (I-10). Null on legacy sessions where the
    *  kernel target wasn't captured → falls back to transcript extraction. */
   candidateAskLpa?: number | null;
+  /** S4S5-B3 — one-time joining bonus the recruiter offered (LPA). When set,
+   *  the "Final Package" tile appends "+ ₹Y joining bonus" so the live deal
+   *  summary matches the actual deal rather than showing only annual CTC. */
+  joiningBonusLpa?: number | null;
 }) {
   // Extract key numbers from the conversation
   const aiTexts = transcript.filter(t => t.speaker === "ai").map(t => t.text);
@@ -384,7 +388,13 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
         {[
           { label: "Initial Offer", value: `₹${initialOffer} LPA`, color: e.inkSoft },
           ...(candidateAsk > 0 ? [{ label: "Your Ask", value: `₹${candidateAsk} LPA`, color: e.coal }] : []),
-          { label: "Final Package", value: `₹${finalOffer} LPA`, color: e.copper },
+          {
+            label: "Final Package",
+            value: joiningBonusLpa && joiningBonusLpa > 0
+              ? `₹${finalOffer} LPA + ₹${joiningBonusLpa}L joining`
+              : `₹${finalOffer} LPA`,
+            color: e.copper,
+          },
         ].map(item => (
           <div key={item.label} style={{ flex: 1, minWidth: 80, padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
             <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</p>

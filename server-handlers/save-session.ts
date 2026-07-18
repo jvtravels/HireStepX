@@ -158,6 +158,12 @@ export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> 
     ...(["soft", "neutral", "hot"].includes(o.marketMode as string) ? { marketMode: o.marketMode } : {}),
     ...(lowballEvent ? { lowballEvent } : {}),
     ...(powerContext ? { powerContext } : {}),
+    /* S4S5-B3 — persist the one-time joining bonus so the report's
+       OfferEconomicsPanel and CounterOfferLetterPanel can surface it
+       after DB save/reload (previously lost because the sanitizer dropped it). */
+    ...(num(o.lastJoiningBonusOffered, 0, 500) != null
+      ? { lastJoiningBonusOffered: num(o.lastJoiningBonusOffered, 0, 500) }
+      : {}),
   };
 }
 
@@ -503,9 +509,30 @@ export default async function handler(req: Request): Promise<Response> {
 
       /* Sessions are now counted at START via /api/record-session-start.
          If the engine already recorded this sessionId there, skip the
-         append here so the user doesn't double-count. */
+         append here so the user doesn't double-count.
+
+         Ghost-session refund: if questions === 0 the user entered /interview
+         but ended immediately without engaging with any question. The credit
+         that record-session-start added at page-load is refunded by popping
+         the last timestamp and removing the session from started_session_ids.
+         A user can only run one session at a time so the last timestamp is
+         always from this session's start call. */
+      const questionsAnswered = (sessionRow.questions ?? 0) >= 1;
       const alreadyCounted = startedIds.includes(sessionRow.id);
-      const next = alreadyCounted ? existing : [...existing, nowIso].slice(-500);
+      const isGhostSession = alreadyCounted && !questionsAnswered;
+
+      let next: string[];
+      let refundedStartedIds: string[] | null = null;
+      if (isGhostSession) {
+        // Refund: pop the timestamp that record-session-start added.
+        next = existing.length > 0 ? existing.slice(0, -1) : existing;
+        refundedStartedIds = startedIds.filter(id => id !== sessionRow.id);
+      } else {
+        next = alreadyCounted ? existing : [...existing, nowIso].slice(-500);
+      }
+
+      const patchBody: Record<string, unknown> = { practice_timestamps: next, has_completed_onboarding: true };
+      if (refundedStartedIds !== null) patchBody.started_session_ids = refundedStartedIds;
 
       const patchRes = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
@@ -517,12 +544,12 @@ export default async function handler(req: Request): Promise<Response> {
             Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
             Prefer: "return=minimal",
           },
-          body: JSON.stringify({ practice_timestamps: next, has_completed_onboarding: true }),
+          body: JSON.stringify(patchBody),
         },
       );
       if (patchRes.ok) {
-        practiceAppended = true;
-        if (!alreadyCounted) {
+        practiceAppended = !isGhostSession;
+        if (!alreadyCounted && questionsAnswered) {
           const bonus = computeStreakReward(existing, nowIso);
           if (bonus > 0) {
             const milestone = existing.length + 1;
@@ -542,7 +569,7 @@ export default async function handler(req: Request): Promise<Response> {
     console.warn(`[save-session] practice_timestamps update threw: ${(err as Error).message}`);
   }
 
-  console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
+  console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} questions=${sessionRow.questions ?? 0} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
 
   // ─── Eager grading kickoff ───
   // The session row is durable in the DB at this point. Kick off the

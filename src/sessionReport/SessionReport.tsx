@@ -38,6 +38,8 @@ import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
 import { sessionReportToInterviewResult, toBehavioralFullReportData, negotiationOutcomeDerivation } from "./adapter";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
+import { clawbackForCompany } from "../../server-handlers/_joining-bonus-clawback";
+import type { OfferNetValueInput } from "./derivations/offerNetValue";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 
@@ -548,6 +550,7 @@ export const SessionReport = memo(function SessionReport({
         role: session.role,
         roleFamily,
         type: session.type,
+        focus: session.focus,
         // Prefer the company captured for THIS session over the profile-level
         // target. The profile field is usually empty, which dropped the
         // session's real target company (e.g. "Razorpay") from the evaluator.
@@ -676,7 +679,9 @@ export const SessionReport = memo(function SessionReport({
   /* ── Fetch trend + live cohort (best-effort) ── */
   useEffect(() => {
     let cancelled = false;
-    fetchRecentSessionScores(10)
+    // Pass the session's focus so the trend only shows sessions of the
+    // same type — campus vs behavioral vs negotiation are not comparable.
+    fetchRecentSessionScores(10, session.focus || undefined)
       .then((points) => {
         if (!cancelled) setTrend(points);
       })
@@ -1002,6 +1007,29 @@ export const SessionReport = memo(function SessionReport({
     behavioralFlags,
   ]);
 
+  /* ── S4S5-B3 — offer economics (clawback-honest net value) ──
+     Derives the OfferEconomicsPanel input from persisted kernel metrics.
+     Only fires when a joining bonus was offered in the session — null
+     (no panel) for every session without one. */
+  const offerNetValue = useMemo((): OfferNetValueInput | undefined => {
+    const km = session.negotiationMetrics as Record<string, unknown> | null | undefined;
+    if (!km || typeof km !== "object") return undefined;
+    const jb = typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0
+      ? km.lastJoiningBonusOffered
+      : null;
+    if (!jb) return undefined;
+    const finalCtc = typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : null;
+    if (!finalCtc) return undefined;
+    const clawback = clawbackForCompany(jb, session.company ?? null);
+    return {
+      baseLpa: finalCtc,
+      variableAtTargetLpa: 0,
+      joiningBonusLpa: jb,
+      clawbackWindowMonths: clawback.months,
+      company: session.company ?? null,
+    };
+  }, [session.negotiationMetrics, session.company]);
+
   /* ── Routing for action callbacks owned by the view ── */
   const onTryQuestionAgain = useCallback(
     (questionIdx: number) => {
@@ -1011,16 +1039,24 @@ export const SessionReport = memo(function SessionReport({
         questionIdx,
         view: "main",
       });
-      // Find the source question on the report (idx in view-model is
-      // 1-based; report is 0-based). Best-effort focus payload — falls
-      // through to the generic /session/new when missing.
-      const q = report?.perQuestion[questionIdx - 1];
-      const focus = q?.question
-        ? `&focus=${encodeURIComponent(q.question.slice(0, 80))}`
-        : "";
-      router.push(`/session/new?type=${encodeURIComponent(session.type)}${focus}`);
+      const params = new URLSearchParams();
+      const isCampus = session.focus === "campus-placement";
+      // Campus placement: route back to /session/new with the session's
+      // own role + company so the form is pre-populated correctly.
+      // Non-campus: carry the question text as a drill directive.
+      if (isCampus) {
+        params.set("type", "behavioral");
+        params.set("focus", "campus-placement");
+      } else {
+        params.set("type", session.type || "behavioral");
+        const q = report?.perQuestion[questionIdx - 1];
+        if (q?.question) params.set("focus", q.question.slice(0, 80));
+      }
+      if (session.role) params.set("role", session.role);
+      if (session.company) params.set("company", session.company);
+      router.push(`/session/new?${params.toString()}`);
     },
-    [router, session.id, session.type, report]
+    [router, session.id, session.type, session.focus, session.role, session.company, report]
   );
 
   const onDrillSkill = useCallback(
@@ -1031,10 +1067,24 @@ export const SessionReport = memo(function SessionReport({
         skill: skillName,
         view: "main",
       });
-      const slug = skillName.toLowerCase().replace(/\s+/g, "-");
-      router.push(`/session/new?type=behavioral&focus=${encodeURIComponent(slug)}`);
+      const params = new URLSearchParams();
+      const isCampus = session.focus === "campus-placement";
+      // Campus placement: skill slugs like "problem-framing" aren't valid
+      // campus drill targets — route back to the campus-placement focus
+      // so the user gets a relevant practice session.
+      if (isCampus) {
+        params.set("type", "behavioral");
+        params.set("focus", "campus-placement");
+      } else {
+        const slug = skillName.toLowerCase().replace(/\s+/g, "-");
+        params.set("type", "behavioral");
+        params.set("focus", slug);
+      }
+      if (session.role) params.set("role", session.role);
+      if (session.company) params.set("company", session.company);
+      router.push(`/session/new?${params.toString()}`);
     },
-    [router, session.id]
+    [router, session.id, session.focus, session.role, session.company]
   );
 
   const onTrustAnswer = useCallback(
@@ -1163,6 +1213,7 @@ export const SessionReport = memo(function SessionReport({
       progressTrends={progressTrends}
       behavioralFullReportData={behavioralFullReportData}
       hrReportData={viewData?.hrReport}
+      offerNetValue={offerNetValue}
       isFreeUser={isFreeUser}
       onUpgrade={onUpgrade}
     />

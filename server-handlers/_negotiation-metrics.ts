@@ -154,6 +154,12 @@ export interface NegotiationMetrics {
   /** Chronological cash offers the recruiter made (LPA), most-recent last.
    *  One entry per cash turn; non-cash lever turns are excluded. */
   offerTrajectoryLpa: ReadonlyArray<number>;
+  /** S4S5-B3 — one-time joining bonus the recruiter last offered (LPA).
+   *  Null when no joining bonus was ever offered. Distinct from the
+   *  annual CTC total (`finalOfferLpa`) — persisted separately so the
+   *  report can display "₹X CTC + ₹Y joining bonus" and the
+   *  OfferEconomicsPanel can compute clawback-honest net value. */
+  lastJoiningBonusOffered: number | null;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -260,6 +266,11 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     finalOfferLpa: recruiterTopOfferLpa,
     candidateAskLpa,
     offerTrajectoryLpa,
+    lastJoiningBonusOffered:
+      typeof finalState.lastJoiningBonusOffered === "number" &&
+      finalState.lastJoiningBonusOffered > 0
+        ? finalState.lastJoiningBonusOffered
+        : null,
   };
 }
 
