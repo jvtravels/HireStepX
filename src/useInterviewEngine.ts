@@ -477,7 +477,14 @@ export function useInterviewEngine() {
        headline domain-mismatches the session role, scrub resume context for
        this salary-neg fetch only. Behavioral flow still uses resume because
        there the role-role match is unambiguous. */
-    const sessionRoleForFetch = targetRole || user?.targetRole || "";
+    // For campus-placement sessions the URL's ?role= is the canonical source;
+    // never fall back to the Settings profile role (which is often a senior
+    // experienced-hire title that would poison the campus question calibration).
+    // Other focuses use the profile role as a convenience fallback.
+    const isCampusFocus = interviewFocus === "campus-placement";
+    const sessionRoleForFetch = isCampusFocus
+      ? (targetRole || "")
+      : (targetRole || user?.targetRole || "");
     const resumeHeadlineRole = (aiProfile?.headline || "").split(/\s+with\s+/i)[0]?.trim() || "";
     const resumeRoleMismatch =
       interviewType === "salary-negotiation"
@@ -489,11 +496,14 @@ export function useInterviewEngine() {
       try { toast(`Using market data for ${sessionRoleForFetch} — your resume role differs.`, "info"); } catch { /* silent */ }
     }
     const effectiveUseResume = shouldUseResume && !resumeRoleMismatch;
+    const roleForLLM = isCampusFocus
+      ? (targetRole || "Fresher")
+      : (targetRole || user?.targetRole || "the role");
     const llmPromise = fetchLLMQuestions({
       type: interviewType,
       focus: interviewFocus,
       difficulty: interviewDifficulty,
-      role: targetRole || user?.targetRole || "the role",
+      role: roleForLLM,
       company: targetCompany || user?.targetCompany,
       currentCity: currentCity,
       jobCity: jobCity,
@@ -3268,9 +3278,17 @@ export function useInterviewEngine() {
           return [...prev.slice(0, nextIdx), placeholder, ...prev.slice(nextIdx)];
         });
       }
+      // OA-B17: the advance is complete — release the lock before phase flips.
+      // Without this, short TTS (thinking+speaking < 4s) hits the next listening
+      // phase with advancingRef still true and the user's first tap is silently
+      // dropped. The 4s safety backstop above only fires after the fact.
+      clearTimeout(advancingSafetyTimer);
+      advancingRef.current = false;
       setPhase("thinking");
       setCurrentStep(currentStep + 1);
     } else {
+      clearTimeout(advancingSafetyTimer);
+      advancingRef.current = false;
       setPhase("done");
     }
     // handleNextQuestion is the central transition function. Many of the values flagged (aiVoiceEnabled / currentCity / interviewerGender / isPanelInterview / jobCity / jobDescription / negotiationScenario / negotiationStyle / targetSalary / toast / transcript) are read at *fire-time* from latest closures inside the callback body — adding them as deps would re-create the function on every keystroke and re-bind every effect that depends on it. The values we DO bind to are the minimum trigger set.
@@ -3742,7 +3760,12 @@ export function useInterviewEngine() {
       resumeVersionId: resumeVersionIdRef.current,
       jobDescription: jobDescription || undefined,
       jdAnalysis: jdAnalysisData || null,
-      targetRole: targetRole || user?.targetRole || undefined,
+      // For campus-placement, never fall back to the profile role — store
+      // what the candidate actually typed (or null), so the report and
+      // future sessions don't inherit the wrong career level.
+      targetRole: interviewFocus === "campus-placement"
+        ? (targetRole || undefined)
+        : (targetRole || user?.targetRole || undefined),
       targetCompany: targetCompany || user?.targetCompany || undefined,
       negotiationMetrics,
     };
