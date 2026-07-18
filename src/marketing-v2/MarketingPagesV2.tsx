@@ -180,7 +180,7 @@ function PageHero({
       />
       <div className="mv2-container" style={{ ...(narrow ? containerNarrow : container), position: "relative", ...(center ? { textAlign: "center" } : {}) }}>
         {eb && <p style={{ ...eyebrow, marginBottom: 18 }}>{eb}</p>}
-        <h1 style={h1Display}>
+        <h1 style={h2}>
           {title}
           {accent && (
             <>
@@ -189,7 +189,7 @@ function PageHero({
             </>
           )}
         </h1>
-        {leadText && <p style={{ ...lead, marginTop: 28, ...(center ? { margin: "28px auto 0" } : {}) }}>{leadText}</p>}
+        {leadText && <p style={{ ...lead, fontSize: 16, marginTop: 24, ...(center ? { margin: "24px auto 0" } : {}) }}>{leadText}</p>}
         {meta && <div style={{ marginTop: 32 }}>{meta}</div>}
       </div>
     </section>
