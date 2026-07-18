@@ -2412,7 +2412,7 @@ function BlogIndex() {
 
       <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 48px 96px" }}>
         {/* Category filters: underline tab style */}
-        <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "flex-start", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
+        <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat}
