@@ -129,7 +129,7 @@ function AnswerBody({
   );
 }
 
-export function QuestionDetail({ q }: { q: Question }) {
+export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQuestionAgain?: (questionIdx: number) => void }) {
   const [tab, setTab] = useState<"answer" | "restructured" | "exemplar">("answer");
   const isStrong = q.band === "strong" || q.band === "complete";
   const coachHeading = isStrong ? "Why it landed" : "Why it scored low";
@@ -389,7 +389,7 @@ export function QuestionDetail({ q }: { q: Question }) {
               </p>
             </div>
           )}
-          <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start", marginTop: "auto" }}>
+          <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start", marginTop: "auto" }} onClick={() => onTryQuestionAgain?.(q.index)}>
             Try this question again
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="23 4 23 10 17 10" />
