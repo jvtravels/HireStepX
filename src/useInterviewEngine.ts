@@ -2540,12 +2540,17 @@ export function useInterviewEngine() {
         ]).acceptedImmediately
       : false;
     // Suppress when (a) the just-answered turn was an opener/closing,
-    // (b) this is the last real answer before closing, or (c) the
-    // candidate has already accepted.
+    // (b) this is the last real answer before closing (non-negotiation only), or
+    // (c) the candidate has already accepted.
+    // OA-B42: in salary-negotiation the 3-step static script always has `closing`
+    // at index 2 — the kernel hasn't inserted its placeholder slots yet, so
+    // `nextStepType === "closing"` would ALWAYS be true, silencing coaching on
+    // every turn. Exempt salary-negotiation from this check; `acceptedAlready`
+    // handles suppression once the deal is actually done.
     const skipMicroFeedback =
       justAskedType === "intro" ||
       justAskedType === "closing" ||
-      nextStepType === "closing" ||
+      (interviewType !== "salary-negotiation" && nextStepType === "closing") ||
       acceptedAlready;
     setMicroFeedback(null);
     if (
