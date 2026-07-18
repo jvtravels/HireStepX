@@ -195,14 +195,19 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
             borderTop: `1px solid ${t.line}`,
             padding: "14px 28px",
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
           }}
         >
+          <p style={{ margin: 0, fontSize: 12, color: t.inkFaint }}>
+            Showing top {visible.length} of {questions.length} questions
+          </p>
           <button
             type="button"
             className="ir-cta-ghost"
             onClick={handleExpandAll}
-            aria-label={`Show ${hiddenCount} more question${hiddenCount === 1 ? "" : "s"}`}
+            aria-label={`Show all ${questions.length} questions (${hiddenCount} more)`}
           >
             Show {hiddenCount} more question{hiddenCount === 1 ? "" : "s"}
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

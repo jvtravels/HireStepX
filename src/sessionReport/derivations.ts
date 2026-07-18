@@ -76,8 +76,6 @@ export function derivePhases(outcome: NegotiationOutcome) {
      answers) is not the candidate justifying their number. Legacy rows without
      the split fall back to the full set in the adapter, so this is inert there. */
   const infoInitiated = outcome.infoAskedInitiated ?? info;
-  const heldPushback =
-    outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
   // A "counter" semantically requires a recruiter offer to counter. When no
   // offer ever landed (offers === []), the candidate's stated number is an
   // OPENING ANCHOR, not a counter — labelling it "counter" is the S16-B7 /
@@ -86,6 +84,15 @@ export function derivePhases(outcome: NegotiationOutcome) {
   const hasPriorOffer = offers.length > 0;
 
   const reachedCounter = outcome.candidateAsk !== null;
+  // S6-B3 (known gap): `outcome.pushbacks` requires a transcript classifier
+  // that was never shipped — it is always undefined. The deterministic fix is
+  // a kernel-side "re-anchor" tactic: when the candidate re-states their number
+  // after a recruiter push, the kernel should emit a tactic so `tactics.length >
+  // 0` covers it (REPORT-6 anti-fabrication: recruiter offer count alone must
+  // not credit the candidate). Until that kernel signal exists, `heldPushback`
+  // falls through to false and `reachedPushback` requires a named Voss tactic.
+  const heldPushback =
+    outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
   // Justified — defended the number with a range, a tactic, or structural
   // discovery; a bare blurted number does NOT reach it.
   const reachedJustification =

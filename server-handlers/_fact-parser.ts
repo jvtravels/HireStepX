@@ -410,9 +410,13 @@ export function substituteForeignCurrency(s: string): string {
   return out;
 }
 
-/** Strip "," thousand separators and parse. */
+/** Strip "," thousand separators and parse.
+ * Scientific-notation strings (e.g. "6e6") are rejected — they represent
+ * magnitudes far above MAX_LPA and were never a valid salary input format. */
 function digitsToNumber(raw: string): number {
-  return Number(raw.replace(/,/g, ""));
+  const clean = raw.replace(/,/g, "");
+  if (/[eE]/.test(clean)) return NaN;
+  return Number(clean);
 }
 
 /* Family A / OA-B14 — unary-negation guard. The number-capture regexes
