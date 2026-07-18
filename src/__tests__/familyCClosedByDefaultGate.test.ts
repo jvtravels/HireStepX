@@ -14,7 +14,8 @@ import { classifyAcceptance } from "../../server-handlers/_acceptance-classifier
 
 const noOffer = { offerLpa: 0, offerOnTable: false, phase: "anchor" } as const;
 const withOffer = { offerLpa: 40, offerOnTable: true, phase: "counter" } as const;
-const acc = (t: string, c: any) => classifyAcceptance(t, c).accepted;
+const acc = (t: string, c: Parameters<typeof classifyAcceptance>[1]) =>
+  classifyAcceptance(t, c).accepted;
 
 describe("Family C — no offer on table ⇒ premature accept is vetoed", () => {
   it.each([
