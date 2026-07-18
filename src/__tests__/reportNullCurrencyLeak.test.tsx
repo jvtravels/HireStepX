@@ -149,6 +149,34 @@ describe("report currency leaks (pre-launch audit)", () => {
     expect(text).toContain("next-round play");
   });
 
+  /* S16-B9 / S17-B3 (2026-07-18 audit) — a no-agreement session where NO offer
+   * ever landed and the candidate named NO number was printing offer-centric
+   * copy: the verdict said "email draft to reopen offer" (there was nothing to
+   * reopen) and "How far you got" said "you didn't push past the first offer"
+   * (no first offer existed). Both strings are gated on offers.length now.
+   * Pinned: with offers === [] the surfaces must talk about RESTARTING the
+   * conversation, never reopening/pushing past a non-existent offer. */
+  it("TLDRHero talks about restarting, not reopening, when no offer ever landed (S16-B9 / S17-B3)", () => {
+    const outcome = baseOutcome({
+      outcome: "no_agreement",
+      finalTotal: null,
+      offers: [],
+      candidateAsk: null,
+    });
+    const { container } = render(
+      // `role` is TLDRHero's domain prop (the job title), not a DOM ARIA role.
+      // eslint-disable-next-line jsx-a11y/aria-role
+      <TLDRHero outcome={outcome} role="Engineering Manager" company="Flipkart" />,
+    );
+    const text = (container.textContent || "").toLowerCase();
+    // S16-B9: no offer to reopen — must say restart, not reopen.
+    expect(text).toContain("restart the conversation");
+    expect(text).not.toContain("reopen");
+    // S17-B3: no first offer to push past — must name it honestly.
+    expect(text).not.toContain("push past the first offer");
+    expect(text).toContain("ended before any offer landed");
+  });
+
   it("TLDRHero keeps the 'no counter' framing on a flat-offer accept with no candidate ask", () => {
     const outcome = baseOutcome({
       outcome: "accepted",
