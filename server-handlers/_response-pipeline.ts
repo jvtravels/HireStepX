@@ -1499,6 +1499,22 @@ function extractNumbers(s: string): string[] {
 const CLOSE_VOCAB_RE =
   /\b(welcome to the team|congratulations[^.!?]*on board|we['’]?re excited to have you|offer letter (?:will be|is being|has been) (?:prepared|sent|issued)|let['’]?s get you onboarded)\b/i;
 
+/* S16-B3 ≡ S12-B4 (2026-07-18) — max-stretch / close-ceiling vocab.
+ * The kernel's escalatingCloseOut is already gated on highestOfferMade>0
+ * (canonicalEscalationAnchor.test.ts), so the KERNEL never emits max-stretch
+ * language pre-offer. The remaining gap is the LLM restyle injecting it
+ * ("I've stretched as far as I can", "final number", "best I can do", "at
+ * the ceiling") onto a non-terminal, non-closing turn whose canonical lacks
+ * it — a fabricated take-it-or-leave-it beat. The set covers both the loose
+ * candidate-observed forms AND the canonical escalatingCloseOut phrasings
+ * ("stretched as far as the band allows", "the ceiling I can sign off on",
+ * "the number I can commit to", "my final, committed figure") so a faithful
+ * restyle of a genuine close-out keeps the phrase and passes on the
+ * canonical-carries-it branch. Same allow-when-canonical-has-it-OR-close-
+ * phase shape as CLOSE_VOCAB_RE below. */
+const MAX_STRETCH_VOCAB_RE =
+  /\b(?:stretched? (?:it )?as far as (?:i|the band)|(?:my |the )?final(?:,? committed)? (?:number|figure)|best i can do|at the ceiling|ceiling i can (?:sign off|commit)|the number i can commit to|my number hasn['’]?t moved|as far as i can (?:go|stretch))\b/i;
+
 /** Discovery-probe ack-prefix vocab. buildDiscoveryAck emits one of
  *  six phrases ("Noted on …", "Got it on …", "Understood on …",
  *  "Appreciate the colour …"). When the kernel canonical opens with
@@ -2395,12 +2411,40 @@ export function validateRestyle(
       return { valid: false, reason: `new-percent-in-restyle:${p.trim()}` };
     }
   }
+  /* S14-B4 / S13-B4 (2026-07-18) — clawback hallucination. Canonical
+   * only ever emits "clawback" bound to a granted joining bonus
+   * (closeAcceptProse / the ctc-inflation breakdowns in _canonical-prose).
+   * A restyle that injects "clawback" onto a turn whose canonical never
+   * mentioned it (candidate said "unvested RSUs", not clawback) is a
+   * fabricated contractual term. Since clawback co-occurs with the bonus
+   * grant in every canonical path, "not present in this-move canonical"
+   * is a sufficient single-source signal — no separate bonus check
+   * needed. Reject → canonical fallback. */
+  const CLAWBACK_RE = /\bclawback\b/i;
+  if (CLAWBACK_RE.test(restyled) && !CLAWBACK_RE.test(canonical)) {
+    return { valid: false, reason: "clawback-hallucination" };
+  }
   /* Closing vocab is allowed only when the canonical itself has it OR
    * the phase is a close phase. */
   const canonicalHasClose = CLOSE_VOCAB_RE.test(canonical);
   const inClosePhase = state.phase === "accepted" || state.phase === "walked-away" || state.phase === "stalemate";
   if (!canonicalHasClose && !inClosePhase && CLOSE_VOCAB_RE.test(restyled)) {
     return { valid: false, reason: "new-close-vocab-outside-close-phase" };
+  }
+  /* S16-B3 ≡ S12-B4 (2026-07-18) — max-stretch / close-ceiling leak.
+   * Same allow-conditions as the close-vocab rule: the ceiling language is
+   * legitimate only when the canonical itself carries it OR the turn is in
+   * the close register (closing-push, or a terminal phase). Otherwise a
+   * restyle that injects "I've stretched as far as I can" onto a mid-flow
+   * probe/counter is a fabricated take-it-or-leave-it beat → canonical
+   * fallback. */
+  const inCloseRegister = state.phase === "closing-push" || isTerminalPhase(state.phase);
+  if (
+    !MAX_STRETCH_VOCAB_RE.test(canonical) &&
+    !inCloseRegister &&
+    MAX_STRETCH_VOCAB_RE.test(restyled)
+  ) {
+    return { valid: false, reason: "new-max-stretch-outside-close-phase" };
   }
   /* PDF#24 follow-up (2026-05-16) — ack-prefix preservation. When the
    * kernel canonical was authored with a discovery-probe acknowledgement

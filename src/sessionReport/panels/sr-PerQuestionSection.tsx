@@ -22,7 +22,7 @@ const BAND_META: Record<Question["band"], { label: string; color: string }> = {
   strong:   { label: "Strong",   color: t.success },
 };
 
-export function PerQuestionSection({ questions }: { questions: Question[] }) {
+export function PerQuestionSection({ questions, onTryQuestionAgain }: { questions: Question[]; onTryQuestionAgain?: (questionIdx: number) => void }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
   const PRIMARY_COUNT = 3;
   /* R-7 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
@@ -157,7 +157,16 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
                   {band.label}
                 </span>
                 <span style={{ fontFamily: f.mono, fontSize: 13, color: t.coal, fontWeight: 600, minWidth: 60, textAlign: "right" }}>
-                  {q.score} <span style={{ color: t.inkFaint, fontWeight: 400 }}>/100</span>
+                  {/* S6-B4 — a row with no genuine per-turn score (reconstructed
+                      negotiation exchange) shows a neutral "—", never a
+                      misleading 0/100 or a fabricated per-turn number. */}
+                  {q.scoreUnavailable ? (
+                    <span style={{ color: t.inkFaint, fontWeight: 400 }} aria-label="No per-turn score">—</span>
+                  ) : (
+                    <>
+                      {q.score} <span style={{ color: t.inkFaint, fontWeight: 400 }}>/100</span>
+                    </>
+                  )}
                 </span>
                 <svg
                   width="14"
@@ -174,7 +183,7 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
                 </svg>
               </button>
               <div id={panelId} role="region" hidden={!open}>
-                {open && <QuestionDetail q={q} />}
+                {open && <QuestionDetail q={q} onTryQuestionAgain={onTryQuestionAgain} />}
               </div>
             </li>
           );

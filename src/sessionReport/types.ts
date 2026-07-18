@@ -56,6 +56,13 @@ export interface Question {
   index: number;
   text: string;
   score: number;
+  /** S6-B4 — true when NO genuine per-turn score exists for this row (e.g. a
+   *  reconstructed negotiation exchange: the evaluator scored the call as a
+   *  whole, never per-turn). The per-question card then renders a neutral "—"
+   *  instead of a misleading numeric score. `score` still carries a value for
+   *  band derivation, but it is NOT the row's own graded score, so it must not
+   *  be shown as one. */
+  scoreUnavailable?: boolean;
   band: "weak" | "partial" | "strong" | "complete";
   answer: AnswerSpan[];
   restructured?: AnswerSpan[];
@@ -289,6 +296,11 @@ export interface InterviewResultData {
     leverDiversity?: number;
     tacticsUsed?: ReadonlyArray<string>;
     infoAsked?: ReadonlyArray<string>;
+    /** S13-B9 — subset of `infoAsked` the candidate raised on their OWN
+     *  initiative (recruiter did not elicit it). `derivePhases` stage-2 ("You
+     *  justified your number") keys on this so a recruiter-elicited disclosure
+     *  is not miscredited as candidate-initiated justification. */
+    infoAskedInitiated?: ReadonlyArray<string>;
     /** Structured pushbacks the AI made during the call. Each entry pairs
      *  an AI line with how the candidate responded (held / deflected /
      *  conceded). Drives the "When they pushed back, did you fold?" panel.
@@ -408,6 +420,9 @@ export interface InterviewResultData {
        before this ship landed will not have them. */
     vossTacticsUsed?: ReadonlyArray<string>;
     infoAsked?: ReadonlyArray<string>;
+    /** S13-B9 — candidate-INITIATED subset of infoAsked (recruiter did not
+     *  elicit it). Optional: absent on rows persisted before it shipped. */
+    infoAskedInitiated?: ReadonlyArray<string>;
     walkAwayReturned?: boolean;
     hardBandCap?: boolean;
     marketMode?: "soft" | "neutral" | "hot";

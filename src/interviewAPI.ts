@@ -2,7 +2,7 @@
 
 import type { InterviewStep } from "./interviewScripts";
 import { scriptHasQuestion } from "./interviewScripts";
-import { apiFetch } from "./apiClient";
+import { apiFetch, throwIfRateLimited, RateLimitError } from "./apiClient";
 import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
 import { extractAccentMarkup } from "./_accent-parser";
@@ -716,10 +716,9 @@ export async function fetchLLMEvaluation(params: {
     );
     clearTimeout(timer);
     if (timedOut) throw new Error("Evaluation timed out. Using estimated score.");
-    if (res.status === 429) {
-      const retryAfter = (res.errorData as { retryAfter?: number } | null)?.retryAfter;
-      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
-    }
+    // Central 429 gate — same typed RateLimitError path fetchFollowUp uses, so
+    // the 429 check has one home instead of a per-caller inline reimplementation.
+    throwIfRateLimited(res);
     if (res.status >= 500) throw new Error(`Evaluation server error: ${res.status}`);
     if (!res.ok || !res.data) return null;
     const body = res.data;
@@ -829,6 +828,10 @@ export async function fetchFollowUp(params: {
         { signal: controller.signal },
       );
       clearTimeout(timer);
+      // Central 429 gate — throws a typed RateLimitError (carrying retryAfter)
+      // so a rate-limit is a distinct, surfaced signal rather than collapsing
+      // into the same silent null as "no follow-up needed" (OA-B9).
+      throwIfRateLimited(res);
       if (!res.ok) {
         if (res.status >= 500) throw new Error(`Server error: ${res.status}`);
         return null;
@@ -839,7 +842,10 @@ export async function fetchFollowUp(params: {
       baseDelayMs: 1000,
       shouldRetry: (err) => err instanceof TypeError || (err instanceof Error && err.message.startsWith("Server error")),
     });
-  } catch {
+  } catch (err) {
+    // Preserve the rate-limit signal — the caller shows "wait N seconds"
+    // instead of silently proceeding as if no follow-up were needed.
+    if (err instanceof RateLimitError) throw err;
     return null;
   }
 }

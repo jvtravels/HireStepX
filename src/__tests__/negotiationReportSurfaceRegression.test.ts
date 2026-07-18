@@ -33,6 +33,7 @@ function outcome(over: Partial<NegotiationOutcome> = {}): NegotiationOutcome {
     leverDiversity: 0,
     tacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     ...over,
   } as NegotiationOutcome;
 }

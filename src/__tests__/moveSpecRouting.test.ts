@@ -54,6 +54,7 @@ function mkCloseRecapState(): NegotiationState {
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     verbalAcceptanceTurn: 12,
     postVerbalRenegotiationCount: 0,
     counterRound: 1,

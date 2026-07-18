@@ -1008,6 +1008,15 @@ export interface NegotiationState {
   /* Candidate-side tactic & intent counters. */
   vossTacticsUsed: VossTactic[];
   infoAsked: InfoIntent[];
+  /* S13-B9 — the subset of `infoAsked` the candidate raised on their OWN
+     initiative, i.e. the recruiter did NOT solicit that disclosure on the
+     immediately-prior turn. This is the single source of truth for
+     "candidate-INITIATED justification": the report's stage-2 credit ("You
+     justified your number") must key on this, not on `infoAsked`, so a
+     recruiter-ELICITED disclosure ("what's your current breakdown?" → the
+     candidate answers) is not miscredited as candidate-initiated justification.
+     Sticky, never cleared, subset of infoAsked by construction. */
+  infoAskedInitiated: InfoIntent[];
 
   /* Verbal-acceptance lock: the candidate said "yes" but then tried to
      re-open the conversation. Distinct from terminal `accepted` — when
@@ -2845,6 +2854,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     verbalAcceptanceTurn: null,
     postVerbalRenegotiationCount: 0,
     counterRound: 0,
@@ -3698,6 +3708,39 @@ function detectVossTactics(a: string, lastAiText: string): VossTactic[] {
   return out;
 }
 
+/* S13-B9 — recruiter-elicited-disclosure detector.
+ *
+ * True when the recruiter's immediately-prior turn SOLICITED a disclosure
+ * from the candidate — i.e. it posed a question that asks the candidate to
+ * enumerate / share / walk through a package or comp detail. When this fires,
+ * any info-intent the classifier picks up on the candidate's reply is
+ * recruiter-ELICITED, not candidate-INITIATED, and must NOT credit the report's
+ * "You justified your number" stage. Conservative: it requires an interrogative
+ * shape (trailing `?` OR an interrogative lead) AND a second-person solicitation
+ * frame directed at the candidate, so a recruiter statement that merely mentions
+ * a component ("our variable is 10%") does not count as elicitation. */
+function recruiterElicitedDisclosure(lastAiText: string | null | undefined): boolean {
+  const t = (lastAiText ?? "").trim();
+  if (!t) return false;
+  const interrogative = /\?\s*$/.test(t) || /\b(?:what|which|how|could|can|would|do)\b/i.test(t);
+  if (!interrogative) return false;
+  /* Second-person solicitation directed at the candidate: "what's your …",
+     "can you share/tell/walk me through …", "your current/expected …",
+     "break down your …". The recruiter is asking the candidate to disclose. */
+  const solicits =
+    /\b(?:what.?s|what\s+is|what\s+are)\s+your\b/i.test(t) ||
+    /\b(?:can|could|would)\s+you\s+(?:share|tell|walk|give|provide|break|list|elaborate|explain)\b/i.test(t) ||
+    /\b(?:share|tell\s+me|walk\s+me\s+through|give\s+me|provide|break\s+down|list|elaborate\s+on)\s+(?:your|the)\b/i.test(t) ||
+    /\byour\s+(?:current|expected|present)\b/i.test(t) ||
+    /* Recruiter inviting the candidate's questions — "what would you like to
+       know…?", "any questions (about …)?", "what can I tell you about …?".
+       A question the candidate then asks in reply is elicited, not initiated. */
+    /\bwhat\s+would\s+you\s+like\s+to\s+know\b/i.test(t) ||
+    /\b(?:any|other)\s+questions\b/i.test(t) ||
+    /\bwhat\s+(?:can|could)\s+i\s+(?:tell|share\s+with)\s+you\b/i.test(t);
+  return solicits;
+}
+
 /* Info-intent detection. The candidate explicitly asks about an offer
    component. Each phrase is conservative — we'd rather miss an ask than
    credit one that wasn't there. */
@@ -4515,6 +4558,28 @@ export function bandAcceptOfferFloor(state: NegotiationState): number {
   return Math.min(Math.max(base, hikeFloor), Math.max(base, ceil));
 }
 
+/** OA-B69 (2026-07-18) — single predicate for "the candidate had verbally
+ *  accepted and is now re-opening the deal". A reopen requires a NEW demand:
+ *  either a fresh target number, a sign-today bundle push, OR a non-cash
+ *  lever ask (higher base, a joining bonus, or relocation assistance). It is
+ *  NOT tripped by acceptance itself, and — preserving AUDIT-W02 BUG-5 — NOT
+ *  by an info-only clarifying question ("what's the joining date again?"):
+ *  `parsed.infoAsked` is deliberately absent from every arm below. The lever
+ *  arms read the demand-shaped signals (a stated joining-bonus ASK, a
+ *  relocation REQUEST, a base-push component) — never the info/literacy
+ *  fields (equity vesting familiarity, notice-period disclosure), which are
+ *  clarifications, not new asks. */
+function isPostAcceptReopen(parsed: ParsedAnswer): boolean {
+  if (parsed.signalsAcceptance) return false;
+  const newNumberOrBundle =
+    parsed.target != null || parsed.vossTactics.includes("sign-today-bundle");
+  const newLeverAsk =
+    parsed.componentBreakdown.base != null || // wants-higher-base (base-push counter)
+    parsed.noticeJoining.joiningBonusAsk != null || // wants-joining-bonus
+    parsed.locationMode.relocationRequested; // wants-relocation-allowance
+  return newNumberOrBundle || newLeverAsk;
+}
+
 /** Apply a candidate turn to state. Returns a new state — never
  *  mutates the input. Terminal phases are sticky: if state.phase is
  *  already terminal, returns state unchanged. */
@@ -4553,6 +4618,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       leversUsed: [...state.leversUsed],
       vossTacticsUsed: [...state.vossTacticsUsed],
       infoAsked: [...state.infoAsked],
+      infoAskedInitiated: [...(state.infoAskedInitiated ?? [])],
       phase: "counter-offer",
       walkAwayReturned: true,
       walkedAwayAtTurn: null,
@@ -4891,6 +4957,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     leversUsed: [...state.leversUsed],
     vossTacticsUsed: [...state.vossTacticsUsed],
     infoAsked: [...state.infoAsked],
+    infoAskedInitiated: [...(state.infoAskedInitiated ?? [])],
     conversationLog: nextConversationLog,
     repetitionComplaintAtTurn,
     offerAskedAtTurn,
@@ -5957,8 +6024,14 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   for (const t of parsed.vossTactics) {
     if (!next.vossTacticsUsed.includes(t)) next.vossTacticsUsed.push(t);
   }
+  /* S13-B9 — an info-intent picked up on this candidate turn is
+     candidate-INITIATED only when the recruiter's immediately-prior turn did
+     NOT solicit that disclosure. `state.lastAiText` is the recruiter utterance
+     that preceded this answer, so it is the correct elicitation context. */
+  const elicited = recruiterElicitedDisclosure(state.lastAiText);
   for (const i of parsed.infoAsked) {
     if (!next.infoAsked.includes(i)) next.infoAsked.push(i);
+    if (!elicited && !next.infoAskedInitiated.includes(i)) next.infoAskedInitiated.push(i);
   }
 
   /* Negotiation-flow redesign commit 2 (2026-05-15) — sync discovery
@@ -6018,11 +6091,13 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   /* AUDIT-W02 BUG-5 (2026-06-08) — info-only post-accept asks (e.g.
    * "what's the joining date again?") must NOT count as renegotiation.
    * Renege requires a new target number or a new lever ask, not a
-   * clarifying info question. Removed parsed.infoAsked.length signal. */
+   * clarifying info question. Removed parsed.infoAsked.length signal.
+   * OA-B69 (2026-07-18) — the "new demand" test is now a single predicate
+   * (isPostAcceptReopen) that ALSO recognises non-cash lever reopens
+   * (higher base, joining bonus, relocation), while still excluding
+   * info-only asks. */
   const reneging =
-    next.verbalAcceptanceTurn != null &&
-    (parsed.target != null || parsed.vossTactics.includes("sign-today-bundle")) &&
-    !parsed.signalsAcceptance;
+    next.verbalAcceptanceTurn != null && isPostAcceptReopen(parsed);
   if (reneging) {
     /* Sticky — leave verbalAcceptanceTurn set so the move-picker keeps
        seeing it across subsequent turns. Phase 25d: also escalate the
@@ -6220,6 +6295,7 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
     leversUsed: [...state.leversUsed],
     vossTacticsUsed: [...state.vossTacticsUsed],
     infoAsked: [...state.infoAsked],
+    infoAskedInitiated: [...(state.infoAskedInitiated ?? [])],
   };
   const num = (s: string | null): number | null => {
     if (!s) return null;
@@ -7745,6 +7821,7 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.candidateAskedAsRange !== undefined && typeof s.candidateAskedAsRange !== "boolean") throw new Error("state.candidateAskedAsRange");
   if (s.vossTacticsUsed !== undefined && !(Array.isArray(s.vossTacticsUsed) && s.vossTacticsUsed.every((v) => typeof v === "string"))) throw new Error("state.vossTacticsUsed");
   if (s.infoAsked !== undefined && !(Array.isArray(s.infoAsked) && s.infoAsked.every((v) => typeof v === "string"))) throw new Error("state.infoAsked");
+  if (s.infoAskedInitiated !== undefined && !(Array.isArray(s.infoAskedInitiated) && s.infoAskedInitiated.every((v) => typeof v === "string"))) throw new Error("state.infoAskedInitiated");
   if (s.verbalAcceptanceTurn !== undefined && s.verbalAcceptanceTurn !== null && !isFiniteNonNegInt(s.verbalAcceptanceTurn)) throw new Error("state.verbalAcceptanceTurn");
   if (s.postVerbalRenegotiationCount !== undefined && !isFiniteNonNegInt(s.postVerbalRenegotiationCount)) throw new Error("state.postVerbalRenegotiationCount");
   /* perfect 1 (2026-05-16) — counterRound spiral counter. Optional for
@@ -8244,6 +8321,7 @@ export function deserializeState(json: string): NegotiationState {
     finalOfferAssertedCount: s.finalOfferAssertedCount ?? 0,
     vossTacticsUsed: (s.vossTacticsUsed as VossTactic[] | undefined) ?? [],
     infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],
+    infoAskedInitiated: (s.infoAskedInitiated as InfoIntent[] | undefined) ?? [],
     verbalAcceptanceTurn: s.verbalAcceptanceTurn ?? null,
     postAcceptanceDocsRequestedAtTurn:
       (s.postAcceptanceDocsRequestedAtTurn as number | null | undefined) ?? null,

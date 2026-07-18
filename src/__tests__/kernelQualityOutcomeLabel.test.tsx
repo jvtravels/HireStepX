@@ -30,6 +30,7 @@ function metrics(over: Partial<KernelMetrics>): KernelMetrics {
     overBandViolation: false,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     walkAwayReturned: false,
     hardBandCap: false,
     marketMode: "neutral",

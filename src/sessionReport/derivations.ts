@@ -69,6 +69,13 @@ export const TOTAL_PHASES = 5;
 export function derivePhases(outcome: NegotiationOutcome) {
   const tactics = outcome.tacticsUsed ?? [];
   const info = outcome.infoAsked ?? [];
+  /* S13-B9 — the candidate-INITIATED subset of info asks. Stage 2 ("You
+     justified your number") credits a structural-discovery justification only
+     when the candidate raised it on their OWN initiative — a disclosure the
+     recruiter ELICITED ("what's your current breakdown?" → the candidate
+     answers) is not the candidate justifying their number. Legacy rows without
+     the split fall back to the full set in the adapter, so this is inert there. */
+  const infoInitiated = outcome.infoAskedInitiated ?? info;
   const heldPushback =
     outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
   // A "counter" semantically requires a recruiter offer to counter. When no
@@ -85,7 +92,7 @@ export function derivePhases(outcome: NegotiationOutcome) {
     reachedCounter &&
     (outcome.anchorBracket?.type === "range_with_justification" ||
       tactics.length > 0 ||
-      info.length > 0);
+      infoInitiated.length > 0);
   // Handled pushback — a held/deflected classifier event or a Voss tactic the
   // candidate played. S16-B4: gated on reachedCounter — you cannot "handle
   // pushback on your number" without having named one, so a lone calibrated

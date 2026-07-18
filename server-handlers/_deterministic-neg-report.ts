@@ -23,6 +23,20 @@ export interface NegReportTurn {
   text: string;
 }
 
+/* Authoritative session-exit read, mirrors the kernel/metrics enum
+   (_negotiation-metrics.ts: "accepted" | "walked-away" | "stalemate" |
+   "in-progress"). Threaded in from the caller — NOT re-derived from the
+   transcript — because a stalemate is a kernel-state fact (ran out of turns
+   without resolution), not something a keyword scan can honestly infer. */
+export type NegOutcome = "accepted" | "walked-away" | "stalemate" | "in-progress";
+
+/* A no-agreement deadlock: the session ended without either side yielding.
+   On these, the candidate's problem is the impasse itself, not a failure to
+   state a walk-away floor — so floor-coaching would be false advice. */
+function isDeadlockOutcome(outcome: NegOutcome | undefined): boolean {
+  return outcome === "stalemate" || outcome === "walked-away";
+}
+
 /* Matches NEGOTIATION_SKILL_AXES in _evaluate-session-helpers.ts. Duplicated
    here (not imported) to keep this module dependency-free and trivially
    testable; a drift guard test asserts the two lists stay identical. */
@@ -73,6 +87,7 @@ function axisScore(base: number, points: number): number {
  */
 export function buildDeterministicNegotiationReport(
   transcript: ReadonlyArray<NegReportTurn>,
+  outcome?: NegOutcome,
 ): DeterministicNegReport {
   const candidateTurns = transcript.filter(
     (t) => t.role === "candidate" && typeof t.text === "string" && t.text.trim().length > 0,
@@ -94,6 +109,19 @@ export function buildDeterministicNegotiationReport(
     lc,
     /\b(?:esop|equity|rsu|variable|joining bonus|sign[- ]?on|sign(?:ing)? bonus|in lieu|instead of|trade|flexible on|relocation|wfh|remote|notice period|stock)\b/gi,
   );
+  /* A candidate-INITIATED trade, not a bare mention. tradeoffSignals fires on
+     any lever term anywhere in the corpus — so "what's the notice period?" or
+     "you offer variable pay" over-matches and would falsely credit a structural
+     lever the candidate never actually put on the table as a trade. The
+     structural-levers WIN requires a lever term co-occurring with explicit
+     trade framing (instead of / in lieu of / in exchange for / swap / rather
+     than / trade X for Y / if cash|base is capped …). A discovery question or
+     acknowledgement satisfies neither clause. */
+  const LEVER_TERM = String.raw`esop|equity|rsu|variable|joining bonus|sign[- ]?on|sign(?:ing)? bonus|relocation|wfh|remote|notice period|stock`;
+  const TRADE_FRAME = String.raw`instead of|in lieu of|in exchange for|rather than|\btrade\b|\bswap\b|move (?:it|that|the \w+) (?:to|into)|if (?:the )?(?:cash|base|fixed|salary) (?:is |are )?capped`;
+  const leverTradeInitiated =
+    new RegExp(String.raw`(?:${LEVER_TERM})[^.?!]{0,80}(?:${TRADE_FRAME})`, "i").test(lc) ||
+    new RegExp(String.raw`(?:${TRADE_FRAME})[^.?!]{0,80}(?:${LEVER_TERM})`, "i").test(lc);
   const structuralSignals = countMatches(
     lc,
     /\b(?:fixed|variable|ctc|base|total comp|in[- ]?hand|breakdown|split|gross|net|per annum|annum|component)\b/gi,
@@ -179,7 +207,7 @@ export function buildDeterministicNegotiationReport(
   } else if (counterSignals > 0) {
     wins.push({ text: "You pushed back on the first offer instead of accepting it outright.", questionIdx: -1, quote: "" });
   }
-  if (tradeoffSignals > 0) {
+  if (leverTradeInitiated) {
     wins.push({ text: "You brought structural levers (equity / variable / joining bonus) into the conversation.", questionIdx: -1, quote: "" });
   }
   if (!anchoredTarget) {
@@ -188,7 +216,10 @@ export function buildDeterministicNegotiationReport(
   if (tradeoffSignals === 0) {
     fixes.push({ text: "Trade across components: if cash is capped, ask for ESOP, joining bonus, or variable instead.", questionIdx: -1, quote: "" });
   }
-  if (!walkAwaySignals) {
+  if (!walkAwaySignals && !isDeadlockOutcome(outcome)) {
+    // Suppress on a no-agreement/stalemate deadlock: the candidate's problem
+    // there is the impasse, not a missing floor — floor-coaching would be false
+    // advice. Only surfaces on settled/accepted sessions where no floor was set.
     fixes.push({ text: "State a walk-away floor or a competing option to give your counter real leverage.", questionIdx: -1, quote: "" });
   }
 

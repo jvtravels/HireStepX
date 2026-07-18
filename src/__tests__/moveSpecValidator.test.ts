@@ -60,6 +60,7 @@ function mkCounterState(): NegotiationState {
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     verbalAcceptanceTurn: null as unknown as number,
     postVerbalRenegotiationCount: 0,
     counterRound: 1,

@@ -787,6 +787,13 @@ function adoptKernelOutcome(
   const leverDiversity = typeof km.leverDiversity === "number" ? km.leverDiversity : 0;
   const tacticsUsed = Array.isArray(km.vossTacticsUsed) ? km.vossTacticsUsed : undefined;
   const infoAsked = Array.isArray(km.infoAsked) ? km.infoAsked : undefined;
+  // S13-B9 — candidate-INITIATED info subset. Fall back to the full infoAsked
+  // ONLY for legacy rows that predate the split (no infoAskedInitiated key at
+  // all) so their stage-2 behaviour is unchanged; a present-but-empty array is
+  // authoritative (recruiter elicited everything) and must NOT fall back.
+  const infoAskedInitiated = Array.isArray(km.infoAskedInitiated)
+    ? km.infoAskedInitiated
+    : infoAsked;
 
   return {
     offers,
@@ -797,6 +804,7 @@ function adoptKernelOutcome(
     leverDiversity,
     ...(tacticsUsed ? { tacticsUsed } : {}),
     ...(infoAsked ? { infoAsked } : {}),
+    ...(infoAskedInitiated ? { infoAskedInitiated } : {}),
   };
 }
 
@@ -1068,12 +1076,15 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       targetLabel: "Target 0–20%",
       band: bandForSilence(coreMetrics.silenceRatio),
     },
-    {
+    // Suppress pace when the LLM reports an implausibly low value (< 20 wpm) —
+    // this happens on mini/brief sessions where the LLM divides word count by
+    // total session clock time (including AI turns) rather than user speaking time.
+    ...(coreMetrics.paceWpm >= 20 ? [{
       label: "Pace (WPM)",
       value: Math.round(coreMetrics.paceWpm),
       targetLabel: "Target 140–180",
       band: bandForPace(coreMetrics.paceWpm),
-    },
+    }] : []),
     {
       label: "Energy",
       value: Math.round(coreMetrics.energy),
@@ -1369,10 +1380,15 @@ function buildNegotiationPerQuestion(
     items.push({
       index: items.length + 1,
       text: pendingRecruiter || `Exchange ${items.length + 1}`,
-      // No per-turn score exists — the evaluator scored the whole call. Carry
-      // the aggregate score with a neutral band rather than fabricate a per-turn
-      // number the kernel never recorded.
+      // S6-B4 — no per-turn score EXISTS for a negotiation exchange: the
+      // evaluator scored the whole call, not each turn. Rendering the aggregate
+      // as "0/100" (heuristic path) or even as the call score on every row is a
+      // fabricated per-turn number. Flag the row as score-unavailable so the
+      // card shows a neutral "—". `score` still carries the aggregate purely so
+      // the band label derives from a real signal, never displayed as this
+      // row's own grade.
       score: aggregate?.score ?? 0,
+      scoreUnavailable: true,
       // Band must agree with the score it's shown beside — a hardcoded "partial"
       // rendered "Partial · 0/100" on the degraded heuristic path (aggregate
       // score 0, live session 734493c9) and would equally misread a healthy
@@ -1460,10 +1476,11 @@ export function collapseThoughtBubble(
 }
 
 /** Score-confidence number → bucket for the chip. Above 0.85 we don't
- *  render a chip ("high"). Treat 0.6-0.85 as medium; below as low. */
+ *  render a chip ("high"). 0.7–0.85 medium; below 0.7 low — aligned with
+ *  the scoreConfidenceNote threshold so chip and note stay consistent. */
 export function confidenceBucket(n: number): "high" | "medium" | "low" {
   if (n >= 0.85) return "high";
-  if (n >= 0.6) return "medium";
+  if (n >= 0.7) return "medium";
   return "low";
 }
 

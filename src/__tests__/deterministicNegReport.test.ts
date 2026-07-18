@@ -11,7 +11,9 @@ import {
   buildDeterministicNegotiationReport,
   NEG_AXES,
   type NegReportTurn,
+  type NegOutcome,
 } from "../../server-handlers/_deterministic-neg-report";
+import { isWalkAway } from "../../server-handlers/_walkaway-detection";
 import {
   NEGOTIATION_SKILL_AXES,
   isUsableEvalReport,
@@ -118,6 +120,122 @@ describe("buildDeterministicNegotiationReport (#PRI-51)", () => {
       const synth = buildDeterministicNegotiationReport(tr);
       expect(isUsableEvalReport(synth, "salary-negotiation")).toBe(true);
     }
+  });
+
+  /* S12-B5 — the structural-levers WIN must require a candidate-INITIATED
+     trade, not a bare lever mention or a discovery question. A false "you
+     brought structural levers" is a hallucinated strength. */
+  const STRUCTURAL_WIN = "You brought structural levers (equity / variable / joining bonus) into the conversation.";
+
+  it("does NOT emit the structural-levers win on a bare info question about a lever", () => {
+    const infoOnly: NegReportTurn[] = [
+      t("interviewer", "We're at 40 LPA fixed."),
+      t("candidate", "Understood. Quick question — what's the notice period here?"),
+      t("interviewer", "It's 60 days."),
+      t("candidate", "Got it, thanks."),
+    ];
+    const r = buildDeterministicNegotiationReport(infoOnly);
+    expect(r.wins.map((w) => w.text)).not.toContain(STRUCTURAL_WIN);
+  });
+
+  it("does NOT emit the structural-levers win on a bare acknowledgement of a lever", () => {
+    const ackOnly: NegReportTurn[] = [
+      t("interviewer", "The package has a fixed base plus variable pay."),
+      t("candidate", "Right, you offer variable pay, that makes sense."),
+      t("interviewer", "Correct."),
+      t("candidate", "Okay, understood."),
+    ];
+    const r = buildDeterministicNegotiationReport(ackOnly);
+    expect(r.wins.map((w) => w.text)).not.toContain(STRUCTURAL_WIN);
+  });
+
+  it("DOES emit the structural-levers win on a candidate-initiated trade", () => {
+    const traded: NegReportTurn[] = [
+      t("interviewer", "We can't go above 45 fixed."),
+      t("candidate", "If the base is capped, can we trade that for more equity?"),
+      t("interviewer", "Possibly."),
+      t("candidate", "Great."),
+    ];
+    const r = buildDeterministicNegotiationReport(traded);
+    expect(r.wins.map((w) => w.text)).toContain(STRUCTURAL_WIN);
+    // STRONG (rich trade framing) keeps emitting it too.
+    const strong = buildDeterministicNegotiationReport(STRONG);
+    expect(strong.wins.map((w) => w.text)).toContain(STRUCTURAL_WIN);
+  });
+
+  /* S13-B10 — the walk-away-floor FIX must be suppressed on a no-agreement /
+     stalemate deadlock (the impasse is the problem, not a missing floor), but
+     may still surface on a settled session where no floor was set. */
+  const WALKAWAY_FIX = "State a walk-away floor or a competing option to give your counter real leverage.";
+
+  it("does NOT emit the walk-away-floor fix on a no_agreement/stalemate deadlock", () => {
+    const deadlocked: NegReportTurn[] = [
+      t("interviewer", "We're firm at 40 LPA."),
+      t("candidate", "I was hoping for closer to 55. Can we come up?"),
+      t("interviewer", "No, 40 is the ceiling."),
+      t("candidate", "I don't think that works for me. Let's leave it here for now."),
+    ];
+    const r = buildDeterministicNegotiationReport(deadlocked, "stalemate");
+    expect(r.fixes.map((f) => f.text)).not.toContain(WALKAWAY_FIX);
+    // walked-away is also a no-agreement terminal — floor advice is misapplied.
+    const walked = buildDeterministicNegotiationReport(deadlocked, "walked-away");
+    expect(walked.fixes.map((f) => f.text)).not.toContain(WALKAWAY_FIX);
+  });
+
+  /* S13-B10 caller-threading — evaluate-session reconstructs the transcript-
+     honest `walked-away` outcome from the candidate turns via isWalkAway (the
+     kernel's OWN single source of truth for walk-away) and threads it into the
+     deadlock gate. This mirrors the exact inline expression at the real call
+     site (evaluate-session.ts) end-to-end: an explicit candidate exit must
+     suppress the walk-away-floor coaching, a non-exit must not. */
+  it("caller-threading: an explicit candidate walk-away transcript suppresses the walk-away-floor fix", () => {
+    const walkedTranscript: NegReportTurn[] = [
+      t("interviewer", "We're firm at 40 LPA, that's the ceiling."),
+      t("candidate", "I was targeting 55. Can we come up at all?"),
+      t("interviewer", "No, 40 is final."),
+      t("candidate", "Then I'll have to walk away from this. I'll pass."),
+    ];
+    // Reconstruct the outcome exactly as evaluate-session does at the call site.
+    const negOutcome: NegOutcome | undefined = walkedTranscript.some(
+      (tt) => tt.role === "candidate" && isWalkAway(tt.text),
+    )
+      ? "walked-away"
+      : undefined;
+    expect(negOutcome).toBe("walked-away");
+    const r = buildDeterministicNegotiationReport(walkedTranscript, negOutcome);
+    expect(r.fixes.map((f) => f.text)).not.toContain(WALKAWAY_FIX);
+  });
+
+  it("caller-threading: a non-walk-away transcript leaves the outcome undefined (fix behaviour unchanged)", () => {
+    const noWalk: NegReportTurn[] = [
+      t("interviewer", "We can offer 48 LPA."),
+      t("candidate", "Could we push to 52? I was hoping for a bit more."),
+      t("interviewer", "We can do 50."),
+      t("candidate", "That works for me. Happy to accept 50."),
+    ];
+    const negOutcome: NegOutcome | undefined = noWalk.some(
+      (tt) => tt.role === "candidate" && isWalkAway(tt.text),
+    )
+      ? "walked-away"
+      : undefined;
+    expect(negOutcome).toBeUndefined();
+    // With no deadlock outcome threaded, the fix still surfaces (no floor set).
+    const r = buildDeterministicNegotiationReport(noWalk, negOutcome);
+    expect(r.fixes.map((f) => f.text)).toContain(WALKAWAY_FIX);
+  });
+
+  it("still emits the walk-away-floor fix on an accepted session with no floor set", () => {
+    const acceptedNoFloor: NegReportTurn[] = [
+      t("interviewer", "We can offer 48 LPA."),
+      t("candidate", "Could we push to 52? I was hoping for a bit more."),
+      t("interviewer", "We can do 50."),
+      t("candidate", "That works for me. Happy to accept 50."),
+    ];
+    const r = buildDeterministicNegotiationReport(acceptedNoFloor, "accepted");
+    expect(r.fixes.map((f) => f.text)).toContain(WALKAWAY_FIX);
+    // And with no outcome threaded (undefined), behaviour is unchanged (emits).
+    const noOutcome = buildDeterministicNegotiationReport(acceptedNoFloor);
+    expect(noOutcome.fixes.map((f) => f.text)).toContain(WALKAWAY_FIX);
   });
 
   it("yields a report shape the assembly's validateReportShape accepts", () => {

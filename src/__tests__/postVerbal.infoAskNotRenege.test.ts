@@ -32,6 +32,7 @@ function mkAcceptedState(): NegotiationState {
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     verbalAcceptanceTurn: 11,
     postVerbalRenegotiationCount: 0,
     counterRound: 1,
@@ -75,6 +76,52 @@ describe("applyCandidateAnswer — post-verbal clarification is not renegotiatio
     const s2 = applyCandidateAnswer(
       s1,
       "And what's the joining date you had in mind?",
+    );
+    expect(s2.postVerbalRenegotiationCount).toBe(0);
+    expect(s2.phase).not.toBe("walked-away");
+  });
+});
+
+/* OA-B69 (2026-07-18) — the post-accept reopen predicate now covers non-cash
+ * lever asks, not just a fresh target number. A candidate who verbally
+ * accepted and then asks for a higher base, a joining bonus, or relocation
+ * assistance IS reopening the deal and must trip the renegotiation counter —
+ * while info-only clarifications (BUG-5, locked above) still must not. */
+describe("applyCandidateAnswer — post-verbal non-cash lever reopens (OA-B69)", () => {
+  it("a post-accept joining-bonus ASK counts as renegotiation", () => {
+    const s = applyCandidateAnswer(
+      mkAcceptedState(),
+      "Actually, can we add a joining bonus of 3 lakhs?",
+    );
+    expect(s.postVerbalRenegotiationCount).toBe(1);
+  });
+
+  it("a post-accept relocation-assistance request counts as renegotiation", () => {
+    const s = applyCandidateAnswer(
+      mkAcceptedState(),
+      "One more thing — I'll need relocation assistance to move to Bangalore.",
+    );
+    expect(s.postVerbalRenegotiationCount).toBe(1);
+  });
+
+  it("a post-accept base-push counter counts as renegotiation", () => {
+    const s = applyCandidateAnswer(
+      mkAcceptedState(),
+      "Can we push the fixed base to 22 LPA?",
+    );
+    expect(s.postVerbalRenegotiationCount).toBe(1);
+  });
+
+  it("info-only equity/notice clarification still does NOT count (BUG-5 preserved)", () => {
+    // A vesting-schedule question and a notice-period clarification are
+    // literacy/info asks, not new demands — they must never trip a reopen.
+    const s1 = applyCandidateAnswer(
+      mkAcceptedState(),
+      "What's the vesting schedule and cliff on the equity?",
+    );
+    const s2 = applyCandidateAnswer(
+      s1,
+      "And remind me of the notice period expectation?",
     );
     expect(s2.postVerbalRenegotiationCount).toBe(0);
     expect(s2.phase).not.toBe("walked-away");

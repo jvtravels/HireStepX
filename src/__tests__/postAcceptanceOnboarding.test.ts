@@ -35,6 +35,7 @@ function makeState(overrides: Partial<NegotiationState> = {}): NegotiationState 
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     verbalAcceptanceTurn: 6,
     postVerbalRenegotiationCount: 0,
     counterRound: 0,

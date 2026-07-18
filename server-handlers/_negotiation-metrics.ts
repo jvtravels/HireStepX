@@ -109,6 +109,12 @@ export interface NegotiationMetrics {
   /** Info intents the candidate raised — clawback, vest schedule, etc.
    *  Each represents a *good* question they thought to ask. */
   infoAsked: ReadonlyArray<InfoIntent>;
+  /** S13-B9 — the subset of `infoAsked` the candidate raised on their OWN
+   *  initiative (the recruiter did not solicit it on the prior turn). The
+   *  report's "You justified your number" stage keys on THIS, so a
+   *  recruiter-elicited disclosure is not miscredited as candidate-initiated
+   *  justification. Subset of `infoAsked` by construction. */
+  infoAskedInitiated: ReadonlyArray<InfoIntent>;
   /** True if the candidate walked away and returned. Rare and risky;
    *  surfaced separately so the report can call it out. */
   walkAwayReturned: boolean;
@@ -244,6 +250,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     totalTurns: moves.length,
     vossTacticsUsed: [...(finalState.vossTacticsUsed ?? [])],
     infoAsked: [...(finalState.infoAsked ?? [])],
+    infoAskedInitiated: [...(finalState.infoAskedInitiated ?? [])],
     walkAwayReturned: finalState.walkAwayReturned ?? false,
     hardBandCap: finalState.hardBandCap ?? false,
     marketMode: finalState.marketMode ?? "neutral",

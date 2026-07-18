@@ -173,6 +173,46 @@ describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
     expect(phases[3].reached).toBe(true);
   });
 
+  /* S13-B9 — recruiter-ELICITED disclosure must NOT credit stage 2 ("You
+     justified your number"). Stage 2 now keys on the candidate-INITIATED
+     subset (infoAskedInitiated); stage 4 (explored levers) still keys on the
+     full infoAsked set (an elicited component ask is still a real component
+     ask). */
+  it("S13-B9: recruiter-elicited-only disclosure does NOT reach phase 2 (justified)", () => {
+    // The candidate disclosed comp structure, but ONLY because the recruiter
+    // asked — infoAskedInitiated is empty. Stage 2 must stay unreached.
+    const phases = derivePhases(
+      makeOutcome({
+        candidateAsk: 30,
+        infoAsked: ["fixed-vs-variable"],
+        infoAskedInitiated: [],
+      }),
+    );
+    expect(phases[1].reached).toBe(false);
+    expect(phases[1].note).toBeUndefined();
+  });
+
+  it("S13-B9: candidate-INITIATED justification DOES reach phase 2 (justified)", () => {
+    const phases = derivePhases(
+      makeOutcome({
+        candidateAsk: 30,
+        infoAsked: ["clawback-period"],
+        infoAskedInitiated: ["clawback-period"],
+      }),
+    );
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Asked about comp structure to support it");
+  });
+
+  it("S13-B9: legacy row without infoAskedInitiated falls back to infoAsked (behaviour unchanged)", () => {
+    // Rows persisted before the split have NO infoAskedInitiated key; the
+    // adapter back-fills from infoAsked so their stage-2 behaviour is preserved.
+    const phases = derivePhases(
+      makeOutcome({ candidateAsk: 30, infoAsked: ["vest-schedule"] }),
+    );
+    expect(phases[1].reached).toBe(true);
+  });
+
   it("outcome accepted → phase 5 reached, named 'You closed the deal', 'Accepted' note", () => {
     const phases = derivePhases(makeOutcome({ outcome: "accepted" }));
     expect(phases[4].reached).toBe(true);

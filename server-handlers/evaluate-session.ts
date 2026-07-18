@@ -5,7 +5,7 @@
 // ignores this `config` export, so it's kept only as accurate documentation.
 export const config = { runtime: "nodejs", maxDuration: 100 };
 
-import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, hashStable } from "./_shared";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -66,7 +66,8 @@ import {
   type RedFlag as RedFlagH,
 } from "./_evaluate-session-helpers";
 import { formatSignatureMetricsPrompt, formatPerQuestionMetricsPrompt } from "../data/focus-signature-metrics";
-import { buildDeterministicNegotiationReport } from "./_deterministic-neg-report";
+import { buildDeterministicNegotiationReport, type NegOutcome } from "./_deterministic-neg-report";
+import { isWalkAway } from "./_walkaway-detection";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -80,14 +81,55 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const REPORT_VERSION = "mvp-9";
 
 /**
+ * Inputs — beyond sessionId + schema version — that change the *content* of a
+ * report even for an identical transcript. Band calibration reads
+ * targetCompany / role / difficulty (resolveCompanyProfile → applyBands), so a
+ * report cached before the user edited any of these is stale. We fold them into
+ * the cached row's identity so any edit is a cache MISS that recomputes.
+ */
+export interface ReportCacheIdentityInputs {
+  targetCompany?: string | null;
+  role?: string | null;
+  difficulty?: string | null;
+}
+
+/**
+ * The single source of truth for a cached report's identity. Written by
+ * saveCachedReport and compared by loadCachedReport — never inline either side.
+ * Returns a composite version string `<REPORT_VERSION>:<hash>` stored in the
+ * existing `report_version` column, so a schema bump OR a calibration-input
+ * change both invalidate the cache with no DB migration. Edge/WinterCG safe
+ * (hashStable → crypto.subtle).
+ */
+export async function buildReportCacheVersion(inputs: ReportCacheIdentityInputs): Promise<string> {
+  // Normalize so cosmetic differences (case, whitespace, null vs "") don't
+  // cause spurious misses — but any real change flips the hash.
+  const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+  const canonical = JSON.stringify({
+    c: norm(inputs.targetCompany),
+    r: norm(inputs.role),
+    d: norm(inputs.difficulty),
+  });
+  const hash = await hashStable(canonical);
+  return `${REPORT_VERSION}:${hash}`;
+}
+
+/**
  * Try to read a cached report for this session. Returns null on any failure
  * (cache miss, network error, version mismatch) so the caller re-evaluates.
  * We verify user_id matches the caller so one user can't retrieve another's
- * report via a guessed sessionId.
+ * report via a guessed sessionId. `identity` folds the calibration-affecting
+ * inputs (company/role/difficulty) into the compare — see
+ * buildReportCacheVersion — so editing any of them is a miss that recomputes.
  */
-async function loadCachedReport(sessionId: string, userId: string): Promise<SessionReport | null> {
+async function loadCachedReport(
+  sessionId: string,
+  userId: string,
+  identity: ReportCacheIdentityInputs,
+): Promise<SessionReport | null> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return null;
   try {
+    const expectedVersion = await buildReportCacheVersion(identity);
     const q = `sessions?id=eq.${encodeURIComponent(sessionId)}&user_id=eq.${encodeURIComponent(userId)}&select=report_json,report_version`;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${q}`, {
       headers: {
@@ -100,7 +142,9 @@ async function loadCachedReport(sessionId: string, userId: string): Promise<Sess
     const rows = await res.json() as Array<{ report_json?: SessionReport; report_version?: string }>;
     const row = rows?.[0];
     if (!row?.report_json) return null;
-    if (row.report_version !== REPORT_VERSION) return null; // schema upgrade invalidates cache
+    // Composite version encodes schema version AND calibration inputs; a schema
+    // upgrade OR a company/role/difficulty edit both invalidate the cache here.
+    if (row.report_version !== expectedVersion) return null;
     return row.report_json;
   } catch (err) {
     console.warn(`[evaluate-session] cache read failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -114,9 +158,15 @@ async function loadCachedReport(sessionId: string, userId: string): Promise<Sess
  * terminates (same lesson as llm_usage), but failures don't block the
  * response — worst case, the user re-evaluates on next view.
  */
-async function saveCachedReport(sessionId: string, userId: string, report: SessionReport): Promise<void> {
+async function saveCachedReport(
+  sessionId: string,
+  userId: string,
+  report: SessionReport,
+  identity: ReportCacheIdentityInputs,
+): Promise<void> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
   try {
+    const reportVersion = await buildReportCacheVersion(identity);
     const q = `sessions?id=eq.${encodeURIComponent(sessionId)}&user_id=eq.${encodeURIComponent(userId)}`;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${q}`, {
       method: "PATCH",
@@ -128,7 +178,7 @@ async function saveCachedReport(sessionId: string, userId: string, report: Sessi
       },
       body: JSON.stringify({
         report_json: report,
-        report_version: REPORT_VERSION,
+        report_version: reportVersion,
         report_generated_at: new Date().toISOString(),
         // Reconcile the canonical sessions.score column with the report's
         // blended overall. save-session.ts first writes the QUICK eval
@@ -211,6 +261,7 @@ interface EvaluateRequest {
     role?: string;
     roleFamily?: "swe" | "pm" | "em" | "data" | "behavioral";
     type?: string; // interview focus type (behavioral, case-study, technical, etc.)
+    focus?: string; // sub-focus slug (e.g. "campus-placement", "hr-round")
     targetCompany?: string | null;
     level?: string | null;
     difficulty?: "warmup" | "standard" | "hard";
@@ -506,7 +557,11 @@ export default async function handler(req: Request): Promise<Response> {
     // Saves ~8-12s of LLM latency and ~2500 tokens per re-open of the same report.
     if (auth.userId) {
       const tCache0 = Date.now();
-      const cached = await loadCachedReport(sessionId, auth.userId);
+      const cached = await loadCachedReport(sessionId, auth.userId, {
+        targetCompany: meta?.targetCompany,
+        role: meta?.role,
+        difficulty: meta?.difficulty,
+      });
       const tCache = Date.now() - tCache0;
       if (cached) {
         const totalMs = Date.now() - t0;
@@ -648,6 +703,25 @@ export default async function handler(req: Request): Promise<Response> {
        inventing comp structure or crediting unused tactics. Empty for non-neg. */
     const negotiationOfferFactsBlock =
       meta?.type === "salary-negotiation" ? buildNegotiationOfferFactsBlock(transcript) : "";
+    /* Campus-placement calibration block — injected only for campus focus so
+       the evaluator uses fresher-appropriate rubrics and exemplars. Placed here
+       (dynamic section) so it doesn't break the prefix cache on other focus types. */
+    const campusCalibrationBlock = meta?.focus === "campus-placement"
+      ? `\n\nCAMPUS PLACEMENT / FRESHER CALIBRATION (MANDATORY — overrides any senior-hire defaults):
+This interview is a CAMPUS PLACEMENT practice session for a student or fresh graduate. Apply every rule below without exception:
+
+SCORING BAR: Calibrate to campus/fresher bar — NOT senior-hire. A score of 70 here means "strong fresher, likely to receive an offer". Academic projects, internship experience, and student club leadership are valid evidence. The ABSENCE of production experience is EXPECTED and must NEVER be penalised.
+
+RUBRIC AXES: Replace "senior bar" references. The campus rubric is: (1) clear STAR structure, (2) personal ownership within a team context, (3) basic quantification ("improved test coverage by 30%", "led a team of 4"), (4) company/role-specific research awareness.
+
+EXEMPLARS — CRITICAL RULES:
+- Every topPerformerAnswer.text MUST be campus-appropriate. Use: final-year project, hackathon, internship, academic achievement, or student club leadership.
+- NEVER write production SDE stories (incident response, on-call rotation, checkout error rates, production traffic numbers). A fresher would be caught fabricating these.
+- VARY exemplars across all questions — each topPerformerAnswer.text must tell a DIFFERENT story/situation. Do not reuse the same project or incident across multiple questions.
+- For intro/"tell me about yourself" questions: exemplar opens with degree, college, strongest project or internship, then pivots to why this company/role.
+
+COACHING TONE: Coach within fresher context. Say "tie your final-year project to the business outcome more clearly" — not "reference your previous role's production impact". If CGPA is ≥7.5, coach the candidate to mention it proactively.`
+      : "";
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -785,7 +859,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}${negotiationOfferFactsBlock}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}${negotiationOfferFactsBlock}${campusCalibrationBlock}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
@@ -1095,7 +1169,27 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       // the 503 path — their value (8-axis rubric, hrReport) can't be faithfully
       // synthesized without the model.
       console.warn(`[evaluate-session] LLM chain exhausted for salary-negotiation; synthesizing deterministic report for user ${auth.userId}.`);
-      parsed = buildDeterministicNegotiationReport(transcript);
+      // S13-B10 — thread the authoritative session outcome into the deadlock
+      // gate. The request carries only the transcript + meta (no persisted
+      // kernel state, no band), so the full four-way outcome (which needs
+      // NegotiationState.phase) is NOT reconstructable here — a `stalemate`
+      // (ran out of turns) is a kernel-state fact a keyword scan cannot
+      // honestly infer, and the band required to replay the transcript
+      // through the kernel isn't in the request. But `walked-away` IS
+      // transcript-honest: it's an explicit candidate exit, detected by
+      // `isWalkAway` — the kernel's OWN single source of truth for walk-away
+      // (_walkaway-detection.ts), not an ad-hoc regex. Threading it lights
+      // the deadlock gate so the walk-away-floor coaching is suppressed on a
+      // session the candidate explicitly ended (the impasse, not a missing
+      // floor, is the story). Acceptance stays undefined here — the gate only
+      // keys on deadlock (walked-away | stalemate), so an unknown accept has
+      // no effect on the suppressed coaching.
+      const negOutcome: NegOutcome | undefined = transcript.some(
+        (t) => t.role === "candidate" && isWalkAway(t.text),
+      )
+        ? "walked-away"
+        : undefined;
+      parsed = buildDeterministicNegotiationReport(transcript, negOutcome);
       result = { text: "", model: "deterministic-neg-fallback", fallback: true, latencyMs: 0 };
     }
 
@@ -1326,7 +1420,11 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     // Persist to cache so re-opens are instant. Awaited so the edge isolate
     // doesn't terminate mid-write (same lesson as llm_usage in _llm.ts).
     // Cache failures are non-fatal — the user still gets their report.
-    if (auth.userId) await saveCachedReport(sessionId, auth.userId, cleanReport);
+    if (auth.userId) await saveCachedReport(sessionId, auth.userId, cleanReport, {
+      targetCompany: meta?.targetCompany,
+      role: meta?.role,
+      difficulty: meta?.difficulty,
+    });
 
     const totalMs = Date.now() - t0;
     console.warn(`[evaluate-session] OK session=${sessionId.slice(0, 8)} score=${overallScore} band=${report.band} llm=${tLLM}ms total=${totalMs}ms model=${result.model}`);

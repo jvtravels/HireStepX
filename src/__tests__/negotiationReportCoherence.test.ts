@@ -229,6 +229,35 @@ describe("I-13 — Per-Question Review shows every recorded exchange", () => {
     });
     for (const q of high.questions) expect(q.band).toBe("strong");
   });
+
+  /* S6-B4 (2026-07-18): a reconstructed negotiation exchange has NO genuine
+   * per-turn score — the evaluator scored the whole call. The row must flag
+   * itself score-unavailable so the card renders a neutral "—", never the
+   * aggregate as this turn's own grade. `score` still carries the aggregate
+   * solely to derive a coherent band label (locked above). */
+  it("flags reconstructed rows score-unavailable so no per-turn number is shown (S6-B4)", () => {
+    const result = sessionReportToInterviewResult({
+      report: reportWithScore(82),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    expect(result.questions).toHaveLength(2);
+    for (const q of result.questions) {
+      // The row never displays its own per-turn grade.
+      expect(q.scoreUnavailable).toBe(true);
+    }
+  });
+
+  it("a genuine aggregate row (no transcript to reconstruct) is NOT score-unavailable", () => {
+    // Legacy row: no reconstruction, the single aggregate item keeps its real
+    // score and stays displayable — the "—" is strictly for invented per-turn
+    // rows, not for the one real aggregate figure.
+    const result = sessionReportToInterviewResult({
+      report: reportWithScore(82),
+      session: baseSession({ transcript: [], negotiationMetrics: kernel({}) }),
+    });
+    expect(result.questions).toHaveLength(1);
+    expect(result.questions[0].scoreUnavailable).toBeFalsy();
+  });
 });
 
 describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor", () => {

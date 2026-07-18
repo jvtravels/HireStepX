@@ -149,4 +149,35 @@ describe("audit-doc kernel-behavioral regression lock", () => {
     expect(deflect.highestOfferMade).toBeGreaterThan(0);
     expect(["opening", "range-disclosure"]).not.toContain(deflect.phase);
   });
+
+  it("S11-B2: a candidate's bare stated accept number cannot inflate the close above what the recruiter offered", () => {
+    // Recruiter never offers above the 60 ceiling; candidate keeps naming a
+    // higher figure and finally 'accepts' at a number nobody offered. The
+    // close floor is the recruiter's highestOfferMade — a candidate-stated
+    // number must not become the final package.
+    const s = run("audit-s11b2", { initialOffer: 50, maxStretch: 60, walkAway: 46, hasEquity: true }, [
+      { candidate: "I'm at 48 LPA, targeting 60.", aiText: "We can start at 50." },
+      { candidate: "Can you improve that?", aiText: "We can go to 55." },
+      { candidate: "Still short — I was hoping for more.", aiText: "58 is the best I can do today." },
+      { candidate: "Fine, I'll sign at 68.", aiText: "Noted." },
+    ]);
+    // The kernel's authoritative close figure is bounded by the recruiter's
+    // offers and the band ceiling — never the candidate's fabricated 68.
+    expect(s.highestOfferMade).toBeLessThanOrEqual(60);
+    expect(s.highestOfferMade).not.toBe(68);
+  });
+
+  it("S13-B2: equity + joining-bonus asks across several turns still land a concrete offer (levers not invisible)", () => {
+    const s = run("audit-s13b2", BAND, [
+      { candidate: "I'm at 44 LPA currently, thanks for the call." },
+      { candidate: "Equity matters most to me — can you improve the RSU grant?" },
+      { candidate: "A joining bonus would also help bridge my unvested stock." },
+      { candidate: "Can you boost the ESOP component meaningfully?" },
+      { candidate: "Where can we land on equity plus the sign-on?" },
+    ]);
+    // Non-base lever asks are heard: the kernel still anchors and presents a
+    // concrete offer rather than treating equity/joining-bonus asks as noise.
+    expect(s.highestOfferMade).toBeGreaterThan(0);
+    expect(["opening", "range-disclosure"]).not.toContain(s.phase);
+  });
 });

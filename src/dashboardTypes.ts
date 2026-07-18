@@ -94,6 +94,11 @@ export interface DashboardSession {
        rows persisted without them deserialize cleanly. */
     vossTacticsUsed?: ReadonlyArray<string>;
     infoAsked?: ReadonlyArray<string>;
+    /* S13-B9 (2026-07-18) — candidate-INITIATED subset of infoAsked
+       (excludes recruiter-elicited questions). Optional so old rows
+       persisted without it deserialize cleanly; the adapter falls back to
+       the full infoAsked only when this key is truly absent. */
+    infoAskedInitiated?: ReadonlyArray<string>;
     walkAwayReturned?: boolean;
     hardBandCap?: boolean;
     marketMode?: "soft" | "neutral" | "hot";

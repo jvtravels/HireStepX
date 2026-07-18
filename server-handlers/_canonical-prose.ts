@@ -576,13 +576,21 @@ const FRUSTRATED_ACK_HEDGE = " and I want to be straight with you here.";
 
 export function renderSentimentPrefix(
   sentiment: import("./_negotiation-kernel").TurnDelta["candidateSentiment"] | undefined | null,
+  /* S13-B6 (2026-07-18) — the "excited" arm asserts range alignment
+   * ("Glad we're in the same range —"), which is a lie before any offer
+   * is on the table (pre-anchor discovery). Gate that arm on the same
+   * `highestOfferMade > 0` signal the rest of this file uses (e.g. the
+   * escalating close-out ~2145) so it only fires once a range exists.
+   * When no offer is on the table, fall back to a neutral acknowledgement
+   * that carries the same warm affect without claiming alignment. */
+  offerOnTable = false,
 ): string | null {
   if (sentiment == null) return null;
   switch (sentiment) {
     case "frustrated":
       return FRUSTRATED_ACK_HEAD + FRUSTRATED_ACK_HEDGE;
     case "excited":
-      return "Glad we're in the same range —";
+      return offerOnTable ? "Glad we're in the same range —" : "Good to hear —";
     case "hesitant":
       return "Take your time on this —";
     case "decisive":
@@ -2011,7 +2019,10 @@ export function renderCanonicalProse(
    * prefix even when sentiment qualifies, because those flows carry
    * their own tone register. */
   const sentiment = state.lastTurnDelta?.candidateSentiment ?? null;
-  let sentimentPrefix: string | null = renderSentimentPrefix(sentiment);
+  let sentimentPrefix: string | null = renderSentimentPrefix(
+    sentiment,
+    state.highestOfferMade > 0,
+  );
   if (sentimentPrefix != null) {
     if (SENTIMENT_PREFIX_SUPPRESSED_KINDS.has(action.kind)) {
       sentimentPrefix = null;

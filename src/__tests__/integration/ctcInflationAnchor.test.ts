@@ -117,6 +117,7 @@ describe("CTC-inflation anchor (audit fix #3)", () => {
         acceptedAtTurn: null,
         walkedAwayAtTurn: null,
         infoAsked: [],
+        infoAskedInitiated: [],
         askedTopics: [],
         ...overrides,
       } as unknown as NegotiationState;
