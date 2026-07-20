@@ -40,7 +40,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "tcs",
     searchPhrase: "TCS Salary for Freshers India 2026",
     metaDescription:
-      "TCS fresher salary ranges for Ninja, Digital, and Prime tracks in India 2026. Verified CTC bands from AmbitionBox, Glassdoor, and TCS NQT disclosures.",
+      "TCS fresher salary India 2026 — Ninja track ₹3.4 LPA, Digital ₹7–9 LPA, Prime ₹11.5 LPA. Which band will you land in? Full CTC breakdown by track + negotiation guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -53,7 +53,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "infosys",
     searchPhrase: "Infosys Salary for Freshers India 2026",
     metaDescription:
-      "Infosys fresher and experienced salary ranges India 2026 — SE to Senior. Verified from AmbitionBox, Glassdoor, and Infosys offer-letter disclosures.",
+      "Infosys fresher salary India 2026 — DSE ₹3.6–6.25 LPA, Specialist Programmer up to ₹21 LPA. Know which track you're on before accepting any offer.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -65,7 +65,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "wipro",
     searchPhrase: "Wipro Salary for Freshers India 2026",
     metaDescription:
-      "Wipro fresher salary India 2026 — NLTH, Elite, and Turbo track CTC ranges. Sourced from AmbitionBox and Wipro offer-letter disclosures.",
+      "Wipro salary India 2026 — NLTH / Elite track freshers ₹3.5–6.5 LPA, experienced ₹6–28 LPA. Track comparison and what to negotiate in your offer letter.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -77,7 +77,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "razorpay",
     searchPhrase: "Razorpay Software Engineer Salary India 2026",
     metaDescription:
-      "Razorpay salary for software engineers, PMs, and data analysts in India 2026. Total CTC ranges from AmbitionBox, Glassdoor, and DRHP filings.",
+      "Razorpay salary India 2026 — SWE entry ₹10–29 LPA, mid ₹25–45 LPA, senior ₹50–70 LPA. Pre-IPO ESOP explained. Verified from Glassdoor, AmbitionBox & DRHP filings.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -105,7 +105,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "flipkart",
     searchPhrase: "Flipkart Software Engineer Salary India 2026",
     metaDescription:
-      "Flipkart salary for SWEs and PMs India 2026. Total CTC bands from AmbitionBox, Glassdoor, and Levels.fyi covering SDE-1 to Principal.",
+      "Flipkart salary India 2026 — SDE-1 ₹12–35 LPA, SDE-2 ₹22–62 LPA, SDE-3 ₹44–119 LPA. ESOP vests over 4 years. Bengaluru & Gurugram negotiation guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -156,7 +156,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "google",
     searchPhrase: "Google Software Engineer Salary India 2026",
     metaDescription:
-      "Google software engineer salary in India 2026 — L3 to L6. Total CTC ranges from Levels.fyi and AmbitionBox covering Bengaluru and Hyderabad offices.",
+      "Google SWE salary India 2026 — L3 ₹30–49 LPA, L4 ₹50–88 LPA, L5 ₹80–130 LPA in Bengaluru. RSU vests 25-25-25-25. Level calibration is your biggest negotiation lever.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -169,7 +169,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "amazon",
     searchPhrase: "Amazon Software Engineer Salary India 2026",
     metaDescription:
-      "Amazon SDE salary in India 2026 — SDE-1 to SDE-3. Total CTC from Levels.fyi and AmbitionBox covering Bengaluru and Hyderabad.",
+      "Amazon SDE salary India 2026 — SDE-1 ₹22–32 LPA, SDE-2 ₹38–65 LPA, SDE-3 ₹65–110 LPA. Back-loaded RSU vesting (5-15-40-40). How to negotiate Y1+Y2 sign-on.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -195,7 +195,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "cognizant",
     searchPhrase: "Cognizant Salary for Freshers India 2026",
     metaDescription:
-      "Cognizant salary for freshers and experienced professionals in India 2026. Verified ranges from AmbitionBox and Glassdoor.",
+      "Cognizant fresher salary India 2026 — GenC ₹4 LPA, GenC Next ₹6.5 LPA. In-hand ₹28–32K/month. Track comparison and what to expect in your first year.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -207,7 +207,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "hcl",
     searchPhrase: "HCL Technologies Salary for Freshers India 2026",
     metaDescription:
-      "HCL Technologies fresher salary India 2026. Graduate Trainee to Software Engineer bands verified from AmbitionBox and Glassdoor.",
+      "HCL Technologies salary India 2026 — Graduate Trainee ₹3.5–5.5 LPA, mid-level ₹6–14 LPA, senior ₹14–28 LPA. TechBee program CTC breakdown and growth path.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -219,7 +219,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "capgemini",
     searchPhrase: "Capgemini Salary for Freshers India 2026",
     metaDescription:
-      "Capgemini fresher salary India 2026. Analyst to Consultant bands verified from AmbitionBox and Glassdoor.",
+      "Capgemini salary India 2026 — fresher Analyst ₹3.8–6.5 LPA, mid-level ₹7–16 LPA, Senior Consultant ₹16–30 LPA. What to negotiate in your Capgemini offer.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -255,7 +255,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "zoho",
     searchPhrase: "Zoho Software Engineer Salary India 2026",
     metaDescription:
-      "Zoho salary for software engineers in India 2026. Verified ranges from AmbitionBox covering Chennai and Bengaluru offices.",
+      "Zoho salary India 2026 — Software Engineer ₹7.5–21 LPA fresher, ₹13–38 LPA mid-level. No equity — pure cash comp. Chennai & Bengaluru CTC guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
