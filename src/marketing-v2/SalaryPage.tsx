@@ -128,7 +128,9 @@ const COMPANY_DOMAIN: Record<string, string> = {
 
 function companyLogoUrl(slug: string): string | null {
   const domain = COMPANY_DOMAIN[slug];
-  return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : null;
+  return domain
+    ? `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=64`
+    : null;
 }
 
 /* ─── Helpers ────────────────────────────────────────────────────── */
