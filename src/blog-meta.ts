@@ -57,7 +57,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "behavioral-interview-questions-freshers",
     title: "50 Behavioral Interview Questions for Freshers — India Campus Placements",
     metaDescription: "Top 50 behavioral interview questions asked in Indian campus placements. Includes STAR method examples for freshers with limited work experience.",
-    datePublished: "2026-01-15",
+    datePublished: "2026-01-16",
     heroImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=630&fit=crop",
     company: "Campus", category: "Freshers",
     faqs: [
@@ -70,7 +70,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "razorpay-interview-experience",
     title: "Razorpay Interview Experience — SDE & PM Roles (2026)",
     metaDescription: "Detailed Razorpay interview experience for SDE and PM roles. Covers coding rounds, system design, culture fit, and salary expectations.",
-    datePublished: "2026-01-15",
+    datePublished: "2026-01-17",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=630&fit=crop",
     company: "Razorpay", category: "Experience",
     faqs: [
@@ -82,7 +82,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "ace-case-study-interviews",
     title: "How to Ace Case Study Interviews — Framework + Examples",
     metaDescription: "Master case study interviews with proven frameworks. Includes examples for consulting, product, and strategy roles with step-by-step walkthroughs.",
-    datePublished: "2026-02-01",
+    datePublished: "2026-01-17",
     heroImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=630&fit=crop",
     company: "Consulting", category: "Strategy",
     faqs: [],
@@ -91,7 +91,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "tcs-interview-questions-freshers-2026",
     title: "TCS Interview Questions for Freshers 2026 — NQT, Technical & HR",
     metaDescription: "Complete TCS interview preparation guide for 2026 freshers. Covers TCS NQT exam, technical coding round, managerial round, and HR interview questions with sample answers.",
-    datePublished: "2026-02-01",
+    datePublished: "2026-01-19",
     heroImage: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&h=630&fit=crop",
     company: "TCS", category: "Campus Placement",
     faqs: [
@@ -103,7 +103,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "infosys-interview-questions-2026",
     title: "Infosys Interview Questions 2026 — SP, DSE & Power Programmer",
     metaDescription: "Complete Infosys interview preparation guide for 2026. Covers all tracks: System Engineer (SE), Specialist Programmer (SP), Digital Specialist Engineer (DSE), and Power Programmer.",
-    datePublished: "2026-02-15",
+    datePublished: "2026-01-19",
     heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=630&fit=crop",
     company: "Infosys", category: "Campus Placement",
     faqs: [
@@ -115,7 +115,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "how-to-introduce-yourself-in-interview",
     title: "How to Introduce Yourself in a Job Interview — Best Answers 2026",
     metaDescription: "Craft the perfect self-introduction for any job interview. Includes 3 sample scripts for freshers, experienced candidates, and career changers with timing tips.",
-    datePublished: "2026-03-01",
+    datePublished: "2026-01-19",
     heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -127,7 +127,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "tell-me-about-yourself-best-answer",
     title: "Tell Me About Yourself — Best Answer Formula for Indian Interviews (2026)",
     metaDescription: "The exact formula for answering 'Tell me about yourself' in Indian job interviews. Includes templates for freshers, 2-5 year experienced, and career changers.",
-    datePublished: "2026-03-01",
+    datePublished: "2026-01-20",
     heroImage: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -139,7 +139,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "wipro-interview-questions-answers",
     title: "Wipro Interview Questions & Answers 2026 — NLTH, Elite and Turbo",
     metaDescription: "Complete Wipro interview preparation guide for 2026. Covers all Wipro tracks (NLTH, Elite, Turbo, WILP), aptitude test, coding, and HR interview with sample answers.",
-    datePublished: "2026-03-15",
+    datePublished: "2026-01-20",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=630&fit=crop",
     company: "Wipro", category: "Campus Placement",
     faqs: [
@@ -151,7 +151,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "hr-interview-questions-answers-india",
     title: "HR Interview Questions and Answers India 2026 — 40 Must-Know Questions",
     metaDescription: "40 most common HR interview questions for Indian job seekers in 2026. Includes ideal answers, what interviewers are really asking, and red-flag responses to avoid.",
-    datePublished: "2026-04-01",
+    datePublished: "2026-01-21",
     heroImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -163,7 +163,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "amazon-leadership-principles-interview",
     title: "Amazon Leadership Principles Interview — All 16 LPs with Example Answers (2026)",
     metaDescription: "Complete guide to Amazon's 16 Leadership Principles with STAR example answers for each. Includes the bar raiser round strategy and common LP question patterns.",
-    datePublished: "2026-04-01",
+    datePublished: "2026-01-23",
     heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&h=630&fit=crop",
     company: "Amazon", category: "Behavioral",
     faqs: [
@@ -175,7 +175,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "system-design-interview-preparation",
     title: "System Design Interview Preparation India 2026 — Complete Guide",
     metaDescription: "Complete system design interview guide for Indian engineers. Covers all major topics, frameworks, India-specific questions, and company-specific expectations.",
-    datePublished: "2026-04-15",
+    datePublished: "2026-01-24",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -187,7 +187,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "salary-negotiation-tips-india",
     title: "Salary Negotiation Tips India 2026 — How to Get 20-30% More",
     metaDescription: "Practical salary negotiation strategies for Indian job seekers. Includes exact scripts, market data anchoring, stock/ESOP negotiation, and when to walk away.",
-    datePublished: "2026-05-01",
+    datePublished: "2026-01-24",
     heroImage: "https://images.unsplash.com/photo-1579621970795-87facc2f976d?w=1200&h=630&fit=crop",
     company: "General", category: "Salary",
     faqs: [
@@ -199,7 +199,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "campus-placement-interview-tips",
     title: "Campus Placement Interview Tips India 2026 — Complete Fresher Guide",
     metaDescription: "Complete campus placement preparation guide for Indian college students in 2026. Covers aptitude, technical, group discussion, and HR rounds with company-specific tips.",
-    datePublished: "2026-05-01",
+    datePublished: "2026-01-26",
     heroImage: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&h=630&fit=crop",
     company: "Campus", category: "Campus Placement",
     faqs: [
@@ -211,7 +211,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "mock-interview-practice-guide",
     title: "How to Practice Mock Interviews — Complete Guide (2026)",
     metaDescription: "How to get the most out of mock interview practice. Covers solo practice, AI mock interviews, peer practice, and the research-backed deliberate practice techniques that actually improve performance.",
-    datePublished: "2026-05-01",
+    datePublished: "2026-01-28",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=630&fit=crop",
     company: "General", category: "Preparation",
     faqs: [
@@ -223,7 +223,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "star-method-interview-answers",
     title: "STAR Method Interview Answers — 20 Examples for India 2026",
     metaDescription: "20 STAR method answer examples for Indian interview candidates. Covers leadership, failure, conflict, initiative, teamwork, and other common behavioral themes.",
-    datePublished: "2026-06-01",
+    datePublished: "2026-01-28",
     heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=630&fit=crop",
     company: "General", category: "Behavioral",
     faqs: [
@@ -235,7 +235,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "cognizant-interview-questions-freshers-2026",
     title: "Cognizant Interview Questions for Freshers 2026 — GenC and GenC Pro",
     metaDescription: "Complete Cognizant interview preparation guide for freshers in 2026. Covers CoCubes test, GenC and GenC Pro tracks, salary comparison, and interview tips.",
-    datePublished: "2026-06-01",
+    datePublished: "2026-01-28",
     heroImage: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&h=630&fit=crop",
     company: "Cognizant", category: "Campus Placement",
     faqs: [
@@ -247,7 +247,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "accenture-interview-questions-freshers-2026",
     title: "Accenture Interview Questions for Freshers 2026 — ASE and ATCI",
     metaDescription: "Complete Accenture interview preparation guide for freshers. Covers the iCAT test, communication round, Technical and HR interviews, and salary for ASE roles.",
-    datePublished: "2026-06-15",
+    datePublished: "2026-01-29",
     heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=630&fit=crop",
     company: "Accenture", category: "Campus Placement",
     faqs: [
@@ -259,7 +259,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "product-manager-interview-questions-india",
     title: "Product Manager Interview Questions India 2026 — Complete PM Guide",
     metaDescription: "Complete Product Manager interview preparation guide for India 2026. Covers case study, product sense, metrics, behavioral and execution questions with India-specific examples.",
-    datePublished: "2026-06-15",
+    datePublished: "2026-01-29",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=630&fit=crop",
     company: "General", category: "Product",
     faqs: [
@@ -271,7 +271,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "hcl-accenture-capgemini-interview-comparison",
     title: "HCL vs Accenture vs Capgemini Interview — Which Is the Best for Freshers?",
     metaDescription: "Compare HCL, Accenture, and Capgemini interview processes for freshers. Covers salary, difficulty, training quality, and which company is best for your career goals.",
-    datePublished: "2026-06-15",
+    datePublished: "2026-01-29",
     heroImage: "https://images.unsplash.com/photo-1488229297570-58520851e868?w=1200&h=630&fit=crop",
     company: "HCL", category: "Comparison",
     faqs: [
@@ -283,7 +283,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "deloitte-interview-questions-freshers-2026",
     title: "Deloitte Interview Questions for Freshers — 2026 Off-Campus & Campus",
     metaDescription: "Complete Deloitte interview preparation guide for freshers in 2026. Covers the CogniVue aptitude test, case study rounds, behavioral interview, and salary expectations for Analyst roles.",
-    datePublished: "2026-06-15",
+    datePublished: "2026-01-31",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=630&fit=crop",
     company: "Deloitte", category: "Freshers",
     faqs: [
@@ -295,7 +295,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "group-discussion-topics-campus-placement-2026",
     title: "Group Discussion Topics for Campus Placements 2026 — 40 Real GD Topics",
     metaDescription: "40 current group discussion topics for campus placements 2026. Covers technology, business, economy, and social issues with talking points for each topic.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-01-31",
     heroImage: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1200&h=630&fit=crop",
     company: "Campus", category: "Campus Placement",
     faqs: [
@@ -307,7 +307,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "how-to-pass-tcs-nqt-2026",
     title: "How to Pass TCS NQT 2026 — Complete Guide to National Qualifier Test",
     metaDescription: "Complete guide to the TCS NQT 2026 exam. Covers all 4 sections (Cognitive Skills, Programming Logic, Advanced Coding, English), cutoffs, and preparation strategy.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-01",
     heroImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=630&fit=crop",
     company: "TCS", category: "Campus Placement",
     faqs: [
@@ -319,7 +319,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "zoho-interview-questions-freshers-2026",
     title: "Zoho Interview Questions for Freshers 2026 — The Unusual Hiring Process",
     metaDescription: "Zoho interview preparation guide for freshers. Covers the unique 5-round process, programming test, aptitude, and why Zoho doesn't hire from placement agencies. Salary ₹5–8 LPA.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-01",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop",
     company: "Zoho", category: "Freshers",
     faqs: [
@@ -331,7 +331,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "software-engineer-interview-checklist-2026",
     title: "Software Engineer Interview Checklist 2026 — 48 Hours Before the Interview",
     metaDescription: "Complete software engineer interview checklist for India 2026. What to review, practice, and confirm in the 48 hours before your SDE interview at any company.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-01",
     heroImage: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -343,7 +343,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "java-interview-questions-freshers-india-2026",
     title: "Java Interview Questions for Freshers India 2026",
     metaDescription: "Top 60 Java interview questions for freshers in India 2026. Covers OOP concepts, collections, exception handling, multithreading, and Java 17+ features with sample answers.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-02",
     heroImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -355,7 +355,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "resume-tips-freshers-india-2026",
     title: "Resume Tips for Freshers India 2026 — What Actually Gets Shortlisted",
     metaDescription: "Practical resume writing tips for Indian freshers in 2026. Covers ATS optimisation, project descriptions, skills section, and what recruiters at TCS, Infosys, Flipkart, and Google actually look for.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-03",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=630&fit=crop",
     company: "General", category: "Preparation",
     faqs: [
@@ -367,7 +367,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "data-analyst-interview-questions-india-2026",
     title: "Data Analyst Interview Questions India 2026 — SQL, Python, Stats & Case Studies",
     metaDescription: "Complete data analyst interview preparation guide for India 2026. Covers SQL queries, Python pandas, statistics, A/B testing, and business case questions with sample answers.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-03",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -379,7 +379,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "zomato-product-manager-interview-2026",
     title: "Zomato Product Manager Interview 2026 — Case Study, Metrics & Experience",
     metaDescription: "Complete Zomato PM interview preparation guide for 2026. Covers product cases on restaurant discovery, delivery metrics, Hyperpure B2B, and Zomato Gold monetisation with sample frameworks.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-03",
     heroImage: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&h=630&fit=crop",
     company: "Zomato", category: "Product",
     faqs: [
@@ -391,7 +391,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "python-interview-questions-freshers-india-2026",
     title: "Python Interview Questions for Freshers India 2026",
     metaDescription: "Top 50 Python interview questions for freshers in India 2026. Covers data types, OOP, list comprehension, decorators, generators, and common libraries with sample answers.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-05",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -403,7 +403,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "goldman-sachs-india-interview-questions",
     title: "Goldman Sachs India Interview Questions 2026 — Engineering & Analyst",
     metaDescription: "Complete Goldman Sachs India interview guide for 2026. Covers the HireVue video screening, technical round (DSA + system design), super day, and salary for SDE and Analyst roles.",
-    datePublished: "2026-07-01",
+    datePublished: "2026-02-05",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
     company: "goldman", category: "Finance & Banking Tech",
     faqs: [
@@ -417,7 +417,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "frontend-developer-interview-questions-india-2026",
     title: "Frontend Developer Interview Questions India 2026 — React, JS & System Design",
     metaDescription: "Top frontend developer interview questions for India 2026. Covers JavaScript internals, React hooks, performance, CSS, system design for UI, and company-specific questions from Flipkart, Razorpay, and Swiggy.",
-    datePublished: "2026-07-05",
+    datePublished: "2026-02-05",
     heroImage: "https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200&h=630&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -431,7 +431,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "swiggy-interview-questions-2026",
     title: "Swiggy Interview Questions 2026 — SDE, PM & Analyst Complete Guide",
     metaDescription: "Complete Swiggy interview guide for SDE, PM, and Business Analyst roles in 2026. Covers DSA rounds, system design, product cases, and salary expectations.",
-    datePublished: "2026-07-05",
+    datePublished: "2026-02-07",
     heroImage: "https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=1200&h=630&fit=crop",
     company: "Swiggy", category: "Product Tech",
     faqs: [
@@ -445,7 +445,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "microsoft-india-interview-questions-2026",
     title: "Microsoft India Interview Questions 2026 — SDE, Program Manager & More",
     metaDescription: "Complete Microsoft India interview guide for 2026. Covers technical phone screen, virtual onsite rounds, behavioral STAR questions, and salary for SDE-1 to SDE-2 roles in Hyderabad and Bengaluru.",
-    datePublished: "2026-07-08",
+    datePublished: "2026-02-07",
     heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=630&fit=crop",
     company: "Microsoft", category: "FAANG",
     faqs: [
@@ -459,7 +459,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "sql-interview-questions-freshers-india-2026",
     title: "SQL Interview Questions for Freshers India 2026",
     metaDescription: "Top 50 SQL interview questions for freshers in India 2026. Covers SELECT queries, JOINs, GROUP BY, subqueries, window functions, indexes, and common HR/analyst interview questions.",
-    datePublished: "2026-07-10",
+    datePublished: "2026-02-11",
     heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1200&h=630&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -473,7 +473,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "product-company-vs-service-company-india-career",
     title: "Product Company vs Service Company India — Honest Career Comparison 2026",
     metaDescription: "Honest comparison of product company vs IT service company careers in India for 2026. Covers salary difference, work quality, interview difficulty, promotion speed, and when to switch.",
-    datePublished: "2026-07-08",
+    datePublished: "2026-02-11",
     heroImage: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200&h=630&fit=crop",
     company: "General", category: "Career",
     faqs: [
@@ -487,7 +487,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "python-developer-salary-india-2026",
     title: "Python Developer Salary India 2026 — Fresher to Senior Complete Guide",
     metaDescription: "Python developer salary in India 2026: ₹3.5 LPA fresher to ₹35 LPA senior. City-wise breakdown for Bangalore, Mumbai, Pune, Hyderabad. What to negotiate.",
-    datePublished: "2026-07-13",
+    datePublished: "2026-02-13",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -501,7 +501,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "data-analyst-salary-india-2026",
     title: "Data Analyst Salary India 2026 — Entry Level to Senior, City-wise Guide",
     metaDescription: "Data analyst salary India 2026: ₹3–5 LPA fresher to ₹20–30 LPA senior. Breakdown by city (Bangalore, Mumbai, Hyderabad), company type, and skills that boost your package.",
-    datePublished: "2026-07-13",
+    datePublished: "2026-02-13",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -514,7 +514,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "how-to-crack-tcs-ion-nqt-2026",
     title: "How to Crack TCS iON NQT 2026 — Complete Strategy, Pattern & Cutoff",
     metaDescription: "Crack TCS iON NQT 2026: full exam pattern, section-wise strategy, qualifying cutoffs, and what happens after. 50,000+ students take this every year — here's how to be in the top 20%.",
-    datePublished: "2026-07-13",
+    datePublished: "2026-02-13",
     heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&h=630&fit=crop",
     company: "TCS", category: "Campus Placement",
     faqs: [
@@ -528,7 +528,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "faang-interview-preparation-india-2026",
     title: "FAANG Interview Preparation India 2026 — Complete Roadmap for Indian Engineers",
     metaDescription: "FAANG interview prep India 2026: complete roadmap covering DSA, system design, behavioral (Amazon LPs), and offer negotiation. Strategies that worked for Indian candidates.",
-    datePublished: "2026-07-13",
+    datePublished: "2026-02-15",
     heroImage: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1200&h=630&fit=crop",
     company: "Google", category: "System Design",
     faqs: [
@@ -541,7 +541,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "wipro-elite-nlth-preparation-2026",
     title: "Wipro NLTH 2026 — Exam Pattern, Preparation & Selection Process",
     metaDescription: "Wipro Elite NTH and NLTH 2026: complete exam pattern, online test sections, qualifying scores, and interview preparation. Everything freshers need to get a Wipro offer.",
-    datePublished: "2026-07-13",
+    datePublished: "2026-02-15",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop",
     company: "Wipro", category: "Campus Placement",
     faqs: [
@@ -554,7 +554,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "react-developer-salary-india-2026",
     title: "React Developer Salary India 2026 — Complete Guide by Experience & City",
     metaDescription: "React developer salary India 2026: ₹4–8 LPA fresher to ₹30–45 LPA senior. Breakdown by experience, city, and skills (Next.js, TypeScript, Node.js) that command premiums.",
-    datePublished: "2026-07-13",
+    datePublished: "2026-02-15",
     heroImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -567,7 +567,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "jp-morgan-interview-questions-india-2026",
     title: "JP Morgan Interview Questions India 2026 — SDE, Analyst & Quant Roles",
     metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles — coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
-    datePublished: "2026-07-14",
+    datePublished: "2026-02-17",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
     company: "jpmc", category: "Full Guide",
     faqs: [
@@ -581,7 +581,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "startup-vs-mnc-india-career",
     title: "Startup vs MNC India 2026 — Which Should You Choose After Engineering?",
     metaDescription: "Startup vs MNC career in India 2026: salary comparison, growth speed, job security, learning curve, and a decision framework for engineering graduates.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-17",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop",
     company: "Career", category: "Career",
     faqs: [
@@ -595,7 +595,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "fresher-salary-india-2026",
     title: "Fresher Salary in India 2026 — What to Expect and How to Negotiate",
     metaDescription: "Fresher salary in India 2026 by company tier, role, and city. What TCS, Infosys, Wipro, Flipkart, and FAANG pay freshers — and how to negotiate your first offer.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-18",
     heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -609,7 +609,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "ibm-interview-questions-india-2026",
     title: "IBM India Interview Questions 2026 — SDE, GBS Consultant & Systems Analyst",
     metaDescription: "IBM India interview guide 2026. Covers the full process for SDE, GBS Consulting Analyst, and Systems Analyst roles — aptitude test, technical rounds, behavioral IBM values interview, and salary.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-19",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop",
     company: "IBM", category: "Full Guide",
     faqs: [
@@ -623,7 +623,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "dsa-60-day-preparation-plan",
     title: "DSA 60-Day Preparation Plan — From Basics to Product Company Ready",
     metaDescription: "60-day DSA preparation plan for product company interviews in India. Week-by-week schedule covering arrays, trees, graphs, DP, and mock interviews — with time estimates and LeetCode targets.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-20",
     heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=630&fit=crop",
     company: "Strategy", category: "Strategy",
     faqs: [
@@ -637,7 +637,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "product-manager-salary-india-2026",
     title: "Product Manager Salary India 2026 — APM to Director, All Levels",
     metaDescription: "Product Manager salary in India 2026: APM to Director, by company tier and city. APM program list, skills that command premium, and PM vs SDE salary comparison.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-21",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -651,7 +651,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "engineering-manager-interview-india-2026",
     title: "Engineering Manager Interview Questions India 2026 — What to Expect",
     metaDescription: "Engineering Manager interview preparation for India 2026. Covers what EM interviews test, system design for managers, people management questions, execution questions, and compensation.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-21",
     heroImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=630&fit=crop",
     company: "Strategy", category: "Leadership",
     faqs: [
@@ -665,7 +665,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "why-should-we-hire-you-answer-india",
     title: "Why Should We Hire You? Best Answer for Indian Freshers 2026",
     metaDescription: "The best answer to 'why should we hire you?' for Indian freshers in 2026. Includes the SPR framework, role-specific examples for TCS, Infosys, Wipro, and Flipkart, and what never to say.",
-    datePublished: "2026-07-14",
+    datePublished: "2026-02-22",
     heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=630&fit=crop",
     company: "Industry", category: "Behavioral",
     faqs: [
@@ -679,7 +679,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "capgemini-interview-questions-freshers-2026",
     title: "Capgemini Interview Questions for Freshers 2026 — IntelliAdapt Test, Process & Salary",
     metaDescription: "Capgemini fresher interview 2026: IntelliAdapt adaptive aptitude test, programming test, technical and HR rounds. Entry salary ₹3.8–6.5 LPA. What to expect and how to prepare.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-22",
     heroImage: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&h=630&fit=crop",
     company: "Capgemini", category: "Campus Placement",
     faqs: [
@@ -693,7 +693,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "ltimindtree-interview-questions-freshers-2026",
     title: "LTIMindtree Interview Questions for Freshers 2026 — Harder Coding, Higher Pay",
     metaDescription: "LTIMindtree fresher interview 2026: online assessment with 3 coding problems (harder than TCS/Wipro), technical interview, HR round. Entry salary ₹4–7 LPA. Complete preparation guide.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-23",
     heroImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=1200&h=630&fit=crop",
     company: "LTIMindtree", category: "Campus Placement",
     faqs: [
@@ -707,7 +707,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "freshworks-interview-questions-india-2026",
     title: "Freshworks SDE Interview Questions India 2026 — B2B SaaS, Customer-Success Engineering",
     metaDescription: "Freshworks SDE interview 2026: online assessment, DSA, system design for multi-tenant SaaS, and behavioral rounds. Entry salary ₹14–22 LPA + RSU. Complete preparation guide for India.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-27",
     heroImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=630&fit=crop",
     company: "Freshworks", category: "Full Guide",
     faqs: [
@@ -721,7 +721,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "phonepe-interview-questions-india-2026",
     title: "PhonePe Engineering Interview Questions India 2026 — Scale, UPI & Builder Mindset",
     metaDescription: "PhonePe SDE interview 2026: scale-obsessed rounds covering 100M daily UPI transactions, payment system design, and builder-mindset behavioral evaluation. Entry salary ₹11–30.8 LPA.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-02-27",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=630&fit=crop",
     company: "PhonePe", category: "Full Guide",
     faqs: [
@@ -735,7 +735,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "meesho-interview-questions-india-2026",
     title: "Meesho Engineering Interview Questions India 2026 — Social Commerce, Scale & Tier-3 India",
     metaDescription: "Meesho SDE interview 2026: catalog search for 150M SKUs, seller-payout settlement, logistics across tier-3 India. Entry salary ₹4–15 LPA + RSU. Speed-over-perfection culture guide.",
-    datePublished: "2026-07-15",
+    datePublished: "2026-03-01",
     heroImage: "https://images.unsplash.com/photo-1609177651781-0fc5ef4ab099?w=1200&h=630&fit=crop",
     company: "Meesho", category: "Full Guide",
     faqs: [
@@ -749,7 +749,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "tech-mahindra-interview-questions",
     title: "Tech Mahindra Interview Questions for Freshers 2026 — ELP, Digital & Off-Campus",
     metaDescription: "Tech Mahindra interview questions 2026 for ELP and Digital tracks. Covers aptitude test, technical rounds, HR, salary (₹4–7 LPA fresher), 90-day notice period and bond details.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-03",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=630&fit=crop",
     company: "Tech Mahindra", category: "Campus Placement",
     faqs: [
@@ -763,7 +763,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "mphasis-interview-questions-freshers-2026",
     title: "Mphasis Interview Questions for Freshers 2026 — Process, Technical Round & Salary",
     metaDescription: "Mphasis interview questions 2026 for freshers. Covers the AMCAT-based aptitude test, technical round (Java/Python, OOP, SQL), HR round, fresher salary ₹4–7 LPA, and what to expect on the first day.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-04",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=630&fit=crop",
     company: "Mphasis", category: "Campus Placement",
     faqs: [
@@ -777,7 +777,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "off-campus-placement-guide-freshers-india-2026",
     title: "Off-Campus Placement Guide for Freshers India 2026 — How to Get a Job Without Campus Drives",
     metaDescription: "How to get a job off-campus in India 2026. Complete guide covering Naukri, LinkedIn, company career pages, referrals, off-campus drives by TCS/Infosys/Wipro, resume tips, and how to crack the process end-to-end.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-04",
     heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&h=630&fit=crop",
     company: "General", category: "Campus Placement",
     faqs: [
@@ -791,7 +791,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "notice-period-india-it-resignation-guide-2026",
     title: "Notice Period in India 2026 — IT Resignation Guide, Buyout, Early Exit & What to Say",
     metaDescription: "How to handle notice period in India 2026. Covers 30, 60, 90-day notice periods at TCS, Infosys, Wipro, Accenture, product companies. Notice period buyout, early release negotiation, and what to write in your resignation email.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-04",
     heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&h=630&fit=crop",
     company: "General", category: "Career",
     faqs: [
@@ -805,7 +805,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "paytm-interview-questions-india-2026",
     title: "Paytm Interview Questions India 2026 — SDE, PM & Analyst Roles (One97 Communications)",
     metaDescription: "Paytm interview questions 2026 for SDE, PM, and analyst roles. Covers coding rounds, payments domain knowledge, system design for UPI scale, and Paytm salary ₹12–52 LPA. Honest guide post-RBI action.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-06",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=630&fit=crop",
     company: "Fintech", category: "Full Guide",
     faqs: [
@@ -819,7 +819,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "cred-interview-questions-india-2026",
     title: "CRED Interview Questions India 2026 — SDE, PM & Designer (Highest Bar in Indian Fintech)",
     metaDescription: "CRED interview questions 2026 for SDE, PM, and designer roles. Covers the notoriously high interview bar, DSA hard problems, credit domain product design, CRED salary ₹12–114 LPA, and ESOP reality for a pre-IPO company.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-06",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=630&fit=crop",
     company: "Fintech", category: "Full Guide",
     faqs: [
@@ -833,7 +833,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "internship-interview-questions-india-2026",
     title: "Internship Interview Questions India 2026 — Freshers Guide for Internshala, LinkedIn & Campus",
     metaDescription: "Internship interview questions in India 2026 for engineering and MBA freshers. Covers technical questions, HR round, what interviewers actually look for, how to apply on Internshala and LinkedIn, and how to convert an internship to PPO.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-08",
     heroImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=630&fit=crop",
     company: "Campus", category: "Freshers",
     faqs: [
@@ -847,7 +847,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "faang-maang-india-meaning-companies-2026",
     title: "FAANG vs MAANG India 2026 — What It Means, Which Companies Qualify, and How to Get In",
     metaDescription: "What is FAANG / MAANG in India 2026? Full list of which companies are FAANG/MAANG, whether TCS or Wipro count, top FAANG equivalents in India (Flipkart, Razorpay, Swiggy), salary comparison, and realistic path to joining one.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-08",
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=630&fit=crop",
     company: "General", category: "Career",
     faqs: [
@@ -861,7 +861,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "aptitude-questions-it-companies-india-2026",
     title: "Aptitude Questions for IT Companies India 2026 — TCS NQT, Infosys, Wipro, Cognizant",
     metaDescription: "Aptitude questions for IT company placements India 2026. Covers quantitative, verbal, and logical reasoning for TCS NQT, Infosys InfyTQ, Wipro NLTH, Cognizant, and Accenture with solved examples and preparation strategy.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-08",
     heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=630&fit=crop",
     company: "General", category: "Campus Placement",
     faqs: [
@@ -875,7 +875,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "cpp-interview-questions-freshers-india-2026",
     title: "C++ Interview Questions for Freshers India 2026 — OOP, STL, Memory Management",
     metaDescription: "C++ interview questions for freshers in India 2026. Covers OOP concepts, STL containers, pointers and memory management, virtual functions, templates, and common coding problems asked at TCS, Wipro, and product companies.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-11",
     heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -889,7 +889,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "backend-developer-salary-india-2026",
     title: "Backend Developer Salary India 2026 — Node.js, Java, Python, Go by City and Experience",
     metaDescription: "Backend developer salary in India 2026 by language (Node.js, Java, Go, Python), city (Bengaluru, Hyderabad, Pune), and experience level. Fresher to senior complete guide with negotiation tips.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-12",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -903,7 +903,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "resignation-letter-format-india-2026",
     title: "Resignation Letter Format India 2026 — Email Templates for IT, Notice Period & Immediate Resignation",
     metaDescription: "Resignation letter format India 2026 with ready-to-use email templates for IT companies, 30/60/90-day notice period, immediate resignation, and relieving letter request. Copy-paste formats for TCS, Infosys, Wipro and product companies.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-12",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=630&fit=crop",
     company: "General", category: "Career",
     faqs: [
@@ -917,7 +917,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "groww-interview-questions-india-2026",
     title: "Groww Interview Questions India 2026 — SDE, Data Engineer & Product Manager Roles",
     metaDescription: "Groww interview questions 2026 for SDE, data engineer, and PM roles. Covers the full interview process, DSA rounds, SQL and data questions, product case studies, Groww salary ₹15–85 LPA, and insider tips from candidates.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-13",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
     company: "Fintech", category: "Full Guide",
     faqs: [
@@ -931,7 +931,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "full-stack-developer-salary-india-2026",
     title: "Full Stack Developer Salary India 2026 — React + Node.js, MERN, MEAN by City and Experience",
     metaDescription: "Full stack developer salary in India 2026 for MERN/MEAN/React+Java stacks by city and experience. Fresher to senior CTC ranges, highest-paying companies, skills that add ₹5–15 LPA, and negotiation strategy.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-17",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -945,7 +945,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "data-analyst-interview-questions-india-2026",
     title: "Data Analyst Interview Questions India 2026 — SQL, Excel, Python & Business Case Studies",
     metaDescription: "Data analyst interview questions India 2026 with answers. Covers SQL queries, Excel pivot tables, Python pandas, statistical concepts, business case studies, and company-specific prep for TCS, Infosys, Flipkart, and Zomato.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-17",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -959,7 +959,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "nykaa-interview-questions-india-2026",
     title: "Nykaa Interview Questions India 2026 — SDE, Product Manager & Data Science Roles",
     metaDescription: "Nykaa interview questions 2026 for SDE, PM, and data science roles. Covers the full interview process, DSA rounds, product case studies, Nykaa salary ₹12–75 LPA, and preparation tips for India's leading beauty e-commerce company.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-17",
     heroImage: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=630&fit=crop",
     company: "E-commerce", category: "Full Guide",
     faqs: [
@@ -973,7 +973,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "ola-interview-questions-india-2026",
     title: "Ola Interview Questions India 2026 — Ola Cabs & Ola Electric SDE, PM & Data Roles",
     metaDescription: "Ola interview questions 2026 for SDE, PM, and data roles at Ola Cabs and Ola Electric. Covers the interview process, system design for ride-hailing, EV-tech questions, salary ₹14–90 LPA, and preparation strategy.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-18",
     heroImage: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1200&h=630&fit=crop",
     company: "Transport", category: "Full Guide",
     faqs: [
@@ -987,7 +987,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "hr-interview-questions-india-2026",
     title: "HR Interview Questions India 2026 — Answers for Freshers & Experienced Candidates",
     metaDescription: "Top HR interview questions with best answers for India 2026. Tell me about yourself, why should we hire you, strengths and weaknesses, where do you see yourself in 5 years — with word-for-word sample answers for freshers and experienced candidates.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-18",
     heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -1001,7 +1001,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "zomato-interview-questions-india-2026",
     title: "Zomato Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
     metaDescription: "Zomato interview questions 2026 for SDE, data scientist, and PM roles. Covers DSA rounds, system design for food delivery at scale, product metrics, Zomato salary ₹18–120 LPA, and preparation tips from actual candidates.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-19",
     heroImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=630&fit=crop",
     company: "Foodtech", category: "Full Guide",
     faqs: [
@@ -1015,7 +1015,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "devops-engineer-salary-india-2026",
     title: "DevOps Engineer Salary India 2026 — Docker, Kubernetes, AWS by City and Experience",
     metaDescription: "DevOps engineer salary India 2026 by skill (Docker, Kubernetes, AWS, Terraform), city (Bengaluru, Hyderabad, Pune), and experience. Fresher to senior CTC ranges, highest-paying companies, and which certifications add the most salary.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-19",
     heroImage: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -1029,7 +1029,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "tell-me-about-yourself-answer-fresher-india-2026",
     title: "Tell Me About Yourself — Best Answer for Freshers India 2026 (With 10 Sample Scripts)",
     metaDescription: "Best answers for 'tell me about yourself' for freshers in India 2026. 10 word-for-word sample scripts for engineering, MBA, BCA, and non-tech graduates — covering IT services (TCS/Infosys), product companies, and campus placements.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-19",
     heroImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -1043,7 +1043,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "makemytrip-interview-questions-india-2026",
     title: "MakeMyTrip Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
     metaDescription: "MakeMyTrip interview questions 2026 for SDE, data science, and PM roles. Covers the full interview process, DSA and system design for travel-tech, product case studies, MakeMyTrip salary ₹15–80 LPA, and preparation tips.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-21",
     heroImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&h=630&fit=crop",
     company: "Travel", category: "Full Guide",
     faqs: [
@@ -1057,7 +1057,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "machine-learning-engineer-salary-india-2026",
     title: "Machine Learning Engineer Salary India 2026 — PyTorch, LLMs, MLOps by City and Experience",
     metaDescription: "Machine learning engineer salary in India 2026 by skill (PyTorch, TensorFlow, LLMs, MLOps), city, and experience. Fresher to senior CTC ranges, highest-paying AI companies, and which ML specialisations command the biggest premiums.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-22",
     heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -1071,7 +1071,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "why-do-you-want-to-join-our-company-answer-india-2026",
     title: "Why Do You Want to Join Our Company? — Best Answers India 2026 (15 Company-Specific Scripts)",
     metaDescription: "Best answers for 'why do you want to join our company' for India 2026. 15 company-specific scripts for TCS, Infosys, Google, Amazon, Razorpay, Zomato, Swiggy, Flipkart, and more — with the framework to write your own for any company.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-22",
     heroImage: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -1085,7 +1085,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "meesho-interview-questions-india-2026",
     title: "Meesho Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
     metaDescription: "Meesho interview questions 2026 for SDE, data scientist, and PM roles. Covers the full interview process, DSA and system design for social commerce, product case studies, Meesho salary ₹20–110 LPA, and insider preparation tips.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-23",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=630&fit=crop",
     company: "E-commerce", category: "Full Guide",
     faqs: [
@@ -1099,7 +1099,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "cloud-computing-salary-india-2026",
     title: "Cloud Computing Salary India 2026 — AWS, Azure, GCP for Cloud Engineers and Architects",
     metaDescription: "Cloud computing salary India 2026 for cloud engineers and architects on AWS, Azure, and GCP. Fresher to senior CTC ranges, cloud architect salary by city, highest-paying certifications, and which cloud platform pays most.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-23",
     heroImage: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&h=630&fit=crop",
     company: "Industry", category: "Salary Guide",
     faqs: [
@@ -1113,7 +1113,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "accenture-interview-questions-india-2026",
     title: "Accenture Interview Questions India 2026 — Freshers & Experienced (All Rounds)",
     metaDescription: "Accenture interview questions India 2026 for freshers and experienced candidates. Covers the online assessment, technical round, communication test, HR round, and Accenture salary ₹4–45 LPA with preparation strategy.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-26",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=630&fit=crop",
     company: "Accenture", category: "Full Guide",
     faqs: [
@@ -1127,7 +1127,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "javascript-interview-questions-india-2026",
     title: "JavaScript Interview Questions India 2026 — Freshers to Senior (Core JS, ES6+, React)",
     metaDescription: "JavaScript interview questions India 2026 with answers. Covers core JS (closures, hoisting, event loop), ES6+ features, async/await, DOM, React basics, and company-specific prep for freshers and experienced developers.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-26",
     heroImage: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -1141,7 +1141,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "career-gap-explanation-interview-india-2026",
     title: "How to Explain a Career Gap in an Interview — India 2026 (With Sample Answers)",
     metaDescription: "How to explain a career gap in an interview in India 2026. Sample answers for health reasons, family responsibilities, higher education, COVID-19 layoffs, startup failures, and extended travel — with what to say and what not to say.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-27",
     heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -1155,7 +1155,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "system-design-interview-questions-india-2026",
     title: "System Design Interview Questions India 2026 — With Answers (3–10 YOE Engineers)",
     metaDescription: "System design interview questions India 2026 with detailed answers. Covers URL shortener, WhatsApp, Netflix, Swiggy, payment systems, rate limiter, and how to crack system design rounds at Flipkart, Swiggy, Razorpay, and FAANG India.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-27",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -1169,7 +1169,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "tcs-nqt-preparation-guide-india-2026",
     title: "TCS NQT Preparation Guide 2026 — Pattern, Syllabus, Cutoff, and Strategy",
     metaDescription: "TCS NQT preparation guide 2026. Full NQT exam pattern, section-wise syllabus, expected cutoff scores, coding round tips, and 30-day preparation strategy for freshers targeting TCS placement.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-27",
     heroImage: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=1200&h=630&fit=crop",
     company: "TCS", category: "Full Guide",
     faqs: [
@@ -1183,7 +1183,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "wipro-interview-questions-india-2026",
     title: "Wipro Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
     metaDescription: "Wipro interview questions India 2026 for freshers and experienced candidates. Covers Wipro NLTH online test, technical round, HR round, Wipro salary ₹3.5–40 LPA, and preparation strategy for campus and off-campus hiring.",
-    datePublished: "2026-07-20",
+    datePublished: "2026-03-29",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=630&fit=crop",
     company: "Wipro", category: "Full Guide",
     faqs: [
@@ -1197,7 +1197,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "python-interview-questions-india-2026",
     title: "Python Interview Questions India 2026 — Freshers to Senior (With Answers)",
     metaDescription: "Python interview questions India 2026 with answers. Covers core Python (lists vs tuples, generators, decorators), OOP, data science libraries, Django/Flask, and coding problems asked at TCS, Infosys, Flipkart, and data science roles.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-03-30",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -1211,7 +1211,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "infosys-interview-questions-india-2026",
     title: "Infosys Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
     metaDescription: "Infosys interview questions India 2026 for freshers and experienced candidates. Covers InfyTQ online test, Power Programmer track, technical and HR rounds, Infosys salary ₹3.6–30 LPA, and preparation strategy.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-01",
     heroImage: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200&h=630&fit=crop",
     company: "Infosys", category: "Full Guide",
     faqs: [
@@ -1225,7 +1225,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "fresher-resume-format-india-2026",
     title: "Fresher Resume Format India 2026 — One-Page Template With Examples",
     metaDescription: "Fresher resume format India 2026 with a one-page template, section-by-section guide, and examples for engineering, MBA, and B.Com freshers. What to include, what to avoid, and how to pass ATS screening.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-01",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=630&fit=crop",
     company: "General", category: "Career Prep",
     faqs: [
@@ -1239,7 +1239,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "java-interview-questions-india-2026",
     title: "Java Interview Questions India 2026 — Core Java, OOP, Collections, Spring Boot (With Answers)",
     metaDescription: "Java interview questions India 2026 with answers. Covers Core Java (OOP, exceptions, multithreading), Collections framework, Java 8+ features (streams, lambdas), Spring Boot, and coding problems at TCS, Infosys, Wipro, and product companies.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-03",
     heroImage: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -1253,7 +1253,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "star-method-interview-answers-india-2026",
     title: "STAR Method Interview Answers India 2026 — Examples for Every HR Question",
     metaDescription: "STAR method interview answers India 2026 with examples for tell me about yourself, teamwork, conflict, leadership, failure, and pressure scenarios. How to structure behavioural answers for TCS, Infosys, Accenture, and product companies.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-04",
     heroImage: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=630&fit=crop",
     company: "General", category: "HR Round",
     faqs: [
@@ -1267,7 +1267,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "cognizant-interview-questions-india-2026",
     title: "Cognizant Interview Questions India 2026 — Freshers & Experienced (GenC, GenC Next, Salary)",
     metaDescription: "Cognizant interview questions India 2026 for freshers and experienced candidates. Covers Cognizant GenC and GenC Next aptitude test, technical round, HR round, Cognizant salary ₹4–35 LPA, and preparation tips.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-04",
     heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=630&fit=crop",
     company: "Cognizant", category: "Full Guide",
     faqs: [
@@ -1281,7 +1281,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "amazon-interview-questions-india-2026",
     title: "Amazon Interview Questions India 2026 — Leadership Principles, DSA, System Design (All Rounds)",
     metaDescription: "Amazon interview questions India 2026 with answers. Covers Amazon Leadership Principles (all 16 LPs), DSA rounds, system design, SDE-1 and SDE-2 preparation, and Amazon India salary ₹25–80 LPA.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-04",
     heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&h=630&fit=crop",
     company: "Amazon", category: "Full Guide",
     faqs: [
@@ -1295,7 +1295,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "dsa-interview-preparation-guide-india-2026",
     title: "DSA Interview Preparation Guide India 2026 — From Zero to Product Company Ready",
     metaDescription: "Complete DSA interview preparation guide India 2026. Arrays, strings, linked lists, trees, graphs, dynamic programming — with a 12-week study plan, LeetCode problem list, and strategies for TCS, Flipkart, Amazon, and Google India.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-06",
     heroImage: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=1200&h=630&fit=crop",
     company: "Tech", category: "Technical",
     faqs: [
@@ -1309,7 +1309,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "hcl-interview-questions-india-2026",
     title: "HCL Technologies Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
     metaDescription: "HCL Technologies interview questions India 2026 for freshers and experienced candidates. Covers HCL online test, technical round, HR round, HCL TechBee programme, salary ₹3.5–35 LPA, and preparation tips.",
-    datePublished: "2026-07-21",
+    datePublished: "2026-04-06",
     heroImage: "https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=1200&h=630&fit=crop",
     company: "HCL", category: "Full Guide",
     faqs: [
@@ -1323,7 +1323,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "google-interview-questions-india-2026",
     title: "Google India Interview Questions 2026 — SWE Process, DSA, Googleyness, Salary",
     metaDescription: "Google India interview questions 2026 for software engineers. Covers the full SWE interview loop, DSA difficulty, Googleyness and leadership rounds, Google India salary ₹30–120 LPA, and how to prepare for L3–L5.",
-    datePublished: "2026-07-22",
+    datePublished: "2026-04-06",
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=500&fit=crop",
     company: "Google", category: "Full Guide",
     faqs: [
@@ -1337,7 +1337,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "microsoft-interview-questions-india-2026",
     title: "Microsoft India Interview Questions 2026 — SDE Process, DSA, Culture Fit, Salary",
     metaDescription: "Microsoft India interview questions 2026 for software engineers. Covers the full SDE interview loop, DSA difficulty level, values-based behavioural round, Microsoft India salary ₹22–90 LPA, and preparation strategy for SDE-1 to SDE-2.",
-    datePublished: "2026-07-22",
+    datePublished: "2026-04-09",
     heroImage: "https://images.unsplash.com/photo-1537498425277-c283d32ef9db?w=1200&h=500&fit=crop",
     company: "Microsoft", category: "Full Guide",
     faqs: [
@@ -1351,7 +1351,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "flipkart-interview-questions-india-2026",
     title: "Flipkart Interview Questions India 2026 — SDE Process, DSA, System Design, Salary",
     metaDescription: "Flipkart interview questions India 2026. Covers Flipkart's SDE-1 to SDE-3 interview loop, DSA difficulty, system design for e-commerce, behavioural rounds, and Flipkart salary ₹25–80 LPA with Walmart stock.",
-    datePublished: "2026-07-22",
+    datePublished: "2026-04-11",
     heroImage: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&h=500&fit=crop",
     company: "Flipkart", category: "Full Guide",
     faqs: [
@@ -1365,7 +1365,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "sql-interview-questions-india-2026",
     title: "SQL Interview Questions India 2026 — Freshers to Senior (50+ Questions + Answers)",
     metaDescription: "SQL interview questions India 2026 — 50+ questions with answers for freshers to senior engineers. Covers JOINs, window functions, indexing, query optimisation, and SQL questions asked at TCS, Infosys, product companies, and data roles.",
-    datePublished: "2026-07-23",
+    datePublished: "2026-04-11",
     heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1200&h=500&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -1379,7 +1379,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "react-interview-questions-india-2026",
     title: "React Interview Questions India 2026 — Freshers to Senior (50+ Questions + Answers)",
     metaDescription: "React interview questions India 2026 — 50+ questions for freshers to senior frontend engineers. Covers hooks, virtual DOM, state management, performance optimisation, and React questions asked at Indian product companies.",
-    datePublished: "2026-07-23",
+    datePublished: "2026-04-13",
     heroImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=500&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -1393,7 +1393,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "nodejs-interview-questions-india-2026",
     title: "Node.js Interview Questions India 2026 — Freshers to Senior (40+ Questions + Answers)",
     metaDescription: "Node.js interview questions India 2026 — 40+ questions for backend engineers. Covers event loop, async/await, Express.js, clustering, streams, and Node.js questions asked at Indian product companies and startups.",
-    datePublished: "2026-07-23",
+    datePublished: "2026-04-15",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -1407,7 +1407,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "aws-interview-questions-india-2026",
     title: "AWS Interview Questions India 2026 — Cloud Engineer, DevOps, Solutions Architect",
     metaDescription: "AWS interview questions India 2026 for cloud engineers, DevOps, and solutions architects. Covers EC2, S3, Lambda, VPC, IAM, RDS, auto-scaling, and AWS certification paths popular in Indian tech jobs.",
-    datePublished: "2026-07-24",
+    datePublished: "2026-04-17",
     heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&h=500&fit=crop",
     company: "General", category: "Technical",
     faqs: [
@@ -1421,7 +1421,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "product-manager-interview-questions-india-2026",
     title: "Product Manager Interview Questions India 2026 — PM Roles at Flipkart, Swiggy, Razorpay",
     metaDescription: "Product manager interview questions India 2026. Covers PM interview framework, product sense questions, analytical questions, execution rounds, and PM salaries at Indian product companies like Flipkart, Swiggy, and Razorpay.",
-    datePublished: "2026-07-24",
+    datePublished: "2026-04-17",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
     company: "General", category: "Full Guide",
     faqs: [
@@ -1435,7 +1435,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "leetcode-preparation-guide-india-2026",
     title: "LeetCode Preparation Guide India 2026 — How to Crack DSA for Product Company Interviews",
     metaDescription: "LeetCode preparation guide India 2026 — how to crack DSA for product company interviews. Covers study plans for 8, 16, and 24 weeks, topic order, which problems to solve, and how Indian companies use LeetCode in interviews.",
-    datePublished: "2026-07-24",
+    datePublished: "2026-04-21",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=500&fit=crop",
     company: "General", category: "Full Guide",
     faqs: [
@@ -1449,7 +1449,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "internship-interview-tips-india-2026",
     title: "Internship Interview Tips India 2026 — How to Get Your First Tech Internship",
     metaDescription: "Internship interview tips India 2026 for engineering students. How to crack tech internships at product companies, IT services, startups. Covers resume, online assessments, coding rounds, and HR interviews for 2nd and 3rd year students.",
-    datePublished: "2026-07-25",
+    datePublished: "2026-04-21",
     heroImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=500&fit=crop",
     company: "General", category: "Career Guide",
     faqs: [
@@ -1463,7 +1463,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "interview-preparation-tips-india-2026",
     title: "Interview Preparation Tips India 2026 — Complete Guide for Tech Freshers to Experienced",
     metaDescription: "Interview preparation tips India 2026 — complete guide for freshers to 5-year experienced engineers. Covers preparation timeline, study plan, mock interviews, HR questions, salary negotiation, and common mistakes Indian candidates make.",
-    datePublished: "2026-07-25",
+    datePublished: "2026-04-21",
     heroImage: "https://images.unsplash.com/photo-1565688534245-05d6b5be184a?w=1200&h=500&fit=crop",
     company: "General", category: "Career Guide",
     faqs: [
@@ -1477,7 +1477,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "campus-placement-preparation-india-2026",
     title: "Campus Placement Preparation India 2026 — Complete Guide for Engineering Students",
     metaDescription: "Campus placement preparation India 2026 — complete guide for engineering students. Covers placement season timeline, aptitude, coding tests, GD/PI rounds, company selection strategy, and how to crack placements at non-IIT colleges.",
-    datePublished: "2026-07-26",
+    datePublished: "2026-04-22",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&h=500&fit=crop",
     company: "General", category: "Career Guide",
     faqs: [
@@ -1491,7 +1491,7 @@ export const BLOG_META: BlogMeta[] = [
     slug: "placement-experience-what-to-expect-india-2026",
     title: "What to Expect on Placement Day India 2026 — A Guide for Engineering Students",
     metaDescription: "What to expect on placement day India 2026. Real experiences from engineering students at placements in IITs, NITs, and private colleges. Covers the full day timeline, waiting anxiously, multiple interview rounds, and what happens after.",
-    datePublished: "2026-07-26",
+    datePublished: "2026-04-22",
     heroImage: "https://images.unsplash.com/photo-1560472355-536de3962603?w=1200&h=500&fit=crop",
     company: "General", category: "Career Guide",
     faqs: [
