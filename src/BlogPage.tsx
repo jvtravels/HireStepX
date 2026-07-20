@@ -3886,7 +3886,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["off-campus-placement-guide-freshers-india-2026", "hr-interview-questions-india-2026", "aptitude-questions-it-companies-india-2026"],
     practicePageSlugs: [
-      { label: "IT Services Interview Practice", slug: "accenture-interview-questions" },
+      { label: "IT Services Interview Practice", slug: "accenture-ase-interview-questions" },
     ],
     cta: "Accenture's HR and communication rounds are where prepared candidates separate from unprepared ones — the technical bar is lower but the communication bar is explicit and scored. HireStepX's voice-based mock interviews train both sides: structured answers to HR questions and the confidence to speak clearly when someone is evaluating your English.",
     relatedLinks: [
@@ -3947,7 +3947,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["full-stack-developer-salary-india-2026", "react-developer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "JavaScript Technical Interview Practice", slug: "javascript-frontend-interview-questions" },
+      { label: "Common HR Interview Practice", slug: "common-hr-interview-questions-freshers-india" },
     ],
     cta: "JavaScript technical interviews test both knowledge and verbal explanation — can you explain what a closure is clearly, not just write one? HireStepX's voice mock interviews train you to articulate technical concepts under pressure, the skill that converts good knowledge into strong interview performance.",
     relatedLinks: [
@@ -4002,9 +4002,9 @@ const posts: BlogPost[] = [
         answer: "You are not required to disclose your diagnosis. Simply say: 'I took time off for a health issue that required treatment and recovery. I'm fully recovered now.' If the interviewer presses for details, it is appropriate to say: 'I'd prefer to keep the medical details private, but I'm happy to provide confirmation of my current fitness to work from my doctor if that's required for the role.' Most interviewers will not press further."
       },
     ],
-    relatedSlugs: ["hr-interview-questions-india-2026", "resignation-letter-format-india-2026", "salary-negotiation-tips-india-2026"],
+    relatedSlugs: ["hr-interview-questions-india-2026", "resignation-letter-format-india-2026", "salary-negotiation-tips-india"],
     practicePageSlugs: [
-      { label: "HR Round Mock Interview", slug: "hr-round-interview-questions" },
+      { label: "HR Round Mock Interview", slug: "common-hr-interview-questions-freshers-india" },
     ],
     cta: "Explaining a career gap confidently requires practice — the words sound different out loud than they do in your head. HireStepX's voice AI lets you rehearse the gap explanation until the delivery is natural and the structure is automatic, so when the real question comes, you're ready.",
     relatedLinks: [
@@ -4065,7 +4065,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["full-stack-developer-salary-india-2026", "javascript-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "System Design Interview Practice", slug: "system-design-interview-questions" },
+      { label: "System Design Interview Practice", slug: "amazon-system-design-interview-questions" },
     ],
     cta: "System design is a verbal skill — you need to explain your thinking clearly under time pressure, respond to challenges without becoming defensive, and guide the conversation toward the strongest parts of your design. HireStepX's AI interviewer simulates the back-and-forth of a real system design round so you practice the conversation, not just the diagrams.",
     relatedLinks: [
@@ -4124,9 +4124,9 @@ const posts: BlogPost[] = [
         answer: "After clearing TCS NQT: (1) Technical Interview — OOP, data structures, DBMS, resume projects, one coding problem; (2) Managerial Interview — behavioural questions, TCS service line interest, willingness to relocate; (3) HR Round — standard HR questions, location preference, TCS's 2-year service bond agreement. The full post-NQT process typically takes 4–8 weeks from test to offer letter, depending on batch size and business need."
       },
     ],
-    relatedSlugs: ["tcs-interview-questions-india-2026", "aptitude-questions-it-companies-india-2026", "off-campus-placement-guide-freshers-india-2026"],
+    relatedSlugs: ["tcs-interview-questions-freshers-2026", "aptitude-questions-it-companies-india-2026", "off-campus-placement-guide-freshers-india-2026"],
     practicePageSlugs: [
-      { label: "TCS Interview Practice", slug: "tcs-interview-questions" },
+      { label: "TCS Interview Practice", slug: "tcs-nqt-interview-questions" },
     ],
     cta: "TCS NQT clears the aptitude gate — but the technical and HR rounds after that are where prepared candidates stand out. HireStepX gives you a voice-based mock for the TCS technical round (OOP, DBMS, resume project questions) so you're ready for both halves of the process.",
     relatedLinks: [
@@ -4187,7 +4187,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["accenture-interview-questions-india-2026", "tcs-nqt-preparation-guide-india-2026", "hr-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Wipro Technical Interview Practice", slug: "wipro-interview-questions" },
+      { label: "Wipro Technical Interview Practice", slug: "wipro-freshers-interview-questions" },
     ],
     cta: "Wipro's technical and HR rounds test both your CS fundamentals and your ability to articulate clearly under pressure. HireStepX's voice mock interviews simulate the exact format — you speak your answers to OOP questions, SQL explanations, and HR scenarios, and receive scored feedback on structure, content accuracy, and communication quality.",
     relatedLinks: [
@@ -4248,7 +4248,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["javascript-interview-questions-india-2026", "full-stack-developer-salary-india-2026", "machine-learning-engineer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "Python Technical Interview Practice", slug: "python-developer-interview-questions" },
+      { label: "Python Technical Interview Practice", slug: "tcs-nqt-interview-questions" },
     ],
     cta: "Python interviews test both knowledge and the ability to explain clearly — can you walk an interviewer through why generators beat lists for large data, not just state it? HireStepX's voice mock interviews train you to articulate Python concepts under real interview conditions, so the explanation is as strong as the knowledge behind it.",
     relatedLinks: [
@@ -4309,7 +4309,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-nqt-preparation-guide-india-2026", "wipro-interview-questions-india-2026", "accenture-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Infosys Technical Interview Practice", slug: "infosys-interview-questions" },
+      { label: "Infosys Technical Interview Practice", slug: "infosys-campus-interview-questions" },
     ],
     cta: "Infosys's HR round probes motivation and behavioural fit more deeply than most IT services companies — and most candidates give generic answers. HireStepX's voice AI gives you a realistic HR mock with scored feedback on STAR structure, specificity, and how convincing your 'why Infosys' sounds before you're in the real room.",
     relatedLinks: [
@@ -4370,7 +4370,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "off-campus-placement-guide-freshers-india-2026", "career-gap-explanation-interview-india-2026"],
     practicePageSlugs: [
-      { label: "Fresher HR Interview Practice", slug: "fresher-interview-questions" },
+      { label: "Fresher HR Interview Practice", slug: "common-hr-interview-questions-freshers-india" },
     ],
     cta: "A strong resume gets you to the interview. Once you're there, the preparation shifts to spoken communication — how you tell the story of your projects, answer HR questions, and handle technical probing. HireStepX gives freshers a safe space to practice both the technical and HR sides of the interview before the real one.",
     relatedLinks: [
@@ -4431,7 +4431,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["javascript-interview-questions-india-2026", "python-interview-questions-india-2026", "full-stack-developer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "Java Technical Interview Practice", slug: "java-developer-interview-questions" },
+      { label: "Java Technical Interview Practice", slug: "amazon-leadership-principles-interview" },
     ],
     cta: "Java technical interviews test both your knowledge and your ability to explain complex concepts clearly — can you explain HashMap internals or walk through a streams pipeline without losing your train of thought under pressure? HireStepX's voice mock interviews train the verbal explanation skill alongside the technical knowledge.",
     relatedLinks: [
@@ -4490,9 +4490,9 @@ const posts: BlogPost[] = [
         answer: "Yes — TCS's Managerial Interview and Infosys's HR round both include STAR-style behavioural questions, though they are not always framed explicitly with 'tell me about a time'. Common forms: 'How do you handle a situation where...' (hypothetical STAR), 'Have you ever faced...' (direct STAR), 'What is your experience with team conflicts?' (indirect STAR). Product companies (Amazon, Flipkart, Swiggy) use STAR most rigorously — Amazon's Leadership Principles interviews are entirely STAR-based."
       },
     ],
-    relatedSlugs: ["hr-interview-questions-india-2026", "tell-me-about-yourself-answer-india-2026", "career-gap-explanation-interview-india-2026"],
+    relatedSlugs: ["hr-interview-questions-india-2026", "tell-me-about-yourself-best-answer", "career-gap-explanation-interview-india-2026"],
     practicePageSlugs: [
-      { label: "HR Behavioural Interview Practice", slug: "hr-round-interview-questions" },
+      { label: "HR Behavioural Interview Practice", slug: "common-hr-interview-questions-freshers-india" },
     ],
     cta: "STAR answers sound very different when you speak them versus when you read them. A story that feels complete on paper often runs too long, loses structure, or sounds rehearsed under real interview pressure. HireStepX's voice AI evaluates your STAR answers in real-time — scoring structure, specificity, and the strength of your Result — so you can refine each story before the actual interview.",
     relatedLinks: [
@@ -4549,7 +4549,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["wipro-interview-questions-india-2026", "infosys-interview-questions-india-2026", "accenture-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Cognizant Technical Interview Practice", slug: "cognizant-interview-questions" },
+      { label: "Cognizant Technical Interview Practice", slug: "cognizant-genc-interview-questions" },
     ],
     cta: "Cognizant's HR round specifically probes your motivation and shift/relocation flexibility — answers that feel rehearsed or evasive reduce your chances even if your technical performance was strong. HireStepX's voice mock interviews train you on exactly these questions: 'why Cognizant', 'are you comfortable with night shifts', 'how do you handle working with global clients' — so the real conversation feels natural.",
     relatedLinks: [
@@ -4610,7 +4610,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "star-method-interview-answers-india-2026", "flipkart-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Amazon Interview Practice", slug: "amazon-interview-questions" },
+      { label: "Amazon Interview Practice", slug: "amazon-leadership-principles-interview" },
     ],
     cta: "Amazon's Leadership Principles rounds are where Indian candidates most often stumble — the DSA preparation is familiar, but the LP interview requires structured STAR stories that demonstrate specific Amazon values. HireStepX's voice AI simulates both the LP and coding rounds, scoring your answers on LP alignment, STAR structure, and technical communication.",
     relatedLinks: [
@@ -4671,7 +4671,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "java-interview-questions-india-2026", "python-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "DSA Coding Interview Practice", slug: "dsa-coding-interview-questions" },
+      { label: "DSA Coding Interview Practice", slug: "amazon-system-design-interview-questions" },
     ],
     cta: "DSA knowledge and interview performance are not the same thing — you can solve a problem at your desk and freeze when explaining your approach to an interviewer. HireStepX's voice mock interviews train you to think out loud and structure your verbal explanation while coding, the skill that separates candidates who pass from those who know the material but can't demonstrate it.",
     relatedLinks: [
@@ -4728,7 +4728,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["wipro-interview-questions-india-2026", "cognizant-interview-questions-india-2026", "infosys-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "HCL Technical Interview Practice", slug: "hcl-interview-questions" },
+      { label: "HCL Technical Interview Practice", slug: "hcl-freshers-interview-questions" },
     ],
     cta: "HCL's technical interview focuses on fundamentals — OOP, data structures, SQL, and a live coding problem — and the HR round assesses cultural fit and flexibility. HireStepX's voice mock interviews cover both: practice explaining C/Java concepts out loud under time pressure, and rehearse your 'why HCL' and location/shift answers before the real conversation.",
     relatedLinks: [
@@ -4789,7 +4789,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["amazon-interview-questions-india-2026", "system-design-interview-questions-india-2026", "dsa-interview-preparation-guide-india-2026"],
     practicePageSlugs: [
-      { label: "Google Interview Practice", slug: "google-interview-questions" },
+      { label: "Google Interview Practice", slug: "google-india-engineering-interview-questions" },
     ],
     cta: "Google's Googleyness round is often where Indian engineers underperform — the DSA preparation is solid but the verbal articulation of collaboration, leadership, and impact stories is weaker. HireStepX's voice mock interviews help you build and rehearse the exact kind of specific, evidence-based answers that Google's behavioural interviewers probe for.",
     relatedLinks: [
@@ -4850,7 +4850,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["google-interview-questions-india-2026", "amazon-interview-questions-india-2026", "system-design-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Microsoft Interview Practice", slug: "microsoft-interview-questions" },
+      { label: "Microsoft Interview Practice", slug: "microsoft-india-sde-interview-questions" },
     ],
     cta: "Microsoft's 'As Delivered' culture round catches many technically strong candidates off-guard — the Growth Mindset framework requires specific, evidence-based stories about learning and collaboration that most candidates haven't rehearsed. HireStepX's voice mock interviews specifically cover these questions so you're prepared for both the technical and cultural dimensions of the Microsoft loop.",
     relatedLinks: [
@@ -4907,7 +4907,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["amazon-interview-questions-india-2026", "system-design-interview-questions-india-2026", "dsa-interview-preparation-guide-india-2026"],
     practicePageSlugs: [
-      { label: "Flipkart Interview Practice", slug: "flipkart-interview-questions" },
+      { label: "Flipkart Interview Practice", slug: "flipkart-sde-interview-questions" },
     ],
     cta: "Flipkart's technical rounds move fast and expect you to communicate your approach clearly before coding — silent coding without narrating your thinking is marked down. HireStepX's voice mock interviews train you to verbalise your DSA reasoning in real time, building the communication habit that Flipkart's interviewers specifically reward.",
     relatedLinks: [
@@ -4968,7 +4968,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["dsa-interview-preparation-guide-india-2026", "system-design-interview-questions-india-2026", "tcs-nqt-preparation-guide-india-2026"],
     practicePageSlugs: [
-      { label: "General Technical Interview Practice", slug: "technical-interview-questions" },
+      { label: "General Technical Interview Practice", slug: "tcs-nqt-interview-questions" },
     ],
     cta: "SQL is tested in behavioural interview format at many companies — interviewers ask you to write a query out loud while narrating your reasoning. HireStepX's voice mock interviews help you build the habit of explaining your SQL logic in plain English as you write it, which is exactly what interviewers at product companies want to see.",
     relatedLinks: [
@@ -5025,7 +5025,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["javascript-interview-questions-india-2026", "system-design-interview-questions-india-2026", "flipkart-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Frontend Interview Practice", slug: "frontend-interview-questions" },
+      { label: "Frontend Interview Practice", slug: "flipkart-sde-interview-questions" },
     ],
     cta: "React interview questions mix technical depth ('explain the reconciliation algorithm') with practical debugging ('why is this component re-rendering unnecessarily?'). HireStepX's voice mock interviews train you to explain complex React concepts clearly under pressure, building the verbal fluency that distinguishes senior candidates.",
     relatedLinks: [
@@ -5082,12 +5082,191 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["javascript-interview-questions-india-2026", "system-design-interview-questions-india-2026", "sql-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "Backend Interview Practice", slug: "backend-interview-questions" },
+      { label: "Backend Interview Practice", slug: "razorpay-engineering-interview-questions" },
     ],
     cta: "Node.js interviews require you to explain async and event loop concepts clearly while also writing working code — two skills that take different preparation. HireStepX's voice mock interviews help you build the verbal explanations ('the event loop picks up callbacks from the queue after I/O completes') that interviewers at Indian product companies specifically listen for.",
     relatedLinks: [
       { label: "JavaScript Interview Questions India 2026", href: "/blog/javascript-interview-questions-india-2026" },
       { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "aws-interview-questions-india-2026",
+    title: "AWS Interview Questions India 2026 — Cloud Engineer, DevOps, Solutions Architect",
+    metaDescription: "AWS interview questions India 2026 for cloud engineers, DevOps, and solutions architects. Covers EC2, S3, Lambda, VPC, IAM, RDS, auto-scaling, and AWS certification paths popular in Indian tech jobs.",
+    company: "General",
+    category: "Technical",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&h=500&fit=crop",
+    heroAlt: "Cloud infrastructure representing AWS interview questions India 2026",
+    datePublished: "2026-07-24",
+    intro: "AWS is the dominant cloud platform at Indian product companies and is also heavily used by IT services companies (TCS, Infosys, Wipro) for their clients' cloud migrations. AWS interview questions appear in cloud engineer, DevOps engineer, solutions architect, and backend SDE interviews in India. This guide covers the core AWS services tested in interviews, the concepts behind them, and the specific questions asked at Indian companies from fresher cloud associates to senior solutions architects.",
+    sections: [
+      {
+        heading: "Core AWS Concepts — Always Tested",
+        content: "**Q: What is the difference between EC2 and Lambda?**\n- EC2 (Elastic Compute Cloud): virtual machines you provision and manage. You control the OS, runtime, scaling configuration, and pay for uptime (whether or not requests are coming in). Best for long-running workloads, stateful applications, or workloads requiring custom OS config\n- Lambda (Serverless Functions): you upload code; AWS runs it in response to events. Pay only when invoked (per execution, per duration). Best for event-driven, short-duration workloads (API handlers, S3 triggers, scheduled jobs). Cold start latency is a trade-off for very-low-latency requirements\n\n**Q: What is the difference between S3 and EBS?**\n- S3 (Simple Storage Service): object storage. Files (objects) stored in buckets. Accessible over HTTP. Unlimited storage, high durability (11 9s). Accessed from anywhere. Use for static files, backups, data lake, CDN origin\n- EBS (Elastic Block Store): block storage. Network-attached virtual disk for EC2 instances. Must be in the same AZ as the EC2 instance. Behaves like a hard drive. Use for OS volumes, database storage, anything requiring low latency random I/O\n- EFS (Elastic File System): managed NFS (shared file system). Multiple EC2 instances can mount the same EFS volume simultaneously. Use for shared file storage across instances\n\n**Q: What is an IAM role vs an IAM user?**\n- IAM User: represents a person or application with long-term credentials (access key + secret). Use for developers and CI/CD systems\n- IAM Role: represents a set of permissions that can be assumed temporarily. EC2 instances, Lambda functions, and ECS tasks assume roles (no hardcoded credentials). Cross-account access also uses roles\n- Best practice: NEVER hardcode AWS credentials in application code. Assign an IAM role to EC2/Lambda instead — AWS SDK picks them up automatically\n\n**Q: What are Availability Zones and Regions?**\n- Region: a geographic area (e.g., ap-south-1 = Mumbai, ap-southeast-1 = Singapore). Contains 3+ AZs\n- Availability Zone (AZ): one or more physical data centres within a Region, with independent power and networking. Deploying across 2+ AZs provides fault tolerance within a Region\n- India context: ap-south-1 (Mumbai) is the primary AWS region for Indian users; ap-south-2 (Hyderabad) launched 2022 for data residency"
+      },
+      {
+        heading: "VPC, Networking, and Security — Solutions Architect Questions",
+        content: "Networking questions appear in solutions architect and senior DevOps interviews.\n\n**VPC (Virtual Private Cloud) components:**\n```\nVPC (your private network: 10.0.0.0/16)\n├── Public Subnet (10.0.1.0/24)\n│   ├── Internet Gateway ← public internet access\n│   └── EC2 (web servers, load balancers)\n├── Private Subnet (10.0.2.0/24)\n│   ├── NAT Gateway ← outbound internet for private instances\n│   └── EC2 (app servers, databases)\n└── Security Groups (stateful firewall per instance)\n    NACLs (stateless firewall at subnet level)\n```\n\n**Security Group vs NACL:**\n- Security Group: stateful (if inbound allowed, response traffic is auto-allowed); attached to instances; allow rules only\n- NACL (Network Access Control List): stateless (must explicitly allow inbound AND outbound for the same traffic); attached to subnets; allow and deny rules; evaluated in number order\n\n**Common networking question — allow EC2 in private subnet to reach internet:**\n1. Create NAT Gateway in the public subnet\n2. Assign an Elastic IP to the NAT Gateway\n3. Add a route in the private subnet route table: `0.0.0.0/0 → NAT Gateway`\n4. Private EC2 outbound traffic now routes through NAT; inbound from internet is blocked (no direct route back)\n\n**Load Balancer types:**\n- ALB (Application Load Balancer): Layer 7 (HTTP/HTTPS). Routes based on path (`/api/*`), host header, or query params. Use for web apps and microservices\n- NLB (Network Load Balancer): Layer 4 (TCP/UDP). Ultra-low latency, millions of requests/second. Use for high-performance non-HTTP traffic (game servers, IoT)\n- CLB (Classic): legacy, avoid for new projects"
+      },
+      {
+        heading: "RDS, DynamoDB, and Caching — Database Questions",
+        content: "Database service questions are common in backend and solutions architect interviews.\n\n**Q: When would you use RDS vs DynamoDB?**\n- RDS (Relational Database Service): managed PostgreSQL/MySQL/Oracle/SQL Server. Strong ACID guarantees, complex queries, JOINs, transactions. Use when your data has relationships and you need flexible queries\n- DynamoDB: managed NoSQL key-value and document store. Single-digit millisecond latency at any scale. Use when: access pattern is key-based (get by userId, orderId), need extreme scale (millions of TPS), and data structure is simple\n- Rule of thumb: start with RDS for most applications; move to DynamoDB when RDS becomes a throughput bottleneck OR your access pattern is purely key-based\n\n**RDS Multi-AZ vs Read Replicas:**\n- Multi-AZ: standby instance in another AZ, synchronous replication, automatic failover in ~60s. Purpose: HIGH AVAILABILITY (not performance — you can't read from the standby)\n- Read Replicas: asynchronous replication to replica instances. Purpose: READ PERFORMANCE (offload read-heavy queries). Can be in different AZ or Region (cross-region replicas)\n\n**ElastiCache (Redis/Memcached):**\n- In-memory caching layer in front of RDS/DynamoDB\n- Reduces DB load, sub-millisecond response for cached data\n- Common patterns: cache DB query results, session storage, rate limiting counters\n```python\n# Cache-aside pattern\ndef get_user(user_id):\n    cached = redis.get(f'user:{user_id}')\n    if cached:\n        return json.loads(cached)\n    user = db.query('SELECT * FROM users WHERE id = ?', user_id)\n    redis.setex(f'user:{user_id}', 300, json.dumps(user))  # cache 5 min\n    return user\n```"
+      },
+      {
+        heading: "Auto Scaling, Lambda, and Serverless — Modern Architecture",
+        content: "These topics are increasingly tested as Indian companies move to serverless and container architectures.\n\n**Auto Scaling Group (ASG):**\nAutomatically adds/removes EC2 instances based on demand:\n- Scale-out policy: add instances when CPU > 70% for 5 minutes\n- Scale-in policy: remove instances when CPU < 30% for 10 minutes\n- Min/Max/Desired instance count\n- Integration with ALB: new instances register automatically, health checks before routing traffic\n\n**Lambda cold starts — interview question:**\nLambda cold start occurs when a new execution environment is provisioned for a function that hasn't run recently. Duration: ~100ms–2s depending on runtime (Java/C# have longer cold starts than Node.js/Python). Mitigations:\n- Provisioned Concurrency: keep N environments pre-warmed (extra cost)\n- Keep functions small and dependencies minimal\n- Use Lambda Snapstart (Java): snapshots after initialisation\n\n**ECS (Elastic Container Service) vs EKS (Elastic Kubernetes Service):**\n- ECS: AWS-native container orchestration. Simpler, tighter AWS integration, lower operational overhead. Use when running containers on AWS and don't need Kubernetes-specific features\n- EKS: managed Kubernetes on AWS. Use when you need Kubernetes ecosystem (Helm, RBAC, custom operators) or multi-cloud portability\n- Fargate: serverless compute for both ECS and EKS — no EC2 management, pay per container vCPU and memory\n\n**AWS certification path for Indian engineers:**\n- AWS Certified Cloud Practitioner: awareness level, 6 hours study. Useful for non-technical roles\n- AWS Solutions Architect Associate (SAA-C03): the most common certification at Indian IT companies. 2–3 weeks study\n- AWS Developer Associate: developer-focused (Lambda, DynamoDB, CodePipeline)\n- AWS DevOps Professional: advanced, for DevOps/SRE roles\nMost Indian product companies value SAA Associate or Developer Associate for SWE roles"
+      },
+      {
+        heading: "AWS in India — What Companies Test",
+        content: "**TCS / Infosys / Wipro (cloud associate / cloud migration roles):**\n- Basic service knowledge: EC2, S3, RDS, IAM, VPC\n- What is cloud computing, what are the service models (IaaS/PaaS/SaaS)\n- Difference between on-premise vs cloud\n- S3 storage classes (Standard, IA, Glacier)\n- Basic security: IAM policies, MFA, CloudTrail for auditing\n\n**Flipkart / Razorpay / Swiggy (backend SDE, DevOps):**\n- VPC design, subnet architecture\n- Auto Scaling with load balancers\n- Lambda vs EC2 trade-offs\n- ElastiCache (Redis) caching patterns\n- RDS Multi-AZ vs Read Replicas\n- S3 event triggers for Lambda\n- CloudWatch for monitoring and alerting\n\n**Senior Solutions Architect / Cloud Architect:**\n- Multi-region architecture for disaster recovery (RPO/RTO)\n- Well-Architected Framework (5 pillars: operational excellence, security, reliability, performance efficiency, cost optimisation)\n- Cost optimisation: Reserved Instances vs Spot Instances vs On-Demand\n- Data residency compliance for Indian regulations (DPDP Act 2023)\n- AWS Organizations for multi-account strategy"
+      },
+    ],
+    faqs: [
+      {
+        question: "What AWS topics are tested in Indian tech interviews in 2026?",
+        answer: "AWS interview topics at Indian companies vary by role: IT services (TCS/Infosys/Wipro) test basic cloud concepts and core services (EC2, S3, IAM, VPC, RDS). Product companies (Flipkart, Razorpay, Swiggy) test VPC networking, auto-scaling, Lambda vs EC2 trade-offs, ElastiCache, and RDS replication. Senior/architect roles test Well-Architected Framework, multi-region disaster recovery, cost optimisation (Reserved vs Spot instances), and compliance (DPDP Act data residency)."
+      },
+      {
+        question: "What AWS certification is most valuable for Indian engineers in 2026?",
+        answer: "The AWS Certified Solutions Architect Associate (SAA-C03) is the most valued AWS certification at Indian IT companies and is frequently listed as preferred/required for cloud roles at TCS, Infosys, Wipro, and HCL. It requires 2-3 weeks of study and tests core service knowledge. For SWE roles at product companies, the AWS Certified Developer Associate is slightly more relevant (focuses on Lambda, DynamoDB, CodePipeline). AWS Cloud Practitioner is minimal value for technical roles — it's for business/non-technical stakeholders."
+      },
+      {
+        question: "What is the difference between EC2 and Lambda?",
+        answer: "EC2 is a virtual machine you provision and manage — you control the OS, runtime, and scaling; you pay for uptime regardless of traffic. Lambda is serverless — you upload code and AWS runs it on demand; you pay only when invoked (per execution + duration, no idle cost). Key trade-off: EC2 is better for long-running stateful workloads and full OS control; Lambda is better for event-driven short-duration workloads. Lambda cold starts (100ms-2s) make it unsuitable for very-low-latency synchronous APIs without Provisioned Concurrency."
+      },
+      {
+        question: "Is AWS knowledge required for software engineering roles in India?",
+        answer: "AWS knowledge is required or strongly preferred at most product companies in India in 2026. For backend SDE roles at Flipkart, Razorpay, Swiggy, PhonePe: familiarity with EC2, S3, RDS, Lambda, and VPC is expected. For IT services (TCS, Infosys): basic cloud concepts are tested for cloud practice roles; general SWE roles don't require AWS. For dedicated DevOps, cloud engineer, or SRE roles: deep AWS knowledge is mandatory. An AWS certification strengthens your profile for any cloud-adjacent role."
+      },
+    ],
+    relatedSlugs: ["system-design-interview-questions-india-2026", "nodejs-interview-questions-india-2026", "sql-interview-questions-india-2026"],
+    practicePageSlugs: [
+      { label: "Cognizant Technical Interview Practice", slug: "cognizant-technical-interview-questions" },
+    ],
+    cta: "AWS architecture questions require you to reason through trade-offs out loud — 'I'd choose RDS Multi-AZ over a Read Replica here because the goal is availability, not read performance.' HireStepX's voice mock interviews specifically train this kind of structured technical reasoning, making cloud questions feel natural rather than panicked.",
+    relatedLinks: [
+      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
+      { label: "Node.js Interview Questions India 2026", href: "/blog/nodejs-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "product-manager-interview-questions-india-2026",
+    title: "Product Manager Interview Questions India 2026 — PM Roles at Flipkart, Swiggy, Razorpay",
+    metaDescription: "Product manager interview questions India 2026. Covers PM interview framework, product sense questions, analytical questions, execution rounds, and PM salaries at Indian product companies like Flipkart, Swiggy, and Razorpay.",
+    company: "General",
+    category: "Full Guide",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
+    heroAlt: "Product roadmap representing product manager interview questions India 2026",
+    datePublished: "2026-07-24",
+    intro: "Product management interviews in India have grown significantly in 2024–2026 as Indian product companies (Flipkart, Swiggy, Zomato, Razorpay, PhonePe, Zerodha) and global tech companies (Google, Microsoft, Meta India) build stronger PM functions. The PM interview differs fundamentally from engineering interviews: there are no correct answers — you're assessed on structured thinking, product sense, data fluency, and communication. This guide covers the PM interview framework used at Indian companies and the exact questions and evaluation rubrics used.",
+    sections: [
+      {
+        heading: "Product Manager Interview Structure at Indian Companies",
+        content: "Indian product companies typically run 4–6 interview rounds for PM roles:\n\n**Round 1: Screening with HR/Recruiter (30 min)**\n- Background, motivation, why this company/role\n- Screening for basic PM knowledge and culture fit\n\n**Round 2: Product Sense / Design Round (45–60 min)**\n- 'Design a product for X user problem'\n- 'Improve product Y'\n- 'What's your favourite product and how would you make it better?'\n- Tests: product thinking framework, user empathy, prioritisation, metrics definition\n\n**Round 3: Analytical / Metrics Round (45–60 min)**\n- 'Our DAU dropped 20% last week — how would you investigate?'\n- 'How would you measure the success of feature X?'\n- 'How would you A/B test this?'\n- Tests: data-driven decision making, metric definition, root cause analysis, statistical reasoning\n\n**Round 4: Execution / Strategy Round (45–60 min)**\n- 'Walk me through how you'd launch feature X'\n- 'What trade-offs did you make in your last feature decision?'\n- 'How do you prioritise between 10 requested features?'\n- Tests: execution discipline, stakeholder management, prioritisation frameworks\n\n**Round 5: Leadership / Behavioural (45 min)**\n- 'Tell me about a time you had to make a difficult product decision with incomplete data'\n- 'Describe a product that failed under your ownership. What did you learn?'\n- 'How do you manage conflict between engineering, design, and business?'\n\n**Round 6: CEO / Founder / VP Product (for senior PM roles)**\n- Strategic alignment: is this candidate's product thinking aligned with company direction?\n- Leadership: can this person lead a product area, not just execute?"
+      },
+      {
+        heading: "Product Sense Questions — Framework and Examples",
+        content: "Product sense is the most important PM skill assessed in Indian interviews. Interviewers look for structured, user-first thinking.\n\n**The product sense framework:**\n1. **Clarify** — ask 2–3 questions to narrow scope ('Is this for Indian users or global? Mobile or web?')\n2. **User segments** — who uses this product? Create 2–3 distinct user personas\n3. **User goals / pain points** — what is each segment trying to accomplish? What frustrates them?\n4. **Prioritise** — pick one primary user segment to focus on\n5. **Solutions** — generate 3–5 solutions to the prioritised pain points\n6. **Evaluate** — rank solutions by impact, feasibility, and strategic fit\n7. **Metrics** — define 2–3 metrics to measure success of your chosen solution\n\n**Common product sense question — 'Design a feature for Swiggy':**\nInterviewer: 'How would you improve Swiggy's delivery tracking experience?'\n\nStrong answer structure:\n'Before I dive in, let me clarify — are we focused on existing delivery tracking, or should I think more broadly about the post-order experience? [waits] Great. Let me think about the user segments using Swiggy's tracking. I'd segment into: impatient first-timers (high anxiety about delivery accuracy), regulars who just want quick status updates, and corporate users tracking bulk orders. For the scope of this question, I'll focus on regular users — the largest segment. Their pain points: uncertainty about exact arrival time, frustration when ETA shifts, and inability to communicate with the delivery partner. Solutions I'd explore: (1) ML-based dynamic ETA with 90% confidence interval rather than a point estimate, (2) real-time chat with delivery partner, (3) proactive push notifications when ETA shifts by >5 minutes, (4) package handoff confirmation photo. I'd prioritise proactive ETA shift notifications first — highest signal-to-noise, solves the core anxiety without requiring the user to actively check. Metric: reduction in in-app 'Where is my order?' support tickets + post-delivery rating for delivery experience.'"
+      },
+      {
+        heading: "Metrics and Analytical Questions — Data-Driven PM",
+        content: "Indian product companies — especially Flipkart, PhonePe, Razorpay — heavily emphasise data-driven PM thinking.\n\n**The metric investigation framework ('DAU dropped 20%'):**\n1. **Clarify the anomaly**: Is this global or a specific segment? Web or app? Which geography? Did anything change in the product or infrastructure?\n2. **Break down the metric**: DAU = returning users + new users. Which dropped? If both, investigate acquisition AND retention separately\n3. **Segment further**: By device (Android vs iOS), by user cohort (age, geography, acquisition channel), by feature area\n4. **Hypotheses**: Internal causes (bug, feature rollout, push notification outage, performance degradation) vs external (competitor launch, app store issue, seasonal effect)\n5. **Data to pull**: MAU/DAU trend, funnel drop-off (launch → home → search → add to cart → checkout), segment breakdown, recent deployments, support ticket volume\n\n**Defining success metrics — framework:**\nFor any feature, define:\n- **Primary metric** (the one you're optimising): often a user behaviour that signals value delivered (DAU for engagement, GMV for commerce)\n- **Secondary metrics** (guardrail metrics): what you're monitoring to ensure you're not breaking something else (DAU up but orders down = bad; need both)\n- **Counter-metrics**: what you'd expect to go DOWN if the feature is working (support tickets, time to complete a task)\n\n**A/B test design questions — tested at Flipkart, PhonePe:**\n- 'How would you A/B test a new checkout flow?'\nAnswer elements: control vs treatment definition, randomisation unit (user vs session), sample size calculation (power analysis), success metric, minimum detectable effect, test duration, guardrail metrics, launch criteria"
+      },
+      {
+        heading: "PM at Indian Product Companies — What's Different",
+        content: "Indian PM interviews have specific characteristics that differ from global PM interviews:\n\n**India-specific product considerations:**\n- **India's user heterogeneity**: a feature for 1.4B users must work for both a first-smartphone user in tier-3 Uttar Pradesh AND a power user in Bengaluru tech park. Best PM candidates show awareness of this range\n- **Connectivity constraints**: 4G penetration is 70%+ but reliability varies. Product decisions must account for offline-first, low-bandwidth variants\n- **Payment stack**: UPI (free, instant, universal) has changed checkout conversion dramatically. India-focused PMs are expected to know UPI, BNPL (Buy Now Pay Later), COD (40%+ of e-commerce), and how payment method affects conversion\n- **Trust and security UX**: Indian users have high SMS/OTP familiarity (used for everything) but may distrust biometric or stored card payment — UX that feels 'familiar' differs from global norms\n\n**PM salary at Indian product companies (2026):**\n- APM/Junior PM (0–2 years): ₹18–30 LPA (total)\n- PM II (2–5 years): ₹28–55 LPA\n- Senior PM (5–8 years): ₹50–90 LPA\n- Group PM (8–12 years): ₹80–140 LPA\n- Director of Product: ₹130–250 LPA\n\n**Companies with strong PM functions in India:**\nFlipkart (strong e-commerce PM culture), Google India (global PM standards), Swiggy (hyperlocal expertise), Razorpay (fintech depth), PhonePe (payments scale), CRED (premium consumer product), Zerodha (fintech self-serve), Meesho (social commerce)"
+      },
+    ],
+    faqs: [
+      {
+        question: "What questions are asked in PM interviews at Indian companies?",
+        answer: "PM interview questions at Indian product companies fall into 4 categories: (1) Product sense — 'Design/improve X product' (tested at every company); (2) Analytical — 'DAU dropped 20%, how do you investigate?', 'How would you measure success of feature Y?'; (3) Execution — 'Walk me through how you launched a feature', 'How do you prioritise 10 requests?'; (4) Behavioural — STAR stories about product failures, stakeholder conflicts, data-driven decisions. Flipkart and PhonePe emphasise analytics heavily; Swiggy and Zomato emphasise hyperlocal product instincts; CRED emphasises product taste and premium UX."
+      },
+      {
+        question: "What is the product sense framework for PM interviews?",
+        answer: "Product sense framework for PM interviews: (1) Clarify scope (2-3 questions); (2) Define user segments (2-3 personas); (3) Identify pain points per segment; (4) Prioritise one segment; (5) Generate 3-5 solutions to prioritised pain points; (6) Evaluate solutions by impact, feasibility, strategic fit; (7) Define success metrics. The most common mistake is jumping to solutions without establishing user segments and pain points — interviewers specifically watch for this structure."
+      },
+      {
+        question: "What is PM salary in India in 2026?",
+        answer: "PM salary in India 2026 by level: APM/Junior PM (0-2 years) ₹18-30 LPA total compensation, PM II (2-5 years) ₹28-55 LPA, Senior PM (5-8 years) ₹50-90 LPA, Group PM (8-12 years) ₹80-140 LPA, Director of Product ₹130-250 LPA. Highest-paying PM employers in India: Google, Meta, Microsoft, Flipkart, Swiggy, Razorpay, PhonePe, CRED. Total compensation includes base salary + ESOPs (stock options) which can be substantial at funded startups."
+      },
+      {
+        question: "How is the PM interview at Indian companies different from US companies?",
+        answer: "Key differences in PM interviews at Indian vs US companies: (1) India-market context is tested — interviewers expect awareness of UPI payments, COD, tier-2/3 users, offline-first design, and India's heterogeneous user base; (2) Analytical emphasis is higher at Indian product companies — data fluency is more strictly assessed than at some US companies; (3) STAR behavioural questions use India-specific contexts ('tell me about a feature you built for a market outside your own experience'); (4) Technical depth is expected higher — Indian PMs are expected to discuss API design, database trade-offs, and system architecture at a working level."
+      },
+    ],
+    relatedSlugs: ["system-design-interview-questions-india-2026", "star-method-interview-answers-india-2026", "flipkart-interview-questions-india-2026"],
+    practicePageSlugs: [
+      { label: "Product Manager Interview Practice", slug: "amazon-pm-interview-questions" },
+    ],
+    cta: "Product sense questions are uniquely hard to practice alone because you can't evaluate your own answer structure — you need an interviewer to probe your reasoning. HireStepX's AI interviewer asks product sense questions, follows up with 'why?' and 'what about this user segment?', and evaluates whether your framework is actually user-first. Practice until the structured approach is automatic.",
+    relatedLinks: [
+      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
+      { label: "STAR Method Interview India 2026", href: "/blog/star-method-interview-india-2026" },
+    ],
+  },
+  {
+    slug: "leetcode-preparation-guide-india-2026",
+    title: "LeetCode Preparation Guide India 2026 — How to Crack DSA for Product Company Interviews",
+    metaDescription: "LeetCode preparation guide India 2026 — how to crack DSA for product company interviews. Covers study plans for 8, 16, and 24 weeks, topic order, which problems to solve, and how Indian companies use LeetCode in interviews.",
+    company: "General",
+    category: "Full Guide",
+    readTime: "11 min",
+    heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=500&fit=crop",
+    heroAlt: "Code on screen representing LeetCode preparation guide India 2026",
+    datePublished: "2026-07-24",
+    intro: "LeetCode has become the de facto preparation platform for product company interviews in India. Candidates targeting Amazon, Flipkart, Google, Microsoft, Razorpay, and Swiggy are expected to solve LeetCode problems efficiently and explain their approach clearly. But LeetCode preparation done wrong — grinding 500+ random problems — wastes months without improving interview performance. This guide gives you an evidence-based preparation plan specific to the Indian product company market: what to solve, in what order, and at what difficulty level for each target company.",
+    sections: [
+      {
+        heading: "The Truth About LeetCode in Indian Interviews",
+        content: "**Which companies use LeetCode-style problems?**\n\nHigh LeetCode bar (Hard expected, advanced data structures):\n- Google, Meta, Apple: LeetCode Hard, sometimes very Hard (with non-obvious insights)\n\nMedium-High bar (Medium-Hard, some advanced topics):\n- Amazon, Flipkart, Microsoft, Swiggy, Zomato: LeetCode Medium to Hard\n\nMedium bar (Medium, some Easy):\n- Razorpay, Zerodha, CRED, PhonePe, Meesho: LeetCode Easy-Medium\n\nLow bar (Easy, sometimes basic OA only):\n- TCS, Infosys, Wipro, Cognizant: Easy to Medium, often MCQ-heavy\n\n**The 80/20 of LeetCode topics:**\nSolving 500 random problems is far less effective than solving 150 problems across the 10 most important patterns. Interviewers draw from a finite set of patterns — you're learning to recognise patterns, not memorise solutions.\n\n**Quality over quantity:**\n- Understanding 100 problems deeply > grinding 300 problems shallowly\n- After each problem, write down: the pattern, the key insight, the time/space complexity, and one similar problem\n- A 'solved' problem you can't re-solve in 20 minutes without hints is not learned"
+      },
+      {
+        heading: "The 10 Core DSA Patterns — LeetCode Interview Patterns",
+        content: "Every LeetCode problem (with a few exceptions) is a variant of one of these patterns:\n\n**1. Two Pointers** — time O(n), removes nested loops\nWhen to use: sorted arrays, finding pairs with a target sum, removing duplicates\nExample: Two Sum II, Container with Most Water, Remove Duplicates\n\n**2. Sliding Window** — time O(n), for contiguous subarrays/substrings\nWhen to use: 'longest/shortest subarray/substring with condition X'\nExample: Longest Substring Without Repeating Characters, Minimum Window Substring\n\n**3. Binary Search** — time O(log n)\nWhen to use: sorted array, monotonic function, 'find the minimum X that satisfies condition'\nExample: Search in Rotated Sorted Array, Find Peak Element, Koko Eating Bananas\n\n**4. BFS (Breadth-First Search)** — level-order traversal, shortest path in unweighted graphs\nWhen to use: shortest path, level-by-level processing, flood fill\nExample: Binary Tree Level Order, Rotting Oranges, Word Ladder\n\n**5. DFS (Depth-First Search)** — explore deeply, backtracking\nWhen to use: connected components, paths, tree traversals, permutations/combinations\nExample: Number of Islands, Path Sum, All Paths from Source to Target\n\n**6. Dynamic Programming** — overlapping subproblems, optimal substructure\nWhen to use: 'find the minimum/maximum', 'how many ways to...', 'can you achieve...'\nExample: Climbing Stairs, House Robber, Longest Common Subsequence, 0/1 Knapsack\n\n**7. Fast and Slow Pointers (Floyd's cycle detection)**\nWhen to use: cycle detection in linked list/array, middle of linked list\nExample: Linked List Cycle, Find the Duplicate Number, Happy Number\n\n**8. Monotonic Stack**\nWhen to use: 'next greater element', 'previous smaller element', histogram problems\nExample: Next Greater Element, Daily Temperatures, Largest Rectangle in Histogram\n\n**9. Heap / Priority Queue**\nWhen to use: top-K elements, merge K sorted lists, scheduling problems\nExample: Top K Frequent Elements, Merge K Sorted Lists, Find Median from Data Stream\n\n**10. Trie (Prefix Tree)**\nWhen to use: prefix search, autocomplete, word dictionary\nExample: Implement Trie, Word Search II, Design Search Autocomplete System"
+      },
+      {
+        heading: "8-Week LeetCode Study Plan — For IT Services to Mid-Product Companies",
+        content: "This plan targets Amazon SDE-1, Flipkart SDE-1, Microsoft SDE-1, Razorpay, and Swiggy (Medium-Hard bar).\n\n**Week 1–2: Arrays, Strings, and Two Pointers (30 problems)**\n- Two Sum, Three Sum, Container with Most Water\n- Move Zeroes, Remove Duplicates from Sorted Array\n- Valid Palindrome, Longest Palindromic Substring (Manacher's optional)\n- Sliding Window: Minimum Window Substring, Longest Substring Without Repeating Characters\n- Daily target: 3 Easy + 1 Medium; don't spend more than 30 min on any problem\n\n**Week 3–4: Trees and Recursion (25 problems)**\n- Binary tree traversals (in/pre/post/level-order)\n- Validate BST, Lowest Common Ancestor, Diameter of Binary Tree\n- Max Path Sum, Serialize/Deserialize Binary Tree\n- Recursion: generate parentheses, permutations, combinations\n\n**Week 5–6: Graphs and Dynamic Programming (25 problems)**\n- Graphs: Number of Islands, Clone Graph, Course Schedule (topological sort), Dijkstra's\n- DP: Climbing Stairs, House Robber, Coin Change, Longest Increasing Subsequence, 0/1 Knapsack\n\n**Week 7: Stacks, Queues, Heaps (15 problems)**\n- Valid Parentheses, Min Stack, Daily Temperatures\n- Top K Frequent Elements, Merge K Sorted Lists, Kth Largest Element\n\n**Week 8: Mock Interviews (10 full mock sessions)**\n- Two LeetCode problems per session, 45 minutes, no hints\n- Verbalise your approach before coding (build the interview habit)\n- Review misses and add to your 'pattern book'"
+      },
+      {
+        heading: "16-Week Plan — For Google / Meta / Amazon Bar Raiser Level",
+        content: "This plan targets Google L3–L4, Meta E3–E4, Amazon SDE-2/Bar Raiser level. Assumes the 8-week fundamentals are complete or equivalent.\n\n**Weeks 9–10: Advanced Graph Algorithms**\n- Dijkstra's shortest path, Bellman-Ford (negative weights)\n- Floyd-Warshall (all-pairs shortest path)\n- Topological sort (Kahn's BFS variant + DFS variant)\n- Strongly Connected Components: Kosaraju's algorithm\n- Minimum Spanning Tree: Prim's + Kruskal's with Union-Find\n\n**Weeks 11–12: Advanced DP and Interval Problems**\n- DP on trees: Tree diameter, max independent set on tree\n- Interval DP: Burst Balloons, Strange Printer, Minimum Cost Tree from Leaf Values\n- Bitmask DP: Travelling Salesman Problem variants, Stickers to Spell Word\n- Interval greedy: Merge Intervals, Non-overlapping Intervals, Meeting Rooms II\n\n**Weeks 13–14: String Algorithms and Segment Trees**\n- KMP pattern matching, Rabin-Karp rolling hash\n- Trie: design prefix tree, word search II\n- Segment trees (range sum, range minimum) — for Google/Amazon L4+\n\n**Weeks 15–16: Mocks and Pattern Consolidation**\n- Daily: 1 Hard LeetCode problem, 45 minutes, no hints\n- Weekly: 2 full timed mock interviews (2 problems each, 45 min)\n- Practice on Google Docs occasionally (no syntax highlighting) to simulate real interview\n\n**What separates Good from Great at this level:**\n- Speed: solve Easy in <10 min, Medium in <20 min, Hard in <35 min\n- Optimisation: always ask 'can I do better than this O(n²)?'\n- Edge cases: null/empty/single element without prompting\n- Communication: explain the pattern before coding, narrate complexity at the end"
+      },
+      {
+        heading: "LeetCode Resources and Tools for Indian Candidates",
+        content: "**Free resources:**\n- NeetCode.io: curated 150-problem list by pattern, free video explanations, highly recommended starting point\n- Striver's SDE Sheet (TakeUForward): 191 problems with detailed Hindi/English video explanations, extremely popular among Indian candidates\n- LeetCode free tier: 750+ free problems, company tags (premium feature, but many lists on GitHub)\n\n**Paid resources (worth it for serious preparation):**\n- LeetCode Premium: unlock company-specific problem lists (Amazon, Google, Microsoft). ~₹1,500–2,000/month. Worth it for 2–3 months of focused preparation\n- NeetCode Pro: structured learning paths, additional problems beyond the 150\n- Algomaster.io: system design + LeetCode combined\n\n**Practice platforms beyond LeetCode:**\n- HackerRank: used by TCS NQT, Infosys, Wipro for online assessments — practice their specific OA format here\n- HackerEarth: used by Flipkart, CRED for OAs\n- Codility: used by Microsoft, some MNCs\n\n**Community:**\n- Reddit r/cscareerquestionsIN: Indian-specific career and interview discussions\n- Reddit r/leetcode: problem discussions, contest rankings\n- LinkedIn: follow NeetCode, Abdul Bari, Striver for content\n\n**Mindset for Indian candidates:**\nMost Indian engineers from tier-2 colleges feel their DSA is 'not good enough' for product companies — the data doesn't support this. Flipkart, Razorpay, and Swiggy regularly hire from NIT, IIIT, and private engineering colleges. The bar is about preparation quality, not college tier. A 16-week dedicated plan, done right, is enough for most non-Google target companies."
+      },
+    ],
+    faqs: [
+      {
+        question: "How many LeetCode problems should I solve to crack interviews in India?",
+        answer: "Quality matters more than quantity. For IT services companies (TCS, Infosys): 30-50 Easy/Medium problems is enough. For mid-product companies (Razorpay, Swiggy, PhonePe): 100-150 problems across the 10 core patterns (two pointers, sliding window, binary search, BFS/DFS, DP, heap, stack). For top product companies (Amazon, Flipkart, Microsoft): 150-200 problems including Hard. For Google: 200+ including consistent Hard practice. The key is pattern recognition — solve problems by learning patterns, not by memorising specific solutions."
+      },
+      {
+        question: "Should I use Striver's SDE Sheet or NeetCode 150 for LeetCode preparation in India?",
+        answer: "Both are excellent; choose based on your learning style. Striver's SDE Sheet (191 problems) has detailed Hindi and English video explanations, is extremely popular among Indian engineering students, covers every topic comprehensively, and has a strong community on YouTube and Discord. NeetCode 150 is more curated (fewer problems), has high-quality English video explanations, is organised by pattern making it easier to see connections, and is preferred by candidates who want efficiency over comprehensiveness. Recommendation: if you have 8+ weeks, Striver's. If 4-6 weeks, NeetCode 150."
+      },
+      {
+        question: "How long does LeetCode preparation take for Amazon or Flipkart interviews in India?",
+        answer: "Realistic timelines for Amazon SDE-1 / Flipkart SDE-1 level (LeetCode Medium-Hard bar): 8 weeks at 2-3 hours/day, covering the 10 core patterns with 150+ problems. For a fresher with no prior DSA: add 4-8 weeks of fundamentals (arrays, linked lists, trees, basic recursion) before the pattern-based practice. For someone with some CS background (college coursework): 8 weeks is realistic. For someone switching from IT services with 2-3 years experience: 12-16 weeks typically needed as you're rebuilding algorithmic thinking alongside job responsibilities."
+      },
+      {
+        question: "What is the difference between LeetCode preparation for Google vs Amazon in India?",
+        answer: "Google India vs Amazon India LeetCode preparation differs significantly: Amazon focuses on LeetCode Medium (occasionally Hard), with problems that map to common patterns — two pointers, BFS/DFS, DP, heap. Bar Raiser round adds a harder problem. Google requires consistent Hard LeetCode ability, non-obvious insight problems, and speed (2 Hard problems in 45 minutes). Google also tests advanced graph algorithms (Tarjan's SCC, MST) and string algorithms (KMP) that Amazon rarely tests. For Google, practice on Google Docs (no autocomplete); for Amazon, the OA uses HackerRank which has syntax highlighting."
+      },
+    ],
+    relatedSlugs: ["dsa-interview-preparation-guide-india-2026", "google-interview-questions-india-2026", "amazon-interview-questions-india-2026"],
+    practicePageSlugs: [
+      { label: "DSA Interview Practice", slug: "dsa-interview-questions" },
+    ],
+    cta: "LeetCode problems tell you whether your code is correct — they don't tell you whether your communication, pacing, and explanation would pass an actual interview. HireStepX's voice mock interviews simulate the real interview dynamic: you narrate your approach, explain complexity, handle edge cases under time pressure, and get feedback on both correctness and communication.",
+    relatedLinks: [
+      { label: "DSA Interview Preparation Guide India 2026", href: "/blog/dsa-interview-preparation-guide-india-2026" },
+      { label: "Google Interview Questions India 2026", href: "/blog/google-interview-questions-india-2026" },
     ],
   },
 ];
