@@ -1109,6 +1109,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What is the salary of a cloud architect in India?", answer: "Cloud architect salary in India 2026: IT services cloud architect (5–8 yrs) ₹28–60 LPA; product company cloud architect (5–8 yrs) ₹50–100 LPA; FAANG India solutions architect (5–8 yrs) ₹70–130+ LPA. The gap between IT services and product company salaries widens significantly at the architect level compared to engineer level." },
     ],
   },
+  {
+    slug: "accenture-interview-questions-india-2026",
+    title: "Accenture Interview Questions India 2026 — Freshers & Experienced (All Rounds)",
+    metaDescription: "Accenture interview questions India 2026 for freshers and experienced candidates. Covers the online assessment, technical round, communication test, HR round, and Accenture salary ₹4–45 LPA with preparation strategy.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=630&fit=crop",
+    company: "Accenture", category: "Full Guide",
+    faqs: [
+      { question: "What is Accenture's interview process for freshers in 2026?", answer: "Accenture's fresher interview process has 4 stages: (1) Cognitive and Technical online assessment (aptitude + CS MCQs + 1-2 coding problems), (2) Communication Assessment (written English email + optional spoken section), (3) Technical Interview (OOP, DBMS, OS, resume project discussion), (4) HR Round (standard HR questions + salary discussion). The communication assessment is unique to Accenture and eliminates 15-25% of candidates who pass the technical test." },
+      { question: "What is Accenture's salary for freshers in India 2026?", answer: "Accenture's fresher salary in India 2026 is ₹4.5–8 LPA depending on the offer package. Package A (standard) is ₹4.5–5 LPA CTC. Package B (for stronger performers) is ₹6.5–8 LPA CTC. Accenture's CTC includes variable pay and benefits; take-home is typically 75-80% of CTC." },
+      { question: "Is Accenture interview hard for freshers?", answer: "Accenture's interview is moderately difficult for freshers — harder than Wipro or Cognizant, easier than TCS NQT Advanced or product companies. The cognitive section is time-pressured. The communication assessment (written English) is where most unprepared candidates fail. The technical round tests OOP, DBMS, and OS fundamentals — not advanced algorithms." },
+      { question: "How should I prepare for Accenture's communication assessment?", answer: "Practice writing professional business emails in 200-250 words on scenarios like 'explain a project delay to your manager' or 'summarise a meeting outcome'. Focus on: professional tone (no casual language), clear structure (situation → action → resolution), grammar accuracy, and appropriate length. Also practice reading English newspaper articles aloud for the spoken component. Spend at least 3 days specifically on this — most candidates ignore it entirely." },
+    ],
+  },
+  {
+    slug: "javascript-interview-questions-india-2026",
+    title: "JavaScript Interview Questions India 2026 — Freshers to Senior (Core JS, ES6+, React)",
+    metaDescription: "JavaScript interview questions India 2026 with answers. Covers core JS (closures, hoisting, event loop), ES6+ features, async/await, DOM, React basics, and company-specific prep for freshers and experienced developers.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=1200&h=630&fit=crop",
+    company: "Tech", category: "Technical",
+    faqs: [
+      { question: "What JavaScript topics are most important for interviews in India 2026?", answer: "The highest-frequency JS interview topics in India in 2026: closures, hoisting, the event loop and microtask/macrotask queue, Promise vs async/await, this context and arrow functions, prototypal inheritance, ES6+ features (destructuring, spread/rest, optional chaining), and coding problems like debounce, flatten, and deep clone. For senior roles: memory leaks, V8 optimisation, and module bundlers." },
+      { question: "What is the difference between var, let, and const in JavaScript?", answer: "var is function-scoped and hoisted (initialised to undefined). let and const are block-scoped and hoisted but remain in the Temporal Dead Zone until their declaration — accessing them before declaration throws ReferenceError. const cannot be reassigned after declaration (but its properties can be mutated for objects). Use const by default, let when reassignment is needed, never var." },
+      { question: "How do I explain the JavaScript event loop in an interview?", answer: "JavaScript is single-threaded. The event loop coordinates: (1) the call stack where synchronous code runs, (2) the microtask queue (Promise .then callbacks — higher priority), and (3) the macro-task queue (setTimeout, setInterval callbacks). After each synchronous task, the microtask queue is fully drained before the next macro-task is taken. This is why Promise callbacks execute before setTimeout(fn, 0) callbacks." },
+      { question: "Is JavaScript asked in freshers interviews in India?", answer: "Yes — JavaScript is tested at IT services companies for web development roles, at product companies for frontend/full-stack roles, and specifically at any company using React, Node.js, or Next.js. Freshers are typically asked: var/let/const differences, hoisting, closures, event handling, and basic DOM manipulation. Senior roles add: prototypes, event loop, memory management, and framework-specific questions." },
+    ],
+  },
+  {
+    slug: "career-gap-explanation-interview-india-2026",
+    title: "How to Explain a Career Gap in an Interview — India 2026 (With Sample Answers)",
+    metaDescription: "How to explain a career gap in an interview in India 2026. Sample answers for health reasons, family responsibilities, higher education, COVID-19 layoffs, startup failures, and extended travel — with what to say and what not to say.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&h=630&fit=crop",
+    company: "General", category: "HR Round",
+    faqs: [
+      { question: "How do I explain a 1-year career gap in an interview in India?", answer: "State the reason in one sentence without apologising, explain briefly what you did during the gap (any learning, freelancing, or project work), and bridge to why you are ready now. Example: 'I took a year off for a family health situation that has since been resolved. During that time I completed my AWS Solutions Architect certification and built a personal project in React and Node.js. I'm now ready to return to full-time work and this role is exactly the direction I want to go in.'" },
+      { question: "Is a career gap a red flag for Indian employers?", answer: "A career gap is not a red flag if explained confidently and honestly. What raises red flags is not the gap itself but: evasiveness about the reason, an inability to describe what you did during that time, or a gap that follows multiple short tenures (which suggests a pattern). COVID-era gaps (2020–2022) carry no stigma. A well-explained gap for health, family, education, or startup experience is understood and accepted by most Indian employers." },
+      { question: "Should I mention my career gap in my resume?", answer: "You do not need to explicitly mark a gap on your resume — the dates of employment speak for themselves. However, if the gap involved something substantial (your own startup, a certification programme, extended freelancing), listing it as an entry removes the unexplained gap and frames it positively. 'Independent Consultant / Startup Founder — [dates]' is better than an unexplained blank period." },
+      { question: "How do I explain a career gap due to health reasons without disclosing details?", answer: "You are not required to disclose your diagnosis. Simply say: 'I took time off for a health issue that required treatment and recovery. I'm fully recovered now.' If the interviewer presses for details, it is appropriate to say: 'I'd prefer to keep the medical details private, but I'm happy to provide confirmation of my current fitness to work from my doctor if that's required for the role.' Most interviewers will not press further." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
