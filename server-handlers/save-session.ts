@@ -28,6 +28,7 @@ import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
 import { groundNoCounterSkillScores } from "../src/sessionReport/progressTracking";
 import { computeStreakReward } from "./_streak-reward";
 import { grantSessionCredits } from "./_session-credits";
+import { computePracticeTimestamps } from "./_save-session-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -507,29 +508,14 @@ export default async function handler(req: Request): Promise<Response> {
       const existing: string[] = Array.isArray(row.practice_timestamps) ? row.practice_timestamps : [];
       const startedIds: string[] = Array.isArray(row.started_session_ids) ? row.started_session_ids : [];
 
-      /* Sessions are now counted at START via /api/record-session-start.
-         If the engine already recorded this sessionId there, skip the
-         append here so the user doesn't double-count.
-
-         Ghost-session refund: if questions === 0 the user entered /interview
-         but ended immediately without engaging with any question. The credit
-         that record-session-start added at page-load is refunded by popping
-         the last timestamp and removing the session from started_session_ids.
-         A user can only run one session at a time so the last timestamp is
-         always from this session's start call. */
       const questionsAnswered = (sessionRow.questions ?? 0) >= 1;
-      const alreadyCounted = startedIds.includes(sessionRow.id);
-      const isGhostSession = alreadyCounted && !questionsAnswered;
-
-      let next: string[];
-      let refundedStartedIds: string[] | null = null;
-      if (isGhostSession) {
-        // Refund: pop the timestamp that record-session-start added.
-        next = existing.length > 0 ? existing.slice(0, -1) : existing;
-        refundedStartedIds = startedIds.filter(id => id !== sessionRow.id);
-      } else {
-        next = alreadyCounted ? existing : [...existing, nowIso].slice(-500);
-      }
+      const { next, refundedStartedIds, alreadyCounted, isGhostSession } = computePracticeTimestamps({
+        existing,
+        startedIds,
+        sessionId: sessionRow.id,
+        questionsAnswered,
+        nowIso,
+      });
 
       const patchBody: Record<string, unknown> = { practice_timestamps: next, has_completed_onboarding: true };
       if (refundedStartedIds !== null) patchBody.started_session_ids = refundedStartedIds;
