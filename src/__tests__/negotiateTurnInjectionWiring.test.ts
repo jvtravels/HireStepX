@@ -19,6 +19,11 @@ const SOURCE = readFileSync(
   "utf-8",
 );
 
+const TURN_HELPERS = readFileSync(
+  join(__dirname, "..", "..", "server-handlers", "_negotiate-turn-helpers.ts"),
+  "utf-8",
+);
+
 describe("negotiate-turn — prompt-injection + leak-guard wiring", () => {
   it("imports detectPromptInjection from the adversarial detector", () => {
     expect(SOURCE).toContain("detectPromptInjection");
@@ -75,5 +80,20 @@ describe("negotiate-turn — prompt-injection + leak-guard wiring", () => {
 
   it("threads injectionDetected into logTurnUsage", () => {
     expect(SOURCE).toMatch(/injectionDetected\b/);
+  });
+});
+
+// S13-B5: the joining-bonus lever prompt must contain an explicit direction
+// guard so the LLM cannot ask the candidate about their current employer's
+// joining bonus instead of OFFERING one. Source-level assertion is the
+// appropriate granularity — model output cannot be unit-tested.
+describe("S13-B5: joining-bonus lever has direction guard in prompt", () => {
+  it("joining-bonus guidance explicitly states direction: recruiter extends TO candidate", () => {
+    expect(TURN_HELPERS).toContain("DIRECTION");
+    expect(TURN_HELPERS).toContain("do NOT ask what joining bonus the candidate currently receives");
+  });
+
+  it("joiningBonusAsk hint says 'from us (the employer)' to prevent direction inversion", () => {
+    expect(TURN_HELPERS).toContain("from us (the employer)");
   });
 });
