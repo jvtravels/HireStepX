@@ -5592,7 +5592,7 @@ function CompactCard({ post }: { post: BlogPost }) {
 }
 
 
-const POSTS_PER_PAGE = 12;
+const POSTS_PER_PAGE = 30;
 
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex() {
