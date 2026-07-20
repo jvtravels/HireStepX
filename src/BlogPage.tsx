@@ -5592,9 +5592,14 @@ function CompactCard({ post }: { post: BlogPost }) {
 }
 
 
+const POSTS_PER_PAGE = 12;
+
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+
   useSEO({
     title: "Interview Prep Blog: HireStepX",
     description: "Company-specific interview preparation guides, question banks, and career strategies for Indian job seekers. Google, Amazon, TCS, Infosys, Flipkart, and more.",
@@ -5618,12 +5623,42 @@ function BlogIndex() {
     },
   });
 
-  const filtered = activeCategory === "All" ? posts : posts.filter(p => (CATEGORY_MAP[p.category] ?? p.category) === activeCategory);
+  const q = searchQuery.trim().toLowerCase();
+
+  const filtered = posts.filter(p => {
+    const catMatch = activeCategory === "All" || (CATEGORY_MAP[p.category] ?? p.category) === activeCategory;
+    if (!catMatch) return false;
+    if (!q) return true;
+    return (
+      p.title.toLowerCase().includes(q) ||
+      p.company.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.metaDescription.toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * POSTS_PER_PAGE, safePage * POSTS_PER_PAGE);
+
+  const resetPage = () => setPage(1);
+
+  /* Page number buttons — show up to 7 slots with ellipsis */
+  const pageNumbers: (number | "…")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+  } else {
+    pageNumbers.push(1);
+    if (safePage > 3) pageNumbers.push("…");
+    for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) pageNumbers.push(i);
+    if (safePage < totalPages - 2) pageNumbers.push("…");
+    pageNumbers.push(totalPages);
+  }
 
   return (
     <BlogShell>
-      {/* ── Hero — consistent with editorial system ── */}
-      <header style={{ paddingTop: 96, paddingBottom: 64, borderBottom: `1px solid ${t.line}`, background: t.cream, textAlign: "center" }}>
+      {/* ── Hero ── */}
+      <header style={{ paddingTop: 96, paddingBottom: 56, borderBottom: `1px solid ${t.line}`, background: t.cream, textAlign: "center" }}>
         <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 48px" }}>
           <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 18px" }}>
             Interview guides · India 2026
@@ -5632,20 +5667,62 @@ function BlogIndex() {
             Interview prep that actually{" "}
             <em style={{ fontStyle: "italic", color: t.copper }}>works.</em>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, margin: "0 auto", maxWidth: "54ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, margin: "0 auto 32px", maxWidth: "54ch" }}>
             Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
+
+          {/* ── Search bar ── */}
+          <div style={{ maxWidth: 540, margin: "0 auto", position: "relative" }}>
+            <svg
+              width="17" height="17" viewBox="0 0 24 24" fill="none"
+              stroke={t.inkFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+            >
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              value={searchQuery}
+              placeholder="Search by company, topic, or keyword…"
+              onChange={e => { setSearchQuery(e.target.value); resetPage(); }}
+              style={{
+                width: "100%", boxSizing: "border-box",
+                fontFamily: fonts.sans, fontSize: 15, color: t.coal,
+                background: "#fff", border: `1.5px solid ${t.line}`,
+                borderRadius: 999, padding: "13px 18px 13px 46px",
+                outline: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                transition: "border-color 180ms",
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = t.indigo; }}
+              onBlur={e => { e.currentTarget.style.borderColor = t.line; }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(""); resetPage(); }}
+                aria-label="Clear search"
+                style={{
+                  position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer", padding: 4,
+                  color: t.inkFaint, display: "flex", alignItems: "center",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 48px 96px" }}>
-        {/* Category filters: underline tab style */}
-        <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
+        {/* Category filter tabs */}
+        <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 36, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat}
               className={`blog-cat-tab${activeCategory === cat ? " active" : ""}`}
-              onClick={() => setActiveCategory(cat)}
+              onClick={() => { setActiveCategory(cat); resetPage(); }}
               aria-pressed={activeCategory === cat}
             >
               {cat}
@@ -5653,16 +5730,108 @@ function BlogIndex() {
           ))}
         </div>
 
-        {/* Post grid: uniform 3-column layout, all posts */}
-        {filtered.length > 0 && (
+        {/* Result count */}
+        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "0 0 24px", textAlign: "center" }}>
+          {filtered.length === posts.length
+            ? `${posts.length} guides`
+            : `${filtered.length} of ${posts.length} guides`}
+          {totalPages > 1 && ` · page ${safePage} of ${totalPages}`}
+        </p>
+
+        {/* Post grid */}
+        {paginated.length > 0 ? (
           <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
-            {filtered.map((p) => <CompactCard key={p.slug} post={p} />)}
+            {paginated.map((p) => <CompactCard key={p.slug} post={p} />)}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "80px 0", fontFamily: fonts.sans }}>
+            <p style={{ fontSize: 40, marginBottom: 12 }}>🔍</p>
+            <p style={{ fontSize: 17, color: t.coal, fontWeight: 600, marginBottom: 8 }}>No guides found</p>
+            <p style={{ fontSize: 14, color: t.inkSoft, marginBottom: 20 }}>
+              Try a different keyword or clear the filter
+            </p>
+            <button
+              onClick={() => { setSearchQuery(""); setActiveCategory("All"); resetPage(); }}
+              style={{ ...ctaPrimaryStyle("md"), fontSize: 14, padding: "10px 22px", cursor: "pointer" }}
+            >
+              Clear all filters
+            </button>
           </div>
         )}
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 52 }}>
+            {/* Prev */}
+            <button
+              onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              disabled={safePage === 1}
+              aria-label="Previous page"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                background: safePage === 1 ? t.creamSoft : "#fff",
+                color: safePage === 1 ? t.inkFaint : t.coal,
+                cursor: safePage === 1 ? "default" : "pointer",
+                opacity: safePage === 1 ? 0.45 : 1,
+                transition: "border-color 150ms, background 150ms",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Prev
+            </button>
+
+            {/* Page numbers */}
+            {pageNumbers.map((n, i) =>
+              n === "…" ? (
+                <span key={`ellipsis-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
+              ) : (
+                <button
+                  key={n}
+                  onClick={() => { setPage(n as number); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  aria-current={safePage === n ? "page" : undefined}
+                  style={{
+                    fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
+                    minWidth: 36, height: 36, borderRadius: 8, border: `1.5px solid ${safePage === n ? t.indigo : t.line}`,
+                    background: safePage === n ? t.indigo : "#fff",
+                    color: safePage === n ? "#fff" : t.coal,
+                    cursor: "pointer", transition: "all 150ms",
+                  }}
+                >
+                  {n}
+                </button>
+              )
+            )}
+
+            {/* Next */}
+            <button
+              onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              disabled={safePage === totalPages}
+              aria-label="Next page"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                background: safePage === totalPages ? t.creamSoft : "#fff",
+                color: safePage === totalPages ? t.inkFaint : t.coal,
+                cursor: safePage === totalPages ? "default" : "pointer",
+                opacity: safePage === totalPages ? 0.45 : 1,
+                transition: "border-color 150ms, background 150ms",
+              }}
+            >
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Closing CTA: homepage video CTA */}
+      {/* Closing CTA */}
       <VideoCtaV2 />
     </BlogShell>
   );
