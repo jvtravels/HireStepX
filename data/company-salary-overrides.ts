@@ -7709,6 +7709,180 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
+
+  /* ── Wave 14 + previously missing slug-key aliases ─────────────── */
+  "angel-one": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / NSE listed", source: "AmbitionBox 2026 (Angel One SDE fresher)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 28, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 48, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "ather-energy": {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 (Ather Energy SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "bajaj-finance": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / BSE listed", source: "AmbitionBox 2026 (Bajaj Finserv SDE entry)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 15, totalMax: 26, equityMin: 1.5, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 48, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
+    },
+  },
+  "bny-mellon": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox + Glassdoor 2026 (BNY Mellon Pune/Chennai SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  "de-shaw": {
+    "software-engineer": {
+      entry: { totalMin: 30, totalMax: 52, equityType: "none", source: "AmbitionBox + Glassdoor 2026 (DESI Hyderabad SDE-1 — cash only)", lastVerified: "2026-07-21", notes: "Pure cash + large performance bonus at DESI; no equity." },
+      mid: { totalMin: 55, totalMax: 90, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-07-21" },
+      senior: { totalMin: 90, totalMax: 140, equityType: "none", source: "Glassdoor / insider data", lastVerified: "2026-07-21" },
+    },
+  },
+  "deutsche-bank": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox 2026 (Deutsche Bank Pune/Mumbai SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  "dr-lal-pathlabs": {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / NSE listed", source: "AmbitionBox 2026", lastVerified: "2026-07-21" },
+      senior: { totalMin: 24, totalMax: 40, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  fiserv: {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / Nasdaq listed", source: "AmbitionBox 2026 (Fiserv Pune/Hyderabad SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 32, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 55, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  "hdfc-bank": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / BSE listed", source: "AmbitionBox 2026 (HDFC Bank SDE fresher)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 28, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
+    },
+  },
+  "icici-lombard": {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / NSE listed", source: "AmbitionBox 2026", lastVerified: "2026-07-21" },
+      senior: { totalMin: 26, totalMax: 44, equityMin: 3, equityMax: 9, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "jane-street": {
+    "software-engineer": {
+      entry: { totalMin: 60, totalMax: 100, equityType: "none", source: "Jane Street India offer data 2026 (cash + large annual bonus)", lastVerified: "2026-07-21", notes: "Pure cash + large discretionary bonus; no equity. One of the highest-paying SDE entry roles in India." },
+      mid: { totalMin: 110, totalMax: 180, equityType: "none", source: "Glassdoor / insider data", lastVerified: "2026-07-21" },
+      senior: { totalMin: 180, totalMax: 280, equityType: "none", source: "Insider data", lastVerified: "2026-07-21" },
+    },
+  },
+  "lowes-india": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox 2026 (Lowe's India Bengaluru SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 65, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  mastercard: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox + Glassdoor 2026 (Mastercard Pune SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 48, equityMin: 6, equityMax: 15, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor + Levels.fyi", lastVerified: "2026-07-21" },
+      senior: { totalMin: 50, totalMax: 88, equityMin: 15, equityMax: 35, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi India", lastVerified: "2026-07-21" },
+    },
+  },
+  "morgan-stanley": {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox 2026 (Morgan Stanley Mumbai SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 30, totalMax: 50, equityMin: 6, equityMax: 16, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 55, totalMax: 90, equityMin: 15, equityMax: 35, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  "ola-electric": {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / NSE listed", source: "AmbitionBox 2026 (Ola Electric Bengaluru SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 34, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 35, totalMax: 58, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
+    },
+  },
+  "pine-labs": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / pre-IPO", source: "AmbitionBox 2026 (Pine Labs Noida/Bengaluru SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 36, totalMax: 60, equityMin: 10, equityMax: 24, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  sarvam: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
+    },
+  },
+  "sarvam-ai": {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
+    },
+  },
+  "standard-chartered": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / LSE listed", source: "AmbitionBox 2026 (Standard Chartered GBS Chennai SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  "star-health": {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / NSE listed", source: "AmbitionBox 2026", lastVerified: "2026-07-21" },
+      senior: { totalMin: 26, totalMax: 42, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "target-india": {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 24, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox + Glassdoor 2026 (Target TCI Bengaluru SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 44, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 75, equityMin: 14, equityMax: 32, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi India", lastVerified: "2026-07-21" },
+    },
+  },
+  "tata-motors": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / NSE listed", source: "AmbitionBox 2026 (Tata Motors Connected Vehicle SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 48, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
+    },
+  },
+  "tower-research": {
+    "software-engineer": {
+      entry: { totalMin: 35, totalMax: 65, equityType: "none", source: "Glassdoor / insider 2026 (Tower Research Capital Gurgaon SDE)", lastVerified: "2026-07-21", notes: "HFT: pure cash + large annual bonus. No equity. Very high bar for quant/algo SDE roles." },
+      mid: { totalMin: 70, totalMax: 120, equityType: "none", source: "Insider data", lastVerified: "2026-07-21" },
+      senior: { totalMin: 120, totalMax: 200, equityType: "none", source: "Insider data", lastVerified: "2026-07-21" },
+    },
+  },
+  "visa-india": {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox + Glassdoor 2026 (Visa VWTC Bengaluru SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 32, totalMax: 54, equityMin: 6, equityMax: 16, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor + Levels.fyi", lastVerified: "2026-07-21" },
+      senior: { totalMin: 55, totalMax: 95, equityMin: 16, equityMax: 38, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi India", lastVerified: "2026-07-21" },
+    },
+  },
+  "wells-fargo": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / NYSE listed", source: "AmbitionBox 2026 (Wells Fargo India Hyderabad/Chennai SDE-1)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 9, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 9, equityMax: 22, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
 };
 
 /**
