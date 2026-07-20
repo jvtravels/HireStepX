@@ -731,7 +731,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               <em style={{ fontStyle: "italic", color: t.copper }}>before the offer.</em>
             </h1>
             <p className="ed-rise ed-d2" style={{ ...leadStyle, margin: "0 auto 28px", textAlign: "center" }}>
-              CTC ranges across India's top companies — from TCS to Goldman Sachs,
+              CTC ranges across India's top companies, from TCS to Goldman Sachs,
               freshers to senior engineers.
             </p>
 
