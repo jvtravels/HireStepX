@@ -27,11 +27,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  /* Bumped 2026-07-15: all 67 SEO pages now have interviewRounds field with
-     round-by-round preparation guidance; canonical URL consolidated to /questions/;
-     filter chip bar added to /questions index with campus-placement, hr, behavioral
-     focus chips prominent for Indian fresher demographic. */
-  const seoPagesLastModified = new Date("2026-07-15");
+  /* Bumped 2026-07-21: +10 salary pages (Meta, Uber, Oracle, Adobe, Atlassian,
+     Groww, Zerodha, Intuit, Walmart Global Tech, Persistent Systems) — 37 total.
+     Salary hub updated with search/filter/pagination. */
+  const seoPagesLastModified = new Date("2026-07-21");
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
