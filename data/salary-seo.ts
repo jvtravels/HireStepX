@@ -808,6 +808,133 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Safest ESOP among Indian edtech — PW IPO signal lifted equity credibility vs Unacademy/Byju's",
     sitemapPriority: 0.69,
   },
+  /* ── AI Wave 7 ──────────────────────────────────────────────── */
+  {
+    slug: "anthropic",
+    searchPhrase: "Anthropic India AI Engineer Salary 2026",
+    metaDescription:
+      "Anthropic India salary 2026 — AI Engineer mid ₹90–180 LPA, senior ₹180–320 LPA plus RSU. Remote India hires; SF-anchored bands. Claude team. Constitutional AI research CTC guide.",
+    roles: [
+      { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Remote India hires only — SF-anchored bands; safety alignment focus is a differentiator",
+    sitemapPriority: 0.78,
+  },
+  {
+    slug: "sarvam-ai",
+    searchPhrase: "Sarvam AI Engineer Salary India 2026",
+    metaDescription:
+      "Sarvam AI salary India 2026 — AI Engineer mid ₹50–80 LPA, senior ₹90–150 LPA. ESOP (pre-Series C). India's leading vernacular AI company. Bengaluru CTC guide.",
+    roles: [
+      { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
+    ],
+    questionSlug: undefined,
+    hubNote: "India's leading vernacular AI — BharatGPT, Sarvam-2B; pre-Series C ESOP",
+    sitemapPriority: 0.73,
+  },
+  /* ── Quant / HFT Wave 7 ─────────────────────────────────────── */
+  {
+    slug: "optiver",
+    searchPhrase: "Optiver India Quant Researcher Salary 2026",
+    metaDescription:
+      "Optiver India salary 2026 — Quant Researcher entry ₹55–90 LPA, mid ₹90–150 LPA, senior ₹150–260 LPA. Pure cash HFT. Amsterdam-HQ market maker with Bengaluru office.",
+    roles: [
+      { roleKey: "data-scientist", label: "Quantitative Researcher / Trader" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pure cash HFT — similar comp profile to Tower Research but derivatives-specialist focus",
+    sitemapPriority: 0.75,
+  },
+  {
+    slug: "millennium",
+    searchPhrase: "Millennium Management India Salary 2026",
+    metaDescription:
+      "Millennium Management India salary 2026 — Quant Analyst mid ₹55–100 LPA, senior ₹100–180 LPA. Multi-strategy hedge fund. Pure cash + performance bonus. Bengaluru office.",
+    roles: [
+      { roleKey: "data-scientist", label: "Quantitative Analyst" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Multi-strategy hedge fund — pure cash + PnL bonus; Bengaluru office is a quant research centre",
+    sitemapPriority: 0.73,
+  },
+  /* ── Banking GCCs ────────────────────────────────────────────── */
+  {
+    slug: "barclays",
+    searchPhrase: "Barclays India Software Engineer Salary 2026",
+    metaDescription:
+      "Barclays India salary 2026 — SWE mid ₹28–45 LPA, senior ₹48–75 LPA. RSU. Pune and Chennai GCC. Investment banking and retail banking technology team CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Barclays Pune GCC is a mid-tier finance employer — RSU + role scope is the negotiation lever",
+    sitemapPriority: 0.71,
+  },
+  /* ── Indian Fintech / Trading ────────────────────────────────── */
+  {
+    slug: "upstox",
+    searchPhrase: "Upstox Software Engineer Salary India 2026",
+    metaDescription:
+      "Upstox salary India 2026 — SWE mid ₹24–38 LPA, senior ₹38–60 LPA. Pre-IPO ESOP. India's 2nd-largest discount broker. RKSV group Mumbai CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP (RKSV group) — Upstox IPO expected but not filed; discount ESOP accordingly",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "angel-one",
+    searchPhrase: "Angel One Software Engineer Salary India 2026",
+    metaDescription:
+      "Angel One salary India 2026 — SWE mid ₹22–36 LPA, senior ₹38–60 LPA. Listed RSU (NSE: ANGELONE). India's 3rd-largest stockbroker. Mumbai tech team CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Listed equity (ANGELONE) — RSU credibility solid; fintech trading systems experience valued",
+    sitemapPriority: 0.70,
+  },
+  /* ── EV / Mobility ───────────────────────────────────────────── */
+  {
+    slug: "ola-electric",
+    searchPhrase: "Ola Electric Software Engineer Salary India 2026",
+    metaDescription:
+      "Ola Electric salary India 2026 — SWE mid ₹22–36 LPA, senior ₹36–58 LPA. Hardware Eng mid ₹18–30 LPA. Listed RSU (OLAELECTRIC). India's #1 EV two-wheeler CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "hardware-engineer", label: "Hardware / Embedded Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Listed equity (OLAELECTRIC IPO Aug 2024) — RSU credibility improving; volatile stock price",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "ather-energy",
+    searchPhrase: "Ather Energy Hardware Engineer Salary India 2026",
+    metaDescription:
+      "Ather Energy salary India 2026 — Hardware Eng entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–45 LPA. Pre-IPO ESOP. India's premium EV two-wheeler startup. Bengaluru CTC guide.",
+    roles: [
+      { roleKey: "hardware-engineer", label: "Hardware / Embedded Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP (IPO filed 2025) — Ather is the quality-focused EV brand vs Ola Electric",
+    sitemapPriority: 0.70,
+  },
+  /* ── Quick Commerce ──────────────────────────────────────────── */
+  {
+    slug: "blinkit",
+    searchPhrase: "Blinkit Software Engineer Salary India 2026",
+    metaDescription:
+      "Blinkit salary India 2026 — SWE mid ₹28–45 LPA, senior ₹45–70 LPA. Zomato RSU (listed). India's largest quick commerce platform. Gurugram engineering team CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Zomato-group RSU (listed on NSE) — RSU credibility solid post-Zomato IPO; comp below Zepto",
+    sitemapPriority: 0.73,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
