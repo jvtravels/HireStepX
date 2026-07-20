@@ -896,6 +896,7 @@ export function HowItWorksV2() {
           <p style={{ ...eyebrow, marginBottom: 20, textAlign: "center" }}>Choose where to start</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
             {([
+              ["AI Mock Interview", "What it is, how it works, voice-based practice explained", "/ai-mock-interview"],
               ["Practice Questions", "67+ sets for TCS, Google, Flipkart & more", "/questions"],
               ["Campus Placement", "HR rounds, NQT, NLTH: for freshers & students", "/for-students"],
               ["All Companies", "Browse by company type: IT, product, consulting", "/companies"],

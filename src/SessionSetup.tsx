@@ -2064,7 +2064,7 @@ export default function SessionSetup() {
               : freeLeft <= 0
               ? 'No free sessions left — upgrade to continue.'
               : freeLeft === 1
-              ? 'This is your last free session.'
+              ? 'Last free session — make it your hardest target company.'
               : `${freeLeft} free sessions remaining.`;
             return (
               <div
