@@ -2939,6 +2939,181 @@ const posts: BlogPost[] = [
       { label: "Salary Negotiation Tips India 2026", href: "/blog/salary-negotiation-tips-india-2026" },
     ],
   },
+  {
+    slug: "resignation-letter-format-india-2026",
+    title: "Resignation Letter Format India 2026 — Email Templates for IT, Notice Period & Immediate Resignation",
+    metaDescription: "Resignation letter format India 2026 with ready-to-use email templates for IT companies, 30/60/90-day notice period, immediate resignation, and relieving letter request. Copy-paste formats for TCS, Infosys, Wipro and product companies.",
+    company: "General",
+    category: "Career",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=500&fit=crop",
+    heroAlt: "Person writing a resignation letter on a laptop in an office",
+    datePublished: "2026-07-20",
+    intro: "Resigning from a job in India involves more than just sending an email. The resignation letter is a legal document that starts the notice period clock, determines whether you receive a full and clear relieving letter, and sets the tone for a reference that may follow you for years. A poorly written resignation email can lead to disputes over your last working day, withheld relieving letters, and strained references. This guide covers the correct format, the common mistakes that create problems, and copy-paste templates for every situation.",
+    sections: [
+      {
+        heading: "Resignation Letter Format — Standard Template",
+        content: "This is the format used by most IT services and product company employees in India. Modify the highlighted fields only.\n\n---\n**Subject: Resignation — [Your Name] — [Employee ID / Department]**\n\nDear [Manager's First Name],\n\nI am writing to formally notify you of my resignation from the position of [Your Designation] at [Company Name], effective [Last Working Day — typically today's date + notice period].\n\nI have appreciated the opportunity to work on [brief mention of a project or team] and am grateful for the learning and support during my time here.\n\nI am committed to ensuring a smooth transition. I will complete all pending deliverables and document handover notes by [date]. Please let me know how I can assist with the transition during my notice period.\n\nRequest you to please initiate the exit formalities and provide guidance on the relieving letter and full-and-final settlement process.\n\nThank you for the opportunity.\n\nWarm regards,\n[Your Full Name]\n[Designation] | [Team/Department]\n[Employee ID]\n[Phone Number]\n\n---\n\n**Why this format works:**\n- Clear subject line with name and ID makes it easy to file and track in HRMS\n- States effective date explicitly — removes ambiguity about notice period start\n- One positive line about the company — important for references, costs nothing\n- Offers handover cooperation — reduces friction and speeds relieving letter\n- Explicitly requests exit formalities — creates a paper trail that you initiated the process"
+      },
+      {
+        heading: "Email Template — Immediate Resignation (No Notice Period)",
+        content: "If you need to leave immediately — personal emergency, medical reason, or buyout — use this template. Be honest about the reason; HR has seen every situation and a clear reason is processed faster than a vague one.\n\n---\n**Subject: Resignation with Request to Waive Notice Period — [Your Name]**\n\nDear [Manager's Name],\n\nI am writing to tender my resignation from [Company Name] with immediate effect, effective [today's date].\n\nDue to [personal circumstances / family medical emergency / a new role with an immediate joining requirement], I am unable to serve the [30/60/90]-day notice period. I sincerely apologise for any inconvenience this may cause.\n\nI am willing to [pay the notice period buyout as per company policy / support a brief handover as needed] to minimise the impact on the team.\n\nRequest you to please initiate the exit process and advise on the settlement of my notice pay and other dues.\n\nThank you for your understanding.\n\nSincerely,\n[Your Full Name]\n[Designation | Department | Employee ID]\n\n---\n\n**Important note:** Most IT companies deduct unpaid notice period from your final settlement. Some require a formal buyout request form through HRMS in addition to the email. Check your offer letter for the exact clause before resigning."
+      },
+      {
+        heading: "Email Template — Resignation with 30/60/90-Day Notice to Manager + CC HR",
+        content: "For most Indian IT employees, sending to your direct manager and CC-ing HR simultaneously is the correct procedure. Some companies require logging into HRMS in addition to the email — check your company's exit policy.\n\n---\n**To:** [manager@company.com]\n**CC:** [hr@company.com], [hrbp@company.com]\n**Subject: Resignation — [Your Name] — [Department] — Last Working Day: [Date]**\n\nDear [Manager's Name],\n\nI am writing to formally resign from my position as [Designation] at [Company Name]. As per my contract, I am serving a [30/60/90]-day notice period. My last working day will be [exact date].\n\nI remain fully committed to the team during this period. I will document my ongoing responsibilities, complete pending deliverables, and ensure a smooth handover to my replacement or team members.\n\nKindly guide me on the exit process — HRMS resignation workflow, asset return, clearance checklist, and relieving letter issuance timeline.\n\nThank you for the opportunity to work with the team.\n\nRegards,\n[Your Full Name | Designation | Employee ID | Phone]\n\n---\n\n**Tips for notice period:**\n- Mark your last working day in the email subject — prevents disputes\n- Don't announce your new employer in the resignation email\n- Keep copies of all email threads in a personal account (not company email)\n- Ask for a written acknowledgement of your resignation from HR"
+      },
+      {
+        heading: "Relieving Letter — How to Request and What to Do If It Is Delayed",
+        content: "The relieving letter is the document that formally confirms your last working day and states you have no outstanding obligations to the company. Most Indian employers and background verification agencies require it.\n\n**How to request a relieving letter:**\nAdd this paragraph to your resignation email or send a separate email at the start of your notice period:\n\n*'Request you to please initiate the exit formalities and confirm the process for obtaining my relieving letter and experience certificate upon completion of the notice period.'*\n\nSend a follow-up on the last day:\n*'Today is my last working day as per my resignation dated [date]. I have completed the handover and cleared all assets. Request you to please issue my relieving letter and Form 16 at the earliest. I can be reached at [personal email/phone].'*\n\n**If the relieving letter is delayed:**\n1. Follow up by email every 7 days, CC HR and your manager\n2. On Day 30 with no response: send a formal demand letter citing Section 16 of the Contract Labour Act\n3. File with the Labour Commissioner if it exceeds 45 days\n4. Most delays resolve at Step 1 — companies delay because of process inefficiency, not malice\n\n**Common reasons for delay:**\n- Manager hasn't completed the clearance in HRMS\n- IT asset not returned (return the laptop/badge first)\n- F&F (full and final) settlement has pending deductions\n- HR backlog — escalate to HRBP directly\n\n**What it should contain:** Your name, designation, date of joining, last working date, statement that you have 'no dues pending', and company letterhead with HR signature."
+      },
+      {
+        heading: "Common Mistakes That Create Problems Later",
+        content: "**1. Not sending a formal resignation email and only telling your manager verbally**\nVerbal resignation has no legal standing and doesn't start the notice clock. Always follow up with an email, even if HR says 'log it in HRMS only' — keep the email record.\n\n**2. Mentioning your new employer or salary in the resignation email**\nThis creates leverage for the company to counteroffer, causes unnecessary friction, and has no benefit to you. The company does not have a right to know where you are going.\n\n**3. Sending resignation to HR only without informing your manager first**\nAlways tell your manager before the resignation email reaches HR. The email to HR should go out the same day, but your manager hearing it from HR before you is a relationship problem.\n\n**4. Not specifying the last working day**\nIf you write 'as per company policy' without calculating the date, HR may calculate it incorrectly. Always compute the date yourself from your contract's notice period clause and state it explicitly.\n\n**5. Burning bridges with the exit interview**\nThe exit interview feedback is used internally. Being extremely negative about a manager or team by name can delay your relieving letter and affect your reference. Keep the exit interview factual and unemotional.\n\n**6. Returning assets before getting written confirmation of clearance**\nReturn assets (laptop, access card, company SIM) only in exchange for a signed clearance slip or email confirmation. 'I handed it over verbally' won't help if clearance gets disputed.\n\n**7. Leaving without collecting your documents**\n- Form 16 (tax deduction certificate) — essential for filing ITR\n- Relieving letter — essential for new employer BGC\n- Experience certificate — optional but useful\n- PF transfer/withdrawal form — don't leave PF unclaimed"
+      },
+    ],
+    faqs: [
+      {
+        question: "What is the correct format for a resignation letter in India?",
+        answer: "A resignation letter in India should include: a clear subject line with your name and employee ID, the effective date (today + notice period), a brief positive note, an offer to complete handover, and a request to initiate exit formalities. Send it to your manager with HR on CC. Keep it professional and brief — 5–8 sentences is ideal."
+      },
+      {
+        question: "How do I resign from TCS / Infosys / Wipro?",
+        answer: "IT services companies (TCS, Infosys, Wipro) require you to resign through their HRMS portal (iQMS for TCS, InfyMe for Infosys, ESS for Wipro) in addition to sending an email. Log the resignation in HRMS first, then send the email to your manager and HR on the same day. Your notice period starts from the date the resignation is logged in HRMS, not from the email date."
+      },
+      {
+        question: "Can I resign with immediate effect in India?",
+        answer: "Yes, but you may be required to pay a notice period buyout. Most Indian employment contracts allow immediate resignation in exchange for payment of notice period salary. Some companies waive notice for family emergencies or medical reasons — this is at the employer's discretion. Always request the waiver formally in writing."
+      },
+      {
+        question: "How long does a relieving letter take after resignation in India?",
+        answer: "Most Indian companies issue the relieving letter on or before the last working day, or within 7–30 days of the last working day. IT services companies often take 15–30 days after the F&F settlement. If it exceeds 45 days with no response to follow-ups, escalate to the Labour Commissioner."
+      },
+    ],
+    relatedSlugs: ["notice-period-india-it-resignation-guide-2026", "salary-negotiation-tips-india-2026"],
+    practicePageSlugs: [],
+    cta: "After resignation comes the job search — and your next interview is the most important one. HireStepX helps you practice the exact questions your new target company asks, with AI that scores your STAR answers and coaches you toward stronger responses.",
+    relatedLinks: [
+      { label: "Notice Period Guide India 2026", href: "/blog/notice-period-india-it-resignation-guide-2026" },
+      { label: "Salary Negotiation Tips India 2026", href: "/blog/salary-negotiation-tips-india-2026" },
+    ],
+  },
+  {
+    slug: "groww-interview-questions-india-2026",
+    title: "Groww Interview Questions India 2026 — SDE, Data Engineer & Product Manager Roles",
+    metaDescription: "Groww interview questions 2026 for SDE, data engineer, and PM roles. Covers the full interview process, DSA rounds, SQL and data questions, product case studies, Groww salary ₹15–85 LPA, and insider tips from candidates.",
+    company: "Fintech",
+    category: "Full Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=500&fit=crop",
+    heroAlt: "Stock market chart representing Groww fintech interview preparation",
+    datePublished: "2026-07-20",
+    intro: "Groww is India's largest discount brokerage by active users, with 12M+ retail investors on its platform. As a product-first fintech company that went through hypergrowth, Groww interviews are rigorous — closer to the bar at Razorpay or PhonePe than to IT services companies. The interview process has become more structured in 2025–26 as the company matured from Series D startup to a pre-IPO giant. This guide covers what candidates actually face in 2026.",
+    sections: [
+      {
+        heading: "Groww Interview Process — Round by Round",
+        content: "**For SDE roles (2–6 years experience):**\n\nRound 1: Online Assessment\n- 2 DSA problems (Medium to Hard), 90 minutes on HackerRank\n- Data structures: arrays, strings, trees, graphs, DP\n- Most commonly Medium-level; at least one Hard problem in every set\n\nRound 2: Technical Interview 1 (DSA deep-dive)\n- 1–2 coding problems solved live on a shared editor\n- Expect follow-ups: 'What is the time complexity? Can you do it in O(n)? What if the input had duplicates?'\n- You need to talk through your approach before coding — silent coding is penalised\n\nRound 3: Technical Interview 2 (System Design)\n- Design a real-time stock price update system\n- Design Groww's portfolio view with millions of concurrent users\n- Design a notification system for price alerts\n- Topics: WebSocket vs polling, Redis pub/sub, database sharding, caching strategies\n\nRound 4: Technical + Behavioural (with team lead or EM)\n- Mix of technical and situational questions\n- 'Describe a time you disagreed with a technical decision and how you handled it'\n- 'What's the biggest production incident you've been part of?'\n- Code quality discussion: how do you approach testing? What's your deployment philosophy?\n\nRound 5: Bar Raiser / Culture Fit (Director or VP)\n- Not a technical round\n- Groww values: user-centricity, ownership, first-principles thinking\n- Questions: 'Why do you want to work at a fintech vs a FAANG?', 'What have you built that you're most proud of?', 'How do you think about product quality?'"
+      },
+      {
+        heading: "DSA Questions Asked at Groww",
+        content: "These are reported by candidates in 2024–26 interview rounds:\n\n**Arrays and Strings:**\n- Find the maximum sum subarray (Kadane's algorithm)\n- Longest substring without repeating characters\n- Two Sum and its variants (three sum, closest to target)\n- Merge intervals — often asked with a stock market framing ('merge overlapping trading sessions')\n- Rotate a matrix 90 degrees in-place\n\n**Linked Lists:**\n- Reverse a linked list in groups of K\n- Detect and find the start of a cycle\n- Merge K sorted linked lists\n\n**Trees:**\n- Level order traversal with zigzag pattern\n- Lowest common ancestor of two nodes\n- Diameter of a binary tree\n- Serialize and deserialize a binary tree\n\n**Dynamic Programming (common at Groww):**\n- Coin change problem (minimum coins)\n- Longest increasing subsequence\n- Edit distance between two strings\n- 0/1 knapsack variants\n\n**Graphs:**\n- Number of islands (BFS/DFS)\n- Shortest path (Dijkstra in weighted graphs)\n- Detect cycle in a directed graph\n- Topological sort (dependency resolution — 'given a list of stock processing dependencies, find the order')\n\n**Groww-specific framing:** Many problems are framed in fintech context — 'process stock orders', 'calculate portfolio return', 'sort watchlist by volume' — the algorithm is standard but the problem statement is domain-specific. Don't let the framing confuse you; identify the underlying algorithm."
+      },
+      {
+        heading: "System Design Questions at Groww",
+        content: "System design at Groww focuses on fintech-relevant scale problems. Key themes: real-time data, high read throughput, consistency requirements.\n\n**Question 1: Design a real-time stock price feed for Groww**\nExpected discussion points:\n- Data source: NSE/BSE WebSocket feed vs REST polling\n- Fan-out: How do you push updates to 12M users without overwhelming your servers?\n- Architecture: Redis pub/sub for in-memory price cache, WebSocket connections for premium users, long-polling for mobile app battery optimisation\n- Consistency: stock price updates are eventually consistent; exact real-time is aspirational, 1–2 second lag is acceptable\n- Load estimation: 2,000 active stocks × 1 update/second during market hours = 2,000 messages/second inbound\n\n**Question 2: Design Groww's portfolio value calculator**\nExpected discussion points:\n- Data model: user holdings (stock + quantity + avg price), live prices (Redis), portfolio value = sum(quantity × live_price)\n- How do you handle market hours vs after-hours? Pre-market vs market open price?\n- Read vs write ratio: reads dominate (users check portfolio frequently), writes happen at order execution\n- Caching: per-user portfolio cache invalidated on order events\n\n**Question 3: Design a price alert notification system**\nExpected discussion points:\n- Alert types: above/below threshold, % change\n- Alert storage: user ID → list of alerts; stock → list of users watching it\n- Trigger evaluation: for each stock update, check if any user's alert is triggered (set intersection)\n- Delivery: WebSocket for in-app, FCM push for mobile, email for inactive users\n- Deduplication: don't send the same alert twice if price bounces around the threshold"
+      },
+      {
+        heading: "Data Engineer & Analyst Interview Questions",
+        content: "Groww has a strong data team — products like SIP performance analysis, portfolio benchmarking, and 'Nudge' recommendations are built on top of user event data.\n\n**SQL Questions (always asked):**\n```sql\n-- Q1: Find users who made their first SIP in the last 30 days\nSELECT DISTINCT user_id\nFROM transactions\nWHERE transaction_type = 'SIP'\nAND transaction_date >= CURRENT_DATE - INTERVAL '30 days'\nAND user_id NOT IN (\n  SELECT user_id FROM transactions\n  WHERE transaction_type = 'SIP'\n  AND transaction_date < CURRENT_DATE - INTERVAL '30 days'\n);\n\n-- Q2: Find the 3rd most traded stock by volume in the last week\nSELECT stock_symbol, SUM(quantity) as total_volume\nFROM trades\nWHERE trade_date >= CURRENT_DATE - INTERVAL '7 days'\nGROUP BY stock_symbol\nORDER BY total_volume DESC\nLIMIT 1 OFFSET 2;\n\n-- Q3: Month-over-month user retention\nWITH monthly_active AS (\n  SELECT user_id, DATE_TRUNC('month', event_date) as month\n  FROM events GROUP BY 1, 2\n)\nSELECT m1.month, COUNT(DISTINCT m2.user_id) * 100.0 / COUNT(DISTINCT m1.user_id) as retention_rate\nFROM monthly_active m1\nLEFT JOIN monthly_active m2\n  ON m1.user_id = m2.user_id AND m1.month = m2.month - INTERVAL '1 month'\nGROUP BY m1.month;\n```\n\n**Python / Data questions:**\n- Clean a transactions dataset with missing prices and duplicate entries\n- Calculate CAGR of a portfolio given transaction history\n- Aggregate daily returns into a rolling 7-day average return\n\n**Product Sense (BI/Analyst):**\n- 'Groww's SIP conversion rate dropped 12% this week. How do you diagnose it?'\n- 'How would you measure the success of a new educational content feature?'"
+      },
+      {
+        heading: "Groww Salary in India 2026",
+        content: "Groww salaries are Tier-1 Indian product company level, comparable to Razorpay and Swiggy.\n\n**SDE-1 (fresher / 0–2 years):** ₹15–28 LPA total compensation\n**SDE-2 (2–5 years):** ₹28–55 LPA\n**SDE-3 / Senior (5–8 years):** ₹50–85 LPA\n**Staff / Principal Engineer (8+ years):** ₹80–130 LPA\n\n**Data Engineer:**\n- DE-1: ₹12–22 LPA\n- DE-2: ₹22–45 LPA\n- Senior DE: ₹40–70 LPA\n\n**Product Manager:**\n- APM / PM-1: ₹20–35 LPA\n- PM-2 / Senior PM: ₹35–70 LPA\n- Group PM / Director: ₹65–115 LPA\n\n**Compensation structure at Groww:**\n- Base salary: 60–70% of total CTC\n- Variable: 15–20% (performance-linked)\n- ESOP: 15–25% for senior roles (pre-IPO; liquidity dependent on IPO or buyback)\n- Groww has done at least one ESOP buyback for employees — better than most pre-IPO companies\n\n**Negotiation at Groww:** Unlike IT services companies, Groww negotiates on ESOP and joining bonus more readily than on base. If you have a competing offer from Razorpay or Swiggy, it is the single most effective negotiation lever."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Groww interview difficult?",
+        answer: "Groww's SDE interview is considered medium-hard — harder than IT services companies (TCS/Infosys) but comparable to Razorpay or PhonePe. DSA requires LeetCode Medium proficiency, and system design is mandatory for 2+ years of experience. The bar is not as high as Amazon or Google India, but the process is more structured than most Indian startups."
+      },
+      {
+        question: "What is Groww's interview process for freshers?",
+        answer: "Groww does not hire freshers directly in large numbers — most SDE-1 hires have 1–2 years of experience (often from IT services or a previous startup). Freshers are occasionally hired through campus placements at IITs and NITs for their data team. The process is: online assessment (DSA) → 2 technical rounds → HR."
+      },
+      {
+        question: "What is Groww's salary for SDE-2 in Bengaluru?",
+        answer: "Groww SDE-2 total compensation in Bengaluru in 2026 is ₹28–55 LPA including base, variable, and ESOP (valued at grant, pre-IPO). Base salary is typically ₹18–35 LPA for SDE-2."
+      },
+      {
+        question: "Does Groww provide ESOPs to employees?",
+        answer: "Yes. Groww provides ESOPs to SDE-2 and above, and to most senior roles. Groww has conducted at least one ESOP buyback, providing some liquidity before its IPO. The IPO timeline has not been officially announced as of mid-2026."
+      },
+    ],
+    relatedSlugs: ["cred-interview-questions-india-2026", "paytm-interview-questions-india-2026", "backend-developer-salary-india-2026"],
+    practicePageSlugs: [
+      { label: "Fintech Interview Practice", slug: "groww-fintech-interview-questions" },
+    ],
+    cta: "Groww's fintech interview tests both technical depth and financial domain understanding. HireStepX's voice mock interviews let you practice the behavioural rounds that often decide between candidates with similar DSA scores — the 'tell me about a time you built something users loved' questions that most engineers underprepare for.",
+    relatedLinks: [
+      { label: "CRED Interview Questions 2026", href: "/blog/cred-interview-questions-india-2026" },
+      { label: "Paytm Interview Questions 2026", href: "/blog/paytm-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "full-stack-developer-salary-india-2026",
+    title: "Full Stack Developer Salary India 2026 — React + Node.js, MERN, MEAN by City and Experience",
+    metaDescription: "Full stack developer salary in India 2026 for MERN/MEAN/React+Java stacks by city and experience. Fresher to senior CTC ranges, highest-paying companies, skills that add ₹5–15 LPA, and negotiation strategy.",
+    company: "Industry",
+    category: "Salary Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=500&fit=crop",
+    heroAlt: "Developer working on both frontend and backend code representing full stack salary India",
+    datePublished: "2026-07-20",
+    intro: "Full stack developer is the most searched software engineering job title in India. The problem is that 'full stack' means very different things at different companies — from a junior who knows basic HTML/CSS + PHP at an agency to a senior engineer who owns React + Node.js + PostgreSQL + Docker in production at a funded product company. This salary guide maps the full stack landscape honestly: what skills are required at each salary tier, which companies pay the most, and exactly which technology investments produce the best salary outcomes.",
+    sections: [
+      {
+        heading: "Full Stack Developer Salary by Experience Level in India",
+        content: "All figures are total CTC (base + variable + equity if applicable) from Glassdoor, AmbitionBox, Levels.fyi India, and Naukri salary data as of 2026.\n\n**Fresher / 0–1 year:**\n| Company Type | Salary Range |\n|---|---|\n| Agency / IT outsourcing | ₹2.5–5 LPA |\n| IT Services (TCS/Infosys/Wipro as full-stack intern → full-time) | ₹4–7 LPA |\n| Small product startup (under Series A) | ₹5–12 LPA |\n| Funded startup (Series B+) | ₹10–20 LPA |\n| Tier-1 Indian product (Razorpay/Swiggy/CRED) | ₹18–32 LPA |\n| FAANG India (Google/Amazon/Microsoft) | ₹22–49 LPA |\n\n**2–4 years experience:**\n| Company Type | Salary Range |\n|---|---|\n| Agency / IT outsourcing | ₹5–10 LPA |\n| IT Services | ₹8–18 LPA |\n| Small product startup | ₹12–22 LPA |\n| Funded startup | ₹18–40 LPA |\n| Tier-1 Indian product | ₹30–60 LPA |\n| FAANG India | ₹40–90 LPA |\n\n**5–8 years experience:**\n| Company Type | Salary Range |\n|---|---|\n| Agency / IT outsourcing | ₹10–20 LPA |\n| IT Services | ₹15–35 LPA |\n| Funded startup | ₹35–65 LPA |\n| Tier-1 Indian product | ₹55–110 LPA |\n| FAANG India | ₹70–140+ LPA |"
+      },
+      {
+        heading: "Salary by Stack — Which Full Stack Combination Pays Most",
+        content: "Not all 'full stack' is equal. The salary premium is largest for stacks that power high-scale product companies.\n\n**MERN Stack (MongoDB + Express + React + Node.js) — highest demand**\n- Most common stack at Indian product startups and e-commerce companies\n- Fresher: ₹8–18 LPA at funded startups\n- 3 years: ₹22–45 LPA at product companies\n- Advantage: React expertise alone commands ₹5–10 LPA premium vs non-React frontend\n- Key skills that push salary higher: TypeScript proficiency, Redis caching, Docker/Kubernetes, system design\n\n**MEAN Stack (MongoDB + Express + Angular + Node.js)**\n- Dominant in enterprise software, BFSI-adjacent SaaS, older product companies\n- Slightly lower demand than MERN as Angular adoption slows vs React\n- Salaries broadly similar to MERN at equivalent skill level\n\n**React + Java/Spring Boot (highest salary ceiling)**\n- Common at fintech and e-commerce companies (Razorpay, Paytm, Amazon India)\n- Java backend knowledge adds ₹8–15 LPA to salary at the 3–6 year level vs pure JavaScript full-stack\n- Spring Boot + React developers at Tier-1 companies: ₹35–70 LPA at 3–5 years\n\n**React + Python/Django or FastAPI (AI/ML company premium)**\n- High demand at AI startups, ML platform companies, edtech\n- Python full-stack developers at AI companies: ₹20–45 LPA at 2–4 years\n- If you also know NumPy/Pandas/SQL: additional ₹5–12 LPA premium at data-heavy companies\n\n**PHP / WordPress full stack — not recommended for salary growth**\n- Agency market only; ceiling is typically ₹8–15 LPA even at 5+ years\n- If you are currently PHP-only, the highest ROI investment is React (6–8 weeks) to switch to MERN\n\n**NEXT.js (adds ₹5–10 LPA to React salary)**\n- Next.js proficiency is now standard at product companies and edtech platforms\n- SSR/SSG/ISR knowledge, App Router (Next.js 13+), performance optimisation: these are interview differentiators\n- Full-stack Next.js developer with backend API routes, Prisma, and PostgreSQL: ₹20–40 LPA at 2–3 years"
+      },
+      {
+        heading: "Full Stack Salary by City in India",
+        content: "**Bengaluru — highest salaries**\n- Most product company headquarters: Razorpay, Swiggy, CRED, Meesho, Flipkart\n- Full-stack salary at funded startup (3 yrs, MERN): ₹25–45 LPA\n- At FAANG India (3 yrs): ₹45–80 LPA\n- Cost of living high; net take-home advantage diminishes for mid-tier companies\n\n**Hyderabad — best value**\n- Strong Microsoft, Amazon, Google presence (same pay as Bengaluru at these companies)\n- Full-stack at funded startup (3 yrs): ₹22–40 LPA\n- Cost of living 20–30% lower than Bengaluru → best net take-home for FAANG employees\n- Growing: Uber India engineering, JPMorgan Chase tech centre, PhonePe expansion\n\n**Pune**\n- Strong presence: Infosys, Wipro (IT services); Swiggy, Razorpay have Pune offices\n- Full-stack at funded startup (3 yrs): ₹20–38 LPA\n- Salary 10–15% below Bengaluru for same product company role\n\n**Chennai**\n- Freshworks headquarters (best tech employer in Chennai)\n- Strong IT services base\n- Full-stack at Freshworks (3 yrs): ₹22–40 LPA\n- Generally 10–20% below Bengaluru for product company roles\n\n**Remote work impact:**\nMany Bengaluru-headquartered product companies now hire full-stack developers remotely across India at Bengaluru salary bands. This is the most significant salary equaliser across cities since 2022."
+      },
+      {
+        heading: "Skills That Add ₹5–15 LPA to a Full Stack Salary",
+        content: "Based on job posting analysis and compensation data, these specific skills have the highest incremental salary value:\n\n**1. TypeScript (adds ₹4–8 LPA)**\nTypeScript is now default at most Tier-1 product companies. Candidates who only know JavaScript increasingly lose to TypeScript-proficient developers at the same experience level. This is the single highest-ROI skill to add if you don't already have it.\n\n**2. Next.js with App Router (adds ₹3–7 LPA)**\nNext.js proficiency is mandatory at many mid-size and large product companies building SSR-heavy apps. The App Router (Next.js 13+) is meaningfully different from Pages Router — interview separately.\n\n**3. Redis / Caching (adds ₹3–6 LPA)**\nKnowing how to cache at the right layer (CDN, server, database query) is the difference between a junior and mid-senior developer in interviews. Redis pub/sub for real-time features is a bonus.\n\n**4. Docker + basic Kubernetes (adds ₹5–10 LPA at senior level)**\nAbility to containerise your application, write a Dockerfile, and debug a Kubernetes deployment adds significant value at product companies where developers own their own deployments.\n\n**5. PostgreSQL + ORMs (Prisma/TypeORM) (adds ₹2–5 LPA)**\nSQL proficiency is often a differentiator because many full-stack developers are weak in databases. Write optimised queries, understand indexing, know when to use a join vs a subquery.\n\n**6. System design fundamentals (adds ₹10–20 LPA at 3+ years)**\nCandidates who can design a URL shortener, a rate limiter, or a notification system earn 25–40% more than peers with equivalent coding ability who cannot. System design is the highest salary lever beyond 3 years of experience."
+      },
+    ],
+    faqs: [
+      {
+        question: "What is the salary of a full stack developer fresher in India 2026?",
+        answer: "A full stack developer fresher in India in 2026 earns ₹2.5–49 LPA depending on company tier. At agencies: ₹2.5–5 LPA. At funded startups: ₹10–20 LPA. At Tier-1 Indian product companies (Flipkart, Razorpay): ₹18–32 LPA. At FAANG India: ₹22–49 LPA. The company matters more than the stack at the fresher level."
+      },
+      {
+        question: "Which full stack is best for salary in India — MERN or MEAN?",
+        answer: "MERN (React) commands slightly higher salaries than MEAN (Angular) in India in 2026 because React has greater product company adoption. The highest salary ceiling comes from React + Java/Spring Boot (React frontend, Java backend), which is common at Razorpay, Paytm, and Amazon India."
+      },
+      {
+        question: "Is full stack developer a good career in India in 2026?",
+        answer: "Yes. Full stack developers are in high demand because they reduce the engineering headcount needed for end-to-end features. At product startups, a full-stack engineer who can independently build a feature from database to UI is more valuable than a pure specialist at the same cost. The career ceiling is high — senior full-stack engineers at Tier-1 companies earn ₹55–110 LPA at 5–8 years."
+      },
+      {
+        question: "What is the highest full stack developer salary in India?",
+        answer: "The highest full stack developer salaries in India are at FAANG India offices (Google, Amazon, Microsoft): ₹70–140+ LPA for 5–8 years of experience. Among Indian product companies, Razorpay, Flipkart, CRED, and Swiggy offer ₹55–110 LPA for senior full-stack engineers."
+      },
+    ],
+    relatedSlugs: ["backend-developer-salary-india-2026", "react-developer-salary-india-2026", "python-developer-salary-india-2026"],
+    practicePageSlugs: [],
+    cta: "Full stack interviews test both your breadth and your ability to explain trade-offs — why you chose MongoDB vs PostgreSQL, why you used SSR vs CSR for a specific page, why you added a Redis cache. HireStepX's voice-based mock interviews train exactly this articulation skill, so your technical depth shows in interviews, not just in code.",
+    relatedLinks: [
+      { label: "Backend Developer Salary India 2026", href: "/blog/backend-developer-salary-india-2026" },
+      { label: "React Developer Salary India 2026", href: "/blog/react-developer-salary-india-2026" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */

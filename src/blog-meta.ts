@@ -899,6 +899,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What is a backend developer salary at Amazon India?", answer: "Amazon India SDE-1 (backend) total compensation in 2026 is ₹22–32 LPA including base, joining bonus, and RSU. SDE-2 is ₹38–65 LPA. These figures reflect the Bengaluru and Hyderabad office bands." },
     ],
   },
+  {
+    slug: "resignation-letter-format-india-2026",
+    title: "Resignation Letter Format India 2026 — Email Templates for IT, Notice Period & Immediate Resignation",
+    metaDescription: "Resignation letter format India 2026 with ready-to-use email templates for IT companies, 30/60/90-day notice period, immediate resignation, and relieving letter request. Copy-paste formats for TCS, Infosys, Wipro and product companies.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=630&fit=crop",
+    company: "General", category: "Career",
+    faqs: [
+      { question: "What is the correct format for a resignation letter in India?", answer: "A resignation letter in India should include: a clear subject line with your name and employee ID, the effective date (today + notice period), a brief positive note, an offer to complete handover, and a request to initiate exit formalities. Send it to your manager with HR on CC. Keep it professional and brief — 5–8 sentences is ideal." },
+      { question: "How do I resign from TCS / Infosys / Wipro?", answer: "IT services companies (TCS, Infosys, Wipro) require you to resign through their HRMS portal (iQMS for TCS, InfyMe for Infosys, ESS for Wipro) in addition to sending an email. Log the resignation in HRMS first, then send the email to your manager and HR on the same day. Your notice period starts from the date the resignation is logged in HRMS, not from the email date." },
+      { question: "Can I resign with immediate effect in India?", answer: "Yes, but you may be required to pay a notice period buyout. Most Indian employment contracts allow immediate resignation in exchange for payment of notice period salary. Some companies waive notice for family emergencies or medical reasons — this is at the employer's discretion. Always request the waiver formally in writing." },
+      { question: "How long does a relieving letter take after resignation in India?", answer: "Most Indian companies issue the relieving letter on or before the last working day, or within 7–30 days of the last working day. IT services companies often take 15–30 days after the F&F settlement. If it exceeds 45 days with no response to follow-ups, escalate to the Labour Commissioner." },
+    ],
+  },
+  {
+    slug: "groww-interview-questions-india-2026",
+    title: "Groww Interview Questions India 2026 — SDE, Data Engineer & Product Manager Roles",
+    metaDescription: "Groww interview questions 2026 for SDE, data engineer, and PM roles. Covers the full interview process, DSA rounds, SQL and data questions, product case studies, Groww salary ₹15–85 LPA, and insider tips from candidates.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
+    company: "Fintech", category: "Full Guide",
+    faqs: [
+      { question: "Is Groww interview difficult?", answer: "Groww's SDE interview is considered medium-hard — harder than IT services companies (TCS/Infosys) but comparable to Razorpay or PhonePe. DSA requires LeetCode Medium proficiency, and system design is mandatory for 2+ years of experience. The bar is not as high as Amazon or Google India, but the process is more structured than most Indian startups." },
+      { question: "What is Groww's interview process for freshers?", answer: "Groww does not hire freshers directly in large numbers — most SDE-1 hires have 1–2 years of experience (often from IT services or a previous startup). Freshers are occasionally hired through campus placements at IITs and NITs for their data team. The process is: online assessment (DSA) → 2 technical rounds → HR." },
+      { question: "What is Groww's salary for SDE-2 in Bengaluru?", answer: "Groww SDE-2 total compensation in Bengaluru in 2026 is ₹28–55 LPA including base, variable, and ESOP (valued at grant, pre-IPO). Base salary is typically ₹18–35 LPA for SDE-2." },
+      { question: "Does Groww provide ESOPs to employees?", answer: "Yes. Groww provides ESOPs to SDE-2 and above, and to most senior roles. Groww has conducted at least one ESOP buyback, providing some liquidity before its IPO. The IPO timeline has not been officially announced as of mid-2026." },
+    ],
+  },
+  {
+    slug: "full-stack-developer-salary-india-2026",
+    title: "Full Stack Developer Salary India 2026 — React + Node.js, MERN, MEAN by City and Experience",
+    metaDescription: "Full stack developer salary in India 2026 for MERN/MEAN/React+Java stacks by city and experience. Fresher to senior CTC ranges, highest-paying companies, skills that add ₹5–15 LPA, and negotiation strategy.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=630&fit=crop",
+    company: "Industry", category: "Salary Guide",
+    faqs: [
+      { question: "What is the salary of a full stack developer fresher in India 2026?", answer: "A full stack developer fresher in India in 2026 earns ₹2.5–49 LPA depending on company tier. At agencies: ₹2.5–5 LPA. At funded startups: ₹10–20 LPA. At Tier-1 Indian product companies (Flipkart, Razorpay): ₹18–32 LPA. At FAANG India: ₹22–49 LPA. The company matters more than the stack at the fresher level." },
+      { question: "Which full stack is best for salary in India — MERN or MEAN?", answer: "MERN (React) commands slightly higher salaries than MEAN (Angular) in India in 2026 because React has greater product company adoption. The highest salary ceiling comes from React + Java/Spring Boot (React frontend, Java backend), which is common at Razorpay, Paytm, and Amazon India." },
+      { question: "Is full stack developer a good career in India in 2026?", answer: "Yes. Full stack developers are in high demand because they reduce the engineering headcount needed for end-to-end features. At product startups, a full-stack engineer who can independently build a feature from database to UI is more valuable than a pure specialist at the same cost. The career ceiling is high — senior full-stack engineers at Tier-1 companies earn ₹55–110 LPA at 5–8 years." },
+      { question: "What is the highest full stack developer salary in India?", answer: "The highest full stack developer salaries in India are at FAANG India offices (Google, Amazon, Microsoft): ₹70–140+ LPA for 5–8 years of experience. Among Indian product companies, Razorpay, Flipkart, CRED, and Swiggy offer ₹55–110 LPA for senior full-stack engineers." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
