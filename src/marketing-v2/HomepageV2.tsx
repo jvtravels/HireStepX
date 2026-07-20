@@ -2905,6 +2905,19 @@ export function BuiltForIndiaV2() {
           {/* Cross-links to pillar pages — signals topical authority to Google */}
           <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
             <a
+              href="/ai-mock-interview"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              How AI mock interviews work <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
+            <a
               href="/questions"
               className="mv2-dark-link"
               style={{
