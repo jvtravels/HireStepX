@@ -8829,6 +8829,520 @@ const posts: BlogPost[] = [
     cta: "A great resume gets you the interview. HireStepX helps you ace the interview itself — practise with our AI mock interviewer until you walk in with complete confidence.",
     relatedLinks: [],
   },
+
+  /* ── Batch 19 ── */
+  {
+    slug: "spring-boot-interview-questions-india-2026",
+    title: "Spring Boot Interview Questions for Indian Engineers 2026",
+    metaDescription: "Top Spring Boot and Java backend interview questions for Indian companies in 2026. Spring IoC, REST APIs, JPA, Spring Security, microservices with Spring Cloud, and practical questions at Indian product companies.",
+    company: "General",
+    category: "Technical",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80",
+    heroAlt: "Java developer preparing Spring Boot interview questions at an Indian tech company",
+    datePublished: "2026-08-16",
+    intro: "Spring Boot remains one of the most widely used Java frameworks in Indian enterprise and product companies. TCS, Infosys, Wipro, HCL, and most Indian BFSI tech teams build their backend services in Spring Boot. Even at product companies like Flipkart, PhonePe, and Razorpay, Java with Spring Boot powers critical payment and order services. This guide covers the Spring Boot questions most commonly asked in Indian technical interviews.",
+    sections: [
+      {
+        heading: "Spring Core and IoC container",
+        content: "Q: What is Spring IoC and dependency injection? Inversion of Control (IoC) is a design principle where the framework controls the flow of the programme rather than the programme controlling it. Spring's IoC container manages object creation and dependency wiring. Dependency injection means the container 'injects' dependencies into objects rather than the object creating them. Result: loosely coupled code that is easier to test.\n\nQ: What is the difference between @Component, @Service, @Repository, and @Controller? All four are specialisations of @Component and register the class as a Spring bean. @Service marks business logic classes. @Repository marks data access classes and adds exception translation. @Controller marks MVC web controllers. These annotations are semantically meaningful — they document intent — but functionally they behave the same way.\n\nQ: What is the difference between @Autowired and constructor injection? @Autowired on a field works but makes testing difficult (cannot inject mocks without Spring context). Constructor injection is preferred: it makes dependencies explicit, allows final fields, and works without any annotation in Spring 4.3+ (single constructor). Use constructor injection by default.\n\nQ: What is @Bean vs @Component? @Component is class-level, used on your own classes. @Bean is method-level, used inside @Configuration classes to define beans for third-party classes you cannot annotate (like library classes). Both register beans in the Spring container.",
+      },
+      {
+        heading: "Spring Boot auto-configuration and REST",
+        content: "Q: How does Spring Boot auto-configuration work? Spring Boot's @SpringBootApplication annotation includes @EnableAutoConfiguration. At startup, Spring Boot reads META-INF/spring.factories (in Spring Boot 2) or META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports (in Spring Boot 3) and conditionally applies configuration classes based on what is on the classpath. Add spring-boot-starter-web → auto-configures DispatcherServlet, Jackson, Tomcat. Add spring-boot-starter-data-jpa → auto-configures EntityManager, DataSource.\n\nQ: What is the difference between @RestController and @Controller? @RestController = @Controller + @ResponseBody on every method. Every method return value is serialised to JSON/XML directly, not passed to a view resolver. Use @RestController for REST APIs. Use @Controller when returning view names (Thymeleaf, JSP).\n\nQ: What are the common HTTP status codes and when to return each? 200 OK (success with body), 201 Created (resource created — include Location header), 204 No Content (success, no body — DELETE), 400 Bad Request (client error, invalid input), 401 Unauthorised (not authenticated), 403 Forbidden (authenticated but not authorised), 404 Not Found (resource does not exist), 409 Conflict (state conflict — duplicate creation), 422 Unprocessable Entity (validation error), 429 Too Many Requests (rate limited), 500 Internal Server Error (unhandled server error).\n\nQ: How do you handle exceptions globally in Spring Boot? @ControllerAdvice with @ExceptionHandler methods. A single class handles exceptions from all controllers and maps them to appropriate HTTP responses. Use @RestControllerAdvice (combines @ControllerAdvice + @ResponseBody) for REST APIs.",
+      },
+      {
+        heading: "Spring Data JPA and database",
+        content: "Q: What is Spring Data JPA and how does it differ from plain Hibernate? Spring Data JPA provides a repository abstraction on top of JPA (which Hibernate implements). Extend JpaRepository<Entity, Id> and Spring Boot auto-generates implementations for common operations (findById, save, delete, findAll). You can also write query methods from method names (findByEmailAndStatus) or use @Query for JPQL/SQL. Hibernate is the ORM layer; Spring Data JPA is the convenience layer on top.\n\nQ: What is lazy vs eager loading in JPA? Lazy loading: related entities are not loaded until accessed. Eager loading: related entities are always loaded with the parent. Default: @ManyToOne and @OneToOne are EAGER by default. @OneToMany and @ManyToMany are LAZY. N+1 problem: accessing a lazy collection in a loop triggers N additional queries. Solution: use JOIN FETCH in JPQL or @EntityGraph to fetch in one query.\n\nQ: What is a JPA transaction and how do you manage it in Spring? @Transactional marks a method or class for transactional execution. Spring wraps the call in a transaction that commits on success and rolls back on RuntimeException. Propagation types: REQUIRED (join existing or create new — default), REQUIRES_NEW (always create a new transaction), NEVER (must not run in a transaction). Read-only transactions: @Transactional(readOnly = true) for query-only methods — prevents unnecessary dirty checking.\n\nQ: What are database connection pools and how does Spring Boot configure them? Connection pools maintain a set of reusable database connections. Spring Boot uses HikariCP by default — the fastest connection pool in the JVM. Key configuration: spring.datasource.hikari.maximum-pool-size (default 10 — tune for production). A pool size too small causes connection waiting. Too large exhausts database connections.",
+      },
+      {
+        heading: "Spring Security and Spring Cloud",
+        content: "Q: How do you implement JWT authentication in Spring Boot? Add Spring Security and java-jwt. Write a JwtFilter that extracts and validates the JWT from Authorization header. Register it before UsernamePasswordAuthenticationFilter. On login, generate JWT with user claims and return it. For each request, validate the token and set SecurityContextHolder.\n\nQ: What is Spring Cloud and when do you need it? Spring Cloud provides tools for building distributed systems and microservices: Eureka (service discovery), Ribbon/LoadBalancer (client-side load balancing), Feign (declarative REST client), Config Server (externalised configuration), Gateway (API gateway), Sleuth + Zipkin (distributed tracing). At Indian product companies, microservices at scale often use a subset of these.\n\nQ: What is circuit breaking in Spring and how is it implemented? Use Resilience4j (the modern replacement for Hystrix). @CircuitBreaker annotation on a method opens the circuit when the failure rate exceeds a threshold, returning a fallback method's result instead of blocking. The circuit half-opens after a wait period to test recovery.",
+      },
+    ],
+    faqs: [
+      { question: "Is Spring Boot still relevant in 2026 or should I learn Quarkus/Micronaut?", answer: "Spring Boot is still the dominant Java framework in India in 2026 — the vast majority of Java job postings require Spring Boot. Quarkus and Micronaut are worth knowing for containerised/serverless contexts but do not replace Spring Boot in the interview market." },
+      { question: "What Java version should I know for Spring Boot interviews in India?", answer: "Java 17 (LTS) is the baseline — Spring Boot 3.x requires Java 17+. Know Java 8 features (streams, lambdas, Optional) and Java 17 features (records, sealed classes, text blocks). Avoid Java 11-specific knowledge in interview discussions — jump from Java 8 to Java 17." },
+      { question: "Is it worth getting Spring certification for Indian job interviews?", answer: "The Spring Professional certification (VMware) is recognised at enterprise clients and BFSI companies. For product companies, practical project experience and code quality matter more than certification." },
+      { question: "What are Spring Boot Actuator endpoints?", answer: "/actuator/health (liveness/readiness), /actuator/metrics (application metrics), /actuator/info (build info), /actuator/env (environment properties), /actuator/beans (registered beans). Expose carefully in production — sensitive endpoints should be secured or only on internal networks." },
+    ],
+    relatedSlugs: ["java-interview-questions-india-2026", "microservices-interview-questions-india-2026", "oop-interview-questions-india-2026"],
+    practicePageSlugs: [{ label: "Java Backend Practice", slug: "software-engineer" }],
+    cta: "Spring Boot questions come up in almost every Java backend interview in India. Practise explaining IoC, REST design, and database transactions clearly with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "aws-interview-questions-india-2026",
+    title: "AWS Interview Questions for Indian Engineers 2026",
+    metaDescription: "Top AWS interview questions for Indian cloud and backend engineers in 2026. EC2, S3, RDS, Lambda, VPC, IAM, CloudWatch, and practical scenario questions at Indian product companies and MNCs.",
+    company: "General",
+    category: "Technical",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
+    heroAlt: "Cloud engineer preparing AWS interview questions in India",
+    datePublished: "2026-08-16",
+    intro: "Amazon Web Services is the dominant cloud platform at Indian tech companies. Flipkart, Swiggy, Razorpay, PhonePe, Meesho, and virtually every funded Indian startup run their infrastructure on AWS. AWS knowledge is now expected at SDE-2+ backend and DevOps roles, and the AWS Solutions Architect and Developer certifications are among the most valued technical credentials in India. This guide covers the AWS concepts most commonly tested in Indian technical interviews.",
+    sections: [
+      {
+        heading: "AWS core services most tested in India",
+        content: "EC2 (Elastic Compute Cloud): Virtual machines in the cloud. Know: instance types (compute-optimised, memory-optimised, GPU), pricing models (on-demand, reserved instances, spot instances — spot is 70–90% cheaper but interruptible), AMIs (machine images), security groups (stateful firewalls), key pairs, and EC2 Auto Scaling (scale based on CPU/custom metrics).\n\nS3 (Simple Storage Service): Object storage. Know: buckets and objects, storage classes (Standard, Standard-IA, Glacier — tradeoff between access speed and cost), lifecycle policies (auto-transition between classes), versioning, bucket policies vs ACLs, pre-signed URLs (time-limited access to private objects — critical for interview questions about secure file sharing), cross-region replication.\n\nRDS (Relational Database Service): Managed relational databases (PostgreSQL, MySQL, Aurora). Know: Multi-AZ deployment (synchronous replication to standby — high availability, automatic failover), read replicas (asynchronous replication for read scaling), automated backups, parameter groups, Aurora Serverless (auto-scales capacity).\n\nLambda: Serverless compute. Know: event triggers (API Gateway, S3 events, SQS, CloudWatch Events), cold starts and how to mitigate them (provisioned concurrency), execution limits (15 minutes max), deployment package size limits, Lambda layers for shared dependencies.\n\nVPC (Virtual Private Cloud): Isolated network within AWS. Know: subnets (public — has internet gateway route; private — no direct internet access), NAT gateway (lets private subnet instances access the internet without being accessible from it), security groups vs NACLs (NACLs are stateless, applied at subnet level), VPC peering, bastion hosts.",
+      },
+      {
+        heading: "AWS messaging, monitoring, and IAM",
+        content: "SQS (Simple Queue Service): Managed message queue. Know: standard queue (at-least-once delivery, no ordering guarantee) vs FIFO queue (exactly-once delivery, ordered). Dead-letter queues for failed message handling. Visibility timeout (time a consumer has to process before the message becomes visible again). Used for decoupling microservices.\n\nSNS (Simple Notification Service): Pub/sub messaging. One message from a publisher fans out to multiple subscribers (SQS queues, Lambda functions, email, HTTP endpoints). SNS + SQS fan-out pattern is very commonly asked in Indian system design interviews.\n\nCloudWatch: AWS monitoring and observability. Know: metrics (EC2 CPU, Lambda invocations, custom application metrics), alarms (trigger actions when metrics cross thresholds — alert, auto-scale, invoke Lambda), logs (log groups, log streams, metric filters to extract metrics from logs), dashboards.\n\nIAM (Identity and Access Management): Know: users, groups, roles, and policies. Principle of least privilege — grant only the permissions needed. EC2 instance roles (instead of embedding credentials in code). Cross-account access with IAM roles. The difference between identity-based policies and resource-based policies (e.g. S3 bucket policies). MFA for root account is a baseline security requirement.",
+      },
+      {
+        heading: "AWS interview scenarios — what Indian companies actually ask",
+        content: "Scenario: 'Your application needs to process uploaded images asynchronously. How do you architect this on AWS?' Standard answer: User uploads image → S3. S3 event triggers Lambda (or puts message in SQS). Lambda/worker processes image (resize, compress) → stores result in S3. Notify user via SNS/SES.\n\nScenario: 'How would you make this stateless application highly available across multiple availability zones?' EC2 Auto Scaling group across minimum 2 AZs behind an Application Load Balancer. RDS Multi-AZ for the database. S3 for any shared static assets. Avoid storing session state on EC2 — use ElastiCache Redis for sessions.\n\nScenario: 'Your Lambda function is experiencing cold starts affecting p99 latency. What do you do?' Enable provisioned concurrency for the function — keeps a specified number of execution environments warm. Trade-off: adds cost. Alternative: architect the system so cold start path is not user-facing (use async event patterns for cold paths).\n\nScenario: 'How do you restrict access to an S3 bucket to only allow your application's EC2 instances?' Attach an IAM role to the EC2 instances with an S3 policy allowing only the required bucket/prefix. Remove any public bucket ACLs. The application uses the instance's IAM role credentials (from EC2 metadata endpoint) rather than embedded access keys.",
+      },
+    ],
+    faqs: [
+      { question: "Which AWS certification is best for Indian engineers in 2026?", answer: "AWS Solutions Architect Associate is the most widely recognised and demanded in India. For developers: AWS Developer Associate. For DevOps roles: AWS DevOps Engineer Professional. The SA Associate should be the first certification for most engineers." },
+      { question: "Is AWS knowledge required for backend SDE roles in India?", answer: "At Indian product companies (SDE-2 and above): yes, basic AWS knowledge is expected. At service IT companies: AWS certification is valued but not always required. For DevOps/SRE roles: deep AWS knowledge is mandatory." },
+      { question: "What is the difference between AWS and GCP/Azure for Indian companies?", answer: "AWS dominates the Indian startup market. GCP is common at companies with Google Workspace or ML-heavy workloads. Azure is common at Microsoft enterprise customers and BFSI companies with Microsoft licensing. AWS knowledge gives you the most interview versatility in India." },
+      { question: "How do I prepare for AWS questions without access to a paid AWS account?", answer: "AWS Free Tier provides sufficient access for learning EC2, S3, Lambda, and RDS basics for 12 months. LocalStack (open source) simulates AWS services locally. The AWS skill builder platform provides free training content and practice question banks." },
+    ],
+    relatedSlugs: ["docker-kubernetes-interview-questions-india-2026", "microservices-interview-questions-india-2026", "devops-interview-questions-india-2026"],
+    practicePageSlugs: [{ label: "Cloud/DevOps Practice", slug: "devops" }, { label: "Backend Engineer Practice", slug: "software-engineer" }],
+    cta: "AWS architecture questions come up in backend and DevOps interviews at every major Indian company. Practise explaining cloud design patterns clearly with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "golang-interview-questions-india-2026",
+    title: "Go (Golang) Interview Questions for Indian Companies 2026",
+    metaDescription: "Top Go (Golang) interview questions for Indian product companies in 2026. Goroutines, channels, interfaces, concurrency patterns, Go idioms, and practical questions at Zerodha, Razorpay, and other Go shops.",
+    company: "General",
+    category: "Technical",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80",
+    heroAlt: "Go developer studying Golang interview questions for Indian tech companies",
+    datePublished: "2026-08-16",
+    intro: "Go (Golang) has become a primary language at a growing number of Indian product companies — Zerodha (almost exclusively Go), Razorpay (Go for payment-critical services), Flipkart, Swiggy, and several Indian fintech startups. If you are applying to these companies, knowing Go well is essential. This guide covers the Go concepts most commonly tested in Indian technical interviews, from beginner Go questions to advanced concurrency patterns.",
+    sections: [
+      {
+        heading: "Go fundamentals most tested in Indian interviews",
+        content: "Q: What are the main differences between Go and Java/Python? Go compiles to a single statically linked binary — no JVM, no interpreter. No exceptions (error handling via explicit return values). No class-based inheritance (interfaces + composition). Garbage collected but with low-latency GC. Goroutines (much lighter than OS threads — a Go programme can have millions). Built-in tooling: go fmt, go test, go vet, go mod.\n\nQ: What is a goroutine and how does it differ from a thread? A goroutine is a lightweight execution unit managed by the Go runtime, not the OS. Initial stack size: 2KB (vs OS thread ~1–8MB). The Go scheduler multiplexes goroutines onto OS threads (M:N scheduling) with GOMAXPROCS threads (default: number of CPU cores). Starting a goroutine: `go functionName()`. Very cheap — launch hundreds of thousands concurrently.\n\nQ: What is a channel in Go? A channel is a typed conduit for communication between goroutines. Channels are the idiomatic alternative to shared memory with locks. `ch := make(chan int)` (unbuffered — sender blocks until receiver is ready). `ch := make(chan int, 100)` (buffered — sender blocks only when buffer is full). Closing a channel: `close(ch)` — receiver gets zero value and ok=false after channel is drained.\n\nQ: What is the select statement? Go's `select` blocks until one of multiple channel operations can proceed, then executes that case. If multiple cases are ready, one is chosen at random. `select { case v := <-ch1: ... case ch2 <- x: ... default: ... }`. The default case prevents blocking — runs if no case is immediately ready.",
+      },
+      {
+        heading: "Go interfaces and composition",
+        content: "Q: How do Go interfaces work (implicit implementation)? In Go, a type implements an interface by implementing all its methods — no `implements` keyword. This is implicit satisfaction. Example: any type with a String() string method satisfies the fmt.Stringer interface. Enables duck typing — if a type has the right methods, it fits the interface.\n\nQ: What is the empty interface and when do you use it? `interface{}` (or `any` since Go 1.18) accepts any type. Used when you truly don't know the type at compile time (JSON unmarshalling, fmt.Println). Avoid over-using it — it removes type safety and requires type assertions or type switches at runtime.\n\nQ: What is a type assertion vs a type switch? Type assertion: `v, ok := i.(string)` — checks if interface value i holds a string. If ok is false, v is zero value (safe form). The unsafe form `v := i.(string)` panics if i is not a string. Type switch: `switch v := i.(type) { case string: ... case int: ... }` — checks multiple types cleanly.\n\nQ: What is embedding in Go? Go uses composition over inheritance. You can embed a type inside a struct to 'inherit' its methods. `type AdminUser struct { User; adminLevel int }` — AdminUser has all User's methods promoted to it. Unlike Java inheritance, there is no polymorphism via embedding — only method promotion.",
+      },
+      {
+        heading: "Go concurrency patterns and common pitfalls",
+        content: "Common concurrency patterns in Go interviews:\n\nWorker pool: Fan out work from a channel to N goroutines. Common pattern for parallelising CPU-bound or I/O-bound work without uncontrolled goroutine growth.\n\nDone channel / context cancellation: Signal goroutines to stop using a `done chan struct{}` or context.Context. Critical in production — goroutines that never stop are goroutine leaks.\n\nSync primitives: `sync.Mutex` for mutual exclusion over shared data. `sync.RWMutex` for read-heavy workloads (multiple concurrent readers, exclusive writers). `sync.WaitGroup` to wait for a group of goroutines to finish. `sync.Once` for one-time initialisation (singleton pattern in Go).\n\nCommon interview pitfalls:\n• Race condition with a shared variable and goroutines: detect with `go test -race`. Fix with sync.Mutex or atomic operations.\n• Goroutine leak: goroutine blocks on a channel that nobody writes to. Fix with context cancellation or buffered channels.\n• Loop variable capture: `for i := range items { go func() { fmt.Println(i) }() }` — all goroutines may print the same value. Fix: pass i as an argument to the goroutine function.\n• Forgetting to drain a channel before closing: `close(ch)` while a sender is still writing causes a panic.",
+      },
+    ],
+    faqs: [
+      { question: "Should I learn Go or Java for backend roles in India?", answer: "For service IT and BFSI: Java with Spring Boot. For Indian product companies (especially fintech, infrastructure): Go is increasingly primary. Learn Java first if you are a fresher — broader market. Learn Go specifically if targeting Zerodha, Razorpay backend, or high-performance services." },
+      { question: "What is the best resource to learn Go for Indian interviews?", answer: "The official Go Tour (tour.golang.org) for fundamentals. 'The Go Programming Language' book by Donovan and Kernighan. goroutines.io for advanced patterns. GitHub.com/tmrts/go-patterns for Go design patterns. Build a real CLI tool or REST API to solidify the knowledge." },
+      { question: "Does Go have generics?", answer: "Yes — Go added generics in version 1.18 (2022). Generic functions and types use type parameters. Generics are increasingly tested in Go interviews at companies using Go 1.18+. Know the basic syntax: `func Map[T, U any](slice []T, f func(T) U) []U`." },
+      { question: "What is the difference between Go's defer, panic, and recover?", answer: "defer: schedules a function call to run when the surrounding function returns — in LIFO order. Used for cleanup (closing files, unlocking mutexes). panic: triggers a stack unwind similar to an exception — should only be used for truly unrecoverable situations. recover: inside a deferred function, catches a panic and allows the programme to continue — the Go equivalent of a catch block." },
+    ],
+    relatedSlugs: ["zerodha-interview-questions-india-2026", "microservices-interview-questions-india-2026", "nodejs-interview-questions-india-2026"],
+    practicePageSlugs: [{ label: "Backend Engineer Practice", slug: "software-engineer" }],
+    cta: "Go interviews test concurrency knowledge that trips up candidates who know only Java or Python. Practise explaining goroutines, channels, and Go patterns with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "paytm-interview-questions-2026",
+    title: "Paytm Interview Questions and Preparation Guide 2026",
+    metaDescription: "Complete Paytm (One97 Communications) interview guide 2026. SDE and product roles, coding rounds, fintech system design, culture questions, and compensation at India's pioneering digital payments company.",
+    company: "Paytm",
+    category: "Company Guides",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80",
+    heroAlt: "Engineer preparing for a Paytm interview in Noida or Bengaluru",
+    datePublished: "2026-08-17",
+    intro: "Paytm (One97 Communications) is one of India's most well-known fintech companies — the first Indian app to reach 100 million users, a pioneer of the QR-code payment revolution, and the first Indian consumer tech company to list on the Indian stock exchanges. Despite well-documented business challenges since its 2021 IPO, Paytm remains a significant employer and an interesting place to work for engineers who want to build at Indian fintech scale. This guide covers the Paytm interview process and what to prepare.",
+    sections: [
+      {
+        heading: "Paytm interview process",
+        content: "The Paytm SDE interview loop:\n\n• Online Assessment: 2–3 DSA problems in 90 minutes. Medium difficulty — arrays, strings, trees, graphs. HackerEarth is the OA platform.\n• Technical Round 1 — DSA: 1–2 problems with complexity discussion. Emphasis on clean, working code rather than very hard problems.\n• Technical Round 2 — System Design: Fintech-themed designs. For SDE-1, a lighter discussion of a smaller system. For SDE-2+, full-scale design of a payment system, wallet, or merchant platform component.\n• Technical Round 3 — CS Fundamentals + Projects: DBMS (SQL queries are common), OS, and a deep dive into your most significant project.\n• HR Round: Offer and role details.\n\nCommon patterns: Paytm's interview is often described as less intense than Razorpay or PhonePe on the DSA side but thorough on fundamentals. SQL is tested more commonly than at many other Indian product companies — be prepared to write joins, subqueries, and aggregations.",
+      },
+      {
+        heading: "Technical focus at Paytm",
+        content: "SQL questions are consistently reported at Paytm interviews:\n\n'Write a query to find all customers who have made more than 5 transactions in the last 30 days.' — Tests GROUP BY, HAVING, date filtering.\n'Find the second-highest transaction amount from the payments table.' — Tests subqueries or DENSE_RANK window function.\n'Find pairs of customers who have transacted with each other.' — Tests self-join.\n\nSystem design at Paytm is fintech-themed:\n• Design Paytm's UPI switch: Transaction routing to the user's bank, NPCI integration, idempotency, retry with backoff, reconciliation.\n• Design Paytm's merchant dashboard: Aggregate transaction data for merchants, settlement to bank account, download reports, fraud alerts.\n• Design Paytm's notification system: 100M+ user base, multi-channel (push, SMS, in-app), personalised campaigns, transactional vs promotional separation.\n• Design a digital gold purchase system: Price fetching from exchange, partial gram purchases, storage vault management, sell-back flow.\n\nTech stack at Paytm: Java (Spring Boot) for core services, Go for newer services, Python for data/ML, React Native for mobile, MySQL and MongoDB for databases, Kafka for event streaming, Kubernetes on AWS.",
+      },
+      {
+        heading: "Working at Paytm — what to know",
+        content: "Paytm went through a significant restructuring after regulatory actions by RBI in 2024 led to the shutdown of Paytm Payments Bank. The company pivoted to focus on payment services (merchant acquiring, UPI, Paytm for Business), financial services distribution, and commerce. This context matters for interviews:\n\n• The team is leaner post-2024 — the company went through layoffs and has a smaller but more focused engineering team. Engineers who remain typically work on meaningful, visible problems.\n• Mission pivot: Paytm is focused on profitability and sustainable growth after years of loss-making expansion. Engineering decisions are more cost-conscious than in 2019–2022.\n• Career trajectory: Paytm is a great second or third job for engineers who want fintech exposure at significant scale. The brand name is still well-recognised in Indian finance.\n• Noida base: Most engineering is in Noida (NCR). Paytm has a presence in Bengaluru but the primary engineering hub is NCR. This is relevant for engineers who prefer to work in Bengaluru.",
+      },
+      {
+        heading: "Paytm compensation 2026",
+        content: "Paytm SDE compensation in 2026:\n\n• SDE-1 (0–2 years): ₹15–28 LPA total\n• SDE-2 (2–5 years): ₹28–50 LPA total\n• SDE-3 / Senior: ₹45–85 LPA total\n• Staff / Principal: ₹80–140 LPA total\n\nPaytm is a listed company on BSE/NSE (One97 Communications, symbol PAYTM). ESOPs are in publicly traded equity — liquid, but the stock has been volatile and is significantly below its IPO price of ₹2,150 per share. Factor this into your evaluation of the ESOPs.\n\nCompensation at Paytm is generally slightly below market leaders like Razorpay or PhonePe for equivalent levels, but the fintech domain experience and scale of the systems are genuine career assets.",
+      },
+    ],
+    faqs: [
+      { question: "Is Paytm a stable company to join in 2026 after the RBI action?", answer: "Paytm the payments and financial services company (separate from Paytm Payments Bank, which was a separate licensed entity) is operational and serving hundreds of millions of users. The regulatory risk is primarily resolved. The company is focused on profitability. It is reasonable to join, but do your due diligence on the specific team and role." },
+      { question: "Is Paytm good for freshers?", answer: "Paytm hires freshers through campus placements and off-campus channels. The starting salaries are below Razorpay or PhonePe but above TCS/Infosys. For fintech experience at scale, it is a reasonable first job." },
+      { question: "How does Paytm compare to PhonePe and Razorpay as an employer?", answer: "PhonePe and Razorpay are generally considered stronger employers in 2026 — both have clearer growth trajectories, more competitive compensation, and stronger engineering brands. However, Paytm's unique position in India's financial ecosystem creates interesting work, particularly in the merchant payments and financial services domains." },
+      { question: "Does Paytm still offer ESOPs?", answer: "Yes — Paytm offers ESOPs that vest in public company stock (One97 Communications). The stock price has been depressed since IPO. Consider ESOPs at current market valuation rather than the IPO price." },
+    ],
+    relatedSlugs: ["phonepe-interview-questions-2026", "razorpay-interview-questions-2026", "cred-interview-questions-2026"],
+    practicePageSlugs: [{ label: "Paytm Interview Practice", slug: "paytm" }, { label: "Fintech Practice", slug: "fintech" }],
+    cta: "Practise Paytm's fintech system design and SQL interview questions with HireStepX's AI mock interviewer before your interview.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "zoho-interview-questions-2026",
+    title: "Zoho Interview Questions and Preparation Guide 2026",
+    metaDescription: "Complete Zoho interview guide 2026. Software engineer roles, Zoho's unique selection process, aptitude and programming rounds, culture at a bootstrapped Indian SaaS giant, and Chennai-based compensation.",
+    company: "Zoho",
+    category: "Company Guides",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+    heroAlt: "Engineer preparing for a Zoho interview in Chennai",
+    datePublished: "2026-08-17",
+    intro: "Zoho is one of India's most distinctive tech success stories — a fully bootstrapped SaaS company with over 100 products, 100 million users worldwide, and $1 billion+ annual revenue, built almost entirely from Chennai without taking a single rupee of venture capital. Zoho's culture, hiring process, and values are genuinely different from every other Indian tech company. This guide explains what Zoho looks for and how to prepare for their unique selection process.",
+    sections: [
+      {
+        heading: "Zoho's unique hiring philosophy",
+        content: "Zoho is not like other Indian tech companies in several important ways:\n\n• Zoho Schools of Learning: Zoho runs its own training programme for students from economically disadvantaged backgrounds who may not have engineering degrees. Many current Zoho engineers graduated from this programme, not from IITs or NITs. Zoho explicitly evaluates aptitude and learning ability over college brand.\n• Anti-credentialism: Zoho's founder Sridhar Vembu has publicly stated that college degrees are overrated as hiring filters. Zoho's aptitude test genuinely tests logical reasoning and problem-solving rather than specific academic knowledge.\n• Long-term orientation: Zoho has very low employee turnover for the Indian tech industry. Engineers who join typically stay 5–10 years. The company is building for decades, not a quick exit.\n• Chennai-first: Zoho is headquartered in Chennai with offices across Tamil Nadu, including a rural campus in Tenkasi. Engineers who want to work in Bengaluru or Hyderabad primarily should consider this before applying.",
+      },
+      {
+        heading: "Zoho interview process",
+        content: "Zoho's interview process is distinctive:\n\n• Aptitude Test (Phase 1): Zoho's written aptitude test covers quantitative reasoning, logical reasoning, and verbal ability. It is tougher than most company aptitude tests and genuinely screens for raw intelligence rather than memorised formulas. Typically 3 sections, 90 minutes.\n• Programming Test (Phase 2): A coding test with 1–2 problems in any programming language of your choice. Zoho accepts any language. Problems are typically algorithmic — data structures and logic problems at medium difficulty.\n• Technical Interview 1 (Phase 3): In-depth discussion of your code from Phase 2, data structures and algorithms, OOP concepts, and database basics. The interviewer may ask you to modify your code or solve variations.\n• Technical Interview 2 (Phase 4): System design and project discussion. For experienced candidates, this round explores past work in detail and includes practical design questions.\n• HR Interview (Phase 5): Cultural fit and career goals. Zoho interviewers genuinely probe whether you are a long-term fit for their culture.",
+      },
+      {
+        heading: "What Zoho builds and what you will work on",
+        content: "Zoho's product suite spans CRM (Zoho CRM), office productivity (Zoho Docs, Sheets, Mail), accounting (Zoho Books), HR (Zoho People), project management, and many more — all built in-house with no acquisitions. You will work on:\n\n• One of Zoho's 100+ products in a full-stack or backend capacity. Most Zoho teams own a product end-to-end.\n• Chennai-based engineering: 90%+ of Zoho's engineering is in Chennai and Tamil Nadu. The office culture is close-knit and collaborative with less of the job-hopping and competitive hustle that characterises Bengaluru.\n• Zoho's tech stack: Java for backend, React for frontend, MySQL and Cassandra for databases. Zoho builds many internal infrastructure components rather than using open-source alternatives — this is a genuine differentiator.\n• Long release cycles by Indian standards: Zoho ships thoughtfully rather than fast. Engineers report less burn-out than at growth-stage startups.",
+      },
+      {
+        heading: "Zoho compensation 2026",
+        content: "Zoho salaries are below the top Indian product companies but competitive for Chennai:\n\n• Fresher / Graduate Trainee: ₹8–15 LPA\n• Software Engineer (2–4 years): ₹18–35 LPA\n• Senior Software Engineer (4–8 years): ₹30–55 LPA\n• Principal Engineer / Tech Lead: ₹50–100 LPA\n\nZoho does not offer ESOPs — the company is fully private and bootstrapped. There are no pre-IPO equity stakes. Compensation is entirely cash-based. What Zoho offers instead: job stability, no layoff history, genuine impact on products used by millions globally, and a work culture that many engineers describe as the sanest of their career.\n\nFor engineers who prioritise stability, meaningful work, and work-life balance over maximum compensation, Zoho is one of the best employers in India. For engineers optimising for compensation maximisation, Zoho is below market.",
+      },
+    ],
+    faqs: [
+      { question: "Can I get into Zoho without a computer science degree?", answer: "Yes — Zoho has a documented history of hiring engineers without traditional CS degrees. Their Zoho Schools of Learning programme specifically trains non-CS candidates. The aptitude test genuinely tests potential, not academic background." },
+      { question: "Is Zoho a good company for career growth?", answer: "Yes — but 'growth' at Zoho means technical depth and product ownership, not frequent promotions or job-hopping. Engineers who want to become deep domain experts and build products for the long term thrive at Zoho. Engineers who want frequent salary jumps through job changes may not find Zoho optimal." },
+      { question: "Does Zoho have work from home options?", answer: "Zoho is primarily an in-office company with a Chennai culture that values physical presence. Limited hybrid options exist but Zoho is not a remote-friendly company. This is a significant consideration for candidates outside Tamil Nadu." },
+      { question: "How is Zoho compared to Freshworks for an engineer in Chennai?", answer: "Freshworks pays more and is a listed company with liquid stock. Zoho offers more stability, a more established product portfolio, and a culture that many engineers prefer. The right choice depends on whether you prioritise compensation (Freshworks) or culture and stability (Zoho)." },
+    ],
+    relatedSlugs: ["freshworks-interview-questions-2026", "startup-vs-mnc-india-career-choice-guide", "work-life-balance-indian-tech-2026"],
+    practicePageSlugs: [{ label: "Zoho Interview Practice", slug: "zoho" }],
+    cta: "Zoho's aptitude and programming tests are genuinely distinct. Practise your logical reasoning and algorithmic problem-solving with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "api-design-best-practices-india-2026",
+    title: "REST API Design Best Practices for Indian Engineers 2026",
+    metaDescription: "REST API design best practices for Indian software engineers in 2026. Naming conventions, versioning, authentication, error handling, pagination, rate limiting, and practical examples used at Indian product companies.",
+    company: "General",
+    category: "Technical",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",
+    heroAlt: "Software engineer designing REST APIs at an Indian product company",
+    datePublished: "2026-08-17",
+    intro: "REST API design is a core backend engineering skill tested at SDE-2+ interviews across Indian product companies. Whether it is a system design question asking you to design a payment API, an e-commerce API, or a social feed API — knowing the conventions and best practices for REST APIs helps you structure clear, professional API designs. This guide covers the REST API design principles most commonly tested at Indian technical interviews.",
+    sections: [
+      {
+        heading: "REST API naming and URL conventions",
+        content: "Resources, not actions: REST URLs identify resources (nouns), not actions (verbs). HTTP methods express the action.\n\nGood:\n• GET /users/123 — retrieve user 123\n• POST /users — create a new user\n• PUT /users/123 — replace user 123 entirely\n• PATCH /users/123 — partially update user 123\n• DELETE /users/123 — delete user 123\n\nBad: GET /getUser?id=123, POST /createUser, POST /deleteUser\n\nNesting for relationships: Use nested resources for relationships, but limit to 2 levels:\n• GET /orders/456/items — get items for order 456\n• AVOID: GET /users/123/orders/456/items/789/reviews — too deep, better as GET /reviews?itemId=789\n\nPlural nouns: Always use plural: /users not /user, /products not /product.\n\nKebab-case for multi-word paths: /payment-methods not /paymentMethods or /payment_methods.\n\nQuery params for filtering, sorting, and pagination: GET /products?category=electronics&sort=price_asc&page=2&limit=20",
+      },
+      {
+        heading: "Authentication, versioning, and error handling",
+        content: "Authentication — what Indian companies use:\n• Bearer tokens (JWT): Most common. Authorization: Bearer <token> header. Stateless — server validates the token without a database lookup.\n• API keys: For server-to-server (merchant to Razorpay). Passed as header X-API-Key or as query param (less secure).\n• OAuth 2.0: For third-party access (Google sign-in, accessing another user's data). Complex but standard.\n\nAPI versioning — three approaches:\n• URL versioning: /v1/users — simple, visible, easy to route. Most common at Indian companies.\n• Header versioning: Accept: application/vnd.api+json;version=2 — cleaner URLs, harder to test in browser.\n• Query param versioning: /users?version=2 — easy to test, messy URLs.\n\nError handling — consistent error response format:\n```json\n{\n  \"status\": 400,\n  \"code\": \"VALIDATION_ERROR\",\n  \"message\": \"The email field is invalid.\",\n  \"details\": [{ \"field\": \"email\", \"issue\": \"must be a valid email address\" }],\n  \"requestId\": \"req_abc123\"\n}\n```\nKey principle: Always include a machine-readable error code (not just the HTTP status), a human-readable message, and the requestId for debugging.",
+      },
+      {
+        heading: "Pagination, rate limiting, and API best practices",
+        content: "Pagination — two approaches:\n• Offset pagination: ?page=2&limit=20. Simple to implement but slow for large offsets (database must scan and skip). Do not use for large tables.\n• Cursor-based pagination: ?cursor=eyJpZCI6MTIzfQ&limit=20. Uses an opaque cursor (encoded last item position). Efficient even at large offsets. Instagram, Twitter, and Razorpay's APIs use cursor pagination for feeds and transactions.\n\nRate limiting — how to communicate limits:\nInclude rate limit information in response headers:\n• X-RateLimit-Limit: 100\n• X-RateLimit-Remaining: 85\n• X-RateLimit-Reset: 1722470400 (Unix timestamp when limit resets)\n\nReturn 429 Too Many Requests with a Retry-After header when the limit is exceeded.\n\nIdempotency — critical for payment APIs:\nFor POST requests that should not be processed twice (payment, order creation), accept an Idempotency-Key header. If the same key is sent again within a time window, return the cached response of the first request. Prevents double-charges. Required by Razorpay, Stripe, and all serious payment API providers.\n\nAPI documentation: Every API should be documented in OpenAPI (Swagger). Interview candidates who mention OpenAPI/Swagger in system design discussions demonstrate production-API awareness.",
+      },
+    ],
+    faqs: [
+      { question: "When should I use GraphQL instead of REST in India?", answer: "Use GraphQL when: clients need flexible queries (mobile apps that cannot afford over-fetching), you have multiple client types with different data needs (mobile vs web), or you have complex nested data requirements. REST is simpler and more appropriate for straightforward CRUD APIs and payment/webhook APIs." },
+      { question: "What is HATEOAS and do I need to know it for Indian interviews?", answer: "HATEOAS (Hypermedia As The Engine Of Application State) is a REST constraint where API responses include links to related actions. Few Indian companies implement full HATEOAS. Understanding the concept is enough for interviews — you do not need to design HATEOAS APIs." },
+      { question: "How do Indian companies handle breaking API changes?", answer: "Typically by version bumping (v1 → v2) with a deprecation period. Most Indian companies maintain at least 1–2 older versions for backward compatibility. Webhook schema changes are particularly sensitive — external customers integrate with them." },
+      { question: "Is gRPC relevant for Indian backend interviews?", answer: "For microservices internal communication at companies like Flipkart, PhonePe, and Swiggy: yes, gRPC knowledge is increasingly relevant for SDE-2+ roles. For public-facing APIs: REST remains dominant. Know what gRPC is and when to prefer it over REST." },
+    ],
+    relatedSlugs: ["microservices-interview-questions-india-2026", "nodejs-interview-questions-india-2026", "system-design-interview-beginner-india-2026"],
+    practicePageSlugs: [{ label: "Backend Engineer Practice", slug: "software-engineer" }, { label: "System Design Practice", slug: "senior-software-engineer" }],
+    cta: "API design questions come up in backend interviews at every Indian product company. Practise explaining REST conventions, versioning, and pagination clearly with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "leetcode-study-plan-india-2026",
+    title: "LeetCode Study Plan for Indian Engineers: 3-Month Guide 2026",
+    metaDescription: "Structured 3-month LeetCode study plan for Indian engineers preparing for product company interviews in 2026. Week-by-week topics, must-solve problems, and how to get from 0 to interview-ready.",
+    company: "General",
+    category: "Technical",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80",
+    heroAlt: "Indian engineer following a structured LeetCode study plan",
+    datePublished: "2026-08-18",
+    intro: "LeetCode preparation is the primary barrier between Indian engineers and product company jobs. The common mistake is grinding random problems without structure — solving 300 problems without pattern recognition is less effective than solving 150 problems with deliberate topic coverage and spaced repetition. This guide gives you a structured 3-month plan to go from beginner to interview-ready at Indian product companies.",
+    sections: [
+      {
+        heading: "Month 1: Foundations (Arrays, Strings, Hashmaps, Two Pointers)",
+        content: "Week 1 — Arrays and Hashmaps: Master the basics. Must-solve: Two Sum (easy), Best Time to Buy and Sell Stock (easy), Contains Duplicate (easy), Product of Array Except Self (medium), Maximum Subarray (medium — Kadane's Algorithm), Group Anagrams (medium).\n\nKey patterns: HashMap for O(1) lookup. Prefix sums for range queries. Kadane's for maximum subarray.\n\nWeek 2 — Two Pointers and Sliding Window: Must-solve: Valid Palindrome (easy), 3Sum (medium), Container With Most Water (medium), Longest Substring Without Repeating Characters (medium), Minimum Window Substring (hard — stretch goal).\n\nKey patterns: Two pointers for sorted arrays and palindromes. Sliding window for substring/subarray problems with a constraint.\n\nWeek 3 — Stacks and Queues: Must-solve: Valid Parentheses (easy), Daily Temperatures (medium), Evaluate Reverse Polish Notation (medium), Largest Rectangle in Histogram (hard — important), Min Stack (medium).\n\nKey patterns: Monotonic stack for next greater/smaller element problems.\n\nWeek 4 — Binary Search: Must-solve: Binary Search (easy), Search in Rotated Sorted Array (medium), Find Minimum in Rotated Sorted Array (medium), Koko Eating Bananas (medium), Median of Two Sorted Arrays (hard — stretch).\n\nKey patterns: Binary search on the answer space (not just sorted arrays). Template: lo, hi, while lo <= hi, check mid.",
+      },
+      {
+        heading: "Month 2: Trees, Graphs, and Dynamic Programming",
+        content: "Week 5 — Binary Trees: Must-solve: Invert Binary Tree (easy), Maximum Depth of Binary Tree (easy), Lowest Common Ancestor (medium), Binary Tree Level Order Traversal (medium — BFS), Validate Binary Search Tree (medium), Serialize and Deserialize Binary Tree (hard).\n\nKey patterns: Recursive tree problems follow the pattern: base case (null), recursive case (call left and right subtrees), combine results. BFS with a queue for level-order traversal.\n\nWeek 6 — Graphs: Must-solve: Number of Islands (medium), Clone Graph (medium), Course Schedule (medium — cycle detection in directed graph), Pacific Atlantic Water Flow (medium), Rotting Oranges (medium — multi-source BFS).\n\nKey patterns: BFS for shortest path (unweighted) and multi-source problems. DFS for connected components and cycle detection. Union-Find for disjoint set problems.\n\nWeek 7 — Dynamic Programming 1D: Must-solve: Climbing Stairs (easy), House Robber (medium), Longest Palindromic Substring (medium), Jump Game (medium), Coin Change (medium — classic unbounded knapsack).\n\nKey patterns: DP = overlapping subproblems + optimal substructure. Start with recursive with memoisation, then convert to tabulation. Identify: what is the state? what is the recurrence relation?\n\nWeek 8 — Dynamic Programming 2D: Must-solve: Unique Paths (medium), Longest Common Subsequence (medium), Edit Distance (hard — important), 0/1 Knapsack (medium — classic), Partition Equal Subset Sum (medium).\n\nKey patterns: 2D DP for problems involving two sequences or a grid. State: dp[i][j] represents something about the first i elements of sequence 1 and first j elements of sequence 2.",
+      },
+      {
+        heading: "Month 3: Advanced topics and company-specific preparation",
+        content: "Week 9 — Heaps and Priority Queues: Must-solve: Kth Largest Element in an Array (medium), Top K Frequent Elements (medium), Merge K Sorted Lists (hard), Find Median from Data Stream (hard), Task Scheduler (medium).\n\nKey patterns: Min-heap for 'top K largest' problems. Max-heap for 'top K smallest'. Two-heap approach for dynamic median.\n\nWeek 10 — Tries and Backtracking: Must-solve: Implement Trie (medium), Word Search II (hard — Trie + backtracking), Combination Sum (medium), Permutations (medium), Sudoku Solver (hard — stretch goal).\n\nKey patterns: Trie for prefix-based string problems. Backtracking = DFS with explicit undo of choices.\n\nWeek 11 — Company-specific problem sets: Sort your LeetCode session by company tag. For Flipkart: DP and graph problems are frequent. For Razorpay: hash maps and design questions. For Swiggy/Zomato: matrix/grid problems. For Amazon: sliding window and trees. Spend this week on 20 problems specifically tagged for your target company.\n\nWeek 12 — Mock interviews and review: Do 2 full 75-minute mock interviews per day. Use NeetCode or AlgoExpert's structured problem sheets. Identify your weakest category and spend 30% of time revisiting it. Practise verbal explanation of your approach before coding — this is what real interviews evaluate.",
+      },
+    ],
+    faqs: [
+      { question: "How many LeetCode problems do I need to solve for Flipkart or Swiggy?", answer: "Quality over quantity. 150–200 problems solved with genuine understanding beats 400 problems half-understood. Focus on covering all major patterns (15 patterns, 10–15 problems each = 150–225 problems) rather than grinding a high number randomly." },
+      { question: "Should I use LeetCode Premium for Indian interview preparation?", answer: "LeetCode Premium is useful primarily for company-tagged problem sets and mock interview sessions. The free tier has enough problems to become interview-ready. Premium is worthwhile in the final month of preparation if targeting a specific company." },
+      { question: "Is NeetCode better than LeetCode for study planning?", answer: "NeetCode provides a curated list of 150 problems (NeetCode 150) organised by pattern — it is the best structured starting point for Indian engineers. Use NeetCode's list as your problem selection guide and LeetCode to solve them." },
+      { question: "What is the best way to track progress during LeetCode preparation?", answer: "Spreadsheet or Notion database: record the problem name, date solved, difficulty, category, your approach, and a confidence rating (1–5). Review all 1–2 rated problems weekly. Spaced repetition prevents forgetting — critical for maintaining patterns over 3 months." },
+    ],
+    relatedSlugs: ["dsa-preparation-for-interviews-india-2026", "technical-interview-one-week-prep-india-2026", "coding-interview-mistakes-india-2026"],
+    practicePageSlugs: [{ label: "DSA Interview Practice", slug: "software-engineer" }],
+    cta: "LeetCode prepares you for the coding round. HireStepX prepares you to explain your thinking clearly under pressure — practise with our AI mock interviewer alongside your LeetCode grind.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "devops-engineer-career-india-2026",
+    title: "DevOps Engineer Career Guide for India 2026",
+    metaDescription: "Complete DevOps engineer career guide for India 2026. Skills required, career path from developer to DevOps, certifications, salaries, top companies hiring, and interview preparation tips.",
+    company: "General",
+    category: "Career",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=800&q=80",
+    heroAlt: "DevOps engineer planning a cloud infrastructure career in India",
+    datePublished: "2026-08-18",
+    intro: "DevOps engineering is one of the highest-paying and fastest-growing career paths in Indian tech in 2026. The combination of cloud infrastructure, automation, and software delivery — bridging development and operations — is in acute demand at every Indian product company. This guide covers what the DevOps career path looks like in India, the skills required at each level, and how to break into the field.",
+    sections: [
+      {
+        heading: "What a DevOps engineer actually does in India",
+        content: "The DevOps role varies significantly by company size and type:\n\nAt Indian startups (Series A–B, 50–200 engineers): One or two DevOps engineers own everything — CI/CD pipelines, cloud infrastructure, monitoring, and incident response. You will touch AWS/GCP, Kubernetes, Terraform, GitHub Actions, and Datadog. Very hands-on.\n\nAt Indian unicorns (Swiggy, Razorpay, Meesho): Dedicated SRE and platform engineering teams. More specialisation — some focus on Kubernetes cluster management, others on observability, others on security automation.\n\nAt Indian service IT (TCS, Infosys, Wipro): DevOps roles are often project-specific, working on client environments. Less greenfield work, more standardised toolchains. Certifications matter more here.\n\nAt Indian BFSI tech (HDFC, ICICI, Bajaj): Infrastructure-heavy environments with regulatory constraints. On-premise data centres alongside cloud. Heavy compliance (RBI guidelines, ISO 27001).\n\nDay-to-day tasks: Writing Terraform or CloudFormation to provision infrastructure. Setting up and maintaining CI/CD pipelines (GitHub Actions, Jenkins, ArgoCD). Managing Kubernetes clusters (node scaling, RBAC, storage). Monitoring and alerting (Datadog, Grafana, PagerDuty). Incident response and postmortem facilitation. Security scanning in the CI pipeline (Snyk, Trivy). Cost optimisation on cloud spend.",
+      },
+      {
+        heading: "Skills roadmap for DevOps in India",
+        content: "Level 1 — Junior DevOps (0–2 years, ₹8–18 LPA):\n• Linux command line: file system, networking commands, scripting basics in bash\n• Git: branching models, merge strategies, CI integration\n• Docker: containers, Dockerfile, docker-compose\n• One CI/CD platform: GitHub Actions or Jenkins\n• One cloud provider basics: AWS or GCP (EC2, S3, VPC, IAM)\n• Python scripting for automation\n\nLevel 2 — Mid-level DevOps (2–5 years, ₹18–40 LPA):\n• Kubernetes: deployment, services, ConfigMaps, RBAC, Helm charts\n• Infrastructure as code: Terraform (most common), AWS CloudFormation, or Pulumi\n• Observability: Prometheus + Grafana, ELK stack, distributed tracing (Jaeger)\n• Secret management: HashiCorp Vault, AWS Secrets Manager\n• GitOps: ArgoCD or Flux\n• Networking: subnets, load balancers, service mesh basics (Istio)\n\nLevel 3 — Senior DevOps / SRE (5–8 years, ₹40–80 LPA):\n• Platform engineering: internal developer platforms, golden path tooling\n• SLO/SLA design and implementation\n• Chaos engineering (Chaos Monkey, Litmus)\n• Multi-cloud and hybrid cloud architecture\n• FinOps: cloud cost optimisation and showback\n• Security: SAST/DAST integration, container security, Kubernetes hardening",
+      },
+      {
+        heading: "Certifications for DevOps in India",
+        content: "Ranked by value in the Indian job market:\n\n1. CKA (Certified Kubernetes Administrator): The most respected DevOps certification in India. Tests actual Kubernetes administration (not just theory). Practical exam in a live cluster. Employers frequently list it as a requirement.\n\n2. AWS Solutions Architect Associate: Broad cloud knowledge. Prerequisite for most senior DevOps roles at AWS-heavy companies.\n\n3. AWS DevOps Engineer Professional: Advanced DevOps on AWS. Required for senior roles at companies using CodePipeline, CodeDeploy, etc.\n\n4. HashiCorp Terraform Associate: Increasingly required for IaC-heavy roles. Tests Terraform fundamentals — state, modules, providers, workspaces.\n\n5. Google Cloud Professional DevOps Engineer: Valuable for companies running on GCP (more common in ML-heavy startups).\n\nAvoiding certification inflation: At service IT companies, 3–4 certifications are expected. At Indian product companies, one strong certification (CKA) plus a strong GitHub portfolio of real infrastructure code beats 5 vendor certifications.",
+      },
+      {
+        heading: "Transitioning to DevOps from software development",
+        content: "This is the most common career move into DevOps from Indian tech backgrounds:\n\nWhy developers make good DevOps engineers: You already understand code, CI/CD, and software delivery. The skill gap is primarily in infrastructure, cloud, and tooling — which is learnable.\n\nTransition path:\n1. Start with Docker: Containerise an application you already know (your existing project). Understand Dockerfile, layers, volumes, networking.\n2. Deploy it on Kubernetes: Set up minikube or kind locally. Write Deployment and Service manifests. Understand pods, replica sets, and ingress.\n3. Automate it with Terraform: Provision the cloud infrastructure (VPC, EC2, RDS) that your application runs on. Manage state in S3.\n4. Set up a CI/CD pipeline: GitHub Actions workflow that runs tests, builds a Docker image, pushes to ECR, and deploys to Kubernetes.\n5. Add observability: Add Prometheus metrics to your application. Create a Grafana dashboard. Set up a PagerDuty alert.\n\nAfter this project, you have a meaningful DevOps portfolio. Apply for junior DevOps or DevOps intern roles. Within 6 months of learning and your first DevOps role, you will be at the mid-level skills baseline.",
+      },
+    ],
+    faqs: [
+      { question: "Can a non-developer become a DevOps engineer in India?", answer: "Yes — Linux/networking engineers, IT operations staff, and cloud support engineers regularly transition into DevOps. The key is picking up coding (Python scripting at minimum) alongside infrastructure skills. The path is harder than a developer transition but very achievable." },
+      { question: "Is DevOps a separate team or embedded with development teams in India?", answer: "Both models exist. Large Indian companies (Flipkart, Amazon) have platform/SRE teams that serve product teams. Startups often embed DevOps engineers in product squads. The embedded model requires broader DevOps skills; the platform model allows deeper specialisation." },
+      { question: "What is the DevOps salary trajectory in India?", answer: "Junior (0–2 years): ₹8–18 LPA. Mid-level (2–5 years): ₹18–40 LPA. Senior DevOps/SRE at unicorns (5–8 years): ₹40–80 LPA. Staff SRE: ₹70–130 LPA. DevOps salaries have been growing 15–20% annually due to demand far outpacing supply." },
+      { question: "Is the DevOps title being replaced by 'Platform Engineer' or 'SRE' in India?", answer: "SRE (Site Reliability Engineering) and Platform Engineering are growing titles, especially at companies influenced by Google's SRE model. Functionally, they overlap heavily with DevOps. For interview purposes, prepare the same skills — the title differences are mostly about team philosophy, not day-to-day tools." },
+    ],
+    relatedSlugs: ["docker-kubernetes-interview-questions-india-2026", "aws-interview-questions-india-2026", "data-scientist-vs-ml-engineer-india-2026"],
+    practicePageSlugs: [{ label: "DevOps Interview Practice", slug: "devops" }],
+    cta: "DevOps interviews cover both technical skills and operational thinking. Practise explaining your infrastructure design decisions and incident handling with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "sql-interview-questions-india-2026",
+    title: "SQL Interview Questions for Indian Companies 2026",
+    metaDescription: "Top SQL interview questions for Indian product companies and IT firms in 2026. Joins, subqueries, window functions, indexes, query optimisation, and practical SQL problems asked at Paytm, Flipkart, and Indian banks.",
+    company: "General",
+    category: "Technical",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&q=80",
+    heroAlt: "Data analyst preparing SQL interview questions for Indian companies",
+    datePublished: "2026-08-18",
+    intro: "SQL is tested in almost every technical interview in India — for software engineers, data analysts, data engineers, and even product managers. At Indian fintech companies (Paytm, Razorpay), BFSI tech (HDFC, ICICI), and e-commerce companies (Flipkart, Meesho), SQL questions come up in technical rounds regularly. This guide covers every SQL concept tested in Indian interviews with examples and expected answers.",
+    sections: [
+      {
+        heading: "Joins — the most tested SQL concept",
+        content: "Q: What is the difference between INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN?\n\nINNER JOIN: Returns only rows with matching values in both tables. If no match, the row is excluded from results.\n\nLEFT JOIN (LEFT OUTER JOIN): Returns all rows from the left table, and matched rows from the right table. Unmatched right rows get NULL.\n\nRIGHT JOIN (RIGHT OUTER JOIN): Returns all rows from the right table, and matched rows from the left table. Unmatched left rows get NULL. Rarely used — can always be rewritten as LEFT JOIN with tables swapped.\n\nFULL OUTER JOIN: Returns all rows from both tables. Unmatched rows on either side get NULL. Note: MySQL does not natively support FULL OUTER JOIN — simulate with UNION of LEFT JOIN and RIGHT JOIN.\n\nCommon interview query: 'Find all customers who have NOT placed any orders.'\nSELECT c.customer_id, c.name FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id WHERE o.order_id IS NULL;\n\nSelf JOIN: A table joined with itself. Common use: find pairs of rows with a relationship, find employees and their managers.\nSELECT e.name AS employee, m.name AS manager FROM employees e JOIN employees m ON e.manager_id = m.employee_id;",
+      },
+      {
+        heading: "Aggregations, subqueries, and window functions",
+        content: "Aggregate functions: COUNT, SUM, AVG, MAX, MIN with GROUP BY. HAVING filters after GROUP BY (WHERE filters before).\n\nCommon interview query: 'Find customers who have placed more than 3 orders in the last 30 days.'\nSELECT customer_id, COUNT(*) AS order_count FROM orders WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' GROUP BY customer_id HAVING COUNT(*) > 3;\n\nSubqueries: A query nested inside another query.\n'Find employees whose salary is above the average salary.'\nSELECT name, salary FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);\n\nCTEs (Common Table Expressions): Named subqueries using WITH clause. More readable than deeply nested subqueries.\nWITH high_value_orders AS ( SELECT customer_id FROM orders WHERE amount > 10000 ) SELECT c.name FROM customers c JOIN high_value_orders h ON c.customer_id = h.customer_id;\n\nWindow functions: Perform calculations across rows related to the current row without collapsing them.\n• ROW_NUMBER(): Unique sequential number per partition\n• RANK(): Same rank for ties, gaps in numbering\n• DENSE_RANK(): Same rank for ties, no gaps\n• LAG(col, n): Value n rows before current row\n• LEAD(col, n): Value n rows after current row\n\n'Find the second highest salary in each department.'\nSELECT department, name, salary FROM ( SELECT department, name, salary, DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS rank FROM employees ) ranked WHERE rank = 2;",
+      },
+      {
+        heading: "Indexes and query optimisation",
+        content: "Q: What is an index and how does it work? An index is a data structure (typically a B-tree) that allows the database to find rows matching a condition without scanning the entire table. Without an index: O(n) scan. With a B-tree index: O(log n) lookup.\n\nTypes of indexes in PostgreSQL/MySQL:\n• B-tree (default): Equality and range queries. Used for most columns.\n• Hash index: Equality only. Faster for exact matches.\n• Composite index: Multiple columns. Most efficient when query conditions match the index column order left-to-right.\n• Unique index: Enforces uniqueness + speeds up lookups.\n• Partial index (PostgreSQL): Index only rows matching a condition (WHERE status = 'active') — smaller and faster for filtered queries.\n\nQ: When does an index NOT help? When the query returns more than 10–15% of table rows (full scan is cheaper). When the column has very low cardinality (gender with 2 values — index rarely used). When the indexed column is used inside a function: WHERE UPPER(email) = 'X' does not use an index on email — use a functional index or normalise the data.\n\nQ: What is EXPLAIN / EXPLAIN ANALYZE? EXPLAIN shows the query execution plan (which index is used, join method, estimated rows). EXPLAIN ANALYZE runs the query and shows actual vs estimated statistics. Use it to diagnose slow queries and verify indexes are being used.",
+      },
+    ],
+    faqs: [
+      { question: "What is the difference between DELETE, TRUNCATE, and DROP?", answer: "DELETE: removes rows one by one, can have a WHERE clause, is transaction-safe, fires triggers. TRUNCATE: removes all rows at once (faster), is DDL in MySQL (cannot be rolled back), does not fire row-level triggers. DROP: removes the entire table structure and all data. Cannot be undone." },
+      { question: "What is normalisation and what are the normal forms?", answer: "Normalisation reduces data redundancy and improves integrity. 1NF: eliminate repeating groups (each column has atomic values). 2NF: eliminate partial dependencies (all non-key attributes depend on the full primary key). 3NF: eliminate transitive dependencies (non-key attributes depend only on the primary key). Denormalisation is deliberately breaking normal forms for read performance." },
+      { question: "Is SQL or NoSQL better for Indian fintech applications?", answer: "Structured transactional data (orders, payments, user accounts) requires SQL's ACID guarantees. NoSQL (MongoDB, Cassandra) is appropriate for high-volume semi-structured data (logs, product catalogues, session data). Most Indian fintech companies use both." },
+      { question: "What SQL platform should I practise on for Indian interviews?", answer: "PostgreSQL is the most interview-relevant platform in India — most product companies use it. LeetCode's Database section for query practice. HackerRank's SQL challenges for company-styled problems. SQLZoo for interactive learning." },
+    ],
+    relatedSlugs: ["postgresql-interview-questions-india-2026", "data-engineer-interview-questions-india-2026", "data-science-interview-questions-india-2026"],
+    practicePageSlugs: [{ label: "Data Analyst Practice", slug: "data-analyst" }, { label: "Backend Engineer Practice", slug: "software-engineer" }],
+    cta: "SQL questions come up in every type of Indian technical interview. Practise explaining query logic and explaining your optimisation decisions with HireStepX's AI mock interviewer.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "how-to-crack-wipro-interview-2026",
+    title: "How to Crack the Wipro Interview 2026: Complete Guide",
+    metaDescription: "Complete Wipro interview guide 2026. NLTH and Elite aptitude rounds, technical interview, communication assessment, and preparation tips for freshers and experienced candidates at Wipro.",
+    company: "Wipro",
+    category: "Company Guides",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+    heroAlt: "Fresher preparing for the Wipro interview process in India",
+    datePublished: "2026-08-19",
+    intro: "Wipro is one of India's largest IT services companies and one of the most popular destinations for engineering freshers. Wipro's National Level Talent Hunt (NLTH) recruits thousands of freshers every year. Despite being a service IT company, Wipro's interview process has become more technical in recent years. This guide covers exactly what to expect and how to prepare, whether you are a fresher or an experienced candidate.",
+    sections: [
+      {
+        heading: "Wipro NLTH process for freshers",
+        content: "The Wipro NLTH (National Level Talent Hunt) hiring process:\n\nRound 1 — Online Assessment (Aptitude):\n• Quantitative Aptitude (20 questions, 20 minutes): Percentages, profit/loss, time-speed-distance, ratios, averages. Wipro's aptitude is moderate difficulty — competitive with TCS NQT.\n• Logical Reasoning (15 questions, 15 minutes): Syllogisms, blood relations, series completion, seating arrangement.\n• Verbal Ability (15 questions, 15 minutes): Reading comprehension, grammar, vocabulary, sentence correction.\n\nRound 2 — Written Communication Test: Essay writing on a given topic in 20 minutes. Assessed on grammar, structure, content, and word count (minimum 200 words). Common topics: technology trends, social issues, sustainability.\n\nRound 3 — Online Technical Test: 20 questions in 30 minutes covering: C/C++/Java output-based questions, data structures basics (array, linked list, sorting), DBMS basics (SQL queries), and OS concepts. One coding problem in a language of your choice.\n\nRound 4 — Technical Interview: 30–45 minutes with a Wipro technical panel. Covers: OOP concepts (mandatory), DBMS (write SQL queries on the spot), project discussion, data structures and algorithms. Be prepared to write code on paper or in a shared editor.\n\nRound 5 — HR Interview: Career goals, relocation acceptance, knowledge of Wipro's service lines, strengths and weaknesses, STAR-format behavioural questions.",
+      },
+      {
+        heading: "Wipro Elite NLTH for higher packages",
+        content: "Wipro Elite NLTH is the high-package track within Wipro's fresher hiring:\n\n• Elite NLTH offers: ₹6.5 LPA vs standard NLTH ₹3.5 LPA — nearly double the fresher package.\n• Selection criteria: Higher aptitude cutoff scores, a more difficult technical test, and a stricter interview.\n• Turbo track (Wipro's highest fresher package at ₹10–12 LPA): For students from Tier-1 colleges with 8.0+ CGPA. Requires exceptional technical performance in the coding round.\n\nElite technical test differences: 2–3 coding problems (medium LeetCode difficulty). More challenging DSA questions. Greater emphasis on time and space complexity analysis.\n\nPreparing for Elite: DSA preparation to the medium-LeetCode level is necessary. Practice C++, Java, or Python implementations. Strong OOP, DBMS, and OS fundamentals at interview depth.",
+      },
+      {
+        heading: "Experienced candidates at Wipro",
+        content: "Wipro hiring for experienced candidates (2–8 years):\n\n• Requisition-based hiring: Unlike NLTH, experienced hiring is through specific open positions. Apply via Wipro Careers portal or through referrals.\n• Technical round: 1–2 technical rounds focused on your domain (Java backend, cloud, testing, etc.). Medium-difficulty DSA question + domain-specific questions.\n• Managerial round: Project management, leadership, and team scenarios.\n• HR round: Compensation discussion, role expectations, joining timeline.\n\nWipro for experienced candidates is primarily interesting for:\n• International project exposure (Wipro has strong onsite rotation programmes to US, UK, Europe)\n• Structured certification programmes and training\n• Stable employment and large-company benefits (health insurance, ESIC, PF)\n• Domain-specific expertise in BFSI, healthcare, and manufacturing verticals",
+      },
+      {
+        heading: "Wipro compensation 2026",
+        content: "Wipro fresher compensation:\n• Standard NLTH: ₹3.5 LPA\n• Elite NLTH: ₹6.5 LPA\n• Turbo/Wilp: ₹10–12 LPA\n\nWipro experienced compensation:\n• 2–4 years: ₹8–16 LPA (significant range based on skills and negotiation)\n• 4–7 years: ₹15–30 LPA\n• 7–12 years (lead/architect): ₹25–55 LPA\n\nWipro is below market for technical roles compared to Indian product companies. However, the combination of international exposure (onsite opportunities), job stability, and structured career tracks makes it a reasonable choice for engineers who want a large-company experience or international placement.",
+      },
+    ],
+    faqs: [
+      { question: "Is Wipro better or worse than TCS as a first job?", answer: "Comparable. Wipro's Elite package (₹6.5 LPA) is better than TCS Digital (₹7 LPA) considering the stability and training quality. TCS has a larger campus and more project variety. For purely technical growth, product companies are better than both." },
+      { question: "Does Wipro have a bond for freshers?", answer: "Wipro has historically required a 1-year bond for freshers (₹75,000 penalty for early exit). Confirm the current bond terms in your specific offer letter." },
+      { question: "How long does the Wipro NLTH process take from application to joining?", answer: "Typically 2–4 months from the online test to joining date. Campus drives happen January–March with joinin in July–August. Off-campus NLTH runs throughout the year with a similar 6–10 week process." },
+      { question: "Can I switch from Wipro to a product company after 1–2 years?", answer: "Yes — many Indian engineers use Wipro as a starting point and switch to product companies after gaining foundational experience. The key is building independent skills (DS&A, system design, strong programming language) alongside the Wipro project work." },
+    ],
+    relatedSlugs: ["how-to-crack-infosys-interview-2026", "tcs-nqt-preparation-guide-india-2026", "first-job-india-tips-freshers-2026"],
+    practicePageSlugs: [{ label: "Wipro Interview Practice", slug: "wipro" }, { label: "HR Interview Practice", slug: "hr-interview-questions" }],
+    cta: "Wipro's HR and technical rounds are very practisable. HireStepX's AI mock interviewer gives you realistic practice for both the OOP technical discussion and the HR behavioural questions.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "how-to-crack-infosys-interview-2026",
+    title: "How to Crack the Infosys Interview 2026: Complete Preparation Guide",
+    metaDescription: "Complete Infosys interview guide 2026. InfyTQ, Infosys Specialist Programmer (SP), DSE tracks, aptitude, technical rounds, HR interview, and preparation tips for freshers applying to India's second-largest IT company.",
+    company: "Infosys",
+    category: "Company Guides",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+    heroAlt: "Fresher preparing for the Infosys interview in India",
+    datePublished: "2026-08-19",
+    intro: "Infosys is India's second-largest IT services company and one of the most common destinations for engineering freshers from tier-2 and tier-3 colleges. Infosys has three hiring tracks — the standard Systems Engineer, the Specialist Programmer (SP), and the Digital Specialist Engineer (DSE) — each with different difficulty levels and starting salaries. This guide covers all three tracks and what to expect in each.",
+    sections: [
+      {
+        heading: "Infosys hiring tracks and what they offer",
+        content: "Track 1 — Systems Engineer (SE): Starting salary ₹3.6–4 LPA. Standard fresher hiring. Least competitive technically. Infosys's mass hiring track. Main product: InfyTQ certification.\n\nTrack 2 — Specialist Programmer (SP): Starting salary ₹6.25–7 LPA. Higher technical bar. Applicants must clear a more difficult coding round with medium-level DSA problems. Campus-focused recruitment at tier-2 colleges.\n\nTrack 3 — Digital Specialist Engineer (DSE): Starting salary ₹9.5 LPA. Highest technical bar. Requires strong coding skills (competitive programming level). Primarily campus recruitment at IITs, NITs, and BITS. Off-campus DSE is also available through Infosys Hackathons.\n\nInfyTQ: Infosys's online learning and certification platform. Completing InfyTQ Foundation level is a prerequisite for the SE recruitment. The platform teaches basic programming, Python, DBMS, and OOP. Completing it and performing well in the assessment fast-tracks you into the SE process.",
+      },
+      {
+        heading: "Infosys interview process by track",
+        content: "Systems Engineer (SE) process:\n1. InfyTQ certification (online, self-paced)\n2. Online aptitude test: Quantitative reasoning, logical reasoning, verbal ability (similar difficulty to Wipro NLTH)\n3. Pseudocode / reasoning assessment: Pattern-matching, algorithm logic without actual coding\n4. HR interview: Background verification questions, career goals, relocation willingness, STAR behavioural questions\n\nSpecialist Programmer (SP) process:\n1. Online coding test: 2 coding problems (medium difficulty) in 3 hours + 1 aptitude section\n2. Technical interview: OOP concepts, data structures, past projects, 1–2 coding questions\n3. HR interview: Same as SE track\n\nDSE process:\n1. Coding test: 3 coding problems (medium to hard) + aptitude\n2. Technical interview 1: Deep DSA discussion, time/space complexity, project walkthrough\n3. Technical interview 2: System design basics + advanced topics\n4. HR interview",
+      },
+      {
+        heading: "Technical preparation for Infosys",
+        content: "For SE track: Focus on aptitude (TCS NQT or Wipro NLTH level), basic programming (Python or Java — output-based questions), OOP fundamentals (encapsulation, inheritance, polymorphism), and SQL basics (SELECT, joins, GROUP BY).\n\nFor SP track: Medium-level LeetCode problems (arrays, strings, trees, hashmaps). OOP concepts at interview depth (design patterns basics). DBMS (ER diagrams, normalisation, SQL queries). CS fundamentals (OS: process vs thread, scheduling; networking: OSI model, HTTP basics).\n\nFor DSE track: Competitive programming background — complete at minimum NeetCode 150. System design basics. Java or C++ at a high level of fluency. Core CS: OS, networking, DBMS at deep interview level.\n\nMost-reported topics at Infosys interviews:\n• OOP: 4 pillars, abstract class vs interface, method overloading vs overriding\n• SQL: write a query to find nth highest salary, self-join for manager-employee\n• Data structures: reverse a linked list, detect cycle, binary search tree operations\n• OS: process vs thread, deadlock conditions\n• Networking: OSI model, TCP vs UDP, what happens when you type a URL",
+      },
+      {
+        heading: "Infosys compensation 2026",
+        content: "Infosys 2026 fresher packages:\n• SE (Systems Engineer): ₹3.6–4 LPA (base only; PF, gratuity, bonus bring total slightly higher)\n• SP (Specialist Programmer): ₹6.25–7 LPA\n• DSE (Digital Specialist Engineer): ₹9.5 LPA\n\nNote: Infosys has historically had delays in joining dates. Students placed in campus 2024 have reported waiting 6–12 months for actual joining. Factor this into your planning if you have other offers.\n\nCareer growth at Infosys: The SE track leads to Systems Engineer → Senior Systems Engineer → Technology Analyst → Technical Lead. Typical promotions take 2–3 years per level. Engineers looking for faster growth typically move to product companies after 1–2 years at Infosys.",
+      },
+    ],
+    faqs: [
+      { question: "What is the CGPA cutoff for Infosys hiring?", answer: "Infosys requires 60% (or 6.0 CGPA on a 10-point scale) throughout academics — 10th, 12th, and graduation — with no active backlogs at the time of joining." },
+      { question: "Can I apply for Infosys SP or DSE as an off-campus candidate?", answer: "Yes — Infosys conducts off-campus drives periodically through its careers portal. The process is the same as campus. For DSE, Infosys Hackathons and competitive programming leaderboards are the primary off-campus path." },
+      { question: "Is InfyTQ mandatory for Infosys application?", answer: "For the SE track: yes, InfyTQ certification is the entry point. For SP and DSE tracks: InfyTQ completion is not required — these tracks have their own assessment processes." },
+      { question: "Will I get a bond if I join Infosys?", answer: "Infosys has a 1-year service bond for freshers. The penalty for early exit was previously ₹1 lakh. Verify the current terms in your specific offer letter." },
+    ],
+    relatedSlugs: ["how-to-crack-wipro-interview-2026", "tcs-nqt-preparation-guide-india-2026", "first-job-india-tips-freshers-2026"],
+    practicePageSlugs: [{ label: "Infosys Interview Practice", slug: "infosys" }, { label: "HR Interview Practice", slug: "hr-interview-questions" }],
+    cta: "Infosys SP and DSE rounds require real coding ability. Practise your technical explanation and HR questions with HireStepX's AI mock interviewer before your Infosys interview.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "product-manager-interview-questions-india-2026",
+    title: "Product Manager Interview Questions for Indian Companies 2026",
+    metaDescription: "Top Product Manager interview questions for Indian companies in 2026. Product sense, estimation, analytical, and behavioural questions with sample answers for PM roles at Swiggy, Razorpay, Flipkart, and Indian startups.",
+    company: "General",
+    category: "Career",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80",
+    heroAlt: "Product manager candidate preparing for interviews at Indian tech companies",
+    datePublished: "2026-08-19",
+    intro: "Product Manager roles at Indian product companies have become some of the most coveted career positions in Indian tech — combining technical understanding, business strategy, and user empathy in a role with genuine organisational influence. The PM interview is fundamentally different from engineering interviews: it tests your thinking process, not specific technical knowledge. This guide covers the PM interview framework and the most commonly asked questions at Indian companies.",
+    sections: [
+      {
+        heading: "PM interview question types at Indian companies",
+        content: "Indian PM interviews typically cover 5 question types:\n\n1. Product Sense: 'Design a new feature for Swiggy.' 'How would you improve Razorpay's dashboard?' These test whether you understand users, can prioritise, and make product trade-offs.\n\n2. Estimation: 'How many UPI transactions happen per day in India?' 'How many food orders does Swiggy process daily?' These test structured thinking under ambiguity.\n\n3. Analytical / Metrics: 'Swiggy's DAU dropped 10% week-over-week. Walk me through how you would diagnose this.' Tests your ability to break down data problems systematically.\n\n4. Strategy: 'Should Razorpay enter the lending space?' 'What is the biggest threat to Meesho's business in the next 3 years?' Tests business acumen and strategic frameworks.\n\n5. Behavioural: 'Tell me about a time you shipped a product with limited data.' 'How did you handle a situation where engineering said something was impossible?' Tests interpersonal and leadership skills via STAR framework.",
+      },
+      {
+        heading: "Product sense questions — sample answers",
+        content: "'How would you improve Google Pay's UX for tier-2 Indian users?'\n\nStrong answer structure:\n1. Clarify: 'By tier-2 users, I mean users in cities like Jaipur, Coimbatore — likely on lower-end Android phones with intermittent 4G.'\n2. Identify users: Primary user is a small business owner or young professional making 3–10 transactions per week — bill payments, UPI transfers, merchant payments.\n3. Identify pain points (from knowledge of this user): Slow load times on low-end devices, confusion with multi-step UPI flow for first-time users, distrust of digital payments due to failure anxiety.\n4. Propose solutions ranked by impact: (a) Offline mode — queue transactions when connectivity is lost and retry automatically. High impact, solves the core anxiety. (b) Simplified first-time UPI setup flow — reduce steps from 6 to 3, with vernacular language support. (c) 'Recent' shortcut on home screen for repeat transactions — most tier-2 users repeat the same 5–10 transactions. Reduces time-to-complete.\n5. Success metrics: UPI setup completion rate (new users), transaction success rate on ₹1–10k range, D7 retention of new activations from tier-2 cities.\n\nCommon mistake: Jumping to features without articulating users and pain points first.",
+      },
+      {
+        heading: "Estimation and metrics questions",
+        content: "'How many food orders does Swiggy process daily in India?'\n\nStructured answer:\n• Urban India internet population: ~700M total internet users, ~350M in cities\n• Regular food delivery users: ~10–15% of urban internet users = 35–50M\n• Order frequency: Average Swiggy user orders 2–3 times per month = roughly 2.5 times/month\n• Daily orders from regular users: 40M users × 2.5 orders/month ÷ 30 days = ~3.3M orders/day\n• Adjust for market share: Swiggy and Zomato split ~50/50 = ~1.6–1.8M Swiggy orders/day\n• Round answer: ~1.5–2M food orders per day\n\nActual: Swiggy publicly disclosed ~3M daily orders in 2024. The estimation is in the right order of magnitude — that is the goal.\n\n'DAU dropped 10% week-over-week — how do you diagnose this?'\n\nStructure: Funnel the investigation:\n1. Is it a data/tracking issue? Check analytics pipeline for reporting errors.\n2. Segment the drop: Platform (iOS vs Android), geography (specific cities?), user type (new vs returning), cohort (recent signups only?)\n3. External factors: Competitor campaign? Public holiday? News event?\n4. Internal changes: Code deployment that week? UX change? Server error rate spike?\n5. Form a hypothesis: 'The drop is concentrated in Android + users who signed up in the last 30 days, coinciding with last Tuesday's push notification change.' → Test by rolling back the notification change.",
+      },
+      {
+        heading: "Behavioural PM questions with STAR answers",
+        content: "'Tell me about a product you managed that failed. What did you learn?'\n\nStrong STAR answer:\nSituation: 'We launched a social sharing feature on our fitness app, allowing users to post workout summaries to their timeline.'\nTask: 'I owned the feature end-to-end — from user research to launch — with a 6-week timeline.'\nAction: 'We shipped the feature on schedule. Usage was 60% below our forecast in week 1.'\nResult/Learning: 'We had assumed users wanted public sharing based on fitness app benchmarks from the US. Our research with 8 users missed the privacy sensitivity of Indian users who did not want their fitness habits visible to family members on the same platform. We added a \"friends only\" privacy setting in the next sprint — usage recovered to 80% of forecast. Learning: competitive benchmarks from different cultural contexts are leading indicators only — user research in the actual market is irreplaceable.'\n\nPM interviews at Indian companies: Product companies (Meesho, Razorpay) expect strong product thinking and data rigour. APM programmes (Amazon, Meesho, Swiggy) for freshers require intellectual curiosity and structured thinking more than domain knowledge.",
+      },
+    ],
+    faqs: [
+      { question: "Do Indian PM interviews require technical background?", answer: "At product companies: you need enough technical understanding to work with engineers — knowing API concepts, database basics, and what makes engineering work complex. A CS background is a significant advantage but not a strict requirement. At B2C consumer companies: product empathy and data skills matter as much as technical skills." },
+      { question: "What is the best APM programme in India for freshers?", answer: "Amazon's APM, Meesho's APM, and Swiggy's APM programmes are the most respected in India. Flipkart and Razorpay also run APM cohorts. The Amazon APM is the most competitive. These programmes provide structured PM mentoring that accelerates the career trajectory significantly." },
+      { question: "Is MBA required to become a PM in India?", answer: "No — the majority of PMs at Indian product companies do not have MBAs. Engineering backgrounds with product interest are equally valued. An MBA from IIM or ISB helps primarily for strategic/business-heavy PM roles or for getting the first PM role without prior product experience." },
+      { question: "How do I transition from software engineering to PM in India?", answer: "Transition via an internal move (most common path — work closely with your current PM, volunteer for product work, then apply internally), an APM programme (apply as a fresher), or by building a product independently (launching an app, even a small one, demonstrates product ownership)." },
+    ],
+    relatedSlugs: ["how-to-become-product-manager-india-2026", "swiggy-interview-questions-2026", "flipkart-interview-questions-2026"],
+    practicePageSlugs: [{ label: "Product Manager Practice", slug: "product-manager" }],
+    cta: "PM interviews test your thinking out loud more than any other interview type. Practise your product sense and estimation frameworks with HireStepX's AI mock interviewer — get real-time feedback on your structure and depth.",
+    relatedLinks: [],
+  },
+
+  {
+    slug: "internship-tips-india-2026",
+    title: "How to Get and Make the Most of a Tech Internship in India 2026",
+    metaDescription: "How to land and succeed in a tech internship in India in 2026. Top platforms, application tips, interview preparation, what interns do at Indian companies, and how to convert to a full-time PPO.",
+    company: "General",
+    category: "Career",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
+    heroAlt: "College student securing a tech internship at an Indian product company",
+    datePublished: "2026-08-20",
+    intro: "A strong internship is the most powerful career-shaping experience available to Indian engineering students. The right internship at a product company can transform your campus placement outcome, significantly differentiate your resume, and in many cases lead directly to a pre-placement offer (PPO) that eliminates the anxiety of campus placements. This guide covers how to find, get, and maximise a tech internship in India in 2026.",
+    sections: [
+      {
+        heading: "Where to find tech internships in India",
+        content: "Internshala: India's largest internship platform. Most small to mid-sized startups post here. High volume but variable quality — filter carefully.\n\nLinkedIn: The single most effective platform for product company internships. Most Swiggy, Razorpay, Meesho, and startup internships are posted here. Set up job alerts and apply within the first 24 hours of posting.\n\nAngelList / Wellfound: Startup internship listings. Companies typically post here when they want to reach engineering students who are interested in startup culture.\n\nCompany career pages: Flipkart, Amazon India, Microsoft India, and Google India post campus internships directly on their careers pages. Subscribe to email alerts.\n\nCampus placement cell: Your college TPO should be actively connecting with companies. Engage early — companies often give a limited number of intern slots and fill them through TPO relationships before posting publicly.\n\nColdEmail + LinkedIn direct outreach: For startups and funded companies not actively posting, a specific email to the engineering lead or CTO with a clear statement of your skills and what you can contribute — with a GitHub portfolio — is more effective than you might expect. Response rates are low (5–10%) but the quality of opportunities is high.",
+      },
+      {
+        heading: "Internship interview preparation",
+        content: "Internship interviews at Indian product companies are lighter than full-time interviews but still require genuine preparation:\n\nTier-1 product companies (Flipkart, Amazon, Swiggy, Razorpay):\n• 2–3 DSA questions (easy to medium LeetCode difficulty)\n• Brief discussion of your projects (be prepared to explain every line of code in your resume project)\n• Basic OOP questions\n• No system design for interns typically\n\nEarly-stage startups:\n• Often just a conversation and a take-home project\n• The take-home project is your best opportunity — deliver working, well-structured code with documentation\n• Be prepared to explain technical decisions you made in the project\n\nTechnical preparation for internship interviews:\n• Complete 50–75 LeetCode problems focused on arrays, strings, hashmaps, and trees\n• Build one real project that demonstrates full-stack or backend/data skills\n• Know at least one language very well (Python or Java)\n• Prepare a clear 2-minute explanation of your most significant project",
+      },
+      {
+        heading: "What interns actually do at Indian companies",
+        content: "At Indian product companies, intern quality varies significantly by team:\n\nStrong intern experience: A dedicated project with a defined scope and a mentor engineer. You own the project end-to-end — design, implementation, testing, and a demo presentation. Access to production code and the codebase. Code reviews from senior engineers.\n\nWeak intern experience: Support tasks (writing documentation, fixing minor bugs), no ownership of a meaningful project, minimal mentorship. This often happens at service IT companies and some startups with no structured intern programme.\n\nHow to identify strong programmes before joining:\n• Ask in your interview: 'What project will I be working on?' 'Will I have a dedicated mentor?' 'Will I have the opportunity to present my work to the team?'\n• Check LinkedIn: Find previous interns from the same company and message them about their experience\n• Look for PPO conversion rates: Companies that convert 40%+ of interns to PPOs typically run structured programmes\n\nInternship stipends at Indian companies (2026):\n• Early-stage startups: ₹15,000–30,000/month\n• Mid-stage funded startups: ₹25,000–60,000/month\n• Unicorns (Swiggy, Razorpay, Meesho): ₹50,000–80,000/month\n• FAANG India (Amazon, Microsoft, Google): ₹80,000–150,000/month + accommodation",
+      },
+      {
+        heading: "Converting your internship to a PPO",
+        content: "A PPO (Pre-Placement Offer) is a full-time offer extended before campus placements. It eliminates placement uncertainty and allows you to negotiate from a position of strength.\n\nHow to maximise your PPO chance:\n\nDeliver the project — not just code: A working demo with a clear impact narrative ('This feature will reduce customer support tickets by 15%') is what managers remember. Code that works but cannot be explained or demonstrated is not a strong PPO case.\n\nBuild visibility beyond your team: Attend team meetings, ask questions in engineering all-hands, introduce yourself to engineers outside your immediate team. PPO decisions are sometimes influenced by people you briefly interacted with.\n\nCommunicate proactively: Give weekly updates to your mentor without being asked. Flag blockers early. If you are going to miss a deadline, say so 3 days before — not on the day. This mirrors professional engineering behaviour.\n\nAsk explicitly if PPO is available: In your mid-internship review (usually week 4–6 of an 8-week internship), ask directly: 'Is there an opportunity for a PPO based on my performance? What would I need to demonstrate in the second half?' This shows initiative and helps you calibrate your remaining weeks.\n\nExtend your impact: Propose a follow-on project or additional feature if you finish your main project early. The intern who takes initiative beyond the assigned scope is almost always first in line for a PPO.",
+      },
+    ],
+    faqs: [
+      { question: "When should I start applying for summer internships in India?", answer: "Product company internships: September–November for internships starting in May–June. Campus placements are earlier than most students expect. For off-campus applications: January–March for summer 2026 internships." },
+      { question: "Is a 2-month internship long enough to get a PPO?", answer: "Most PPO-eligible internships are 8–12 weeks. 2 months is the minimum that gives a company enough time to evaluate your performance. Some programmes (Amazon, Microsoft) run longer internships (10–16 weeks) with higher PPO rates." },
+      { question: "What if I don't get a PPO? Is the internship still worth it?", answer: "Yes — even without a PPO, a meaningful internship at a product company significantly strengthens your campus placement profile, your LeetCode code quality improves from real project work, and you have a concrete professional project to discuss in every future interview." },
+      { question: "Can final-year students still do internships?", answer: "Final-year students typically pursue placement, not additional internships. But if a company offers a 2–3 month internship with a conversion path, it is worth considering — many such programmes lead directly to joining. Confirm the company's joining timeline is compatible with your graduation date." },
+    ],
+    relatedSlugs: ["campus-placement-preparation-guide-india-2026", "internship-to-fulltime-conversion-tips-india-2026", "first-job-india-tips-freshers-2026"],
+    practicePageSlugs: [{ label: "HR Interview Practice", slug: "hr-interview-questions" }, { label: "Technical Interview Practice", slug: "software-engineer" }],
+    cta: "Internship interviews require both technical and behavioural preparation. Practise both with HireStepX's AI mock interviewer before your interview day.",
+    relatedLinks: [],
+  },
 ];
 
 /* ─── Helpers ─── */
