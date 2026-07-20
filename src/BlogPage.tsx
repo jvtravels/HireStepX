@@ -2464,6 +2464,121 @@ const posts: BlogPost[] = [
       { label: "Infosys Interview Questions 2026", href: "/blog/infosys-interview-questions-2026" },
     ],
   },
+  {
+    slug: "notice-period-india-it-resignation-guide-2026",
+    title: "Notice Period in India 2026 — IT Resignation Guide, Buyout, Early Exit & What to Say",
+    metaDescription: "How to handle notice period in India 2026. Covers 30, 60, 90-day notice periods at TCS, Infosys, Wipro, Accenture, product companies. Notice period buyout, early release negotiation, and what to write in your resignation email.",
+    company: "General",
+    category: "Career",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&h=500&fit=crop",
+    heroAlt: "Professional writing resignation letter representing notice period guide",
+    datePublished: "2026-07-20",
+    intro: "Notice period anxiety is real: most Indian IT professionals know they need to resign but freeze on the details — what to say, whether the manager will make it difficult, how to handle buyout requests from the new company, and what happens to salary if you want to leave early. This guide covers the full process, company by company for the major IT employers, with scripts for the conversations that feel awkward to navigate alone.",
+    sections: [
+      {
+        heading: "Notice Period by Company in India 2026",
+        content: "Notice period varies significantly across Indian IT. Know your company's policy before you start the process:\n\n| Company | Notice Period | Bond Penalty | Notes |\n|---|---|---|---|\n| TCS | 90 days | ₹50K (freshers, 1-year bond) | Freshers must serve full notice OR pay the bond. Mid-career: negotiable by project status |\n| Infosys | 60 days (junior) / 90 days (senior) | None (post-bond period) | Bond expired? Standard exit applies. Active InfyTQ training? May extend. |\n| Wipro | 90 days | ₹75K (NTH/Elite freshers, 1-year) | Wipro standard policy; Turbo track has separate terms |\n| Cognizant | 45–60 days | None | GenC and GenC Pro tracks have same terms |\n| Accenture | 90 days | None | 90-day notice strictly enforced in most cases |\n| Tech Mahindra | 90 days | ₹50K (ELP, 1-year bond) | Longest notice period in tier-2 IT services |\n| HCL | 60 days | None | Negotiable with manager approval |\n| Capgemini | 60 days | None | Standard industry terms |\n| IBM | 60 days | None | Performance review period can complicate exit timing |\n| LTIMindtree | 60–90 days | None | 90 days for senior roles |\n| Infosys BPO | 30 days | None | Separate from Infosys tech arm |\n| Razorpay | 30 days | None | Standard startup-style policy |\n| Swiggy / Zomato | 30–60 days | None | Depends on level |\n| Flipkart | 60 days | None | Standard |\n| Amazon | 30 days | None | India offices follow standard policy |\n| Microsoft | 30 days | None | Rare early releases given on case-by-case basis |\n| Google India | 30–60 days | None | Notice period waiver possible for senior hires |\n\n**The 90-day problem**: Accenture, TCS, Wipro, and Tech Mahindra all have 90-day notice periods. If your new company wants a 30-day joinee, you have a gap. Most product companies absorb this by either (a) buying out your notice period or (b) waiting, depending on urgency."
+      },
+      {
+        heading: "How to Resign — Step by Step",
+        content: "The resignation process in Indian IT has a specific sequence. Skipping steps creates friction with HR that delays your clearance.\n\n**Step 1: Inform your manager verbally before submitting formal resignation**\nDon't submit formal resignation through the HR portal as your first communication. Tell your manager in a 1:1 first — either in person or video call — and give them 24–48 hours. This preserves the relationship and often results in the manager expediting your exit or supporting an early release request.\n\n**Step 2: Submit formal resignation on the HRMS portal**\nAll major IT companies use HRMS systems:\n- TCS: iEvolve portal\n- Infosys: InfyMe\n- Wipro: MyWipro\n- Accenture: myHR portal\n- Cognizant: 1Cognizant portal\n\nSubmit through the portal on the same day or next day after informing your manager. The notice period countdown typically starts from the submission date, not the verbal communication.\n\n**Step 3: Serve or negotiate the notice period**\n- Full service: Safest option. No financial risk.\n- Early release: Request from manager + HR approval. Success depends heavily on your project status, client relationship, and manager's goodwill. Prepare a proper knowledge transfer plan and offer it proactively.\n- Notice buyout: Your new company pays the salary for the remaining notice days to your current company. Not all companies offer this; most large IT companies accept it.\n\n**Step 4: Complete knowledge transfer (KT)**\nDocument every system, process, and client contact you handle. A thorough KT document significantly improves your chances of early release — it signals that you've made the transition easy for your team.\n\n**Step 5: Clear IT assets and complete exit formalities**\nReturn laptop, access cards, and any other company assets. Complete clearance from IT, admin, and finance. This must be done before your final working day.\n\n**Step 6: Collect relieving letter and experience letter**\nThe relieving letter confirms your last working day. The experience letter (or service letter) confirms your tenure, role, and responsibilities. Both are required for your background check at the new company. Don't leave without them — follow up with HR explicitly."
+      },
+      {
+        heading: "Notice Period Buyout — How It Works",
+        content: "Notice period buyout is when your new employer pays your current employer for the remaining days of notice so you can join earlier. It's common in the Indian IT industry but not universal.\n\n**How to initiate a buyout:**\n1. Confirm your new company is willing to buy out the notice (not all companies do — product startups often do; large IT services rarely offer it)\n2. Get the buyout amount in writing from your new company (usually an email from HR stating the amount and how it will be reimbursed)\n3. Request early release from your current company's HR with the buyout letter\n4. Current company HR may accept payment from the new company or from you directly\n\n**Buyout amounts:**\n- TCS: equivalent to remaining days' gross salary — typically ₹30–50K for fresher package for 1–2 months remaining\n- Wipro: same formula, ₹30–60K range\n- Accenture and IBM: negotiated case-by-case; some offices accept, others do not\n\n**When buyout doesn't work:**\n- Your project is in a critical phase (client delivery, live deployment)\n- Your manager refuses to approve early release despite buyout offer\n- Your role is on a billable project and the client relationship requires handover time\n\nIn these cases, your options are: serve the notice, negotiate a longer joining date with your new company, or accept that the new offer may be withdrawn (rare but happens with companies that have fixed joining batches).\n\n**Protecting yourself if they push back**: If your company refuses a legitimate early release despite proper KT, document all communication in writing (email). In India, companies cannot legally force you to work beyond the statutory notice period under the Industrial Employment (Standing Orders) Act, though specific contractual terms and state-level shops-and-establishments rules may apply."
+      },
+      {
+        heading: "What to Write in Your Resignation Email",
+        content: "Keep it short. Long resignation emails create opportunities for awkward responses. The goal is clarity, not closure.\n\n**Template for IT services companies:**\n\n---\nSubject: Resignation — [Your Name] — [Employee ID]\n\nDear [Manager's Name],\n\nI am writing to formally resign from my position as [Job Title] at [Company Name], effective [last working day — calculate your notice period from today].\n\nI have genuinely valued my time here and will ensure a complete handover of all responsibilities before my last day. I will share a detailed knowledge transfer document by [specific date — suggest 2 weeks before last day].\n\nPlease let me know the next steps for the exit formalities.\n\nThank you,\n[Your Name]\n[Employee ID]\n[Contact number]\n---\n\n**What to omit:**\n- Why you are leaving\n- Details about your new company or role\n- Any complaints about the current role, manager, or team\n- Any ask for a counteroffer (if you want to explore a counteroffer, have that conversation verbally, never in the resignation email)\n\n**CC list**: Your manager (To:), HR (CC:). Nothing else.\n\n**Counteroffer warning**: In Indian IT, counteroffers are common when you are leaving a critical project. A counteroffer that doesn't address the root reason you were leaving (career growth, salary ceiling, work culture) is a trap. Accept it and you delay the inevitable by 6–12 months, and your negotiating position deteriorates — the company now knows your floor."
+      },
+      {
+        heading: "Salary During Notice Period and Full & Final Settlement",
+        content: "You will receive your full salary for every working day during the notice period, including PF and any variable components that have already been declared.\n\n**What gets deducted in F&F (Full & Final Settlement):**\n- Notice pay shortfall (if you leave before your notice period ends without a buyout)\n- Any pending loan recoveries (if you took a company loan)\n- Unreturned asset value (rare — company claims if laptop is damaged)\n- Gratuity adjustment (you receive it if you have served 5+ continuous years; not applicable for most freshers)\n\n**What you receive in F&F:**\n- Unpaid salary for last partial month\n- Encashment of unused leave (depends on company policy — Infosys pays up to 30 days; TCS policy caps it)\n- Gratuity (if applicable at 4 years 240 days+ at some companies — they treat this as 5 years)\n- Variable pay / performance bonus if already declared\n\n**Timeline**: F&F settlement in India takes 30–90 days after your last working day. Companies are legally required to process it, but delays are common at large IT companies. Follow up with HR via email (keeps paper trail) every 2 weeks if it's delayed."
+      },
+    ],
+    faqs: [
+      {
+        question: "Can a company force me to serve the full notice period in India?",
+        answer: "Contractually, yes — your employment contract specifies the notice period and you agreed to it. However, the company cannot legally detain you. You can leave at any time; the consequence is forfeiture of notice pay and potential bond penalty (if applicable). In practice, most early exits are resolved through negotiation — a thorough KT and proactive communication with your manager resolves the majority of cases."
+      },
+      {
+        question: "What happens if I don't serve my notice period?",
+        answer: "If you leave without serving your notice period, your company can deduct the equivalent salary from your F&F settlement and withhold your relieving letter. The relieving letter is required for your new employer's background check — not having it creates friction. The company generally cannot pursue legal action for notice period breaches in IT services, though some contracts include liquidated damages clauses for senior roles."
+      },
+      {
+        question: "Can I get my notice period reduced?",
+        answer: "Yes — with manager approval and a completed knowledge transfer. The earlier you submit your KT document and get it approved, the stronger your case for early release. Most companies grant early release of 15–30 days for cooperative exits. If your project is in a critical phase, early release is harder to get regardless of KT quality."
+      },
+      {
+        question: "Is notice period negotiable before joining a new company?",
+        answer: "Yes, and this is the right time to negotiate. When you receive an offer from a new company, negotiate your joining date before signing. Most product companies and funded startups will give 60–90 days if asked — they know the Indian IT notice period reality. Don't accept a 30-day joining date if you have a 90-day notice period and assume you can figure it out later."
+      },
+    ],
+    relatedSlugs: ["salary-negotiation-tips-india-2026", "fresher-salary-india-2026-what-to-expect-negotiate", "product-company-vs-service-company-india-career"],
+    practicePageSlugs: [],
+    cta: "Preparing for interviews at your next company while serving notice is stressful. HireStepX lets you practice voice mock interviews during commutes or lunch breaks — the full interview in 20–25 minutes, scored against STAR framework, with detailed feedback you can act on before your next attempt.",
+    relatedLinks: [
+      { label: "Salary Negotiation Tips India 2026", href: "/blog/salary-negotiation-tips-india-2026" },
+    ],
+  },
+  {
+    slug: "paytm-interview-questions-india-2026",
+    title: "Paytm Interview Questions India 2026 — SDE, PM & Analyst Roles (One97 Communications)",
+    metaDescription: "Paytm interview questions 2026 for SDE, PM, and analyst roles. Covers coding rounds, payments domain knowledge, system design for UPI scale, and Paytm salary ₹12–52 LPA. Honest guide post-RBI action.",
+    company: "Fintech",
+    category: "Full Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=500&fit=crop",
+    heroAlt: "Mobile payment screen representing Paytm interview preparation",
+    datePublished: "2026-07-20",
+    intro: "Paytm (One97 Communications) remains one of India's most recognisable fintech employers despite the Paytm Payments Bank shutdown by RBI in early 2024. The core Paytm app, Paytm for Business (merchant QR), and financial distribution (loans, insurance) businesses continue to operate and hire. If you're interviewing at Paytm in 2026, understanding what the business is now — not what it was in 2021 at its peak — is the single most important context you can bring. Interviewers flag candidates who show up without knowing this.",
+    sections: [
+      {
+        heading: "Paytm's Current Business (What to Know Before Your Interview)",
+        content: "The Paytm Payments Bank (PPBL) shut down in February 2024 following RBI regulatory action. This changed Paytm's business model significantly:\n\n**What still runs:**\n- Paytm app: UPI payments, wallet (now powered by partner banks, not PPBL)\n- Paytm for Business: merchant payment acceptance, QR codes, Soundbox devices\n- Financial services distribution: loans via partner NBFCs, insurance distribution\n- Paytm Payment Gateway: for online merchants\n- Paytm Mini Apps: app-within-app marketplace\n\n**What changed:**\n- Paytm no longer operates a banking arm\n- Paytm Wallet now routes via partner banks\n- The company is more lean; headcount was reduced in 2024\n\n**Why this matters for your interview**: PM candidates will be asked to design or improve products within the current business model. SDE candidates working on payment flows need to know Paytm is a payment aggregator now, not a bank — the system design implications are different. Candidates who reference PPBL as if it still operates signal poor research."
+      },
+      {
+        heading: "SDE Technical Round — What Paytm Actually Asks",
+        content: "Paytm SDE interviews are challenging by Indian product company standards — above Swiggy and Zomato, close to Razorpay, below Amazon India.\n\n**Coding Rounds (2 rounds, 45–60 min each)**\n\nDifficulty: LeetCode Medium to Medium-Hard. Recent questions from 2025–2026 candidate reports:\n- Two sum variations (easy warm-up), then median of two sorted arrays\n- LRU Cache implementation\n- Maximum sum subarray (Kadane's algorithm)\n- Serialize and deserialize a binary tree\n- Implement a rate limiter (payments context — very common at fintech companies)\n- Find all permutations of a string\n- Merge k sorted linked lists\n\n**Payment domain design in technical rounds:**\nPaytm interviewers frequently ask coding questions with payment framing:\n- \"Implement a retry mechanism for failed UPI transactions\" (exponential backoff)\n- \"Design a function to detect duplicate payment requests\" (idempotency key pattern)\n- \"Given N transaction records, find all circular payment chains\" (graph problem)\n\nThese require the same DSA skills as any LeetCode problem, but knowing the domain context (why idempotency matters in payments, what a circular payment chain means for fraud detection) improves your ability to discuss trade-offs with the interviewer.\n\n**System Design (1 round for SDE-2+)**\nCommon topics:\n- Design UPI payment flow from merchant scan to settlement\n- Design a real-time fraud detection system for payment transactions\n- Design a notification system that handles 10M payment status updates per day\n- Design Paytm's merchant dashboard with real-time transaction visibility"
+      },
+      {
+        heading: "PM Interview at Paytm",
+        content: "Paytm PM interviews have three consistent components:\n\n**1. Product Sense**\n- \"Design a feature to increase merchant adoption in tier-3 cities\"\n- \"How would you improve Paytm's checkout conversion rate?\"\n- \"What new financial product should Paytm build given its current distribution reach?\"\n\nPaytm PM candidates are expected to reason about India-specific constraints: low smartphone RAM on entry-level devices, unreliable internet connectivity in tier-2/3 cities, and UPI's dominance over alternatives.\n\n**2. Metrics and Analytics**\n- \"Paytm's merchant acquisition rate dropped 15% this quarter. How do you diagnose it?\"\n- \"Design a metrics framework to measure the health of Paytm's payments business\"\n- \"What is your north star metric for the Paytm for Business product, and why?\"\n\n**3. Execution / Prioritisation**\n- \"You have 5 features requested by merchant partners and 2 engineering sprints. How do you decide?\"\n- \"A major payment partner (bank) is threatening to reduce Paytm's UPI transaction limits. Walk me through how you handle this.\"\n\n**Context that scores well**: Referencing Paytm's real strategic constraints — the move from banking to pure payment aggregation, the competition from GPay and PhonePe for UPI market share, and the merchant QR business as the defensible moat — shows interviewers you've done more than cursory research."
+      },
+      {
+        heading: "Paytm Salary 2026 — Post-Restructuring Reality",
+        content: "Paytm's compensation in 2026 reflects the company's leaner phase after the 2024 restructuring:\n\n**Software Engineer:**\n- Entry/SDE-1 (0–2 yrs): ₹12–18 LPA total compensation\n- SDE-2 (2–5 yrs): ₹20–32 LPA\n- SDE-3/Senior (5+ yrs): ₹32–52 LPA\n\n**Product Manager:**\n- APM/PM-1: ₹12–27 LPA\n- PM-2/Senior PM: ₹21–60 LPA\n\nRSU grants are liquid (Paytm is listed on NSE/BSE). The stock has been volatile — factor this in when evaluating equity offers. Cash component is reliable.\n\n**Negotiation reality**: Paytm's HR negotiates. Given the 2024 restructuring and reduced hiring volume, Paytm in 2026 is more flexible on fixed pay than in its 2021 peak. Quote 10–15% above your current CTC and hold; most candidates report settling at 15–20% above current.\n\n**Benefits**: Health insurance (₹3L family cover), employee RSU grants, food coupons/allowance. Work-from-office for most roles in Noida headquarters; Bengaluru office for some tech teams."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Paytm still a good company to work for in 2026?",
+        answer: "Paytm is a viable employer in 2026 for engineers and PMs who want payments domain expertise with a listed company. The business has stabilised post-RBI action on PPBL. Headcount is leaner, which means more individual ownership per engineer. The stock has been volatile; don't take the offer primarily for equity. If you want fintech domain exposure with good brand recognition for your resume, Paytm remains a strong choice."
+      },
+      {
+        question: "What happened to Paytm Payments Bank?",
+        answer: "The RBI ordered Paytm Payments Bank (PPBL) to stop accepting new deposits and credits from February 29, 2024, following supervisory concerns. PPBL's banking operations effectively wound down. The parent company (One97 Communications / Paytm app) continues to operate payments and financial services distribution through partner banks."
+      },
+      {
+        question: "How hard is the Paytm SDE interview?",
+        answer: "Paytm SDE interviews are moderately hard — LeetCode medium to medium-hard difficulty, plus 1 system design round for SDE-2+ roles. The bar is above Swiggy/Zomato and similar to Razorpay. 2–3 months of LeetCode preparation (targeting 100+ medium problems) and system design study is sufficient for most SDE-2 candidates."
+      },
+      {
+        question: "Does Paytm have a work-from-home policy in 2026?",
+        answer: "Most Paytm tech roles are work-from-office in 2026 at the Noida headquarters (Sector 132, Noida) or Bengaluru offices. Some senior roles have hybrid arrangements. Confirm the specific policy for your role during the HR discussion, as policies have varied in the post-pandemic period."
+      },
+    ],
+    relatedSlugs: ["razorpay-interview-experience-sde-pm-2026", "phonepe-engineering-interview-india-2026", "salary-negotiation-tips-india-2026"],
+    practicePageSlugs: [
+      { label: "Fintech SDE Interview Practice", slug: "fintech-interview-questions" },
+    ],
+    cta: "Paytm interviews test payment domain knowledge alongside standard DSA and system design. HireStepX's fintech interview mode frames coding and system design questions in payment contexts — UPI flows, idempotency, fraud detection — so you're practicing what Paytm actually asks, not generic LeetCode problems.",
+    relatedLinks: [
+      { label: "Razorpay Interview Experience 2026", href: "/blog/razorpay-interview-experience-sde-pm-2026" },
+      { label: "PhonePe Engineering Interview 2026", href: "/blog/phonepe-engineering-interview-india-2026" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */

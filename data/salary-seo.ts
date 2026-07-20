@@ -354,6 +354,18 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "mphasis-interview-questions-freshers-2026",
     hubNote: "Blackstone ownership since 2016 — stable employer, moderate pay",
   },
+  {
+    slug: "paytm",
+    searchPhrase: "Paytm Software Engineer Salary India 2026",
+    metaDescription:
+      "Paytm salary India 2026 — SDE-1 ₹12–18 LPA, SDE-2 ₹20–32 LPA, SDE-3 ₹32–52 LPA. Listed RSU. Post-RBI-action business context and negotiation guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
+    questionSlug: "paytm-interview-questions-india-2026",
+    hubNote: "Listed RSU (NSE/BSE) — volatile stock, solid cash comp",
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */

@@ -787,6 +787,34 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What CGPA is required for off-campus placement?", answer: "Most IT services companies require 60% aggregate or 6.0 CGPA. TCS requires 60% in 10th, 12th, and graduation with no active backlogs. Infosys requires 65% aggregate." },
     ],
   },
+  {
+    slug: "notice-period-india-it-resignation-guide-2026",
+    title: "Notice Period in India 2026 — IT Resignation Guide, Buyout, Early Exit & What to Say",
+    metaDescription: "How to handle notice period in India 2026. Covers 30, 60, 90-day notice periods at TCS, Infosys, Wipro, Accenture, product companies. Notice period buyout, early release negotiation, and what to write in your resignation email.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&h=630&fit=crop",
+    company: "General", category: "Career",
+    faqs: [
+      { question: "Can a company force me to serve the full notice period in India?", answer: "Contractually, yes. However, you can leave at any time; the consequence is forfeiture of notice pay and potential bond penalty. In practice, most early exits are resolved through negotiation and a thorough knowledge transfer." },
+      { question: "What happens if I don't serve my notice period?", answer: "The company can deduct equivalent salary from your F&F settlement and withhold your relieving letter. The relieving letter is required for your new employer's background check." },
+      { question: "Can I get my notice period reduced?", answer: "Yes — with manager approval and a completed knowledge transfer. Most companies grant early release of 15–30 days for cooperative exits." },
+      { question: "Is notice period negotiable before joining a new company?", answer: "Yes — negotiate your joining date before signing the offer. Most product companies give 60–90 days if asked. Don't accept a 30-day joining date if you have a 90-day notice period." },
+    ],
+  },
+  {
+    slug: "paytm-interview-questions-india-2026",
+    title: "Paytm Interview Questions India 2026 — SDE, PM & Analyst Roles (One97 Communications)",
+    metaDescription: "Paytm interview questions 2026 for SDE, PM, and analyst roles. Covers coding rounds, payments domain knowledge, system design for UPI scale, and Paytm salary ₹12–52 LPA. Honest guide post-RBI action.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=630&fit=crop",
+    company: "Fintech", category: "Full Guide",
+    faqs: [
+      { question: "Is Paytm still a good company to work for in 2026?", answer: "Paytm is a viable employer in 2026. The business has stabilised post-RBI action on PPBL. Headcount is leaner, which means more individual ownership per engineer. The stock has been volatile; don't take the offer primarily for equity." },
+      { question: "What happened to Paytm Payments Bank?", answer: "The RBI ordered Paytm Payments Bank to stop accepting new deposits from February 29, 2024. The parent company (Paytm app) continues to operate payments and financial services distribution through partner banks." },
+      { question: "How hard is the Paytm SDE interview?", answer: "Paytm SDE interviews are LeetCode medium to medium-hard difficulty, plus 1 system design round for SDE-2+. The bar is above Swiggy/Zomato and similar to Razorpay. 2–3 months of preparation is sufficient." },
+      { question: "Does Paytm have a work-from-home policy in 2026?", answer: "Most Paytm tech roles are work-from-office in 2026 at the Noida headquarters or Bengaluru offices. Some senior roles have hybrid arrangements." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
