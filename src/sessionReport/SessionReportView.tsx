@@ -624,9 +624,16 @@ export default function SessionReportView({
             readinessSentence={data.readinessSentence}
             weakestSkill={data.weakestSkill?.name}
             resumeImprovements={data.resumeImprovements}
+            weakestQuestionIndex={
+              data.questions.length > 0
+                ? data.questions.reduce((min, q) => q.score < min.score ? q : min, data.questions[0]).index
+                : undefined
+            }
             onTryWeakestQuestion={
-              onTryQuestionAgain
-                ? () => onTryQuestionAgain(data.questions[0]?.index ?? 1)
+              onTryQuestionAgain && data.questions.length > 0
+                ? () => onTryQuestionAgain(
+                    data.questions.reduce((min, q) => q.score < min.score ? q : min, data.questions[0]).index
+                  )
                 : undefined
             }
             onDrillSkill={

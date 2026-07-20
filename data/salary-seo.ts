@@ -265,9 +265,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "deloitte",
-    searchPhrase: "Deloitte Salary for Freshers India 2026",
+    searchPhrase: "Deloitte India Salary 2026 — Fresher to Manager CTC",
     metaDescription:
-      "Deloitte India salary for freshers and analysts 2026. Analyst to Manager bands verified from AmbitionBox and Glassdoor.",
+      "Deloitte India salary 2026 — Analyst ₹6–11 LPA, Consultant ₹12–22 LPA, Senior Consultant ₹24–32 LPA, Manager ₹35–60 LPA. USI vs Consulting pay difference explained.",
     roles: [
       { roleKey: "software-engineer", label: "Analyst / SWE" },
       { roleKey: "consultant", label: "Consultant" },
@@ -305,7 +305,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "goldman",
     searchPhrase: "Goldman Sachs Salary India 2026",
     metaDescription:
-      "Goldman Sachs analyst and engineering salary India 2026. SWE, Data Scientist, Business Analyst, and Finance Analyst bands across Bengaluru and Hyderabad offices. Figures from seed dataset (goldman 1.2x).",
+      "Goldman Sachs salary India 2026 — Software Engineer ₹20–110 LPA, IB Analyst ₹48–75 LPA across Bengaluru & Hyderabad. Cash-only comp (no RSU at India offices). Know your band before you negotiate.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer / Analyst" },
       { roleKey: "data-scientist", label: "Data Scientist" },
@@ -318,9 +318,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "jpmc",
-    searchPhrase: "JP Morgan (JPMC) Salary India 2026",
+    searchPhrase: "JP Morgan Chase (JPMC) Salary India 2026",
     metaDescription:
-      "JP Morgan Chase (JPMC) salary India 2026. Software Engineer, Data Scientist, Business Analyst, and Finance Analyst bands across Bengaluru, Mumbai, and Hyderabad. Figures from seed dataset (jpmc 1.1x).",
+      "JP Morgan Chase salary India 2026 — Software Engineer ₹14–80 LPA, Business Analyst ₹4–35 LPA across Bengaluru, Mumbai & Hyderabad. No RSU at India offices. Negotiate smarter.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "data-scientist", label: "Data Scientist" },

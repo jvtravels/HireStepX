@@ -687,8 +687,12 @@ export default function SessionSetup() {
      "Your next move" engine emits (nextMove.ts). For gap CTAs that means
      `?focus=hr-round`, which maps to the HR Round type below. Skill-name
      focuses (e.g. ?focus=Communication) don't match a type and harmlessly
-     fall through to the role-recommended focus. */
-  const preselectedFocus = searchParams.get("type") || searchParams.get("focus");
+     fall through to the role-recommended focus.
+     When both params are present (e.g. Re-run emits ?type=behavioral&focus=campus-placement),
+     prefer `focus` when it's a specific slug — it's more precise than the generic `type`. */
+  const _focusParam = searchParams.get("focus");
+  const _typeParam = searchParams.get("type");
+  const preselectedFocus = (_focusParam && _focusParam !== "general") ? _focusParam : (_typeParam || _focusParam);
   /* Bounce-back from useInterviewEngine when /interview was hit with a
      hard role × company mismatch. We prefill role + company from the
      URL so the candidate sees what got rejected, and surface the warn
@@ -1450,20 +1454,24 @@ export default function SessionSetup() {
       // Forward drill key when present + recognized. Unknown keys are
       // dropped so /interview doesn't receive an unrecognized directive.
       const drillParam = drillCta ? `&drill=${encodeURIComponent(drillKey)}` : "";
-      /* HR rounds carry their type forward as the focus so useInterviewEngine
-         resolves interviewFocus="hr-round" instead of the "general" default.
-         The whole HR pipeline is already keyed on "hr-round": the personalization
-         prebias gate, the session_insights read bucket (analyze-sessions writes
-         focus = session.type), and HR-specific reference-question retrieval
-         (FOCUS_MAP "hr-round" -> "hr"). Without this the prebias never fires and
-         the insight read queries the wrong bucket. Scoped to hr-round only so
-         every other interview type's focus handling stays unchanged. */
-      const focusParam = focusType === "hr-round" ? "&focus=hr-round" : "";
+      /* Some focuses need both a `type=` and `focus=` param on the interview URL:
+         - HR Round: type=hr-round, focus=hr-round (pipeline keyed on "hr-round")
+         - Campus Placement: type=behavioral, focus=campus-placement
+           (stored as behavioral in DB; focus distinguishes it from behavioral)
+         Every other type: type=<focusType>, no separate focus param. */
+      let interviewTypeParam = focusType;
+      let focusParam = "";
+      if (focusType === "hr-round") {
+        focusParam = "&focus=hr-round";
+      } else if (focusType === "campus-placement") {
+        interviewTypeParam = "behavioral";
+        focusParam = "&focus=campus-placement";
+      }
       /* Starting without a granted mic (allowed when voice output is off) —
          hand the engine its text-only hatch so it doesn't try to acquire a
          mic the user never gave and doesn't render a dead "Listening" state. */
       const micParam = micStatus === "granted" ? "" : "&nomic=1";
-      router.push(`/interview?type=${focusType}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}${micParam}`);
+      router.push(`/interview?type=${interviewTypeParam}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}${micParam}`);
     }, 1900);
   };
 
@@ -1812,11 +1820,13 @@ export default function SessionSetup() {
                       <span style={{ color: T.copper, fontSize: 12 }}>*</span>
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      {relevantFocusSet
+                      {relevantFocusSet && targetRole.trim()
                         ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
-                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus)
+                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && targetRole.trim()
                           ? "Choose one area to focus on. The recommended pick for your role is highlighted."
-                          : "Choose one area to focus on."}
+                          : targetRole.trim()
+                            ? "Choose one area to focus on."
+                            : "Enter a role to see relevant focuses."}
                     </div>
                   </div>
                   <div

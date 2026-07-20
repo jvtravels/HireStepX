@@ -267,6 +267,20 @@ export default async function handler(req: Request): Promise<Response> {
   const feedbackBySession = await fetchFeedbackBySession(sessions.map((s) => s.id));
 
   for (const session of sessions) {
+    // Skip sessions where no candidate answered — same guard as evaluate-session.ts.
+    // `questions > 0` (DB filter) only counts generated questions, not answered ones.
+    // A session where the user never typed/spoke has only "user" transcript turns
+    // with empty text; analyzing it produces fabricated coaching (L-039).
+    const hasAnswers = (session.transcript ?? []).some(
+      (t) => (t.speaker === "user" || t.speaker === "User") && t.text?.trim().length > 0
+    );
+    if (!hasAnswers) {
+      void captureServerEvent("analyzer_skipped_no_answers", session.user_id, {
+        session_id: session.id,
+        focus: analyzerFocus(session),
+      });
+      continue;
+    }
     const analyzer = pickAnalyzer(analyzerFocus(session));
     const turnT0 = Date.now();
     let row: InsightRow;

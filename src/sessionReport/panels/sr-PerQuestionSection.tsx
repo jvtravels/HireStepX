@@ -65,7 +65,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
         }}
       >
         <h2 id="ir-questions-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
-          Per-Question Review <span style={{ color: t.inkFaint, fontSize: 16, marginLeft: 6 }}>({questions.length})</span>
+          Per-Question Review <span style={{ color: t.inkFaint, fontSize: 16, marginLeft: 6 }}>({questions.length} answered)</span>
         </h2>
         {showAll ? (
           <button

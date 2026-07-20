@@ -892,10 +892,13 @@ export function useInterviewEngine() {
       if (firstExp) return [`${cleanPhrase(firstExp.title)} at ${cleanPhrase(firstExp.company)}`];
       return [];
     })();
+    // Campus placement: never inject the profile role into Q1 — the intro
+    // should greet a fresher, not someone interviewing for "Senior Product Designer".
+    const isCampusFocus = interviewFocus === "campus-placement";
     const intro = buildBehavioralIntro({
       interviewerName,
       candidateName: user?.name || undefined,
-      role: targetRole || user?.targetRole || undefined,
+      role: isCampusFocus ? (targetRole || "Fresher") : (targetRole || user?.targetRole || undefined),
       company: targetCompany || user?.targetCompany || undefined,
       topProjects: introTopProjects.length ? introTopProjects : undefined,
     });

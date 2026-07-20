@@ -528,7 +528,7 @@ export default function CalendarPage() {
   const resetForm = () => {
     setFormTitle("");
     setFormCompany(user?.targetCompany || "");
-    setFormRole(user?.targetRole || "");
+    setFormRole("");
     setFormType("");
     setFormDate("");
     setFormTime("10:00");
@@ -545,7 +545,6 @@ export default function CalendarPage() {
   const openNewForm = () => {
     resetForm();
     setFormCompany(user?.targetCompany || "");
-    setFormRole(user?.targetRole || "");
     setShowForm(true);
   };
 

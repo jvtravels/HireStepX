@@ -17,6 +17,7 @@ export function NextStepsSection({
   daysUntilInterview,
   readinessSentence,
   weakestSkill,
+  weakestQuestionIndex,
   onTryWeakestQuestion,
   onDrillSkill,
   resumeImprovements,
@@ -24,6 +25,10 @@ export function NextStepsSection({
   daysUntilInterview?: number;
   readinessSentence?: string;
   weakestSkill?: string;
+  /** The label index (as shown in the Per-Question section) of the
+   *  lowest-scored question — used in the CTA copy so it matches
+   *  what the user sees in the report (e.g. "Q5", not "Q1"). */
+  weakestQuestionIndex?: number;
   onTryWeakestQuestion?: () => void;
   onDrillSkill?: () => void;
   /** Resume polish bullets from the AI analysis — shown when present
@@ -70,7 +75,7 @@ export function NextStepsSection({
         iconBg: t.errorTint,
         iconColor: t.error,
         title: "Try your weakest question again",
-        desc: "Improve your answer for Q1 and see your score go up.",
+        desc: `Improve your answer for Q${weakestQuestionIndex ?? 1} and see your score go up.`,
         cta: "Retry now",
       };
 

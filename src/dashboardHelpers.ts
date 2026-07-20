@@ -414,7 +414,9 @@ export function parseNaturalEvent(text: string, now: Date): ParsedNaturalEvent {
     if (h >= 0 && h <= 23) out.time = `${pad2(h)}:${t24[2]}`;
   }
 
-  // Date: "today", "tomorrow", a weekday name (next occurrence).
+  // Date: "today", "tomorrow", a weekday name (next occurrence),
+  // or an explicit date like "25th July", "July 25", "25/07", "25/07/2026".
+  const MONTH_NAMES = ["january","february","march","april","may","june","july","august","september","october","november","december"];
   if (/\btoday\b/.test(lower)) {
     out.date = toDateStr(now);
   } else if (/\btomorrow\b/.test(lower)) {
@@ -427,6 +429,34 @@ export function parseNaturalEvent(text: string, now: Date): ParsedNaturalEvent {
       if (delta === 0) delta = 7; // a weekday name means the next one, not today
       d.setDate(d.getDate() + delta);
       out.date = toDateStr(d);
+    } else {
+      // "25th July", "1st Jan", "July 25", "july 25th" — ordinal or plain day + month
+      const ordinalDay = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\b/.exec(lower);
+      const monthFirst  = /\b(jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\s+(\d{1,2})(?:st|nd|rd|th)?\b/.exec(lower);
+      // "25/07" or "25/07/2026"
+      const slashDate   = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?\b/.exec(lower);
+      let parsedDay: number | null = null;
+      let parsedMonth: number | null = null;
+      let parsedYear: number | null = null;
+      if (ordinalDay) {
+        parsedDay = parseInt(ordinalDay[1], 10);
+        parsedMonth = MONTH_NAMES.findIndex((m) => ordinalDay[2].startsWith(m.slice(0, 3)));
+      } else if (monthFirst) {
+        parsedMonth = MONTH_NAMES.findIndex((m) => monthFirst[1].startsWith(m.slice(0, 3)));
+        parsedDay = parseInt(monthFirst[2], 10);
+      } else if (slashDate) {
+        parsedDay = parseInt(slashDate[1], 10);
+        parsedMonth = parseInt(slashDate[2], 10) - 1; // 0-indexed
+        if (slashDate[3]) parsedYear = parseInt(slashDate[3], 10);
+      }
+      if (parsedDay !== null && parsedMonth !== null && parsedMonth >= 0) {
+        const year = parsedYear ?? now.getFullYear();
+        const d = new Date(year, parsedMonth, parsedDay);
+        // If the resulting date is in the past (and no explicit year was given),
+        // assume the user means next year.
+        if (!parsedYear && d < now) d.setFullYear(d.getFullYear() + 1);
+        if (!isNaN(d.getTime())) out.date = toDateStr(d);
+      }
     }
   }
 

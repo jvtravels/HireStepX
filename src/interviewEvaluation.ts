@@ -55,7 +55,9 @@ export function computeFallbackScores(params: EvalParams): FallbackResult {
   const hasAnyAnswers = transcript.some(
     t => t.speaker === "user" && t.text.length > 10 && !/^\[.*\]$/.test(t.text.trim()),
   );
-  const score = hasAnyAnswers ? fallbackScore : Math.min(30, fallbackScore);
+  // No answers → score 0 so save-session persists a sentinel that the card
+  // can display as "Incomplete" rather than a misleading numeric score (L-054).
+  const score = hasAnyAnswers ? fallbackScore : 0;
 
   const userAnswers = transcript.filter(t => t.speaker === "user");
   const avgAnswerLen = userAnswers.length > 0
@@ -74,7 +76,9 @@ export function computeFallbackScores(params: EvalParams): FallbackResult {
      honestly low. When answers exist, dimBase === fallbackScore and
      dimFloor === 40, so the scored path is byte-identical to before. */
   const dimBase = hasAnyAnswers ? fallbackScore : score;
-  const dimFloor = hasAnyAnswers ? 40 : 15;
+  // No answers → score is 0, so dimensions must also be 0 (floor = 0) to
+  // avoid dimensions sitting above an overall of 0 (internal contradiction).
+  const dimFloor = hasAnyAnswers ? 40 : 0;
   const clamp = (v: number) => Math.max(dimFloor, Math.min(95, v));
 
   if (interviewType === "salary-negotiation") {

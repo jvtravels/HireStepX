@@ -993,24 +993,32 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
         {s.draft ? null : (
           <div
             role="status"
-            aria-label={`Score ${s.score}, ${meta.label}${hasDelta ? `, ${deltaUp ? "up" : "down"} ${Math.abs(delta!)}` : ""}`}
+            aria-label={s.score === 0 ? "Incomplete — no answers recorded" : `Score ${s.score}, ${meta.label}${hasDelta ? `, ${deltaUp ? "up" : "down"} ${Math.abs(delta!)}` : ""}`}
             className="hsx-peek-meta" style={{ display: "inline-flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}
           >
             <span style={{ fontFamily: fonts.ui, fontSize: 11, color: tok.inkSoft, whiteSpace: "nowrap" }}>
               {dateText}{s.questions ? ` · ${s.questions} Qs` : ""}
             </span>
-            <span style={{ fontFamily: fonts.ui, fontSize: 18, fontWeight: 700, color: tok.coal }}>
-              {s.score}
-            </span>
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              fontFamily: fonts.ui, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em",
-              color: meta.color, textTransform: "uppercase",
-            }}>
-              <span aria-hidden>{meta.glyph}</span>
-              {meta.label}
-            </span>
-            {hasDelta ? (
+            {s.score === 0 ? (
+              <span style={{ fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft, letterSpacing: 0.3 }}>
+                Incomplete
+              </span>
+            ) : (
+              <>
+                <span style={{ fontFamily: fonts.ui, fontSize: 18, fontWeight: 700, color: tok.coal }}>
+                  {s.score}
+                </span>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  fontFamily: fonts.ui, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em",
+                  color: meta.color, textTransform: "uppercase",
+                }}>
+                  <span aria-hidden>{meta.glyph}</span>
+                  {meta.label}
+                </span>
+              </>
+            )}
+            {hasDelta && s.score !== 0 ? (
               <span style={{
                 fontFamily: fonts.ui, fontSize: 11, fontWeight: 700,
                 color: deltaUp ? tok.success : tok.copper, fontVariantNumeric: "tabular-nums",
@@ -1386,29 +1394,32 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
     }
     return m;
   }, [sessions]);
-  const total = sessions.length;
-  const avg = total > 0 ? Math.round(sessions.reduce((s, x) => s + x.score, 0) / total) : 0;
-  const best = total > 0 ? Math.max(...sessions.map(s => s.score)) : 0;
+  // KPI strip reflects the active filter so "Campus Placement" filter shows
+  // Campus-only averages, not all-time stats (L-045/L-053).
+  const total = filtered.length;
+  const avg = total > 0 ? Math.round(filtered.reduce((s, x) => s + x.score, 0) / total) : 0;
+  const best = total > 0 ? Math.max(...filtered.map(s => s.score)) : 0;
   /* Real practice hours from actual durations. The previous
      `(total * 42 / 60)` was a literal-42-minutes-per-session
      fabrication that drifted further from truth the more varied a
      user's history got. Uses parseDurationMin so the math works for
      any duration format the DashboardSession persists. */
-  const totalMinutes = sessions.reduce((sum, s) => sum + parseDurationMin(s.duration), 0);
+  const totalMinutes = filtered.reduce((sum, s) => sum + parseDurationMin(s.duration), 0);
   const hours = (totalMinutes / 60).toFixed(1);
   /* "Latest" must be the most recent by date, not the array head.
      DashboardContext sorts recent-first today, but pinning to date
      here means we can't be regressed by an upstream reorder. */
   const latest = total > 0
-    ? sessions.reduce(
+    ? filtered.reduce(
         (top, s) => new Date(s.date).getTime() > new Date(top.date).getTime() ? s : top,
-        sessions[0],
+        filtered[0],
       )
     : null;
   /* Best (score) and its context — surfaced in the N≥3 KPI hint. */
   const bestSession = total > 0
-    ? sessions.reduce((top, s) => s.score > top.score ? s : top, sessions[0])
+    ? filtered.reduce((top, s) => s.score > top.score ? s : top, filtered[0])
     : null;
+  // draftCount uses full sessions so the drafts toggle appears even when filtered
   const draftCount = allowDrafts ? sessions.filter(s => s.draft).length : 0;
   const showingFiltered = type !== "All" || query.trim() !== "";
   return (

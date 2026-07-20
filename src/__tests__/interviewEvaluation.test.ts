@@ -64,13 +64,14 @@ describe("computeFallbackScores", () => {
       transcript, currentStep: 2, scriptLength: 5, difficulty: "standard", elapsed: 120,
     });
     expect(result.hasAnyAnswers).toBe(false);
-    expect(result.score).toBeLessThanOrEqual(30);
+    // L-054: no-answer sessions get score=0 (not the old 30 sentinel).
+    expect(result.score).toBe(0);
     const dims = Object.values(result.skillScores);
-    // No dimension may sit far above the overall it aggregates into. Allow a
-    // small band for demeanour skills but forbid the old 40-floor contradiction.
+    // No dimension may sit far above the overall it aggregates into.
+    // With score=0, dimFloor=0 so every dimension must also be 0.
     const maxDim = Math.max(...dims);
     expect(maxDim).toBeLessThanOrEqual(result.score + 10);
-    // And the honest-low floor now lets an empty transcript read below 40.
+    // And no dim should have the old 40-floor for no-answer sessions.
     expect(Math.min(...dims)).toBeLessThan(40);
   });
 
