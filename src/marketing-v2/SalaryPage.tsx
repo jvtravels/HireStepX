@@ -735,19 +735,6 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               Glassdoor, and Levels.fyi. Updated July 2026.
             </p>
 
-            {/* Context chips */}
-            <div className="ed-rise ed-d3" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 32, justifyContent: "center" }}>
-              <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
-                Total CTC in LPA
-              </span>
-              <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
-                AmbitionBox · Glassdoor · Levels.fyi
-              </span>
-              <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
-                Updated July 2026
-              </span>
-            </div>
-
             {/* Search bar — centered */}
             <div style={{ maxWidth: 520, margin: "0 auto", position: "relative" }}>
               <svg
