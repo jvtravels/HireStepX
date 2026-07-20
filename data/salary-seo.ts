@@ -366,6 +366,20 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "paytm-interview-questions-india-2026",
     hubNote: "Listed RSU (NSE/BSE) — volatile stock, solid cash comp",
   },
+  {
+    slug: "cred",
+    searchPhrase: "CRED Software Engineer Salary India 2026",
+    metaDescription:
+      "CRED salary India 2026 — SDE-1 ₹12–34 LPA, SDE-2 ₹22–60 LPA, senior ₹42–114 LPA. Pre-IPO ESOP. Highest interview bar in Indian fintech. Full comp guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ux-designer", label: "UX/Product Designer" },
+    ],
+    questionSlug: "cred-interview-questions-india-2026",
+    hubNote: "Pre-IPO ESOP — secondary sales have occurred but liquidity not guaranteed",
+    sitemapPriority: 0.78,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */

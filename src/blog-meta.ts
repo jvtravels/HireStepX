@@ -815,6 +815,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "Does Paytm have a work-from-home policy in 2026?", answer: "Most Paytm tech roles are work-from-office in 2026 at the Noida headquarters or Bengaluru offices. Some senior roles have hybrid arrangements." },
     ],
   },
+  {
+    slug: "cred-interview-questions-india-2026",
+    title: "CRED Interview Questions India 2026 — SDE, PM & Designer (Highest Bar in Indian Fintech)",
+    metaDescription: "CRED interview questions 2026 for SDE, PM, and designer roles. Covers the notoriously high interview bar, DSA hard problems, credit domain product design, CRED salary ₹12–114 LPA, and ESOP reality for a pre-IPO company.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=630&fit=crop",
+    company: "Fintech", category: "Full Guide",
+    faqs: [
+      { question: "Is CRED interview really that hard?", answer: "Yes. CRED has the highest SDE interview bar of any Indian fintech company. Candidates with 5+ years at Amazon or Flipkart have failed CRED's coding rounds. You need Hard LeetCode proficiency, strong system design, and deep code quality discussion ability." },
+      { question: "What CRED SDE salary is in India 2026?", answer: "CRED SDE salary ranges from ₹12–34 LPA for junior engineers to ₹42–114 LPA for senior engineers. Staff and principal-level roles can reach ₹145 LPA total compensation including ESOP." },
+      { question: "Has CRED had its IPO?", answer: "CRED has not had its IPO as of July 2026. It remains a pre-IPO company backed by GIC, Softbank, Tiger Global, and others. ESOP liquidity depends on secondary sales or a future IPO." },
+      { question: "What does CRED do?", answer: "CRED started as a credit card bill payment app and has expanded into CRED Cash (personal loans), CRED Pay (checkout at partner merchants), CRED Mint (P2P lending), and CRED Rent. It serves 12M+ premium credit card users with a credit score above 750." },
+    ],
+  },
+  {
+    slug: "internship-interview-questions-india-2026",
+    title: "Internship Interview Questions India 2026 — Freshers Guide for Internshala, LinkedIn & Campus",
+    metaDescription: "Internship interview questions in India 2026 for engineering and MBA freshers. Covers technical questions, HR round, what interviewers actually look for, how to apply on Internshala and LinkedIn, and how to convert an internship to PPO.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=630&fit=crop",
+    company: "Campus", category: "Freshers",
+    faqs: [
+      { question: "What are the most common internship interview questions in India?", answer: "OOP fundamentals, basic data structures, 1–2 easy coding problems, and HR questions about your projects. SQL basics are asked at most tech companies." },
+      { question: "How do I prepare for an internship interview in 2 weeks?", answer: "Week 1: OOP fundamentals, 5 easy LeetCode problems/day, prepare a 2-minute project explanation. Week 2: SQL queries, 5 more coding problems, practice tell me about yourself, research the company." },
+      { question: "What is a PPO in an Indian internship?", answer: "PPO (Pre-Placement Offer) is a full-time job offer made to an intern during or at the end of the internship, skipping the standard interview process. IT services companies offer PPOs to 40–70% of interns; product companies to 50–80% of strong performers." },
+      { question: "Is an internship certificate important for placement in India?", answer: "A certificate alone is not valuable. What matters is the internship project you can describe and the reference from your manager. A real internship with a clear project outcome significantly improves shortlist rates." },
+    ],
+  },
+  {
+    slug: "faang-maang-india-meaning-companies-2026",
+    title: "FAANG vs MAANG India 2026 — What It Means, Which Companies Qualify, and How to Get In",
+    metaDescription: "What is FAANG / MAANG in India 2026? Full list of which companies are FAANG/MAANG, whether TCS or Wipro count, top FAANG equivalents in India (Flipkart, Razorpay, Swiggy), salary comparison, and realistic path to joining one.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=630&fit=crop",
+    company: "General", category: "Career",
+    faqs: [
+      { question: "Is TCS a FAANG company?", answer: "No. TCS is an IT services company and is not FAANG or FAANG-equivalent. FAANG refers to Meta, Apple, Amazon, Netflix, and Google — US product companies known for high interview bars and high compensation." },
+      { question: "What is FAANG equivalent in India?", answer: "The closest Indian equivalents to FAANG are Flipkart, Razorpay, Swiggy, Zomato, PhonePe, CRED, and Meesho. Among US companies with large India engineering teams, Google India, Amazon India, and Microsoft India are the primary FAANG India offices." },
+      { question: "What CGPA do you need for FAANG India?", answer: "FAANG India companies do not publish CGPA cut-offs. A strong coding round clears the resume bar at most FAANG India offices regardless of college." },
+      { question: "Is Wipro a top company for engineers in India?", answer: "Wipro is a reputable IT services employer. It is not considered a top company in the product engineering sense used by the FAANG/Tier-1 framework." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
