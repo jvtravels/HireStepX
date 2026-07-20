@@ -224,13 +224,20 @@ export function getRelevantFocuses(
     out.push("Salary Negotiation");
   }
 
-  // Campus Placement: freshers, students, and juniors in tech families.
-  // In India "Junior Software Engineer" / "SDE-1" / "Associate Engineer" are
-  // frequently campus-hire titles — these candidates need campus prep too.
+  // Campus Placement: freshers, students, juniors, and unqualified-mid tech
+  // roles. In India's IT services market, "Software Engineer" without an
+  // explicit seniority prefix (no "Senior", no "Junior") maps to seniority=mid
+  // but is the canonical campus-hire title at TCS/Infosys/Wipro/Cognizant.
+  // Extending to mid ensures "Software Engineer" surfaces Campus Placement.
+  // Senior+ are excluded because the block below flips to Technical Leadership
+  // which is the appropriate prep for experienced hires.
   if (
     seniority === "fresher" ||
     family === "student" ||
-    (seniority === "junior" && ["swe", "data", "qa", "devops"].includes(family))
+    (
+      (seniority === "junior" || seniority === "mid") &&
+      ["swe", "data", "qa", "devops"].includes(family)
+    )
   ) {
     out.push("Campus Placement");
   }
