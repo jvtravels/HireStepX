@@ -1288,8 +1288,16 @@ const CLOSE_THEN_CONDITIONAL_PATTERN =
  *  over" means the candidate is deferring the decision to read it, not
  *  accepting. Verb list excludes commit verbs (take/sign/accept) so a genuine
  *  "yes send me the offer letter" still closes. Offline sweep batch 4. */
+/* PRI-96 (2026-07-20, offline hostile battery) — Indian English stall idioms.
+ * "I'll revert on this" (= "I'll get back to you") and "I'll get back to you"
+ * were absent from the verb list, so "I'll revert on this, deal" and
+ * "I'll get back to you, sounds good" both false-closed. Neither "revert"
+ * nor "get back" is a commit verb — they are deferral idioms — so the welded
+ * close token must be vetoed. Both added at the single source so BOTH gates
+ * reject in lockstep. "Revert" is very common Indian English: "Will revert",
+ * "I'll revert back", "I'll revert on this tomorrow". */
 const REVIEW_TAIL_PATTERN =
-  /\bi'?ll\s+(?:review|look\s+(?:it|that|them)?\s*over|think\s+(?:it|that|this)\s+over|go\s+over\s+(?:it|that|them)|read\s+(?:it|through|over)|consider\s+(?:it|that|this)|mull\s+(?:it|that)\s+over|run\s+(?:it|that)\s+by)\b/i;
+  /\bi'?ll\s+(?:review|look\s+(?:it|that|them)?\s*over|think\s+(?:it|that|this)\s+over|go\s+over\s+(?:it|that|them)|read\s+(?:it|through|over)|consider\s+(?:it|that|this)|mull\s+(?:it|that)\s+over|run\s+(?:it|that)\s+by|revert\b|get\s+back\s+(?:to\s+(?:you|you\s+on\s+this)|on\s+this))\b/i;
 
 /** Veto: commitment deferred to a personal consultation / future return —
  *  "I'll sign after I talk to my wife", "I'll accept once I see it in writing",
@@ -1319,7 +1327,7 @@ const CONSULT_DEFERRAL_PATTERN =
  *  after "let me" so the genuine performative "let me sign" (a commit) does NOT
  *  match. Shared single-source so BOTH gates reject in lockstep. */
 const CONSULT_FIRST_PATTERN =
-  /\blet\s+me\s+(?:first\s+|just\s+)?(?:run\s+it\s+(?:by|past|with)|bounce\s+it\s+(?:off|by)|check\s+(?:with|in\s+with)|speak\s+(?:to|with)|talk\s+(?:to|it\s+over\s+with|with)|consult|discuss\s+(?:it\s+)?with|sleep\s+on\s+it|loop\s+in|think\s+it\s+over)\b/i;
+  /\blet\s+me\s+(?:first\s+|just\s+)?(?:run\s+it\s+(?:by|past|with)|bounce\s+it\s+(?:off|by)|check\s+(?:with|in\s+with)|speak\s+(?:to|with)|talk\s+(?:to|it\s+over\s+with|with)|consult|discuss\s+(?:it\s+)?with|sleep\s+on\s+it|loop\s+in|think\s+it\s+over|revert\s+on\s+(?:it|this)|get\s+back\s+(?:to\s+you|on\s+this))\b/i;
 
 /** Veto (offline future-deferral battery, 2026-07-09) — a request for TIME
  *  before committing, welded to a close idiom: "Give me till Monday and I'll

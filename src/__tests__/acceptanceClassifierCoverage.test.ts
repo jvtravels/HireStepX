@@ -447,3 +447,72 @@ describe("strict gate — Hindi deal-close idiom routes through detectExplicitAc
     expect(detectExplicitAcceptance("bhej do").accepted).toBe(false);
   });
 });
+
+/* S20 / S22 — offline verification (2026-07-20).
+ * The audit doc flagged these as "Uncertain" because no test exercised them.
+ * All patterns were confirmed correct offline; these tests pin that result
+ * so the scenarios can be marked verified (no code changes needed). */
+describe("S20 — equity-only counter: 'base is fine' + equity demand blocks close", () => {
+  const ctx = { offerLpa: 48, offerOnTable: true, phase: "counter" as const };
+  const accepted = (t: string) => classifyAcceptance(t, ctx).accepted;
+
+  it("blocks: 'The base is fine with me, I want equity' (comma joiner)", () =>
+    expect(accepted("The base is fine with me, I want equity")).toBe(false));
+
+  it("blocks: 'base is fine but I need RSU' (but joiner)", () =>
+    expect(accepted("base is fine but I need RSU")).toBe(false));
+
+  it("blocks: 'I'm fine with the base salary, can you add equity?' (question demand)", () =>
+    expect(accepted("I'm fine with the base salary, can you add equity?")).toBe(false));
+
+  it("blocks: 'base looks fine. I need more ESOP.' (period-separated same turn)", () =>
+    expect(accepted("base looks fine. I need more ESOP.")).toBe(false));
+
+  it("accepts: 'That's fine with me' (no demand, clean commit)", () =>
+    expect(accepted("That's fine with me")).toBe(true));
+});
+
+describe("S22 — CTC negation/correction is blocked (not parsed as acceptance)", () => {
+  const ctx = { offerLpa: 48, offerOnTable: true, phase: "counter" as const };
+  const accepted = (t: string) => classifyAcceptance(t, ctx).accepted;
+
+  it("blocks: 'My CTC is not 48L, it's 42L' (in-session CTC correction)", () =>
+    expect(accepted("My CTC is not 48L, it's 42L")).toBe(false));
+
+  it("blocks: 'not ₹48, I said ₹42 LPA' (explicit number negation)", () =>
+    expect(accepted("not ₹48, I said ₹42 LPA")).toBe(false));
+});
+
+/* PRI-96 (2026-07-20, offline hostile sweep) — Indian English stall idioms
+ * "I'll revert on this" (= "I'll get back to you") and "I'll get back to you"
+ * were absent from REVIEW_TAIL / CONSULT_FIRST, letting a welded close idiom
+ * ("deal", "sounds good", "I'll sign") fire through them and false-close the
+ * session while the candidate was deferring. Both verb forms added to the
+ * single-source veto patterns; these tests pin that the full stall+idiom
+ * cross-product is blocked while genuine clean accepts still close. */
+describe("PRI-96 — 'revert on this' / 'get back to you' stall idioms block close", () => {
+  const ctx = { offerLpa: 48, offerOnTable: true, phase: "counter" as const };
+  const accepted = (t: string) => classifyAcceptance(t, ctx).accepted;
+
+  // Standalone stalls — blocked even without a welded idiom
+  it("blocks: 'I'll revert on this' (Indian English deferral, standalone)", () =>
+    expect(accepted("I'll revert on this")).toBe(false));
+  it("blocks: 'Will revert on this tomorrow'", () =>
+    expect(accepted("Will revert on this tomorrow")).toBe(false));
+
+  // Stall + welded close idiom — the FALSE-CLOSE failure mode (PRI-96)
+  it("blocks: 'I'll revert on this, deal' (revert + bare deal)", () =>
+    expect(accepted("I'll revert on this, deal")).toBe(false));
+  it("blocks: 'Let me revert on this and then I'll sign' (let-me + trailing sign)", () =>
+    expect(accepted("Let me revert on this and then I'll sign")).toBe(false));
+  it("blocks: 'I'll get back to you, sounds good' (get-back + commitment idiom)", () =>
+    expect(accepted("I'll get back to you, sounds good")).toBe(false));
+  it("blocks: 'Will revert tomorrow, then deal'", () =>
+    expect(accepted("Will revert tomorrow, then deal")).toBe(false));
+
+  // Precision: genuine clean accepts must still close (no over-blocking)
+  it("closes: 'That's fine with me' (clean commit, no stall)", () =>
+    expect(accepted("That's fine with me")).toBe(true));
+  it("closes: 'I'll take it' (clean performative)", () =>
+    expect(accepted("I'll take it")).toBe(true));
+});
