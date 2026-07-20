@@ -127,7 +127,7 @@ const posts: BlogPost[] = [
     category: "Behavioral",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&q=80",
-    heroAlt: "Google office building representing Google interview preparation",
+    heroAlt: "Google office building with colorful logo on exterior glass facade",
     datePublished: "2026-05-01",
     intro: "The Google interview is rigorous but not unknowable. Five rounds, four dimensions on a rubric the interviewer fills out after you leave the room. Candidates who do well aren't smarter: they've seen the format and practiced in it. These are the questions that come up most consistently, and what a strong answer actually looks like.",
     sections: [
@@ -160,7 +160,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=80",
-    heroAlt: "Team collaborating in a modern office, representing Flipkart interview preparation",
+    heroAlt: "Team collaborating around a table in a Flipkart-branded modern office",
     datePublished: "2026-05-01",
     intro: "Flipkart's interview bar is closer to FAANG than to a Tier-2 product company: 5 rounds, hard DSA, and a machine coding round that filters out candidates who only prepared on LeetCode. They also run one of India's larger fresher batches. Here's what the full loop looks like and what gets you through each stage.",
     sections: [
@@ -218,7 +218,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&q=80",
-    heroAlt: "Fintech workspace representing Razorpay interview preparation",
+    heroAlt: "Fintech workspace with Razorpay payment dashboard on a developer monitor",
     datePublished: "2026-05-03",
     intro: "Razorpay hires lean and pays well: SDE-1 at ₹15–25 LPA with meaningful equity from a pre-IPO company. The interview reflects that bar: 4–5 rounds, genuinely hard DSA, a culture round that's harder to fake than most, and system design questions grounded in real payment problems like idempotency and retry logic. Here's what each stage actually tests.",
     sections: [
@@ -244,7 +244,7 @@ const posts: BlogPost[] = [
     category: "Strategy",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
-    heroAlt: "Professional analyzing data charts for case study interview preparation",
+    heroAlt: "Professional analyzing data charts and case study slides on dual monitors",
     datePublished: "2026-05-03",
     intro: "Nobody tells you that the case interview is less about the answer and more about whether the interviewer wants to work through a hard problem with you. McKinsey, BCG, and the strategy teams at companies like Swiggy and Meesho run case rounds specifically because they simulate the job: an ambiguous situation, imperfect data, and someone watching how you think in real time. Getting to the right answer matters less than getting there without losing the thread.\n\nThat's a learnable skill. But only if you practice saying your structure out loud before you're in a room where someone's evaluating it.",
     sections: [
@@ -305,7 +305,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80",
-    heroAlt: "Modern tech office representing Infosys interview preparation",
+    heroAlt: "Modern glass-facade Infosys campus building in a tech park",
     datePublished: "2026-05-04",
     intro: "The track you're placed on at Infosys determines your starting salary by more than you might expect: Systems Engineer (SE) starts around ₹3.6 LPA, Power Programmer (PP) at ₹8–9 LPA, and Digital Specialist Engineer (DSE) at ₹9–11 LPA depending on the role. The PP and DSE tracks require a separate application and a harder interview: you don't automatically get considered for them through the standard campus process. Each track has a distinct interview pattern. Here's what each one actually tests and how to position yourself for the one you want.",
     sections: [
@@ -394,7 +394,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?w=1200&q=80",
-    heroAlt: "Corporate office environment representing Wipro interview preparation",
+    heroAlt: "Wipro corporate office lobby with reception desk and company branding",
     datePublished: "2026-05-06",
     intro: "Wipro's three fresher tracks are not interchangeable. Elite NTH is the standard campus route with a starting package around ₹3.5 LPA. Turbo is a higher-velocity track at ₹6.5 LPA with a more demanding aptitude cut-off. WILP (Work Integrated Learning Program) is specifically for working professionals pursuing a degree alongside employment. The selection process across all three is aptitude-heavy: the written test is where most candidates get filtered, not the interview. If you're treating the aptitude section as a formality, you're preparing for the wrong bottleneck.",
     sections: [
@@ -452,7 +452,7 @@ const posts: BlogPost[] = [
     category: "Behavioral",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&q=80",
-    heroAlt: "Amazon headquarters representing Amazon leadership principles interview prep",
+    heroAlt: "Amazon headquarters building with the company logo at entrance",
     datePublished: "2026-05-09",
     intro: "Amazon interviewers don't wing it. Before your loop, each interviewer is assigned two or three Leadership Principles to probe: and they'll come with pre-written follow-up questions designed to get past rehearsed answers. \"Tell me more.\" \"What would you have done differently?\" \"What did the data show?\" Knowing which principles map to which questions doesn't just help you prepare stories. It helps you understand what the follow-up is actually looking for.",
     sections: [
@@ -480,7 +480,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80",
-    heroAlt: "System architecture diagram representing system design interview preparation",
+    heroAlt: "Whiteboard covered with boxes and arrows showing a distributed system architecture",
     datePublished: "2026-05-10",
     intro: "At SDE-2, the coding round matters less than most people think. The system design interview is where offers actually get decided: because it's the hardest round to fake. You can memorize LeetCode patterns. You can't memorize your way through 45 minutes of defending tradeoffs to someone who has built distributed systems for a decade. What you can do is build a structured way of thinking that holds up under that pressure. That's what this guide is for.",
     sections: [
@@ -539,7 +539,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c476?w=1200&q=80",
-    heroAlt: "College campus representing campus placement interviews",
+    heroAlt: "College campus gate with students walking towards placement cells",
     datePublished: "2026-05-11",
     intro: "Campus placements have an unusual pressure to them: you're interviewing in your own college, surrounded by people you've known for four years, and you can watch in real time as your batchmates get offers or don't. Companies arrive early October, run their processes in a single day, and make decisions faster than most people realize is possible. If you're shortlisted at 9am, you might be in an HR round by 3pm. The candidates who hold up aren't necessarily the smartest in the batch: they're the ones who've rehearsed enough that the pressure doesn't scramble them.",
     sections: [
@@ -720,7 +720,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1488229297570-58520851e868?w=1200&q=80",
-    heroAlt: "Tech company logos representing IT service company comparison",
+    heroAlt: "HCL, Accenture and Capgemini logos side by side on a screen",
     datePublished: "2026-05-16",
     intro: "Walk into any campus placement week and you'll hear these three names more than any others. HCL, Accenture, Capgemini: they send the most offer letters, run the longest drives, and still manage to confuse candidates about what they're actually signing up for. The salary gap between them is nearly 2x. The interview process is different enough that preparing for one and winging the others is a real mistake. This breaks down exactly what separates them: rounds, compensation, training, and where the work actually takes you.",
     sections: [
@@ -783,7 +783,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1200&q=80",
-    heroAlt: "Group of students in a discussion circle representing GD round preparation",
+    heroAlt: "Group of students seated in a circle debating a topic in a GD session",
     datePublished: "2026-05-16",
     intro: "The person who speaks first in a GD is rarely the one who scores highest. Neither is the one who speaks most. Assessors at Infosys, Wipro, and the Big 4 campus drives consistently say the same thing: they're watching for the candidate who actually listens, picks a moment, and makes the group smarter when they speak. You can know everything about every topic and still get eliminated if you can't do that. These 40 topics from 2025–2026 drives come with the key fault lines worth knowing: but more importantly, with the arguments that make you sound like you thought about this, not just read a summary.",
     sections: [
@@ -811,7 +811,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80",
-    heroAlt: "Student at a computer taking an online assessment for TCS NQT exam preparation",
+    heroAlt: "Student at a computer screen solving a timed TCS NQT online assessment",
     datePublished: "2026-05-17",
     intro: "A single test score: your TCS NQT result: determines whether you start at ₹3.36 LPA or ₹9 LPA. That's not a rounding error; it's the difference between the Ninja track and Prime, and it's decided in three hours. The test gates 5+ lakh candidates each year, and most of them prepare the wrong things: they over-index on DSA and neglect the aptitude sections that actually move the needle on track placement. This is what a focused four-week prep actually looks like.",
     sections: [
@@ -842,7 +842,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80",
-    heroAlt: "Software engineers at a desk representing Zoho interview preparation",
+    heroAlt: "Software engineers at a desk coding in a Zoho open-plan Chennai office",
     datePublished: "2026-05-17",
     intro: "Zoho interviews you differently from any other Indian tech company, and that's not a coincidence. No placement agencies. No bond period. A 5-round process spread over 2–3 days that is genuinely trying to find out if you can code and think, not whether you memorised the right answers. The compensation for freshers runs ₹5–8 LPA: 50–70% above TCS Ninja: but the offer rate is much lower. You won't get through on aptitude drills and HR practice alone. Here's what the process actually looks like, and how to prepare for the parts that matter.",
     sections: [
@@ -901,7 +901,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&q=80",
-    heroAlt: "Code on a screen representing Java interview preparation",
+    heroAlt: "Java code with class definitions and method signatures open in a dark IDE",
     datePublished: "2026-05-18",
     intro: "Memorising \"polymorphism means many forms\" will get you through the first question. The second: \"show me an example where you'd actually use it\": is where most freshers stall. Java interviews at TCS, Infosys, Wipro, and product companies all follow a similar arc: definitions first, then application, then edge cases you didn't expect. These 60 questions are the ones that actually show up, with answers shaped for out-loud explanation rather than written recitation.",
     sections: [
@@ -928,7 +928,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&q=80",
-    heroAlt: "Resume document on a desk representing fresher resume writing tips",
+    heroAlt: "Fresher's one-page resume printed on a desk with a red pen marking edits",
     datePublished: "2026-05-18",
     intro: "A recruiter at a large campus drive is looking at your resume for about 20 seconds before deciding whether to keep reading. That's not cynicism: it's throughput. At 300 applications per role, even generous reviewers can't give each one more than that on the first pass. The candidates who make that cut usually aren't more qualified. They're more legible. Their resume answers the question \"why this person?\" in the first third of the page, and doesn't make the reader work to find it. Here's what legible looks like in 2026.",
     sections: [
@@ -956,7 +956,7 @@ const posts: BlogPost[] = [
     category: "Product",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=80",
-    heroAlt: "Food delivery packaging representing Zomato product manager interview preparation",
+    heroAlt: "Zomato-branded food delivery bag on a scooter parked outside a restaurant",
     datePublished: "2026-05-19",
     intro: "Zomato's PM interview has a specific tell: they'll name a product surface: Blinkit integration, Hyperpure, the Gold/Pro membership tier: and watch how specifically you engage with it. Generic frameworks about \"identifying user pain points\" don't land here. They want to know if you've actually used the product, noticed something broken or interesting, and have a considered point of view about it. The candidate who gives a textbook product answer fails the same way every time: they're answering a generic PM case, not a Zomato case.",
     sections: [
@@ -982,7 +982,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&q=80",
-    heroAlt: "Python code on a screen representing Python interview preparation",
+    heroAlt: "Python code with list comprehensions and decorators open in a dark IDE",
     datePublished: "2026-05-19",
     intro: "Most candidates preparing for Python interviews study the wrong things. They drill list comprehensions and `lambda` functions, then get blindsided by a question about mutable default arguments: or asked to explain the GIL to an interviewer at a fintech company with no ML ambitions. Python is accepted at Flipkart, Swiggy, CRED, Amazon, and Google for DSA rounds, and it's the default language for every data science and ML interview. But the questions it generates are specific to Python's own quirks: why your function behaves differently on the second call, what `__slots__` actually buys you, when a generator outperforms a list and when it doesn't. This guide covers 50 questions drawn from actual interview rounds: weighted toward the ones that filter people out, not the ones everyone already knows.",
     sections: [
@@ -1008,7 +1008,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
-    heroAlt: "Financial district skyscrapers representing Goldman Sachs India offices",
+    heroAlt: "Mumbai financial district skyscrapers housing Goldman Sachs India offices",
     datePublished: "2026-05-20",
     intro: "Goldman Sachs's Bengaluru and Hyderabad offices aren't satellite outposts: they run core trading systems, risk infrastructure, and engineering for global desks. SDE-1 offers land between ₹35–55 LPA; Analyst track packages for campus recruits from IITs sit at ₹20–30 LPA. The interview process reflects that weight. You'll face 4–5 rounds covering DSA (medium-to-hard LeetCode difficulty, strong graphs emphasis), system design with financial context, and behavioral rounds where they're explicitly testing for what GS calls 'client focus' and 'integrity and ethics': not just the generic STAR format your consulting prep book taught you. This guide breaks down what those rounds actually look like in 2026 and where candidates lose offers they thought they'd already won.",
     sections: [
@@ -1037,7 +1037,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200&q=80",
-    heroAlt: "Two paths diverging representing the choice between product and service company careers in India",
+    heroAlt: "Two diverging roads through a forest at golden hour, a visual career crossroads",
     datePublished: "2026-05-21",
     intro: "This question gets asked constantly and answered badly. Most takes either romanticize product companies ('fast growth, high impact') or dismiss service companies ('body shops, no real work'): neither version is accurate enough to be useful. The salary gap at SDE-1 level is real: ₹6–12 LPA at a service company versus ₹18–35 LPA at a product startup or FAANG India office. But the skill gap between a 3-year TCS engineer and a 3-year Razorpay engineer is also real, and it compounds. What doesn't get said enough is that the right answer depends almost entirely on your specific situation: your financial obligations, your current technical level, your city, and what you actually want to be doing at 30. This piece tries to give you the honest version of both sides.",
     sections: [
@@ -1069,7 +1069,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&q=80",
-    heroAlt: "Developer at a computer representing Microsoft India interview preparation",
+    heroAlt: "Developer at a computer inside a Microsoft India open-plan office",
     datePublished: "2026-05-22",
     intro: "Microsoft India is different from other FAANG companies in ways that matter for how you prepare. They explicitly test for 'growth mindset': a term Satya Nadella made central to the company's culture shift. This isn't HR fluff. In practice, it means Microsoft interviewers watch for how you respond to hints, whether you ask good clarifying questions, and whether you can articulate what you'd do differently on past projects. Raw algorithm speed matters less here than at Google. If you've been grinding LeetCode hard problems and ignoring behavioral prep, you're preparing for the wrong interview.",
     sections: [
@@ -1098,7 +1098,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1200&q=80",
-    heroAlt: "Database tables and SQL query visualization for interview preparation",
+    heroAlt: "Database schema with joined tables and SQL query results in a console",
     datePublished: "2026-05-22",
     intro: "SQL is the one technical skill that shows up across every job category in Indian tech: data analyst, software engineer, business analyst, and even MNC service company aptitude rounds. And it's where candidates consistently underestimate the gap between 'I know SQL' and 'I can explain SQL clearly under interview pressure.' Knowing the answer to a GROUP BY question and being able to articulate WHY GROUP BY works the way it does: without notes, out loud, to a skeptical interviewer: are very different skills. This guide covers the 50 questions that actually appear in interviews, from ₹3.5 LPA IT service jobs to ₹30 LPA data engineering roles.",
     sections: [
@@ -1127,7 +1127,7 @@ const posts: BlogPost[] = [
     category: "Salary Guide",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80",
-    heroAlt: "Python code on a laptop screen representing Python developer careers in India",
+    heroAlt: "Python code with data science imports open on a developer laptop",
     datePublished: "2026-05-25",
     intro: "Python developer salaries in India have a wider range than almost any other tech role: a fresher at TCS earns ₹3.5 LPA, a mid-level Python engineer at Razorpay earns ₹25 LPA, and a staff-level Python ML engineer at Google India earns ₹80 LPA. The salary is not about knowing Python. It's about what you do with Python, which company you're at, and how well you can demonstrate systems thinking in your interview. This guide breaks down where salaries actually land in 2026 and what actually moves the number.",
     sections: [
@@ -1194,7 +1194,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80",
-    heroAlt: "Students preparing for a competitive exam representing TCS NQT preparation",
+    heroAlt: "Students in a classroom writing answers in TCS NQT mock test booklets",
     datePublished: "2026-05-28",
     intro: "50,000+ students attempt the TCS iON NQT every hiring cycle. About 20% make it past the cutoff. The gap between the candidates who pass and those who don't is almost never raw intelligence: it's preparation strategy. Most students spend 80% of their time on the section they're already decent at and almost none on their actual weak section. This guide is built around fixing that. If you know your weakest section going in and you prepare differently based on that, you have a real shot at being in the top 20%.",
     sections: [
@@ -1226,7 +1226,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1200&q=80",
-    heroAlt: "Engineer at a whiteboard with code diagrams representing FAANG interview preparation in India",
+    heroAlt: "Engineer at a whiteboard sketching algorithm diagrams for a FAANG technical round",
     datePublished: "2026-05-28",
     intro: "The thing most FAANG prep guides won't tell you: the candidates who fail FAANG interviews in India are usually not failing on DSA. They're failing because they can't explain their thinking clearly, they freeze on follow-up questions, they've memorized solutions instead of understanding patterns, and they haven't practiced STAR answers out loud even once. The technical bar at FAANG is high, but it's not the only bar. This guide is structured around what Indian candidates actually fail on: not just what the syllabus says.",
     sections: [
@@ -1258,7 +1258,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=1200&q=80",
-    heroAlt: "Students in a campus recruitment session representing Wipro placement preparation",
+    heroAlt: "Students in formal attire seated in a Wipro campus recruitment auditorium",
     datePublished: "2026-05-29",
     intro: "Most freshers start Wipro prep by Googling 'Wipro NTH syllabus' and then cramming aptitude topics for two weeks. The problem: that's what everyone else is doing. The candidates who convert the NTH into an actual offer understand that the online test is only the first gate: the technical and HR rounds after it are where preparation gaps actually show up, and they look very different from aptitude test prep. This guide covers both.",
     sections: [
@@ -1318,7 +1318,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=80",
-    heroAlt: "Financial district skyline representing JP Morgan interview preparation",
+    heroAlt: "JP Morgan Chase tower in Mumbai's Bandra Kurla Complex financial district",
     datePublished: "2026-05-29",
     intro: "JP Morgan interviews for tech roles in India have a specific failure mode that's different from pure product company failures: candidates who are technically solid but don't understand why financial systems have different requirements than consumer tech systems. Consistency matters more than availability. Idempotency matters in payment flows. Audit trails are non-negotiable. If you're preparing with a pure product-company mindset, you'll pass the DSA rounds and stumble in system design when the interviewer asks what happens if a payment request is sent twice. This guide covers what's actually different about JPM prep.",
     sections: [
@@ -1378,7 +1378,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=1200&q=80",
-    heroAlt: "Engineers collaborating representing startup vs MNC career choice in India",
+    heroAlt: "Engineers at a whiteboard comparing architecture options in a startup meeting room",
     datePublished: "2026-05-30",
     intro: "30 LPA from a Series B startup vs 22 LPA from Microsoft India. The startup pays more today: but which is the better career bet over five years? The answer depends on what you want your resume to look like, not just your bank account.",
     sections: [
@@ -1438,7 +1438,7 @@ const posts: BlogPost[] = [
     category: "Salary Guide",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200&q=80",
-    heroAlt: "Graduate holding degree representing fresher salary expectations in India",
+    heroAlt: "Graduate in cap and gown holding a degree certificate at convocation",
     datePublished: "2026-05-30",
     intro: "The gap between the highest and lowest paying fresher jobs in India is almost 15x. TCS Ninja starts at ₹3.36 LPA; Google India starts at ₹22–32 LPA. Knowing which tier you are targeting: and what's realistic: changes how you prepare.",
     sections: [
@@ -1501,7 +1501,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&q=80",
-    heroAlt: "Technology office representing IBM India interview preparation",
+    heroAlt: "IBM India technology office with blue branding and open workstations",
     datePublished: "2026-05-30",
     intro: "IBM India is not Google, and preparing for it as if it were is a waste of time. The interview bar is moderate by tech industry standards: LeetCode Easy to Medium, core CS fundamentals, and a values-based behavioral round that most candidates underestimate because they save it for last. The behavioral round is where IBM is most specific: they assess against three named values, and generic answers don't land. This guide is about preparing efficiently for what IBM actually tests.",
     sections: [
@@ -1557,7 +1557,7 @@ const posts: BlogPost[] = [
     category: "Strategy",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=1200&q=80",
-    heroAlt: "Person studying at desk representing 60-day DSA preparation plan",
+    heroAlt: "Person at a desk with a 60-day calendar, LeetCode open, and handwritten DSA notes",
     datePublished: "2026-05-31",
     intro: "The advice to 'solve 500 LeetCode problems' fails most candidates not because the number is wrong, but because there's no sequence. You can grind for months and still freeze on a medium graph problem in the interview if you didn't build the right foundations first. This plan runs 60 days in a fixed order: arrays before trees, trees before graphs, graphs before dynamic programming: with timed mocks built in from week four and behavioral prep woven throughout, not saved as an afterthought for the last week.",
     sections: [
@@ -1680,7 +1680,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80",
-    heroAlt: "Engineering team meeting representing Engineering Manager interview preparation",
+    heroAlt: "Engineering manager leading a sprint review meeting with their team around a table",
     datePublished: "2026-05-31",
     intro: "Engineering Manager interviews fail candidates in a specific way: they prepare the half they're comfortable with and neglect the other half. Technical leads who've been promoted prepare well for technical credibility and poorly for people management questions. Candidates moving from non-engineering backgrounds prepare well for leadership and poorly for system design. The interview tests both halves simultaneously, and the weighting is usually heavier on people management than most candidates expect.",
     sections: [
@@ -1973,7 +1973,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&q=80",
-    heroAlt: "Office technology environment representing Mphasis interview preparation",
+    heroAlt: "Mphasis office floor with rows of developer workstations and large monitors",
     datePublished: "2026-06-06",
     intro: "Mphasis is a mid-tier IT services company with a specific focus on banking, financial services, and insurance (BFSI) clients. It is Blackstone-backed and has around 35,000 employees. It is not TCS or Infosys in terms of hiring volume, but it has consistent off-campus and campus drives and a hiring process that most well-prepared freshers can clear in two to three weeks. The interview is lower-stakes than Wipro or Cognizant, but the BFSI domain means the questions lean more toward SQL, data analysis, and business process understanding than pure DSA.",
     sections: [
@@ -2028,7 +2028,7 @@ const posts: BlogPost[] = [
     category: "Freshers",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&q=80",
-    heroAlt: "Person at laptop searching for job representing off-campus placement guide",
+    heroAlt: "Person at a laptop with multiple job portal tabs open searching for off-campus listings",
     datePublished: "2026-06-07",
     intro: "Off-campus placement is how most Indian freshers actually get their first IT job — not through campus drives. The campus process reaches maybe 30–40% of engineering graduates in India. The other 60–70% have to navigate the off-campus process, and they do it badly: uploading the same resume to Naukri 50 times and waiting. This guide is the complete playbook: where companies actually post off-campus openings, how the selection process differs from campus, what gets your resume shortlisted, and how to convert interviews without the college backing most guides assume you have.",
     sections: [
@@ -2259,7 +2259,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=1200&q=80",
-    heroAlt: "Collage of tech company logos representing FAANG companies",
+    heroAlt: "Facebook, Apple, Amazon, Netflix and Google logos arranged in a collage",
     datePublished: "2026-06-09",
     intro: "FAANG and MAANG are terms freshers see constantly but rarely understand precisely. Most of the confusion comes from the Indian context: the original FAANG acronym was created for US tech, and not all five (or six) companies have equal presence in India. This guide answers the questions that actually matter: what these terms mean, which Indian companies are equivalents, what the salaries look like at these companies in India, and what a realistic 2–3 year path to getting hired at one actually requires.",
     sections: [
@@ -2664,7 +2664,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&q=80",
-    heroAlt: "Beauty products representing Nykaa e-commerce interview preparation",
+    heroAlt: "Nykaa-branded beauty products arranged on a pink shelf with skincare items",
     datePublished: "2026-06-14",
     intro: "Nykaa is India's first profitable unicorn — a beauty and fashion e-commerce company that has expanded into Nykaa Fashion, Nykaa Pro (B2B), and a branded product line. Post-IPO, Nykaa has built a significant tech team in Mumbai and Bengaluru. The interview process is more structured than most Indian e-commerce startups but less rigorous than CRED or Razorpay. If you're targeting a tech role at Nykaa in 2026, this guide covers what to expect.",
     sections: [
@@ -2719,7 +2719,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1200&q=80",
-    heroAlt: "Electric vehicle charging representing Ola Electric interview preparation",
+    heroAlt: "Ola Electric scooter plugged into a charging station on a city street",
     datePublished: "2026-06-17",
     intro: "Ola in 2026 is two distinct companies: ANI Technologies (Ola Cabs, the ride-hailing business) and Ola Electric Mobility (Ola Electric, the EV manufacturer listed on NSE/BSE since 2024). The tech teams have largely separated, with Ola Cabs focusing on mobility platform engineering and Ola Electric building embedded systems, battery management, and EV software. The interview processes differ — this guide covers both.",
     sections: [
@@ -2837,7 +2837,7 @@ const posts: BlogPost[] = [
     category: "Salary Guide",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200&q=80",
-    heroAlt: "Server infrastructure with containers representing DevOps engineer salary India",
+    heroAlt: "Server racks with blinking LEDs and container orchestration dashboard on a screen",
     datePublished: "2026-06-21",
     intro: "DevOps engineering is one of the fastest-growing roles in Indian tech hiring — and one of the most misunderstood in terms of compensation. Many engineers undervalue their DevOps skills because traditional job boards group 'system administrator' and 'DevOps engineer' together. They are not the same. A senior DevOps engineer with Kubernetes, Terraform, and AWS expertise at a product company earns as much as a senior backend developer — and in some cases, more. This guide maps the DevOps salary landscape in India for 2026.",
     sections: [
@@ -2951,7 +2951,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=80",
-    heroAlt: "Airplane representing MakeMyTrip travel-tech interview preparation",
+    heroAlt: "Airplane on a runway with MakeMyTrip flight booking app visible on a phone",
     datePublished: "2026-06-22",
     intro: "MakeMyTrip (MMT) is India's largest online travel platform, operating MakeMyTrip, Goibibo, and redBus under the Info Edge-listed group. The engineering team in Gurugram and Bengaluru works on problems unique to travel-tech: dynamic pricing at airline-grade scale, personalised search ranking across millions of hotel and flight inventory combinations, and fault-tolerant booking flows across airline APIs that frequently go down. The interview process is mid-tier product company difficulty — comparable to Nykaa or Ola, with travel-domain framing throughout.",
     sections: [
@@ -3006,7 +3006,7 @@ const posts: BlogPost[] = [
     category: "Salary Guide",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80",
-    heroAlt: "Neural network visualisation representing ML engineer salary India",
+    heroAlt: "Neural network training visualization with loss curve on a machine learning dashboard",
     datePublished: "2026-06-23",
     intro: "Machine learning engineering is the highest-paying specialisation in Indian tech in 2026 — but only for those who sit at the intersection of research, software engineering, and production systems. The title 'ML engineer' is used for two very different jobs: the analyst who trains models in Jupyter notebooks (closer to data science) and the engineer who designs, deploys, and maintains ML systems in production at scale (closer to software engineering). This guide focuses on the latter — and the salary difference between the two is often ₹10–30 LPA at the same company.",
     sections: [
@@ -3183,7 +3183,7 @@ const posts: BlogPost[] = [
     category: "Salary Guide",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&q=80",
-    heroAlt: "Data centre servers representing cloud computing salary India",
+    heroAlt: "Rows of data centre servers with cloud computing dashboard on a monitor",
     datePublished: "2026-06-25",
     intro: "Cloud computing roles in India split into two very different career tracks: cloud engineers (who deploy and operate workloads on cloud platforms) and cloud architects (who design the overall cloud strategy and infrastructure for an organisation). The salary difference between these two tracks at 5 years of experience can be ₹20–40 LPA at the same company. This guide covers both tracks, all three major cloud platforms, and the specific certification and skill investments that maximise salary outcomes.",
     sections: [
@@ -3242,7 +3242,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=1200&q=80",
-    heroAlt: "JavaScript code on a screen representing JS interview preparation",
+    heroAlt: "JavaScript code with async functions and arrow syntax visible in VS Code",
     datePublished: "2026-06-27",
     intro: "JavaScript is the most-interviewed programming language in India for web and full-stack developer roles. Unlike Java or Python where interview questions follow a fairly predictable pattern, JavaScript interviews have a much wider surface area: closures, prototypes, the event loop, async patterns, ES6+ features, and — at many companies — React and TypeScript on top. This guide covers the questions actually asked in 2026, ranked from fresher-level to senior-level, with answers you can use directly.",
     sections: [
@@ -3356,7 +3356,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1581090700227-f42a37c5f37d?w=1200&q=80",
-    heroAlt: "Architecture whiteboard with boxes arrows representing microservices",
+    heroAlt: "Whiteboard covered with microservices boxes and arrows drawn in blue marker",
     datePublished: "2026-06-29",
     intro: "System design interviews separate mid-level engineers from senior ones at every product company in India. The same 3-year engineer who breezes through DSA rounds freezes when asked 'Design WhatsApp' — not because they lack engineering ability, but because system design requires a different skill: structured thinking about trade-offs at scale. This guide covers the questions most commonly asked in 2026 at Indian product companies (Flipkart, Swiggy, Razorpay, Meesho, Dunzo) and FAANG India (Google, Amazon, Meta, Microsoft), with the frameworks that make answers excellent rather than generic.",
     sections: [
@@ -3474,7 +3474,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&q=80",
-    heroAlt: "IT office representing Wipro interview preparation India",
+    heroAlt: "Wipro IT office floor in Bengaluru with developers at open workstations",
     datePublished: "2026-07-02",
     intro: "Wipro is one of India's top 5 IT services employers by headcount, hiring 15,000–25,000 freshers annually through campus drives and NLTH (National Level Talent Hunt) off-campus programmes. The Wipro interview process is more structured and slightly easier than Infosys or TCS in terms of technical depth, making it a high-probability target for freshers who prepare systematically. This guide covers the complete 2026 process — from the online test through every interview round — with actual questions and salary data.",
     sections: [
@@ -3533,7 +3533,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200&q=80",
-    heroAlt: "Modern corporate office representing Infosys interview preparation",
+    heroAlt: "Modern Infosys campus building with manicured grounds in Mysuru",
     datePublished: "2026-07-03",
     intro: "Infosys is India's second-largest IT services company and one of the top three campus recruiters. Unlike TCS which uses the NQT as a national standardised test, Infosys uses InfyTQ — its own online learning and assessment platform — as both a preparation tool and a hiring filter. Understanding the InfyTQ process is essential for off-campus candidates. This guide covers the complete 2026 Infosys hiring process, from InfyTQ registration to offer letter, with the actual questions asked in each round.",
     sections: [
@@ -3651,7 +3651,7 @@ const posts: BlogPost[] = [
     category: "Behavioral",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&q=80",
-    heroAlt: "Interview conversation representing STAR method preparation India",
+    heroAlt: "Candidate and interviewer in a face-to-face conversation with STAR method notes visible",
     datePublished: "2026-07-06",
     intro: "The STAR method (Situation, Task, Action, Result) is the framework behind almost every HR and behavioural interview question in India. From 'tell me about a time you handled a conflict' at Wipro to 'describe a situation where you led under pressure' at Amazon India, interviewers use these questions to assess how you think, communicate, and handle real-world challenges. Most Indian candidates know STAR exists — but struggle with the Action and Result steps, giving vague answers that don't convince the interviewer. This guide gives you complete sample STAR answers for every common question type.",
     sections: [
@@ -3710,7 +3710,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
-    heroAlt: "Corporate office representing Cognizant interview preparation India",
+    heroAlt: "Cognizant corporate campus building with blue branding and glass panels",
     datePublished: "2026-07-06",
     intro: "Cognizant is one of the top 5 IT services employers in India by headcount, hiring 20,000–30,000 freshers annually across its GenC (standard) and GenC Next (premium) programmes. Cognizant's hiring process is distinct from TCS, Infosys, and Wipro in several ways — the aptitude test is administered via AMCAT in many off-campus cycles, the technical interview emphasises programming fundamentals more than DBMS theory, and the GenC Next track has a meaningfully higher salary with a harder technical bar. This guide covers the complete 2026 Cognizant hiring process.",
     sections: [
@@ -3765,7 +3765,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&q=80",
-    heroAlt: "Amazon office representing Amazon India interview preparation",
+    heroAlt: "Amazon India office building with the smile logo at the entrance",
     datePublished: "2026-07-07",
     intro: "Amazon interviews in India follow the same global format as Amazon worldwide — the Leadership Principles (LPs) are non-negotiable, the bar raiser round is real, and the DSA bar is set at LeetCode Medium to Hard. What many Indian candidates underestimate is the LP component: at Amazon, behavioural rounds are scored as rigorously as technical rounds, and LP answers can reject candidates who cleared the coding bar. This guide covers every round of Amazon India's 2026 process with strategies specific to Indian candidates.",
     sections: [
@@ -3824,7 +3824,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=1200&q=80",
-    heroAlt: "Algorithm flowchart representing DSA interview preparation India",
+    heroAlt: "Algorithm flowchart with decision diamonds and sorting steps drawn on graph paper",
     datePublished: "2026-07-07",
     intro: "Data Structures and Algorithms (DSA) is the single most searched interview preparation topic among Indian engineers in 2026 — and for good reason. DSA rounds are mandatory at every product company (Flipkart, Swiggy, Razorpay, Amazon, Google, Microsoft) and increasingly tested even at IT services companies' premium tracks (TCS Digital, Infosys Power Programmer, Wipro Elite). This guide gives you the complete preparation roadmap: what to study, in what order, how to practice efficiently, and what to do in the final week before an interview.",
     sections: [
@@ -3883,7 +3883,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=1200&q=80",
-    heroAlt: "HCL Technologies office representing HCL interview preparation India",
+    heroAlt: "HCL Technologies campus building with the HCL logo on the exterior facade",
     datePublished: "2026-07-08",
     intro: "HCL Technologies is India's fourth-largest IT services company and a top-10 global IT services employer. HCL is often overlooked by candidates focused on TCS, Infosys, and Wipro — but it is one of the better-paying IT services companies for freshers (₹3.5–4.5 LPA standard, higher for specialist tracks) and has a reputation for faster growth into senior roles compared to TCS and Infosys. HCL also runs the TechBee early career programme for Class 12 graduates — a distinctive offering no other major IT company has. This guide covers the complete 2026 HCL hiring process.",
     sections: [
@@ -3997,7 +3997,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1537498425277-c283d32ef9db?w=1200&q=80",
-    heroAlt: "Microsoft office representing Microsoft India interview preparation",
+    heroAlt: "Microsoft India office building in Hyderabad with the Windows logo at entrance",
     datePublished: "2026-07-08",
     intro: "Microsoft India (Hyderabad and Bengaluru) is consistently rated among the best employers in India for work-life balance, engineering culture, and benefits — while still offering FAANG-level compensation. Microsoft's interview process is less rigorous than Google's but harder than Amazon's DSA bar for mid-level roles. The standout feature of Microsoft India interviews is the 'As Delivered' or cultural interview — a structured assessment of Microsoft's growth mindset culture that is genuinely distinct from HR rounds at other companies.",
     sections: [
@@ -4056,7 +4056,7 @@ const posts: BlogPost[] = [
     category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&q=80",
-    heroAlt: "E-commerce warehouse representing Flipkart interview preparation India",
+    heroAlt: "Flipkart e-commerce fulfilment warehouse with workers sorting yellow-branded packages",
     datePublished: "2026-07-11",
     intro: "Flipkart is India's leading e-commerce company and one of the most prestigious engineering employers in the country. A Flipkart SDE offer is broadly equivalent in prestige to an Amazon SDE offer and significantly above Swiggy, Zomato, or Razorpay. Since Walmart's acquisition, Flipkart engineers receive Walmart stock, making the total compensation more competitive than many candidates realise. The interview process is rigorous — DSA at LeetCode Medium-Hard, system design from SDE-2 onwards, and a distinct behavioural assessment rooted in Flipkart's engineering values.",
     sections: [
@@ -4170,7 +4170,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1565688534245-05d6b5be184a?w=1200&q=80",
-    heroAlt: "Person preparing for an interview representing interview preparation tips India 2026",
+    heroAlt: "Person reviewing printed interview question sheets and making notes at a desk",
     datePublished: "2026-07-15",
     intro: "Most Indian engineers preparing for interviews focus almost entirely on DSA problems and neglect the other dimensions that determine whether an offer is made: communication, behavioural answers, system design, and salary negotiation. This guide covers the complete interview preparation picture — not just 'solve more LeetCode' — with a realistic timeline and a preparation checklist for freshers and experienced engineers targeting Indian product companies.",
     sections: [
@@ -4229,7 +4229,7 @@ const posts: BlogPost[] = [
     category: "Career",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&q=80",
-    heroAlt: "College campus representing campus placement preparation India 2026",
+    heroAlt: "College campus placement cell with company banners and student queues",
     datePublished: "2026-07-17",
     intro: "Campus placement season in India typically runs from August to March, with the biggest companies visiting Tier-1 colleges (IITs, NITs, IIITs) in August–October and Tier-2/3 colleges in November–March. For most engineering students, campus placement is the single most important professional transition in their academic life. This guide covers the full placement lifecycle: what to prepare, when to prepare it, how to approach different company tiers, and what most students get wrong.",
     sections: [
@@ -8796,7 +8796,7 @@ const posts: BlogPost[] = [
     category: "Technical",
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1488229297570-58520851e868?w=1200&q=80",
-    heroAlt: "Container ship dock representing Docker container orchestration",
+    heroAlt: "Docker and Kubernetes logos on a terminal screen with container logs scrolling",
     datePublished: "2026-09-02",
     intro: "Docker and Kubernetes knowledge has moved from 'DevOps specialist' territory to mainstream SDE expectation at Indian product companies. In 2026, most mid-level and senior backend engineers at companies like Razorpay, Swiggy, and Meesho are expected to understand containerisation and basic orchestration. This guide covers the container and Kubernetes questions you will encounter across backend and DevOps roles at Indian product companies.",
     sections: [
