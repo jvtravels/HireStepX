@@ -213,6 +213,52 @@ describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
     expect(phases[1].reached).toBe(true);
   });
 
+  /* S3-B2 — Phase-11 hike-rationale (rationaleKind) must credit stage 2
+     ("You justified your number") when the candidate gave a grounded reason
+     for their ask. Without this, market-data / YOE / competing-offer
+     justifications were invisible to the stage tracker. */
+  it("S3-B2: rationaleKind 'market-data' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "market-data" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Backed it with market-rate data");
+  });
+
+  it("S3-B2: rationaleKind 'competing-offer' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "competing-offer" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Used a competing offer as the anchor");
+  });
+
+  it("S3-B2: rationaleKind 'tenure-yoe' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "tenure-yoe" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Justified by experience and tenure");
+  });
+
+  it("S3-B2: rationaleKind 'scope-expansion' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "scope-expansion" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Justified by expanded scope and responsibility");
+  });
+
+  it("S3-B2: rationaleKind 'specialization' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "specialization" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Justified by niche skill or specialization");
+  });
+
+  it("S3-B2: unknown rationaleKind reaches phase 2 with the fallback note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "col-relocation" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Gave a grounded reason for the number");
+  });
+
+  it("S3-B2: bare counter with NO rationaleKind does NOT reach phase 2 (anti-fabrication)", () => {
+    // Verifies rationaleKind=undefined does not credit stage 2 on its own.
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30 }));
+    expect(phases[1].reached).toBe(false);
+  });
+
   it("outcome accepted → phase 5 reached, named 'You closed the deal', 'Accepted' note", () => {
     const phases = derivePhases(makeOutcome({ outcome: "accepted" }));
     expect(phases[4].reached).toBe(true);

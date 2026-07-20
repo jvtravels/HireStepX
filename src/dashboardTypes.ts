@@ -129,6 +129,11 @@ export interface DashboardSession {
     /* S4S5-B3 (2026-07-18) — one-time joining bonus the recruiter offered (LPA).
        Optional so rows persisted before this field shipped deserialize cleanly. */
     lastJoiningBonusOffered?: number | null;
+    /* S3-B2 (2026-07-20) — Phase-11 hike-justification rationale the candidate
+       gave. Optional so rows persisted before this field shipped deserialize
+       cleanly. Values: "market-data" | "tenure-yoe" | "competing-offer" |
+       "scope-expansion" | "specialization" | "col-relocation". */
+    rationaleKind?: string;
   };
 }
 

@@ -301,6 +301,11 @@ export interface InterviewResultData {
      *  justified your number") keys on this so a recruiter-elicited disclosure
      *  is not miscredited as candidate-initiated justification. */
     infoAskedInitiated?: ReadonlyArray<string>;
+    /** S3-B2 — hike-justification rationale the candidate used (Phase-11
+     *  `_hike-rationale.ts`). Absent when no grounded reason was detected.
+     *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
+     *  "scope-expansion" | "specialization" | "col-relocation". */
+    rationaleKind?: string;
     /** Structured pushbacks the AI made during the call. Each entry pairs
      *  an AI line with how the candidate responded (held / deflected /
      *  conceded). Drives the "When they pushed back, did you fold?" panel.

@@ -84,26 +84,30 @@ export function derivePhases(outcome: NegotiationOutcome) {
   const hasPriorOffer = offers.length > 0;
 
   const reachedCounter = outcome.candidateAsk !== null;
-  // S6-B3 (known gap): `outcome.pushbacks` requires a transcript classifier
-  // that was never shipped — it is always undefined. The deterministic fix is
-  // a kernel-side "re-anchor" tactic: when the candidate re-states their number
-  // after a recruiter push, the kernel should emit a tactic so `tactics.length >
-  // 0` covers it (REPORT-6 anti-fabrication: recruiter offer count alone must
-  // not credit the candidate). Until that kernel signal exists, `heldPushback`
-  // falls through to false and `reachedPushback` requires a named Voss tactic.
   const heldPushback =
     outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
-  // Justified — defended the number with a range, a tactic, or structural
-  // discovery; a bare blurted number does NOT reach it.
+  // Justified — defended the number with a range, a Voss tactic, structural
+  // discovery, or a Phase-11 hike-rationale (market-data / YOE / scope / etc.).
+  // S3-B2: rationaleKind is sourced from finalState.rationale.kind in the
+  // kernel (Phase-11 `_hike-rationale.ts`) and is set whenever the candidate
+  // gave a grounded reason for their ask — "market rate for my YOE is ₹X",
+  // "I have a competing offer at ₹Y", etc. A bare blurted number without
+  // reasoning does NOT set rationaleKind and therefore does NOT reach this stage.
   const reachedJustification =
     reachedCounter &&
     (outcome.anchorBracket?.type === "range_with_justification" ||
       tactics.length > 0 ||
-      infoInitiated.length > 0);
-  // Handled pushback — a held/deflected classifier event or a Voss tactic the
-  // candidate played. S16-B4: gated on reachedCounter — you cannot "handle
-  // pushback on your number" without having named one, so a lone calibrated
-  // question on a pure-discovery session must NOT credit this stage.
+      infoInitiated.length > 0 ||
+      outcome.rationaleKind !== undefined);
+  // Handled pushback — a held/deflected classifier event OR a Voss tactic.
+  // S16-B4: gated on reachedCounter — you cannot "handle pushback on your
+  // number" without having named one.
+  // NOTE (S6-B3): The pushbacks classifier was never built (outcome.pushbacks
+  // is always undefined), so this stage only fires via Voss tactics today.
+  // A grounded proxy based on offers.length >= 2 was attempted but violates
+  // the REPORT-6 anti-fabrication contract (test line 127) — recruiter-offer
+  // count alone must never credit a candidate stage. Requires building the
+  // pushbacks classifier first.
   const reachedPushback = reachedCounter && (tactics.length > 0 || heldPushback);
   // Explored levers — S16-B5: `leverDiversity` counts the RECRUITER's move
   // levers (always ≥1 once any turn occurs), so it must NOT credit the
@@ -135,7 +139,19 @@ export function derivePhases(outcome: NegotiationOutcome) {
           ? "Framed a defended range"
           : tactics.length > 0
             ? `Backed it with ${tactics.length} tactic${tactics.length === 1 ? "" : "s"}`
-            : "Asked about comp structure to support it"
+            : infoInitiated.length > 0
+              ? "Asked about comp structure to support it"
+              : outcome.rationaleKind === "market-data"
+                ? "Backed it with market-rate data"
+                : outcome.rationaleKind === "competing-offer"
+                  ? "Used a competing offer as the anchor"
+                  : outcome.rationaleKind === "tenure-yoe"
+                    ? "Justified by experience and tenure"
+                    : outcome.rationaleKind === "scope-expansion"
+                      ? "Justified by expanded scope and responsibility"
+                      : outcome.rationaleKind === "specialization"
+                        ? "Justified by niche skill or specialization"
+                        : "Gave a grounded reason for the number"
         : undefined,
     },
     {

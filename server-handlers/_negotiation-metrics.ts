@@ -154,6 +154,13 @@ export interface NegotiationMetrics {
   /** Chronological cash offers the recruiter made (LPA), most-recent last.
    *  One entry per cash turn; non-cash lever turns are excluded. */
   offerTrajectoryLpa: ReadonlyArray<number>;
+  /** S3-B2 — hike-justification rationale the candidate used at least once.
+   *  Sourced from `state.rationale.kind` (Phase-11 `_hike-rationale.ts`).
+   *  Absent when the candidate never gave a grounded reason for their ask
+   *  (bare-number counter with no market-data / YOE / scope framing).
+   *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
+   *  "scope-expansion" | "specialization" | "col-relocation". */
+  rationaleKind?: string;
   /** S4S5-B3 — one-time joining bonus the recruiter last offered (LPA).
    *  Null when no joining bonus was ever offered. Distinct from the
    *  annual CTC total (`finalOfferLpa`) — persisted separately so the
@@ -271,6 +278,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
       finalState.lastJoiningBonusOffered > 0
         ? finalState.lastJoiningBonusOffered
         : null,
+    ...(finalState.rationale?.kind ? { rationaleKind: finalState.rationale.kind } : {}),
   };
 }
 

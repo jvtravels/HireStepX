@@ -55,6 +55,9 @@ export interface RealSession {
   questions: number;
   /** Company the candidate targeted at session setup, from target_company column. */
   company?: string;
+  /** Role the candidate set at session setup, from target_role column. When set,
+   *  used instead of the profile targetRole so the card shows the session role. */
+  target_role?: string | null;
   ai_feedback?: string;
   skill_scores?: Record<string, number> | null;
   /** Plain-language coaching pair from the evaluator (mvp-8+), read out of
@@ -96,6 +99,18 @@ export interface RealSession {
       posture: "strong" | "neutral" | "hungry";
       candidateLeverage: "low" | "neutral" | "high";
     };
+    /** Voss tactics the candidate deployed (mirror, label, calibrated, …). */
+    vossTacticsUsed?: string[];
+    /** Comp-structure info the candidate asked about. */
+    infoAsked?: string[];
+    /** Candidate-INITIATED subset of infoAsked (S13-B9). */
+    infoAskedInitiated?: string[];
+    /** Last joining-bonus figure the recruiter offered (LPA). S4S5-B3. */
+    lastJoiningBonusOffered?: number | null;
+    /** Phase-11 hike-justification rationale the candidate gave. S3-B2.
+     *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
+     *  "scope-expansion" | "specialization" | "col-relocation". */
+    rationaleKind?: string;
   };
 }
 
@@ -195,7 +210,7 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
       date: rs.date.split("T")[0],
       dateLabel,
       type,
-      role: targetRole || "Target Role",
+      role: rs.target_role || targetRole || "Target Role",
       company: rs.company,
       score: rs.score,
       change: rs.score - prevScore,

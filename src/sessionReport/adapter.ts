@@ -467,7 +467,7 @@ export function sessionReportToInterviewResult(
           : "Keep practising consistently.",
     },
     questions: (() => {
-      const base = report.perQuestion.map((q) => adaptQuestion(q, report.redFlags));
+      const raw = report.perQuestion.map((q) => adaptQuestion(q, report.redFlags));
       /* I-13 (2026-07-11, live staging) — for salary negotiations the evaluator
        * collapses the whole call into a SINGLE aggregate perQuestion item, so the
        * Per-Question Review showed "1" for a six-turn negotiation. The real
@@ -477,9 +477,12 @@ export function sessionReportToInterviewResult(
        * the heading count is honest. Falls back to the aggregate base when the
        * transcript can't be split into more turns than we already have (legacy
        * rows without a stored transcript) — we never invent exchanges. */
-      if (!isNegotiation) return base;
-      const reconstructed = buildNegotiationPerQuestion(session.transcript, base);
-      return reconstructed ?? base;
+      const base = isNegotiation
+        ? (buildNegotiationPerQuestion(session.transcript, raw) ?? raw)
+        : raw;
+      // q.idx is the transcript-turn index, not the sequential question number.
+      // Re-index to 1, 2, 3… so the report shows "Q1", "Q2" not "Q5", "Q9".
+      return base.map((q, i) => ({ ...q, index: i + 1 }));
     })(),
     scoreConfidence: confidenceBucket(report.scoreConfidence),
     scoreConfidenceNote:
@@ -810,6 +813,9 @@ function adoptKernelOutcome(
     ...(typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0
       ? { joiningBonusLpa: km.lastJoiningBonusOffered }
       : {}),
+    /* S3-B2 — surface Phase-11 hike-justification rationale so
+       derivePhases stage-2 ("You justified your number") fires. */
+    ...(typeof km.rationaleKind === "string" ? { rationaleKind: km.rationaleKind } : {}),
   };
 }
 
@@ -1067,6 +1073,18 @@ function pickWeakestSkill(
  *  per pixel of report real estate. */
 function buildMetrics(report: SessionReport): DeliveryMetric[] {
   const { coreMetrics, advancedDelivery } = report;
+  // Text-only sessions have no voice signal — every metric would be 0, which
+  // renders as a wall of "Good" tiles that are actually absent data. Return []
+  // so the CoreMetricsSection is hidden rather than misleading. Matches the
+  // same guard in readinessIndex/sections.tsx DeliveryPanel.
+  const hasVoiceData =
+    coreMetrics.fillerPerMin > 0 ||
+    coreMetrics.silenceRatio > 0 ||
+    coreMetrics.paceWpm >= 20 ||
+    coreMetrics.energy > 0 ||
+    advancedDelivery.medianLatencyMs > 0 ||
+    advancedDelivery.selfCorrectionRate > 0;
+  if (!hasVoiceData) return [];
   return [
     {
       label: "Filler words / min",
