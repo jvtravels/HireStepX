@@ -2204,6 +2204,98 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Revenue operations SaaS: $150M+ ARR; ESOP at $2.6B valuation; Bengaluru engineering",
     sitemapPriority: 0.68,
   },
+
+  /* ── WAVE 14: GCCs + FinServ + Remaining ──────────────────────────── */
+  {
+    slug: "lowes-india",
+    searchPhrase: "Lowe's India GCC Software Engineer Salary 2026",
+    metaDescription:
+      "Lowe's India GCC salary 2026: SWE entry ₹14–22 LPA, mid ₹22–38 LPA, senior ₹38–65 LPA. RSU on NYSE (LOW). Bengaluru retail-tech GCC building the digital backbone of a $90B US home improvement retailer.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "US retail GCC; Bengaluru; NYSE listed; RSU; cloud and retail-tech focus",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "target-india",
+    searchPhrase: "Target India TCI Software Engineer Salary 2026",
+    metaDescription:
+      "Target India salary 2026: SWE entry ₹16–26 LPA, mid ₹26–45 LPA, senior ₹45–78 LPA. RSU on NYSE (TGT). Bengaluru GCC (TCI) driving supply chain, data science, and full-stack engineering for a $110B US retailer.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "US retail GCC Bengaluru; NYSE; RSU; data science + supply chain engineering",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "bny-mellon",
+    searchPhrase: "BNY Mellon Technology India Software Engineer Salary 2026",
+    metaDescription:
+      "BNY Mellon India salary 2026: SWE entry ₹15–24 LPA, mid ₹24–42 LPA, senior ₹42–70 LPA. RSU on NYSE (BK). Pune and Chennai fintech GCC for the world's largest custody bank with $47T in assets.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "World's largest custody bank GCC; Pune + Chennai; NYSE; RSU; fintech engineering",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "standard-chartered",
+    searchPhrase: "Standard Chartered India GBS Software Engineer Salary 2026",
+    metaDescription:
+      "Standard Chartered India salary 2026: SWE entry ₹14–22 LPA, mid ₹22–40 LPA, senior ₹40–68 LPA. RSU on LSE. Chennai GBS hub for a global emerging-markets bank; heavy on Python, cloud, and risk analytics.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Emerging-markets bank GBS Chennai; LSE listed; RSU; Python + risk analytics",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "mastercard",
+    searchPhrase: "Mastercard Technology India Software Engineer Salary 2026",
+    metaDescription:
+      "Mastercard India salary 2026: SWE entry ₹18–30 LPA, mid ₹30–52 LPA, senior ₹52–90 LPA. RSU on NYSE (MA). Pune and Vadodara tech centres building payments infrastructure processing 150B+ transactions annually.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Global payments network; NYSE; RSU; Pune + Vadodara; 150B+ txn/yr",
+    sitemapPriority: 0.76,
+  },
+  {
+    slug: "visa-india",
+    searchPhrase: "Visa Technology India Software Engineer Salary 2026",
+    metaDescription:
+      "Visa India salary 2026: SWE entry ₹20–32 LPA, mid ₹32–55 LPA, senior ₹55–95 LPA. RSU on NYSE (V). Bengaluru Visa Worldwide Technology Centre building real-time payments, fraud ML, and developer APIs.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Global payments network; NYSE; RSU; Bengaluru; real-time payments + fraud ML",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "fiserv",
+    searchPhrase: "Fiserv India Software Engineer Salary 2026",
+    metaDescription:
+      "Fiserv India salary 2026: SWE entry ₹12–20 LPA, mid ₹20–36 LPA, senior ₹36–60 LPA. RSU on Nasdaq (FI). Pune and Hyderabad fintech GCC for a $18B revenue payment processing and banking software giant.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Fintech GCC Pune + Hyderabad; Nasdaq listed; RSU; banking software + payments",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "sarvam",
+    searchPhrase: "Sarvam AI Software Engineer Salary India 2026",
+    metaDescription:
+      "Sarvam AI salary India 2026: SWE entry ₹18–30 LPA, mid ₹30–55 LPA, senior ₹55–95 LPA. ESOP. Bengaluru AI lab building India's own LLMs, TTS, and STT in 10 Indian languages; Series A backed.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "India-native LLM lab Bengaluru; Series A; ESOP; 10 Indian languages AI",
+    sitemapPriority: 0.74,
+  },
+  {
+    slug: "hdfc",
+    searchPhrase: "HDFC Ltd Software Engineer Salary India 2026",
+    metaDescription:
+      "HDFC Ltd salary India 2026: SWE entry ₹10–17 LPA, mid ₹17–30 LPA, senior ₹30–52 LPA. Mumbai-headquartered financial services conglomerate; tech roles in mortgages, wealth management, and digital banking platforms.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Financial services conglomerate Mumbai; BSE/NSE; mortgage + wealth management tech",
+    sitemapPriority: 0.69,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */

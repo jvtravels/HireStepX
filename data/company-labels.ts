@@ -173,6 +173,14 @@ export const COMPANY_LABEL: Record<string, string> = {
   "p&g": "P&G",
   itc: "ITC",
 
+  // Wave 14: GCCs + FinServ + remaining
+  "lowes-india": "Lowe's India (GCC)",
+  "target-india": "Target India (TCI)",
+  "bny-mellon": "BNY Mellon Technology",
+  "standard-chartered": "Standard Chartered GBS India",
+  mastercard: "Mastercard Technology India",
+  "visa-india": "Visa India",
+  fiserv: "Fiserv India",
   // Generic fresher / campus prep pages
   campus: "Campus Interviews",
 
