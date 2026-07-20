@@ -941,6 +941,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What is the highest full stack developer salary in India?", answer: "The highest full stack developer salaries in India are at FAANG India offices (Google, Amazon, Microsoft): ₹70–140+ LPA for 5–8 years of experience. Among Indian product companies, Razorpay, Flipkart, CRED, and Swiggy offer ₹55–110 LPA for senior full-stack engineers." },
     ],
   },
+  {
+    slug: "data-analyst-interview-questions-india-2026",
+    title: "Data Analyst Interview Questions India 2026 — SQL, Excel, Python & Business Case Studies",
+    metaDescription: "Data analyst interview questions India 2026 with answers. Covers SQL queries, Excel pivot tables, Python pandas, statistical concepts, business case studies, and company-specific prep for TCS, Infosys, Flipkart, and Zomato.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop",
+    company: "General", category: "Technical",
+    faqs: [
+      { question: "What SQL questions are asked in data analyst interviews in India?", answer: "SQL questions for data analyst roles in India range from basic JOINs and GROUP BY at IT services companies to window functions (RANK, ROW_NUMBER, LAG/LEAD), CTEs, and subqueries at product companies. The most common advanced questions: second highest salary, 7-day rolling average, cohort retention query, and finding lapsed users." },
+      { question: "Is Python required for data analyst jobs in India in 2026?", answer: "Python is required at product companies (Flipkart, Swiggy, Zomato, funded startups) and strongly preferred at analytics platforms. IT services companies and FMCG firms often accept Excel + SQL without Python for junior roles. For salary above ₹15 LPA, Python (pandas + matplotlib) is effectively mandatory." },
+      { question: "What is the data analyst salary fresher in India 2026?", answer: "Data analyst fresher salary in India in 2026 ranges from ₹4–24 LPA depending on company type. IT services: ₹4–8 LPA. Funded startups: ₹8–16 LPA. Tier-1 product companies (Flipkart, Swiggy): ₹12–24 LPA. SQL + Python proficiency is the single biggest differentiator at the fresher level." },
+      { question: "How do I prepare for a data analyst interview in 2 weeks?", answer: "Week 1: SQL — practice 5 problems/day on LeetCode or StrataScratch (medium difficulty). Focus on JOINs, GROUP BY, HAVING, window functions. Week 2: Python pandas basics + business case practice. Pick 3 companies you're interviewing at and prepare 2 metric design questions per company. On the last day, do one full mock interview (SQL + case study + statistics)." },
+    ],
+  },
+  {
+    slug: "nykaa-interview-questions-india-2026",
+    title: "Nykaa Interview Questions India 2026 — SDE, Product Manager & Data Science Roles",
+    metaDescription: "Nykaa interview questions 2026 for SDE, PM, and data science roles. Covers the full interview process, DSA rounds, product case studies, Nykaa salary ₹12–75 LPA, and preparation tips for India's leading beauty e-commerce company.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=630&fit=crop",
+    company: "E-commerce", category: "Full Guide",
+    faqs: [
+      { question: "Is Nykaa a good company to work for in tech?", answer: "Nykaa is a good stepping stone for 2–5 year experience engineers moving from IT services to product companies. The tech problems are real e-commerce scale challenges (search, recommendations, flash sales, inventory). Compensation is mid-tier product company level. Many engineers use Nykaa as a bridge to higher-tier product companies (Razorpay, Swiggy, Zomato) at the 5–7 year mark." },
+      { question: "What is Nykaa SDE salary?", answer: "Nykaa SDE salary in 2026: SDE-1 ₹12–22 LPA, SDE-2 ₹22–45 LPA, Senior SDE ₹40–70 LPA. Post-IPO ESOPs are liquid (listed stock). Compensation is comparable to Urban Company, PolicyBazaar, and Cars24." },
+      { question: "What does Nykaa interview for PM roles?", answer: "Nykaa PM interviews test product sense through beauty/fashion-domain case studies (design a skincare discovery feature, improve loyalty, diagnose conversion drop), analytical ability (A/B testing, metric interpretation), and past product ownership. Beauty category awareness is a significant differentiator — generic frameworks with no domain knowledge do not score well." },
+      { question: "How hard is Nykaa's SDE interview?", answer: "Nykaa's SDE interview is Medium difficulty — LeetCode Medium proficiency is sufficient for the coding rounds. System design is required for 2+ years experience. It is harder than IT services companies (TCS/Infosys) but easier than CRED, Razorpay, or FAANG India." },
+    ],
+  },
+  {
+    slug: "ola-interview-questions-india-2026",
+    title: "Ola Interview Questions India 2026 — Ola Cabs & Ola Electric SDE, PM & Data Roles",
+    metaDescription: "Ola interview questions 2026 for SDE, PM, and data roles at Ola Cabs and Ola Electric. Covers the interview process, system design for ride-hailing, EV-tech questions, salary ₹14–90 LPA, and preparation strategy.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1200&h=630&fit=crop",
+    company: "Transport", category: "Full Guide",
+    faqs: [
+      { question: "Is Ola a good company for software engineers in India?", answer: "Ola Cabs (ANI Technologies) is a mid-tier product company — good for 2–5 year experience engineers moving from IT services who want to work on large-scale distributed systems (location services, payments, real-time matching). Ola Electric is interesting for engineers wanting hardware-software intersection experience in the growing EV sector. Neither pays at the FAANG/Razorpay level." },
+      { question: "What is the difference between Ola and Ola Electric interviews?", answer: "Ola Cabs interviews focus on standard product engineering: DSA + system design (ride-hailing problems). Ola Electric interviews depend on the role: embedded systems/firmware roles test C/C++, CAN bus, RTOS concepts; platform engineering roles are standard product engineering interviews with EV telemetry context." },
+      { question: "What is Ola Electric salary in India 2026?", answer: "Ola Electric salary in India 2026: SDE/Firmware-1 ₹12–22 LPA, SDE/FW-2 ₹22–42 LPA, Senior ₹40–70 LPA. Post-IPO ESOPs are listed on NSE/BSE. Stock has been volatile — evaluate total comp at a conservative stock price when negotiating." },
+      { question: "How difficult is the Ola SDE interview?", answer: "Ola's SDE interview difficulty is medium — comparable to Nykaa, Urban Company, and Dunzo. LeetCode Medium proficiency handles the coding rounds. System design (ride-hailing specific) is the differentiator at 2+ years. It is notably easier than CRED, Razorpay, or Amazon India." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {

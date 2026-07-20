@@ -3114,6 +3114,179 @@ const posts: BlogPost[] = [
       { label: "React Developer Salary India 2026", href: "/blog/react-developer-salary-india-2026" },
     ],
   },
+  {
+    slug: "data-analyst-interview-questions-india-2026",
+    title: "Data Analyst Interview Questions India 2026 — SQL, Excel, Python & Business Case Studies",
+    metaDescription: "Data analyst interview questions India 2026 with answers. Covers SQL queries, Excel pivot tables, Python pandas, statistical concepts, business case studies, and company-specific prep for TCS, Infosys, Flipkart, and Zomato.",
+    company: "General",
+    category: "Technical",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=500&fit=crop",
+    heroAlt: "Data analyst working with charts and SQL on a laptop",
+    datePublished: "2026-07-20",
+    intro: "Data analyst roles in India have exploded since 2022 — every funded startup, every FMCG company, and every IT services firm now has a data team. The interview process varies significantly by company tier: an IT services data analyst role tests basic SQL and Excel, while a product company like Zomato or Flipkart tests statistical reasoning, Python, A/B test interpretation, and business problem framing. This guide covers both, with actual questions asked across the spectrum.",
+    sections: [
+      {
+        heading: "SQL Interview Questions for Data Analysts",
+        content: "SQL is tested in every data analyst interview. Expect 2–4 SQL problems, ranging from basic joins to window functions at product companies.\n\n**Basic to Intermediate SQL (IT services / entry-level):**\n\n**Q1: Find the second highest salary from an employee table.**\n```sql\n-- Method 1: Subquery\nSELECT MAX(salary) FROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n\n-- Method 2: Window function (preferred in product companies)\nSELECT salary FROM (\n  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk\n  FROM employees\n) ranked WHERE rnk = 2;\n```\n\n**Q2: Find all departments where the average salary exceeds ₹8 LPA.**\n```sql\nSELECT department, AVG(salary) as avg_salary\nFROM employees\nGROUP BY department\nHAVING AVG(salary) > 800000;\n```\n\n**Q3: List employees who joined in the last 6 months and have not had a performance review.**\n```sql\nSELECT e.employee_id, e.name\nFROM employees e\nLEFT JOIN reviews r ON e.employee_id = r.employee_id\nWHERE e.join_date >= CURRENT_DATE - INTERVAL '6 months'\nAND r.review_id IS NULL;\n```\n\n**Advanced SQL (product companies — Flipkart, Zomato, Swiggy):**\n\n**Q4: Calculate 7-day rolling average of daily orders.**\n```sql\nSELECT order_date,\n  daily_orders,\n  AVG(daily_orders) OVER (\n    ORDER BY order_date\n    ROWS BETWEEN 6 PRECEDING AND CURRENT ROW\n  ) as rolling_7day_avg\nFROM (\n  SELECT DATE(order_time) as order_date, COUNT(*) as daily_orders\n  FROM orders\n  GROUP BY DATE(order_time)\n) daily;\n```\n\n**Q5: Find users who placed orders in January but not in February (lapsed users).**\n```sql\nSELECT DISTINCT user_id FROM orders\nWHERE MONTH(order_date) = 1 AND YEAR(order_date) = 2026\nAND user_id NOT IN (\n  SELECT DISTINCT user_id FROM orders\n  WHERE MONTH(order_date) = 2 AND YEAR(order_date) = 2026\n);\n```\n\n**Q6: Rank products by revenue within each category (window function).**\n```sql\nSELECT category, product_name, revenue,\n  RANK() OVER (PARTITION BY category ORDER BY revenue DESC) as revenue_rank\nFROM product_sales;\n```"
+      },
+      {
+        heading: "Excel Interview Questions",
+        content: "Excel is tested at IT services companies and FMCG/consulting firms. Product companies rarely test Excel — they expect Python or SQL instead.\n\n**Frequently asked Excel questions:**\n\n**1. VLOOKUP vs INDEX-MATCH — which is better and why?**\nVLOOKUP only looks right (the lookup column must be the leftmost column in the range). INDEX-MATCH works in any direction, is faster on large datasets, and does not break when columns are inserted. In 2026, XLOOKUP has largely replaced both in newer Excel versions — mention it if you know it.\n\n**2. How do you find duplicates in a column?**\n- Conditional Formatting → Highlight Cell Rules → Duplicate Values\n- COUNTIF: `=COUNTIF(A:A, A2) > 1` — flags duplicates with TRUE\n- SUMPRODUCT: `=SUMPRODUCT((COUNTIF(A2:A100, A2:A100)>1)*1)` — counts total duplicate cells\n\n**3. How do you build a Pivot Table?**\nInsert → PivotTable → Select range → Choose rows, columns, values. Key concepts:\n- Values: SUM, COUNT, AVERAGE, DISTINCT COUNT\n- % of Total: right-click value → Show Values As → % of Grand Total\n- Slicers for interactive filtering\n\n**4. What is the difference between a regular chart and a sparkline?**\nSparklines are mini-charts that live inside a single cell — useful for showing trends at a glance in a table. Regular charts are objects on the sheet that can be formatted independently.\n\n**5. How do you clean messy data in Excel?**\n- TRIM: removes extra spaces\n- CLEAN: removes non-printable characters\n- TEXT TO COLUMNS: splits by delimiter\n- FIND & REPLACE: bulk text substitution\n- Power Query: for large datasets requiring repeatable transformation steps"
+      },
+      {
+        heading: "Python for Data Analysis — Questions and Code",
+        content: "Python (with pandas, numpy, matplotlib) is tested at product companies and analytics-focused startups.\n\n**Q1: How do you handle missing values in a pandas DataFrame?**\n```python\nimport pandas as pd\ndf = pd.read_csv('orders.csv')\n\n# Check missing values\nprint(df.isnull().sum())\n\n# Drop rows with any missing values\ndf_clean = df.dropna()\n\n# Fill missing values\ndf['price'].fillna(df['price'].median(), inplace=True)  # fill with median\ndf['category'].fillna('Unknown', inplace=True)  # fill with a constant\n\n# Forward fill (for time series)\ndf['revenue'].fillna(method='ffill', inplace=True)\n```\n\n**Q2: Find the top 5 cities by total order value.**\n```python\ntop_cities = (\n  df.groupby('city')['order_value']\n  .sum()\n  .sort_values(ascending=False)\n  .head(5)\n  .reset_index()\n)\nprint(top_cities)\n```\n\n**Q3: Calculate month-over-month growth rate.**\n```python\ndf['order_date'] = pd.to_datetime(df['order_date'])\nmonthly = df.groupby(df['order_date'].dt.to_period('M'))['revenue'].sum()\nmonthly_df = monthly.reset_index()\nmonthly_df['mom_growth'] = monthly_df['revenue'].pct_change() * 100\nprint(monthly_df)\n```\n\n**Q4: How do you merge two DataFrames?**\n```python\n# SQL-style joins in pandas\nresult = pd.merge(orders, customers, on='customer_id', how='left')\n# how='inner' (default), 'left', 'right', 'outer'\n```\n\n**Q5: Detect outliers using IQR.**\n```python\nQ1 = df['order_value'].quantile(0.25)\nQ3 = df['order_value'].quantile(0.75)\nIQR = Q3 - Q1\noutliers = df[(df['order_value'] < Q1 - 1.5*IQR) | (df['order_value'] > Q3 + 1.5*IQR)]\nprint(f\"{len(outliers)} outliers found\")\n```"
+      },
+      {
+        heading: "Business Case and Product Sense Questions",
+        content: "Product companies ask case-style questions that test whether you can turn data into decisions. These are tested at Zomato, Flipkart, Swiggy, and similar.\n\n**Q: Zomato's order volume dropped 18% last Tuesday. How do you investigate?**\n\nExpected framework:\n1. **Clarify scope**: Is it all cities or specific markets? All categories or specific cuisine types? All times of day or peak hours only?\n2. **Check data integrity first**: Was there a logging outage or a pipeline failure? If metrics dropped to exactly zero for a period, it's likely a data issue, not a real drop.\n3. **External factors**: Was it a public holiday? Rainy weather (counterintuitively reduces orders in some markets)? A competitor ran a large promotion?\n4. **App performance**: Was there a deployment that day? Any increase in app crash rates or checkout failure rates?\n5. **Supply side**: Restaurant partner strikes, driver shortage in specific cities?\n6. **Conclusion structure**: 'Based on [data point X], the most likely root cause is [Y]. I would validate by [Z] and recommend [action].'\n\n**Q: Design a metric to measure the 'health' of Groww's user engagement.**\n\nExpected answer components:\n- Don't propose a single metric — propose a North Star metric + supporting metrics\n- North Star: Daily Active Users who complete at least one transaction\n- Supporting: D1/D7/D30 retention, SIP continuation rate, portfolio view frequency, watchlist additions\n- Counter-metrics: App uninstall rate, complaint volume, negative app store reviews\n- Always explain *why* your proposed metric cannot be gamed easily\n\n**Q: An A/B test showed that the new checkout flow has +12% conversion, but the test ran for only 3 days. Do you ship it?**\n\nExpected answer:\n- No — 3 days is too short. Reasons: weekly seasonality (behaviour differs Mon vs weekend), novelty effect (users interact differently with new UIs initially), statistical significance may not be reached.\n- What to check: What is the p-value? Is the sample size large enough to achieve 80%+ power? How does conversion look by day of week within the test?\n- What to do: Extend the test to 2 full weeks minimum. Monitor for day-of-week effects."
+      },
+      {
+        heading: "Data Analyst Salary in India 2026",
+        content: "Data analyst salaries in India depend heavily on company type and the specific skills demonstrated.\n\n**Fresher / 0–2 years:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services (TCS/Infosys/Wipro analytics roles) | ₹4–8 LPA |\n| FMCG / consulting firm (Unilever, P&G, Deloitte) | ₹6–12 LPA |\n| Funded startup | ₹8–16 LPA |\n| Tier-1 product company (Flipkart, Swiggy, Zomato) | ₹12–24 LPA |\n\n**2–5 years experience:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services | ₹8–18 LPA |\n| FMCG / consulting | ₹14–28 LPA |\n| Funded startup | ₹16–35 LPA |\n| Tier-1 product company | ₹25–55 LPA |\n\n**Skills that move the salary band upward:**\n- SQL proficiency (window functions, CTEs): +₹3–6 LPA vs SQL-basic analysts\n- Python / pandas: +₹5–10 LPA at product companies\n- A/B testing and experimentation design: +₹4–8 LPA\n- Dashboard tools (Tableau, Looker, Metabase): +₹2–5 LPA\n- ML fundamentals (regression, clustering, forecasting): positions you for senior analyst or ML roles at ₹35–60 LPA"
+      },
+    ],
+    faqs: [
+      {
+        question: "What SQL questions are asked in data analyst interviews in India?",
+        answer: "SQL questions for data analyst roles in India range from basic JOINs and GROUP BY at IT services companies to window functions (RANK, ROW_NUMBER, LAG/LEAD), CTEs, and subqueries at product companies. The most common advanced questions: second highest salary, 7-day rolling average, cohort retention query, and finding lapsed users."
+      },
+      {
+        question: "Is Python required for data analyst jobs in India in 2026?",
+        answer: "Python is required at product companies (Flipkart, Swiggy, Zomato, funded startups) and strongly preferred at analytics platforms. IT services companies and FMCG firms often accept Excel + SQL without Python for junior roles. For salary above ₹15 LPA, Python (pandas + matplotlib) is effectively mandatory."
+      },
+      {
+        question: "What is the data analyst salary fresher in India 2026?",
+        answer: "Data analyst fresher salary in India in 2026 ranges from ₹4–24 LPA depending on company type. IT services: ₹4–8 LPA. Funded startups: ₹8–16 LPA. Tier-1 product companies (Flipkart, Swiggy): ₹12–24 LPA. SQL + Python proficiency is the single biggest differentiator at the fresher level."
+      },
+      {
+        question: "How do I prepare for a data analyst interview in 2 weeks?",
+        answer: "Week 1: SQL — practice 5 problems/day on LeetCode or StrataScratch (medium difficulty). Focus on JOINs, GROUP BY, HAVING, window functions. Week 2: Python pandas basics + business case practice. Pick 3 companies you're interviewing at and prepare 2 metric design questions per company. On the last day, do one full mock interview (SQL + case study + statistics)."
+      },
+    ],
+    relatedSlugs: ["groww-interview-questions-india-2026", "backend-developer-salary-india-2026"],
+    practicePageSlugs: [],
+    cta: "Data analyst interviews test both technical skills and the ability to communicate your analysis clearly. HireStepX's voice interview practice helps you structure answers to 'how would you diagnose a metric drop' and 'how would you design this experiment' — the business case questions that most technically prepared candidates stumble on.",
+    relatedLinks: [
+      { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
+      { label: "Backend Developer Salary India 2026", href: "/blog/backend-developer-salary-india-2026" },
+    ],
+  },
+  {
+    slug: "nykaa-interview-questions-india-2026",
+    title: "Nykaa Interview Questions India 2026 — SDE, Product Manager & Data Science Roles",
+    metaDescription: "Nykaa interview questions 2026 for SDE, PM, and data science roles. Covers the full interview process, DSA rounds, product case studies, Nykaa salary ₹12–75 LPA, and preparation tips for India's leading beauty e-commerce company.",
+    company: "E-commerce",
+    category: "Full Guide",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=500&fit=crop",
+    heroAlt: "Beauty products representing Nykaa e-commerce interview preparation",
+    datePublished: "2026-07-20",
+    intro: "Nykaa is India's first profitable unicorn — a beauty and fashion e-commerce company that has expanded into Nykaa Fashion, Nykaa Pro (B2B), and a branded product line. Post-IPO, Nykaa has built a significant tech team in Mumbai and Bengaluru. The interview process is more structured than most Indian e-commerce startups but less rigorous than CRED or Razorpay. If you're targeting a tech role at Nykaa in 2026, this guide covers what to expect.",
+    sections: [
+      {
+        heading: "Nykaa Interview Process — SDE Roles",
+        content: "Nykaa's SDE interview process typically has 4–5 rounds for mid-senior roles and 3 rounds for freshers/junior roles.\n\n**Round 1: Online Assessment (HackerRank)**\n- 2 coding problems (Medium difficulty), 90 minutes\n- Topics: arrays, strings, hash maps, basic dynamic programming\n- No proctoring noted; standard HackerRank auto-evaluate\n- Tip: The first problem is usually Easy (warm-up), the second is the real filter\n\n**Round 2: Technical Interview 1 (DSA)**\n- 1–2 problems solved on a shared Google Doc or CoderPad\n- Interviewer is senior/staff SDE\n- Expected: walk through approach before coding; discuss time/space complexity\n- Common topics: sliding window, two pointers, BFS/DFS on trees, simple DP\n\n**Round 3: Technical Interview 2 (System Design or Low-Level Design)**\n- For 2+ years experience: High-Level System Design\n  - Design Nykaa's product catalogue search\n  - Design a flash sale system (thousands of simultaneous checkout attempts)\n  - Design the wishlist + cart system with real-time inventory\n- For freshers/1 year: Low-Level Design\n  - Design a shopping cart class with add/remove/discount methods\n  - Design an order management system with status transitions\n\n**Round 4: Hiring Manager Round**\n- Half technical (discuss past projects, code quality decisions)\n- Half behavioural: team collaboration, handling disagreements, example of learning from a mistake\n- Leadership Principles not as formal as Amazon — but similar questions in spirit\n\n**Round 5: HR Round**\n- Compensation discussion, joining date, relocation (if applicable)\n- Standard HR questions: why Nykaa? where do you see yourself in 3 years?"
+      },
+      {
+        heading: "DSA Questions Asked at Nykaa",
+        content: "Based on 2024–26 interview reports, Nykaa's DSA bar is LeetCode Medium. Hard problems are rare.\n\n**Commonly asked problems:**\n\n**1. Product of Array Except Self**\nGiven an array, return an array where each element is the product of all elements except itself (no division allowed).\n```python\ndef product_except_self(nums):\n    n = len(nums)\n    result = [1] * n\n    left = 1\n    for i in range(n):\n        result[i] = left\n        left *= nums[i]\n    right = 1\n    for i in range(n-1, -1, -1):\n        result[i] *= right\n        right *= nums[i]\n    return result\n```\n\n**2. LRU Cache (Low-Level Design + DSA combined)**\nDesign an LRU cache with O(1) get and put operations.\nSolution: Use a doubly linked list (for O(1) removal) + hash map (for O(1) lookup).\nNykaa framing: 'Design a recently viewed products cache for the homepage'\n\n**3. Top K Frequent Elements**\nGiven an array of product IDs, find the K most frequently ordered.\n```python\nfrom collections import Counter\nimport heapq\ndef top_k_frequent(products, k):\n    count = Counter(products)\n    return heapq.nlargest(k, count.keys(), key=count.get)\n```\n\n**4. Valid Parentheses**\nCheck if a string of brackets is valid — a warm-up problem; expected O(n) stack solution.\n\n**5. Merge K Sorted Lists**\nMerge K sorted lists of product IDs into one sorted list.\nSolution: Min-heap with (value, list_index, element_index). Time: O(N log K).\n\n**6. Find All Anagrams in a String**\nSliding window with character frequency map — often appears as a variant."
+      },
+      {
+        heading: "Product Manager Interview at Nykaa",
+        content: "Nykaa PM interviews are known for being beauty/fashion domain-heavy. Generic product frameworks work, but you score higher by demonstrating category awareness.\n\n**Round structure for PM roles:**\n1. Resume walkthrough (30 min): walk through 2–3 past projects with metrics\n2. Product case study (45 min): design a feature for Nykaa\n3. Analytical round: A/B test design, metric diagnosis\n4. Leadership + culture fit (30 min): past conflict resolution, prioritisation trade-offs\n\n**Common Nykaa PM case questions:**\n\n**'Design a feature that helps new users find the right skincare products.'**\nExpected framework: User segment (first-time skincare buyer, ingredient-aware buyer, dermat-recommended buyer) → Problem statement (discovery vs navigation vs trust) → Feature options (skin quiz, ingredient search, AR try-on) → Prioritisation (skin quiz has highest trust conversion, lowest build effort) → Success metrics (quiz completion rate, add-to-cart from quiz recommendation, D30 repurchase).\n\n**'How would you improve Nykaa's loyalty programme?'**\nExpected: Analyse current Nykaa Pink Points mechanics → Identify friction (points expiry confusion, low redemption rate) → Propose: tiered benefits tied to beauty category expertise, birthday rewards, early access for Platinum members → Metrics: monthly active loyalty members, redemption rate, tier upgrade rate.\n\n**'Nykaa Fashion's conversion rate dropped 8% this month. Diagnose it.'**\nFramework: Data integrity check first → External (seasonality? competitor sale?) → Funnel analysis (where in funnel: browse → PDP → cart → checkout?) → Supply side (out-of-stock SKUs in key categories?) → UX (recent app update?) → Hypothesis → Validation plan."
+      },
+      {
+        heading: "Nykaa Salary in India 2026",
+        content: "Nykaa is a Tier-2 product company by compensation — above IT services, below FAANG India or Razorpay, roughly comparable to Urban Company or PolicyBazaar.\n\n**SDE roles:**\n| Level | Salary Range |\n|---|---|\n| SDE-1 (0–2 yrs) | ₹12–22 LPA |\n| SDE-2 (2–5 yrs) | ₹22–45 LPA |\n| Senior SDE (5–8 yrs) | ₹40–70 LPA |\n| Staff/Principal | ₹65–100 LPA |\n\n**Product Manager roles:**\n| Level | Salary Range |\n|---|---|\n| APM / PM-1 | ₹18–30 LPA |\n| PM-2 / Senior PM | ₹30–55 LPA |\n| Group PM | ₹55–85 LPA |\n\n**Data Science / Analyst:**\n| Level | Salary Range |\n|---|---|\n| DA-1 / DS-1 (0–2 yrs) | ₹10–20 LPA |\n| Senior DA/DS (3–6 yrs) | ₹22–45 LPA |\n\n**Compensation structure:**\n- Post-IPO, Nykaa's ESOPs are liquid (listed on BSE/NSE)\n- Variable is 10–15% of base for most roles\n- Office locations: Mumbai (HQ), Bengaluru (tech hub), Delhi NCR (fashion & ops)\n\n**Negotiation:** Nykaa negotiates reasonably on base. A competing offer from a comparable company (Urban Company, PolicyBazaar, Cars24) carries weight. For senior roles, ESOP negotiation (vesting schedule, cliff) is often more valuable than base negotiation."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Nykaa a good company to work for in tech?",
+        answer: "Nykaa is a good stepping stone for 2–5 year experience engineers moving from IT services to product companies. The tech problems are real e-commerce scale challenges (search, recommendations, flash sales, inventory). Compensation is mid-tier product company level. Many engineers use Nykaa as a bridge to higher-tier product companies (Razorpay, Swiggy, Zomato) at the 5–7 year mark."
+      },
+      {
+        question: "What is Nykaa SDE salary?",
+        answer: "Nykaa SDE salary in 2026: SDE-1 ₹12–22 LPA, SDE-2 ₹22–45 LPA, Senior SDE ₹40–70 LPA. Post-IPO ESOPs are liquid (listed stock). Compensation is comparable to Urban Company, PolicyBazaar, and Cars24."
+      },
+      {
+        question: "What does Nykaa interview for PM roles?",
+        answer: "Nykaa PM interviews test product sense through beauty/fashion-domain case studies (design a skincare discovery feature, improve loyalty, diagnose conversion drop), analytical ability (A/B testing, metric interpretation), and past product ownership. Beauty category awareness is a significant differentiator — generic frameworks with no domain knowledge do not score well."
+      },
+      {
+        question: "How hard is Nykaa's SDE interview?",
+        answer: "Nykaa's SDE interview is Medium difficulty — LeetCode Medium proficiency is sufficient for the coding rounds. System design is required for 2+ years experience. It is harder than IT services companies (TCS/Infosys) but easier than CRED, Razorpay, or FAANG India."
+      },
+    ],
+    relatedSlugs: ["groww-interview-questions-india-2026", "data-analyst-interview-questions-india-2026"],
+    practicePageSlugs: [
+      { label: "E-commerce PM Interview Practice", slug: "flipkart-product-manager-interview" },
+    ],
+    cta: "Nykaa's PM and SDE interviews test both domain awareness and structured communication. HireStepX's voice-based mock interviews help you practise the product case study format out loud — the skill that separates candidates who know the framework from those who can apply it fluently under pressure.",
+    relatedLinks: [
+      { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
+      { label: "Data Analyst Interview Questions 2026", href: "/blog/data-analyst-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "ola-interview-questions-india-2026",
+    title: "Ola Interview Questions India 2026 — Ola Cabs & Ola Electric SDE, PM & Data Roles",
+    metaDescription: "Ola interview questions 2026 for SDE, PM, and data roles at Ola Cabs and Ola Electric. Covers the interview process, system design for ride-hailing, EV-tech questions, salary ₹14–90 LPA, and preparation strategy.",
+    company: "Transport",
+    category: "Full Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1200&h=500&fit=crop",
+    heroAlt: "Electric vehicle charging representing Ola Electric interview preparation",
+    datePublished: "2026-07-20",
+    intro: "Ola in 2026 is two distinct companies: ANI Technologies (Ola Cabs, the ride-hailing business) and Ola Electric Mobility (Ola Electric, the EV manufacturer listed on NSE/BSE since 2024). The tech teams have largely separated, with Ola Cabs focusing on mobility platform engineering and Ola Electric building embedded systems, battery management, and EV software. The interview processes differ — this guide covers both.",
+    sections: [
+      {
+        heading: "Ola Cabs Interview Process — SDE Roles",
+        content: "Ola Cabs' tech team in Bengaluru runs a standard product company interview process for SDE roles.\n\n**Round 1: Resume Screen / HR Screen**\n- Basic background check; no technical content\n- Confirm notice period, location preference, compensation range\n\n**Round 2: Online Assessment**\n- 2 DSA problems on HackerRank, 60–90 minutes\n- LeetCode Easy + Medium split\n- Some reports include a SQL query round in the assessment\n\n**Round 3: Technical Interview 1 (DSA)**\n- 1–2 problems live, Google Doc or shared editor\n- Ride-hailing framing common: 'given a list of driver locations and a rider location, find the nearest K drivers'\n- Topics: sorting, hash maps, heaps, BFS/DFS\n\n**Round 4: Technical Interview 2 (System Design)**\n- Expected for 2+ years\n- Common topics:\n  - Design Ola's driver matching system\n  - Design real-time ETA calculation for a ride\n  - Design Ola's surge pricing engine\n  - Design the driver earnings and payout system\n\n**Round 5: Technical + Behavioural (Engineering Manager)**\n- Past project deep-dive: 'describe the most complex system you've built'\n- Team collaboration: 'describe a disagreement you had with a senior engineer and how it resolved'\n- Ownership: 'describe a time a production issue happened on your watch'\n\n**Round 6: HR / Offer**\n- Compensation negotiation\n- Ola Cabs offers on the lower end of product company bands; negotiate with a competing offer"
+      },
+      {
+        heading: "System Design Questions — Ride-Hailing Specific",
+        content: "Ola system design questions are almost always ride-hailing specific. Study these patterns before the interview.\n\n**Question 1: Design Ola's driver matching system**\n\nCore problem: Given millions of GPS pings per second from drivers, match a rider request to the nearest available driver within 500ms.\n\nKey components:\n- **Location indexing**: Use a geohash or S2 cell index (Google's spatial library) to partition the map into cells. Store driver locations in Redis with geohash keys for O(1) cell lookup.\n- **Match algorithm**: Rider request → determine rider's geohash cell → query drivers in that cell and adjacent cells (8 neighbours) → sort by straight-line distance → return top-K candidates → assign the one with lowest ETA (not distance — ETA accounts for traffic)\n- **Scale**: 500K concurrent drivers in India. Redis cluster with geospatial indexing (GEOADD/GEORADIUS commands).\n- **Staleness**: Driver location updates every 5 seconds. An assignment may go to a driver who just went offline — handle with a retry on the next-best match.\n\n**Question 2: Design a real-time ETA engine**\n\n- Input: Rider pickup location, driver current location\n- Data sources: Historical trip duration data (by road segment, time of day), real-time traffic (Google Maps API or HERE Maps), ML model trained on Ola's own trip history\n- Output: ETA ± confidence interval\n- Cache: Pre-compute ETAs for common origin-destination pairs during off-peak; invalidate on traffic incident triggers\n\n**Question 3: Design Ola's surge pricing system**\n\n- Trigger: supply (available drivers) / demand (rider requests) ratio falls below threshold in a geohash cell\n- Surge multiplier: 1.2x → 1.5x → 2x based on demand-supply ratio bands\n- Transparency: Rider sees surge multiplier and estimated wait time before confirming\n- Abuse prevention: Don't let surge multiplier update faster than 1-minute windows (prevents driver collusion — drivers going offline to trigger surge, then back online)\n- Regulatory consideration: Some Indian state transport authorities cap surge multipliers. Build a per-state config layer."
+      },
+      {
+        heading: "Ola Electric Interview Questions",
+        content: "Ola Electric is a hardware + software company. Tech roles fall into three tracks: embedded systems / firmware, vehicle software (infotainment, OTA, diagnostics), and platform engineering (cloud, data, connectivity).\n\n**Embedded Systems / Firmware roles:**\n- 'Explain the difference between a microcontroller and a microprocessor'\n- 'How does a BMS (Battery Management System) communicate with the vehicle ECU?'\n- 'What protocols are used in automotive systems?'\n  - Answer: CAN bus (most common), LIN bus, Ethernet (for ADAS), UART, SPI, I2C\n- 'How do you handle real-time constraints in an RTOS?'\n- C/C++ coding on bare metal: write an interrupt service routine, implement a circular buffer\n\n**Vehicle Software (OTA, Infotainment):**\n- 'How does an OTA (over-the-air) update work for an EV?'\n  - Answer: Delta update package → cryptographic signature verification → staged rollout by vehicle cohort → rollback capability if post-update telemetry shows faults\n- 'Design a system to detect and alert on abnormal battery cell temperatures'\n- Python or Go for cloud-to-vehicle connectivity APIs\n\n**Platform Engineering (data, cloud):**\n- Standard product engineering interview (DSA + system design)\n- EV-specific context: telemetry pipelines (CAN frame data ingestion → Kafka → data lake), fleet management dashboards, predictive maintenance models\n- SQL/Python for analyzing vehicle diagnostic data\n\n**Ola Electric culture note:** Ola Electric moves fast and operates closer to a startup culture than its parent ANI Technologies. Engineers are expected to own across hardware-software boundaries and handle ambiguity well."
+      },
+      {
+        heading: "Ola Salary in India 2026",
+        content: "Ola Cabs and Ola Electric have different compensation structures post-separation.\n\n**Ola Cabs (ANI Technologies) — SDE:**\n| Level | Salary Range |\n|---|---|\n| SDE-1 (0–2 yrs) | ₹14–24 LPA |\n| SDE-2 (2–5 yrs) | ₹24–45 LPA |\n| Senior SDE (5–8 yrs) | ₹40–70 LPA |\n| Staff Engineer | ₹65–95 LPA |\n\n**Ola Electric — SDE / Firmware:**\n| Level | Salary Range |\n|---|---|\n| SDE-1 / FW-1 (0–2 yrs) | ₹12–22 LPA |\n| SDE-2 / FW-2 (2–5 yrs) | ₹22–42 LPA |\n| Senior / Lead (5–8 yrs) | ₹40–70 LPA |\n\nNote: Ola Electric ESOPs are now liquid (listed on NSE/BSE). The stock has been volatile post-IPO — factor this into total compensation valuation.\n\n**Product Manager:**\n- Ola Cabs PM: ₹20–55 LPA depending on level\n- Ola Electric PM: ₹18–50 LPA (smaller PM team, hardware product ownership)\n\n**Data / Analytics:**\n- Data Analyst: ₹10–22 LPA\n- Data Scientist: ₹18–40 LPA\n\n**Negotiation:** Ola is known for flexibility on joining bonus for candidates coming from higher-paying companies. Base negotiation is harder. For Ola Electric, ESOP negotiation is meaningful given the listed stock."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Ola a good company for software engineers in India?",
+        answer: "Ola Cabs (ANI Technologies) is a mid-tier product company — good for 2–5 year experience engineers moving from IT services who want to work on large-scale distributed systems (location services, payments, real-time matching). Ola Electric is interesting for engineers wanting hardware-software intersection experience in the growing EV sector. Neither pays at the FAANG/Razorpay level."
+      },
+      {
+        question: "What is the difference between Ola and Ola Electric interviews?",
+        answer: "Ola Cabs interviews focus on standard product engineering: DSA + system design (ride-hailing problems). Ola Electric interviews depend on the role: embedded systems/firmware roles test C/C++, CAN bus, RTOS concepts; platform engineering roles are standard product engineering interviews with EV telemetry context."
+      },
+      {
+        question: "What is Ola Electric salary in India 2026?",
+        answer: "Ola Electric salary in India 2026: SDE/Firmware-1 ₹12–22 LPA, SDE/FW-2 ₹22–42 LPA, Senior ₹40–70 LPA. Post-IPO ESOPs are listed on NSE/BSE. Stock has been volatile — evaluate total comp at a conservative stock price when negotiating."
+      },
+      {
+        question: "How difficult is the Ola SDE interview?",
+        answer: "Ola's SDE interview difficulty is medium — comparable to Nykaa, Urban Company, and Dunzo. LeetCode Medium proficiency handles the coding rounds. System design (ride-hailing specific) is the differentiator at 2+ years. It is notably easier than CRED, Razorpay, or Amazon India."
+      },
+    ],
+    relatedSlugs: ["groww-interview-questions-india-2026", "nykaa-interview-questions-india-2026", "backend-developer-salary-india-2026"],
+    practicePageSlugs: [
+      { label: "System Design Mock Interview", slug: "uber-system-design-interview" },
+    ],
+    cta: "Ola's ride-hailing system design questions test whether you can reason about geospatial indexing, real-time matching, and pricing algorithms under interview pressure. HireStepX's voice mock interviews let you practice articulating system design trade-offs out loud — the skill that determines whether your architecture knowledge translates to a hire decision.",
+    relatedLinks: [
+      { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
+      { label: "Backend Developer Salary India 2026", href: "/blog/backend-developer-salary-india-2026" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */
