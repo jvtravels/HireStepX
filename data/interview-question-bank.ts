@@ -46,6 +46,47 @@ export type CompanyKey =
      getting routed to generic behavioral. */
   | "l-and-t" | "bhel" | "ongc" | "ntpc" | "mahindra" | "bajaj"
   | "cummins" | "tata-steel" | "samsung"
+  /* Indian unicorns / consumer tech wave 2 */
+  | "nykaa" | "myntra" | "dream11" | "rapido" | "zepto" | "blinkit"
+  | "ola" | "ola-electric" | "ather-energy" | "cars24" | "spinny"
+  | "byjus" | "unacademy" | "physicswallah" | "vedantu" | "scaler"
+  /* Banking / FinTech */
+  | "hdfc-bank" | "axis" | "kotak" | "sbi" | "barclays" | "hsbc"
+  | "deutsche-bank" | "wells-fargo" | "citi" | "bny-mellon"
+  | "standard-chartered" | "morgan-stanley-india"
+  | "upstox" | "angel-one" | "zerodha-india" | "groww"
+  | "bharatpe" | "cashfree" | "acko" | "digit" | "pine-labs"
+  | "star-health" | "icici-lombard" | "bajaj-finance"
+  | "juspay" | "slice" | "jupiter" | "fi-money" | "policybazaar"
+  | "nium" | "khatabook" | "smallcase" | "zeta" | "navi" | "kreditbee"
+  | "moneyview" | "fibe" | "indmoney" | "rupeek" | "niyo"
+  | "mastercard" | "visa-india" | "fiserv"
+  /* Enterprise GCCs */
+  | "qualcomm" | "mediatek" | "servicenow" | "workday" | "vmware"
+  | "sap-labs" | "siemens-india" | "bosch-india" | "texas-instruments"
+  | "intel-india" | "arm-india" | "thoughtworks" | "samsung-india"
+  | "ericsson-india" | "nokia-india" | "ntt-data" | "globallogic"
+  | "lowes-india" | "target-india"
+  /* IT services / consulting */
+  | "mphasis" | "techmahindra" | "persistent" | "ey" | "kpmg" | "pwc"
+  /* D2C / Consumer / FMCG */
+  | "lenskart" | "mamaearth" | "boat" | "wakefit" | "dmart" | "godrej"
+  | "nestle" | "procter-gamble"
+  /* Healthcare */
+  | "metropolis" | "curefit" | "dr-lal-pathlabs" | "tata-1mg" | "apollo-247" | "medibuddy"
+  /* Mobility / Auto */
+  | "tata-motors" | "mahindra-india"
+  /* Startups / SaaS */
+  | "postman" | "browserstack" | "chargebee" | "intuit"
+  | "walmart-global-tech" | "optiver" | "millennium"
+  | "practo" | "shiprocket" | "udaan" | "moglix" | "ninjacart" | "licious"
+  | "rebel-foods" | "purplle" | "blackbuck" | "shadowfax" | "hasura"
+  | "gupshup" | "exotel" | "plivo" | "bigbasket" | "delhivery"
+  | "makemytrip" | "ixigo" | "sharechat" | "moengage" | "clevertap"
+  | "druva" | "darwinbox" | "truecaller" | "inmobi" | "naukri"
+  | "sigmoid" | "mindtickle" | "tracxn"
+  /* Conglomerates / PSUs */
+  | "hdfc-ltd" | "tata-steel-india" | "sarvam-ai" | "krutrim" | "perplexity"
   /* Generic campus / fresher pages not tied to a single company. */
   | "campus";
 
