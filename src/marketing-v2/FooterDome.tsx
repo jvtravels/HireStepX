@@ -30,12 +30,14 @@ const COMPANY_LINKS: Array<[string, string]> = [
   ["Privacy", "/privacy"],
   ["Terms", "/terms"],
   ["Refund policy", "/refund"],
+  ["Grievance Officer", "/grievance"],
 ];
 
 const LEGAL_LINKS: Array<[string, string]> = [
   ["Privacy", "/privacy"],
   ["Terms", "/terms"],
   ["Refund", "/refund"],
+  ["Grievance", "/grievance"],
 ];
 
 /* ── Icon SVGs ── */

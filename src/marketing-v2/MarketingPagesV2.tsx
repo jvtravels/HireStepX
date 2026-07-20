@@ -1707,7 +1707,7 @@ export function PrivacyV2() {
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
       <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
-      <p>We respond to any request within 7 working days. Reach us at <code>hello@hirestepx.com</code> for data requests, grievances, or any privacy question.</p>
+      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <code>grievance@hirestepx.com</code>.</p>
 
       <h2>Cookies</h2>
       <p>Strictly-necessary cookies only by default (session token, CSRF). Analytics cookies (PostHog) load only after explicit consent via the banner on first visit. No third-party advertising or tracking cookies, ever.</p>
@@ -1771,6 +1771,81 @@ export function RefundPolicyV2() {
 
       <h2>Disputes</h2>
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
+    </LegalPage>
+  );
+}
+
+export function GrievanceOfficerV2() {
+  return (
+    <LegalPage title="Grievance" accent="Officer." updated="20 July 2026">
+      <h2>Who is the Grievance Officer?</h2>
+      <p>
+        In compliance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021
+        and the Digital Personal Data Protection Act, 2023, HireStepX has appointed a Grievance Officer to address
+        complaints and grievances of users.
+      </p>
+
+      <h2>Contact details</h2>
+      <ul>
+        <li><strong>Name:</strong> Jay Vyas</li>
+        <li><strong>Designation:</strong> Grievance Officer, HireStepX</li>
+        <li>
+          <strong>Email:</strong>{" "}
+          <a href="mailto:grievance@hirestepx.com">grievance@hirestepx.com</a>
+          {" "}(also reachable at{" "}
+          <a href="mailto:hello@hirestepx.com">hello@hirestepx.com</a>)
+        </li>
+        <li>
+          <strong>Registered address:</strong> HireStepX (Hirloop), India
+        </li>
+      </ul>
+
+      <h2>How to file a grievance</h2>
+      <p>
+        Email your complaint to{" "}
+        <a href="mailto:grievance@hirestepx.com">grievance@hirestepx.com</a>{" "}
+        with the subject line <em>"Grievance – [brief description]"</em>. Include:
+      </p>
+      <ul>
+        <li>Your registered account email address</li>
+        <li>A description of the issue or complaint</li>
+        <li>Any relevant screenshots or order IDs</li>
+      </ul>
+
+      <h2>Response timelines</h2>
+      <ul>
+        <li><strong>Acknowledgement:</strong> Within 24 hours of receiving your complaint</li>
+        <li><strong>Resolution:</strong> Within 15 days of acknowledgement, as required under the IT Rules 2021</li>
+        <li><strong>Data requests</strong> (access / correction / erasure under DPDP 2023): Within 7 working days</li>
+      </ul>
+
+      <h2>Your rights under DPDP Act 2023</h2>
+      <p>
+        India's Digital Personal Data Protection Act, 2023 gives you the right to:
+      </p>
+      <ul>
+        <li>Access the personal data we hold about you</li>
+        <li>Correct inaccurate or incomplete data</li>
+        <li>Erase your data (right to be forgotten)</li>
+        <li>Nominate another person to exercise these rights on your behalf</li>
+        <li>Grievance redressal through this Officer</li>
+      </ul>
+      <p>
+        If your grievance is not resolved to your satisfaction within 30 days, you may escalate to the{" "}
+        <strong>Data Protection Board of India</strong> once constituted under the DPDP Act 2023.
+      </p>
+
+      <h2>Other concerns</h2>
+      <p>
+        For content-related complaints under the IT Rules 2021 (unlawful content, misinformation, etc.),
+        please also write to the above email. We respond within 24 hours for urgent safety concerns and
+        within 15 days for all other complaints.
+      </p>
+      <p>
+        For general support, refunds, or billing questions, see our{" "}
+        <a href="/refund">Refund Policy</a> or email{" "}
+        <a href="mailto:hello@hirestepx.com">hello@hirestepx.com</a>.
+      </p>
     </LegalPage>
   );
 }
