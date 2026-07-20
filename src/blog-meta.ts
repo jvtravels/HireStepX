@@ -1319,6 +1319,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "Is HCL a good company for freshers compared to TCS and Infosys?", answer: "HCL compares favourably to TCS and Infosys in several ways for freshers: faster promotion cycles (merit-based vs seniority), stronger engineering culture (particularly in embedded systems, aerospace software, and engineering services), and comparable onsite opportunities. The starting package is slightly lower than Infosys's premium tracks. HCL is a particularly good choice for candidates interested in engineering software (rather than pure IT services) or who have strong C/C++ or embedded systems backgrounds." },
     ],
   },
+  {
+    slug: "google-interview-questions-india-2026",
+    title: "Google India Interview Questions 2026 — SWE Process, DSA, Googleyness, Salary",
+    metaDescription: "Google India interview questions 2026 for software engineers. Covers the full SWE interview loop, DSA difficulty, Googleyness and leadership rounds, Google India salary ₹30–120 LPA, and how to prepare for L3–L5.",
+    datePublished: "2026-07-22",
+    heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=500&fit=crop",
+    company: "Google", category: "Full Guide",
+    faqs: [
+      { question: "How hard is Google's interview compared to Amazon in India?", answer: "Google India's interview is harder than Amazon India's across all dimensions: DSA bar is higher (Hard LeetCode expected vs Medium-Hard for Amazon SDE-2), system design is more advanced (distributed systems depth required), and there's no structured LP framework to prepare against — Googleyness assessment is more freeform. However, Google doesn't have a Bar Raiser equivalent that can veto a hire post-loop — the Hiring Committee review is the equivalent gate. Most candidates find Google's technical bar harder but Amazon's LP preparation more time-intensive." },
+      { question: "What is Google India's salary for L3/new grad in 2026?", answer: "Google India L3 total compensation in 2026: Base ₹22-38 LPA + RSU stock (₹15-30 LPA over 4 years, quarterly vesting) + 15-20% annual bonus. Total Year 1 compensation is approximately ₹40-70 LPA. Google's stock vests quarterly (unlike Amazon's 5%/15%/40%/40% back-loading), so there's no cliff — Year 1 and Year 4 stock income are comparable." },
+      { question: "How should I prepare for Google India's interview in 2026?", answer: "Google India interview preparation: (1) DSA — complete NeetCode 250 or Striver's SDE Sheet, then solve 50+ Hard LeetCode problems; allocate 16-20 weeks minimum; (2) System Design — read 'Designing Data-Intensive Applications', study Google's technical papers (Bigtable, Spanner, MapReduce), and practice distributed systems design; (3) Googleyness — prepare 8-10 specific STAR stories emphasising collaboration, ambiguity tolerance, and measurable impact; (4) Practice coding on Google Docs (no IDE) — get comfortable writing clean code without autocomplete." },
+      { question: "What is the Hiring Committee at Google and how does it affect your offer?", answer: "Google's Hiring Committee (HC) is a group of Google engineers who review your complete interview packet — coded feedback from all rounds, system design evaluation, and Googleyness scores — without knowing you personally. HC can approve your hire, ask for additional interviews, or reject you even if all interviewers individually wanted to hire you. HC exists to maintain a consistent quality bar across teams and geographies. The HC step typically adds 2-4 weeks to Google's already-long process." },
+    ],
+  },
+  {
+    slug: "microsoft-interview-questions-india-2026",
+    title: "Microsoft India Interview Questions 2026 — SDE Process, DSA, Culture Fit, Salary",
+    metaDescription: "Microsoft India interview questions 2026 for software engineers. Covers the full SDE interview loop, DSA difficulty level, values-based behavioural round, Microsoft India salary ₹22–90 LPA, and preparation strategy for SDE-1 to SDE-2.",
+    datePublished: "2026-07-22",
+    heroImage: "https://images.unsplash.com/photo-1537498425277-c283d32ef9db?w=1200&h=500&fit=crop",
+    company: "Microsoft", category: "Full Guide",
+    faqs: [
+      { question: "What is Microsoft India's interview process for SDE-1 in 2026?", answer: "Microsoft India SDE-1 interview process: (1) Online Assessment — 2 LeetCode Medium problems in 90 minutes (optional for campus); (2) Virtual Loop of 4-5 rounds: Coding + Behavioural (LeetCode Medium + values questions), Coding + Design (Medium-Hard coding + OOD), As Delivered (Growth Mindset culture interview), As Designed (object-oriented design), and Hiring Manager round. Microsoft's loop is faster than Google's (2-4 weeks vs 4-8 weeks) with no separate Hiring Committee." },
+      { question: "What is Microsoft's Growth Mindset interview and how do I prepare?", answer: "Microsoft's 'As Delivered' round assesses Growth Mindset — Carol Dweck's framework that Microsoft adopted under Satya Nadella. Interviewers probe for: learning from failure (with specific examples), genuine curiosity when facing unknowns, inclusive collaboration, and adapting communication style. Prepare 5-6 STAR stories specifically showing: a time you learned from a mistake, a time you sought help and learned from it, a time you adapted your style for a different audience, and a time you actively included someone. Generic answers without specifics will score low." },
+      { question: "What is Microsoft India salary for SDE-1 in 2026?", answer: "Microsoft India SDE-1 total compensation in 2026: Base ₹20-35 LPA + RSU stock (₹10-25 LPA over 4 years, quarterly vesting — no cliff unlike Amazon) + 10-15% annual bonus. Total Year 1 compensation is approximately ₹33-55 LPA. Microsoft's stock vests quarterly, so you don't face Amazon's 5%/15%/40%/40% back-loading — Year 1 stock income is comparable to Year 4." },
+      { question: "How does Microsoft India compare to Google India and Amazon India for engineers?", answer: "Microsoft India is typically: better work-life balance than Google and Amazon, compensation between Amazon and Google, faster interview process than Google (2-4 weeks vs 4-8 weeks), lower DSA bar than Google but similar to Amazon. Microsoft is particularly known for internal mobility (easy team transfers), generous benefits, and a collaborative culture under Satya Nadella's growth mindset philosophy. Engineers who value balance and internal growth often prefer Microsoft; engineers who prioritise maximum compensation and technical prestige often prefer Google." },
+    ],
+  },
+  {
+    slug: "flipkart-interview-questions-india-2026",
+    title: "Flipkart Interview Questions India 2026 — SDE Process, DSA, System Design, Salary",
+    metaDescription: "Flipkart interview questions India 2026. Covers Flipkart's SDE-1 to SDE-3 interview loop, DSA difficulty, system design for e-commerce, behavioural rounds, and Flipkart salary ₹25–80 LPA with Walmart stock.",
+    datePublished: "2026-07-22",
+    heroImage: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&h=500&fit=crop",
+    company: "Flipkart", category: "Full Guide",
+    faqs: [
+      { question: "What is Flipkart's interview process for SDE-1 in 2026?", answer: "Flipkart SDE-1 interview process: (1) Online Assessment — 2 LeetCode Medium problems in 90 minutes; (2) 2-3 Technical Coding rounds — 2 LeetCode Medium-Hard problems each, 60 minutes each; (3) Data Structures round — harder problem with multiple approaches and tradeoffs; (4) Behavioural + Hiring Manager round — STAR questions, role alignment. System Design round starts from SDE-2. Total process takes 3-5 weeks." },
+      { question: "What DSA difficulty does Flipkart expect?", answer: "Flipkart expects LeetCode Medium to Hard for SDE-1 and consistently Hard for SDE-2. The problems are often application-oriented (e-commerce scenarios) rather than pure academic algorithms. Key topics: sliding window for time-series problems, trees for category hierarchy, graphs for delivery network, heap for top-K queries, and HashMap for frequency/deduplication problems. Interviewers expect explicit complexity analysis and edge case handling." },
+      { question: "What is Flipkart's salary for SDE-1 in India 2026?", answer: "Flipkart SDE-1 total compensation in 2026: Base ₹22-38 LPA + Walmart RSUs (₹5-15 LPA for higher offers) + joining bonus (₹2-5 LPA). Total Year 1 compensation is approximately ₹30-55 LPA. Flipkart is broadly comparable to Amazon at SDE-1 level, higher than Swiggy/Zomato/Razorpay at the same level. Senior engineers (SDE-2+) receive meaningful Walmart RSU grants which add significantly to total compensation." },
+      { question: "What system design topics does Flipkart ask about?", answer: "Flipkart's system design round focuses heavily on e-commerce scenarios: product search at scale, flash sale systems for 10M concurrent users, recommendation engines, real-time inventory management, and delivery tracking. India-specific knowledge is a differentiator: COD (Cash on Delivery) payment flows, UPI payment constraints (NPCI limits), festival sale traffic spikes (10-20× normal), and tier-2/3 user experience with intermittent connectivity." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
