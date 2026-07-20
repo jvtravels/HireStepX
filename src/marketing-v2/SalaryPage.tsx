@@ -515,7 +515,7 @@ function tierBadge(entryMax?: number): { label: string; tier: "faang" | "startup
 }
 
 const MAX_CTC_SCALE = 70; // LPA — bar fills at ₹70L+
-const CARDS_PER_PAGE = 12;
+const CARDS_PER_PAGE = 30;
 const TIER_TABS = ["All", "FAANG", "Startup", "Service"] as const;
 
 export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
