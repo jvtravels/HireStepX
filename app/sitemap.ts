@@ -27,9 +27,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  /* Bumped 2026-07-21: +10 salary pages (Meta, Uber, Oracle, Adobe, Atlassian,
-     Groww, Zerodha, Intuit, Walmart Global Tech, Persistent Systems) — 37 total.
-     Salary hub updated with search/filter/pagination. */
+  /* Bumped 2026-07-21: +17 salary pages across waves 3–5 (Meta, Uber, Oracle,
+     Adobe, Atlassian, Groww, Zerodha, Intuit, Walmart Global Tech, Persistent,
+     Salesforce, OYO, Nykaa, Myntra, Dream11, Rapido, ICICI) + quant/finance firms
+     (Morgan Stanley, HDFC Bank, Tower Research Capital, Jane Street, DE Shaw) — 49 total. */
   const seoPagesLastModified = new Date("2026-07-21");
 
   const staticEntries: MetadataRoute.Sitemap = [

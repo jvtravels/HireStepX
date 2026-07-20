@@ -34,6 +34,10 @@ export const COMPANY_LABEL: Record<string, string> = {
   groww: "Groww",
   meesho: "Meesho",
   oyo: "OYO",
+  nykaa: "Nykaa",
+  myntra: "Myntra",
+  dream11: "Dream11",
+  rapido: "Rapido",
   freshworks: "Freshworks",
   zoho: "Zoho",
   sarvam: "Sarvam AI",
@@ -65,8 +69,10 @@ export const COMPANY_LABEL: Record<string, string> = {
   "morgan-stanley": "Morgan Stanley",
   "jane-street": "Jane Street",
   "de-shaw": "DE Shaw",
+  "tower-research": "Tower Research Capital",
   citadel: "Citadel",
   hdfc: "HDFC",
+  "hdfc-bank": "HDFC Bank",
   icici: "ICICI",
 
   // FMCG / conglomerate

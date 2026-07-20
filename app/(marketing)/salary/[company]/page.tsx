@@ -76,11 +76,17 @@ export async function generateMetadata({
 
 const LEVEL_KEYS = ["entry", "mid", "senior", "lead", "executive"] as const;
 
+/* Some legacy override keys use spaces ("morgan stanley", "hdfc bank").
+   Slugs in salary-seo use hyphens. Normalize so both resolve. */
+function resolveOverrides(slug: string) {
+  return COMPANY_SALARY_OVERRIDES[slug] ?? COMPANY_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
+}
+
 function buildRoleSections(
   companySlug: string,
   roles: Array<{ roleKey: string; label: string }>,
 ): SalaryRoleSection[] {
-  const overrides = COMPANY_SALARY_OVERRIDES[companySlug];
+  const overrides = resolveOverrides(companySlug);
   if (!overrides) return [];
 
   return roles.flatMap(({ roleKey, label }) => {
@@ -129,8 +135,9 @@ export default async function SalaryCompanySlugPage({
   if (!page) notFound();
 
   const label = salaryCompanyLabel(company);
-  const knownFacts = COMPANY_KNOWN_FACTS[company];
-  const meta = COMPANY_META[company];
+  const overrideKey = company.replace(/-/g, " ");
+  const knownFacts = COMPANY_KNOWN_FACTS[company] ?? COMPANY_KNOWN_FACTS[overrideKey];
+  const meta = COMPANY_META[company] ?? COMPANY_META[overrideKey];
   const roles = buildRoleSections(company, page.roles);
 
   /* Matching blog post — links back to the interview guide for this company. */

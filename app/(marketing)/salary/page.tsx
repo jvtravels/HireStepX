@@ -50,7 +50,7 @@ export default async function SalaryIndexPage() {
   const nonce = (await headers()).get("x-nonce") ?? "";
 
   const entries: SalaryHubEntry[] = SALARY_SEO_PAGES.map((page) => {
-    const overrides = COMPANY_SALARY_OVERRIDES[page.slug];
+    const overrides = COMPANY_SALARY_OVERRIDES[page.slug] ?? COMPANY_SALARY_OVERRIDES[page.slug.replace(/-/g, " ")];
     const sweBands = overrides?.["software-engineer"];
     const entryBand = sweBands?.["entry"];
 

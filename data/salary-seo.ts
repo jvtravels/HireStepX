@@ -521,6 +521,159 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Strong in healthcare IT and BFS — above-market for pure IT services",
     sitemapPriority: 0.72,
   },
+  {
+    slug: "salesforce",
+    searchPhrase: "Salesforce India Software Engineer Salary 2026",
+    metaDescription:
+      "Salesforce India salary 2026 — SWE entry ₹27–38 LPA, mid ₹45–80 LPA, senior ₹75–130 LPA. CRM RSU with annual cliff (unusual). Bengaluru & Hyderabad CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ux-designer", label: "UX Designer" },
+    ],
+    hubNote: "CRM RSU vests annually not quarterly — verify vest schedule before signing",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "oyo",
+    searchPhrase: "OYO Software Engineer Salary India 2026",
+    metaDescription:
+      "OYO salary India 2026 — SWE entry ₹12–24 LPA, mid ₹22–45 LPA, senior ₹40–75 LPA. Pre-IPO ESOP. Travel tech unicorn Gurgaon & Bengaluru CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
+    questionSlug: "oyo-engineering-interview-questions",
+    hubNote: "Pre-IPO ESOP — OYO IPO timeline uncertain; verify ESOP liquidity before signing",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "nykaa",
+    searchPhrase: "Nykaa Software Engineer Salary India 2026",
+    metaDescription:
+      "Nykaa salary India 2026 — SWE entry ₹10–22 LPA, mid ₹20–42 LPA, senior ₹38–70 LPA. NSE-listed RSU (FSN E-Commerce). Beauty ecommerce + fintech CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ux-designer", label: "UX Designer" },
+    ],
+    hubNote: "FSN RSU listed on NSE — check stock trajectory before ESOP value estimates",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "myntra",
+    searchPhrase: "Myntra Software Engineer Salary India 2026",
+    metaDescription:
+      "Myntra salary India 2026 — SWE entry ₹14–28 LPA, mid ₹26–52 LPA, senior ₹48–85 LPA. ESOP (Flipkart group). Fashion ecommerce engineering Bengaluru CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ux-designer", label: "UX Designer" },
+    ],
+    hubNote: "Flipkart-group ESOP — liquidity tied to Flipkart/Walmart exit event",
+    sitemapPriority: 0.74,
+  },
+  {
+    slug: "dream11",
+    searchPhrase: "Dream11 Software Engineer Salary India 2026",
+    metaDescription:
+      "Dream11 salary India 2026 — SWE entry ₹18–34 LPA, mid ₹32–62 LPA, senior ₹55–95 LPA. Pre-IPO ESOP. India's top fantasy sports platform Mumbai CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ml-engineer", label: "ML Engineer" },
+    ],
+    hubNote: "Pre-IPO ESOP — Dream Sports valued at ~$8B; secondary transactions have occurred",
+    sitemapPriority: 0.75,
+  },
+  {
+    slug: "rapido",
+    searchPhrase: "Rapido Software Engineer Salary India 2026",
+    metaDescription:
+      "Rapido salary India 2026 — SWE entry ₹12–24 LPA, mid ₹22–44 LPA, senior ₹38–68 LPA. Pre-IPO ESOP. India's largest bike taxi platform Bengaluru CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+    ],
+    hubNote: "Pre-IPO ESOP — Rapido raised Series E in 2024; IPO timeline not announced",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "icici",
+    searchPhrase: "ICICI Bank Software Engineer Salary India 2026",
+    metaDescription:
+      "ICICI Bank salary India 2026 — IT Analyst entry ₹5–9 LPA, mid ₹12–22 LPA, senior ₹22–40 LPA. No equity. India's 2nd-largest private bank tech team CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer / IT Analyst" },
+      { roleKey: "sales", label: "Relationship Manager" },
+    ],
+    hubNote: "Banking IT — no equity, but stable employment; domain knowledge of BFSI systems valued",
+    sitemapPriority: 0.70,
+  },
+  /* ── Finance & Quant ─────────────────────────────────────────── */
+  {
+    slug: "morgan-stanley",
+    searchPhrase: "Morgan Stanley India Software Engineer Salary 2026",
+    metaDescription:
+      "Morgan Stanley India salary 2026 — SWE entry ₹18–28 LPA, mid ₹32–50 LPA, senior ₹55–90 LPA plus RSU. Mumbai technology campus CTC breakdown and negotiation guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "finance", label: "Investment Banking Analyst" },
+    ],
+    questionSlug: undefined,
+    hubNote: "No joining bonus at India offices — negotiate base + RSU cliff schedule",
+    sitemapPriority: 0.74,
+  },
+  {
+    slug: "hdfc-bank",
+    searchPhrase: "HDFC Bank Salary India 2026",
+    metaDescription:
+      "HDFC Bank salary India 2026 — Relationship Manager entry ₹4–7 LPA, VP ₹30–60 LPA. Business Analyst ₹6–12 LPA. No equity. India's largest private bank CTC breakdown.",
+    roles: [
+      { roleKey: "finance", label: "Relationship Manager" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+    ],
+    questionSlug: undefined,
+    hubNote: "No equity — banking stability + variable performance bonus; PF contribution included in CTC",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "tower-research",
+    searchPhrase: "Tower Research Capital India Salary 2026",
+    metaDescription:
+      "Tower Research Capital India salary 2026 — Quant Researcher entry ₹50–80 LPA, mid ₹80–140 LPA, senior ₹140–240 LPA. Pure cash, no equity. Gurgaon HFT firm CTC guide.",
+    roles: [
+      { roleKey: "data-scientist", label: "Quantitative Researcher" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pure cash comp — no equity, heavy performance bonus; highest fresher comp in India for quant",
+    sitemapPriority: 0.76,
+  },
+  {
+    slug: "jane-street",
+    searchPhrase: "Jane Street India Quant Researcher Salary 2026",
+    metaDescription:
+      "Jane Street India salary 2026 — Quant Trader/Researcher entry ₹70–130 LPA, mid ₹200–400 LPA. Pure cash + performance bonus. Mumbai. India's highest-paying fresher role for IIT toppers.",
+    roles: [
+      { roleKey: "data-scientist", label: "Quantitative Researcher / Trader" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Highest comp for India freshers — pure cash, no equity; only 10–15 India hires per year",
+    sitemapPriority: 0.78,
+  },
+  {
+    slug: "de-shaw",
+    searchPhrase: "DE Shaw India Quant Analyst Salary 2026",
+    metaDescription:
+      "DE Shaw India salary 2026 — Quant Analyst entry ₹35–60 LPA, mid ₹80–180 LPA. Pure cash + heavy performance bonus. Hyderabad offices. IIT-targeted fresher recruiting guide.",
+    roles: [
+      { roleKey: "data-scientist", label: "Quantitative Analyst" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pure cash + heavy performance bonus — no equity at India offices; Hyderabad campus focus",
+    sitemapPriority: 0.76,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
