@@ -63,6 +63,8 @@ function getWeakestSkill(skillScores: Record<string, number> | null): string | n
   return entries.sort(([, a], [, b]) => a - b)[0][0];
 }
 
+const FREE_SESSION_LIMIT = 2;
+
 function buildEmail(
   user: UserRow,
   tier: EmailTier,
@@ -74,8 +76,14 @@ function buildEmail(
   const score = lastSession?.score ?? null;
   const dashUrl = `${APP_URL}/dashboard`;
   const sessionUrl = `${APP_URL}/session/new`;
+  const upgradeUrl = `${APP_URL}/dashboard?upgrade=1`;
 
   const safeWeakest = weakest ? escapeHtml(weakest) : null;
+
+  // Free users who've hit the limit should be directed to upgrade, not practice.
+  const isFreeUser = user.subscription_tier === "free";
+  const sessionsUsed = user.practice_timestamps?.length ?? 0;
+  const hitFreeLimit = isFreeUser && sessionsUsed >= FREE_SESSION_LIMIT;
 
   const subjects: Record<EmailTier, string> = {
     day1: `${user.name?.split(" ")[0] || "Hey"}, your next practice session is ready`,
@@ -117,8 +125,8 @@ function buildEmail(
   };
 
   const ctaText: Record<EmailTier, string> = {
-    day1: "Continue practising",
-    day3: weakest ? `Practise ${weakest}` : "Start a session",
+    day1: hitFreeLimit ? "See upgrade options" : "Continue practising",
+    day3: hitFreeLimit ? "Upgrade from ₹9" : (weakest ? `Practise ${weakest}` : "Start a session"),
     day7: "Practise now",
     paid14: "Start a quick session",
     paid30: "Start a focused drill",
@@ -126,15 +134,22 @@ function buildEmail(
   };
 
   const footerText: Record<EmailTier, string> = {
-    day1: "You still have free sessions remaining, no card needed.",
-    day3: "Ten minutes is all it takes. Your resume-personalised questions are waiting.",
+    day1: hitFreeLimit
+      ? "You've used both free sessions. Plans start at ₹9 per session — no subscription required."
+      : "You still have free sessions remaining, no card needed.",
+    day3: hitFreeLimit
+      ? "Plans start at ₹9 per session — less than a coffee, and your history stays intact."
+      : "Ten minutes is all it takes. Your resume-personalised questions are waiting.",
     day7: "This is our last reminder. We will stop emailing, and your practice sessions will always be here when you are ready.",
     paid14: "You are on the Pro plan, unlimited sessions every day.",
     paid30: "Pause or cancel anytime from your settings. We want you practising only when it helps.",
     winback: "No pressure. Your practice history and resume are saved. Come back whenever it suits you.",
   };
 
-  const ctaUrl = tier === "day1" || tier === "paid14" || tier === "paid30" || tier === "winback" ? sessionUrl : dashUrl;
+  // Free-limit-hit users should go to upgrade, not the session-new page.
+  const ctaUrl = hitFreeLimit && (tier === "day1" || tier === "day3")
+    ? upgradeUrl
+    : tier === "day1" || tier === "paid14" || tier === "paid30" || tier === "winback" ? sessionUrl : dashUrl;
 
   const showCard = score && tier !== "day7";
   const cardRows: [string, string][] = [["Last score", `${score}/100`]];
