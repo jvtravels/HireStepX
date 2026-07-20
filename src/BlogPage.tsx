@@ -218,7 +218,10 @@ const posts: BlogPost[] = [
       { label: "PhonePe Behavioral Interview", slug: "phonepe-behavioral-interview-questions" },
     ],
     cta: "Most freshers discover their filler words and vague transitions only after the interview, in the elevator. Say your answers out loud on HireStepX before that: you'll get scored on STAR structure and clarity while there's still time to fix them.",
-    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
+    relatedLinks: [
+      { label: "How AI Mock Interviews Work — Free Voice Practice", href: "/ai-mock-interview" },
+      { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
+    ],
   },
   {
     slug: "razorpay-interview-experience",
@@ -651,7 +654,10 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "campus-placement-interview-tips", "how-to-introduce-yourself-in-interview"],
     cta: "Start your mock interview practice right now: 2 free AI sessions with scored feedback. See your baseline score in 10 minutes.",
-    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
+    relatedLinks: [
+      { label: "What Is an AI Mock Interview? Free, Voice-Based Practice", href: "/ai-mock-interview" },
+      { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
+    ],
   },
   {
     slug: "star-method-interview-answers",
@@ -684,7 +690,10 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Writing a STAR answer and delivering it are different skills. HireStepX's AI scores each component separately: so if your Situation runs long or your Result lacks specifics, you'll know exactly which part to fix, not just that the answer \"could be stronger.\"",
-    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
+    relatedLinks: [
+      { label: "How AI Mock Interviews Work — Free Voice Practice", href: "/ai-mock-interview" },
+      { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
+    ],
   },
   {
     slug: "cognizant-interview-questions-freshers-2026",
@@ -4903,6 +4912,181 @@ const posts: BlogPost[] = [
     cta: "Flipkart's technical rounds move fast and expect you to communicate your approach clearly before coding — silent coding without narrating your thinking is marked down. HireStepX's voice mock interviews train you to verbalise your DSA reasoning in real time, building the communication habit that Flipkart's interviewers specifically reward.",
     relatedLinks: [
       { label: "Amazon Interview Questions India 2026", href: "/blog/amazon-interview-questions-india-2026" },
+      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "sql-interview-questions-india-2026",
+    title: "SQL Interview Questions India 2026 — Freshers to Senior (50+ Questions + Answers)",
+    metaDescription: "SQL interview questions India 2026 — 50+ questions with answers for freshers to senior engineers. Covers JOINs, window functions, indexing, query optimisation, and SQL questions asked at TCS, Infosys, product companies, and data roles.",
+    company: "General",
+    category: "Technical",
+    readTime: "11 min",
+    heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1200&h=500&fit=crop",
+    heroAlt: "Database tables representing SQL interview questions India 2026",
+    datePublished: "2026-07-23",
+    intro: "SQL is the most universally tested technical skill in Indian tech interviews — asked at TCS, Infosys, and Wipro for every role, and tested at product companies for backend engineer, data engineer, and data analyst positions. The difficulty ranges from basic SELECT statements at IT services companies to complex window functions and query optimisation at product companies. This guide covers every tier: fresher-level basics, SDE-2 SQL, and senior/data-engineer SQL.",
+    sections: [
+      {
+        heading: "SQL Basics — Fresher / IT Services Level",
+        content: "These questions are asked at TCS, Infosys, Wipro, Cognizant, and Accenture for freshers and 0–2 year candidates:\n\n**Q1: What is the difference between WHERE and HAVING?**\nWHERE filters rows BEFORE aggregation; HAVING filters groups AFTER aggregation.\n```sql\nSELECT department, COUNT(*) as emp_count\nFROM employees\nWHERE salary > 30000        -- filters individual rows first\nGROUP BY department\nHAVING COUNT(*) > 5;         -- then filters groups\n```\n\n**Q2: What are the types of JOINs?**\n- INNER JOIN: rows where the condition matches in BOTH tables\n- LEFT JOIN: all rows from left table + matching rows from right (NULL if no match)\n- RIGHT JOIN: all rows from right table + matching rows from left\n- FULL OUTER JOIN: all rows from both tables (NULL where no match on either side)\n- CROSS JOIN: Cartesian product (every row × every row)\n\n**Q3: What is the difference between DELETE, TRUNCATE, and DROP?**\n- DELETE: removes rows one at a time; can be rolled back; triggers fire\n- TRUNCATE: removes all rows at once; cannot be rolled back in most databases; no triggers; resets auto-increment\n- DROP: removes the entire table structure and data permanently\n\n**Q4: What is a Primary Key vs Unique Key?**\n- Primary Key: uniquely identifies each row; cannot be NULL; only one per table\n- Unique Key: enforces uniqueness; can be NULL (once in most databases); multiple allowed per table\n\n**Q5: What is normalisation? What are the normal forms?**\nNormalisation eliminates data redundancy and ensures data integrity by organising tables into normal forms:\n- 1NF: each column has atomic (indivisible) values; no repeating groups\n- 2NF: in 1NF + no partial dependencies (non-key columns depend on the FULL primary key)\n- 3NF: in 2NF + no transitive dependencies (non-key columns depend only on the primary key, not on other non-key columns)\n- BCNF (Boyce-Codd NF): stricter 3NF — every determinant must be a candidate key"
+      },
+      {
+        heading: "JOINs — The Most Common Interview Topic",
+        content: "JOINs are asked in virtually every SQL interview. Expect scenario-based questions where you must write the correct JOIN type.\n\n**Classic JOIN problem — asked at product companies:**\n'Find all employees who have no manager (i.e., their manager_id doesn't match any employee_id in the table).'\n```sql\nSELECT e.employee_id, e.name\nFROM employees e\nLEFT JOIN employees m ON e.manager_id = m.employee_id\nWHERE m.employee_id IS NULL;\n-- Self-join + LEFT JOIN: employees whose manager_id has no match\n```\n\n**Second salary problem (extremely common):**\n'Find the second highest salary in the employees table.'\n```sql\n-- Method 1: using LIMIT/OFFSET (MySQL/PostgreSQL)\nSELECT DISTINCT salary\nFROM employees\nORDER BY salary DESC\nLIMIT 1 OFFSET 1;\n\n-- Method 2: subquery (works in all databases)\nSELECT MAX(salary)\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n\n-- Method 3: window function (preferred at product companies)\nSELECT salary FROM (\n  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk\n  FROM employees\n) ranked WHERE rnk = 2;\n```\n\n**Duplicate detection — data quality / analytics roles:**\n'Find all emails that appear more than once in the users table.'\n```sql\nSELECT email, COUNT(*) as count\nFROM users\nGROUP BY email\nHAVING COUNT(*) > 1;\n```\n\n**Running total — data analyst / analytics engineer:**\n'Calculate a running total of sales by date.'\n```sql\nSELECT\n  sale_date,\n  amount,\n  SUM(amount) OVER (ORDER BY sale_date) as running_total\nFROM sales;\n```"
+      },
+      {
+        heading: "Window Functions — Product Company SQL Bar",
+        content: "Window functions are the primary differentiator between fresher SQL (IT services level) and SDE-2/data engineer SQL (product company level). If you're targeting product companies, master these.\n\n**Core window functions:**\n- `ROW_NUMBER()`: assigns a unique integer to each row within a partition, starting from 1\n- `RANK()`: like ROW_NUMBER but skips numbers for ties (1,1,3 for two tied rows)\n- `DENSE_RANK()`: like RANK but doesn't skip numbers (1,1,2 for two tied rows)\n- `LAG(col, n)`: value from n rows before the current row\n- `LEAD(col, n)`: value from n rows after the current row\n- `SUM/AVG/COUNT() OVER (...)`: aggregate over a window without collapsing rows\n\n**Classic window function problem — asked at Flipkart, Razorpay, Swiggy:**\n'Find the top 3 highest-paid employees in each department.'\n```sql\nSELECT department, name, salary FROM (\n  SELECT\n    department,\n    name,\n    salary,\n    DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) as salary_rank\n  FROM employees\n) ranked\nWHERE salary_rank <= 3;\n```\n\n**Month-over-month growth — analytics role:**\n'Calculate month-over-month revenue growth as a percentage.'\n```sql\nSELECT\n  month,\n  revenue,\n  LAG(revenue) OVER (ORDER BY month) as prev_month_revenue,\n  ROUND(\n    (revenue - LAG(revenue) OVER (ORDER BY month))\n    / LAG(revenue) OVER (ORDER BY month) * 100, 2\n  ) as growth_pct\nFROM monthly_revenue;\n```\n\n**The OVER clause anatomy:**\n```sql\nFUNCTION() OVER (\n  PARTITION BY col   -- resets window for each value of col\n  ORDER BY col       -- ordering within the window\n  ROWS/RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW  -- frame\n)\n```"
+      },
+      {
+        heading: "Indexing and Query Optimisation — Senior / Data Engineer Level",
+        content: "Index and performance questions appear from SDE-2 onwards at product companies, and in data engineering interviews at all levels.\n\n**What is an index and how does it work?**\nAn index is a separate data structure (typically a B-tree) that maps column values to row locations, making lookups faster at the cost of additional storage and slower writes.\n\n**Types of indexes:**\n- Clustered index: the table data IS the index — rows are physically stored in index key order. One per table (the primary key in most databases)\n- Non-clustered index: separate structure that points to the row location. Multiple allowed per table\n- Composite index: index on multiple columns — column order matters for queries\n- Covering index: index includes all columns needed for a query — no need to access the main table ('index-only scan')\n\n**When does an index NOT get used (index killer patterns)?**\n```sql\n-- 1. Function on indexed column\nWHERE UPPER(email) = 'USER@EXAMPLE.COM'  -- index on email not used\n-- Fix: store data in consistent case, or use a functional index\n\n-- 2. Leading wildcard\nWHERE name LIKE '%kumar'  -- % at start kills the index\n-- Fix: full-text search, or suffix index for suffix queries\n\n-- 3. Implicit type conversion\nWHERE user_id = '12345'  -- if user_id is INT, the string causes a cast\n-- Fix: match the data type\n\n-- 4. NOT IN / NOT EQUAL TO often skips indexes\nWHERE status != 'active'  -- full table scan\n-- Fix: restructure to a positive condition or a covering index\n```\n\n**EXPLAIN / EXPLAIN ANALYZE:**\nInterviewers at product companies often ask 'how would you check if a query is using an index?' The answer: run EXPLAIN (MySQL/PostgreSQL) to see the query plan — look for `type: ALL` (full table scan, bad) vs `type: ref` or `type: range` (index used, good). EXPLAIN ANALYZE actually executes the query and returns real timing."
+      },
+      {
+        heading: "SQL at Indian Companies — What Each Tests",
+        content: "**TCS / Infosys / Wipro / Cognizant (fresher to 3 years):**\n- Basic SELECT, WHERE, ORDER BY, GROUP BY, HAVING\n- INNER JOIN and LEFT JOIN (write a query given two table schemas)\n- Aggregate functions: COUNT, SUM, AVG, MIN, MAX\n- Basic subqueries\n- Difference between DELETE/TRUNCATE/DROP\n- Normal forms (1NF, 2NF, 3NF)\n\n**Flipkart / Razorpay / Swiggy / Zomato (SDE-2, data engineer):**\n- All of the above PLUS:\n- Window functions (RANK, DENSE_RANK, ROW_NUMBER, LAG, LEAD)\n- Complex multi-table JOINs with business scenarios\n- CTEs (Common Table Expressions) for readable multi-step queries\n- Recursive CTEs for hierarchical data (org charts, category trees)\n- Query optimisation discussion: index types, EXPLAIN output\n\n**Amazon / Google / Microsoft (senior SDE, data engineer):**\n- All of the above PLUS:\n- Partitioning strategies (range, list, hash)\n- Distributed SQL concepts (sharding, consistent hashing)\n- Trade-offs between relational and NoSQL\n- Write optimisation (batch inserts, upserts, avoiding lock contention)\n- Schema design given a business problem ('design the schema for Flipkart's order system')\n\n**Data analyst / business analyst roles (all companies):**\n- Heavy emphasis on window functions and aggregations\n- Self-joins for comparing rows within the same table\n- DATE/TIMESTAMP functions (DATEDIFF, DATE_TRUNC, EXTRACT)\n- NULL handling (COALESCE, IS NULL, NULLIF)\n- CASE WHEN for conditional logic"
+      },
+    ],
+    faqs: [
+      {
+        question: "What SQL topics do Indian IT companies test for freshers?",
+        answer: "Indian IT companies (TCS, Infosys, Wipro, Cognizant) test these SQL topics for freshers: SELECT with WHERE/ORDER BY/GROUP BY/HAVING, INNER and LEFT JOINs (write a query given two schemas), aggregate functions (COUNT/SUM/AVG), basic subqueries, DELETE vs TRUNCATE vs DROP, and normalisation (1NF/2NF/3NF). Window functions and query optimisation are NOT expected at fresher level for IT services companies."
+      },
+      {
+        question: "Are window functions asked in SQL interviews in India?",
+        answer: "Yes — window functions (RANK, DENSE_RANK, ROW_NUMBER, LAG, LEAD, SUM OVER) are the primary SQL differentiator at product companies in India. Flipkart, Razorpay, Swiggy, Zomato, and Meesho regularly ask window function problems at SDE-2 and data engineer level. At IT services companies (TCS, Infosys, Wipro), window functions are rarely asked for freshers but may appear for experienced candidates in data roles. If you're targeting product companies, mastering PARTITION BY and ORDER BY inside OVER() is essential."
+      },
+      {
+        question: "What is the most common SQL question asked in Indian interviews?",
+        answer: "The single most common SQL interview question in India is the 'second highest salary' problem — asked at IT services companies, product companies, and data roles alike. Interviewers vary it ('nth highest salary', 'top 3 per department'), so know all approaches: subquery with MAX, LIMIT/OFFSET, and DENSE_RANK window function. The second most common type is multi-table JOIN problems given a business scenario (employee-department, orders-customers)."
+      },
+      {
+        question: "How do I prepare for SQL interviews at product companies in India?",
+        answer: "SQL preparation for product companies: (1) Master all JOIN types and write queries for common patterns (second highest salary, running total, top-N per group); (2) Learn window functions — RANK/DENSE_RANK/ROW_NUMBER/LAG/LEAD with PARTITION BY; (3) Understand indexing — B-tree vs hash, clustered vs non-clustered, patterns that kill index usage; (4) Practice CTEs for multi-step queries instead of nested subqueries; (5) Use LeetCode SQL section (50+ problems, medium difficulty) or StrataScratch for data analyst-type SQL. HackerRank SQL track covers the basics well."
+      },
+    ],
+    relatedSlugs: ["dsa-interview-preparation-guide-india-2026", "system-design-interview-questions-india-2026", "tcs-nqt-preparation-guide-india-2026"],
+    practicePageSlugs: [
+      { label: "General Technical Interview Practice", slug: "technical-interview-questions" },
+    ],
+    cta: "SQL is tested in behavioural interview format at many companies — interviewers ask you to write a query out loud while narrating your reasoning. HireStepX's voice mock interviews help you build the habit of explaining your SQL logic in plain English as you write it, which is exactly what interviewers at product companies want to see.",
+    relatedLinks: [
+      { label: "DSA Interview Preparation Guide India 2026", href: "/blog/dsa-interview-preparation-guide-india-2026" },
+      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "react-interview-questions-india-2026",
+    title: "React Interview Questions India 2026 — Freshers to Senior (50+ Questions + Answers)",
+    metaDescription: "React interview questions India 2026 — 50+ questions for freshers to senior frontend engineers. Covers hooks, virtual DOM, state management, performance optimisation, and React questions asked at Indian product companies.",
+    company: "General",
+    category: "Technical",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=500&fit=crop",
+    heroAlt: "React logo representing React interview questions India 2026",
+    datePublished: "2026-07-23",
+    intro: "React is the dominant frontend library at Indian product companies — Flipkart, Swiggy, Razorpay, PhonePe, Zerodha, Zomato, and virtually every funded startup uses React for web. React interview questions range from beginner-level JSX and component concepts at 0–1 year experience, to hooks internals and performance optimisation at 2–4 years, to architecture and design patterns at senior level. This guide covers all tiers with code examples and the specific framing used in Indian tech interviews.",
+    sections: [
+      {
+        heading: "React Fundamentals — Fresher / 0–1 Year Level",
+        content: "**Q1: What is the Virtual DOM and how does React use it?**\nThe Virtual DOM is a lightweight in-memory representation of the actual DOM. When state changes:\n1. React creates a new Virtual DOM tree representing the updated UI\n2. It diffs the new tree against the previous one (reconciliation)\n3. Only the changed nodes are updated in the real DOM (minimising expensive DOM operations)\n\n**Q2: What is JSX?**\nJSX is a syntax extension that lets you write HTML-like code inside JavaScript. Browsers don't understand JSX — Babel transpiles it to `React.createElement()` calls.\n```jsx\n// JSX\nconst element = <h1 className=\"title\">Hello</h1>;\n\n// What Babel compiles it to:\nconst element = React.createElement('h1', { className: 'title' }, 'Hello');\n```\n\n**Q3: What is the difference between state and props?**\n- Props: data passed FROM parent TO child; read-only in the child (immutable)\n- State: internal data managed BY the component; can be changed with setState/useState; triggers re-render on change\n\n**Q4: What is a controlled vs uncontrolled component?**\n- Controlled: form input value is controlled by React state; `value` prop + `onChange` handler\n- Uncontrolled: form input value is stored in the DOM, accessed via a ref (`useRef`); not managed by React state\n\n```jsx\n// Controlled (React manages the value)\nconst [name, setName] = useState('');\n<input value={name} onChange={(e) => setName(e.target.value)} />\n\n// Uncontrolled (DOM manages the value)\nconst inputRef = useRef(null);\n<input ref={inputRef} />\n// Access value: inputRef.current.value\n```\n\n**Q5: What is a key prop and why does React need it?**\nKeys help React identify which list items changed, were added, or were removed during reconciliation. Without unique keys, React may re-render the entire list unnecessarily or produce incorrect UI.\n```jsx\n// Wrong: using index as key (breaks when items are reordered)\n{items.map((item, index) => <Item key={index} data={item} />)}\n\n// Correct: stable unique identifier\n{items.map((item) => <Item key={item.id} data={item} />)}\n```"
+      },
+      {
+        heading: "React Hooks — The Core of Modern React Interviews",
+        content: "Hooks are the most heavily tested React topic at product companies in India for 1–4 year candidates.\n\n**useState:**\n```jsx\nconst [count, setCount] = useState(0);\n// Functional update: use when new state depends on previous state\nsetCount(prev => prev + 1);  // safe in async contexts, use instead of setCount(count + 1)\n```\n\n**useEffect — common mistakes:**\n```jsx\nuseEffect(() => {\n  // Runs after every render by default\n}, []);              // runs once after mount\n// }, [dependency]);   // runs when dependency changes\n// No second arg: runs after every render\n\n// Cleanup: return a function to clean up\nuseEffect(() => {\n  const sub = subscribe();\n  return () => unsubscribe(sub);  // cleanup on unmount + before next effect\n}, []);\n```\n\n**useCallback vs useMemo:**\n- `useMemo(fn, deps)`: memoises the RETURN VALUE of a function\n- `useCallback(fn, deps)`: memoises the FUNCTION ITSELF\n```jsx\n// useMemo: expensive computation — recalculates only when deps change\nconst filteredList = useMemo(\n  () => items.filter(i => i.active),\n  [items]\n);\n\n// useCallback: stable function reference for child component props\nconst handleClick = useCallback(\n  () => doSomething(id),\n  [id]  // recreated only when id changes\n);\n```\n\n**useRef:**\n- Access DOM elements directly\n- Store mutable values that persist across renders WITHOUT triggering re-renders\n```jsx\nconst inputRef = useRef(null);\n<input ref={inputRef} />\ninputRef.current.focus();\n\n// Mutable counter that doesn't cause re-renders\nconst countRef = useRef(0);\ncountRef.current++;  // updates silently\n```\n\n**useContext:**\nAvoids prop-drilling by providing values to any descendant without passing through intermediate components.\n```jsx\nconst ThemeContext = React.createContext('light');\n\n// Provider wraps the tree\n<ThemeContext.Provider value=\"dark\">\n  <App />\n</ThemeContext.Provider>\n\n// Consumer anywhere in the tree\nconst theme = useContext(ThemeContext);\n```"
+      },
+      {
+        heading: "React Performance — SDE-2 / Senior Level Questions",
+        content: "Performance questions appear in senior React interviews at Flipkart, Razorpay, Swiggy.\n\n**Q: When should you use React.memo?**\nReact.memo wraps a component to prevent re-rendering when props haven't changed (shallow comparison).\n```jsx\nconst ListItem = React.memo(({ item }) => {\n  return <div>{item.name}</div>;\n});\n// Without memo: re-renders every time the parent renders\n// With memo: skips re-render if item prop hasn't changed\n```\n**When NOT to use memo**: small, cheap components (the comparison itself has cost); components that almost always receive new props.\n\n**Q: What is code splitting and how does React implement it?**\nCode splitting breaks your bundle into chunks loaded on demand, reducing initial load time.\n```jsx\nconst LazyComponent = React.lazy(() => import('./HeavyComponent'));\n\nfunction App() {\n  return (\n    <Suspense fallback={<div>Loading...</div>}>\n      <LazyComponent />\n    </Suspense>\n  );\n}\n```\n\n**Q: What is reconciliation and what triggers it?**\nReconciliation is React's algorithm for diffing the old and new Virtual DOM trees to determine minimal DOM updates. Triggers: `setState`, `useState` setter call, context value change, or parent re-render (even if props didn't change — which is why memo exists).\n\n**React 18 specific — asked at companies on latest React:**\n- `useTransition`: mark state updates as non-urgent so urgent updates (typing) aren't blocked\n- `useDeferredValue`: defer an expensive child render until the browser is idle\n- Automatic batching: in React 18, all updates are batched (even in setTimeout, Promises) — previously only synchronous event handlers were batched\n\n**Common performance pitfalls:**\n```jsx\n// 1. Creating objects/functions in render (breaks memoisation)\n<Child onClick={() => doThing()} />  // new fn every render → memo useless\n// Fix: useCallback\n\n// 2. Avoid array index as key when items reorder\n\n// 3. Avoid large component trees without virtualisation\n// Fix for long lists: react-window or react-virtual\n```"
+      },
+      {
+        heading: "State Management — Redux vs Zustand vs Context",
+        content: "State management is a senior-level React interview topic and is asked at companies with complex frontend applications.\n\n**When to use each:**\n- React Context: small-to-medium apps, low-frequency updates (theme, auth user, locale). Not recommended for high-frequency updates (it re-renders all consumers on any change)\n- Zustand: medium-to-large apps, lightweight, no boilerplate, excellent performance (selective subscription). The current favorite at Indian product startups\n- Redux Toolkit: large enterprise apps, need for time-travel debugging, dev tools, or server-state management with RTK Query. Heavyweight but powerful\n\n**Zustand example (modern approach):**\n```jsx\nimport { create } from 'zustand'\n\nconst useCartStore = create((set, get) => ({\n  items: [],\n  total: 0,\n  addItem: (item) => set(state => ({\n    items: [...state.items, item],\n    total: state.total + item.price\n  })),\n  removeItem: (id) => set(state => ({\n    items: state.items.filter(i => i.id !== id),\n  })),\n}))\n\n// Component — subscribes only to what it reads\nconst { items, addItem } = useCartStore()\n```\n\n**Redux vs Context — common interview question:**\nContext is built into React and is good for low-update values (current user, theme). Redux has a dedicated store, middleware (Thunk/Saga for async), selectors, and dev tools. The key difference: Context re-renders ALL consumers when the value changes; Redux allows selective subscription (only re-renders if the selected slice of state changed)."
+      },
+    ],
+    faqs: [
+      {
+        question: "What React topics are asked in Indian product company interviews?",
+        answer: "React interview topics at Indian product companies (Flipkart, Razorpay, Swiggy, Zerodha): Virtual DOM and reconciliation, controlled vs uncontrolled components, all major hooks (useState, useEffect, useCallback, useMemo, useRef, useContext, useReducer), React.memo and performance optimisation, code splitting (React.lazy/Suspense), state management (Context vs Redux vs Zustand), React 18 features (useTransition, useDeferredValue, automatic batching). Questions are both theoretical ('explain useMemo') and practical ('fix this performance bug')."
+      },
+      {
+        question: "What is the difference between useMemo and useCallback in React?",
+        answer: "useMemo and useCallback both memoize values to avoid unnecessary recalculations, but they memoize different things: useMemo(fn, deps) memoizes the RETURN VALUE of fn — use it for expensive computations. useCallback(fn, deps) memoizes the FUNCTION ITSELF — use it when you pass a function as a prop to a child component wrapped in React.memo, so the function reference stays stable and the child doesn't re-render. useMemo(() => fn, deps) is equivalent to useCallback(fn, deps)."
+      },
+      {
+        question: "What is React reconciliation?",
+        answer: "React reconciliation is the algorithm React uses to compare the old Virtual DOM tree with the new one after a state or props change, to determine the minimal set of real DOM updates needed. React uses two heuristics: (1) elements of different types produce different trees — React unmounts the old tree and mounts a new one; (2) for elements of the same type, React updates only the changed attributes. For lists, React uses the key prop to match elements across renders. This is why using stable unique IDs as keys is important — index keys break the matching when items reorder."
+      },
+      {
+        question: "Is Redux still asked in React interviews in India in 2026?",
+        answer: "Redux is still asked at companies with large, established codebases (older Flipkart, Ola, larger enterprises). However, the interview trend in 2026 Indian product companies has shifted: Zustand and React Query are more commonly asked for new architecture discussions, and Context API is expected knowledge. Redux interview questions have shifted from implementation details to architectural trade-offs ('when would you choose Redux over Zustand/Context?'). If a job description mentions Redux, prepare it; otherwise, prioritise hooks and Zustand."
+      },
+    ],
+    relatedSlugs: ["javascript-interview-questions-india-2026", "system-design-interview-questions-india-2026", "flipkart-interview-questions-india-2026"],
+    practicePageSlugs: [
+      { label: "Frontend Interview Practice", slug: "frontend-interview-questions" },
+    ],
+    cta: "React interview questions mix technical depth ('explain the reconciliation algorithm') with practical debugging ('why is this component re-rendering unnecessarily?'). HireStepX's voice mock interviews train you to explain complex React concepts clearly under pressure, building the verbal fluency that distinguishes senior candidates.",
+    relatedLinks: [
+      { label: "JavaScript Interview Questions India 2026", href: "/blog/javascript-interview-questions-india-2026" },
+      { label: "Flipkart Interview Questions India 2026", href: "/blog/flipkart-interview-questions-india-2026" },
+    ],
+  },
+  {
+    slug: "nodejs-interview-questions-india-2026",
+    title: "Node.js Interview Questions India 2026 — Freshers to Senior (40+ Questions + Answers)",
+    metaDescription: "Node.js interview questions India 2026 — 40+ questions for backend engineers. Covers event loop, async/await, Express.js, clustering, streams, and Node.js questions asked at Indian product companies and startups.",
+    company: "General",
+    category: "Technical",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
+    heroAlt: "Server infrastructure representing Node.js interview questions India 2026",
+    datePublished: "2026-07-23",
+    intro: "Node.js is the backbone of backend development at Indian product startups and mid-size companies — Razorpay, Zerodha, CRED, Meesho, ShareChat, and hundreds of funded startups use Node.js for APIs, microservices, and real-time features. Node.js interviews in India range from event loop basics at 0–2 year level, to clustering and performance optimisation at 2–4 years, to distributed system design at senior level. This guide prepares you for all three tiers with the exact questions and code patterns used in Indian tech interviews.",
+    sections: [
+      {
+        heading: "Node.js Fundamentals — The Event Loop",
+        content: "The event loop is the most important Node.js concept and is asked in virtually every Node.js interview.\n\n**Q: What is Node.js and why is it single-threaded?**\nNode.js is a JavaScript runtime built on Chrome's V8 engine. It uses a single-threaded event loop model — there is one main thread for JavaScript execution, but I/O operations (file system, network) are delegated to the OS (via libuv) and processed asynchronously. The event loop picks up completed I/O results from the callback queue when the main thread is free.\n\n**Q: Explain the event loop phases:**\n```\nEvent Loop Phases (in order):\n1. timers         → executes setTimeout / setInterval callbacks\n2. pending I/O    → I/O callbacks from previous iteration\n3. idle/prepare   → internal Node.js use\n4. poll           → waits for new I/O events; executes their callbacks\n5. check          → setImmediate callbacks\n6. close          → close event callbacks (socket.on('close', ...))\n\nMicrotasks (between every phase):\n- process.nextTick() queue (drains first)\n- Promise .then() callbacks\n```\n\n**Q: What is the difference between process.nextTick() and setImmediate()?**\n- `process.nextTick()`: queued BEFORE the event loop continues to the next phase (highest priority among async callbacks)\n- `setImmediate()`: queued in the 'check' phase, after I/O events\n```js\nsetTimeout(() => console.log('1 - setTimeout'), 0);\nsetImmediate(() => console.log('2 - setImmediate'));\nprocess.nextTick(() => console.log('3 - nextTick'));\nPromise.resolve().then(() => console.log('4 - Promise'));\n\n// Output order:\n// 3 - nextTick       (microtask, before any phase)\n// 4 - Promise        (microtask, after nextTick queue drains)\n// 1 - setTimeout     (timers phase, or check phase — order may vary at 0ms)\n// 2 - setImmediate   (check phase)\n```"
+      },
+      {
+        heading: "Async Patterns — Callbacks, Promises, Async/Await",
+        content: "Async programming patterns are consistently tested in Node.js interviews.\n\n**Callback hell and how to escape it:**\n```js\n// Callback hell (bad)\nfs.readFile('a.txt', (err, a) => {\n  fs.readFile('b.txt', (err, b) => {\n    fs.readFile('c.txt', (err, c) => {\n      // deeply nested, error handling repeated\n    });\n  });\n});\n\n// Async/await (clean)\nasync function readFiles() {\n  try {\n    const a = await fs.promises.readFile('a.txt');\n    const b = await fs.promises.readFile('b.txt');\n    const c = await fs.promises.readFile('c.txt');\n    return { a, b, c };\n  } catch (err) {\n    console.error('Read failed:', err);\n  }\n}\n\n// Parallel with Promise.all\nasync function readParallel() {\n  const [a, b, c] = await Promise.all([\n    fs.promises.readFile('a.txt'),\n    fs.promises.readFile('b.txt'),\n    fs.promises.readFile('c.txt'),\n  ]);\n  return { a, b, c };\n}\n```\n\n**Promise.all vs Promise.allSettled vs Promise.race:**\n- `Promise.all([p1,p2,p3])`: resolves when ALL resolve; rejects immediately if ANY reject\n- `Promise.allSettled([...])`: always resolves; returns array of `{status: 'fulfilled'|'rejected', value|reason}` — use when you want all results regardless of failures\n- `Promise.race([...])`: resolves/rejects as soon as the FIRST promise settles — use for timeouts\n\n**Error handling in async:**\n```js\n// Pattern 1: try/catch in async function\nasync function handler(req, res) {\n  try {\n    const data = await fetchData();\n    res.json(data);\n  } catch (err) {\n    res.status(500).json({ error: err.message });\n  }\n}\n\n// Pattern 2: wrapper to avoid repetitive try/catch\nconst asyncHandler = (fn) => (req, res, next) =>\n  Promise.resolve(fn(req, res, next)).catch(next);\n\nrouter.get('/users', asyncHandler(async (req, res) => {\n  const users = await UserService.getAll();\n  res.json(users);\n}));\n```"
+      },
+      {
+        heading: "Express.js — Middleware, Routing, Error Handling",
+        content: "Express.js is the dominant Node.js web framework in India and is tested alongside Node.js at most companies.\n\n**Q: What is middleware in Express?**\nMiddleware functions have access to `(req, res, next)`. They can execute code, modify req/res, end the request-response cycle, or call `next()` to pass control to the next middleware.\n```js\n// Application-level middleware\napp.use((req, res, next) => {\n  console.log(`${req.method} ${req.path}`);\n  next();\n});\n\n// Router-level middleware\nrouter.use('/admin', isAuthenticated);\n\n// Error-handling middleware — 4 parameters\napp.use((err, req, res, next) => {\n  res.status(500).json({ error: err.message });\n});\n```\n\n**Q: How do you structure a large Express application?**\nLayer pattern (most common in Indian interviews):\n```\nroutes/          → Express router, HTTP layer only\ncontrollers/     → request parsing, response formatting\nservices/        → business logic (testable, no HTTP)\nrepositories/    → database access (PostgreSQL, MongoDB queries)\nmodels/          → data shapes / ORM models\nmiddleware/      → auth, validation, logging, rate limiting\nconfig/          → env vars, DB config, constants\n```\n\n**Common interview question — rate limiting middleware:**\n```js\nconst rateLimit = require('express-rate-limit');\napp.use('/api/', rateLimit({\n  windowMs: 15 * 60 * 1000,  // 15 minutes\n  max: 100,                   // 100 requests per window\n  message: 'Too many requests, please try again later'\n}));\n```\n\n**Q: How do you handle 404 and uncaught errors?**\n```js\n// 404 — catch all unmatched routes\napp.use((req, res) => {\n  res.status(404).json({ error: 'Route not found' });\n});\n\n// Uncaught error — safety net for unhandled Promise rejections\nprocess.on('unhandledRejection', (err) => {\n  console.error('Unhandled rejection:', err);\n  // Graceful shutdown: close server, exit with error code\n  server.close(() => process.exit(1));\n});\n```"
+      },
+      {
+        heading: "Clustering, Performance, and Production Node.js",
+        content: "These topics are asked at SDE-2 level and above at product companies.\n\n**Q: Since Node.js is single-threaded, how do you use all CPU cores?**\nNode.js Cluster module spawns child processes (workers), each running on a separate CPU core, sharing the same server port.\n```js\nconst cluster = require('cluster');\nconst os = require('os');\n\nif (cluster.isPrimary) {\n  const numCPUs = os.cpus().length;\n  for (let i = 0; i < numCPUs; i++) {\n    cluster.fork();  // spawn one worker per CPU\n  }\n  cluster.on('exit', (worker) => {\n    cluster.fork();  // restart crashed worker\n  });\n} else {\n  require('./server');  // each worker runs the express app\n}\n```\nIn production, PM2 (`pm2 start app.js -i max`) handles clustering automatically.\n\n**Q: What are Node.js Streams and when would you use them?**\nStreams process data piece by piece rather than loading it all into memory — essential for large file processing, video serving, or real-time data pipelines.\n```js\n// Without streams: loads entire 1GB file into memory (bad)\nconst data = fs.readFileSync('large-file.csv');\nres.send(data);\n\n// With streams: pipes data directly from file to response\nconst readStream = fs.createReadStream('large-file.csv');\nreadStream.pipe(res);  // no memory spike\n```\nStream types: Readable (source), Writable (destination), Duplex (both), Transform (duplex that modifies data).\n\n**Q: How do you debug memory leaks in Node.js?**\n- `process.memoryUsage()` to monitor heap usage\n- `--inspect` flag + Chrome DevTools for heap snapshots\n- Common causes: global variables holding references, unclosed event listeners, circular references, closures holding large data"
+      },
+    ],
+    faqs: [
+      {
+        question: "What Node.js topics are asked in Indian product company interviews?",
+        answer: "Node.js interview topics at Indian product companies: event loop (phases, microtask queue, nextTick vs setImmediate), async patterns (callbacks vs Promises vs async/await, Promise.all vs allSettled vs race), Express.js middleware and routing, error handling patterns, clustering for multi-core usage, streams for large file handling, and database connection pooling. Senior candidates also face distributed system questions: horizontal scaling, message queues (Kafka/RabbitMQ), and microservice communication."
+      },
+      {
+        question: "What is the Node.js event loop and why is it important?",
+        answer: "The Node.js event loop is the mechanism that allows Node.js to perform non-blocking I/O despite being single-threaded. It continuously loops through 6 phases: timers (setTimeout/setInterval), pending I/O, idle/prepare, poll (waits for I/O, runs I/O callbacks), check (setImmediate), and close events. Between each phase, microtasks run: first the process.nextTick() queue, then Promise .then() callbacks. This model allows thousands of concurrent connections with a single thread — blocking the event loop (with CPU-intensive synchronous code) kills performance for all concurrent requests."
+      },
+      {
+        question: "How do you scale a Node.js application for high traffic?",
+        answer: "Node.js scaling strategies for high traffic: (1) Cluster module — spawn one worker per CPU core to use all cores; PM2 handles this automatically with `pm2 start -i max`; (2) Horizontal scaling — run multiple Node.js instances behind a load balancer (Nginx, AWS ALB); stateless design required; (3) Caching — Redis for frequently-read data, reducing DB load; (4) Message queues — offload slow background work (emails, reports) to queues (BullMQ, Kafka) so API response stays fast; (5) Connection pooling — pool PostgreSQL/MySQL connections rather than creating a new connection per request."
+      },
+      {
+        question: "Is Express.js still relevant in India in 2026, or should I learn Fastify/NestJS?",
+        answer: "Express.js remains the dominant Node.js framework in Indian companies in 2026 — most existing codebases use it, and it's the most commonly asked framework in interviews. However, learning a second framework is valuable: NestJS is gaining adoption at companies building large enterprise APIs (Infosys, Wipro internal products, some unicorns) because of its TypeScript-first design and Angular-style structure. Fastify is popular for high-performance microservices. Recommendation for job seekers: master Express (required), then learn NestJS if targeting enterprise companies, or Fastify if targeting high-throughput API roles."
+      },
+    ],
+    relatedSlugs: ["javascript-interview-questions-india-2026", "system-design-interview-questions-india-2026", "sql-interview-questions-india-2026"],
+    practicePageSlugs: [
+      { label: "Backend Interview Practice", slug: "backend-interview-questions" },
+    ],
+    cta: "Node.js interviews require you to explain async and event loop concepts clearly while also writing working code — two skills that take different preparation. HireStepX's voice mock interviews help you build the verbal explanations ('the event loop picks up callbacks from the queue after I/O completes') that interviewers at Indian product companies specifically listen for.",
+    relatedLinks: [
+      { label: "JavaScript Interview Questions India 2026", href: "/blog/javascript-interview-questions-india-2026" },
       { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
     ],
   },
