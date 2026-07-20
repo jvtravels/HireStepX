@@ -134,6 +134,10 @@ export interface DashboardSession {
        cleanly. Values: "market-data" | "tenure-yoe" | "competing-offer" |
        "scope-expansion" | "specialization" | "col-relocation". */
     rationaleKind?: string;
+    /* OA-B58 (2026-07-20) — candidate's current CTC parsed by the kernel (LPA).
+       Null = never disclosed during the session; band fell back to role defaults.
+       Optional so rows persisted before this field shipped deserialize cleanly. */
+    candidateCurrentCtcLpa?: number | null;
   };
 }
 

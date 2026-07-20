@@ -111,6 +111,8 @@ export interface RealSession {
      *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
      *  "scope-expansion" | "specialization" | "col-relocation". */
     rationaleKind?: string;
+    /** Candidate's current CTC parsed by the kernel (LPA). OA-B58. */
+    candidateCurrentCtcLpa?: number | null;
   };
 }
 

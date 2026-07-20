@@ -167,6 +167,13 @@ export interface NegotiationMetrics {
    *  report can display "₹X CTC + ₹Y joining bonus" and the
    *  OfferEconomicsPanel can compute clawback-honest net value. */
   lastJoiningBonusOffered: number | null;
+  /** OA-B58 — the candidate's current CTC the kernel parsed from their
+   *  utterances (LPA). Null when the candidate never disclosed it during
+   *  the session (common when practising without a real package in mind).
+   *  When null the band falls back to role-average defaults; the report
+   *  surfaces a context note so the candidate understands the simulation
+   *  was not personalised to their actual package. */
+  candidateCurrentCtcLpa: number | null;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -279,6 +286,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
         ? finalState.lastJoiningBonusOffered
         : null,
     ...(finalState.rationale?.kind ? { rationaleKind: finalState.rationale.kind } : {}),
+    candidateCurrentCtcLpa: finalState.candidateCurrentCtc ?? null,
   };
 }
 

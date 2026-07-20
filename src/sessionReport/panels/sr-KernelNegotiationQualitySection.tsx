@@ -135,6 +135,11 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     : t.inkSoft;
   const anchorLabel = anchorAtLabel(m.anchorTurn, m.candidateAskLpa);
   const traversalPct = m.bandTraversal == null ? null : Math.round(m.bandTraversal * 100);
+  const ctc = m.candidateCurrentCtcLpa ?? null;
+  const finalOffer = m.finalOfferLpa ?? null;
+  const hikePct = ctc != null && ctc > 0 && finalOffer != null && finalOffer > 0
+    ? Math.round((finalOffer / ctc - 1) * 100)
+    : null;
   const tiles: Array<{ label: string; value: string; sub?: string }> = [
     { label: "Execution score", value: `${m.score}`, sub: "/100" },
     { label: "Outcome", value: outcomeLabel },
@@ -142,6 +147,9 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     { label: "LPA gained", value: `₹${m.lpaGained}`, sub: `LPA · ${m.lpaPerTurn}/turn` },
     { label: "Band traversal", value: traversalPct == null ? "—" : `${traversalPct}%`, sub: traversalPct == null ? "no spread" : "of ceiling" },
     { label: "Lever diversity", value: `${m.leverDiversity}`, sub: `lever${m.leverDiversity === 1 ? "" : "s"} explored` },
+    ...(hikePct != null
+      ? [{ label: "Hike from current", value: `${hikePct > 0 ? "+" : ""}${hikePct}%`, sub: `from ₹${ctc} LPA` }]
+      : []),
   ];
   const outcomeChip = (
     <span style={{ fontFamily: f.mono, fontSize: 11, color: outcomeColor, letterSpacing: "0.06em", textTransform: "uppercase" }}>
@@ -197,6 +205,20 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
           color: t.kernelBadInk,
         }}>
           Kernel anomaly: AI offered above the band ceiling on at least one turn. This shouldn't happen — please report.
+        </div>
+      )}
+      {(m.candidateCurrentCtcLpa == null) && (
+        <div style={{
+          marginTop: 14,
+          padding: "10px 14px",
+          background: t.creamSoft,
+          border: `1px solid ${t.line}`,
+          borderRadius: radius.lg,
+          fontFamily: f.sans,
+          fontSize: 12,
+          color: t.inkSoft,
+        }}>
+          <strong style={{ color: t.coal }}>CTC not shared.</strong> You never stated your current package, so the simulation used role-average band defaults. Share your actual CTC in your next session for a personalised band and hike-% read.
         </div>
       )}
       <KernelTacticsPanel m={m} />

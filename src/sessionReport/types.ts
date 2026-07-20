@@ -443,6 +443,14 @@ export interface InterviewResultData {
      *  taxonomy + guardrail layer landed. Drives CoachingSignalsPanel
      *  in NegotiationFullReport. */
     guardrailFlagSummary?: Record<string, number>;
+    /** OA-B58 — candidate's current CTC the kernel parsed (LPA).
+     *  Null when never disclosed. When null, the simulated band used
+     *  role defaults — reported to the user as a context note. */
+    candidateCurrentCtcLpa?: number | null;
+    /** The highest total CTC the recruiter put on the table (LPA).
+     *  For an accepted deal this is the agreed number. Optional: absent
+     *  on rows persisted before authoritative offer numbers were added. */
+    finalOfferLpa?: number;
   };
 }
 

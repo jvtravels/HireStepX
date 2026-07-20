@@ -423,6 +423,22 @@ describe("computeNegotiationMetrics", () => {
     // gained 8 over 3 cash turns
     expect(m.lpaPerTurn).toBe(2.67);
   });
+
+  it("OA-B58: candidateCurrentCtcLpa threads from finalState.candidateCurrentCtc", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ candidateCurrentCtc: 38 }),
+      moves: [move({ lever: "open-with-offer", newTotalLpa: 20 })],
+    });
+    expect(m.candidateCurrentCtcLpa).toBe(38);
+  });
+
+  it("OA-B58: candidateCurrentCtcLpa is null when candidate never disclosed CTC", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ candidateCurrentCtc: null }),
+      moves: [move({ lever: "open-with-offer", newTotalLpa: 20 })],
+    });
+    expect(m.candidateCurrentCtcLpa).toBeNull();
+  });
 });
 
 describe("scoreNegotiationBehaviour", () => {
