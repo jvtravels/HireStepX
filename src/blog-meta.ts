@@ -1235,6 +1235,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What CGPA is needed for IT company placements in India in 2026?", answer: "CGPA requirements for Indian IT company placements in 2026: TCS and Infosys require minimum 6.0 CGPA or 60% throughout academics. Wipro requires 6.5 CGPA. Accenture requires 5.0 CGPA (lower bar). Product companies (Flipkart, Swiggy, Razorpay, startups) often have no formal CGPA bar or set it at 6.0, focusing instead on DSA skills and projects. If your CGPA is below the threshold, target off-campus applications at product companies and startups rather than IT services campus drives." },
     ],
   },
+  {
+    slug: "java-interview-questions-india-2026",
+    title: "Java Interview Questions India 2026 — Core Java, OOP, Collections, Spring Boot (With Answers)",
+    metaDescription: "Java interview questions India 2026 with answers. Covers Core Java (OOP, exceptions, multithreading), Collections framework, Java 8+ features (streams, lambdas), Spring Boot, and coding problems at TCS, Infosys, Wipro, and product companies.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=630&fit=crop",
+    company: "Tech", category: "Technical",
+    faqs: [
+      { question: "What Java topics are most important for IT services interviews in India in 2026?", answer: "For IT services companies (TCS, Infosys, Wipro, Accenture): OOP concepts (encapsulation, inheritance, polymorphism, abstraction), String handling (String vs StringBuilder vs StringBuffer), Collections framework (ArrayList vs LinkedList, HashMap internals), exception handling (checked vs unchecked), and one simple coding problem. Spring Boot is not typically tested at IT services fresher level — focus on Core Java." },
+      { question: "What Java topics are asked at product companies in India?", answer: "At Indian product companies (Flipkart, Swiggy, Razorpay, Meesho) and FAANG India: all Core Java fundamentals plus Java 8+ features (streams, lambdas, Optional), Collections deep dive (HashMap internals, concurrent collections), multithreading (synchronized, volatile, ExecutorService, CompletableFuture), design patterns (Singleton, Factory, Builder, Observer), and Spring Boot for backend roles. Expect LeetCode Medium DSA problems on top." },
+      { question: "What is the difference between ArrayList and LinkedList in Java?", answer: "ArrayList uses a dynamic array — O(1) random access by index, O(n) for insert/delete in the middle (elements must shift). LinkedList uses a doubly linked list — O(n) random access, O(1) insert/delete when you have a reference to the node. Use ArrayList when you read elements by index frequently; use LinkedList when you insert/delete frequently at the head/tail (e.g., as a queue or deque)." },
+      { question: "What are Java 8 streams and why are they important for interviews?", answer: "Java 8 Streams allow functional-style operations (filter, map, reduce, collect) on collections without modifying the source. They are important for interviews at product companies because: (1) they demonstrate modern Java knowledge, (2) stream-based solutions are more concise than imperative loops, and (3) parallel streams show awareness of performance optimisation. Common interview questions: group elements by property, find top-N elements, calculate averages, flatten nested lists — all solvable elegantly with streams." },
+    ],
+  },
+  {
+    slug: "star-method-interview-answers-india-2026",
+    title: "STAR Method Interview Answers India 2026 — Examples for Every HR Question",
+    metaDescription: "STAR method interview answers India 2026 with examples for tell me about yourself, teamwork, conflict, leadership, failure, and pressure scenarios. How to structure behavioural answers for TCS, Infosys, Accenture, and product companies.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=630&fit=crop",
+    company: "General", category: "HR Round",
+    faqs: [
+      { question: "What is the STAR method and how do I use it in interviews?", answer: "STAR stands for Situation (context), Task (your specific role), Action (what you specifically did, step by step), and Result (the outcome, quantified where possible). Use it for any behavioural HR question that starts with 'Tell me about a time...' or 'Describe a situation when...'. Each answer should take 2–2.5 minutes. The Action step is the most important — use 'I' not 'we', and describe specific decisions and steps, not vague behaviours like 'I communicated better'." },
+      { question: "How do I answer 'tell me about a failure' in an interview using STAR?", answer: "Choose a real, specific failure — not a fake one like 'I work too hard'. Structure it: Situation (what the project/context was), Task (your role), Action (what went wrong and what specifically happened), Result (the honest outcome + what you changed afterwards). Interviewers are not penalising you for failing — they are assessing whether you have self-awareness and the ability to learn and adapt. A genuine failure answered with clear learning is always stronger than a fake 'weakness' answer." },
+      { question: "How many STAR stories should I prepare for an interview?", answer: "Prepare 8–10 STAR stories that can be adapted to different questions. The core 8: a challenging technical problem, a team conflict, initiative beyond your role, a project under time pressure, a genuine failure, influencing without authority, learning something new quickly, and a decision with incomplete information. These 8 stories cover 90% of behavioural questions asked in Indian IT services and product company interviews." },
+      { question: "Do Indian IT companies like TCS and Infosys use STAR-style questions?", answer: "Yes — TCS's Managerial Interview and Infosys's HR round both include STAR-style behavioural questions, though they are not always framed explicitly with 'tell me about a time'. Common forms: 'How do you handle a situation where...' (hypothetical STAR), 'Have you ever faced...' (direct STAR), 'What is your experience with team conflicts?' (indirect STAR). Product companies (Amazon, Flipkart, Swiggy) use STAR most rigorously — Amazon's Leadership Principles interviews are entirely STAR-based." },
+    ],
+  },
+  {
+    slug: "cognizant-interview-questions-india-2026",
+    title: "Cognizant Interview Questions India 2026 — Freshers & Experienced (GenC, GenC Next, Salary)",
+    metaDescription: "Cognizant interview questions India 2026 for freshers and experienced candidates. Covers Cognizant GenC and GenC Next aptitude test, technical round, HR round, Cognizant salary ₹4–35 LPA, and preparation tips.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=630&fit=crop",
+    company: "Cognizant", category: "Full Guide",
+    faqs: [
+      { question: "What is Cognizant's interview process for freshers in 2026?", answer: "Cognizant's fresher interview process has 3 stages: (1) Online Assessment — English, analytical/reasoning, and coding (2 problems for GenC, 3 for GenC Next); (2) Technical Interview — programming fundamentals, OOP, data structures, SQL, and one coding problem on paper; (3) HR Interview — tell me about yourself, why Cognizant, shift readiness, relocation willingness. Top performers in the aptitude test are considered for GenC Next (₹6.5 LPA) instead of the standard GenC track (₹4 LPA)." },
+      { question: "What is the difference between Cognizant GenC and GenC Next?", answer: "GenC is Cognizant's standard fresher hiring programme at ₹4 LPA — large-scale hiring for Technology and Operations roles. GenC Next is the premium track at ₹6.5 LPA — a smaller, more selective cohort with a harder aptitude test (3 coding problems vs 2), two technical interview rounds, and CGPA ≥7.5 typically required. Selection for GenC Next happens based on aptitude test performance — candidates who score in the top percentile on the standard test are automatically considered." },
+      { question: "What is Cognizant's salary for freshers in India 2026?", answer: "Cognizant's fresher salary in India 2026: GenC (standard track) ₹4 LPA, GenC Next ₹6.5 LPA, GenC Elevate (specialist, limited seats) ₹9 LPA. Take-home is approximately 78-82% of CTC. GenC at ₹4 LPA is slightly above TCS Ninja (₹3.36 LPA) and Wipro standard (₹3.5 LPA). GenC Next at ₹6.5 LPA is comparable to TCS Digital (₹7 LPA) and below Infosys Power Programmer (₹8 LPA)." },
+      { question: "How hard is Cognizant's coding test for freshers?", answer: "Cognizant's coding test for GenC track is one of the easier IT services company coding tests — 2 problems solvable with basic programming knowledge (loops, arrays, strings, simple sorting). GenC Next requires 3 problems at Easy to LeetCode Medium level. For GenC, candidates who can write working Python or Java for basic array/string problems (reverse a string, find missing number, Armstrong number check) will pass comfortably. Focus more preparation time on the analytical and English sections — they carry equal weight." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
