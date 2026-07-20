@@ -1341,6 +1341,26 @@ input[type="range"]::-moz-range-thumb {
     outline: 1px solid ButtonText;
     outline-offset: 1px;
   }
+
+  /* OA-B11: interview control buttons suppress outline via inline style;
+     forced-colors must restore a visible focus ring with !important
+     since inline styles outrank regular CSS specificity. */
+  .iv-ctrl-btn:focus-visible {
+    outline: 3px solid ButtonText !important;
+    outline-offset: 2px;
+  }
+  /* Ensure the button border is always visible (RGBA borders can become
+     invisible when the system palette maps them to Canvas). */
+  .iv-ctrl-btn {
+    border: 1px solid ButtonText !important;
+  }
+
+  /* Voice-ring pulse: RGBA border becomes invisible; switch to Highlight
+     so the listening-state indicator remains legible. */
+  .hsx-iv-ring {
+    forced-color-adjust: none;
+    border-color: Highlight !important;
+  }
 }
 
 @media print {

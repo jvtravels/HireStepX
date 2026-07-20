@@ -423,6 +423,7 @@ export const ControlButton = React.memo(function ControlButton({ icon, label, ac
       onClick={onClick}
       title={label}
       aria-label={label}
+      className="iv-ctrl-btn"
       style={{
         width: 48, height: 48, borderRadius: "50%",
         background: danger ? e.copperSoft : active ? e.indigo100 : e.white,
