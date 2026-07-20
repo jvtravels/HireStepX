@@ -1193,6 +1193,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "How should I prepare for Wipro's essay writing section?", answer: "Practice writing 200-250 word structured essays in under 10 minutes. Use a 4-paragraph structure: (1) define topic and state position, (2) main argument with one specific example, (3) acknowledge counter-argument and address it, (4) conclusion with a forward-looking statement. Practice 5-10 essays before the exam on tech/business/social topics. Focus on: grammar accuracy, structure, taking a clear position, and staying within the word limit. This section eliminates candidates who treat it as an afterthought." },
     ],
   },
+  {
+    slug: "python-interview-questions-india-2026",
+    title: "Python Interview Questions India 2026 — Freshers to Senior (With Answers)",
+    metaDescription: "Python interview questions India 2026 with answers. Covers core Python (lists vs tuples, generators, decorators), OOP, data science libraries, Django/Flask, and coding problems asked at TCS, Infosys, Flipkart, and data science roles.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=630&fit=crop",
+    company: "Tech", category: "Technical",
+    faqs: [
+      { question: "What Python topics are most important for interviews in India 2026?", answer: "For IT services company roles: list/tuple/dict/set differences, basic OOP (classes, inheritance), file handling, simple coding problems. For product company backend roles: decorators, generators, context managers, OOP (MRO, dunder methods), concurrency (threading vs multiprocessing, asyncio), database (SQLAlchemy or raw SQL). For data science roles: NumPy broadcasting, Pandas (groupby, merge, missing values), and scikit-learn pipeline basics." },
+      { question: "What is the difference between a list and a tuple in Python?", answer: "Lists are mutable (can be modified after creation) and use square brackets []. Tuples are immutable (cannot be modified) and use parentheses (). Tuples are faster than lists for iteration, use less memory, and can be used as dictionary keys (lists cannot). Use lists when you need to add/remove/modify elements; use tuples for fixed collections of data (coordinates, RGB values, function return values)." },
+      { question: "What is a Python generator and when should I use it?", answer: "A generator is a function that yields values one at a time using the `yield` keyword instead of returning all values at once. Generators are lazy — they compute values only when requested — so they use very little memory regardless of the sequence length. Use generators when: processing large files line by line, working with infinite sequences, streaming data from APIs, or any situation where you don't need all values in memory simultaneously." },
+      { question: "Is Python used for freshers interviews in India?", answer: "Yes — Python is now tested in fresher interviews at IT services companies (TCS, Infosys, Wipro, Accenture) for web/automation roles, at product companies for backend and data roles, and at nearly all data science and ML positions. Freshers are typically asked: data type differences (list/tuple/set/dict), basic OOP (class, inheritance, __init__), list comprehensions, and simple coding problems (reverse a string, check palindrome, find duplicates)." },
+    ],
+  },
+  {
+    slug: "infosys-interview-questions-india-2026",
+    title: "Infosys Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
+    metaDescription: "Infosys interview questions India 2026 for freshers and experienced candidates. Covers InfyTQ online test, Power Programmer track, technical and HR rounds, Infosys salary ₹3.6–30 LPA, and preparation strategy.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200&h=630&fit=crop",
+    company: "Infosys", category: "Full Guide",
+    faqs: [
+      { question: "What is Infosys's interview process for freshers in 2026?", answer: "Infosys's fresher interview process has 3 stages: (1) Online Assessment (95 minutes) — reasoning, mathematical ability, verbal, and puzzle solving sections; (2) Technical Interview — data structures, DBMS/SQL, OS, programming language fundamentals, resume project discussion, and one coding problem; (3) HR Round — behavioural questions, motivation, location preference, shift readiness. Off-campus candidates typically go through InfyTQ certification first." },
+      { question: "What is InfyTQ and is it necessary for Infosys placement?", answer: "InfyTQ (Infosys Talent Quest) is Infosys's online platform for learning and off-campus hiring. For campus candidates, it's optional prep material. For off-campus candidates, it's the primary channel: register, complete learning modules, pass the InfyTQ certification exam (score ≥65% for System Engineer track, ≥75% for Power Programmer track), and get shortlisted for technical + HR interviews. InfyTQ certification is valid for 1 year." },
+      { question: "What is Infosys Power Programmer salary in 2026?", answer: "Infosys Power Programmer salary in 2026 is ₹8 LPA CTC. The Digital Specialist Engineer track (separate from Power Programmer) offers ₹9.5 LPA. Both require InfyTQ scores ≥75%, strong performance on coding problems, and CGPA ≥8.0. The standard System Engineer offer is ₹3.6 LPA. The gap between tracks widens with experience — Power Programmers often reach Senior System Engineer (₹12–24 LPA) faster than standard track engineers." },
+      { question: "How hard is Infosys's online test compared to TCS NQT?", answer: "Infosys's online assessment is generally considered harder than TCS NQT Foundation, particularly the puzzle solving section and the mathematical ability section. The puzzle solving section (cryptarithmetic, logic puzzles) has no direct equivalent in TCS NQT and requires specific practice. However, Infosys's online test has no negative marking (recent pattern), which reduces the risk of attempting all questions. Prepare 2–3 weeks more specifically for Infosys's puzzle section." },
+    ],
+  },
+  {
+    slug: "fresher-resume-format-india-2026",
+    title: "Fresher Resume Format India 2026 — One-Page Template With Examples",
+    metaDescription: "Fresher resume format India 2026 with a one-page template, section-by-section guide, and examples for engineering, MBA, and B.Com freshers. What to include, what to avoid, and how to pass ATS screening.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=630&fit=crop",
+    company: "General", category: "Career Prep",
+    faqs: [
+      { question: "What is the ideal resume format for freshers in India in 2026?", answer: "The ideal fresher resume format in India in 2026 is a single-page, reverse-chronological document with these sections in order: Contact Information, Education, Skills, Projects, Internships/Experience (if any), Certifications, and Achievements. Keep it one page, use a standard font (Calibri or Garamond at 10-11pt), save as PDF, and name the file YourName_Resume.pdf. Most importantly: prioritise the Projects section — it's what differentiates freshers with similar academic backgrounds." },
+      { question: "Should a fresher write an objective or summary on their resume?", answer: "No — objective statements are outdated and clichéd for Indian fresher resumes. Every candidate says 'seeking a challenging role to utilise my skills in a dynamic organisation' — it adds no information and wastes space. Use that space for an additional project bullet or certification instead. A summary section only helps if you have 2+ years of work experience worth summarising." },
+      { question: "How do I write a good projects section with no work experience?", answer: "For each project: (1) name the project and list the exact tech stack in the heading, (2) write one sentence on what the project does, (3) describe your specific contribution (not the whole team's), (4) add one measurable outcome (load time, accuracy %, users, lines of code), (5) include a GitHub link and live demo link if available. The difference between a weak and strong project entry is specificity and measurability — not the complexity of the project." },
+      { question: "What CGPA is needed for IT company placements in India in 2026?", answer: "CGPA requirements for Indian IT company placements in 2026: TCS and Infosys require minimum 6.0 CGPA or 60% throughout academics. Wipro requires 6.5 CGPA. Accenture requires 5.0 CGPA (lower bar). Product companies (Flipkart, Swiggy, Razorpay, startups) often have no formal CGPA bar or set it at 6.0, focusing instead on DSA skills and projects. If your CGPA is below the threshold, target off-campus applications at product companies and startups rather than IT services campus drives." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
