@@ -305,6 +305,108 @@ async function sendSessionReportEmail(
   }
 }
 
+/* ── Milestone emails (free-tier conversion) ── */
+
+/** Fires after a user completes their first session (1 free session remaining).
+ *  Goal: anchor their momentum and warm them to upgrading before they hit the wall. */
+async function sendFirstSessionCompletedEmail(
+  userEmail: string,
+  userName: string,
+  sessionId: string,
+): Promise<void> {
+  if (!RESEND_API_KEY || !userEmail) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+
+  const greeting = escapeHtml(userName || "there");
+  const reportUrl = `${APP_URL}/session/${sessionId}`;
+  const nextUrl = `${APP_URL}/session/new`;
+
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `first-session-${sessionId}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [userEmail],
+        subject: `${userName ? userName.split(" ")[0] + ", you" : "You"}'ve completed your first HireStepX session`,
+        html: emailShell({
+          preview: "First session done. One more free session left — make it count.",
+          body:
+            title("First session", { accentWord: "done." }) +
+            para(`Hi ${greeting}, your report is ready — scores, STAR breakdown, and the exact phrases that'll sharpen your next attempt.`) +
+            para(`You have <strong>1 free session left</strong>. Use it on your hardest target company or a round you've been avoiding.`) +
+            button("View report", reportUrl) +
+            button("Start session 2", nextUrl) +
+            para(
+              "After your second session you can upgrade to keep practicing — plans start at ₹249/week.",
+              { small: true, muted: true },
+            ),
+        }),
+      }),
+    });
+    clearTimeout(timer);
+  } catch (err) {
+    console.warn(`[save-session] first-session email threw: ${(err as Error).message}`);
+  }
+}
+
+/** Fires after a user completes their second (last) free session.
+ *  Goal: close the conversion while the practice feeling is hot. */
+async function sendFreeLimitReachedEmail(
+  userEmail: string,
+  userName: string,
+  sessionId: string,
+): Promise<void> {
+  if (!RESEND_API_KEY || !userEmail) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+
+  const greeting = escapeHtml(userName || "there");
+  const reportUrl = `${APP_URL}/session/${sessionId}`;
+  const upgradeUrl = `${APP_URL}/dashboard?upgrade=1`;
+
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `free-limit-${sessionId}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [userEmail],
+        subject: "You've finished your 2 free sessions — keep the momentum going",
+        html: emailShell({
+          preview: "Both free sessions used. Upgrade to keep practicing before your interview.",
+          body:
+            title("Both free sessions", { accentWord: "done." }) +
+            para(`Hi ${greeting}, you've completed both of your free mock interviews. Your report is ready — you've already built muscle memory that candidates who don't practice at all don't have.`) +
+            para(`To keep going, upgrade to Starter (₹249/week, 3 sessions) or grab a single session for ₹9. No subscription required.`) +
+            button("View report", reportUrl) +
+            button("Upgrade to keep practicing", upgradeUrl) +
+            para(
+              "Questions? Reply to this email and we'll help you choose the right plan.",
+              { small: true, muted: true },
+            ),
+        }),
+      }),
+    });
+    clearTimeout(timer);
+  } catch (err) {
+    console.warn(`[save-session] free-limit email threw: ${(err as Error).message}`);
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), {
@@ -492,6 +594,9 @@ export default async function handler(req: Request): Promise<Response> {
   //    completes one session at a time, so races aren't real here.
   const nowIso = new Date().toISOString();
   let practiceAppended = false;
+  // Set when this session is the 1st or 2nd completed free session — used to
+  // decide which milestone email fires in the report-email block below.
+  let completedCountAfter = -1;
   try {
     const getRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids`,
@@ -535,6 +640,11 @@ export default async function handler(req: Request): Promise<Response> {
       );
       if (patchRes.ok) {
         practiceAppended = !isGhostSession;
+        // Capture the user's new total for milestone email routing.
+        // Only set when this was a genuine new session (not a replay / ghost).
+        if (!alreadyCounted && !isGhostSession && questionsAnswered) {
+          completedCountAfter = existing.length + 1;
+        }
         if (!alreadyCounted && questionsAnswered) {
           const bonus = computeStreakReward(existing, nowIso);
           if (bonus > 0) {
@@ -615,6 +725,13 @@ export default async function handler(req: Request): Promise<Response> {
         const userEmail = userData.email || "";
         const userName = userData.user_metadata?.name || userData.user_metadata?.full_name || "";
         await sendSessionReportEmail(userEmail, userName, sessionRow.id, sessionRow.type || "interview");
+        // Free-tier milestone emails — fire sequentially so they don't race
+        // each other. completedCountAfter is -1 for ghost/replay sessions.
+        if (completedCountAfter === 1) {
+          await sendFirstSessionCompletedEmail(userEmail, userName, sessionRow.id);
+        } else if (completedCountAfter === 2) {
+          await sendFreeLimitReachedEmail(userEmail, userName, sessionRow.id);
+        }
       } else {
         console.warn(`[save-session] auth user fetch failed HTTP ${userRes.status} — skipping report email`);
       }
