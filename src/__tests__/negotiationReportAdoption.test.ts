@@ -98,6 +98,26 @@ describe("report adopts the kernel's authoritative negotiation outcome", () => {
     expect(stalemate!.outcome).toBe("no_agreement");
     expect(derivePhases(stalemate!)[4].reached).toBe(false);
   });
+
+  // S14-REPORT-B5: consecutive identical offer values must be deduplicated so
+  // a session where the kernel logged [55.3, 55.3, 55.3] (cash frozen) renders
+  // a single ₹55.3 pill rather than a misleading three-arrow progression.
+  it("S14-REPORT-B5: deduplicates consecutive identical offer values in the trajectory", () => {
+    const outcome = buildNegotiationOutcome(
+      opaqueReport,
+      kernel({ offerTrajectoryLpa: [55.3, 55.3, 55.3], finalOfferLpa: 55.3, candidateAskLpa: 48 }),
+    );
+    expect(outcome!.offers.map((o) => o.total)).toEqual([55.3]);
+  });
+
+  it("S14-REPORT-B5: does NOT collapse non-consecutive identical values", () => {
+    // [40, 45, 40] — valid oscillation: deduplicate only consecutive runs.
+    const outcome = buildNegotiationOutcome(
+      opaqueReport,
+      kernel({ offerTrajectoryLpa: [40, 45, 40], finalOfferLpa: 40, candidateAskLpa: 50 }),
+    );
+    expect(outcome!.offers.map((o) => o.total)).toEqual([40, 45, 40]);
+  });
 });
 
 describe("legacy rows without a persisted trajectory fall back to the transcript heuristic", () => {

@@ -751,7 +751,11 @@ function adoptKernelOutcome(
     : "no_agreement"; // stalemate / in-progress → no close
 
   const trajectory = km.offerTrajectoryLpa;
-  const offers = trajectory.map((total, i) => ({
+  // S14-REPORT-B5: collapse consecutive identical cash offers so a session
+  // where the kernel logged the same number multiple times (e.g. [55.3,55.3,55.3])
+  // renders as a single pill rather than a misleading flat progression.
+  const uniqueTrajectory = trajectory.filter((v, i) => i === 0 || v !== trajectory[i - 1]);
+  const offers = uniqueTrajectory.map((total, i) => ({
     turn: i + 1,
     total,
     question: "",
