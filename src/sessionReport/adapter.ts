@@ -1441,9 +1441,12 @@ function buildNegotiationPerQuestion(
     }
     if (entry.speaker !== "user") continue;
     if (/^\[.*\]$/.test(text)) continue; // skipped-turn sentinel
+    // S13-B11: strip leading pause tics ("Uh, " / "Umm, ") from the heading.
+    // The tic is realistic in audio but reads as a typo in a report heading.
+    const heading = pendingRecruiter.replace(/^(?:Uh,\s*|Umm?,\s*)+/i, "").trim();
     items.push({
       index: items.length + 1,
-      text: pendingRecruiter || `Exchange ${items.length + 1}`,
+      text: heading || `Exchange ${items.length + 1}`,
       // S6-B4 — no per-turn score EXISTS for a negotiation exchange: the
       // evaluator scored the whole call, not each turn. Rendering the aggregate
       // as "0/100" (heuristic path) or even as the call score on every row is a

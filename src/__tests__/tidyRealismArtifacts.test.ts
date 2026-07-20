@@ -326,3 +326,27 @@ describe("tidyRealismArtifacts — doubled-opener artifacts (PRI-62)", () => {
     expect(tidyRealismArtifacts("Uh, right.")).toBe("Uh, right.");
   });
 });
+
+/* S13-B12 (2026-07-20) — "We" was absent from the TIDY_MIDSENTENCE_DOWNCASE
+ * whitelist. The LLM generates comma-spliced clauses like "Thank you for that,
+ * We can discuss…" where "We" is a pronoun subject, not a sentence-start or
+ * proper noun, and must be lowercased. */
+describe("tidyRealismArtifacts — S13-B12 'We' mid-sentence downcase", () => {
+  it("S13-B12: downcases 'We' after comma mid-sentence (comma-splice guard)", () => {
+    expect(
+      tidyRealismArtifacts("Thank you for that, We can discuss the joining bonus."),
+    ).toBe("Thank you for that, we can discuss the joining bonus.");
+  });
+
+  it("S13-B12: does not downcase 'We' at sentence start", () => {
+    expect(
+      tidyRealismArtifacts("We can discuss the joining bonus."),
+    ).toBe("We can discuss the joining bonus.");
+  });
+
+  it("S13-B12: downcases 'We' even after other comma-separated discourse words", () => {
+    expect(
+      tidyRealismArtifacts("Honestly, We need to loop in the panel here."),
+    ).toBe("Honestly, we need to loop in the panel here.");
+  });
+});

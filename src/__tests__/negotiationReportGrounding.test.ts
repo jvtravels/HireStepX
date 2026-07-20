@@ -483,3 +483,67 @@ describe("sessionReportToInterviewResult — fold is grounded end-to-end", () =>
     expect(numStated!.value).toBeGreaterThanOrEqual(25);
   });
 });
+
+/* S13-B11 (2026-07-20) — frantic-mood pause tics ("Uh, " / "Umm, ") were
+ * leaking into Per-Question Review headings because buildNegotiationPerQuestion
+ * used the raw pendingRecruiter text verbatim. The strip happens in the adapter
+ * so the heading is clean regardless of which prose-realism layer fired. */
+describe("buildNegotiationPerQuestion — S13-B11 pause-tic heading strip", () => {
+  it("S13-B11: strips leading 'Uh,' from per-question heading", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "Uh, what salary are you expecting?" },
+          { speaker: "user", text: "I'm looking for 65 LPA." },
+          { speaker: "ai",   text: "Umm, can you walk me through your current CTC?" },
+          { speaker: "user", text: "My current CTC is 42 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const headings = out.questions.map((q) => q.text);
+    // "Uh, what salary…" → "what salary…" (tic stripped, NOT sentence-cased by adapter)
+    expect(headings[0]).not.toMatch(/^Uh,/i);
+    expect(headings[0]).not.toMatch(/^Umm?,/i);
+    // Content is preserved after stripping
+    expect(headings[0]).toMatch(/salary/i);
+  });
+
+  it("S13-B11: strips stacked tics ('Uh, Umm, ') from heading", () => {
+    // Need ≥2 user turns so buildNegotiationPerQuestion returns items, not null.
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "Uh, Umm, that seems high." },
+          { speaker: "user", text: "I understand, but that's my ask." },
+          { speaker: "ai",   text: "Umm, can we come down a bit?" },
+          { speaker: "user", text: "No, 65 LPA is my final number." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.questions[0]?.text).not.toMatch(/^(?:Uh|Umm?),/i);
+    expect(out.questions[0]?.text).toMatch(/high/i);
+    expect(out.questions[1]?.text).not.toMatch(/^(?:Uh|Umm?),/i);
+  });
+
+  it("S13-B11: leaves heading intact when no tic present", () => {
+    // Need ≥2 user turns so buildNegotiationPerQuestion returns items, not null.
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What are your expectations?" },
+          { speaker: "user", text: "I want 65 LPA." },
+          { speaker: "ai",   text: "Can you walk me through your current CTC?" },
+          { speaker: "user", text: "My current CTC is 42 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.questions[0]?.text).toBe("What are your expectations?");
+    expect(out.questions[1]?.text).toBe("Can you walk me through your current CTC?");
+  });
+});

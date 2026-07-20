@@ -514,8 +514,13 @@ function fixSentenceCaps(s: string): string {
  * wh-interrogatives are a CLOSED grammatical class — none is ever a proper
  * noun in recruiter comp-talk — so they extend the same proper-noun-safe
  * whitelist as When/Where (already present). */
+/* S13-B12 (2026-07-20, live staging) — "We" was absent from the whitelist.
+ * The LLM generates constructions like "Thank you for that, We can discuss
+ * the joining bonus" where "We" is the subject of a spliced clause — not a
+ * proper noun or sentence start — and must be lowercased. "We" is a pronoun
+ * and never a proper noun in recruiter comp-talk, so it belongs in this list. */
 const TIDY_MIDSENTENCE_DOWNCASE =
-  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where|What|Why|How|Which|Who)\b/g;
+  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where|What|Why|How|Which|Who|We)\b/g;
 
 export function tidyRealismArtifacts(s: string): string {
   if (!s) return s;
