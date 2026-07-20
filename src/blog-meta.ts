@@ -983,6 +983,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "How difficult is the Ola SDE interview?", answer: "Ola's SDE interview difficulty is medium — comparable to Nykaa, Urban Company, and Dunzo. LeetCode Medium proficiency handles the coding rounds. System design (ride-hailing specific) is the differentiator at 2+ years. It is notably easier than CRED, Razorpay, or Amazon India." },
     ],
   },
+  {
+    slug: "hr-interview-questions-india-2026",
+    title: "HR Interview Questions India 2026 — Answers for Freshers & Experienced Candidates",
+    metaDescription: "Top HR interview questions with best answers for India 2026. Tell me about yourself, why should we hire you, strengths and weaknesses, where do you see yourself in 5 years — with word-for-word sample answers for freshers and experienced candidates.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=630&fit=crop",
+    company: "General", category: "HR Round",
+    faqs: [
+      { question: "How do I answer 'tell me about yourself' for a fresher in India?", answer: "Use the Present → Past → Future structure. Present: your degree and specialisation. Past: 1–2 internships or projects with a specific outcome. Future: why this role is the logical next step. Keep it under 90 seconds. Avoid listing your resume — instead tell a story with a thread from your education to where you want to go." },
+      { question: "What is the best answer for 'why should we hire you'?", answer: "Match your strongest skill to a specific requirement from the job description, back it with a one-line example, and show genuine enthusiasm for the team's specific problem (not just the company brand). The mistake is answering with company praise — that explains why you want to join, not why they should choose you over other candidates." },
+      { question: "How do I answer 'what is your weakness' in an HR interview?", answer: "Mention a real weakness (not a fake one like 'I work too hard') and describe what you're actively doing to address it. Good example: 'I've been slow to ask for help when stuck — I set a 30-minute rule now: if I'm blocked for 30 minutes, I ask rather than continue alone.' The fix shows self-awareness and growth, which is what the question is actually testing." },
+      { question: "What should I not say in an HR interview in India?", answer: "Never badmouth your current employer, manager, or team. Never say 'I haven't thought about' your career goals. Never give fake weaknesses like 'I'm too dedicated.' Avoid asking about salary, leaves, or WFH in the first HR round. Don't say 'I want to start my own company in 5 years' — it signals the role is just a stepping stone." },
+    ],
+  },
+  {
+    slug: "zomato-interview-questions-india-2026",
+    title: "Zomato Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
+    metaDescription: "Zomato interview questions 2026 for SDE, data scientist, and PM roles. Covers DSA rounds, system design for food delivery at scale, product metrics, Zomato salary ₹18–120 LPA, and preparation tips from actual candidates.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=630&fit=crop",
+    company: "Foodtech", category: "Full Guide",
+    faqs: [
+      { question: "Is Zomato interview hard?", answer: "Zomato's SDE interview is medium-hard. DSA requires LeetCode Medium to Hard proficiency. System design is mandatory for 2+ years and focuses on food-delivery-specific problems (real-time tracking, delivery assignment, restaurant recommendations). The bar is comparable to Swiggy — harder than Nykaa or Ola, easier than Amazon India or Razorpay." },
+      { question: "What system design questions are asked at Zomato?", answer: "Zomato system design focuses on food delivery at scale: order tracking (real-time GPS + state machine), delivery partner assignment, restaurant recommendation engine, surge fee system, and ETD calculation. Key themes: location-aware services (Redis geospatial), real-time updates (WebSocket + Kafka), and handling burst traffic during peak hours." },
+      { question: "What is Zomato SDE salary in India 2026?", answer: "Zomato SDE salary in India 2026: SDE-1 ₹18–32 LPA, SDE-2 ₹30–60 LPA, Senior SDE ₹55–95 LPA. ESOPs are liquid (listed stock). Compensation is comparable to Swiggy and Meesho, slightly below Razorpay and CRED at equivalent levels." },
+      { question: "Does Zomato hire freshers?", answer: "Zomato hires freshers through campus placements at IITs, NITs, and top private engineering colleges. The SDE-1 campus package is ₹18–28 LPA (varies by college tier). Off-campus freshers are rarely hired directly — 1 year of experience or a prior Zomato internship is typically required for off-campus applications." },
+    ],
+  },
+  {
+    slug: "devops-engineer-salary-india-2026",
+    title: "DevOps Engineer Salary India 2026 — Docker, Kubernetes, AWS by City and Experience",
+    metaDescription: "DevOps engineer salary India 2026 by skill (Docker, Kubernetes, AWS, Terraform), city (Bengaluru, Hyderabad, Pune), and experience. Fresher to senior CTC ranges, highest-paying companies, and which certifications add the most salary.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200&h=630&fit=crop",
+    company: "Industry", category: "Salary Guide",
+    faqs: [
+      { question: "What is the DevOps engineer salary for freshers in India in 2026?", answer: "DevOps engineer fresher salary in India in 2026: IT services ₹4–8 LPA, funded startups ₹8–16 LPA, Tier-1 product companies ₹16–28 LPA, FAANG India ₹20–38 LPA. Kubernetes and AWS knowledge at the fresher level significantly improves placement at higher-tier companies." },
+      { question: "Is DevOps a good career in India in 2026?", answer: "Yes. DevOps is one of the highest-demand roles in Indian tech in 2026. Every company migrating to cloud or containers needs DevOps engineers, and the supply of Kubernetes-proficient engineers is low. Senior DevOps engineers at Tier-1 product companies earn ₹55–95 LPA — comparable to senior backend engineers at the same experience level." },
+      { question: "Which is better — AWS or Kubernetes for DevOps salary in India?", answer: "Kubernetes expertise commands the highest salary premium per skill in 2026 — even above AWS. This is because most Indian companies are actively migrating to Kubernetes and engineers who can operate production K8s clusters are scarce. That said, AWS is the prerequisite for most roles (understanding EKS, ECR, IAM). Learn AWS first, then go deep on Kubernetes." },
+      { question: "What certifications increase DevOps salary in India?", answer: "Highest ROI certifications in order: CKA (Certified Kubernetes Administrator) adds ₹4–8 LPA; AWS Certified DevOps Engineer – Professional adds ₹3–6 LPA; AWS Certified Solutions Architect – Professional adds ₹4–7 LPA at cloud-heavy roles. Terraform Associate is useful for IT services but less differentiated at product companies." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
