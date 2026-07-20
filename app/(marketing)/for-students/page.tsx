@@ -459,6 +459,12 @@ export default async function ForStudentsPage() {
               }}>
                 Full interview prep guide
               </Link>
+              <Link href="/ai-mock-interview" style={{
+                display: "inline-flex", alignItems: "center",
+                color: copper, textDecoration: "none", padding: "14px 16px", fontSize: 14, fontWeight: 500,
+              }}>
+                How AI mock interviews work
+              </Link>
             </div>
           </section>
 

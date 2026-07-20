@@ -422,6 +422,7 @@ export default async function InterviewPrepPage() {
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
               {([
+                ["AI Mock Interview Practice — Free, Voice-Based", "/ai-mock-interview"],
                 ["Freshworks SDE Interview 2026 — B2B SaaS & Customer-Success Engineering", "/blog/freshworks-interview-questions-india-2026"],
                 ["PhonePe Engineering Interview 2026 — Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
                 ["Meesho Engineering Interview 2026 — Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
