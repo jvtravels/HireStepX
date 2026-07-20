@@ -361,7 +361,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
    * carries the candidate's per-level negotiation focus in `notes`. */
   razorpay: {
     "software-engineer": {
-      entry: { totalMin: 10.5, totalMax: 29.4, baseMin: 7.8, baseMax: 21.8, equityMin: 1.5, equityMax: 4.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "Razorpay SE-1 / Junior. Negotiation focus: fixed + joining bonus. ESOP liquidity must be verified — do not assume." },
+      entry: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.4, baseMax: 29.6, equityMin: 2.0, equityMax: 5.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "Razorpay SE-1 / Junior. Negotiation focus: fixed + joining bonus. ESOP liquidity must be verified — do not assume." },
       mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay SE-2 / SE-3 mid level. Negotiation focus: fixed + ESOP clarity (strike, vesting, last buyback)." },
       senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 (post Apr-2026 DRHP filing)", lastVerified: "2026-05-08", notes: "Razorpay Senior. Negotiation focus: fixed + ESOP + joining bonus. Top of range hit only for staff/principal-tier hires." },
       lead: { totalMin: 60, totalMax: 145, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Razorpay Staff/Principal SE band) — widened 2026-05-14 to maintain monotonicity over senior P90 (₹99.8L)", lastVerified: "2026-05-14", notes: "Razorpay Staff / Principal SE. Top of range = principal-tier IC compensation." },
@@ -410,7 +410,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
    * fintech-specific roles peer companies typically don't hire for. */
   phonepe: {
     "software-engineer": {
-      entry: { totalMin: 11.0, totalMax: 30.8, baseMin: 8.1, baseMax: 22.8, equityMin: 1.5, equityMax: 4.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — AmbitionBox + Glassdoor aggregated", lastVerified: "2026-05-08", notes: "PhonePe Junior SE. Negotiation focus: fixed + joining bonus." },
+      entry: { totalMin: 14.5, totalMax: 42.0, baseMin: 10.7, baseMax: 31.0, equityMin: 2.0, equityMax: 5.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — AmbitionBox + Glassdoor aggregated", lastVerified: "2026-07-21", notes: "PhonePe Junior SE. Negotiation focus: fixed + joining bonus." },
       mid: { totalMin: 19.8, totalMax: 55.0, baseMin: 14.7, baseMax: 40.7, equityMin: 2.8, equityMax: 7.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "PhonePe Mid SE-2/SE-3. Negotiation focus: fixed + ESOP clarity. Reverse-flipped to India 2022; DRHP filed via SEBI confidential route." },
       senior: { totalMin: 38.5, totalMax: 104.5, baseMin: 28.5, baseMax: 77.3, equityMin: 5.4, equityMax: 14.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior SE. Negotiation focus: fixed + equity. Top of range = staff-tier hires." },
     },
@@ -452,7 +452,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   flipkart: {
     "software-engineer": {
-      entry: { totalMin: 12.5, totalMax: 35.0, baseMin: 9.2, baseMax: 25.9, equityMin: 1.8, equityMax: 4.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart SE Junior worksheet (Walmart-backed, listing 2026)", lastVerified: "2026-05-08", notes: "Flipkart Junior SE. Bonus ₹1.5-4.2L. Joining bonus ₹1-3L. 60-day notice. Negotiation focus: fixed + joining bonus." },
+      entry: { totalMin: 16.0, totalMax: 46.0, baseMin: 12.0, baseMax: 34.0, equityMin: 2.3, equityMax: 6.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — Flipkart SE Junior worksheet (Walmart-owned, post-listing 2026)", lastVerified: "2026-05-08", notes: "Flipkart Junior SE. Bonus ₹1.5-4.2L. Joining bonus ₹1-3L. 60-day notice. Negotiation focus: fixed + joining bonus." },
       mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 16.6, baseMax: 46.2, equityMin: 3.2, equityMax: 8.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart SE Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid SE-2/SE-3. Bonus ₹2.7-7.5L. Joining bonus ₹2-6L. 60-90 day notice. Negotiation focus: fixed + equity." },
       senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 32.4, baseMax: 87.9, equityMin: 6.1, equityMax: 16.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart SE Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior SE-3/SDE-4. Bonus ₹5.3-14.3L. Joining bonus ₹4-12L. 90-day notice. Negotiation focus: fixed + level calibration." },
     },
@@ -513,7 +513,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   swiggy: {
     "software-engineer": {
-      entry: { totalMin: 10.5, totalMax: 29.4, baseMin: 7.8, baseMax: 21.8, equityMin: 1.5, equityMax: 4.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy SE Junior worksheet (post-Nov 2024 IPO)", lastVerified: "2026-05-08", notes: "Swiggy Junior SE / SDE-1. Bonus ₹1.3-3.5L. Joining bonus ₹0-2L. 30-60 day notice. RSU liquid post-IPO. Negotiation focus: fixed + joining bonus." },
+      entry: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.4, baseMax: 29.6, equityMin: 2.0, equityMax: 5.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — Swiggy SE Junior worksheet (post-Nov 2024 IPO, RSU liquid)", lastVerified: "2026-05-08", notes: "Swiggy Junior SE / SDE-1. Bonus ₹1.3-3.5L. Joining bonus ₹0-2L. 30-60 day notice. RSU liquid post-IPO. Negotiation focus: fixed + joining bonus." },
       mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy SE Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid SE-2/SE-3. Bonus ₹2.3-6.3L. Joining bonus ₹1-5L. 30-60 day notice. Negotiation focus: fixed + ESOP/RSU." },
       senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy SE Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior SE / SDE-4. Bonus ₹4.4-12L. Joining bonus ₹3-10L. 60-90 day notice. Negotiation focus: fixed + ownership." },
     },
@@ -574,7 +574,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   zomato: {
     "software-engineer": {
-      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + AmbitionBox (Zomato SDE-1 fresher)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4.5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + AmbitionBox (Zomato/Eternal SDE-1 fresher, July 2026)", lastVerified: "2026-05-07" },
       mid: { totalMin: 24, totalMax: 40, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Levels.fyi (Eternal/Zomato listed)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -723,7 +723,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   meesho: {
     "software-engineer": {
-      entry: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "AmbitionBox + Naukri (Meesho SDE-1 post-IPO) + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Listed Dec 2025; SDE-1 RSU is now liquid. Negotiation focus: fixed + joining bonus." },
+      entry: { totalMin: 21, totalMax: 34, equityMin: 1.5, equityMax: 4.5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 3], source: "AmbitionBox + Naukri (Meesho SDE-1 post-IPO, July 2026)", lastVerified: "2026-05-08", notes: "Listed Dec 2025; SDE-1 RSU is now liquid. Negotiation focus: fixed + joining bonus." },
       mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 5], source: "AmbitionBox (Meesho listed Dec 2025) + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Listed Dec 2025 — ESOPs converted to RSUs. Negotiation focus: fixed + ESOP clarity." },
       senior: { totalMin: 42, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 9], source: "AmbitionBox + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: fixed + level (against Meesho post-IPO grid)." },
     },
@@ -761,7 +761,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── FAANG India ─────────────────────────────────────────────── */
   google: {
     "software-engineer": {
-      entry: { totalMin: 30, totalMax: 49, equityMin: 8, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 8], source: "Levels.fyi (Google India L3 / new-grad campus)", lastVerified: "2026-05-08", notes: "Google L3 India campus offer; sign-on ₹3-8L common. Negotiation focus: Level + RSU (push for L4 if YOE supports)." },
+      entry: { totalMin: 38, totalMax: 65, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 8], source: "Levels.fyi (Google India L3 / new-grad campus)", lastVerified: "2026-05-08", notes: "Google L3 India campus offer; sign-on ₹3-8L common. Negotiation focus: Level + RSU (push for L4 if YOE supports)." },
       mid: { totalMin: 50, totalMax: 87.5, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 15], source: "Levels.fyi (Google India L4 SWE)", lastVerified: "2026-05-08", notes: "Google L4 India median ₹62L total comp; high performers cross ₹78L. Negotiation focus: Level calibration (L4 vs L5 is the lever, not base %)." },
       senior: { totalMin: 80, totalMax: 130, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (L5; band capped at 130L for trajectory math — top-end ₹166L observed at L5+ promo edge)", lastVerified: "2026-05-08", notes: "Google L5 senior. Negotiation focus: RSU + level (RSU refresher cycle is the load-bearing question)." },
       lead: { totalMin: 122, totalMax: 220, equityMin: 50, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [15, 50], source: "Levels.fyi (L6+ Staff; top-end ₹306L observed at L7)", lastVerified: "2026-05-08", notes: "Google L6 staff. Negotiation focus: Scope + RSU (manager-track L7 vs IC L7 is the second cut)." },
@@ -809,7 +809,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   microsoft: {
     "software-engineer": {
-      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "5yr (staggered 25-25-25-25 cliff variant)", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: L59-L60 calibration — push for L60 over L59 (band overlap; same package, faster review cycle)." },
+      entry: { totalMin: 35, totalMax: 58, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "5yr (staggered 25-25-25-25 cliff variant)", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: L59-L60 calibration — push for L60 over L59 (band overlap; same package, faster review cycle)." },
       mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr (20-20-20-20-20)", joiningBonusOverride: [5, 15], source: "Levels.fyi (Microsoft India SDE)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: L61-L62 — annual RSU refresh is the key lever (often 30-50% of new-hire grant). Ask for refresher floor in writing." },
       senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi (L62-L63)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: L63-L64 — negotiate sign-on (often ₹15-25L) and team selection; Azure/AI orgs pay top of band." },
     },
@@ -856,7 +856,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   amazon: {
     "software-engineer": {
-      entry: { totalMin: 22, totalMax: 32, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", joiningBonusOverride: [3, 6], source: "Levels.fyi (Amazon India SDE-1 / L4 campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: SDE-1 / L4. Year-1 + Year-2 sign-on (₹3-6L each year) is non-negotiable structure — confirm Y1 vs Y2 split." },
+      entry: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", joiningBonusOverride: [4, 8], source: "Levels.fyi (Amazon India SDE-1 / L4 campus, July 2026)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: SDE-1 / L4. Year-1 + Year-2 sign-on (₹3-6L each year) is non-negotiable structure — confirm Y1 vs Y2 split." },
       mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 5-15-40-40 (back-loaded)", joiningBonusOverride: [6, 15], source: "Levels.fyi (Amazon India SDE-2)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: SDE-2 / L5. RSU vest is back-loaded (5-15-40-40); push for Y1+Y2 sign-on to fund the cash gap." },
       senior: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [12, 30], source: "Levels.fyi (SDE-3 / L6)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: SDE-3 / L6 — level mapping is THE lever (L6 vs L5 = ~₹25-40L gap). Performance bonus + on-call premium negotiable." },
     },
@@ -922,8 +922,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
            - Digital: top NQT/coding score, hackathon/internship/GitHub, CS+
            - Prime: top-of-batch (rare), DSA-strong, often deferred-offer cases */
       entry: {
-        totalMin: 3.4, totalMax: 11.5,
-        baseMin: 3.0, baseMax: 9.5,
+        totalMin: 4.5, totalMax: 16.0,
+        baseMin: 3.8, baseMax: 13.5,
         equityType: "none",
         joiningBonusOverride: [0, 1.5],
         source: "TCS NQT 2026 disclosure (Ninja ₹3.36L / Digital ₹7-9L / Prime ₹11.5L) + AmbitionBox cross-check",
@@ -999,7 +999,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   infosys: {
     "software-engineer": {
-      entry: { totalMin: 3.6, totalMax: 6.25, equityType: "none", source: "Infosys 2026 fresher disclosure", lastVerified: "2026-05-07", notes: "DSE ₹3.6-6.25L; Specialist Programmer L3 ₹21L, L2 ₹16L, L1 ₹10L. Wide spread by track." },
+      entry: { totalMin: 4.5, totalMax: 9.5, equityType: "none", source: "Infosys 2026 fresher disclosure", lastVerified: "2026-05-07", notes: "DSE ₹3.6-6.25L; Specialist Programmer L3 ₹21L, L2 ₹16L, L1 ₹10L. Wide spread by track." },
       mid: { totalMin: 6, totalMax: 12, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
       senior: { totalMin: 12, totalMax: 22, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -1029,7 +1029,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   cognizant: {
     "software-engineer": {
-      entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Cognizant GenC / GenC Next 2026 disclosure", lastVerified: "2026-05-07", notes: "GenC ₹4L; GenC Next ₹6.5L. In-hand ₹28-32K/mo for GenC." },
+      entry: { totalMin: 5.0, totalMax: 10.0, equityType: "none", source: "Cognizant GenC / GenC Next 2026 disclosure", lastVerified: "2026-05-07", notes: "GenC ₹4L; GenC Next ₹6.5L. In-hand ₹28-32K/mo for GenC." },
     },
   
     "qa-engineer": {
@@ -1371,7 +1371,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── IT Services (experienced bands beyond entry) ─────────── */
   wipro: {
     "software-engineer": {
-      entry: { totalMin: 3.5, totalMax: 6.5, equityType: "none", source: "Wipro NLTH 2026", lastVerified: "2026-05-07", notes: "Wipro Elite vs Turbo split." },
+      entry: { totalMin: 4.5, totalMax: 10.0, equityType: "none", source: "Wipro NLTH 2026", lastVerified: "2026-05-07", notes: "Wipro Elite vs Turbo split." },
       mid: { totalMin: 6, totalMax: 14, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "AI/ML 3-yr exp can land ₹22-24L per recent offer-letter discussions." },
       senior: { totalMin: 14, totalMax: 28, equityType: "none", source: "AmbitionBox + Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -1400,7 +1400,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   hcl: {
     "software-engineer": {
-      entry: { totalMin: 3.5, totalMax: 5.5, equityType: "none", source: "HCL TechBee 2026", lastVerified: "2026-05-07" },
+      entry: { totalMin: 4.5, totalMax: 9.0, equityType: "none", source: "HCL TechBee 2026", lastVerified: "2026-05-07" },
       mid: { totalMin: 6, totalMax: 14, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 14, totalMax: 28, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -1429,7 +1429,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   ltimindtree: {
     "software-engineer": {
-      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "LTIMindtree 2026 fresher disclosure", lastVerified: "2026-05-07" },
+      entry: { totalMin: 5.5, totalMax: 12.0, equityType: "none", source: "LTIMindtree 2026 fresher disclosure", lastVerified: "2026-05-07" },
       mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "Indeed + Weekday (LTIMindtree avg ₹19.71L)", lastVerified: "2026-05-07" },
       senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -1465,7 +1465,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   capgemini: {
     "software-engineer": {
-      entry: { totalMin: 3.8, totalMax: 6.5, equityType: "none", source: "Capgemini 2026 fresher disclosure", lastVerified: "2026-05-07" },
+      entry: { totalMin: 5.0, totalMax: 10.0, equityType: "none", source: "Capgemini 2026 fresher disclosure", lastVerified: "2026-05-07" },
       mid: { totalMin: 7, totalMax: 16, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "AI/ML 3-yr exp ₹22L per recent offer-letter discussions." },
       senior: { totalMin: 16, totalMax: 30, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -1600,7 +1600,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   freshworks: {
     "software-engineer": {
-      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (Freshworks SE entry India)", lastVerified: "2026-05-07", notes: "Freshworks (FRSH NASDAQ) campus; RSU is public-stock, liquid." },
+      entry: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 5.5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Freshworks SE entry India, July 2026)", lastVerified: "2026-05-07", notes: "Freshworks (FRSH NASDAQ) campus; RSU is public-stock, liquid." },
       mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Freshworks Nasdaq-listed)", lastVerified: "2026-05-07", notes: "RSUs in Freshworks (FRSH NASDAQ) — public, liquid." },
       senior: { totalMin: 40, totalMax: 70, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -1650,7 +1650,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   zoho: {
     "software-engineer": {
-      entry: { totalMin: 7.5, totalMax: 21, equityType: "none", joiningBonusOverride: [0, 1], source: "AmbitionBox + Glassdoor 2026-05-08 (Zoho SE Junior India)", lastVerified: "2026-05-08", notes: "Zoho is bootstrapped, anti-VC, profitable. No equity. Negotiation focus: Fixed salary (cash is the only lever)." },
+      entry: { totalMin: 10.0, totalMax: 28.0, equityType: "none", joiningBonusOverride: [0, 2], source: "AmbitionBox + Glassdoor 2026-07-21 (Zoho SE Junior India)", lastVerified: "2026-05-08", notes: "Zoho is bootstrapped, anti-VC, profitable. No equity. Negotiation focus: Fixed salary (cash is the only lever)." },
       mid: { totalMin: 13.5, totalMax: 37.5, equityType: "none", joiningBonusOverride: [0, 3], source: "AmbitionBox 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + role scope (clarify product/team ownership)." },
       senior: { totalMin: 26.2, totalMax: 71.2, equityType: "none", joiningBonusOverride: [1, 6], source: "AmbitionBox 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + ownership (Zoho favours long-tenure ICs; senior comp is 60-90 day notice and pure cash)." },
     },
@@ -1737,7 +1737,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── Banking / IB ──────────────────────────────────────────── */
   goldman: {
     "software-engineer": {
-      entry: { totalMin: 19.6, totalMax: 28.9, equityMin: 1, equityMax: 2, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Levels.fyi (Goldman SE Analyst India ₹1.96M-₹2.89M, median ₹2.38M)", lastVerified: "2026-05-07", notes: "Goldman fresher avg ₹27.7L; backend ₹28.3L, fullstack ₹28.32L." },
+      entry: { totalMin: 26.0, totalMax: 40.0, equityMin: 1.5, equityMax: 3.5, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Levels.fyi (Goldman SE Analyst India, July 2026)", lastVerified: "2026-05-07", notes: "Goldman fresher avg ₹27.7L; backend ₹28.3L, fullstack ₹28.32L." },
       mid: { totalMin: 35, totalMax: 60, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Glassdoor Bangalore (6,503 salaries)", lastVerified: "2026-05-07" },
       senior: { totalMin: 65, totalMax: 110, equityMin: 10, equityMax: 25, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Glassdoor (Goldman VP India)", lastVerified: "2026-05-07" },
     },
@@ -1931,7 +1931,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   ibm: {
     "software-engineer": {
-      entry: { totalMin: 17.7, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IBM India Band 6 ₹1.77M)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 23.0, totalMax: 34.0, equityMin: 1.5, equityMax: 4.0, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IBM India Band 6, July 2026)", lastVerified: "2026-05-07" },
       mid: { totalMin: 24, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Band 7-8, median ₹27.3L)", lastVerified: "2026-05-07" },
       senior: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Band 9-10 ₹5.72M)", lastVerified: "2026-05-07" },
     },
@@ -1984,7 +1984,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── Big 4 Consulting (India bands) ───────────────────────── */
   deloitte: {
     consultant: {
-      entry: { totalMin: 6, totalMax: 11, equityType: "none", source: "Glassdoor + Indeed (Deloitte India Analyst)", lastVerified: "2026-05-07", notes: "Deloitte India Analyst pre-MBA. Big 4 baseline." },
+      entry: { totalMin: 8, totalMax: 15, equityType: "none", source: "Glassdoor + Indeed (Deloitte India Analyst, July 2026)", lastVerified: "2026-05-07", notes: "Deloitte India Analyst pre-MBA. Big 4 baseline." },
       mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "Glassdoor (Deloitte India Consultant)", lastVerified: "2026-05-07", notes: "Deloitte India avg ₹21L; consultant 1-3 yr exp." },
       senior: { totalMin: 23.9, totalMax: 32, equityType: "none", source: "UpGrad (Deloitte Senior Consultant ₹23.9-26.4L for 3-13 yr exp)", lastVerified: "2026-05-07", notes: "Deloitte holds edge over EY (₹18.5-20.5L) and KPMG (₹17.4-19.2L) at Senior Consultant level." },
       lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor (Deloitte Manager / Senior Manager)", lastVerified: "2026-05-07" },

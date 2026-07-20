@@ -17,7 +17,7 @@ import type { CompanyTier } from "./company-tiers";
  *  (Razorpay, Flipkart, Google, Microsoft, Apple, TCS, Infosys,
  *  Indian-unicorn PM/PD/DS/SRE/CySec senior bands).
  */
-export const CALIBRATION_DATE = "2026-05";
+export const CALIBRATION_DATE = "2026-07";
 
 export type ExperienceLevel = "entry" | "mid" | "senior" | "lead" | "executive";
 
