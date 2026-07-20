@@ -585,6 +585,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { localStorage.removeItem("hirestepx_auth"); } catch { /* expected: localStorage may be unavailable */ }
   }, []);
 
+  // Auto-assign referral code: every user gets one, but it's lazy (created on
+  // first GET /api/referral). Without this, new users complete their first
+  // session and see no WhatsApp/LinkedIn share option because their profile
+  // still has referral_code = null. This fires once per authenticated session
+  // when the code is absent, silently updating state so the share section is
+  // live the next time the report renders.
+  useEffect(() => {
+    if (!user?.id || user.referralCode) return;
+    fetch("/api/referral")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { code?: string } | null) => {
+        if (data?.code) {
+          setUser((prev) => prev ? { ...prev, referralCode: data.code } : prev);
+        }
+      })
+      .catch(() => { /* non-critical — share section stays hidden this session */ });
+  }, [user?.id, user?.referralCode]);
+
   // Register global error reporter: captures unhandled errors + promise rejections
   // and forwards them to /api/log-error (and optional Sentry). Idempotent.
   // Dynamic import keeps errorReporter's optional @sentry/browser dynamic import
