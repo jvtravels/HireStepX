@@ -6051,14 +6051,6 @@ function BlogIndex() {
           ))}
         </div>
 
-        {/* Result count */}
-        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "0 0 24px", textAlign: "center" }}>
-          {filtered.length === posts.length
-            ? `${posts.length} guides`
-            : `${filtered.length} of ${posts.length} guides`}
-          {totalPages > 1 && ` · page ${safePage} of ${totalPages}`}
-        </p>
-
         {/* Post grid */}
         {paginated.length > 0 ? (
           <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
@@ -6083,6 +6075,11 @@ function BlogIndex() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 52 }}>
+            {/* Count label */}
+            <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginRight: 12, whiteSpace: "nowrap" as const }}>
+              {filtered.length === posts.length ? `${posts.length} guides` : `${filtered.length} of ${posts.length} guides`}
+              {` · page ${safePage} of ${totalPages}`}
+            </span>
             {/* Prev */}
             <button
               onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
