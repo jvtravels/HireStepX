@@ -413,4 +413,73 @@ describe("sessionReportToInterviewResult — fold is grounded end-to-end", () =>
     expect(out.overallScore).toBe(79);
     expect(out.verdict).toBe("hire");
   });
+
+  /* S6-B5 — "Numbers stated" undercount regression.
+   * buildNegotiationMetrics was scanning report.perQuestion (always 1 LLM-
+   * collapsed item for negotiations) instead of the raw transcript user turns.
+   * Denominator = 1 so ANY miss gave 0 → floored to 25. Fix: pass session.transcript
+   * and scan user turns directly. Also extends anchorRe to match ₹N without unit. */
+  it("S6-B5: Numbers stated reflects per-turn transcript count, not collapsed perQuestion", () => {
+    // 4 user turns out of 5 contain an explicit number mention → 80%
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What are your salary expectations?" },
+          { speaker: "user", text: "I'm looking for ₹200 LPA minimum." },
+          { speaker: "ai",   text: "That's above our band. Our ceiling is ₹55 LPA." },
+          { speaker: "user", text: "I understand, but my ask is ₹200 LPA." },
+          { speaker: "ai",   text: "Can we discuss further?" },
+          { speaker: "user", text: "I need at least 200 LPA — that's firm." },
+          { speaker: "ai",   text: "Let me check with the team." },
+          { speaker: "user", text: "Sure, but my position remains 200 lakhs." },
+          { speaker: "ai",   text: "Unfortunately we cannot go that high." },
+          { speaker: "user", text: "Then I'll have to decline. Thank you." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const numStated = out.metrics.find((m) => m.label === "Numbers stated");
+    expect(numStated).toBeDefined();
+    // 4 of 5 user turns mention a number → 80%, not stuck at 25%.
+    expect(numStated!.value).toBeGreaterThan(25);
+    expect(numStated!.value).toBeGreaterThanOrEqual(75);
+  });
+
+  it("S6-B5: ₹N without unit suffix (e.g. '₹200') is counted by the expanded anchorRe", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What salary are you expecting?" },
+          { speaker: "user", text: "I want ₹200 — that's my target." },
+          { speaker: "ai",   text: "That is quite high." },
+          { speaker: "user", text: "I understand, but ₹200 is what I need." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const numStated = out.metrics.find((m) => m.label === "Numbers stated");
+    expect(numStated).toBeDefined();
+    // Both user turns have ₹200 (no unit) — should match with expanded regex.
+    // 2/2 turns = 100%, definitely above the stuck-at-25 floor.
+    expect(numStated!.value).toBeGreaterThanOrEqual(75);
+  });
+
+  it("S6-B5: falls back to perQuestion when transcript is empty (legacy rows)", () => {
+    const ctx = {
+      report: negReport({
+        perQuestion: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { idx: 0, question: "What is your ask?", answerText: "I want ₹65 LPA.", score: 80, verdict: "strong", explanation: "", starPresence: { S: true, T: true, A: true, R: true, L: false } } as any,
+        ],
+      }),
+      session: negSession({ transcript: [] }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const numStated = out.metrics.find((m) => m.label === "Numbers stated");
+    expect(numStated).toBeDefined();
+    // Fallback: 1 of 1 perQuestion has a number → 100%, not 0%.
+    expect(numStated!.value).toBeGreaterThanOrEqual(25);
+  });
 });

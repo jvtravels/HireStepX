@@ -456,7 +456,7 @@ export function sessionReportToInterviewResult(
       : report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
     metrics: isNegotiation
-      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null)
+      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null, session.transcript)
       : buildMetrics(report),
     skills: buildSkills(groundedSkills),
     weakestSkill: {
@@ -1169,9 +1169,19 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
 function buildNegotiationMetrics(
   report: SessionReport,
   kernelAsk: number | null,
+  rawTranscript?: { speaker: string; text: string }[],
 ): DeliveryMetric[] {
-  const candidateAnswers = report.perQuestion.map((q) => q.answerText || "");
-  const allText = candidateAnswers.join(" ");
+  // S6-B5: report.perQuestion is the LLM-collapsed single aggregate at this
+  // call site (the per-turn expansion via buildNegotiationPerQuestion runs
+  // later and never feeds back here). Scanning one aggregated item means
+  // answersWithAnchor is always 0 or 1, making the denominator irrelevant
+  // and the value stuck at the REPORT-3c floor (25%). Use the raw transcript
+  // user turns when available — they contain the verbatim text as typed
+  // by the candidate, one entry per turn, giving an honest per-turn ratio.
+  const candidateAnswers = (rawTranscript ?? []).filter(t => t.speaker === "user").map(t => t.text || "");
+  const fallbackAnswers = report.perQuestion.map((q) => q.answerText || "");
+  const effectiveAnswers = candidateAnswers.length > 0 ? candidateAnswers : fallbackAnswers;
+  const allText = effectiveAnswers.join(" ");
 
   // "Numbers stated" — % of negotiation answers where the candidate stated a
   // specific figure. This used to be mislabelled "Anchor strength", which
@@ -1180,8 +1190,11 @@ function buildNegotiationMetrics(
   // show "Anchor strength 100" here next to "Anchor strength 78" in the
   // Skills section. Renamed so each metric has one unambiguous owner; the
   // skill axis is now the single source for "Anchor strength". (REPORT-3.)
-  const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
-  const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
+  // S6-B5: also match ₹N without explicit unit (candidate writes "₹200" or
+  // "₹25.5" without appending "LPA"). Unit suffix is required when no ₹
+  // prefix is present to avoid counting recruiter-context bare numbers.
+  const anchorRe = /₹\s*\d+(?:\.\d+)?(?:\s*(?:LPA|lpa|lakhs?|cr|crore|l\b))?|\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
+  const answersWithAnchor = effectiveAnswers.filter((t) => anchorRe.test(t)).length;
   // REPORT-3b (2026-07-11, live staging) — cross-surface coherence. The kernel
   // authoritatively tracks whether the candidate named a counter-number
   // (`candidateAsk`, the same field derivePhases renders as "Asked for ₹X LPA").
@@ -1204,8 +1217,8 @@ function buildNegotiationMetrics(
   // No effect when the candidate genuinely never anchored (kernelAsk === null):
   // that 0% · Needs Work is the honest, coherent verdict.
   const kernelAnchored = kernelAsk !== null;
-  let numbersStated = candidateAnswers.length > 0
-    ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
+  let numbersStated = effectiveAnswers.length > 0
+    ? Math.round((answersWithAnchor / effectiveAnswers.length) * 100)
     : 0;
   if (kernelAnchored) {
     numbersStated = Math.max(numbersStated, 25);
