@@ -2285,6 +2285,67 @@ const posts: BlogPost[] = [
       { label: "Meesho Salary Guide India 2026", href: "/salary/meesho" },
     ],
   },
+  {
+    slug: "tech-mahindra-interview-questions",
+    title: "Tech Mahindra Interview Questions for Freshers 2026 — ELP, Digital & Off-Campus",
+    metaDescription: "Tech Mahindra interview questions 2026 for ELP and Digital tracks. Covers aptitude test, technical rounds, HR, salary (₹4–7 LPA fresher), 90-day notice period and bond details.",
+    company: "Tech Mahindra",
+    category: "Campus Placement",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=500&fit=crop",
+    heroAlt: "Office interior representing Tech Mahindra interview preparation",
+    datePublished: "2026-07-20",
+    intro: "Tech Mahindra is one of India's Big 7 IT services companies and one of the largest fresher employers in the country — hiring thousands through campus drives every year under its Entry Level Programme (ELP) and Digital track. The interview itself is not difficult by product company standards, but the preparation most candidates do is wrong: they over-prepare on DSA and underestimate the verbal and logical reasoning test that filters 40-50% of applicants before the technical round even starts. This guide covers the actual process, the actual questions, and the things that trip people up.",
+    sections: [
+      {
+        heading: "Tech Mahindra Interview Process Overview",
+        content: "Tech Mahindra's campus and off-campus hiring runs through three stages:\n\n**Stage 1: Aptitude + Coding Test (Online)**\n- Duration: 90–120 minutes\n- Sections: Verbal Ability, Logical Reasoning, Quantitative Aptitude, Coding (1–2 problems)\n- Platform: AMCAT or Tech Mahindra's own portal\n- Cut-off: Not published; approximately 60–65% overall\n\n**Stage 2: Technical Interview (In-Person or Video)**\n- Duration: 30–45 minutes\n- Focus: Core CS fundamentals, language proficiency (Java / Python / C++), 1–2 coding problems (easy)\n- Projects from resume are almost always discussed\n\n**Stage 3: HR Interview**\n- Duration: 15–30 minutes\n- Covers: relocation flexibility, bond agreement (₹50K penalty for leaving before 1 year), career goals, salary expectations\n\n**Key fact**: Tech Mahindra's ELP track starts at ₹4–7 LPA. The Digital track (for roles in cloud, AI/ML, cybersecurity) starts at ₹6–9 LPA and requires a separate application during the same drive."
+      },
+      {
+        heading: "Aptitude Test — What to Prepare",
+        content: "The aptitude test is where most candidates lose the race before it begins. Tech Mahindra's test is similar to TCS NQT or Infosys Specialist Programmer in format but slightly easier on the DSA side.\n\n**Verbal Ability**\n- Reading comprehension (2 passages, 5 questions each)\n- Fill in the blanks (grammar, prepositions, articles)\n- Sentence correction and para-jumbles\n- Vocabulary: antonyms, synonyms, one-word substitution\n\nPrep: Read The Hindu or Economic Times editorials daily. Solve 20–30 verbal questions per day for 2 weeks.\n\n**Logical Reasoning**\n- Seating arrangements and blood relations (very common)\n- Number series and letter analogies\n- Syllogisms (most candidates underestimate these)\n- Odd one out and classification\n\n**Quantitative Aptitude**\n- Time and work, time-speed-distance\n- Percentages, profit/loss, simple and compound interest\n- Permutations and combinations\n- Data interpretation (tables and bar graphs)\n\n**Coding Section (1–2 problems)**\n- Difficulty: Easy\n- Typical problems: reverse a string, check if a number is prime, find the largest element in an array, Fibonacci series, palindrome check\n- Language: Java, Python, or C++ (choose what you're strongest in)\n\nNote: partial coding marks are NOT given on most platforms — the test cases either pass or don't. Write clean, correct code over clever code."
+      },
+      {
+        heading: "Technical Interview Questions",
+        content: "Tech Mahindra's technical round for freshers is not a LeetCode round. The interviewer is testing CS fundamentals and whether you can write basic code.\n\n**Most asked Technical Questions (2025–2026 reports)**:\n\n*Object-Oriented Programming*\n1. What are the four pillars of OOP?\n2. Explain polymorphism with a real example\n3. What is the difference between overloading and overriding?\n4. What is an abstract class? How is it different from an interface?\n5. What is the use of constructors?\n\n*Data Structures*\n1. What is the difference between an array and a linked list?\n2. Write a program to reverse a linked list\n3. What is a stack? Where is it used in real programs?\n4. Explain binary search with code\n5. What is the time complexity of sorting algorithms (bubble, merge, quick)?\n\n*Database Management*\n1. What is normalization? Explain 1NF, 2NF, 3NF\n2. Write a SQL query to find the second highest salary\n3. What is the difference between DELETE, DROP, and TRUNCATE?\n4. What is a primary key vs foreign key?\n5. What are ACID properties?\n\n*Operating Systems*\n1. What is the difference between a process and a thread?\n2. What is a deadlock? Name the four conditions for deadlock\n3. What is paging?\n\n**Project discussion**: Almost every Tech Mahindra interviewer asks you to explain your final year project in 2 minutes: what problem it solves, what technology stack you used, what was your individual contribution. Prepare this in advance."
+      },
+      {
+        heading: "HR Interview — The Bond Question",
+        content: "Tech Mahindra's HR round has one question that most candidates handle badly: the service bond.\n\nTech Mahindra imposes a ₹50,000 penalty if you leave within the first year of joining. This is a standard IT services clause but candidates often try to negotiate it or give vague answers — which reads as a red flag to HR.\n\n**How to answer the bond question**: \"Yes, I'm aware of the service agreement and I'm comfortable with it. I'm looking forward to a long association with Tech Mahindra.\"\n\nAnything else — \"I'll try\", \"I'll see how it goes\", \"Can we negotiate the bond amount\" — lowers your offer probability.\n\n**Other HR questions in Tech Mahindra rounds**:\n1. Why Tech Mahindra specifically? (Have a real answer — reference their work in 5G, telecom, healthcare IT, or manufacturing)\n2. Are you open to relocation? (The correct answer is yes if you want the offer — they place freshers across India)\n3. Where do you see yourself in 5 years? (Focus on skill development, not promotions)\n4. What is your expected salary? (Quote ₹4–4.5 LPA — the standard ELP band — to show you've done research)\n5. Tell me about yourself (Keep it under 90 seconds: education → internship/projects → why IT services)\n\n**Notice period**: Tech Mahindra has a 90-day notice period, one of the longest among IT services companies. This matters if you're planning to switch companies — start planning your exit 3–4 months before your target joining date."
+      },
+      {
+        heading: "Tech Mahindra Salary 2026 — ELP vs Digital Track",
+        content: "Understanding the two tracks before you join is important because the starting salary difference compounds over time:\n\n**ELP (Entry Level Programme)**\n- Starting salary: ₹4–5.25 LPA (Pune, Hyderabad, Bengaluru)\n- Benefits: Health insurance, PF, gratuity, IBM SkillsBuild equivalent\n- Work type: Billable project within 3–6 months of joining\n\n**Digital Track (Cloud, AI/ML, Cybersecurity, Digital Marketing)**\n- Starting salary: ₹6–9 LPA\n- Requires separate application during campus drive\n- Interview: Additional technical round focused on the specific domain\n\n**Salary growth trajectory**:\n- 2 years experience: ₹7–12 LPA (depending on project, client, and performance rating)\n- 4 years (Senior Software Engineer): ₹12–20 LPA\n- Team Lead (6+ years): ₹18–28 LPA\n\n**What is negotiable**: Location preference (Pune vs Bengaluru vs Hyderabad vs Chennai), joining date. Salary for freshers is fixed by band — you cannot negotiate up. However, the Digital track is worth applying for if your background is relevant.\n\n**Joining bonus**: Tech Mahindra occasionally offers ₹10K–25K joining bonuses for campus drives at target colleges. This is not published — HR mentions it during the offer call."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Tech Mahindra a good company for freshers?",
+        answer: "Tech Mahindra is a solid first company for freshers who want IT services experience with a large brand name. The learning environment varies significantly by project — some clients offer modern tech stacks, others are legacy maintenance work. The Digital track gives better project exposure. Most freshers who want to move to product companies spend 2–3 years at Tech Mahindra, prepare aggressively on DSA in parallel, and switch."
+      },
+      {
+        question: "What is Tech Mahindra ELP salary for freshers in 2026?",
+        answer: "Tech Mahindra ELP (Entry Level Programme) salary for freshers in 2026 is ₹4–7 LPA depending on the role, location, and college band. The Digital track offers ₹6–9 LPA for specialised roles in cloud, AI/ML, and cybersecurity."
+      },
+      {
+        question: "Does Tech Mahindra have a service bond?",
+        answer: "Yes. Tech Mahindra imposes a ₹50,000 penalty if you leave within the first year of joining. After 1 year, there is no penalty. The 90-day notice period also applies from day one."
+      },
+      {
+        question: "Is Tech Mahindra interview easy for freshers?",
+        answer: "The technical round is moderate — similar to TCS or Infosys. Core CS fundamentals, basic DSA, and your final year project. The aptitude test is the main filter. With 2–3 weeks of preparation (aptitude + basic DSA), most engineering graduates can clear the interview. The HR round with the bond question is where unprepared candidates lose offers."
+      },
+    ],
+    relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers-2026", "infosys-interview-questions-2026"],
+    practicePageSlugs: [
+      { label: "Tech Mahindra SDE Interview Practice", slug: "tech-mahindra-interview-questions" },
+    ],
+    cta: "Tech Mahindra's aptitude test filters 40–50% of applicants before the technical round. HireStepX includes mock aptitude rounds followed by a full technical interview simulation — so you practice the entire loop, not just coding, before your actual drive.",
+    relatedLinks: [
+      { label: "Tech Mahindra Salary Guide India 2026", href: "/salary/techmahindra" },
+      { label: "TCS Interview Questions 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */

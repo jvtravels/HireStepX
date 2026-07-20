@@ -49,6 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${baseUrl}/refund`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/grievance`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${baseUrl}/referral`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
   ];
 

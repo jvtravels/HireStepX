@@ -745,6 +745,20 @@ export const BLOG_META: BlogMeta[] = [
       { question: "Has Meesho had its IPO?", answer: "Meesho listed in December 2025. RSU grants to employees vest into publicly traded shares with increasing liquidity compared to the pre-IPO period. Confirm your specific RSU terms from your offer letter and Meesho's official communications." },
     ],
   },
+  {
+    slug: "tech-mahindra-interview-questions",
+    title: "Tech Mahindra Interview Questions for Freshers 2026 — ELP, Digital & Off-Campus",
+    metaDescription: "Tech Mahindra interview questions 2026 for ELP and Digital tracks. Covers aptitude test, technical rounds, HR, salary (₹4–7 LPA fresher), 90-day notice period and bond details.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=630&fit=crop",
+    company: "Tech Mahindra", category: "Campus Placement",
+    faqs: [
+      { question: "Is Tech Mahindra a good company for freshers?", answer: "Tech Mahindra is a solid first company for freshers who want IT services experience with a large brand name. The learning environment varies significantly by project. The Digital track gives better project exposure. Most freshers who want to move to product companies spend 2–3 years at Tech Mahindra, prepare aggressively on DSA in parallel, and switch." },
+      { question: "What is Tech Mahindra ELP salary for freshers in 2026?", answer: "Tech Mahindra ELP (Entry Level Programme) salary for freshers in 2026 is ₹4–7 LPA depending on the role, location, and college band. The Digital track offers ₹6–9 LPA for specialised roles in cloud, AI/ML, and cybersecurity." },
+      { question: "Does Tech Mahindra have a service bond?", answer: "Yes. Tech Mahindra imposes a ₹50,000 penalty if you leave within the first year of joining. After 1 year, there is no penalty. The 90-day notice period also applies from day one." },
+      { question: "Is Tech Mahindra interview easy for freshers?", answer: "The technical round is moderate — similar to TCS or Infosys. Core CS fundamentals, basic DSA, and your final year project. The aptitude test is the main filter. With 2–3 weeks of preparation (aptitude + basic DSA), most engineering graduates can clear the interview. The HR round with the bond question is where unprepared candidates lose offers." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {

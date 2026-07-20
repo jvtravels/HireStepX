@@ -47,6 +47,7 @@ export const COMPANY_LABEL: Record<string, string> = {
   hcl: "HCL",
   capgemini: "Capgemini",
   ibm: "IBM",
+  techmahindra: "Tech Mahindra",
 
   // Consulting & finance
   mckinsey: "McKinsey",

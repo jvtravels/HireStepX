@@ -331,6 +331,18 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "No RSU at India offices — compensation is base + annual bonus",
     sitemapPriority: 0.78,
   },
+  {
+    slug: "techmahindra",
+    searchPhrase: "Tech Mahindra Salary for Freshers India 2026",
+    metaDescription:
+      "Tech Mahindra salary India 2026 — ELP fresher ₹4–7 LPA, mid-level ₹8–16 LPA, senior ₹16–28 LPA. 90-day notice period and bond details for new joiners.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+    ],
+    questionSlug: "tech-mahindra-interview-questions-2026",
+    hubNote: "ELP (Entry Level Programme) — 90-day notice, ₹50K bond penalty",
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
