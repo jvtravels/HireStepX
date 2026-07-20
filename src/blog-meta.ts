@@ -759,6 +759,34 @@ export const BLOG_META: BlogMeta[] = [
       { question: "Is Tech Mahindra interview easy for freshers?", answer: "The technical round is moderate — similar to TCS or Infosys. Core CS fundamentals, basic DSA, and your final year project. The aptitude test is the main filter. With 2–3 weeks of preparation (aptitude + basic DSA), most engineering graduates can clear the interview. The HR round with the bond question is where unprepared candidates lose offers." },
     ],
   },
+  {
+    slug: "mphasis-interview-questions-freshers-2026",
+    title: "Mphasis Interview Questions for Freshers 2026 — Process, Technical Round & Salary",
+    metaDescription: "Mphasis interview questions 2026 for freshers. Covers the AMCAT-based aptitude test, technical round (Java/Python, OOP, SQL), HR round, fresher salary ₹4–7 LPA, and what to expect on the first day.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=630&fit=crop",
+    company: "Mphasis", category: "Campus Placement",
+    faqs: [
+      { question: "Is Mphasis a good company for freshers?", answer: "Mphasis is a solid choice for freshers who want an IT services career with BFSI (banking/insurance) domain focus. The no-bond policy is a genuine advantage — you can leave without financial penalty once you have a better offer." },
+      { question: "What is Mphasis fresher salary in 2026?", answer: "Mphasis fresher software engineer salary in 2026 is ₹4–7 LPA depending on the role and location. Bengaluru and Pune positions tend to be at the upper end." },
+      { question: "Does Mphasis have a service bond?", answer: "No. Mphasis does not impose a service bond on freshers, unlike TCS (₹50K), Wipro (₹75K), or Tech Mahindra (₹50K). This is a meaningful advantage if you're planning to switch companies within 1–2 years of joining." },
+      { question: "What is the Mphasis AMCAT cut-off?", answer: "Scoring 60–65% or above in each individual section (English, Logical, Quant, Technical) is sufficient to advance to the technical interview based on candidate reports." },
+    ],
+  },
+  {
+    slug: "off-campus-placement-guide-freshers-india-2026",
+    title: "Off-Campus Placement Guide for Freshers India 2026 — How to Get a Job Without Campus Drives",
+    metaDescription: "How to get a job off-campus in India 2026. Complete guide covering Naukri, LinkedIn, company career pages, referrals, off-campus drives by TCS/Infosys/Wipro, resume tips, and how to crack the process end-to-end.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&h=630&fit=crop",
+    company: "General", category: "Campus Placement",
+    faqs: [
+      { question: "Can I get a job without campus placement in India?", answer: "Yes. Most IT services jobs in India are filled through off-campus processes — online applications, off-campus drives, referrals, and walk-ins. TCS, Infosys, Wipro, Cognizant, and Accenture all run structured off-campus drives open to candidates from any college." },
+      { question: "Which is the best app for off-campus placement in India?", answer: "For IT services: Naukri.com and company career portals (TCS NextStep, InfyTQ for Infosys, Wipro Careers). For product companies: LinkedIn. For competition-based entry: Unstop (formerly Dare2Compete)." },
+      { question: "What is the difference between on-campus and off-campus placement?", answer: "On-campus placement happens through your college's placement cell. Off-campus means you apply directly through company portals or LinkedIn without the placement cell as intermediary." },
+      { question: "What CGPA is required for off-campus placement?", answer: "Most IT services companies require 60% aggregate or 6.0 CGPA. TCS requires 60% in 10th, 12th, and graduation with no active backlogs. Infosys requires 65% aggregate." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {

@@ -2346,6 +2346,124 @@ const posts: BlogPost[] = [
       { label: "TCS Interview Questions 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
     ],
   },
+  {
+    slug: "mphasis-interview-questions-freshers-2026",
+    title: "Mphasis Interview Questions for Freshers 2026 — Process, Technical Round & Salary",
+    metaDescription: "Mphasis interview questions 2026 for freshers. Covers the AMCAT-based aptitude test, technical round (Java/Python, OOP, SQL), HR round, fresher salary ₹4–7 LPA, and what to expect on the first day.",
+    company: "Mphasis",
+    category: "Campus Placement",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=500&fit=crop",
+    heroAlt: "Office technology environment representing Mphasis interview preparation",
+    datePublished: "2026-07-20",
+    intro: "Mphasis is a mid-tier IT services company with a specific focus on banking, financial services, and insurance (BFSI) clients. It is Blackstone-backed and has around 35,000 employees. It is not TCS or Infosys in terms of hiring volume, but it has consistent off-campus and campus drives and a hiring process that most well-prepared freshers can clear in two to three weeks. The interview is lower-stakes than Wipro or Cognizant, but the BFSI domain means the questions lean more toward SQL, data analysis, and business process understanding than pure DSA.",
+    sections: [
+      {
+        heading: "Mphasis Interview Process Overview",
+        content: "Mphasis follows a three-stage process for campus and off-campus freshers:\n\n**Stage 1: Online Aptitude Test**\n- Platform: AMCAT (Aspiring Minds Computer Adaptive Test)\n- Sections: English comprehension, logical reasoning, quantitative ability, technical fundamentals\n- Duration: 90–105 minutes\n- Cut-off: Approximately 60–65% on each section\n\nNote: Mphasis uses AMCAT for most drives, which means your AMCAT score from any company drive in the past 12 months may be accepted — check whether your score is still valid before retaking.\n\n**Stage 2: Technical Interview**\n- Duration: 30–45 minutes (video or in-person)\n- Topics: OOP concepts, SQL queries, one coding problem (easy-medium), resume project discussion\n- Language: Java most common, Python accepted\n\n**Stage 3: HR Interview**\n- Duration: 15–20 minutes\n- Standard questions: Why Mphasis? Relocation flexibility? Salary expectations?\n- No bond at Mphasis (unlike TCS, Wipro, or Tech Mahindra)\n\n**Offer timeline**: 1–3 weeks after HR round. Joining timelines are flexible — 30–90 days from offer, negotiable."
+      },
+      {
+        heading: "Aptitude Test — AMCAT Preparation",
+        content: "The AMCAT test is the main filter in Mphasis hiring. It adapts to your performance (correct answers lead to harder questions, wrong answers to easier ones), so your score reflects accuracy more than speed.\n\n**English (Verbal)**\n- Reading comprehension: 3 passages, 3–4 questions each\n- Sentence completion and error identification\n- Vocabulary: synonyms, antonyms, one-word substitutions\n\nPrep: Practice 20–30 verbal questions daily. Focus on comprehension accuracy over speed.\n\n**Logical Reasoning**\n- Statement-conclusion and statement-assumption\n- Blood relations, seating arrangements (linear and circular)\n- Coding-decoding\n- Series: number, letter, mixed\n\n**Quantitative Aptitude**\n- Percentages, ratio and proportion, averages\n- Time-work, time-speed-distance\n- Simple and compound interest\n- Permutation and combination (basic)\n\n**Technical (Computer Science Fundamentals)**\n- Basic OOP terminology\n- Data structures: arrays, stacks, queues (conceptual questions)\n- Database: basic SQL SELECT, WHERE, JOIN questions\n- Networking: layers, protocols\n- OS: basics of process management\n\nThis technical section on AMCAT is conceptual, not coding."
+      },
+      {
+        heading: "Technical Interview Questions",
+        content: "Mphasis technical rounds for freshers focus on OOP, SQL, and one easy coding problem. The bar is similar to Cognizant or Capgemini — not TCS Digital or Infosys Power Programmer.\n\n**OOP Questions (Most Commonly Asked)**\n1. What are the four pillars of OOP? Give a real-world example of each.\n2. What is the difference between abstraction and encapsulation?\n3. Can you override a static method in Java? Why or why not?\n4. What is the difference between == and .equals() in Java?\n5. What is method overloading vs method overriding? Give code examples.\n\n**SQL Questions (Common in BFSI-focused companies like Mphasis)**\n1. Write a query to find employees who joined in the last 30 days\n2. What is the difference between INNER JOIN and LEFT JOIN?\n3. Write a query to find the second highest salary in an employees table\n4. What are GROUP BY and HAVING clauses? When do you use HAVING over WHERE?\n5. What is a primary key? Can it be NULL?\n\n**Coding Problem (1 question, 20–25 minutes)**\nTypical difficulty: LeetCode Easy. Recent examples from candidate reports:\n- Find all duplicate elements in an array\n- Check if a given string is a palindrome\n- Reverse a singly linked list\n- Find the factorial of a number using recursion\n- Write a program to check if a number is prime\n\n**Resume project**: Be ready to explain your project in 2 minutes. Interviewers typically ask what problem it solved, what stack you used, what was your individual contribution, and what you would do differently."
+      },
+      {
+        heading: "HR Round and What Sets Mphasis Apart",
+        content: "Mphasis's HR round is low-stress compared to TCS or Wipro, partly because there is no service bond to negotiate, which removes one source of friction.\n\n**Common Mphasis HR Questions**:\n1. Tell me about yourself (90 seconds max; close with why IT services)\n2. Why Mphasis specifically? (Reference their BFSI focus — banking, insurance, mortgage — and Blackstone backing as a stability signal)\n3. Are you comfortable with relocation? (Bengaluru and Pune are the primary locations; Hyderabad and Chennai also have Mphasis offices)\n4. What are your salary expectations? (Quote ₹4–4.5 LPA for ELP roles to show awareness of market rates)\n5. Where do you see yourself in 3 years? (Skill development, BFSI domain expertise, possible MBA or specialization path)\n\n**What makes Mphasis different from TCS/Infosys**:\n- Smaller team sizes (35,000 vs 300,000+ at TCS) means more individual visibility\n- Heavy BFSI client exposure: you will work on real banking or insurance software, which is resume-valuable for future BFSI roles\n- No service bond: you can leave without penalty from Day 1 (though professional courtesy suggests 2–3 months notice)\n- Salary is competitive within the mid-tier tier: ₹4–7 LPA fresher, growing to ₹9–18 LPA at 3–5 years experience"
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Mphasis a good company for freshers?",
+        answer: "Mphasis is a solid choice for freshers who want an IT services career with BFSI (banking/insurance) domain focus and a smaller company feel than TCS or Infosys. The no-bond policy is a genuine advantage — you can leave without financial penalty once you have a better offer. Learning quality depends heavily on the project and client you're placed on."
+      },
+      {
+        question: "What is Mphasis fresher salary in 2026?",
+        answer: "Mphasis fresher software engineer salary in 2026 is ₹4–7 LPA depending on the role and location. Bengaluru and Pune positions tend to be at the upper end. This is in line with mid-tier IT services companies and above TCS and Infosys freshers salaries."
+      },
+      {
+        question: "Does Mphasis have a service bond?",
+        answer: "No. Mphasis does not impose a service bond on freshers, unlike TCS (₹50K), Wipro (₹75K bond for some tracks), or Tech Mahindra (₹50K). This is a meaningful advantage if you're planning to switch companies within 1–2 years of joining."
+      },
+      {
+        question: "What is the Mphasis AMCAT cut-off?",
+        answer: "Mphasis does not publish official AMCAT cut-offs. Based on candidate reports, scoring 60–65% or above in each individual section (English, Logical, Quant, Technical) is sufficient to advance to the technical interview. The adaptive nature of AMCAT means raw score and percentile matter more than raw number of correct answers."
+      },
+    ],
+    relatedSlugs: ["tech-mahindra-interview-questions", "cognizant-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
+    practicePageSlugs: [
+      { label: "Mphasis SDE Interview Practice", slug: "mphasis-interview-questions" },
+    ],
+    cta: "Mphasis's BFSI-focused technical rounds test SQL and data analysis more than most IT services interviews. HireStepX lets you practice these SQL-heavy technical rounds with real banking domain scenarios — explaining your approach out loud to an AI interviewer and getting instant feedback on both accuracy and communication clarity.",
+    relatedLinks: [
+      { label: "Mphasis Salary Guide India 2026", href: "/salary/mphasis" },
+      { label: "HCL vs Accenture vs Capgemini Comparison", href: "/blog/hcl-accenture-capgemini-interview-comparison" },
+    ],
+  },
+  {
+    slug: "off-campus-placement-guide-freshers-india-2026",
+    title: "Off-Campus Placement Guide for Freshers India 2026 — How to Get a Job Without Campus Drives",
+    metaDescription: "How to get a job off-campus in India 2026. Complete guide covering Naukri, LinkedIn, company career pages, referrals, off-campus drives by TCS/Infosys/Wipro, resume tips, and how to crack the process end-to-end.",
+    company: "General",
+    category: "Campus Placement",
+    readTime: "10 min",
+    heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&h=500&fit=crop",
+    heroAlt: "Person at laptop searching for job representing off-campus placement guide",
+    datePublished: "2026-07-20",
+    intro: "Off-campus placement is how most Indian freshers actually get their first IT job — not through campus drives. The campus process reaches maybe 30–40% of engineering graduates in India. The other 60–70% have to navigate the off-campus process, and they do it badly: uploading the same resume to Naukri 50 times and waiting. This guide is the complete playbook: where companies actually post off-campus openings, how the selection process differs from campus, what gets your resume shortlisted, and how to convert interviews without the college backing most guides assume you have.",
+    sections: [
+      {
+        heading: "Where Companies Post Off-Campus Openings",
+        content: "The average fresher checks Naukri and stops there. Companies post off-campus openings across six channels, and the less-crowded channels have higher shortlist rates:\n\n**1. Company Career Pages (Highest Signal)**\nEvery large IT company has a dedicated fresher portal:\n- TCS: NextStep portal (nextstep.tcs.com) — the only official channel for TCS off-campus; Naukri listings for TCS are mostly third-party and less reliable\n- Infosys: InfyTQ (infytq.com) — complete the certification course AND register for drives\n- Wipro: Wipro Careers (careers.wipro.com) — the Elite NTH registration is separate from regular hiring\n- Cognizant: Cognizant Careers (careers.cognizant.com) — off-campus drives listed under 'Freshers'\n- Tech Mahindra: TechM Careers + LinkedIn\n- Accenture: Accenture Careers India\n\n**2. LinkedIn (Best for Product Companies)**\n- Set location to Bengaluru/Hyderabad/Pune\n- Set experience level to 'Internship' and 'Entry level'\n- Turn on 'Open to Work' with 'Software Engineer' as the target role\n- Follow the company pages: most product companies post on LinkedIn before they post on job boards\n- LinkedIn Easy Apply has lower competition than Naukri for product company roles\n\n**3. Naukri.com (Best for IT Services Volume)**\n- Build a complete profile: skills, projects, education, expected salary\n- Apply within 24–48 hours of posting: response rates drop sharply after 48 hours\n- Naukri's Resdex (resume visibility) subscription increases profile views: worth ₹299/month during active search\n- Upload a clean, ATS-optimized resume: avoid tables, columns, graphics — Naukri's parser handles plain text best\n\n**4. Off-Campus Drive Announcements on Social Media**\n- Unstop (formerly Dare2Compete): lists off-campus drives, hackathons, and competitions that funnel into hiring\n- Internshala: Internship → PPO (Pre-Placement Offer) is a common path into IT services companies\n- Reddit r/developersIndia and r/cscareerquestionsIN: real-time announcements of off-campus drives posted by candidates\n- YouTube channels: search \"[Company] off campus drive 2026\" — channels post links to active drives daily\n\n**5. Referrals (Highest Conversion Rate)**\n- LinkedIn connections who work at the target company: message them with a specific ask (\"Can you share my resume internally for SDE roles?\")\n- College alumni networks: seniors from your college who joined 2–4 years ago are the most willing to refer\n- Referral bonus programs: most large IT companies pay ₹20K–1L to employees who refer hired candidates — your referrer has a financial incentive to help\n\n**6. Hackathons and Coding Competitions**\n- TCS CodeVita: top performers get interview bypasses\n- Infosys InfyTQ Certification: a score above 70% makes your profile visible to Infosys recruiters directly\n- Smart Interviews, PrepInsta Prime: platforms that aggregate off-campus drives"
+      },
+      {
+        heading: "How Off-Campus Selection Differs from Campus",
+        content: "Campus placement gives you a structured sequence with fixed dates and a safety net of your college's placement cell managing the process. Off-campus strips all of that:\n\n**What you lose without campus:**\n- Pre-negotiated CTC packages (off-campus offers for the same company and same role can be 10–20% lower than campus packages at top colleges)\n- Placement cell follow-ups — you are entirely responsible for tracking your applications\n- Cohort joining: you may join in a batch of 2–5 rather than 50–200, which affects initial training structure at IT services companies\n- Resume screening by the company's ATS rather than a human coordinator who knows your college\n\n**What you gain:**\n- Access to companies that didn't visit your campus\n- The ability to apply to multiple companies simultaneously, not sequentially\n- More flexibility on start dates and location\n\n**The timeline reality**: From your first application to an offer letter, expect 6–14 weeks for IT services companies and 10–20 weeks for product companies. Most freshers underestimate this and panic after 4 weeks. The process is slow by design: companies open off-campus drives in batches tied to their project pipeline, not your graduation date."
+      },
+      {
+        heading: "Off-Campus Resume That Gets Shortlisted",
+        content: "The ATS (Applicant Tracking System) filters 70–80% of off-campus applications before a human reads them. Your resume has to pass the ATS before it can impress anyone.\n\n**ATS-safe resume rules for off-campus:**\n1. Single column, no tables, no columns: ATS parsers read left-to-right, top-to-bottom in plain text\n2. Standard section headings: Education, Experience, Projects, Skills, Certifications — no creative names\n3. Skills section must contain keywords from the job description: if the JD says 'Java', your resume must say 'Java' (not 'object-oriented programming' alone)\n4. File format: PDF for company portals (most accept PDF); Naukri prefers .doc for parsing — upload both versions\n5. Resume length: 1 page for freshers with less than 2 years of experience\n\n**Content priorities for freshers with no work experience:**\n- **Projects**: 2–3 substantial projects with: problem statement, technology stack (be specific: not 'used web technologies' but 'React.js + Node.js + MySQL'), your individual contribution, and measurable outcome\n- **Internships**: even 1-month internships significantly improve shortlist rates — add all of them\n- **Certifications**: AWS Cloud Practitioner, Google Analytics, Meta Front-End Developer, or company-specific certs (TCS Ion, InfyTQ) signal initiative and domain knowledge\n- **GitHub link**: a visible, active GitHub with project code is increasingly checked by product company recruiters; IT services companies check less frequently\n- **CGPA**: include it if above 7.0; you can omit it if below — never fake it"
+      },
+      {
+        heading: "Companies That Actively Run Off-Campus Drives in 2026",
+        content: "Some companies rely primarily on campus drives; others actively hire off-campus year-round. Know the difference before you spend time on a company's portal:\n\n**Strong off-campus programs (frequent drives, clear process):**\n- TCS: NextStep portal open year-round; NQT test run multiple times per year off-campus\n- Infosys: InfyTQ-based off-campus drives every quarter\n- Wipro: Off-campus Elite NTH drives; also hires through Wipro TalentNext for lateral freshers\n- Cognizant: Regular off-campus GenC drives on their portal; separate GenC Pro test for technical roles\n- Accenture: Off-campus drives through LinkedIn and their portal, multiple rounds per year\n- Capgemini: IntelliAdapt test run off-campus on a rolling basis\n- Tech Mahindra: Off-campus ELP drives announced on LinkedIn and their career page\n\n**Product companies (off-campus routes that exist but are harder):**\n- Razorpay: Primarily LinkedIn applications; no structured off-campus drive\n- Swiggy / Zomato: Open applications on their careers page; competitive with no campus bypass\n- Freshworks: Fresh Grads program announced periodically; strong off-campus hiring culture\n- Zoho: Zoho's unique 'no campus placement, only skills test' model is built for off-campus hiring — the programming test and personal interview are the same for everyone\n\n**Avoid wasting time on:**\n- Companies that say 'only via campus referral' in the JD\n- Drives on third-party WhatsApp groups asking for ₹500–2000 'registration fees' — these are scams\n- Any company that asks you to pay for a training program as part of the hiring process"
+      },
+      {
+        heading: "Interview Preparation Without Campus Support",
+        content: "Campus candidates get mock interview sessions from their placement cell. Off-campus candidates have to build this infrastructure themselves.\n\n**3-week off-campus interview prep plan:**\n\n**Week 1: Resume + Aptitude**\n- Polish resume: get feedback from 2–3 people (seniors who got placed, not just friends)\n- Practice 30 AMCAT-style aptitude questions daily (Naukri's Free Mock tests, PrepInsta)\n- Register on all portals: TCS NextStep, InfyTQ, Wipro Careers, Cognizant Careers, Accenture Careers, Capgemini portal\n\n**Week 2: Technical Fundamentals**\n- OOP: review all four pillars with code examples (not definitions)\n- SQL: practice 20 queries covering SELECT, JOIN, GROUP BY, subqueries\n- DSA: 5 easy LeetCode problems per day in your target language\n- Solve 10 questions from each of: arrays, linked lists, strings, basic sorting\n\n**Week 3: Interview Simulation**\n- Practice 'tell me about yourself' out loud — not in your head\n- Explain each resume project in 2 minutes maximum\n- Practice SQL questions verbally — typing the answer is different from saying it\n- Do 2–3 mock interviews: AI interview tools (HireStepX), college seniors, LinkedIn connects\n\n**The thing most freshers skip**: practicing answers out loud. Reading an answer feels like knowing it. Saying it under pressure reveals gaps. Mock interview practice is the most ROI-positive hour you can spend in week 3."
+      },
+    ],
+    faqs: [
+      {
+        question: "Can I get a job without campus placement in India?",
+        answer: "Yes. Most IT services jobs in India are filled through off-campus processes — online applications, off-campus drives, referrals, and walk-ins. TCS, Infosys, Wipro, Cognizant, and Accenture all run structured off-campus drives that are open to candidates from any college. The process takes longer (6–14 weeks typically) but the same positions are available."
+      },
+      {
+        question: "Which is the best app for off-campus placement in India?",
+        answer: "For IT services companies: Naukri.com and company career portals (TCS NextStep, InfyTQ for Infosys, Wipro Careers). For product companies: LinkedIn. For competition-based entry: Unstop (formerly Dare2Compete). For internship-to-PPO routes: Internshala."
+      },
+      {
+        question: "What is the difference between on-campus and off-campus placement?",
+        answer: "On-campus placement happens through your college's placement cell with pre-negotiated company visits and fixed selection timelines. Off-campus placement means you apply directly to companies through their portals, LinkedIn, or referrals — without the placement cell as an intermediary. Off-campus requires you to manage the process entirely on your own and typically takes longer."
+      },
+      {
+        question: "What CGPA is required for off-campus placement?",
+        answer: "Most IT services companies require 60% aggregate or 6.0 CGPA and above for off-campus applications. TCS requires 60% in 10th, 12th, and graduation with no active backlogs. Infosys requires 65% aggregate. Some product company drives don't have CGPA requirements. Gaps in education or active backlogs are common rejection filters — clear backlogs before applying."
+      },
+    ],
+    relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "resume-tips-freshers-india-2026"],
+    practicePageSlugs: [
+      { label: "IT Services Interview Practice", slug: "tcs-ninja-interview-questions" },
+    ],
+    cta: "Off-campus candidates don't get college placement cell mock interviews. HireStepX fills that gap — voice-based mock interviews tailored to the company and role you're targeting, with STAR-scored feedback on every answer so you walk into your first actual interview having already practiced the same questions multiple times.",
+    relatedLinks: [
+      { label: "TCS Interview Questions 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
+      { label: "Infosys Interview Questions 2026", href: "/blog/infosys-interview-questions-2026" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */

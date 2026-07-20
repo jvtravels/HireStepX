@@ -343,6 +343,17 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "tech-mahindra-interview-questions-2026",
     hubNote: "ELP (Entry Level Programme) — 90-day notice, ₹50K bond penalty",
   },
+  {
+    slug: "mphasis",
+    searchPhrase: "Mphasis Software Engineer Salary India 2026",
+    metaDescription:
+      "Mphasis salary India 2026 — SWE fresher ₹4–7 LPA, mid ₹9–18 LPA, senior ₹18–32 LPA. Blackstone-backed IT services firm. Bengaluru & Pune CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: "mphasis-interview-questions-freshers-2026",
+    hubNote: "Blackstone ownership since 2016 — stable employer, moderate pay",
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
