@@ -157,7 +157,7 @@ const posts: BlogPost[] = [
     title: "Flipkart Interview Prep Guide: What to Expect in 2026",
     metaDescription: "Complete Flipkart interview preparation guide. Covers coding rounds, system design, HR behavioral questions, and insider tips for SDE-1 to SDE-3 roles.",
     company: "Flipkart",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&h=500&fit=crop",
     heroAlt: "Team collaborating in a modern office, representing Flipkart interview preparation",
@@ -183,7 +183,7 @@ const posts: BlogPost[] = [
     slug: "behavioral-interview-questions-freshers",
     title: "50 Behavioral Interview Questions for Freshers: India Campus Placements",
     metaDescription: "Top 50 behavioral interview questions asked in Indian campus placements. Includes STAR method examples for freshers with limited work experience.",
-    company: "Campus",
+    company: "General",
     category: "Freshers",
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=500&fit=crop",
@@ -215,7 +215,7 @@ const posts: BlogPost[] = [
     title: "Razorpay Interview Experience: SDE & PM Roles (2026)",
     metaDescription: "Detailed Razorpay interview experience for SDE and PM roles. Covers coding rounds, system design, culture fit, and salary expectations.",
     company: "Razorpay",
-    category: "Experience",
+    category: "Career",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=500&fit=crop",
     heroAlt: "Fintech workspace representing Razorpay interview preparation",
@@ -240,7 +240,7 @@ const posts: BlogPost[] = [
     slug: "ace-case-study-interviews",
     title: "How to Ace Case Study Interviews: Framework + Examples",
     metaDescription: "Master case study interviews with proven frameworks. Includes examples for consulting, product, and strategy roles with step-by-step walkthroughs.",
-    company: "Consulting",
+    company: "General",
     category: "Strategy",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=500&fit=crop",
@@ -333,7 +333,7 @@ const posts: BlogPost[] = [
     title: "How to Introduce Yourself in an Interview: Script + Examples (India)",
     metaDescription: "Learn how to introduce yourself in an interview with proven scripts and examples. Covers freshers, experienced professionals, and career changers with Indian context.",
     company: "General",
-    category: "Skills",
+    category: "Technical",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=1200&h=500&fit=crop",
     heroAlt: "Professional introducing themselves in a job interview setting",
@@ -362,7 +362,7 @@ const posts: BlogPost[] = [
     title: "\"Tell Me About Yourself\": Best Answer Examples for 2026 Interviews",
     metaDescription: "Best answers for 'Tell me about yourself' in 2026 interviews. Includes scripts for freshers, experienced, managers, and career changers with real examples.",
     company: "General",
-    category: "Skills",
+    category: "Technical",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1200&h=500&fit=crop",
     heroAlt: "Confident professional answering tell me about yourself interview question",
@@ -421,7 +421,7 @@ const posts: BlogPost[] = [
     title: "Top 30 HR Interview Questions & Answers for India (2026)",
     metaDescription: "30 most-asked HR interview questions in India with best answers. Covers freshers and experienced candidates with salary negotiation tips and common mistakes.",
     company: "General",
-    category: "HR Round",
+    category: "Behavioral",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1200&h=500&fit=crop",
     heroAlt: "HR interview in progress with interviewer and candidate",
@@ -536,7 +536,7 @@ const posts: BlogPost[] = [
     title: "Campus Placement Interview Tips: Complete Guide for 2026 Freshers",
     metaDescription: "Complete campus placement interview preparation guide for Indian engineering students. Covers aptitude, technical, HR rounds, and insider tips to crack on-campus interviews.",
     company: "General",
-    category: "Campus",
+    category: "Freshers",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c476?w=1200&h=500&fit=crop",
     heroAlt: "College campus representing campus placement interviews",
@@ -717,7 +717,7 @@ const posts: BlogPost[] = [
     title: "HCL vs Accenture vs Capgemini Interview: Which Is the Best for Freshers?",
     metaDescription: "Compare HCL, Accenture, and Capgemini interview processes for freshers. Covers salary, difficulty, training quality, and which company is best for your career goals.",
     company: "HCL",
-    category: "Comparison",
+    category: "Career",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1488229297570-58520851e868?w=1200&h=500&fit=crop",
     heroAlt: "Tech company logos representing IT service company comparison",
@@ -779,8 +779,8 @@ const posts: BlogPost[] = [
     slug: "group-discussion-topics-campus-placement-2026",
     title: "Group Discussion Topics for Campus Placements 2026: 40 Real GD Topics",
     metaDescription: "40 current group discussion topics for campus placements 2026. Covers technology, business, economy, and social issues with talking points for each topic.",
-    company: "Campus",
-    category: "Campus Placement",
+    company: "General",
+    category: "Freshers",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1200&h=500&fit=crop",
     heroAlt: "Group of students in a discussion circle representing GD round preparation",
@@ -808,7 +808,7 @@ const posts: BlogPost[] = [
     title: "How to Pass TCS NQT 2026: Complete Guide to National Qualifier Test",
     metaDescription: "Complete guide to the TCS NQT 2026 exam. Covers all 4 sections (Cognitive Skills, Programming Logic, Advanced Coding, English), cutoffs, and preparation strategy.",
     company: "TCS",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&h=500&fit=crop",
     heroAlt: "Student at a computer taking an online assessment for TCS NQT exam preparation",
@@ -869,7 +869,7 @@ const posts: BlogPost[] = [
     slug: "software-engineer-interview-checklist-2026",
     title: "Software Engineer Interview Checklist 2026: 48 Hours Before the Interview",
     metaDescription: "Complete software engineer interview checklist for India 2026. What to review, practice, and confirm in the 48 hours before your SDE interview at any company.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1200&h=500&fit=crop",
@@ -897,7 +897,7 @@ const posts: BlogPost[] = [
     slug: "java-interview-questions-freshers-india-2026",
     title: "Java Interview Questions for Freshers India 2026: Top 60 Q&A",
     metaDescription: "Top 60 Java interview questions for freshers in India 2026. Covers OOP concepts, collections, exception handling, multithreading, and Java 17+ features with sample answers.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=500&fit=crop",
@@ -925,7 +925,7 @@ const posts: BlogPost[] = [
     title: "Resume Tips for Freshers India 2026: What Actually Gets Shortlisted",
     metaDescription: "Practical resume writing tips for Indian freshers in 2026. Covers ATS optimisation, project descriptions, skills section, and what recruiters at TCS, Infosys, Flipkart, and Google actually look for.",
     company: "General",
-    category: "Preparation",
+    category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=500&fit=crop",
     heroAlt: "Resume document on a desk representing fresher resume writing tips",
@@ -947,33 +947,6 @@ const posts: BlogPost[] = [
     relatedSlugs: ["campus-placement-interview-tips", "behavioral-interview-questions-freshers", "tcs-interview-questions-freshers-2026"],
     cta: "Your resume gets you in the room. What you say about it determines whether you leave with an offer. Most candidates can't explain their own projects as well on paper as they think they can out loud: HireStepX is where you find out, before the panel does.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
-  },
-  {
-    slug: "data-analyst-interview-questions-india-2026",
-    title: "Data Analyst Interview Questions India 2026: SQL, Python, Stats & Case Studies",
-    metaDescription: "Complete data analyst interview preparation guide for India 2026. Covers SQL queries, Python pandas, statistics, A/B testing, and business case questions with sample answers.",
-    company: "Tech",
-    category: "Technical",
-    readTime: "11 min",
-    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=500&fit=crop",
-    heroAlt: "Data charts and analytics dashboard representing data analyst interview preparation",
-    datePublished: "2026-05-18",
-    intro: "\"Data analyst\" covers a wider range than most candidates realise, and preparing the wrong way for the wrong company is one of the more common ways to tank an interview that should have been winnable. The person Goldman Sachs wants and the person Swiggy wants are both called data analysts: but Goldman is testing statistics and financial modelling while Swiggy wants SQL fluency and product intuition. TCS and Infosys are somewhere else entirely: Excel, reporting tools, and business communication. This covers what each type actually asks, so you can prepare for the specific job rather than a generic version of the role.",
-    sections: [
-      { heading: "SQL: The Universal Filter", content: "SQL is asked in virtually every data analyst interview in India. The questions that actually differentiate candidates:\n\n1. Window functions: ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), LEAD(), PARTITION BY. These are asked at every product company.\n\nExample: 'Find the 2nd highest salary per department.'\nSELECT * FROM (SELECT *, DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) as rk FROM employees) t WHERE rk = 2;\n\n2. Self joins: 'Find all employees who earn more than their manager.'\n\n3. Aggregation + HAVING: 'Find departments with more than 5 employees earning above ₹10L.'\n\n4. Common Table Expressions (CTEs): Readable alternative to subqueries. Interviewers at Flipkart and Amazon specifically look for CTE usage as a signal of SQL maturity.\n\n5. Query optimisation: 'How would you optimise a slow query?': Cover indexing (B-tree vs hash), explain plan, avoiding SELECT *, avoiding functions on indexed columns in WHERE clause." },
-      { heading: "Python + Pandas: Product Company Bar", content: "Product companies (Flipkart, Swiggy, Meesho) typically test Python/Pandas for data manipulation:\n\nMust-know Pandas operations:\n• read_csv(), head(), describe(), info(), value_counts()\n• groupby() + agg(): 'Find average order value per city'\n• merge(): equivalent of SQL joins\n• pivot_table(): aggregate with multiple dimensions\n• apply() + lambda: custom transformations\n• Handle missing values: fillna(), dropna(), isnull()\n\nTypical question: 'Given a dataframe of orders, find the top 5 customers by total spend in the last 30 days, excluding cancelled orders.'\n\nExpected: filter, groupby, sort, head(5): all in 5–10 lines of clean Pandas." },
-      { heading: "Statistics & Probability: Fintech/FAANG Specific", content: "Goldman Sachs, JPMorgan, Amazon, and Flipkart analytics roles all test statistics heavily. The core areas are probability (Bayes theorem, conditional probability, the major distributions: normal, binomial, Poisson), hypothesis testing (p-values, Type I/II error, confidence intervals), A/B testing setup and interpretation, regression assumptions, and the Central Limit Theorem.\n\nThe A/B testing question is nearly universal at these companies and worth preparing a specific answer for. The prompt is usually something like: \"We ran an A/B test for two weeks. Variant B shows a 3% higher conversion rate. Is this statistically significant? How do you decide?\"\n\nThe answer that impresses is not just \"check if p < 0.05.\" The complete answer walks through: defining the significance threshold before the test ran (not after seeing the results); calculating the minimum sample size that would make the effect detectable; checking whether the test ran long enough to reach that sample size; applying a t-test or chi-squared depending on the metric type; and reporting the confidence interval alongside the p-value. That last point matters more than it sounds: \"3% lift, p=0.03\" is much less informative than \"3% lift, 95% CI [1.1%, 4.9%], p=0.03,\" and interviewers at quant-heavy firms know the difference.\n\nThe underlying thing being tested is whether you understand statistics as a reasoning tool, not a checklist of formulas." },
-      { heading: "Business Case / Product Analysis Questions", content: "At product companies (Swiggy, Zomato, Flipkart, Meesho), expect business case questions:\n\n'Swiggy orders dropped 15% last Tuesday between 7-9 PM. How would you diagnose the issue?'\n\nFramework:\n1. Confirm the data: Is the drop real? Check for data pipeline issues first.\n2. Narrow the scope: Is it all cities or specific ones? All restaurants or specific cuisines? Specific device types?\n3. External vs internal: Weather event? Competitor promotion? App crash? Server downtime?\n4. Hypothesis tree: For each dimension, form a hypothesis and identify the data that would confirm/deny it.\n5. Recommendation: What immediate action and what monitoring to put in place.\n\nThis type of question tests structured thinking, not SQL knowledge: practice narrating your diagnostic process out loud." },
-    ],
-    faqs: [
-      { question: "What is data analyst salary in India in 2026?", answer: "Data Analyst salaries in India: Junior DA at IT services ₹4–7 LPA; Mid-level at Indian startups ₹10–20 LPA; Senior DA at unicorns (Flipkart, Swiggy) ₹25–40 LPA; Analytics roles at FAANG India ₹35–60 LPA." },
-      { question: "Which is better for data analyst: SQL or Python?", answer: "SQL is the universal requirement: every company tests it. Python (Pandas, NumPy) is additionally required at product companies and FAANG. For service IT companies, Excel/Tableau may be the primary tool. Learn SQL first, then Python." },
-      { question: "Is data science the same as data analyst?", answer: "No. Data Analyst: SQL, dashboards, business reports, A/B tests: explains what happened. Data Scientist: machine learning, predictive models: predicts what will happen. The interview bar is different; data science roles require ML/statistics depth beyond typical DA interviews." },
-    ],
-    practicePageSlugs: [{ label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Flipkart Sde Interview Practice", slug: "Flipkart SDE Interview Practice" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Phonepe Engineering Interview Practice", slug: "PhonePe Engineering Interview Practice" }, { label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }],
-    relatedSlugs: ["system-design-interview-preparation", "razorpay-interview-experience", "product-manager-interview-questions-india"],
-    cta: "The technical questions are usually the easy part. Explaining your SQL query logic, walking through an A/B test setup, or justifying a business recommendation out loud: that's where interviews are won or lost. HireStepX runs you through those verbal explanations with AI scoring on whether the reasoning actually holds together.",
-    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "zomato-product-manager-interview-2026",
@@ -1005,7 +978,7 @@ const posts: BlogPost[] = [
     slug: "python-interview-questions-freshers-india-2026",
     title: "Python Interview Questions for Freshers India 2026: Top 50 Q&A",
     metaDescription: "Top 50 Python interview questions for freshers in India 2026. Covers data types, OOP, list comprehension, decorators, generators, and common libraries with sample answers.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=500&fit=crop",
@@ -1032,7 +1005,7 @@ const posts: BlogPost[] = [
     title: "Goldman Sachs India Interview Questions 2026: Engineering & Analyst",
     metaDescription: "Complete Goldman Sachs India interview guide for 2026. Covers the Hirevue video screening, technical round (DSA + system design), super day, and salary for SDE and Analyst roles.",
     company: "Goldman Sachs",
-    category: "Finance & Banking Tech",
+    category: "Technical",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=500&fit=crop",
     heroAlt: "Financial district skyscrapers representing Goldman Sachs India offices",
@@ -1055,38 +1028,6 @@ const posts: BlogPost[] = [
     practicePageSlugs: [{ label: "Goldman Sachs Engineering Interview", slug: "Goldman Sachs Engineering Interview" }, { label: "Goldman Sachs Interview Questions India", slug: "goldman-sachs-interview-questions-india" }],
     cta: "GS behavioral rounds aren't a formality: they've rejected candidates who cleared every technical round. The difference is usually specificity: vague answers about 'teamwork' don't hold up when the interviewer asks a follow-up. HireStepX runs voice mock interviews where you practice articulating your reasoning under pressure, with AI feedback on both the technical substance and how clearly you made your case.",
     relatedLinks: [{ label: "Goldman Sachs Salary Guide India 2026", href: "/salary/goldman" }],
-  },
-  {
-    slug: "frontend-developer-interview-questions-india-2026",
-    title: "Frontend Developer Interview Questions India 2026: React, JS & System Design",
-    metaDescription: "Top frontend developer interview questions for India 2026. Covers JavaScript internals, React hooks, performance, CSS, system design for UI, and company-specific questions from Flipkart, Razorpay, and Swiggy.",
-    company: "General",
-    category: "Technical",
-    readTime: "12 min",
-    heroImage: "https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200&h=500&fit=crop",
-    heroAlt: "Developer writing frontend code on a laptop with multiple browser windows",
-    datePublished: "2026-05-21",
-    intro: "Until about 2022, a frontend engineer in India could clear most product company interviews with solid React knowledge and a few CSS tricks. That's no longer true. Razorpay now runs the same graph and DP problems on frontend candidates that they run on backend SDE-2s. Swiggy asks about Core Web Vitals and then follows up with a system design question: design the real-time order tracking UI at 100k concurrent users. Meesho wants TypeScript generics and micro-frontend architecture in the same conversation. This shift caught a lot of working frontend engineers off guard: people who are excellent at their jobs but prepared for a different interview. This guide covers the 60 questions coming up in 2026 rounds, organized by what each company actually emphasizes.",
-    sections: [
-      { heading: "JavaScript Fundamentals: The Non-Negotiables", content: "1. What is the event loop in JavaScript?\nJS is single-threaded. The event loop continuously checks the call stack and the callback queue: when the call stack is empty, it pushes the first item from the queue to the stack. Microtasks (Promises, queueMicrotask) run before macrotasks (setTimeout, setInterval) after each stack frame.\n\n2. What is the difference between var, let, and const?\nvar: function-scoped, hoisted (initialized to undefined). let: block-scoped, not initialized (TDZ: temporal dead zone before declaration). const: block-scoped, must be initialized at declaration, reference is immutable (object properties can still change).\n\n3. What is closure in JavaScript?\nA closure is a function that retains access to its outer scope even after the outer function has returned. This is the basis for module patterns, memoization, and factory functions.\n\n4. What is the difference between == and ===?\n=== (strict): no type coercion: 1 === '1' is false. == (loose): coerces types: 1 == '1' is true. Always use ===; == produces unexpected results and is considered a code smell.\n\n5. What is prototype chain and prototypal inheritance?\nEvery JS object has a __proto__ pointing to its prototype. When you access a property, JS walks up the chain until it finds it or hits null. ES6 classes are syntactic sugar over prototypal inheritance.\n\n6. What is async/await vs Promises vs callbacks?\nCallbacks: original async pattern, leads to callback hell. Promises: chainable, .then()/.catch()/.finally(). async/await: syntactic sugar over Promises: cleaner, but same underlying mechanics. Use async/await by default; know Promises for interview questions.\n\n7. What is debounce vs throttle?\nDebounce: delays execution until N ms after the LAST call: useful for search inputs. Throttle: limits execution to once per N ms regardless of call frequency: useful for scroll handlers. Knowing how to implement both from scratch is an interview staple." },
-      { heading: "React: What Interviewers Actually Ask", content: "8. What is the difference between useMemo and useCallback?\nuseCallback: memoises a function reference: prevents child re-renders when passing callbacks as props. useMemo: memoises a computed value: prevents expensive recalculations. Both take a dependency array. Neither is free: adds overhead; only use when profiling shows a real re-render problem.\n\n9. What is the React reconciliation algorithm?\nReact compares the virtual DOM tree (new render) against the previous tree. It uses a heuristic: same element type in same position = update; different type = unmount + remount. Keys tell React to match elements across a list by identity, not position.\n\n10. What is useEffect dependency array?\nEmpty array []: run once on mount. Specific deps [a, b]: run when a or b changes. No array: run after every render. Cleanup function: returned from useEffect, runs before the next effect and on unmount.\n\n11. What are React Server Components?\nRSC (available in Next.js App Router) render on the server: zero client JS bundle for those components. They cannot use state, effects, or browser APIs. Client components use 'use client' directive. Mixing RSC and client components is the pattern for optimal bundle sizes.\n\n12. What is Context vs Redux for state management?\nContext: built-in, good for low-frequency updates (theme, auth, locale). Redux / Zustand: better for high-frequency or complex state: they avoid unnecessary re-renders Context triggers. Modern recommendation: Zustand for most apps, Context for auth/theme.\n\n13. How would you optimise a React app with 10,000 list items?\nVirtualisation (react-window or react-virtual): render only visible items. Memoization (React.memo, useMemo, useCallback): prevent unnecessary re-renders. Code splitting (lazy + Suspense): reduce initial bundle. Profiler: identify actual bottlenecks before optimising." },
-      { heading: "CSS & Browser: Often Overlooked", content: "14. What is the CSS box model?\nContent → Padding → Border → Margin. box-sizing: content-box (default): width doesn't include padding/border. box-sizing: border-box: width includes padding/border: easier to reason about, use for everything.\n\n15. What is the difference between Flexbox and CSS Grid?\nFlexbox: one-dimensional (row OR column). Grid: two-dimensional (rows AND columns). Use Flexbox for nav bars, button groups, card contents. Use Grid for page layouts, card grids.\n\n16. What is CSS specificity?\nInline styles (1000) > ID selectors (100) > Class/attribute selectors (10) > Element selectors (1). The highest specificity wins. !important overrides everything: avoid it.\n\n17. What happens between the URL being typed and the page rendering?\nDNS resolution → TCP connection → TLS handshake → HTTP request → server response → HTML parsing → DOM construction → CSSOM construction → Render tree → Layout → Paint → Composite. Knowing this sequence (the 'critical rendering path') is tested at Razorpay and Flipkart." },
-      { heading: "System Design for Frontend Engineers", content: "Increasingly asked at SDE-2+ frontend roles at companies like Flipkart, Swiggy, and Razorpay:\n\n'Design the Swiggy order tracking UI': focuses on WebSocket vs polling tradeoff, optimistic updates, failure handling, reconnection logic.\n\n'Design a Google Docs-style collaborative editor': OT (Operational Transformation) vs CRDT, WebSocket, conflict resolution.\n\n'Design an infinite scroll feed with search': client-side state management, debounced search, virtual scrolling, skeleton screens, error boundaries.\n\n'Design a component library': versioning, design tokens, Storybook, accessibility, tree-shaking.\n\nFrontend system design rubric (what interviewers score):\n1. Component architecture (how you break up the UI)\n2. State management decision (local vs global vs server state)\n3. Network strategy (caching, polling, WebSocket choice)\n4. Performance (bundle size, lazy loading, rendering strategy)\n5. Error handling and edge cases (empty states, loading, failure)" },
-      { heading: "Company-Specific Frontend Questions (2026)", content: "**Razorpay**\n\nRazorpay's frontend rounds go deeper on JavaScript internals than almost any other company at this level. Expect questions on the event loop, prototype chain, and closure scope: then a follow-up asking you to write something that demonstrates the concept, not just define it. The system design round is almost always the Razorpay checkout widget: you'll need to talk through iframe isolation, postMessage for cross-origin communication, and what happens when the parent page's CSP is restrictive. CSS animations with GPU compositing come up more than you'd expect for a payments company: they care about payment flow smoothness on mid-range Android devices.\n\n**Swiggy**\n\nSwiggy's interviews are heavier on React 18 specifics than most. If you haven't used `useTransition` in a real project, read the docs and prepare an example: interviewers ask about it concretely, not just 'what is concurrent mode.' Core Web Vitals (CLS, LCP, FID) come up in the context of their consumer app, where a 200ms LCP regression is a real business problem. There's usually one coding round with array or string manipulation in JavaScript, medium difficulty, focused on whether you write idiomatic JS rather than raw problem-solving speed.\n\n**Flipkart**\n\nFlipkart's frontend bar has risen since they moved heavily to Next.js. TypeScript in strict mode is a baseline expectation: they'll ask about generics and utility types (`Partial`, `Pick`, `Omit`) in ways that require you to have written them in anger, not just read about them. The system design question is usually a product listing page: URL state management for filters, pagination strategy, and the SSR vs ISR tradeoff for catalog pages that change daily but are crawled constantly. Micro-frontend architecture comes up at SDE-2 and above: they want to know about module federation and how you'd handle shared state between independently deployed frontends." },
-    ],
-    faqs: [
-      { question: "What is frontend developer salary in India 2026?", answer: "Frontend developer salary in India 2026: Junior (0–2 yr) ₹6–12 LPA, Mid (2–4 yr) ₹15–28 LPA, Senior (5+ yr) ₹30–55 LPA at product companies. IT service companies pay 40–60% less at all levels." },
-      { question: "Do frontend developers need to know DSA in India?", answer: "Yes, for product companies (Flipkart, Swiggy, Razorpay, Meesho). Typically 1–2 DSA rounds of medium difficulty. IT service companies rarely ask DSA. Focus on arrays, strings, recursion, and hashmaps: tree/graph problems are less common for frontend roles." },
-      { question: "Is React knowledge enough for frontend interviews in India 2026?", answer: "React is necessary but not sufficient. You also need core JavaScript internals (event loop, closures, prototypes), browser APIs, CSS layout, and web performance. Senior roles additionally require TypeScript, system design, and SSR/rendering strategy knowledge." },
-      { question: "How do I prepare for frontend interviews at Flipkart or Razorpay?", answer: "Spend 4 weeks: Week 1: JavaScript fundamentals (You Don't Know JS, 50 interview questions). Week 2: React deep dive (hooks internals, reconciliation, RSC). Week 3: DSA in JavaScript (LeetCode Medium: arrays, strings, trees). Week 4: System design for UI + company research. Do 3–5 mock interviews with AI feedback." },
-    ],
-    relatedSlugs: ["system-design-interview-preparation", "java-interview-questions-freshers-india-2026", "salary-negotiation-tips-india"],
-    practicePageSlugs: [{ label: "Flipkart Sde Interview", slug: "Flipkart SDE Interview" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Razorpay Engineering Interview", slug: "Razorpay Engineering Interview" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
-    cta: "Frontend system design is where most candidates lose points: not because they don't know the answer, but because they struggle to structure an answer out loud in real time. HireStepX runs voice mock interviews specifically for this: you talk through your approach to a checkout widget, a real-time feed, or a micro-frontend architecture, and the AI gives you feedback on structure, depth, and what you skipped.",
-    relatedLinks: [
-      { label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" },
-      { label: "Razorpay Salary Guide India 2026", href: "/salary/razorpay" },
-    ],
   },
   {
     slug: "product-company-vs-service-company-india-career",
@@ -1121,40 +1062,11 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "swiggy-interview-questions-2026",
-    title: "Swiggy Interview Questions 2026: SDE, PM & Analyst Complete Guide",
-    metaDescription: "Complete Swiggy interview guide for SDE, PM, and Business Analyst roles in 2026. Covers DSA rounds, system design, product cases, and salary expectations.",
-    company: "Swiggy",
-    category: "Product Tech",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=1200&h=500&fit=crop",
-    heroAlt: "Food delivery order representing Swiggy interview preparation",
-    datePublished: "2026-05-21",
-    intro: "Swiggy went through a significant restructuring in 2023–2024, cut headcount, and came out the other side hiring more selectively. SDE-1 packages now sit at ₹18–25 LPA and PM roles at ₹28–45 LPA: both up from pre-layoff numbers, partly because the bar got higher and the teams got leaner. Engineering interviews run 3–4 DSA rounds with a real emphasis on graphs and dynamic programming, not just arrays and hashmaps. PM interviews include product case studies with a logistics or hyperlocal lens: Swiggy's domain expertise means they'll ask you to think about problems like ETA accuracy or dark store inventory in ways that catch candidates who prepped on generic PM frameworks. This guide covers what each round looks like and where the actual difficulty sits.",
-    sections: [
-      { heading: "Swiggy Hiring Process 2026", content: "SDE hiring process (5 stages):\n1. Resume screening + referral/portal\n2. Online Assessment: 2 coding problems (1 medium + 1 hard), 90 min on HackerRank\n3. Technical Round 1: DSA + code walkthrough (45 min)\n4. Technical Round 2: System design for mid/senior, DSA for SDE-1 (45 min)\n5. Hiring Manager + Bar Raiser round (culture fit + depth questions)\n\nPM hiring process (4 stages):\n1. Resume + cover letter screening\n2. Case study assignment (take-home, 48 hours)\n3. Case study discussion + metric questions (45 min)\n4. Product sense + behavioral round (Director/VP level)\n\nBusiness Analyst process:\n1. Aptitude + SQL test\n2. Case study (operations or business metric problem)\n3. HR round" },
-      { heading: "Swiggy SDE Interview: DSA Topics", content: "Based on recent candidate reports (2025–2026), Swiggy DSA rounds focus on:\n\nGraphs (frequently tested):\n• Minimum cost to connect all cities (MST)\n• Find the shortest delivery route between N locations\n• Detect cycles in delivery partner assignment graph\n\nArrays & Sliding Window:\n• Maximum orders per delivery zone in a time window\n• Find peak order hours with sliding window maximum\n\nHashing & Sets:\n• Two-sum variants, group anagrams\n• Track unique customers in a session\n\nTrees:\n• Serialize/deserialize order history tree\n• LCA in delivery zone hierarchy\n\nDP (medium frequency):\n• Optimal pricing with constraints\n• Max profit delivery scheduling\n\nSwiggy-specific angle: Many questions have a delivery/logistics framing: the underlying DSA is standard, but candidates who recognize the mapping (delivery zones = graph, time windows = sliding window) communicate better." },
-      { heading: "Swiggy System Design Questions", content: "Common Swiggy system design interview questions (SDE-2+):\n\n'Design Swiggy's real-time order tracking': Key components: GPS polling interval tradeoff (battery vs freshness), WebSocket vs SSE vs polling, event sourcing for order state machine, push notifications.\n\n'Design the restaurant discovery feed': Personalization (collaborative filtering vs geo + category filters), ranking algorithm, A/B testing infrastructure, latency budget.\n\n'Design Swiggy Instamart's inventory system': Dark store inventory management, real-time stock deduction, oversell prevention with Redis distributed locks, eventual consistency for catalog vs strong consistency for stock.\n\n'Design a surge pricing engine': Demand/supply ratio calculation, real-time pricing updates, anti-gaming protections, revenue impact tracking.\n\nWhat Swiggy values in system design:\n• Handling failure gracefully: what happens when a delivery partner's GPS drops?\n• Horizontal scalability: Swiggy processes 10M+ orders/day; your design should handle that\n• Data freshness vs consistency tradeoffs: especially for inventory and pricing" },
-      { heading: "Swiggy PM Interview: Product Cases", content: "Swiggy PM interviews are heavy on metrics and marketplace dynamics:\n\nCommon PM questions:\n• 'DAU dropped 15% last week: diagnose it'\n• 'Design a feature to reduce food delivery cancellations'\n• 'How would you grow Swiggy Instamart in Tier-2 cities?'\n• 'Build a recommendation system for restaurants'\n• 'How should Swiggy respond to Zomato launching a faster delivery tier?'\n\nSwiggy-specific PM framework:\n1. Always define the metric clearly ('DAU: logged in AND placed an order? Or just opened the app?')\n2. Show marketplace thinking: any Swiggy feature affects 3 sides: customers, restaurants, delivery partners\n3. Use real Swiggy product context: Instamart, Dineout, Swiggy One, Genie\n4. Anchor metrics in business context: Swiggy is publicly listed; revenue and take rate matter\n\nThe biggest differentiator: Candidates who can articulate how a feature moves GMV, take rate, or NPS while describing implementation earn significantly better scores." },
-      { heading: "Swiggy Salary 2026", content: "After the 2023–2024 restructuring, Swiggy recalibrated compensation upward to retain and attract talent. Here's where packages stand in 2026:\n\nSDE-1 (0–3 years): ₹18–25 LPA (base + RSUs)\nSDE-2 (3–6 years): ₹28–42 LPA\nSDE-3 / Staff: ₹48–70 LPA\n\nPM-1 (0–3 years): ₹28–38 LPA\nSPM (3–6 years): ₹42–60 LPA\n\nBusiness Analyst (0–3 years): ₹12–18 LPA\nSenior BA: ₹18–25 LPA\n\nEquity: RSUs vest over 4 years (1-year cliff). As a publicly listed company, RSUs have real liquidity at vest: unlike pre-IPO promises that may never materialize. Strong performers receive annual refreshes.\n\nContext that matters: SDE-2 packages at Swiggy are now competitive with Razorpay and Meesho. The post-layoff narrative of 'Swiggy pays less' is outdated: the company needed to rebuild credibility with engineers, and compensation is one of the levers they pulled." },
-    ],
-    faqs: [
-      { question: "Is Swiggy SDE interview hard?", answer: "Moderately hard: harder than IT service companies, comparable to Meesho and Zomato, slightly easier than Flipkart and Razorpay. The online assessment is the biggest filter. 1–2 hard LeetCode-equivalent problems in 90 min." },
-      { question: "What is Swiggy SDE-1 salary in India 2026?", answer: "Swiggy SDE-1 salary in India 2026 is ₹18–25 LPA including base and RSUs. The RSU component has grown post-IPO since Swiggy listed on NSE/BSE." },
-      { question: "Does Swiggy have system design rounds for SDE-1?", answer: "For SDE-1, system design is often a 'design a small feature' question rather than a full distributed system design. Full system design rounds start at SDE-2." },
-      { question: "How to prepare for Swiggy product manager interview?", answer: "Focus on: (1) deep Swiggy product knowledge: use all their products for 2 weeks, (2) marketplace metrics (GMV, take rate, NPS, cancellation rate), (3) case framework with 3-sided marketplace thinking, and (4) 2–3 data-driven hypotheses per question." },
-    ],
-    relatedSlugs: ["zomato-product-manager-interview-2026", "system-design-interview-preparation", "product-manager-interview-questions-india"],
-    practicePageSlugs: [{ label: "Swiggy Engineering Interview", slug: "Swiggy Engineering Interview" }, { label: "Swiggy Engineering Interview Questions", slug: "swiggy-engineering-interview-questions" }, { label: "Swiggy Pm Interview", slug: "Swiggy PM Interview" }, { label: "Swiggy Pm Interview Questions", slug: "swiggy-pm-interview-questions" }],
-    relatedLinks: [{ label: "Swiggy Salary Guide India 2026", href: "/salary/swiggy" }],
-    cta: "Swiggy PM interviews reward people who can reason about logistics tradeoffs, not just recite frameworks. If you've been practicing with generic PM prep material, you'll feel the gap in the room. HireStepX runs voice mock interviews where you think through cases out loud: the AI evaluates how you structure ambiguity, not just whether you hit the right bullet points.",
-  },
-  {
     slug: "microsoft-india-interview-questions-2026",
     title: "Microsoft India Interview Questions 2026: SDE, Program Manager & More",
     metaDescription: "Complete Microsoft India interview guide for 2026. Covers the technical phone screen, virtual onsite rounds, behavioral STAR questions, and salary for SDE-1 to SDE-2 roles in Hyderabad and Bengaluru.",
     company: "Microsoft",
-    category: "FAANG",
+    category: "Company Guides",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=500&fit=crop",
     heroAlt: "Developer at a computer representing Microsoft India interview preparation",
@@ -1211,7 +1123,7 @@ const posts: BlogPost[] = [
     slug: "python-developer-salary-india-2026",
     title: "Python Developer Salary India 2026: Fresher to Senior Complete Guide",
     metaDescription: "Python developer salary in India 2026: ₹3.5 LPA fresher to ₹35 LPA senior. City-wise breakdown for Bangalore, Mumbai, Pune, Hyderabad. What to negotiate.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=500&fit=crop",
@@ -1245,7 +1157,7 @@ const posts: BlogPost[] = [
     slug: "data-analyst-salary-india-2026",
     title: "Data Analyst Salary India 2026: Entry Level to Senior, City-wise Guide",
     metaDescription: "Data analyst salary India 2026: ₹3–5 LPA fresher to ₹20–30 LPA senior. Breakdown by city (Bangalore, Mumbai, Hyderabad), company type, and skills that boost your package.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&h=500&fit=crop",
@@ -1279,7 +1191,7 @@ const posts: BlogPost[] = [
     title: "How to Crack TCS iON NQT 2026: Complete Strategy, Pattern & Cutoff",
     metaDescription: "Crack TCS iON NQT 2026: full exam pattern, section-wise strategy, qualifying cutoffs, and what happens after. 50,000+ students take this every year: here's how to be in the top 20%.",
     company: "TCS",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&h=500&fit=crop",
     heroAlt: "Students preparing for a competitive exam representing TCS NQT preparation",
@@ -1311,7 +1223,7 @@ const posts: BlogPost[] = [
     title: "FAANG Interview Preparation India 2026: Complete Roadmap for Indian Engineers",
     metaDescription: "FAANG interview prep India 2026: complete roadmap covering DSA, system design, behavioral (Amazon LPs), and offer negotiation. Strategies that worked for Indian candidates.",
     company: "Google",
-    category: "System Design",
+    category: "Technical",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1200&h=500&fit=crop",
     heroAlt: "Engineer at a whiteboard with code diagrams representing FAANG interview preparation in India",
@@ -1343,7 +1255,7 @@ const posts: BlogPost[] = [
     title: "Wipro Elite NTH & NLTH 2026: Exam Pattern, Selection Process & Preparation",
     metaDescription: "Wipro Elite NTH and NLTH 2026: complete exam pattern, online test sections, qualifying scores, and interview preparation. Everything freshers need to get a Wipro offer.",
     company: "Wipro",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=1200&h=500&fit=crop",
     heroAlt: "Students in a campus recruitment session representing Wipro placement preparation",
@@ -1372,7 +1284,7 @@ const posts: BlogPost[] = [
     slug: "react-developer-salary-india-2026",
     title: "React Developer Salary India 2026: Complete Guide by Experience & City",
     metaDescription: "React developer salary India 2026: ₹4–8 LPA fresher to ₹30–45 LPA senior. Breakdown by experience, city, and skills (Next.js, TypeScript, Node.js) that command premiums.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=500&fit=crop",
@@ -1403,7 +1315,7 @@ const posts: BlogPost[] = [
     title: "JP Morgan Interview Questions India 2026: SDE, Analyst & Quant Roles",
     metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles: coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
     company: "JP Morgan",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&h=500&fit=crop",
     heroAlt: "Financial district skyline representing JP Morgan interview preparation",
@@ -1462,7 +1374,7 @@ const posts: BlogPost[] = [
     slug: "startup-vs-mnc-india-career",
     title: "Startup vs MNC India 2026: Which Should You Choose After Engineering?",
     metaDescription: "Startup vs MNC career in India 2026: salary comparison, growth speed, job security, learning curve, and a decision framework for engineering graduates.",
-    company: "Career",
+    company: "General",
     category: "Career",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=1200&h=500&fit=crop",
@@ -1522,7 +1434,7 @@ const posts: BlogPost[] = [
     slug: "fresher-salary-india-2026",
     title: "Fresher Salary in India 2026: What to Expect and How to Negotiate",
     metaDescription: "Fresher salary in India 2026 by company tier, role, and city. What TCS, Infosys, Wipro, Flipkart, and FAANG pay freshers: and how to negotiate your first offer.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200&h=500&fit=crop",
@@ -1641,7 +1553,7 @@ const posts: BlogPost[] = [
     slug: "dsa-60-day-preparation-plan",
     title: "DSA 60-Day Preparation Plan: From Basics to Product Company Ready",
     metaDescription: "60-day DSA preparation plan for product company interviews in India. Week-by-week schedule covering arrays, trees, graphs, DP, and mock interviews: with time estimates and resource links.",
-    company: "Strategy",
+    company: "General",
     category: "Strategy",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=1200&h=500&fit=crop",
@@ -1704,7 +1616,7 @@ const posts: BlogPost[] = [
     slug: "product-manager-salary-india-2026",
     title: "Product Manager Salary India 2026: APM to Director, All Levels",
     metaDescription: "Product Manager salary in India 2026: APM to Director, by company tier and city. Includes APM program list, skills that command premium, and PM vs SDE salary comparison.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&h=500&fit=crop",
@@ -1764,7 +1676,7 @@ const posts: BlogPost[] = [
     slug: "engineering-manager-interview-india-2026",
     title: "Engineering Manager Interview Questions India 2026: What to Expect",
     metaDescription: "Engineering Manager interview preparation for India 2026. Covers what EM interviews test, system design for managers, people management questions, execution questions, and compensation.",
-    company: "Strategy",
+    company: "General",
     category: "Career",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=500&fit=crop",
@@ -1817,52 +1729,11 @@ const posts: BlogPost[] = [
     relatedLinks: [{ label: "Google Salary Guide India 2026", href: "/salary/google" }],
   },
   {
-    slug: "why-should-we-hire-you-answer-india",
-    title: "Why Should We Hire You? Best Answer for Indian Freshers 2026",
-    metaDescription: "The best answer to 'why should we hire you?' for Indian freshers in 2026. Includes the SPR framework, role-specific examples for TCS, Infosys, Wipro, and Flipkart, and what never to say.",
-    company: "Industry",
-    category: "Behavioral",
-    readTime: "7 min",
-    heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=500&fit=crop",
-    heroAlt: "Indian fresher in a job interview confidently answering behavioral questions",
-    datePublished: "2026-06-03",
-    intro: "Most freshers answer 'why should we hire you?' with a list: I'm a quick learner, I'm a team player, I'm passionate about technology. The interviewer has heard this exact answer forty times that week. The problem is not that you're saying the wrong things: it's that you're saying nothing specific. Interviewers asking this question want one thing: evidence that you will add value in this specific role at this specific company. Here is how to give them that.",
-    sections: [
-      {
-        heading: "The SPR Framework: Skill, Proof, Relevance",
-        content: "The three-part answer that works across every Indian fresher interview: TCS, Infosys, Wipro, Flipkart, Accenture: is built on SPR:\n\nSkill: Name one concrete capability. Not 'I'm good at coding': 'I'm strong in Java with hands-on experience in Spring Boot.'\n\nProof: Back it with one specific example. A college project, a hackathon, an internship task: anything real. 'In my final-year project, I built a REST API that handled 500 concurrent requests in load testing.'\n\nRelevance: Connect it explicitly to what this company does. 'Your role requires backend Java developers who can work in distributed systems: this is exactly what I've been building toward.'\n\nThe full answer runs 90 to 120 words spoken aloud: roughly 45 to 60 seconds at a steady pace. Short enough to stay crisp; long enough to feel complete.",
-      },
-      {
-        heading: "Service Company Answers: TCS, Infosys, Wipro, HCL",
-        content: "Service company interviewers evaluate three things: technical baseline, communication quality, and culture fit. Generic 'I'm passionate' answers fail on all three.\n\nFor TCS Ninja: 'My core skill is object-oriented programming in Java, applied in a two-member team that built a library management system. We handled concurrent book reservations using synchronized methods: hands-on experience with the multithreaded problems that come up in enterprise IT. TCS works on large-scale enterprise applications for global clients, and I want to deepen that backend systems experience in a structured environment like ILP.'\n\nFor Infosys: 'I cleared the InfyTQ Power Programmer certification with 79%, which tested OOP, DBMS, and Python: the same curriculum Infosys fresher training runs on. My project involved a Python Flask backend with MySQL, which maps directly to the GenC Pro track.'\n\nFor Wipro NLTH: 'I've cleared Wipro's mock test with 82% in aptitude through timed practice. Beyond the test, I have 2 Java projects I can walk through in the technical round, and I'm fully flexible on location and shifts.'\n\nKey principle: quote something the company actually does, runs, or values: not a generic statement about innovation.",
-      },
-      {
-        heading: "Product Company Answers: Flipkart, Razorpay, Swiggy",
-        content: "Product company interviewers want ownership, depth of thought, and user empathy. The SPR framework still works, but the Relevance component must be more specific.\n\nFor Flipkart SDE-1: 'My strongest skill is DSA problem-solving: 150+ LeetCode problems focused on trees and graphs. In my major project, I built a product recommendation engine using collaborative filtering, adjacent to the kind of catalog-scale ML infrastructure Flipkart runs. I want to work on systems where my code directly affects millions of transactions.'\n\nFor Razorpay: 'I understand idempotency in distributed systems: I specifically built my API project to handle duplicate requests correctly, thinking about payment retry scenarios. Razorpay's core challenge is reliability in financial infrastructure. I'm building toward that kind of engineering depth, not just feature velocity.'\n\nProduct company answers show you understand the company's specific technical domain: not just that you want a job there.",
-      },
-      {
-        heading: "What Not to Say",
-        content: "These answers actively hurt your chances:\n\n'I'm a quick learner': everyone says this. It signals you have nothing concrete to point to.\n\n'I'm passionate about technology': unverifiable. Passion is demonstrated through projects, not stated.\n\n'I'll work hard and give my 100%': this is the baseline expectation, not a differentiator.\n\n'I have good communication skills': you're demonstrating communication live in this interview. Don't describe what they can already observe.\n\n'Your company is a leader in the industry': flattery without specificity. Which division? Which product? Which recent initiative?\n\nThe rule: if your answer could apply to any job at any company, it is not a good answer to 'why should we hire you specifically.'",
-      },
-    ],
-    faqs: [
-      { question: "How long should the 'why should we hire you' answer be?", answer: "90 to 120 words spoken aloud: 45 to 60 seconds at a steady pace. Long enough to include one skill, one proof, and one relevance connection. Short enough to stay crisp. Practice out loud; most candidates underestimate how fast or slow they speak under pressure." },
-      { question: "Can freshers with no work experience answer 'why should we hire you'?", answer: "Yes. College projects, hackathons, certifications, open-source contributions, and lab assignments all count as proof. A final-year project you built and can explain in technical depth is worth more than vague claims about work ethic. Focus on what you actually built and what you learned, not on apologising for the lack of industry experience." },
-      { question: "Should I research the company before answering this question?", answer: "Yes. The Relevance component of your answer must name something specific: a product, a technology stack, a business division, or a challenge the company is known for. Candidates who say 'Wipro is a leading IT company' without specifics have clearly not researched. Candidates who say 'Wipro's WILP program specifically aligns with enterprise Java' have." },
-      { question: "What if the interviewer asks a follow-up to my answer?", answer: "Follow-up questions are a good sign: your answer was specific enough to probe. The most common follow-up is 'tell me more about the project you mentioned.' This is why you should only mention things you can go 3 to 5 minutes deeper on. Never name a project, technology, or skill you cannot explain in detail." },
-    ],
-    relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
-    practicePageSlugs: [{ label: "Why Should We Hire You — Ai Practice", slug: "Why Should We Hire You — AI Practice" }, { label: "Why Should We Hire You Answer India", slug: "why-should-we-hire-you-answer-india" }, { label: "Tcs Hr Round Practice", slug: "TCS HR Round Practice" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }, { label: "Wipro Behavioral Interview Practice", slug: "Wipro Behavioral Interview Practice" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }, { label: "Infosys Campus Interview Practice", slug: "Infosys Campus Interview Practice" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }],
-    cta: "Reading the right answer framework is the first step. The gap between knowing the SPR structure and delivering it confidently under interview pressure is where most freshers get caught. HireStepX runs voice mock interviews where you practice 'why should we hire you' out loud: the AI evaluates whether your proof is specific, your relevance connection is genuine, and your delivery sounds natural rather than rehearsed.",
-    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
-  },
-  // ═══════════════════════════════════════════
-  {
     slug: "capgemini-interview-questions-freshers-2026",
     title: "Capgemini Interview Questions for Freshers 2026 — IntelliAdapt Test, Process & Salary",
     metaDescription: "Capgemini fresher interview 2026: IntelliAdapt adaptive aptitude test, programming test, technical and HR rounds. Entry salary ₹3.8–6.5 LPA. What to expect and how to prepare.",
     company: "Capgemini",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&h=500&fit=crop",
     heroAlt: "Fresher preparing for Capgemini's IntelliAdapt online test",
@@ -1906,7 +1777,7 @@ const posts: BlogPost[] = [
     title: "LTIMindtree Interview Questions for Freshers 2026 — Harder Coding, Higher Pay",
     metaDescription: "LTIMindtree fresher interview 2026: online assessment with 3 coding problems (harder than TCS/Wipro), technical interview, HR round. Entry salary ₹4–7 LPA. Complete preparation guide.",
     company: "LTIMindtree",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "6 min",
     heroImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=1200&h=500&fit=crop",
     heroAlt: "Engineering fresher solving coding problems for LTIMindtree online assessment",
@@ -1950,7 +1821,7 @@ const posts: BlogPost[] = [
     title: "Freshworks SDE Interview Questions India 2026 — B2B SaaS, Customer-Success Engineering",
     metaDescription: "Freshworks SDE interview 2026: online assessment, DSA, system design for multi-tenant SaaS, and behavioral rounds. Entry salary ₹14–22 LPA + RSU. Complete preparation guide for India.",
     company: "Freshworks",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=500&fit=crop",
     heroAlt: "Software engineer preparing for Freshworks SDE interview in Chennai",
@@ -1993,7 +1864,7 @@ const posts: BlogPost[] = [
     title: "PhonePe Engineering Interview Questions India 2026 — Scale, UPI & Builder Mindset",
     metaDescription: "PhonePe SDE interview 2026: scale-obsessed rounds covering 100M daily UPI transactions, payment system design, and builder-mindset behavioral evaluation. Entry salary ₹11–30.8 LPA.",
     company: "PhonePe",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=500&fit=crop",
     heroAlt: "Engineer preparing for PhonePe interview focused on UPI scale and payment systems",
@@ -2036,57 +1907,11 @@ const posts: BlogPost[] = [
   },
   // ═══════════════════════════════════════════
   {
-    slug: "meesho-interview-questions-india-2026",
-    title: "Meesho Engineering Interview Questions India 2026 — Social Commerce, Scale & Tier-3 India",
-    metaDescription: "Meesho SDE interview 2026: catalog search for 150M SKUs, seller-payout settlement, logistics across tier-3 India. Entry salary ₹4–15 LPA + RSU. Speed-over-perfection culture guide.",
-    company: "Meesho",
-    category: "Full Guide",
-    readTime: "8 min",
-    heroImage: "https://images.unsplash.com/photo-1609177651781-0fc5ef4ab099?w=1200&h=500&fit=crop",
-    heroAlt: "Engineer studying social commerce platform architecture for Meesho interview preparation",
-    datePublished: "2026-06-05",
-    intro: "Meesho is India's social commerce platform, connecting resellers in tier-2 and tier-3 cities with suppliers and enabling them to sell through WhatsApp and social media. The engineering challenges are shaped by this context: catalog search across 150 million SKUs, seller-payout settlement for millions of small vendors, and return-logistics orchestration across PIN codes that established courier networks do not fully serve. Meesho interviews expect you to reason about India-specific scale constraints, not just abstract distributed systems theory. Here is how the process works.",
-    sections: [
-      {
-        heading: "The Four-Round Meesho Interview Process",
-        content: "Meesho SDE hiring runs in four stages:\n\n1. Online Assessment — Two to three DSA problems at a medium-to-hard level, timed at 60 to 90 minutes. Problems may have an e-commerce or logistics framing.\n\n2. DSA Round — A live coding round focused on graphs, dynamic programming, or string manipulation, with emphasis on correctness and clean code.\n\n3. System Design Round — Social commerce or logistics infrastructure at Meesho scale. Common topics include catalog indexing for 150 million SKUs, seller settlement pipelines, and return-logistics routing.\n\n4. Behavioral and Hiring Manager Round — Ownership, first-principles thinking, and trade-off reasoning. Meesho's culture emphasizes speed over perfection — expect questions about how you make decisions when time is short and all the information is not available.",
-      },
-      {
-        heading: "System Design: Social Commerce at Scale",
-        content: "Meesho system design rounds are grounded in real product problems at India's social commerce scale:\n\nCatalog Search — Design a search system for 150 million product listings. Cover indexing strategy, search relevance (text match vs. sales rank vs. seller rating), and performance requirements for users in tier-3 cities with intermittent connectivity.\n\nSeller Payout Settlement — Meesho's sellers are small-scale resellers. Design the pipeline that calculates net payout per seller (sales minus returns minus platform fees), batches bank transfers, handles failed UPI payouts, and provides sellers with a self-service transaction history.\n\nReturn-Logistics Routing — Meesho serves PIN codes that established delivery networks do not always reach. Design a return pickup routing system that assigns returns to the right logistics partner based on PIN code coverage, pickup SLA, and cost.\n\nEvaluation emphasis: simplicity and correctness over theoretical elegance. Meesho's culture prizes solutions that ship and work over architecturally perfect designs that take twice as long to build.",
-      },
-      {
-        heading: "DSA Preparation for Meesho",
-        content: "Meesho's DSA rounds test medium-to-hard problems across common algorithm families:\n\nGraphs: BFS and DFS for logistics network problems — which routes connect which PIN codes, minimum hops between warehouses.\n\nDynamic Programming: Optimal selection problems — which sellers to batch in a single payout transfer, optimal product bundling.\n\nString and Array Operations: Catalog matching, prefix search, and sorting with custom comparators for product ranking.\n\nHeap and Priority Queue: Top-K sellers by GMV, priority-based return pickup assignment.\n\nClean code is heavily weighted — Meesho interviewers specifically look for readable variable names, explicit edge-case handling, and the ability to articulate your approach before writing code.",
-      },
-      {
-        heading: "Behavioral: Speed Over Perfection",
-        content: "Meesho's behavioral round is evaluated against the company's explicit cultural value of moving fast and learning from production data rather than over-engineering before launch.\n\nCommon questions:\n\n'Tell me about a time you shipped something that was not perfect but was the right call given the timeline.'\n\n'How do you decide when something is good enough to release versus when to keep improving it?'\n\n'Describe a time when you had to figure out a solution with very limited information or ambiguous requirements.'\n\nPrepare STAR stories that demonstrate first-principles reasoning, comfort with imperfect decisions, and a bias toward learning through action. Stories about over-engineering something and regretting it are useful here — Meesho values self-awareness about trade-offs.",
-      },
-      {
-        heading: "Compensation at Meesho",
-        content: "Meesho SDE entry compensation in India in 2026:\n\n- Total CTC: ₹4–15 LPA (base + bonus + RSU), depending on experience level and hiring band\n- RSU: Meesho listed in December 2025, improving ESOP liquidity for employees going forward\n\nThe wide range reflects different hiring bands — fresh graduates typically enter at the lower end of the scale, candidates with internship or prior product company experience at higher bands. Confirm your specific terms in the offer letter.",
-      },
-    ],
-    faqs: [
-      { question: "What kind of system design does Meesho ask in interviews?", answer: "Meesho focuses on social commerce and logistics infrastructure problems: catalog search at 150 million SKU scale, seller-payout settlement pipelines, and logistics routing for tier-3 India PIN codes. The framing is always grounded in Meesho's actual product rather than abstract distributed systems problems. Reading about Meesho's reseller marketplace and the logistics constraints of serving tier-2/3 India helps you understand the context." },
-      { question: "Is Meesho a good company for engineers in India?", answer: "Meesho offers real product engineering challenges at significant scale, a fast-moving culture, and post-IPO RSU liquidity (Meesho listed December 2025). The tier-2/3 India focus is a genuinely different product context from metro-first apps. It is a strong choice for candidates who want product company exposure without the most competitive FAANG-level hiring bar." },
-      { question: "What does Meesho's 'speed over perfection' culture mean in practice?", answer: "It means Meesho favors shipping working solutions quickly and iterating based on user data over waiting to build the theoretically optimal version first. In interviews, this shows up as: they value candidates who can make good decisions with incomplete information, who know when to stop polishing and ship, and who have shipped things and learned from production outcomes. Over-engineering stories without a shipped outcome are less well received." },
-      { question: "Has Meesho had its IPO?", answer: "Meesho listed in December 2025. This means RSU grants to employees vest into publicly traded shares with increasing liquidity compared to the pre-IPO period. Confirm current trading status and your specific RSU terms from your offer letter and Meesho's official communications." },
-    ],
-    relatedSlugs: ["faang-interview-preparation-india-2026", "system-design-interview-preparation", "product-company-vs-service-company-india-career"],
-    practicePageSlugs: [{ label: "Meesho Engineering Interview Practice", slug: "Meesho Engineering Interview Practice" }, { label: "Meesho Engineering Interview Questions", slug: "meesho-engineering-interview-questions" }, { label: "Meesho Pm Interview Practice", slug: "Meesho PM Interview Practice" }, { label: "Meesho Pm Interview Questions", slug: "meesho-pm-interview-questions" }],
-    cta: "Reasoning about social commerce scale under interview pressure is a distinct skill. HireStepX runs mock Meesho-style rounds where the AI plays the interviewer with India-specific constraints — catalog search for 150 million SKUs, seller settlement at volume, and logistics across tier-3 PIN codes — and provides detailed feedback on your architecture trade-offs.",
-    relatedLinks: [
-      { label: "Meesho Salary Guide India 2026", href: "/salary/meesho" },
-    ],
-  },
-  {
     slug: "tech-mahindra-interview-questions",
     title: "Tech Mahindra Interview Questions for Freshers 2026 — ELP, Digital & Off-Campus",
     metaDescription: "Tech Mahindra interview questions 2026 for ELP and Digital tracks. Covers aptitude test, technical rounds, HR, salary (₹4–7 LPA fresher), 90-day notice period and bond details.",
     company: "Tech Mahindra",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=500&fit=crop",
     heroAlt: "Office interior representing Tech Mahindra interview preparation",
@@ -2145,7 +1970,7 @@ const posts: BlogPost[] = [
     title: "Mphasis Interview Questions for Freshers 2026 — Process, Technical Round & Salary",
     metaDescription: "Mphasis interview questions 2026 for freshers. Covers the AMCAT-based aptitude test, technical round (Java/Python, OOP, SQL), HR round, fresher salary ₹4–7 LPA, and what to expect on the first day.",
     company: "Mphasis",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=500&fit=crop",
     heroAlt: "Office technology environment representing Mphasis interview preparation",
@@ -2200,7 +2025,7 @@ const posts: BlogPost[] = [
     title: "Off-Campus Placement Guide for Freshers India 2026 — How to Get a Job Without Campus Drives",
     metaDescription: "How to get a job off-campus in India 2026. Complete guide covering Naukri, LinkedIn, company career pages, referrals, off-campus drives by TCS/Infosys/Wipro, resume tips, and how to crack the process end-to-end.",
     company: "General",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&h=500&fit=crop",
     heroAlt: "Person at laptop searching for job representing off-campus placement guide",
@@ -2316,8 +2141,8 @@ const posts: BlogPost[] = [
     slug: "paytm-interview-questions-india-2026",
     title: "Paytm Interview Questions India 2026 — SDE, PM & Analyst Roles (One97 Communications)",
     metaDescription: "Paytm interview questions 2026 for SDE, PM, and analyst roles. Covers coding rounds, payments domain knowledge, system design for UPI scale, and Paytm salary ₹12–52 LPA. Honest guide post-RBI action.",
-    company: "Fintech",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=500&fit=crop",
     heroAlt: "Mobile payment screen representing Paytm interview preparation",
@@ -2371,8 +2196,8 @@ const posts: BlogPost[] = [
     slug: "cred-interview-questions-india-2026",
     title: "CRED Interview Questions India 2026 — SDE, PM & Designer (Highest Bar in Indian Fintech)",
     metaDescription: "CRED interview questions 2026 for SDE, PM, and designer roles. Covers the notoriously high interview bar, DSA hard problems, credit domain product design, CRED salary ₹12–114 LPA, and ESOP reality for a pre-IPO company.",
-    company: "Fintech",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=500&fit=crop",
     heroAlt: "Premium credit card representing CRED fintech interview preparation",
@@ -2424,65 +2249,6 @@ const posts: BlogPost[] = [
     relatedLinks: [
       { label: "CRED Salary Guide India 2026", href: "/salary/cred" },
       { label: "System Design Interview Preparation", href: "/blog/system-design-interview-preparation" },
-    ],
-  },
-  {
-    slug: "internship-interview-questions-india-2026",
-    title: "Internship Interview Questions India 2026 — Freshers Guide for Internshala, LinkedIn & Campus",
-    metaDescription: "Internship interview questions in India 2026 for engineering and MBA freshers. Covers technical questions, HR round, what interviewers actually look for, how to apply on Internshala and LinkedIn, and how to convert an internship to PPO.",
-    company: "Campus",
-    category: "Freshers",
-    readTime: "8 min",
-    heroImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=500&fit=crop",
-    heroAlt: "Students in a collaborative workspace representing internship interview preparation",
-    datePublished: "2026-06-09",
-    intro: "The internship interview in India is not the job interview with lower stakes — it's a different kind of evaluation. Companies interviewing interns are not looking for finished engineers. They're looking for candidates who can learn fast, communicate clearly about what they don't know, and show genuine curiosity about the problem domain. The technical bar is real but forgiving; the attitude bar is unforgiving. This guide covers what's actually asked, what interviewers are evaluating, and how to use an internship as the most efficient path to a full-time offer.",
-    sections: [
-      {
-        heading: "How Indian Internship Interviews Work by Company Type",
-        content: "The interview format varies significantly by company type. Prepare for the right format:\n\n**IT Services Companies (TCS, Infosys, Wipro, Cognizant) — Campus Internships**\n- Aptitude test (same format as their full-time hiring)\n- Technical interview: basic OOP, one coding problem (easy), and resume discussion\n- HR interview: standard questions + relocation flexibility\n- PPO (Pre-Placement Offer) conversion rate: 40–70% if you complete the internship in good standing\n\n**Product Companies (Swiggy, Razorpay, Paytm, Freshworks) — Summer / Semester Internships**\n- Online coding test: 2 problems, LeetCode Easy-Medium difficulty\n- Technical round: 1–2 rounds, DSA + project discussion\n- No system design at internship level (usually)\n- Bar is lower than full-time SDE-1 but the same type of question\n- PPO conversion: 50–80% for strong interns\n\n**Startups (< 200 people) — Via Internshala, AngelList, LinkedIn**\n- Usually a 1–2 round process: a take-home assignment + 1 technical call\n- Assignment may be: build a simple REST API, write a React component, fix a bug in their codebase\n- HR round is often the founder or a senior engineer\n- Stipend: ₹5,000–25,000/month (varies enormously)\n- PPO: depends entirely on company growth and hiring plans\n\n**FAANG India (Google, Microsoft, Amazon) — Internships**\n- Full interview process similar to FTE but 1 fewer round\n- Google: coding + googliness interview\n- Microsoft: 2 coding rounds\n- Amazon: leadership principles + 1 coding\n- These are competitive. IIT/NIT background + strong DSA required."
-      },
-      {
-        heading: "Technical Questions Freshers Are Actually Asked",
-        content: "Internship interviewers test fundamentals, not advanced algorithms. Here's what's actually asked:\n\n**Core Computer Science (for all engineering internships)**\n\n*OOP — the most common technical questions at internship level:*\n1. What are classes and objects? Give a real example.\n2. What is inheritance and why is it useful?\n3. What is the difference between a class and an interface?\n4. What is encapsulation? Where have you used it in your projects?\n5. What is polymorphism? Can you give an example from a project?\n\n*Data Structures — freshers are expected to know the basics:*\n1. What is the difference between an array and an ArrayList?\n2. When would you use a stack vs a queue?\n3. What is a HashMap? How does it handle collisions?\n4. What is a linked list? When would you use it over an array?\n5. What is binary search? Write code for it.\n\n*Database / SQL:*\n1. Write a query to find all users who placed an order in the last 7 days\n2. What is a JOIN? Write an example of an INNER JOIN\n3. What is the difference between WHERE and HAVING?\n4. What is normalization? (Even a simple answer is fine at internship level)\n\n*Coding problems (1–2, easy difficulty):*\n- Reverse a string\n- Check if a number is palindrome\n- Find the largest and second-largest element in an array\n- Count occurrences of each character in a string\n- Check if two strings are anagrams\n\n**The honesty test**: Internship interviewers frequently ask about concepts they know freshers haven't deeply studied (e.g., 'what is a race condition?'). The correct answer when you don't know is: 'I'm not confident about race conditions — I know it relates to concurrent access but I'd need to read more before explaining it accurately.' This scores better than a wrong confident answer."
-      },
-      {
-        heading: "HR Round for Internship Interviews",
-        content: "The HR round for internship interviews has a different purpose than for full-time roles: the interviewer is assessing whether you'll fit into the team for 2–6 months, not whether you're ready to own a production system.\n\n**What internship HR interviewers look for:**\n- **Initiative**: Have you built something on your own (not just classwork)? A side project, a fix for a bug in an open-source repo, a small tool you built for yourself.\n- **Curiosity**: Do you ask good questions at the end of the interview? 'What would I actually work on?' is a better question than 'What are the timings?'\n- **Adaptability**: Can you handle feedback? Internship interviewers often ask about a time you received criticism and how you responded.\n- **Communication**: Interns who communicate what they know and don't know clearly are the ones who get PPOs. Silence = uncertainty to your manager.\n\n**Questions you'll be asked:**\n1. Tell me about yourself (90 seconds; end with 'that's why I'm interested in this internship')\n2. Why do you want to intern at this company specifically? (Generic answer = red flag; research the company's product)\n3. Tell me about a project you built (have a clean 2-minute answer for your strongest project)\n4. What are you hoping to learn from this internship? (Answer with specifics: a technology, a domain, a type of problem)\n5. Do you have any questions for me? (Always say yes. Ask about what you'll work on.)\n\n**Stipend negotiation**: For Internshala / startup internships, the stipend is usually negotiable at the offer stage. Approach: 'I'm very interested in this role. Is the stipend of ₹X flexible? I'm comparing with one other offer at ₹Y.' Keep it brief and non-confrontational."
-      },
-      {
-        heading: "How to Find and Apply for Internships in India",
-        content: "Most freshers apply to Internshala and stop there. The less-crowded channels have higher conversion rates:\n\n**Internshala** — best for startup and SME internships; highest volume\n- Complete your profile fully (college, skills, past projects)\n- Apply within the first 24 hours of posting: response rates drop after the first day\n- Personalise your cover letter even for Internshala applications — a 3-sentence specific note about why this company beats 95% of generic applications\n\n**LinkedIn** — best for product company and FAANG internships\n- Connect with HR at target companies and message directly\n- Look for 'student programs' and 'intern' roles\n- Easy Apply with a strong profile photo, headline ('Computer Science Student | Python, Java | Building X')\n\n**Company career pages** — often not on Internshala or LinkedIn\n- Freshworks Fresh Grads: internship program listed on Freshworks careers\n- Razorpay internship: LinkedIn only, no Internshala listing\n- Swiggy: career page and campus drives via college\n\n**Cold email (highest effort, highest conversion for startups)**\n- Find the CTO/engineering lead on LinkedIn\n- Email: subject 'Internship inquiry — [Your Name], CS student, [specific skill]'\n- Body: 2 sentences about what you built, 1 sentence about why their product interests you, 1 ask for a call\n- Response rate: 5–15% — much higher than applying to job boards for the same company\n\n**Campus placement cell** — use it but don't rely on it\n- Register and attend every company presentation\n- Ask your seniors which companies they interned at and who their contacts are\n- Referrals from seniors work at 60–70% of the companies that recruit via campus"
-      },
-      {
-        heading: "Converting Your Internship to a Full-Time Offer (PPO)",
-        content: "A PPO (Pre-Placement Offer) is the most efficient path to a full-time job — you skip the hiring process entirely. Here's what actually determines whether you get one:\n\n**What gets you a PPO:**\n\n1. **Ship something.** Complete an assigned project to production or demo-ready state. Interns who leave projects half-finished rarely get PPOs regardless of intelligence or attitude.\n\n2. **Ask for feedback early.** In week 3, ask your manager: 'What would make me a strong candidate for a full-time offer?' This shows ambition and gives you 4–8 more weeks to address the gaps they name.\n\n3. **Be visible without being annoying.** Give weekly updates. Share what you built, what you learned, what you're working on next. Managers who have to ask for updates are not tracking your impact.\n\n4. **Solve one problem nobody asked you to solve.** Find a bug, a UX friction point, a documentation gap, or a process inefficiency. Fix it. This separates interns who fulfilled their brief from ones who showed ownership.\n\n5. **Get along with the team.** This sounds soft but matters: interns who ask good questions in team meetings, help with code reviews, and show up to team lunches are remembered positively. Those who arrive, code, and disappear are interchangeable.\n\n**If you don't get a PPO:**\nA completed internship with a strong reference from your manager is worth as much as a PPO for your job search. Ask your manager to be a LinkedIn reference and to write a brief note you can use in applications. Hiring managers at product companies consistently prioritise 'worked on real product at [known company]' over college rank."
-      },
-    ],
-    faqs: [
-      {
-        question: "What are the most common internship interview questions in India?",
-        answer: "OOP fundamentals (what is inheritance, polymorphism, encapsulation), basic data structures (arrays, linked lists, stacks, queues, hashmaps), 1–2 easy coding problems (palindrome, reverse string, find duplicates), and HR questions about your projects and why you want this internship. SQL basics (SELECT, JOIN, WHERE) are asked at most tech companies."
-      },
-      {
-        question: "How do I prepare for an internship interview in 2 weeks?",
-        answer: "Week 1: Review OOP fundamentals with code examples, practice 5 easy LeetCode problems per day, and prepare a 2-minute project explanation. Week 2: Practice SQL queries (SELECT, JOIN, GROUP BY), solve 5 more coding problems, practice telling me about yourself out loud, and research the company's product. That's sufficient for most startup and mid-tier company internship interviews."
-      },
-      {
-        question: "What is a PPO in an Indian internship?",
-        answer: "PPO (Pre-Placement Offer) is a full-time job offer made to an intern during or at the end of their internship, skipping the standard interview process. Acceptance rates for PPOs are high because the intern and company have already worked together. IT services companies (TCS, Wipro) offer PPOs to 40–70% of interns; product companies offer them to 50–80% of strong performers."
-      },
-      {
-        question: "Is an internship certificate important for placement in India?",
-        answer: "An internship certificate alone is not valuable. What's valuable is the internship project you can describe and the reference from your manager. A certificate from a real company (even a startup) with a clear project outcome on your resume significantly improves shortlist rates at IT services companies. For product companies, what you built matters more than the certificate."
-      },
-    ],
-    relatedSlugs: ["resume-tips-freshers-india-2026", "behavioral-interview-questions-freshers", "off-campus-placement-guide-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Fresher Interview Practice", slug: "Fresher Interview Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
-    cta: "Internship interviews test whether you can think clearly about technical problems out loud. HireStepX's voice-based mock interviews are specifically designed for freshers and pre-final year students — you get asked real internship-level questions, answer by speaking, and receive STAR-scored feedback that shows exactly what to improve before your actual interview.",
-    relatedLinks: [
-      { label: "Resume Tips for Freshers India 2026", href: "/blog/resume-tips-freshers-india-2026" },
-      { label: "Off-Campus Placement Guide 2026", href: "/blog/off-campus-placement-guide-freshers-india-2026" },
     ],
   },
   {
@@ -2549,7 +2315,7 @@ const posts: BlogPost[] = [
     title: "Aptitude Questions for IT Companies India 2026 — TCS NQT, Infosys, Wipro, Cognizant",
     metaDescription: "Aptitude questions for IT company placements India 2026. Covers quantitative, verbal, and logical reasoning for TCS NQT, Infosys InfyTQ, Wipro NLTH, Cognizant, and Accenture with solved examples and preparation strategy.",
     company: "General",
-    category: "Campus Placement",
+    category: "Freshers",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=500&fit=crop",
     heroAlt: "Person solving aptitude questions on paper for IT company placement",
@@ -2607,7 +2373,7 @@ const posts: BlogPost[] = [
     slug: "cpp-interview-questions-freshers-india-2026",
     title: "C++ Interview Questions for Freshers India 2026 — OOP, STL, Memory Management",
     metaDescription: "C++ interview questions for freshers in India 2026. Covers OOP concepts, STL containers, pointers and memory management, virtual functions, templates, and common coding problems asked at TCS, Wipro, and product companies.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=500&fit=crop",
@@ -2666,7 +2432,7 @@ const posts: BlogPost[] = [
     slug: "backend-developer-salary-india-2026",
     title: "Backend Developer Salary India 2026 — Node.js, Java, Python, Go by City and Experience",
     metaDescription: "Backend developer salary in India 2026 by language (Node.js, Java, Go, Python), city (Bengaluru, Hyderabad, Pune), and experience level. Fresher to senior complete guide with negotiation tips.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
@@ -2780,8 +2546,8 @@ const posts: BlogPost[] = [
     slug: "groww-interview-questions-india-2026",
     title: "Groww Interview Questions India 2026 — SDE, Data Engineer & Product Manager Roles",
     metaDescription: "Groww interview questions 2026 for SDE, data engineer, and PM roles. Covers the full interview process, DSA rounds, SQL and data questions, product case studies, Groww salary ₹15–85 LPA, and insider tips from candidates.",
-    company: "Fintech",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=500&fit=crop",
     heroAlt: "Stock market chart representing Groww fintech interview preparation",
@@ -2839,7 +2605,7 @@ const posts: BlogPost[] = [
     slug: "full-stack-developer-salary-india-2026",
     title: "Full Stack Developer Salary India 2026 — React + Node.js, MERN, MEAN by City and Experience",
     metaDescription: "Full stack developer salary in India 2026 for MERN/MEAN/React+Java stacks by city and experience. Fresher to senior CTC ranges, highest-paying companies, skills that add ₹5–15 LPA, and negotiation strategy.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=500&fit=crop",
@@ -2891,70 +2657,11 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "data-analyst-interview-questions-india-2026",
-    title: "Data Analyst Interview Questions India 2026 — SQL, Excel, Python & Business Case Studies",
-    metaDescription: "Data analyst interview questions India 2026 with answers. Covers SQL queries, Excel pivot tables, Python pandas, statistical concepts, business case studies, and company-specific prep for TCS, Infosys, Flipkart, and Zomato.",
-    company: "General",
-    category: "Technical",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=500&fit=crop",
-    heroAlt: "Data analyst working with charts and SQL on a laptop",
-    datePublished: "2026-06-14",
-    intro: "Data analyst roles in India have exploded since 2022 — every funded startup, every FMCG company, and every IT services firm now has a data team. The interview process varies significantly by company tier: an IT services data analyst role tests basic SQL and Excel, while a product company like Zomato or Flipkart tests statistical reasoning, Python, A/B test interpretation, and business problem framing. This guide covers both, with actual questions asked across the spectrum.",
-    sections: [
-      {
-        heading: "SQL Interview Questions for Data Analysts",
-        content: "SQL is tested in every data analyst interview. Expect 2–4 SQL problems, ranging from basic joins to window functions at product companies.\n\n**Basic to Intermediate SQL (IT services / entry-level):**\n\n**Q1: Find the second highest salary from an employee table.**\n```sql\n-- Method 1: Subquery\nSELECT MAX(salary) FROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n\n-- Method 2: Window function (preferred in product companies)\nSELECT salary FROM (\n  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk\n  FROM employees\n) ranked WHERE rnk = 2;\n```\n\n**Q2: Find all departments where the average salary exceeds ₹8 LPA.**\n```sql\nSELECT department, AVG(salary) as avg_salary\nFROM employees\nGROUP BY department\nHAVING AVG(salary) > 800000;\n```\n\n**Q3: List employees who joined in the last 6 months and have not had a performance review.**\n```sql\nSELECT e.employee_id, e.name\nFROM employees e\nLEFT JOIN reviews r ON e.employee_id = r.employee_id\nWHERE e.join_date >= CURRENT_DATE - INTERVAL '6 months'\nAND r.review_id IS NULL;\n```\n\n**Advanced SQL (product companies — Flipkart, Zomato, Swiggy):**\n\n**Q4: Calculate 7-day rolling average of daily orders.**\n```sql\nSELECT order_date,\n  daily_orders,\n  AVG(daily_orders) OVER (\n    ORDER BY order_date\n    ROWS BETWEEN 6 PRECEDING AND CURRENT ROW\n  ) as rolling_7day_avg\nFROM (\n  SELECT DATE(order_time) as order_date, COUNT(*) as daily_orders\n  FROM orders\n  GROUP BY DATE(order_time)\n) daily;\n```\n\n**Q5: Find users who placed orders in January but not in February (lapsed users).**\n```sql\nSELECT DISTINCT user_id FROM orders\nWHERE MONTH(order_date) = 1 AND YEAR(order_date) = 2026\nAND user_id NOT IN (\n  SELECT DISTINCT user_id FROM orders\n  WHERE MONTH(order_date) = 2 AND YEAR(order_date) = 2026\n);\n```\n\n**Q6: Rank products by revenue within each category (window function).**\n```sql\nSELECT category, product_name, revenue,\n  RANK() OVER (PARTITION BY category ORDER BY revenue DESC) as revenue_rank\nFROM product_sales;\n```"
-      },
-      {
-        heading: "Excel Interview Questions",
-        content: "Excel is tested at IT services companies and FMCG/consulting firms. Product companies rarely test Excel — they expect Python or SQL instead.\n\n**Frequently asked Excel questions:**\n\n**1. VLOOKUP vs INDEX-MATCH — which is better and why?**\nVLOOKUP only looks right (the lookup column must be the leftmost column in the range). INDEX-MATCH works in any direction, is faster on large datasets, and does not break when columns are inserted. In 2026, XLOOKUP has largely replaced both in newer Excel versions — mention it if you know it.\n\n**2. How do you find duplicates in a column?**\n- Conditional Formatting → Highlight Cell Rules → Duplicate Values\n- COUNTIF: `=COUNTIF(A:A, A2) > 1` — flags duplicates with TRUE\n- SUMPRODUCT: `=SUMPRODUCT((COUNTIF(A2:A100, A2:A100)>1)*1)` — counts total duplicate cells\n\n**3. How do you build a Pivot Table?**\nInsert → PivotTable → Select range → Choose rows, columns, values. Key concepts:\n- Values: SUM, COUNT, AVERAGE, DISTINCT COUNT\n- % of Total: right-click value → Show Values As → % of Grand Total\n- Slicers for interactive filtering\n\n**4. What is the difference between a regular chart and a sparkline?**\nSparklines are mini-charts that live inside a single cell — useful for showing trends at a glance in a table. Regular charts are objects on the sheet that can be formatted independently.\n\n**5. How do you clean messy data in Excel?**\n- TRIM: removes extra spaces\n- CLEAN: removes non-printable characters\n- TEXT TO COLUMNS: splits by delimiter\n- FIND & REPLACE: bulk text substitution\n- Power Query: for large datasets requiring repeatable transformation steps"
-      },
-      {
-        heading: "Python for Data Analysis — Questions and Code",
-        content: "Python (with pandas, numpy, matplotlib) is tested at product companies and analytics-focused startups.\n\n**Q1: How do you handle missing values in a pandas DataFrame?**\n```python\nimport pandas as pd\ndf = pd.read_csv('orders.csv')\n\n# Check missing values\nprint(df.isnull().sum())\n\n# Drop rows with any missing values\ndf_clean = df.dropna()\n\n# Fill missing values\ndf['price'].fillna(df['price'].median(), inplace=True)  # fill with median\ndf['category'].fillna('Unknown', inplace=True)  # fill with a constant\n\n# Forward fill (for time series)\ndf['revenue'].fillna(method='ffill', inplace=True)\n```\n\n**Q2: Find the top 5 cities by total order value.**\n```python\ntop_cities = (\n  df.groupby('city')['order_value']\n  .sum()\n  .sort_values(ascending=False)\n  .head(5)\n  .reset_index()\n)\nprint(top_cities)\n```\n\n**Q3: Calculate month-over-month growth rate.**\n```python\ndf['order_date'] = pd.to_datetime(df['order_date'])\nmonthly = df.groupby(df['order_date'].dt.to_period('M'))['revenue'].sum()\nmonthly_df = monthly.reset_index()\nmonthly_df['mom_growth'] = monthly_df['revenue'].pct_change() * 100\nprint(monthly_df)\n```\n\n**Q4: How do you merge two DataFrames?**\n```python\n# SQL-style joins in pandas\nresult = pd.merge(orders, customers, on='customer_id', how='left')\n# how='inner' (default), 'left', 'right', 'outer'\n```\n\n**Q5: Detect outliers using IQR.**\n```python\nQ1 = df['order_value'].quantile(0.25)\nQ3 = df['order_value'].quantile(0.75)\nIQR = Q3 - Q1\noutliers = df[(df['order_value'] < Q1 - 1.5*IQR) | (df['order_value'] > Q3 + 1.5*IQR)]\nprint(f\"{len(outliers)} outliers found\")\n```"
-      },
-      {
-        heading: "Business Case and Product Sense Questions",
-        content: "Product companies ask case-style questions that test whether you can turn data into decisions. These are tested at Zomato, Flipkart, Swiggy, and similar.\n\n**Q: Zomato's order volume dropped 18% last Tuesday. How do you investigate?**\n\nExpected framework:\n1. **Clarify scope**: Is it all cities or specific markets? All categories or specific cuisine types? All times of day or peak hours only?\n2. **Check data integrity first**: Was there a logging outage or a pipeline failure? If metrics dropped to exactly zero for a period, it's likely a data issue, not a real drop.\n3. **External factors**: Was it a public holiday? Rainy weather (counterintuitively reduces orders in some markets)? A competitor ran a large promotion?\n4. **App performance**: Was there a deployment that day? Any increase in app crash rates or checkout failure rates?\n5. **Supply side**: Restaurant partner strikes, driver shortage in specific cities?\n6. **Conclusion structure**: 'Based on [data point X], the most likely root cause is [Y]. I would validate by [Z] and recommend [action].'\n\n**Q: Design a metric to measure the 'health' of Groww's user engagement.**\n\nExpected answer components:\n- Don't propose a single metric — propose a North Star metric + supporting metrics\n- North Star: Daily Active Users who complete at least one transaction\n- Supporting: D1/D7/D30 retention, SIP continuation rate, portfolio view frequency, watchlist additions\n- Counter-metrics: App uninstall rate, complaint volume, negative app store reviews\n- Always explain *why* your proposed metric cannot be gamed easily\n\n**Q: An A/B test showed that the new checkout flow has +12% conversion, but the test ran for only 3 days. Do you ship it?**\n\nExpected answer:\n- No — 3 days is too short. Reasons: weekly seasonality (behaviour differs Mon vs weekend), novelty effect (users interact differently with new UIs initially), statistical significance may not be reached.\n- What to check: What is the p-value? Is the sample size large enough to achieve 80%+ power? How does conversion look by day of week within the test?\n- What to do: Extend the test to 2 full weeks minimum. Monitor for day-of-week effects."
-      },
-      {
-        heading: "Data Analyst Salary in India 2026",
-        content: "Data analyst salaries in India depend heavily on company type and the specific skills demonstrated.\n\n**Fresher / 0–2 years:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services (TCS/Infosys/Wipro analytics roles) | ₹4–8 LPA |\n| FMCG / consulting firm (Unilever, P&G, Deloitte) | ₹6–12 LPA |\n| Funded startup | ₹8–16 LPA |\n| Tier-1 product company (Flipkart, Swiggy, Zomato) | ₹12–24 LPA |\n\n**2–5 years experience:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services | ₹8–18 LPA |\n| FMCG / consulting | ₹14–28 LPA |\n| Funded startup | ₹16–35 LPA |\n| Tier-1 product company | ₹25–55 LPA |\n\n**Skills that move the salary band upward:**\n- SQL proficiency (window functions, CTEs): +₹3–6 LPA vs SQL-basic analysts\n- Python / pandas: +₹5–10 LPA at product companies\n- A/B testing and experimentation design: +₹4–8 LPA\n- Dashboard tools (Tableau, Looker, Metabase): +₹2–5 LPA\n- ML fundamentals (regression, clustering, forecasting): positions you for senior analyst or ML roles at ₹35–60 LPA"
-      },
-    ],
-    faqs: [
-      {
-        question: "What SQL questions are asked in data analyst interviews in India?",
-        answer: "SQL questions for data analyst roles in India range from basic JOINs and GROUP BY at IT services companies to window functions (RANK, ROW_NUMBER, LAG/LEAD), CTEs, and subqueries at product companies. The most common advanced questions: second highest salary, 7-day rolling average, cohort retention query, and finding lapsed users."
-      },
-      {
-        question: "Is Python required for data analyst jobs in India in 2026?",
-        answer: "Python is required at product companies (Flipkart, Swiggy, Zomato, funded startups) and strongly preferred at analytics platforms. IT services companies and FMCG firms often accept Excel + SQL without Python for junior roles. For salary above ₹15 LPA, Python (pandas + matplotlib) is effectively mandatory."
-      },
-      {
-        question: "What is the data analyst salary fresher in India 2026?",
-        answer: "Data analyst fresher salary in India in 2026 ranges from ₹4–24 LPA depending on company type. IT services: ₹4–8 LPA. Funded startups: ₹8–16 LPA. Tier-1 product companies (Flipkart, Swiggy): ₹12–24 LPA. SQL + Python proficiency is the single biggest differentiator at the fresher level."
-      },
-      {
-        question: "How do I prepare for a data analyst interview in 2 weeks?",
-        answer: "Week 1: SQL — practice 5 problems/day on LeetCode or StrataScratch (medium difficulty). Focus on JOINs, GROUP BY, HAVING, window functions. Week 2: Python pandas basics + business case practice. Pick 3 companies you're interviewing at and prepare 2 metric design questions per company. On the last day, do one full mock interview (SQL + case study + statistics)."
-      },
-    ],
-    relatedSlugs: ["groww-interview-questions-india-2026", "backend-developer-salary-india-2026"],
-    practicePageSlugs: [],
-    cta: "Data analyst interviews test both technical skills and the ability to communicate your analysis clearly. HireStepX's voice interview practice helps you structure answers to 'how would you diagnose a metric drop' and 'how would you design this experiment' — the business case questions that most technically prepared candidates stumble on.",
-    relatedLinks: [
-      { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
-      { label: "Backend Developer Salary India 2026", href: "/blog/backend-developer-salary-india-2026" },
-    ],
-  },
-  {
     slug: "nykaa-interview-questions-india-2026",
     title: "Nykaa Interview Questions India 2026 — SDE, Product Manager & Data Science Roles",
     metaDescription: "Nykaa interview questions 2026 for SDE, PM, and data science roles. Covers the full interview process, DSA rounds, product case studies, Nykaa salary ₹12–75 LPA, and preparation tips for India's leading beauty e-commerce company.",
-    company: "E-commerce",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=500&fit=crop",
     heroAlt: "Beauty products representing Nykaa e-commerce interview preparation",
@@ -3008,8 +2715,8 @@ const posts: BlogPost[] = [
     slug: "ola-interview-questions-india-2026",
     title: "Ola Interview Questions India 2026 — Ola Cabs & Ola Electric SDE, PM & Data Roles",
     metaDescription: "Ola interview questions 2026 for SDE, PM, and data roles at Ola Cabs and Ola Electric. Covers the interview process, system design for ride-hailing, EV-tech questions, salary ₹14–90 LPA, and preparation strategy.",
-    company: "Transport",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1200&h=500&fit=crop",
     heroAlt: "Electric vehicle charging representing Ola Electric interview preparation",
@@ -3064,7 +2771,7 @@ const posts: BlogPost[] = [
     title: "HR Interview Questions India 2026 — Answers for Freshers & Experienced Candidates",
     metaDescription: "Top HR interview questions with best answers for India 2026. Tell me about yourself, why should we hire you, strengths and weaknesses, where do you see yourself in 5 years — with word-for-word sample answers for freshers and experienced candidates.",
     company: "General",
-    category: "HR Round",
+    category: "Behavioral",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=500&fit=crop",
     heroAlt: "Interview conversation between a candidate and HR manager",
@@ -3123,69 +2830,10 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "zomato-interview-questions-india-2026",
-    title: "Zomato Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
-    metaDescription: "Zomato interview questions 2026 for SDE, data scientist, and PM roles. Covers DSA rounds, system design for food delivery at scale, product metrics, Zomato salary ₹18–120 LPA, and preparation tips from actual candidates.",
-    company: "Foodtech",
-    category: "Full Guide",
-    readTime: "9 min",
-    heroImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=500&fit=crop",
-    heroAlt: "Food delivery box representing Zomato interview preparation",
-    datePublished: "2026-06-19",
-    intro: "Zomato is one of the most coveted product company destinations for Indian engineers — a listed company, Tier-1 product stack, and some of the most interesting real-time logistics engineering problems in the country. The interview bar has risen significantly since 2022 and is now comparable to Swiggy and Meesho — harder than Nykaa or Ola, easier than Amazon India or Razorpay. This guide covers what candidates actually face in 2026.",
-    sections: [
-      {
-        heading: "Zomato Interview Process — SDE Roles",
-        content: "Zomato's SDE interview process for 2–6 year experience candidates runs 4–5 rounds.\n\n**Round 1: Online Assessment**\n- Platform: HackerRank or internal Zomato assessment\n- 2 DSA problems (Medium–Hard), 90 minutes\n- Sometimes includes SQL queries + basic system design MCQs\n- Tip: Zomato OAs are known for time-pressure — attempt the easier problem first, submit a working (even if not optimal) solution before attempting to optimise\n\n**Round 2: Technical Interview 1 (DSA)**\n- 1–2 problems live, usually on Google Meets + shared Doc\n- Expect problems framed in food-delivery context: 'find the nearest available delivery partner', 'process orders in optimal sequence'\n- The underlying algorithm is standard; recognise the pattern quickly\n\n**Round 3: Technical Interview 2 (System Design)**\n- For 2+ years: High-Level Design\n  - Design Zomato's order tracking system\n  - Design the restaurant recommendation engine\n  - Design the delivery partner assignment system at city scale\n  - Design a real-time ETD (Estimated Time of Delivery) engine\n- Discussions lean toward consistency vs availability trade-offs, database choice, and how to handle peak load (Friday evenings, IPL match nights)\n\n**Round 4: Bar Raiser or Engineering Manager**\n- Technical: deep-dive on your most complex past project\n- Behavioural: conflict resolution, ownership examples, failure stories\n- Culture: Zomato values rapid iteration and ownership — questions probe whether you've owned outcomes, not just tasks\n\n**Round 5: VP/Director (for senior roles) or skipped (for junior)**"
-      },
-      {
-        heading: "DSA Questions Asked at Zomato",
-        content: "Zomato's DSA bar is LeetCode Medium to Hard. These problem types appear most frequently:\n\n**Graphs (highest frequency at Zomato):**\n\n**Q1: Shortest path in a city map (delivery partner routing)**\nGiven a weighted graph of city roads, find the shortest delivery route from restaurant to customer.\nSolution: Dijkstra's algorithm with a min-heap. Time O((V + E) log V).\n```python\nimport heapq\ndef dijkstra(graph, start):\n    dist = {node: float('inf') for node in graph}\n    dist[start] = 0\n    heap = [(0, start)]\n    while heap:\n        d, u = heapq.heappop(heap)\n        if d > dist[u]: continue\n        for v, w in graph[u]:\n            if dist[u] + w < dist[v]:\n                dist[v] = dist[u] + w\n                heapq.heappush(heap, (dist[v], v))\n    return dist\n```\n\n**Q2: Number of delivery zones reachable from a depot (connected components)**\nBFS/DFS on a grid or adjacency list.\n\n**Dynamic Programming:**\n\n**Q3: Minimum cost to assign N orders to K delivery partners**\nVariant of assignment problem / DP on bitmask for small N.\n\n**Q4: Longest common subsequence of customer order histories**\nClassic DP — O(mn) time, O(mn) space.\n\n**Sorting and Searching:**\n\n**Q5: Find the peak delivery hour given a time-series of orders**\nSliding window of fixed size or binary search on sorted timestamps.\n\n**Q6: Kth largest restaurant by order volume**\nMin-heap of size K: O(N log K) vs full sort O(N log N). Explain both.\n\n**Two Pointers / Sliding Window:**\n\n**Q7: Minimum window of consecutive delivery slots to fulfil K orders**\nSliding window with counter map — Zomato framing of 'minimum window substring'."
-      },
-      {
-        heading: "System Design at Zomato",
-        content: "Zomato system design focuses on real-time logistics, scale under bursts, and location-aware services.\n\n**Question 1: Design Zomato's order tracking system**\n\nRequirements: Customer sees real-time status updates (order placed → accepted → preparation → picked up → out for delivery → delivered). Delivery partner location updates every 5–10 seconds.\n\nKey components:\n- **Location service**: Delivery partner app sends GPS ping every 5s → Kafka topic → consumer writes to Redis geospatial index\n- **Status state machine**: Order status is a state machine with defined transitions. Stored in PostgreSQL. Each transition triggers a push notification.\n- **Customer-facing update**: WebSocket connection for real-time updates; long-polling fallback for battery-limited mobile.\n- **ETD calculation**: Haversine distance from current delivery partner location to customer → factor in average speed, traffic model → refresh ETD on each location update.\n- **Scale**: 1M+ simultaneous orders during peak. Partition Kafka by order_id. Shard Redis by geohash region.\n\n**Question 2: Design the restaurant recommendation engine**\n\n- User context: location, time of day, past orders, dietary preferences\n- Ranking signals: delivery time ETA (weighted heavily), user-restaurant affinity score (collaborative filtering), restaurant health score (order acceptance rate, cancellation rate, hygiene score)\n- Cold-start: new user → fallback to popularity + location filter\n- Freshness: re-rank on each page load (ETAs change); cache rank for max 60 seconds\n- A/B testing layer: every recommendation algorithm change runs as an experiment with CTR and order conversion as metrics\n\n**Question 3: Design a surge/dynamic delivery fee system**\n\n- Inputs: available delivery partners in a zone, incoming order density in last 5 minutes\n- Surge trigger: ratio below threshold\n- Fee calculation: tiered based on demand-supply ratio, capped at 2x standard fee per NPCI/merchant guidelines\n- Transparency: customer sees surge reason and estimated wait time before confirming\n- Revenue split: surge fee partially passed to delivery partner to incentivise supply increase"
-      },
-      {
-        heading: "Data Science Interview at Zomato",
-        content: "Zomato's data science team is large and influential — the recommendation engine, pricing, fraud detection, and demand forecasting are all ML-driven. DS interviews are 4–5 rounds.\n\n**Statistics and probability (always asked):**\n- 'You run an A/B test on the checkout CTA. After 7 days, treatment has 12% higher conversion with p=0.04. Do you ship it?'\n  Answer: p=0.04 < 0.05 is statistically significant, but check: was the test pre-registered? Was 7 days sufficient (weekly seasonality)? Is the sample size large enough for the effect to be practically meaningful? Are there other metrics (session length, basket size) that changed? If all pass, yes ship.\n- Explain the difference between Type I and Type II errors in an A/B test context\n- What is selection bias? Give an example from food delivery data.\n\n**Machine learning:**\n- 'How would you build a model to predict whether an order will be late?'\n  Features: restaurant average prep time, delivery partner location, distance, current order load on that partner, historical on-time rate for restaurant+zone combination\n  Model: gradient boosting (XGBoost/LightGBM); interpretability matters for ops team\n  Evaluation: precision-recall (not accuracy — late orders are minority class); NDCG if framed as ranking\n- 'How do you handle class imbalance in the fraud detection model?'\n  SMOTE, undersampling, class weights in loss function, precision@recall curve instead of AUC-ROC\n\n**SQL (always included):**\n- 7-day retention cohort query\n- Rank restaurants by reorder rate per city\n- Find customers who ordered from more than 3 cuisine types in one month"
-      },
-      {
-        heading: "Zomato Salary in India 2026",
-        content: "Zomato is solidly Tier-1 Indian product company compensation — comparable to Swiggy and Meesho, slightly below Razorpay and CRED at equivalent levels.\n\n**SDE:**\n| Level | Salary Range |\n|---|---|\n| SDE-1 (0–2 yrs) | ₹18–32 LPA |\n| SDE-2 (2–5 yrs) | ₹30–60 LPA |\n| Senior SDE (5–8 yrs) | ₹55–95 LPA |\n| Staff / Principal | ₹90–130+ LPA |\n\n**Data Science / ML:**\n| Level | Salary Range |\n|---|---|\n| DS-1 (0–2 yrs) | ₹16–30 LPA |\n| DS-2 / Senior DS (2–5 yrs) | ₹28–60 LPA |\n| Lead DS / ML Engineer | ₹55–90 LPA |\n\n**Product Manager:**\n| Level | Salary Range |\n|---|---|\n| APM / PM-1 | ₹22–38 LPA |\n| PM-2 / Senior PM | ₹38–70 LPA |\n| Group PM / Director PM | ₹70–120 LPA |\n\n**Compensation structure:**\n- Listed stock (BSE/NSE) — ESOPs are liquid\n- Variable: 10–20% based on performance\n- Joining bonus: common for lateral hires to offset notice period loss\n- Office: Gurugram (HQ), Bengaluru (engineering hub)\n\n**Negotiation:** Zomato matches competing offers from Swiggy, Meesho, and comparable companies. A Razorpay or Amazon offer is the strongest leverage for a 15–25% bump above initial offer."
-      },
-    ],
-    faqs: [
-      {
-        question: "Is Zomato interview hard?",
-        answer: "Zomato's SDE interview is medium-hard. DSA requires LeetCode Medium to Hard proficiency. System design is mandatory for 2+ years and focuses on food-delivery-specific problems (real-time tracking, delivery assignment, restaurant recommendations). The bar is comparable to Swiggy — harder than Nykaa or Ola, easier than Amazon India or Razorpay."
-      },
-      {
-        question: "What system design questions are asked at Zomato?",
-        answer: "Zomato system design focuses on food delivery at scale: order tracking (real-time GPS + state machine), delivery partner assignment, restaurant recommendation engine, surge fee system, and ETD calculation. Key themes: location-aware services (Redis geospatial), real-time updates (WebSocket + Kafka), and handling burst traffic during peak hours."
-      },
-      {
-        question: "What is Zomato SDE salary in India 2026?",
-        answer: "Zomato SDE salary in India 2026: SDE-1 ₹18–32 LPA, SDE-2 ₹30–60 LPA, Senior SDE ₹55–95 LPA. ESOPs are liquid (listed stock). Compensation is comparable to Swiggy and Meesho, slightly below Razorpay and CRED at equivalent levels."
-      },
-      {
-        question: "Does Zomato hire freshers?",
-        answer: "Zomato hires freshers through campus placements at IITs, NITs, and top private engineering colleges. The SDE-1 campus package is ₹18–28 LPA (varies by college tier). Off-campus freshers are rarely hired directly — 1 year of experience or a prior Zomato internship is typically required for off-campus applications."
-      },
-    ],
-    relatedSlugs: ["groww-interview-questions-india-2026", "data-analyst-interview-questions-india-2026", "backend-developer-salary-india-2026"],
-    practicePageSlugs: [{ label: "Product Company Interview Practice", slug: "Product Company Interview Practice" }, { label: "Zomato Product Interview Questions", slug: "zomato-product-interview-questions" }],
-    cta: "Zomato's behavioural rounds test ownership and speed of delivery — how fast you shipped, what you owned end-to-end, how you handled failure. HireStepX's STAR-scored voice mock interviews are designed for exactly this: practice your ownership stories until the structure is automatic and the details come naturally under pressure.",
-    relatedLinks: [
-      { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
-      { label: "Data Analyst Interview Questions 2026", href: "/blog/data-analyst-interview-questions-india-2026" },
-    ],
-  },
-  {
     slug: "devops-engineer-salary-india-2026",
     title: "DevOps Engineer Salary India 2026 — Docker, Kubernetes, AWS by City and Experience",
     metaDescription: "DevOps engineer salary India 2026 by skill (Docker, Kubernetes, AWS, Terraform), city (Bengaluru, Hyderabad, Pune), and experience. Fresher to senior CTC ranges, highest-paying companies, and which certifications add the most salary.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200&h=500&fit=crop",
@@ -3245,7 +2893,7 @@ const posts: BlogPost[] = [
     title: "Tell Me About Yourself — Best Answer for Freshers India 2026 (With 10 Sample Scripts)",
     metaDescription: "Best answers for 'tell me about yourself' for freshers in India 2026. 10 word-for-word sample scripts for engineering, MBA, BCA, and non-tech graduates — covering IT services (TCS/Infosys), product companies, and campus placements.",
     company: "General",
-    category: "HR Round",
+    category: "Behavioral",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=500&fit=crop",
     heroAlt: "Fresher candidate speaking confidently in a job interview",
@@ -3299,8 +2947,8 @@ const posts: BlogPost[] = [
     slug: "makemytrip-interview-questions-india-2026",
     title: "MakeMyTrip Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
     metaDescription: "MakeMyTrip interview questions 2026 for SDE, data science, and PM roles. Covers the full interview process, DSA and system design for travel-tech, product case studies, MakeMyTrip salary ₹15–80 LPA, and preparation tips.",
-    company: "Travel",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&h=500&fit=crop",
     heroAlt: "Airplane representing MakeMyTrip travel-tech interview preparation",
@@ -3354,7 +3002,7 @@ const posts: BlogPost[] = [
     slug: "machine-learning-engineer-salary-india-2026",
     title: "Machine Learning Engineer Salary India 2026 — PyTorch, LLMs, MLOps by City and Experience",
     metaDescription: "Machine learning engineer salary in India 2026 by skill (PyTorch, TensorFlow, LLMs, MLOps), city, and experience. Fresher to senior CTC ranges, highest-paying AI companies, and which ML specialisations command the biggest premiums.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&h=500&fit=crop",
@@ -3414,7 +3062,7 @@ const posts: BlogPost[] = [
     title: "Why Do You Want to Join Our Company? — Best Answers India 2026 (15 Company-Specific Scripts)",
     metaDescription: "Best answers for 'why do you want to join our company' for India 2026. 15 company-specific scripts for TCS, Infosys, Google, Amazon, Razorpay, Zomato, Swiggy, Flipkart, and more — with the framework to write your own for any company.",
     company: "General",
-    category: "HR Round",
+    category: "Behavioral",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&h=500&fit=crop",
     heroAlt: "Job candidate speaking to a panel in an interview room",
@@ -3476,8 +3124,8 @@ const posts: BlogPost[] = [
     slug: "meesho-interview-questions-india-2026",
     title: "Meesho Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
     metaDescription: "Meesho interview questions 2026 for SDE, data scientist, and PM roles. Covers the full interview process, DSA and system design for social commerce, product case studies, Meesho salary ₹20–110 LPA, and insider preparation tips.",
-    company: "E-commerce",
-    category: "Full Guide",
+    company: "General",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=500&fit=crop",
     heroAlt: "Social commerce seller representing Meesho interview preparation",
@@ -3531,7 +3179,7 @@ const posts: BlogPost[] = [
     slug: "cloud-computing-salary-india-2026",
     title: "Cloud Computing Salary India 2026 — AWS, Azure, GCP for Cloud Engineers and Architects",
     metaDescription: "Cloud computing salary India 2026 for cloud engineers and architects on AWS, Azure, and GCP. Fresher to senior CTC ranges, cloud architect salary by city, highest-paying certifications, and which cloud platform pays most.",
-    company: "Industry",
+    company: "General",
     category: "Salary Guide",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&h=500&fit=crop",
@@ -3587,69 +3235,10 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "accenture-interview-questions-india-2026",
-    title: "Accenture Interview Questions India 2026 — Freshers & Experienced (All Rounds)",
-    metaDescription: "Accenture interview questions India 2026 for freshers and experienced candidates. Covers the online assessment, technical round, communication test, HR round, and Accenture salary ₹4–45 LPA with preparation strategy.",
-    company: "Accenture",
-    category: "Full Guide",
-    readTime: "8 min",
-    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=500&fit=crop",
-    heroAlt: "Professional working in a modern office representing Accenture interview",
-    datePublished: "2026-06-27",
-    intro: "Accenture is one of the largest campus recruiters in India — hiring 50,000+ freshers per year across its Technology, Operations, and Consulting tracks. The interview process is more structured than TCS or Infosys but less technical than product companies. What makes Accenture interviews distinctive is the communication assessment and the written English test — sections that don't appear at any other major IT services company. If you're preparing for an Accenture interview in 2026, this guide covers every round with actual questions.",
-    sections: [
-      {
-        heading: "Accenture Interview Process — Complete Round-by-Round Breakdown",
-        content: "**For freshers (campus or off-campus):**\n\nRound 1: Cognitive and Technical Assessment (online, 90 minutes)\n- Cognitive Ability: Quantitative (percentages, time-work, probability), Logical Reasoning (syllogisms, patterns, analogies), Verbal (reading comprehension, sentence correction)\n- Technical Assessment: Core computer science MCQs — OOP concepts, DBMS basics, OS basics, networking fundamentals, data structures\n- Coding Section (for Technology track): 1–2 coding problems, Easy to Medium difficulty, any language\n- Tip: The cognitive section is time-pressured — don't spend more than 60 seconds on any single question\n\nRound 2: Communication Assessment (unique to Accenture)\n- Written English: 200–300 word response to a business scenario (e.g., 'Write an email to your manager explaining a project delay')\n- Spoken English (for some hiring cohorts): Read-aloud paragraph, answer 2 spoken questions into a microphone\n- Scored on: Grammar accuracy, sentence structure, vocabulary appropriateness, professional tone\n- Tip: This round eliminates 15–25% of candidates who pass the cognitive test — do not underestimate it\n\nRound 3: Technical Interview\n- 30–45 minutes with a senior Accenture technologist\n- Questions from your resume projects: 'Tell me about a project you built. What was the biggest technical challenge?'\n- Core CS fundamentals: OOP in Java/C++, SQL queries, OS concepts (process vs thread, deadlock), DBMS (normalisation, indexing)\n- For experienced hires: technology-specific deep dive on your primary skill (Java Spring Boot, .NET, React, AWS)\n- Coding: 1 problem live on a shared doc — typically Easy LeetCode level\n\nRound 4: HR Round\n- Standard HR questions: tell me about yourself, strengths/weaknesses, why Accenture, 5-year plan\n- Salary negotiation and joining date discussion\n- Background check consent"
-      },
-      {
-        heading: "Technical Round Questions — What Is Actually Asked",
-        content: "**OOP Questions (always asked):**\n\n1. 'What are the four pillars of OOP?'\nAnswer: Encapsulation (binding data and methods; hiding internal state), Abstraction (exposing only essential features), Inheritance (child class inherits from parent), Polymorphism (same interface, different implementations — compile-time overloading + runtime overriding).\n\n2. 'What is the difference between abstract class and interface in Java?'\nAbstract class: can have both abstract and concrete methods, constructors, instance variables. Interface (Java 8+): can have default and static methods, but no instance variables. A class can implement multiple interfaces but extend only one abstract class.\n\n3. 'What is the difference between overloading and overriding?'\nOverloading: same method name, different parameters, same class, resolved at compile time.\nOverriding: child class redefines a parent class method with the same signature, resolved at runtime via virtual dispatch.\n\n**DBMS Questions (very common at Accenture):**\n\n4. 'What are the different normal forms?'\n- 1NF: Atomic values, no repeating groups\n- 2NF: 1NF + no partial dependency on composite primary key\n- 3NF: 2NF + no transitive dependency\n- BCNF: Stricter 3NF — every determinant is a candidate key\n\n5. 'Write a SQL query to find the second highest salary.'\n```sql\nSELECT MAX(salary) FROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n```\n\n6. 'What is the difference between DELETE, TRUNCATE, and DROP?'\n- DELETE: removes specific rows; can be rolled back; triggers fire; slow on large tables\n- TRUNCATE: removes all rows; cannot be rolled back (DDL); no triggers; fast\n- DROP: removes entire table structure; cannot be rolled back\n\n**OS Questions:**\n\n7. 'What is the difference between process and thread?'\nProcess: independent program execution with its own memory space.\nThread: lightweight unit within a process; shares memory space with other threads in the same process.\n\n8. 'What is deadlock? What are the four conditions for deadlock?'\nDeadlock: two or more processes permanently blocked waiting for resources held by each other.\nFour conditions (Coffman): Mutual Exclusion + Hold and Wait + No Preemption + Circular Wait — all four must hold simultaneously."
-      },
-      {
-        heading: "Communication Assessment — How to Prepare",
-        content: "The Accenture communication assessment eliminates more freshers than the technical round. Most candidates don't prepare for it at all.\n\n**Written English section:**\n\nTypical prompt: 'Your team missed a project deadline due to unexpected technical issues. Write a professional email to your manager explaining what happened and what steps you are taking to resolve it.'\n\nSample answer (aim for this quality):\n\n*Subject: Update on Project Deadline — [Project Name]*\n\n*Dear [Manager Name],*\n\n*I am writing to inform you that the [Project Name] delivery scheduled for [date] has been delayed by approximately 3 days.*\n\n*During integration testing, we encountered an unexpected compatibility issue between the payment gateway library and our authentication module. Our team identified the root cause on [date] and has since developed a fix. We expect to complete final testing by [date] and deliver the updated build by [new date].*\n\n*I apologise for the delay and any inconvenience this may cause. Please let me know if you would like a detailed technical briefing on the issue.*\n\n*Regards, [Your Name]*\n\n**What evaluators look for:**\n- Professional tone (no casual language: 'hey', 'ASAP', abbreviations)\n- Clear structure: what happened, why it happened, what you're doing, revised timeline\n- Grammar accuracy: subject-verb agreement, tense consistency, correct prepositions\n- Appropriate length: 150–250 words — not too brief, not rambling\n\n**Spoken English section (where applicable):**\n- Speak at moderate pace — neither rushed nor excessively slow\n- Complete sentences — avoid trailing off\n- Common prompts: 'Describe a challenge you overcame', 'Tell us about your final year project', 'What are your career goals?'\n- Practice reading English newspaper editorials aloud for 10 minutes daily in the week before the interview"
-      },
-      {
-        heading: "Coding Round — What Level Is Expected",
-        content: "Accenture's coding section is significantly easier than product companies. The bar is 'can you write working code in any language' — not 'can you solve LeetCode Medium in 20 minutes'.\n\n**Typical problems:**\n\n1. Print all prime numbers up to N\n2. Check if a string is a palindrome\n3. Find the factorial of a number (iterative and recursive)\n4. Sum of digits of a number\n5. Count vowels in a string\n6. Find the largest element in an array\n7. Reverse an array without using built-in functions\n8. Check if two strings are anagrams\n9. FizzBuzz (print 1 to 100, replace multiples of 3 with 'Fizz', 5 with 'Buzz', both with 'FizzBuzz')\n10. Find the second largest element in an array without sorting\n\n**Strategy:**\n- Use Java or Python — both are well-supported\n- Always write your code with a main function that includes at least one test case\n- Comment what your code does (Accenture values readable code over clever code)\n- If you get stuck on the optimal solution, write a working brute-force solution first — partial marks are given for working code\n\n**What distinguishes top performers:**\nCandidates who handle edge cases (empty array, single element, negative numbers) and explain their approach before coding are rated significantly higher, even for easy problems."
-      },
-      {
-        heading: "Accenture Salary in India 2026",
-        content: "Accenture hiring tracks have different salary bands:\n\n**Analyst (Technology / Operations / Consulting) — fresher:**\n- Package A (standard offer): ₹4.5–5 LPA CTC\n- Package B (higher offer for better performers): ₹6.5–8 LPA CTC\n- Note: Accenture's published CTC includes a variable component (10–15%) and benefits; take-home is typically 75–80% of CTC\n\n**Experienced hires (2–5 years):**\n| Role | Salary Range |\n|---|---|\n| Software Engineering Analyst | ₹7–15 LPA |\n| Associate Software Engineer | ₹10–20 LPA |\n| Software Engineer | ₹14–28 LPA |\n| Senior Software Engineer | ₹22–38 LPA |\n| Technology Architect | ₹32–55 LPA |\n\n**Specialised tracks (higher compensation):**\n- Accenture Cloud First: ₹12–35 LPA for 2–5 years experience\n- Accenture AI and Data: ₹14–38 LPA for 2–5 years experience\n- Accenture Song (digital marketing/experience): ₹10–30 LPA\n\n**Negotiation:** Accenture has rigid salary bands for freshers — the Package A vs Package B distinction is made by the hiring team, not by negotiation. For experienced hires, a competing offer from Infosys, Wipro, or Capgemini is the primary lever. Offers above the band are uncommon.\n\n**Why candidates join Accenture despite lower pay:**\n- Global exposure: client-facing roles with Fortune 500 clients\n- International travel/onsite opportunities (US, UK, Europe) for Technology track\n- Certifications: Accenture pays for AWS, Azure, and Google Cloud certifications\n- Brand: Accenture on the resume opens doors for subsequent roles at IT services and consulting firms"
-      },
-    ],
-    faqs: [
-      {
-        question: "What is Accenture's interview process for freshers in 2026?",
-        answer: "Accenture's fresher interview process has 4 stages: (1) Cognitive and Technical online assessment (aptitude + CS MCQs + 1-2 coding problems), (2) Communication Assessment (written English email + optional spoken section), (3) Technical Interview (OOP, DBMS, OS, resume project discussion), (4) HR Round (standard HR questions + salary discussion). The communication assessment is unique to Accenture and eliminates 15-25% of candidates who pass the technical test."
-      },
-      {
-        question: "What is Accenture's salary for freshers in India 2026?",
-        answer: "Accenture's fresher salary in India 2026 is ₹4.5–8 LPA depending on the offer package. Package A (standard) is ₹4.5–5 LPA CTC. Package B (for stronger performers) is ₹6.5–8 LPA CTC. Accenture's CTC includes variable pay and benefits; take-home is typically 75-80% of CTC."
-      },
-      {
-        question: "Is Accenture interview hard for freshers?",
-        answer: "Accenture's interview is moderately difficult for freshers — harder than Wipro or Cognizant, easier than TCS NQT Advanced or product companies. The cognitive section is time-pressured. The communication assessment (written English) is where most unprepared candidates fail. The technical round tests OOP, DBMS, and OS fundamentals — not advanced algorithms."
-      },
-      {
-        question: "How should I prepare for Accenture's communication assessment?",
-        answer: "Practice writing professional business emails in 200-250 words on scenarios like 'explain a project delay to your manager' or 'summarise a meeting outcome'. Focus on: professional tone (no casual language), clear structure (situation → action → resolution), grammar accuracy, and appropriate length. Also practice reading English newspaper articles aloud for the spoken component. Spend at least 3 days specifically on this — most candidates ignore it entirely."
-      },
-    ],
-    relatedSlugs: ["off-campus-placement-guide-freshers-india-2026", "hr-interview-questions-india-2026", "aptitude-questions-it-companies-india-2026"],
-    practicePageSlugs: [{ label: "It Services Interview Practice", slug: "IT Services Interview Practice" }, { label: "Accenture Ase Interview Questions", slug: "accenture-ase-interview-questions" }],
-    cta: "Accenture's HR and communication rounds are where prepared candidates separate from unprepared ones — the technical bar is lower but the communication bar is explicit and scored. HireStepX's voice-based mock interviews train both sides: structured answers to HR questions and the confidence to speak clearly when someone is evaluating your English.",
-    relatedLinks: [
-      { label: "HR Interview Questions India 2026", href: "/blog/hr-interview-questions-india-2026" },
-      { label: "Aptitude Questions for IT Companies 2026", href: "/blog/aptitude-questions-it-companies-india-2026" },
-    ],
-  },
-  {
     slug: "javascript-interview-questions-india-2026",
     title: "JavaScript Interview Questions India 2026 — Freshers to Senior (Core JS, ES6+, React)",
     metaDescription: "JavaScript interview questions India 2026 with answers. Covers core JS (closures, hoisting, event loop), ES6+ features, async/await, DOM, React basics, and company-specific prep for freshers and experienced developers.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=1200&h=500&fit=crop",
@@ -3709,7 +3298,7 @@ const posts: BlogPost[] = [
     title: "How to Explain a Career Gap in an Interview — India 2026 (With Sample Answers)",
     metaDescription: "How to explain a career gap in an interview in India 2026. Sample answers for health reasons, family responsibilities, higher education, COVID-19 layoffs, startup failures, and extended travel — with what to say and what not to say.",
     company: "General",
-    category: "HR Round",
+    category: "Behavioral",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&h=500&fit=crop",
     heroAlt: "Calendar with a gap period representing career break in India",
@@ -3763,7 +3352,7 @@ const posts: BlogPost[] = [
     slug: "system-design-interview-questions-india-2026",
     title: "System Design Interview Questions India 2026 — With Answers (3–10 YOE Engineers)",
     metaDescription: "System design interview questions India 2026 with detailed answers. Covers URL shortener, WhatsApp, Netflix, Swiggy, payment systems, rate limiter, and how to crack system design rounds at Flipkart, Swiggy, Razorpay, and FAANG India.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
@@ -3823,7 +3412,7 @@ const posts: BlogPost[] = [
     title: "TCS NQT Preparation Guide 2026 — Pattern, Syllabus, Cutoff, and Strategy",
     metaDescription: "TCS NQT preparation guide 2026. Full NQT exam pattern, section-wise syllabus, expected cutoff scores, coding round tips, and 30-day preparation strategy for freshers targeting TCS placement.",
     company: "TCS",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=1200&h=500&fit=crop",
     heroAlt: "Fresher student preparing for TCS NQT exam at a desk with laptop",
@@ -3882,7 +3471,7 @@ const posts: BlogPost[] = [
     title: "Wipro Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
     metaDescription: "Wipro interview questions India 2026 for freshers and experienced candidates. Covers Wipro NLTH online test, technical round, HR round, Wipro salary ₹3.5–40 LPA, and preparation strategy for campus and off-campus hiring.",
     company: "Wipro",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=500&fit=crop",
     heroAlt: "IT office representing Wipro interview preparation India",
@@ -3937,70 +3526,11 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "python-interview-questions-india-2026",
-    title: "Python Interview Questions India 2026 — Freshers to Senior (With Answers)",
-    metaDescription: "Python interview questions India 2026 with answers. Covers core Python (lists vs tuples, generators, decorators), OOP, data science libraries, Django/Flask, and coding problems asked at TCS, Infosys, Flipkart, and data science roles.",
-    company: "Tech",
-    category: "Technical",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=500&fit=crop",
-    heroAlt: "Python code on a screen representing Python interview preparation",
-    datePublished: "2026-07-02",
-    intro: "Python is now the most widely used language in Indian tech interviews — not just for data science roles, but for backend engineering, automation, DevOps, and full-stack positions. The questions asked in Python interviews in India span a wide range: from basic syntax questions at IT services companies to advanced generator and metaclass questions at product companies and FAANG India. This guide organises the questions by level so you can target exactly what you need based on your experience and target company.",
-    sections: [
-      {
-        heading: "Core Python — Questions Asked at Every Level",
-        content: "**1. What is the difference between list, tuple, set, and dictionary?**\n\n| Type | Ordered | Mutable | Duplicates | Syntax |\n|---|---|---|---|---|\n| list | Yes | Yes | Yes | `[1, 2, 3]` |\n| tuple | Yes | No | Yes | `(1, 2, 3)` |\n| set | No | Yes | No | `{1, 2, 3}` |\n| dict | Yes (3.7+) | Yes | Keys: No, Values: Yes | `{'a': 1}` |\n\nUse tuple when data should not change (function return values, dict keys). Use set for membership testing (O(1) vs O(n) for list). Use dict for key-value lookup.\n\n**2. What is the difference between `is` and `==`?**\n`==` compares values. `is` compares identity (same object in memory).\n```python\na = [1, 2, 3]\nb = [1, 2, 3]\nprint(a == b)  # True — same values\nprint(a is b)  # False — different objects\n\n# Exception: Python caches small integers (-5 to 256) and interned strings\nx = 256; y = 256\nprint(x is y)  # True — cached\nz = 257; w = 257\nprint(z is w)  # False in CPython (implementation detail)\n```\n\n**3. What is a mutable default argument trap?**\nOne of the most common Python bug patterns:\n```python\n# WRONG — mutable default shared across all calls\ndef append_to(element, to=[]):\n    to.append(element)\n    return to\n\nappend_to(1)  # [1]\nappend_to(2)  # [1, 2] — not [2]! to is the SAME list\n\n# CORRECT — use None as sentinel\ndef append_to(element, to=None):\n    if to is None:\n        to = []\n    to.append(element)\n    return to\n```\n\n**4. What is the difference between `*args` and `**kwargs`?**\n```python\ndef func(*args, **kwargs):\n    print(args)    # tuple of positional args\n    print(kwargs)  # dict of keyword args\n\nfunc(1, 2, 3, name='Priya', city='Bengaluru')\n# args = (1, 2, 3)\n# kwargs = {'name': 'Priya', 'city': 'Bengaluru'}\n```\n\n**5. How does Python manage memory?**\nPython uses reference counting as the primary memory management strategy. Every object has a reference count; when it drops to 0, the memory is freed. A cyclic garbage collector handles circular references that reference counting can't resolve. Memory is managed in a private heap — developers don't call `malloc`/`free` directly.\n\n**6. What is GIL (Global Interpreter Lock)?**\nCPython's GIL ensures only one thread executes Python bytecode at a time. This means multi-threaded Python programs cannot achieve true parallelism for CPU-bound tasks on a multi-core CPU. Workarounds: use `multiprocessing` (separate processes, no GIL) for CPU-bound tasks; use `threading` or `asyncio` for I/O-bound tasks (GIL releases during I/O)."
-      },
-      {
-        heading: "Intermediate Python — Functions, Decorators, Generators",
-        content: "**7. What is a decorator and how do you write one?**\nA decorator is a function that wraps another function to add behaviour without modifying the original function.\n```python\nimport functools\nimport time\n\ndef timer(func):\n    @functools.wraps(func)  # preserves __name__, __doc__\n    def wrapper(*args, **kwargs):\n        start = time.time()\n        result = func(*args, **kwargs)\n        print(f'{func.__name__} took {time.time() - start:.2f}s')\n        return result\n    return wrapper\n\n@timer\ndef slow_function():\n    time.sleep(1)\n\nslow_function()  # prints: slow_function took 1.00s\n```\n\n**8. What is a generator and how is it different from a list?**\nA generator is a function that yields values one at a time instead of computing all values upfront. It is lazy — values are produced only when requested.\n```python\n# List — computes all 1M numbers, stores in memory\nnumbers = [x * x for x in range(1_000_000)]\n\n# Generator — computes one at a time, uses almost no memory\nnumbers = (x * x for x in range(1_000_000))\n\n# Generator function with yield\ndef fibonacci():\n    a, b = 0, 1\n    while True:\n        yield a\n        a, b = b, a + b\n\nfib = fibonacci()\nprint(next(fib))  # 0\nprint(next(fib))  # 1\nprint(next(fib))  # 1\n```\nUse generators when: processing large datasets that don't fit in memory, streaming data, infinite sequences.\n\n**9. What is the difference between `map`, `filter`, and list comprehension?**\n```python\nnumbers = [1, 2, 3, 4, 5]\n\n# map — apply function to every element\nsquares = list(map(lambda x: x**2, numbers))  # [1, 4, 9, 16, 25]\n\n# filter — keep elements where function returns True\nevens = list(filter(lambda x: x % 2 == 0, numbers))  # [2, 4]\n\n# List comprehension — more Pythonic, often preferred\nsquares = [x**2 for x in numbers]\nevens = [x for x in numbers if x % 2 == 0]\n```\nList comprehensions are generally preferred in Python code for readability. `map`/`filter` are useful when passing a function by reference.\n\n**10. What is `__init__` vs `__new__` in Python classes?**\n`__new__` creates the instance (allocates memory). `__init__` initialises the instance with attributes. `__new__` is rarely overridden directly (only needed for custom metaclasses or immutable types like `int` subclasses).\n```python\nclass Singleton:\n    _instance = None\n    def __new__(cls):\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n        return cls._instance\n```"
-      },
-      {
-        heading: "OOP in Python — Questions for Backend and Product Roles",
-        content: "**11. What is method resolution order (MRO) in Python?**\nMRO determines the order Python looks for a method in a class hierarchy when using multiple inheritance. Python uses the C3 linearisation algorithm.\n```python\nclass A:\n    def hello(self): print('A')\n\nclass B(A):\n    def hello(self): print('B')\n\nclass C(A):\n    def hello(self): print('C')\n\nclass D(B, C):\n    pass\n\nD().hello()  # prints 'B'\nprint(D.__mro__)  # (D, B, C, A, object)\n```\n\n**12. What is the difference between `@staticmethod` and `@classmethod`?**\n```python\nclass Employee:\n    company = 'Wipro'\n    \n    def __init__(self, name):\n        self.name = name\n    \n    @classmethod\n    def from_string(cls, string):     # receives class as first arg\n        name = string.split('-')[0]\n        return cls(name)              # can call cls() to create instances\n    \n    @staticmethod\n    def is_valid_name(name):          # no self or cls — pure utility function\n        return len(name) > 0 and name.isalpha()\n\nemp = Employee.from_string('Rahul-Engineer')\nprint(Employee.is_valid_name('Rahul'))  # True\n```\n\n**13. What are Python's dunder (magic) methods?**\nDunder methods allow classes to implement Python protocols:\n- `__str__` / `__repr__`: string representation\n- `__len__`: `len(obj)` support\n- `__eq__`, `__lt__`, `__gt__`: comparison operators\n- `__add__`, `__mul__`: arithmetic operators\n- `__enter__`, `__exit__`: context manager (`with` statement)\n- `__iter__`, `__next__`: iteration protocol\n- `__getitem__`, `__setitem__`: indexing (`obj[key]`)\n\n```python\nclass Vector:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n    def __add__(self, other):\n        return Vector(self.x + other.x, self.y + other.y)\n    def __repr__(self):\n        return f'Vector({self.x}, {self.y})'\n\nv1 = Vector(1, 2)\nv2 = Vector(3, 4)\nprint(v1 + v2)  # Vector(4, 6)\n```"
-      },
-      {
-        heading: "Python Coding Problems Asked in Indian Interviews",
-        content: "**Problem 1: Find all duplicates in a list**\n```python\nfrom collections import Counter\ndef find_duplicates(lst):\n    return [item for item, count in Counter(lst).items() if count > 1]\n\nfind_duplicates([1, 2, 3, 2, 4, 1])  # [1, 2]\n```\n\n**Problem 2: Flatten a nested list**\n```python\ndef flatten(lst):\n    result = []\n    for item in lst:\n        if isinstance(item, list):\n            result.extend(flatten(item))\n        else:\n            result.append(item)\n    return result\n\nflatten([1, [2, [3, 4], 5], 6])  # [1, 2, 3, 4, 5, 6]\n```\n\n**Problem 3: Most frequent character in a string**\n```python\nfrom collections import Counter\ndef most_frequent_char(s):\n    return Counter(s).most_common(1)[0][0]\n\nmost_frequent_char('programming')  # 'g'\n```\n\n**Problem 4: Check if a number is prime**\n```python\ndef is_prime(n):\n    if n < 2: return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0: return False\n    return True\n```\n\n**Problem 5: Two Sum (very common at product companies)**\n'Given a list of integers and a target, return indices of the two numbers that add up to target.'\n```python\ndef two_sum(nums, target):\n    seen = {}  # value -> index\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return [seen[complement], i]\n        seen[num] = i\n    return []\n\ntwo_sum([2, 7, 11, 15], 9)  # [0, 1]\n```\n\n**Problem 6: Group anagrams**\n```python\nfrom collections import defaultdict\ndef group_anagrams(words):\n    groups = defaultdict(list)\n    for word in words:\n        key = tuple(sorted(word))\n        groups[key].append(word)\n    return list(groups.values())\n\ngroup_anagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])\n# [['eat', 'tea', 'ate'], ['tan', 'nat'], ['bat']]\n```"
-      },
-      {
-        heading: "Python for Data Science — Questions for Analyst and ML Roles",
-        content: "For data science, ML engineering, and data analyst roles in India, Python questions shift toward libraries and data manipulation:\n\n**NumPy:**\n- 'What is broadcasting in NumPy?' — Operations between arrays of different shapes; smaller array is 'broadcast' to match the larger. Enables vectorised operations without explicit loops.\n- 'Difference between ndarray copy and view?' — `a[:]` returns a view (shares memory); `a.copy()` returns an independent copy. Modifying a view modifies the original.\n\n**Pandas:**\n- 'Difference between loc and iloc?' — `loc` uses label-based indexing; `iloc` uses integer-position-based indexing.\n- 'How do you handle missing values?' — `df.isnull().sum()` to detect; `df.fillna(value)` to fill; `df.dropna()` to drop rows/columns with NaN.\n- 'How do you merge two DataFrames?' — `pd.merge(df1, df2, on='key', how='inner/left/right/outer')`\n\n**Common data science coding problems:**\n```python\nimport pandas as pd\n\n# Find top 3 products by revenue\ndf.groupby('product')['revenue'].sum().nlargest(3)\n\n# Calculate month-over-month growth\ndf['mom_growth'] = df['revenue'].pct_change() * 100\n\n# Find customers who bought in both Jan and Feb\njan = set(df[df['month'] == 'Jan']['customer_id'])\nfeb = set(df[df['month'] == 'Feb']['customer_id'])\nboth = jan & feb\n```\n\n**Python salary by role in India 2026:**\n| Role | Experience | Range |\n|---|---|---|\n| Python Developer (backend) | 0–2 years | ₹4–12 LPA |\n| Python Developer (backend) | 2–5 years | ₹10–28 LPA |\n| Data Scientist (Python) | 2–5 years | ₹12–35 LPA |\n| ML Engineer | 3–6 years | ₹18–50 LPA |\n| Senior Python Engineer (product company) | 5–8 years | ₹30–70 LPA |"
-      },
-    ],
-    faqs: [
-      {
-        question: "What Python topics are most important for interviews in India 2026?",
-        answer: "For IT services company roles: list/tuple/dict/set differences, basic OOP (classes, inheritance), file handling, simple coding problems. For product company backend roles: decorators, generators, context managers, OOP (MRO, dunder methods), concurrency (threading vs multiprocessing, asyncio), database (SQLAlchemy or raw SQL). For data science roles: NumPy broadcasting, Pandas (groupby, merge, missing values), and scikit-learn pipeline basics."
-      },
-      {
-        question: "What is the difference between a list and a tuple in Python?",
-        answer: "Lists are mutable (can be modified after creation) and use square brackets []. Tuples are immutable (cannot be modified) and use parentheses (). Tuples are faster than lists for iteration, use less memory, and can be used as dictionary keys (lists cannot). Use lists when you need to add/remove/modify elements; use tuples for fixed collections of data (coordinates, RGB values, function return values)."
-      },
-      {
-        question: "What is a Python generator and when should I use it?",
-        answer: "A generator is a function that yields values one at a time using the `yield` keyword instead of returning all values at once. Generators are lazy — they compute values only when requested — so they use very little memory regardless of the sequence length. Use generators when: processing large files line by line, working with infinite sequences, streaming data from APIs, or any situation where you don't need all values in memory simultaneously."
-      },
-      {
-        question: "Is Python used for freshers interviews in India?",
-        answer: "Yes — Python is now tested in fresher interviews at IT services companies (TCS, Infosys, Wipro, Accenture) for web/automation roles, at product companies for backend and data roles, and at nearly all data science and ML positions. Freshers are typically asked: data type differences (list/tuple/set/dict), basic OOP (class, inheritance, __init__), list comprehensions, and simple coding problems (reverse a string, check palindrome, find duplicates)."
-      },
-    ],
-    relatedSlugs: ["javascript-interview-questions-india-2026", "full-stack-developer-salary-india-2026", "machine-learning-engineer-salary-india-2026"],
-    practicePageSlugs: [{ label: "Python Technical Interview Practice", slug: "Python Technical Interview Practice" }, { label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }],
-    cta: "Python interviews test both knowledge and the ability to explain clearly — can you walk an interviewer through why generators beat lists for large data, not just state it? HireStepX's voice mock interviews train you to articulate Python concepts under real interview conditions, so the explanation is as strong as the knowledge behind it.",
-    relatedLinks: [
-      { label: "JavaScript Interview Questions India 2026", href: "/blog/javascript-interview-questions-india-2026" },
-      { label: "ML Engineer Salary India 2026", href: "/blog/machine-learning-engineer-salary-india-2026" },
-    ],
-  },
-  {
     slug: "infosys-interview-questions-india-2026",
     title: "Infosys Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
     metaDescription: "Infosys interview questions India 2026 for freshers and experienced candidates. Covers InfyTQ online test, Power Programmer track, technical and HR rounds, Infosys salary ₹3.6–30 LPA, and preparation strategy.",
     company: "Infosys",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200&h=500&fit=crop",
     heroAlt: "Modern corporate office representing Infosys interview preparation",
@@ -4059,7 +3589,7 @@ const posts: BlogPost[] = [
     title: "Fresher Resume Format India 2026 — One-Page Template With Examples",
     metaDescription: "Fresher resume format India 2026 with a one-page template, section-by-section guide, and examples for engineering, MBA, and B.Com freshers. What to include, what to avoid, and how to pass ATS screening.",
     company: "General",
-    category: "Career Prep",
+    category: "Career",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=500&fit=crop",
     heroAlt: "Resume on a desk representing fresher resume preparation India",
@@ -4114,70 +3644,11 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "java-interview-questions-india-2026",
-    title: "Java Interview Questions India 2026 — Core Java, OOP, Collections, Spring Boot (With Answers)",
-    metaDescription: "Java interview questions India 2026 with answers. Covers Core Java (OOP, exceptions, multithreading), Collections framework, Java 8+ features (streams, lambdas), Spring Boot, and coding problems at TCS, Infosys, Wipro, and product companies.",
-    company: "Tech",
-    category: "Technical",
-    readTime: "11 min",
-    heroImage: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=500&fit=crop",
-    heroAlt: "Java code on a monitor representing Java interview preparation India",
-    datePublished: "2026-07-04",
-    intro: "Java remains the dominant backend language in Indian IT services and a primary choice at product companies for server-side development. Whether you are preparing for TCS, Infosys, Wipro, or Flipkart, Java interview questions will cover a predictable set of topics — OOP fundamentals, the Collections framework, exception handling, multithreading, and Java 8+ features. This guide covers every level from fresher to 5-year experienced, with the answers that interviewers actually want to hear.",
-    sections: [
-      {
-        heading: "Core Java — OOP and Language Fundamentals",
-        content: "**1. What are the four pillars of OOP and how does Java implement each?**\n\n- **Encapsulation**: Binding data (fields) and methods together in a class; hiding internal state via `private` access modifier and exposing via `public` getters/setters. Java example: JavaBeans pattern.\n- **Abstraction**: Hiding implementation details, exposing only relevant interface. Java achieves this via abstract classes and interfaces.\n- **Inheritance**: A child class (`extends`) inherits fields and methods from a parent. Java supports single inheritance for classes; multiple inheritance via interfaces.\n- **Polymorphism**: Same method name, different behaviour. Compile-time (method overloading) and runtime (method overriding via `@Override`).\n\n**2. What is the difference between abstract class and interface in Java?**\n\n| | Abstract Class | Interface |\n|---|---|---|\n| Methods | Abstract + concrete methods | Abstract methods + default/static (Java 8+) |\n| Variables | Instance variables allowed | Only `public static final` constants |\n| Constructor | Yes | No |\n| Multiple inheritance | Not supported | Supported (class implements multiple interfaces) |\n| When to use | 'Is-a' relationship with shared state | 'Can-do' contract with no shared state |\n\n```java\nabstract class Animal {\n    String name;  // instance variable\n    abstract void speak();  // must override\n    void breathe() { System.out.println(\"breathing\"); }  // concrete\n}\n\ninterface Flyable {\n    void fly();  // implicitly public abstract\n    default void land() { System.out.println(\"landing\"); }  // Java 8+\n}\n```\n\n**3. What is the difference between `==` and `.equals()` in Java?**\n`==` for objects compares references (memory addresses), not content.\n`.equals()` compares content (if overridden correctly).\n```java\nString s1 = new String(\"hello\");\nString s2 = new String(\"hello\");\nSystem.out.println(s1 == s2);      // false — different objects\nSystem.out.println(s1.equals(s2)); // true — same content\n\n// String pool exception:\nString s3 = \"hello\";\nString s4 = \"hello\";\nSystem.out.println(s3 == s4); // true — same pool object\n```\n\n**4. What is the difference between `String`, `StringBuilder`, and `StringBuffer`?**\n- `String`: Immutable. Every modification creates a new object. Thread-safe by design.\n- `StringBuilder`: Mutable. Not thread-safe. Use for single-threaded string manipulation — significantly faster than String concatenation in loops.\n- `StringBuffer`: Mutable. Thread-safe (synchronised methods). Use in multi-threaded contexts. Slower than StringBuilder.\n\n**5. What is the `final` keyword in Java?**\n- `final` variable: value cannot be changed after assignment\n- `final` method: cannot be overridden in subclasses\n- `final` class: cannot be subclassed (e.g., `String`, `Integer` are final)\n\n**6. What is the difference between `static` and instance methods?**\nStatic methods belong to the class, not instances. They cannot access instance variables or call instance methods without an object reference. Use static for utility methods that don't need object state.\n```java\npublic class MathUtils {\n    public static int add(int a, int b) { return a + b; }  // no 'this'\n}\nMathUtils.add(3, 4);  // no object needed\n```"
-      },
-      {
-        heading: "Java Collections Framework — Most-Tested Topic",
-        content: "The Collections framework is the most frequently tested Java topic at both IT services and product companies.\n\n**7. What is the difference between ArrayList and LinkedList?**\n\n| | ArrayList | LinkedList |\n|---|---|---|\n| Internal structure | Dynamic array | Doubly linked list |\n| Random access | O(1) | O(n) |\n| Insert/delete (middle) | O(n) — shift elements | O(1) — update pointers |\n| Memory | Less overhead | More (stores prev/next pointers) |\n| Best for | Read-heavy, index-based access | Insert/delete-heavy, queue operations |\n\n**8. What is the difference between HashMap, LinkedHashMap, and TreeMap?**\n- `HashMap`: No ordering guarantee, O(1) get/put average, allows one `null` key\n- `LinkedHashMap`: Maintains insertion order, slightly slower than HashMap\n- `TreeMap`: Sorted by natural key order (or Comparator), O(log n) operations, no `null` keys\n\n**9. What is the difference between HashSet and TreeSet?**\n- `HashSet`: No order, O(1) add/contains, allows one `null`\n- `TreeSet`: Sorted order (natural or Comparator), O(log n), no `null`\n\n**10. What is the difference between Iterator and ListIterator?**\n- `Iterator`: Forward-only traversal; works on all Collection types; can remove elements\n- `ListIterator`: Bidirectional (forward + backward); only works on List; can add and set elements\n\n**11. What happens when two keys have the same `hashCode()` in a HashMap?**\nThis is a hash collision. In Java 8+, HashMap uses a linked list for up to 8 entries per bucket, then converts to a red-black tree (O(log n) lookup) for better performance when many collisions occur. Before Java 8, it was always a linked list.\n\n**12. Coding question: Find the frequency of each character in a string using Collections.**\n```java\nString s = \"programming\";\nMap<Character, Integer> freq = new HashMap<>();\nfor (char c : s.toCharArray()) {\n    freq.put(c, freq.getOrDefault(c, 0) + 1);\n}\nSystem.out.println(freq); // {p=1, r=2, o=1, g=2, a=1, m=2, i=1, n=1}\n```"
-      },
-      {
-        heading: "Java 8+ Features — Asked at Every Product Company",
-        content: "Java 8 features are now standard interview material at any company using Java.\n\n**13. What are lambda expressions?**\nLambdas are anonymous functions — they implement functional interfaces (interfaces with exactly one abstract method) without needing a named class.\n```java\n// Before Java 8\nRunnable r = new Runnable() {\n    @Override\n    public void run() { System.out.println(\"Hello\"); }\n};\n\n// With lambda\nRunnable r = () -> System.out.println(\"Hello\");\n\n// With parameters\nComparator<String> comp = (a, b) -> a.compareTo(b);\n```\n\n**14. What are Streams in Java 8?**\nStreams allow functional-style operations on collections — filter, map, reduce — without modifying the source.\n```java\nList<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6);\n\n// Filter even numbers, square them, collect to list\nList<Integer> result = numbers.stream()\n    .filter(n -> n % 2 == 0)      // [2, 4, 6]\n    .map(n -> n * n)               // [4, 16, 36]\n    .collect(Collectors.toList()); // [4, 16, 36]\n\n// Sum all elements\nint sum = numbers.stream().reduce(0, Integer::sum);  // 21\n\n// Group by even/odd\nMap<Boolean, List<Integer>> grouped = numbers.stream()\n    .collect(Collectors.partitioningBy(n -> n % 2 == 0));\n```\n\n**15. What is Optional in Java 8?**\n`Optional<T>` is a container that may or may not contain a non-null value. It forces explicit handling of null cases, reducing NullPointerExceptions.\n```java\nOptional<String> name = Optional.ofNullable(getUserName());\nString display = name.orElse(\"Anonymous\");  // default if empty\nname.ifPresent(n -> System.out.println(n)); // only runs if present\n```"
-      },
-      {
-        heading: "Exception Handling and Multithreading",
-        content: "**16. What is the difference between checked and unchecked exceptions?**\n- **Checked exceptions**: Must be declared with `throws` or caught in a `try-catch`. Represent recoverable conditions. Examples: `IOException`, `SQLException`.\n- **Unchecked exceptions** (Runtime exceptions): Don't need to be declared. Represent programming errors. Examples: `NullPointerException`, `ArrayIndexOutOfBoundsException`.\n\n```java\n// Checked — compiler forces you to handle\nvoid readFile() throws IOException { ... }  // must declare\n\n// Unchecked — no compile-time enforcement\nvoid riskyOp() {\n    String s = null;\n    s.length(); // NullPointerException at runtime\n}\n```\n\n**17. What is the difference between `throw` and `throws`?**\n- `throw`: Used to explicitly throw an exception inside a method body\n- `throws`: Used in a method signature to declare which checked exceptions the method may throw\n\n**18. What is the difference between `process` and `thread` in Java?**\nA process is an independent program execution with its own memory space. A thread is a lightweight unit within a process — threads share the process's memory space. Java provides `Thread` class and `Runnable` interface for creating threads.\n\n**19. What is `synchronized` in Java?**\n`synchronized` ensures that only one thread can execute a block of code or method at a time — prevents race conditions on shared data.\n```java\nclass Counter {\n    private int count = 0;\n    public synchronized void increment() {  // only one thread at a time\n        count++;\n    }\n}\n```\n\n**20. What is a deadlock? Give an example in Java context.**\nDeadlock: Thread A holds Lock 1 and waits for Lock 2; Thread B holds Lock 2 and waits for Lock 1. Both wait forever.\nPrevention: always acquire locks in a consistent order across all threads."
-      },
-      {
-        heading: "Spring Boot — Questions for Backend/Full-Stack Roles",
-        content: "For 2+ year experienced Java engineers, Spring Boot questions are expected.\n\n**21. What is Spring Boot and how is it different from Spring Framework?**\nSpring Framework is a comprehensive dependency injection and web framework — but requires significant XML/Java configuration. Spring Boot adds:\n- Auto-configuration (sensible defaults, no boilerplate config)\n- Embedded server (Tomcat/Jetty/Undertow — no WAR deployment needed)\n- Starter dependencies (spring-boot-starter-web includes everything for a REST API)\n- Actuator (production monitoring endpoints out of the box)\n\n**22. What is Dependency Injection? How does Spring implement it?**\nDependency Injection: components receive their dependencies from an external source rather than creating them internally. Spring's IoC container creates and injects dependencies.\n```java\n@Service\npublic class UserService {\n    private final UserRepository userRepo;\n    \n    @Autowired  // Spring injects UserRepository\n    public UserService(UserRepository userRepo) {\n        this.userRepo = userRepo;\n    }\n}\n```\n\n**23. What is the difference between `@RestController` and `@Controller`?**\n- `@Controller`: Returns a view name (for server-side rendering with Thymeleaf/JSP)\n- `@RestController`: `@Controller` + `@ResponseBody` — every method returns data (JSON/XML) directly, not a view. Use for REST APIs.\n\n**24. What is JPA and what is the difference between `findById` and `getById`?**\nJPA (Jakarta Persistence API) is the Java standard for ORM. Spring Data JPA simplifies database access:\n- `findById(id)` returns `Optional<T>` — safe, handles not-found case\n- `getById(id)` (deprecated in newer versions) returns a proxy and throws `EntityNotFoundException` on access if not found"
-      },
-    ],
-    faqs: [
-      {
-        question: "What Java topics are most important for IT services interviews in India in 2026?",
-        answer: "For IT services companies (TCS, Infosys, Wipro, Accenture): OOP concepts (encapsulation, inheritance, polymorphism, abstraction), String handling (String vs StringBuilder vs StringBuffer), Collections framework (ArrayList vs LinkedList, HashMap internals), exception handling (checked vs unchecked), and one simple coding problem. Spring Boot is not typically tested at IT services fresher level — focus on Core Java."
-      },
-      {
-        question: "What Java topics are asked at product companies in India?",
-        answer: "At Indian product companies (Flipkart, Swiggy, Razorpay, Meesho) and FAANG India: all Core Java fundamentals plus Java 8+ features (streams, lambdas, Optional), Collections deep dive (HashMap internals, concurrent collections), multithreading (synchronized, volatile, ExecutorService, CompletableFuture), design patterns (Singleton, Factory, Builder, Observer), and Spring Boot for backend roles. Expect LeetCode Medium DSA problems on top."
-      },
-      {
-        question: "What is the difference between ArrayList and LinkedList in Java?",
-        answer: "ArrayList uses a dynamic array — O(1) random access by index, O(n) for insert/delete in the middle (elements must shift). LinkedList uses a doubly linked list — O(n) random access, O(1) insert/delete when you have a reference to the node. Use ArrayList when you read elements by index frequently; use LinkedList when you insert/delete frequently at the head/tail (e.g., as a queue or deque)."
-      },
-      {
-        question: "What are Java 8 streams and why are they important for interviews?",
-        answer: "Java 8 Streams allow functional-style operations (filter, map, reduce, collect) on collections without modifying the source. They are important for interviews at product companies because: (1) they demonstrate modern Java knowledge, (2) stream-based solutions are more concise than imperative loops, and (3) parallel streams show awareness of performance optimisation. Common interview questions: group elements by property, find top-N elements, calculate averages, flatten nested lists — all solvable elegantly with streams."
-      },
-    ],
-    relatedSlugs: ["javascript-interview-questions-india-2026", "python-interview-questions-india-2026", "full-stack-developer-salary-india-2026"],
-    practicePageSlugs: [{ label: "Java Technical Interview Practice", slug: "Java Technical Interview Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }],
-    cta: "Java technical interviews test both your knowledge and your ability to explain complex concepts clearly — can you explain HashMap internals or walk through a streams pipeline without losing your train of thought under pressure? HireStepX's voice mock interviews train the verbal explanation skill alongside the technical knowledge.",
-    relatedLinks: [
-      { label: "Python Interview Questions India 2026", href: "/blog/python-interview-questions-india-2026" },
-      { label: "Full Stack Developer Salary India 2026", href: "/blog/full-stack-developer-salary-india-2026" },
-    ],
-  },
-  {
     slug: "star-method-interview-answers-india-2026",
     title: "STAR Method Interview Answers India 2026 — Examples for Every HR Question",
     metaDescription: "STAR method interview answers India 2026 with examples for tell me about yourself, teamwork, conflict, leadership, failure, and pressure scenarios. How to structure behavioural answers for TCS, Infosys, Accenture, and product companies.",
     company: "General",
-    category: "HR Round",
+    category: "Behavioral",
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=500&fit=crop",
     heroAlt: "Interview conversation representing STAR method preparation India",
@@ -4236,7 +3707,7 @@ const posts: BlogPost[] = [
     title: "Cognizant Interview Questions India 2026 — Freshers & Experienced (GenC, GenC Next, Salary)",
     metaDescription: "Cognizant interview questions India 2026 for freshers and experienced candidates. Covers Cognizant GenC and GenC Next aptitude test, technical round, HR round, Cognizant salary ₹4–35 LPA, and preparation tips.",
     company: "Cognizant",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=500&fit=crop",
     heroAlt: "Corporate office representing Cognizant interview preparation India",
@@ -4291,7 +3762,7 @@ const posts: BlogPost[] = [
     title: "Amazon Interview Questions India 2026 — Leadership Principles, DSA, System Design (All Rounds)",
     metaDescription: "Amazon interview questions India 2026 with answers. Covers Amazon Leadership Principles (all 16 LPs), DSA rounds, system design, SDE-1 and SDE-2 preparation, and Amazon India salary ₹25–80 LPA.",
     company: "Amazon",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&h=500&fit=crop",
     heroAlt: "Amazon office representing Amazon India interview preparation",
@@ -4349,7 +3820,7 @@ const posts: BlogPost[] = [
     slug: "dsa-interview-preparation-guide-india-2026",
     title: "DSA Interview Preparation Guide India 2026 — From Zero to Product Company Ready",
     metaDescription: "Complete DSA interview preparation guide India 2026. Arrays, strings, linked lists, trees, graphs, dynamic programming — with a 12-week study plan, LeetCode problem list, and strategies for TCS, Flipkart, Amazon, and Google India.",
-    company: "Tech",
+    company: "General",
     category: "Technical",
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=1200&h=500&fit=crop",
@@ -4409,7 +3880,7 @@ const posts: BlogPost[] = [
     title: "HCL Technologies Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
     metaDescription: "HCL Technologies interview questions India 2026 for freshers and experienced candidates. Covers HCL online test, technical round, HR round, HCL TechBee programme, salary ₹3.5–35 LPA, and preparation tips.",
     company: "HCL",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=1200&h=500&fit=crop",
     heroAlt: "HCL Technologies office representing HCL interview preparation India",
@@ -4464,7 +3935,7 @@ const posts: BlogPost[] = [
     title: "Google India Interview Questions 2026 — SWE Process, DSA, Googleyness, Salary",
     metaDescription: "Google India interview questions 2026 for software engineers. Covers the full SWE interview loop, DSA difficulty, Googleyness and leadership rounds, Google India salary ₹30–120 LPA, and how to prepare for L3–L5.",
     company: "Google",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=500&fit=crop",
     heroAlt: "Google office representing Google India SWE interview preparation",
@@ -4523,7 +3994,7 @@ const posts: BlogPost[] = [
     title: "Microsoft India Interview Questions 2026 — SDE Process, DSA, Culture Fit, Salary",
     metaDescription: "Microsoft India interview questions 2026 for software engineers. Covers the full SDE interview loop, DSA difficulty level, values-based behavioural round, Microsoft India salary ₹22–90 LPA, and preparation strategy for SDE-1 to SDE-2.",
     company: "Microsoft",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1537498425277-c283d32ef9db?w=1200&h=500&fit=crop",
     heroAlt: "Microsoft office representing Microsoft India interview preparation",
@@ -4582,7 +4053,7 @@ const posts: BlogPost[] = [
     title: "Flipkart Interview Questions India 2026 — SDE Process, DSA, System Design, Salary",
     metaDescription: "Flipkart interview questions India 2026. Covers Flipkart's SDE-1 to SDE-3 interview loop, DSA difficulty, system design for e-commerce, behavioural rounds, and Flipkart salary ₹25–80 LPA with Walmart stock.",
     company: "Flipkart",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&h=500&fit=crop",
     heroAlt: "E-commerce warehouse representing Flipkart interview preparation India",
@@ -4629,65 +4100,6 @@ const posts: BlogPost[] = [
     cta: "Flipkart's technical rounds move fast and expect you to communicate your approach clearly before coding — silent coding without narrating your thinking is marked down. HireStepX's voice mock interviews train you to verbalise your DSA reasoning in real time, building the communication habit that Flipkart's interviewers specifically reward.",
     relatedLinks: [
       { label: "Amazon Interview Questions India 2026", href: "/blog/amazon-interview-questions-india-2026" },
-      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
-    ],
-  },
-  {
-    slug: "sql-interview-questions-india-2026",
-    title: "SQL Interview Questions India 2026 — Freshers to Senior (50+ Questions + Answers)",
-    metaDescription: "SQL interview questions India 2026 — 50+ questions with answers for freshers to senior engineers. Covers JOINs, window functions, indexing, query optimisation, and SQL questions asked at TCS, Infosys, product companies, and data roles.",
-    company: "General",
-    category: "Technical",
-    readTime: "11 min",
-    heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1200&h=500&fit=crop",
-    heroAlt: "Database tables representing SQL interview questions India 2026",
-    datePublished: "2026-07-11",
-    intro: "SQL is the most universally tested technical skill in Indian tech interviews — asked at TCS, Infosys, and Wipro for every role, and tested at product companies for backend engineer, data engineer, and data analyst positions. The difficulty ranges from basic SELECT statements at IT services companies to complex window functions and query optimisation at product companies. This guide covers every tier: fresher-level basics, SDE-2 SQL, and senior/data-engineer SQL.",
-    sections: [
-      {
-        heading: "SQL Basics — Fresher / IT Services Level",
-        content: "These questions are asked at TCS, Infosys, Wipro, Cognizant, and Accenture for freshers and 0–2 year candidates:\n\n**Q1: What is the difference between WHERE and HAVING?**\nWHERE filters rows BEFORE aggregation; HAVING filters groups AFTER aggregation.\n```sql\nSELECT department, COUNT(*) as emp_count\nFROM employees\nWHERE salary > 30000        -- filters individual rows first\nGROUP BY department\nHAVING COUNT(*) > 5;         -- then filters groups\n```\n\n**Q2: What are the types of JOINs?**\n- INNER JOIN: rows where the condition matches in BOTH tables\n- LEFT JOIN: all rows from left table + matching rows from right (NULL if no match)\n- RIGHT JOIN: all rows from right table + matching rows from left\n- FULL OUTER JOIN: all rows from both tables (NULL where no match on either side)\n- CROSS JOIN: Cartesian product (every row × every row)\n\n**Q3: What is the difference between DELETE, TRUNCATE, and DROP?**\n- DELETE: removes rows one at a time; can be rolled back; triggers fire\n- TRUNCATE: removes all rows at once; cannot be rolled back in most databases; no triggers; resets auto-increment\n- DROP: removes the entire table structure and data permanently\n\n**Q4: What is a Primary Key vs Unique Key?**\n- Primary Key: uniquely identifies each row; cannot be NULL; only one per table\n- Unique Key: enforces uniqueness; can be NULL (once in most databases); multiple allowed per table\n\n**Q5: What is normalisation? What are the normal forms?**\nNormalisation eliminates data redundancy and ensures data integrity by organising tables into normal forms:\n- 1NF: each column has atomic (indivisible) values; no repeating groups\n- 2NF: in 1NF + no partial dependencies (non-key columns depend on the FULL primary key)\n- 3NF: in 2NF + no transitive dependencies (non-key columns depend only on the primary key, not on other non-key columns)\n- BCNF (Boyce-Codd NF): stricter 3NF — every determinant must be a candidate key"
-      },
-      {
-        heading: "JOINs — The Most Common Interview Topic",
-        content: "JOINs are asked in virtually every SQL interview. Expect scenario-based questions where you must write the correct JOIN type.\n\n**Classic JOIN problem — asked at product companies:**\n'Find all employees who have no manager (i.e., their manager_id doesn't match any employee_id in the table).'\n```sql\nSELECT e.employee_id, e.name\nFROM employees e\nLEFT JOIN employees m ON e.manager_id = m.employee_id\nWHERE m.employee_id IS NULL;\n-- Self-join + LEFT JOIN: employees whose manager_id has no match\n```\n\n**Second salary problem (extremely common):**\n'Find the second highest salary in the employees table.'\n```sql\n-- Method 1: using LIMIT/OFFSET (MySQL/PostgreSQL)\nSELECT DISTINCT salary\nFROM employees\nORDER BY salary DESC\nLIMIT 1 OFFSET 1;\n\n-- Method 2: subquery (works in all databases)\nSELECT MAX(salary)\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n\n-- Method 3: window function (preferred at product companies)\nSELECT salary FROM (\n  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk\n  FROM employees\n) ranked WHERE rnk = 2;\n```\n\n**Duplicate detection — data quality / analytics roles:**\n'Find all emails that appear more than once in the users table.'\n```sql\nSELECT email, COUNT(*) as count\nFROM users\nGROUP BY email\nHAVING COUNT(*) > 1;\n```\n\n**Running total — data analyst / analytics engineer:**\n'Calculate a running total of sales by date.'\n```sql\nSELECT\n  sale_date,\n  amount,\n  SUM(amount) OVER (ORDER BY sale_date) as running_total\nFROM sales;\n```"
-      },
-      {
-        heading: "Window Functions — Product Company SQL Bar",
-        content: "Window functions are the primary differentiator between fresher SQL (IT services level) and SDE-2/data engineer SQL (product company level). If you're targeting product companies, master these.\n\n**Core window functions:**\n- `ROW_NUMBER()`: assigns a unique integer to each row within a partition, starting from 1\n- `RANK()`: like ROW_NUMBER but skips numbers for ties (1,1,3 for two tied rows)\n- `DENSE_RANK()`: like RANK but doesn't skip numbers (1,1,2 for two tied rows)\n- `LAG(col, n)`: value from n rows before the current row\n- `LEAD(col, n)`: value from n rows after the current row\n- `SUM/AVG/COUNT() OVER (...)`: aggregate over a window without collapsing rows\n\n**Classic window function problem — asked at Flipkart, Razorpay, Swiggy:**\n'Find the top 3 highest-paid employees in each department.'\n```sql\nSELECT department, name, salary FROM (\n  SELECT\n    department,\n    name,\n    salary,\n    DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) as salary_rank\n  FROM employees\n) ranked\nWHERE salary_rank <= 3;\n```\n\n**Month-over-month growth — analytics role:**\n'Calculate month-over-month revenue growth as a percentage.'\n```sql\nSELECT\n  month,\n  revenue,\n  LAG(revenue) OVER (ORDER BY month) as prev_month_revenue,\n  ROUND(\n    (revenue - LAG(revenue) OVER (ORDER BY month))\n    / LAG(revenue) OVER (ORDER BY month) * 100, 2\n  ) as growth_pct\nFROM monthly_revenue;\n```\n\n**The OVER clause anatomy:**\n```sql\nFUNCTION() OVER (\n  PARTITION BY col   -- resets window for each value of col\n  ORDER BY col       -- ordering within the window\n  ROWS/RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW  -- frame\n)\n```"
-      },
-      {
-        heading: "Indexing and Query Optimisation — Senior / Data Engineer Level",
-        content: "Index and performance questions appear from SDE-2 onwards at product companies, and in data engineering interviews at all levels.\n\n**What is an index and how does it work?**\nAn index is a separate data structure (typically a B-tree) that maps column values to row locations, making lookups faster at the cost of additional storage and slower writes.\n\n**Types of indexes:**\n- Clustered index: the table data IS the index — rows are physically stored in index key order. One per table (the primary key in most databases)\n- Non-clustered index: separate structure that points to the row location. Multiple allowed per table\n- Composite index: index on multiple columns — column order matters for queries\n- Covering index: index includes all columns needed for a query — no need to access the main table ('index-only scan')\n\n**When does an index NOT get used (index killer patterns)?**\n```sql\n-- 1. Function on indexed column\nWHERE UPPER(email) = 'USER@EXAMPLE.COM'  -- index on email not used\n-- Fix: store data in consistent case, or use a functional index\n\n-- 2. Leading wildcard\nWHERE name LIKE '%kumar'  -- % at start kills the index\n-- Fix: full-text search, or suffix index for suffix queries\n\n-- 3. Implicit type conversion\nWHERE user_id = '12345'  -- if user_id is INT, the string causes a cast\n-- Fix: match the data type\n\n-- 4. NOT IN / NOT EQUAL TO often skips indexes\nWHERE status != 'active'  -- full table scan\n-- Fix: restructure to a positive condition or a covering index\n```\n\n**EXPLAIN / EXPLAIN ANALYZE:**\nInterviewers at product companies often ask 'how would you check if a query is using an index?' The answer: run EXPLAIN (MySQL/PostgreSQL) to see the query plan — look for `type: ALL` (full table scan, bad) vs `type: ref` or `type: range` (index used, good). EXPLAIN ANALYZE actually executes the query and returns real timing."
-      },
-      {
-        heading: "SQL at Indian Companies — What Each Tests",
-        content: "**TCS / Infosys / Wipro / Cognizant (fresher to 3 years):**\n- Basic SELECT, WHERE, ORDER BY, GROUP BY, HAVING\n- INNER JOIN and LEFT JOIN (write a query given two table schemas)\n- Aggregate functions: COUNT, SUM, AVG, MIN, MAX\n- Basic subqueries\n- Difference between DELETE/TRUNCATE/DROP\n- Normal forms (1NF, 2NF, 3NF)\n\n**Flipkart / Razorpay / Swiggy / Zomato (SDE-2, data engineer):**\n- All of the above PLUS:\n- Window functions (RANK, DENSE_RANK, ROW_NUMBER, LAG, LEAD)\n- Complex multi-table JOINs with business scenarios\n- CTEs (Common Table Expressions) for readable multi-step queries\n- Recursive CTEs for hierarchical data (org charts, category trees)\n- Query optimisation discussion: index types, EXPLAIN output\n\n**Amazon / Google / Microsoft (senior SDE, data engineer):**\n- All of the above PLUS:\n- Partitioning strategies (range, list, hash)\n- Distributed SQL concepts (sharding, consistent hashing)\n- Trade-offs between relational and NoSQL\n- Write optimisation (batch inserts, upserts, avoiding lock contention)\n- Schema design given a business problem ('design the schema for Flipkart's order system')\n\n**Data analyst / business analyst roles (all companies):**\n- Heavy emphasis on window functions and aggregations\n- Self-joins for comparing rows within the same table\n- DATE/TIMESTAMP functions (DATEDIFF, DATE_TRUNC, EXTRACT)\n- NULL handling (COALESCE, IS NULL, NULLIF)\n- CASE WHEN for conditional logic"
-      },
-    ],
-    faqs: [
-      {
-        question: "What SQL topics do Indian IT companies test for freshers?",
-        answer: "Indian IT companies (TCS, Infosys, Wipro, Cognizant) test these SQL topics for freshers: SELECT with WHERE/ORDER BY/GROUP BY/HAVING, INNER and LEFT JOINs (write a query given two schemas), aggregate functions (COUNT/SUM/AVG), basic subqueries, DELETE vs TRUNCATE vs DROP, and normalisation (1NF/2NF/3NF). Window functions and query optimisation are NOT expected at fresher level for IT services companies."
-      },
-      {
-        question: "Are window functions asked in SQL interviews in India?",
-        answer: "Yes — window functions (RANK, DENSE_RANK, ROW_NUMBER, LAG, LEAD, SUM OVER) are the primary SQL differentiator at product companies in India. Flipkart, Razorpay, Swiggy, Zomato, and Meesho regularly ask window function problems at SDE-2 and data engineer level. At IT services companies (TCS, Infosys, Wipro), window functions are rarely asked for freshers but may appear for experienced candidates in data roles. If you're targeting product companies, mastering PARTITION BY and ORDER BY inside OVER() is essential."
-      },
-      {
-        question: "What is the most common SQL question asked in Indian interviews?",
-        answer: "The single most common SQL interview question in India is the 'second highest salary' problem — asked at IT services companies, product companies, and data roles alike. Interviewers vary it ('nth highest salary', 'top 3 per department'), so know all approaches: subquery with MAX, LIMIT/OFFSET, and DENSE_RANK window function. The second most common type is multi-table JOIN problems given a business scenario (employee-department, orders-customers)."
-      },
-      {
-        question: "How do I prepare for SQL interviews at product companies in India?",
-        answer: "SQL preparation for product companies: (1) Master all JOIN types and write queries for common patterns (second highest salary, running total, top-N per group); (2) Learn window functions — RANK/DENSE_RANK/ROW_NUMBER/LAG/LEAD with PARTITION BY; (3) Understand indexing — B-tree vs hash, clustered vs non-clustered, patterns that kill index usage; (4) Practice CTEs for multi-step queries instead of nested subqueries; (5) Use LeetCode SQL section (50+ problems, medium difficulty) or StrataScratch for data analyst-type SQL. HackerRank SQL track covers the basics well."
-      },
-    ],
-    relatedSlugs: ["dsa-interview-preparation-guide-india-2026", "system-design-interview-questions-india-2026", "tcs-nqt-preparation-guide-india-2026"],
-    practicePageSlugs: [{ label: "General Technical Interview Practice", slug: "General Technical Interview Practice" }, { label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }],
-    cta: "SQL is tested in behavioural interview format at many companies — interviewers ask you to write a query out loud while narrating your reasoning. HireStepX's voice mock interviews help you build the habit of explaining your SQL logic in plain English as you write it, which is exactly what interviewers at product companies want to see.",
-    relatedLinks: [
-      { label: "DSA Interview Preparation Guide India 2026", href: "/blog/dsa-interview-preparation-guide-india-2026" },
       { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
     ],
   },
@@ -4747,180 +4159,11 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "nodejs-interview-questions-india-2026",
-    title: "Node.js Interview Questions India 2026 — Freshers to Senior (40+ Questions + Answers)",
-    metaDescription: "Node.js interview questions India 2026 — 40+ questions for backend engineers. Covers event loop, async/await, Express.js, clustering, streams, and Node.js questions asked at Indian product companies and startups.",
-    company: "General",
-    category: "Technical",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
-    heroAlt: "Server infrastructure representing Node.js interview questions India 2026",
-    datePublished: "2026-07-12",
-    intro: "Node.js is the backbone of backend development at Indian product startups and mid-size companies — Razorpay, Zerodha, CRED, Meesho, ShareChat, and hundreds of funded startups use Node.js for APIs, microservices, and real-time features. Node.js interviews in India range from event loop basics at 0–2 year level, to clustering and performance optimisation at 2–4 years, to distributed system design at senior level. This guide prepares you for all three tiers with the exact questions and code patterns used in Indian tech interviews.",
-    sections: [
-      {
-        heading: "Node.js Fundamentals — The Event Loop",
-        content: "The event loop is the most important Node.js concept and is asked in virtually every Node.js interview.\n\n**Q: What is Node.js and why is it single-threaded?**\nNode.js is a JavaScript runtime built on Chrome's V8 engine. It uses a single-threaded event loop model — there is one main thread for JavaScript execution, but I/O operations (file system, network) are delegated to the OS (via libuv) and processed asynchronously. The event loop picks up completed I/O results from the callback queue when the main thread is free.\n\n**Q: Explain the event loop phases:**\n```\nEvent Loop Phases (in order):\n1. timers         → executes setTimeout / setInterval callbacks\n2. pending I/O    → I/O callbacks from previous iteration\n3. idle/prepare   → internal Node.js use\n4. poll           → waits for new I/O events; executes their callbacks\n5. check          → setImmediate callbacks\n6. close          → close event callbacks (socket.on('close', ...))\n\nMicrotasks (between every phase):\n- process.nextTick() queue (drains first)\n- Promise .then() callbacks\n```\n\n**Q: What is the difference between process.nextTick() and setImmediate()?**\n- `process.nextTick()`: queued BEFORE the event loop continues to the next phase (highest priority among async callbacks)\n- `setImmediate()`: queued in the 'check' phase, after I/O events\n```js\nsetTimeout(() => console.log('1 - setTimeout'), 0);\nsetImmediate(() => console.log('2 - setImmediate'));\nprocess.nextTick(() => console.log('3 - nextTick'));\nPromise.resolve().then(() => console.log('4 - Promise'));\n\n// Output order:\n// 3 - nextTick       (microtask, before any phase)\n// 4 - Promise        (microtask, after nextTick queue drains)\n// 1 - setTimeout     (timers phase, or check phase — order may vary at 0ms)\n// 2 - setImmediate   (check phase)\n```"
-      },
-      {
-        heading: "Async Patterns — Callbacks, Promises, Async/Await",
-        content: "Async programming patterns are consistently tested in Node.js interviews.\n\n**Callback hell and how to escape it:**\n```js\n// Callback hell (bad)\nfs.readFile('a.txt', (err, a) => {\n  fs.readFile('b.txt', (err, b) => {\n    fs.readFile('c.txt', (err, c) => {\n      // deeply nested, error handling repeated\n    });\n  });\n});\n\n// Async/await (clean)\nasync function readFiles() {\n  try {\n    const a = await fs.promises.readFile('a.txt');\n    const b = await fs.promises.readFile('b.txt');\n    const c = await fs.promises.readFile('c.txt');\n    return { a, b, c };\n  } catch (err) {\n    console.error('Read failed:', err);\n  }\n}\n\n// Parallel with Promise.all\nasync function readParallel() {\n  const [a, b, c] = await Promise.all([\n    fs.promises.readFile('a.txt'),\n    fs.promises.readFile('b.txt'),\n    fs.promises.readFile('c.txt'),\n  ]);\n  return { a, b, c };\n}\n```\n\n**Promise.all vs Promise.allSettled vs Promise.race:**\n- `Promise.all([p1,p2,p3])`: resolves when ALL resolve; rejects immediately if ANY reject\n- `Promise.allSettled([...])`: always resolves; returns array of `{status: 'fulfilled'|'rejected', value|reason}` — use when you want all results regardless of failures\n- `Promise.race([...])`: resolves/rejects as soon as the FIRST promise settles — use for timeouts\n\n**Error handling in async:**\n```js\n// Pattern 1: try/catch in async function\nasync function handler(req, res) {\n  try {\n    const data = await fetchData();\n    res.json(data);\n  } catch (err) {\n    res.status(500).json({ error: err.message });\n  }\n}\n\n// Pattern 2: wrapper to avoid repetitive try/catch\nconst asyncHandler = (fn) => (req, res, next) =>\n  Promise.resolve(fn(req, res, next)).catch(next);\n\nrouter.get('/users', asyncHandler(async (req, res) => {\n  const users = await UserService.getAll();\n  res.json(users);\n}));\n```"
-      },
-      {
-        heading: "Express.js — Middleware, Routing, Error Handling",
-        content: "Express.js is the dominant Node.js web framework in India and is tested alongside Node.js at most companies.\n\n**Q: What is middleware in Express?**\nMiddleware functions have access to `(req, res, next)`. They can execute code, modify req/res, end the request-response cycle, or call `next()` to pass control to the next middleware.\n```js\n// Application-level middleware\napp.use((req, res, next) => {\n  console.log(`${req.method} ${req.path}`);\n  next();\n});\n\n// Router-level middleware\nrouter.use('/admin', isAuthenticated);\n\n// Error-handling middleware — 4 parameters\napp.use((err, req, res, next) => {\n  res.status(500).json({ error: err.message });\n});\n```\n\n**Q: How do you structure a large Express application?**\nLayer pattern (most common in Indian interviews):\n```\nroutes/          → Express router, HTTP layer only\ncontrollers/     → request parsing, response formatting\nservices/        → business logic (testable, no HTTP)\nrepositories/    → database access (PostgreSQL, MongoDB queries)\nmodels/          → data shapes / ORM models\nmiddleware/      → auth, validation, logging, rate limiting\nconfig/          → env vars, DB config, constants\n```\n\n**Common interview question — rate limiting middleware:**\n```js\nconst rateLimit = require('express-rate-limit');\napp.use('/api/', rateLimit({\n  windowMs: 15 * 60 * 1000,  // 15 minutes\n  max: 100,                   // 100 requests per window\n  message: 'Too many requests, please try again later'\n}));\n```\n\n**Q: How do you handle 404 and uncaught errors?**\n```js\n// 404 — catch all unmatched routes\napp.use((req, res) => {\n  res.status(404).json({ error: 'Route not found' });\n});\n\n// Uncaught error — safety net for unhandled Promise rejections\nprocess.on('unhandledRejection', (err) => {\n  console.error('Unhandled rejection:', err);\n  // Graceful shutdown: close server, exit with error code\n  server.close(() => process.exit(1));\n});\n```"
-      },
-      {
-        heading: "Clustering, Performance, and Production Node.js",
-        content: "These topics are asked at SDE-2 level and above at product companies.\n\n**Q: Since Node.js is single-threaded, how do you use all CPU cores?**\nNode.js Cluster module spawns child processes (workers), each running on a separate CPU core, sharing the same server port.\n```js\nconst cluster = require('cluster');\nconst os = require('os');\n\nif (cluster.isPrimary) {\n  const numCPUs = os.cpus().length;\n  for (let i = 0; i < numCPUs; i++) {\n    cluster.fork();  // spawn one worker per CPU\n  }\n  cluster.on('exit', (worker) => {\n    cluster.fork();  // restart crashed worker\n  });\n} else {\n  require('./server');  // each worker runs the express app\n}\n```\nIn production, PM2 (`pm2 start app.js -i max`) handles clustering automatically.\n\n**Q: What are Node.js Streams and when would you use them?**\nStreams process data piece by piece rather than loading it all into memory — essential for large file processing, video serving, or real-time data pipelines.\n```js\n// Without streams: loads entire 1GB file into memory (bad)\nconst data = fs.readFileSync('large-file.csv');\nres.send(data);\n\n// With streams: pipes data directly from file to response\nconst readStream = fs.createReadStream('large-file.csv');\nreadStream.pipe(res);  // no memory spike\n```\nStream types: Readable (source), Writable (destination), Duplex (both), Transform (duplex that modifies data).\n\n**Q: How do you debug memory leaks in Node.js?**\n- `process.memoryUsage()` to monitor heap usage\n- `--inspect` flag + Chrome DevTools for heap snapshots\n- Common causes: global variables holding references, unclosed event listeners, circular references, closures holding large data"
-      },
-    ],
-    faqs: [
-      {
-        question: "What Node.js topics are asked in Indian product company interviews?",
-        answer: "Node.js interview topics at Indian product companies: event loop (phases, microtask queue, nextTick vs setImmediate), async patterns (callbacks vs Promises vs async/await, Promise.all vs allSettled vs race), Express.js middleware and routing, error handling patterns, clustering for multi-core usage, streams for large file handling, and database connection pooling. Senior candidates also face distributed system questions: horizontal scaling, message queues (Kafka/RabbitMQ), and microservice communication."
-      },
-      {
-        question: "What is the Node.js event loop and why is it important?",
-        answer: "The Node.js event loop is the mechanism that allows Node.js to perform non-blocking I/O despite being single-threaded. It continuously loops through 6 phases: timers (setTimeout/setInterval), pending I/O, idle/prepare, poll (waits for I/O, runs I/O callbacks), check (setImmediate), and close events. Between each phase, microtasks run: first the process.nextTick() queue, then Promise .then() callbacks. This model allows thousands of concurrent connections with a single thread — blocking the event loop (with CPU-intensive synchronous code) kills performance for all concurrent requests."
-      },
-      {
-        question: "How do you scale a Node.js application for high traffic?",
-        answer: "Node.js scaling strategies for high traffic: (1) Cluster module — spawn one worker per CPU core to use all cores; PM2 handles this automatically with `pm2 start -i max`; (2) Horizontal scaling — run multiple Node.js instances behind a load balancer (Nginx, AWS ALB); stateless design required; (3) Caching — Redis for frequently-read data, reducing DB load; (4) Message queues — offload slow background work (emails, reports) to queues (BullMQ, Kafka) so API response stays fast; (5) Connection pooling — pool PostgreSQL/MySQL connections rather than creating a new connection per request."
-      },
-      {
-        question: "Is Express.js still relevant in India in 2026, or should I learn Fastify/NestJS?",
-        answer: "Express.js remains the dominant Node.js framework in Indian companies in 2026 — most existing codebases use it, and it's the most commonly asked framework in interviews. However, learning a second framework is valuable: NestJS is gaining adoption at companies building large enterprise APIs (Infosys, Wipro internal products, some unicorns) because of its TypeScript-first design and Angular-style structure. Fastify is popular for high-performance microservices. Recommendation for job seekers: master Express (required), then learn NestJS if targeting enterprise companies, or Fastify if targeting high-throughput API roles."
-      },
-    ],
-    relatedSlugs: ["javascript-interview-questions-india-2026", "system-design-interview-questions-india-2026", "sql-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Backend Interview Practice", slug: "Backend Interview Practice" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
-    cta: "Node.js interviews require you to explain async and event loop concepts clearly while also writing working code — two skills that take different preparation. HireStepX's voice mock interviews help you build the verbal explanations ('the event loop picks up callbacks from the queue after I/O completes') that interviewers at Indian product companies specifically listen for.",
-    relatedLinks: [
-      { label: "JavaScript Interview Questions India 2026", href: "/blog/javascript-interview-questions-india-2026" },
-      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
-    ],
-  },
-  {
-    slug: "aws-interview-questions-india-2026",
-    title: "AWS Interview Questions India 2026 — Cloud Engineer, DevOps, Solutions Architect",
-    metaDescription: "AWS interview questions India 2026 for cloud engineers, DevOps, and solutions architects. Covers EC2, S3, Lambda, VPC, IAM, RDS, auto-scaling, and AWS certification paths popular in Indian tech jobs.",
-    company: "General",
-    category: "Technical",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&h=500&fit=crop",
-    heroAlt: "Cloud infrastructure representing AWS interview questions India 2026",
-    datePublished: "2026-07-12",
-    intro: "AWS is the dominant cloud platform at Indian product companies and is also heavily used by IT services companies (TCS, Infosys, Wipro) for their clients' cloud migrations. AWS interview questions appear in cloud engineer, DevOps engineer, solutions architect, and backend SDE interviews in India. This guide covers the core AWS services tested in interviews, the concepts behind them, and the specific questions asked at Indian companies from fresher cloud associates to senior solutions architects.",
-    sections: [
-      {
-        heading: "Core AWS Concepts — Always Tested",
-        content: "**Q: What is the difference between EC2 and Lambda?**\n- EC2 (Elastic Compute Cloud): virtual machines you provision and manage. You control the OS, runtime, scaling configuration, and pay for uptime (whether or not requests are coming in). Best for long-running workloads, stateful applications, or workloads requiring custom OS config\n- Lambda (Serverless Functions): you upload code; AWS runs it in response to events. Pay only when invoked (per execution, per duration). Best for event-driven, short-duration workloads (API handlers, S3 triggers, scheduled jobs). Cold start latency is a trade-off for very-low-latency requirements\n\n**Q: What is the difference between S3 and EBS?**\n- S3 (Simple Storage Service): object storage. Files (objects) stored in buckets. Accessible over HTTP. Unlimited storage, high durability (11 9s). Accessed from anywhere. Use for static files, backups, data lake, CDN origin\n- EBS (Elastic Block Store): block storage. Network-attached virtual disk for EC2 instances. Must be in the same AZ as the EC2 instance. Behaves like a hard drive. Use for OS volumes, database storage, anything requiring low latency random I/O\n- EFS (Elastic File System): managed NFS (shared file system). Multiple EC2 instances can mount the same EFS volume simultaneously. Use for shared file storage across instances\n\n**Q: What is an IAM role vs an IAM user?**\n- IAM User: represents a person or application with long-term credentials (access key + secret). Use for developers and CI/CD systems\n- IAM Role: represents a set of permissions that can be assumed temporarily. EC2 instances, Lambda functions, and ECS tasks assume roles (no hardcoded credentials). Cross-account access also uses roles\n- Best practice: NEVER hardcode AWS credentials in application code. Assign an IAM role to EC2/Lambda instead — AWS SDK picks them up automatically\n\n**Q: What are Availability Zones and Regions?**\n- Region: a geographic area (e.g., ap-south-1 = Mumbai, ap-southeast-1 = Singapore). Contains 3+ AZs\n- Availability Zone (AZ): one or more physical data centres within a Region, with independent power and networking. Deploying across 2+ AZs provides fault tolerance within a Region\n- India context: ap-south-1 (Mumbai) is the primary AWS region for Indian users; ap-south-2 (Hyderabad) launched 2022 for data residency"
-      },
-      {
-        heading: "VPC, Networking, and Security — Solutions Architect Questions",
-        content: "Networking questions appear in solutions architect and senior DevOps interviews.\n\n**VPC (Virtual Private Cloud) components:**\n```\nVPC (your private network: 10.0.0.0/16)\n├── Public Subnet (10.0.1.0/24)\n│   ├── Internet Gateway ← public internet access\n│   └── EC2 (web servers, load balancers)\n├── Private Subnet (10.0.2.0/24)\n│   ├── NAT Gateway ← outbound internet for private instances\n│   └── EC2 (app servers, databases)\n└── Security Groups (stateful firewall per instance)\n    NACLs (stateless firewall at subnet level)\n```\n\n**Security Group vs NACL:**\n- Security Group: stateful (if inbound allowed, response traffic is auto-allowed); attached to instances; allow rules only\n- NACL (Network Access Control List): stateless (must explicitly allow inbound AND outbound for the same traffic); attached to subnets; allow and deny rules; evaluated in number order\n\n**Common networking question — allow EC2 in private subnet to reach internet:**\n1. Create NAT Gateway in the public subnet\n2. Assign an Elastic IP to the NAT Gateway\n3. Add a route in the private subnet route table: `0.0.0.0/0 → NAT Gateway`\n4. Private EC2 outbound traffic now routes through NAT; inbound from internet is blocked (no direct route back)\n\n**Load Balancer types:**\n- ALB (Application Load Balancer): Layer 7 (HTTP/HTTPS). Routes based on path (`/api/*`), host header, or query params. Use for web apps and microservices\n- NLB (Network Load Balancer): Layer 4 (TCP/UDP). Ultra-low latency, millions of requests/second. Use for high-performance non-HTTP traffic (game servers, IoT)\n- CLB (Classic): legacy, avoid for new projects"
-      },
-      {
-        heading: "RDS, DynamoDB, and Caching — Database Questions",
-        content: "Database service questions are common in backend and solutions architect interviews.\n\n**Q: When would you use RDS vs DynamoDB?**\n- RDS (Relational Database Service): managed PostgreSQL/MySQL/Oracle/SQL Server. Strong ACID guarantees, complex queries, JOINs, transactions. Use when your data has relationships and you need flexible queries\n- DynamoDB: managed NoSQL key-value and document store. Single-digit millisecond latency at any scale. Use when: access pattern is key-based (get by userId, orderId), need extreme scale (millions of TPS), and data structure is simple\n- Rule of thumb: start with RDS for most applications; move to DynamoDB when RDS becomes a throughput bottleneck OR your access pattern is purely key-based\n\n**RDS Multi-AZ vs Read Replicas:**\n- Multi-AZ: standby instance in another AZ, synchronous replication, automatic failover in ~60s. Purpose: HIGH AVAILABILITY (not performance — you can't read from the standby)\n- Read Replicas: asynchronous replication to replica instances. Purpose: READ PERFORMANCE (offload read-heavy queries). Can be in different AZ or Region (cross-region replicas)\n\n**ElastiCache (Redis/Memcached):**\n- In-memory caching layer in front of RDS/DynamoDB\n- Reduces DB load, sub-millisecond response for cached data\n- Common patterns: cache DB query results, session storage, rate limiting counters\n```python\n# Cache-aside pattern\ndef get_user(user_id):\n    cached = redis.get(f'user:{user_id}')\n    if cached:\n        return json.loads(cached)\n    user = db.query('SELECT * FROM users WHERE id = ?', user_id)\n    redis.setex(f'user:{user_id}', 300, json.dumps(user))  # cache 5 min\n    return user\n```"
-      },
-      {
-        heading: "Auto Scaling, Lambda, and Serverless — Modern Architecture",
-        content: "These topics are increasingly tested as Indian companies move to serverless and container architectures.\n\n**Auto Scaling Group (ASG):**\nAutomatically adds/removes EC2 instances based on demand:\n- Scale-out policy: add instances when CPU > 70% for 5 minutes\n- Scale-in policy: remove instances when CPU < 30% for 10 minutes\n- Min/Max/Desired instance count\n- Integration with ALB: new instances register automatically, health checks before routing traffic\n\n**Lambda cold starts — interview question:**\nLambda cold start occurs when a new execution environment is provisioned for a function that hasn't run recently. Duration: ~100ms–2s depending on runtime (Java/C# have longer cold starts than Node.js/Python). Mitigations:\n- Provisioned Concurrency: keep N environments pre-warmed (extra cost)\n- Keep functions small and dependencies minimal\n- Use Lambda Snapstart (Java): snapshots after initialisation\n\n**ECS (Elastic Container Service) vs EKS (Elastic Kubernetes Service):**\n- ECS: AWS-native container orchestration. Simpler, tighter AWS integration, lower operational overhead. Use when running containers on AWS and don't need Kubernetes-specific features\n- EKS: managed Kubernetes on AWS. Use when you need Kubernetes ecosystem (Helm, RBAC, custom operators) or multi-cloud portability\n- Fargate: serverless compute for both ECS and EKS — no EC2 management, pay per container vCPU and memory\n\n**AWS certification path for Indian engineers:**\n- AWS Certified Cloud Practitioner: awareness level, 6 hours study. Useful for non-technical roles\n- AWS Solutions Architect Associate (SAA-C03): the most common certification at Indian IT companies. 2–3 weeks study\n- AWS Developer Associate: developer-focused (Lambda, DynamoDB, CodePipeline)\n- AWS DevOps Professional: advanced, for DevOps/SRE roles\nMost Indian product companies value SAA Associate or Developer Associate for SWE roles"
-      },
-      {
-        heading: "AWS in India — What Companies Test",
-        content: "**TCS / Infosys / Wipro (cloud associate / cloud migration roles):**\n- Basic service knowledge: EC2, S3, RDS, IAM, VPC\n- What is cloud computing, what are the service models (IaaS/PaaS/SaaS)\n- Difference between on-premise vs cloud\n- S3 storage classes (Standard, IA, Glacier)\n- Basic security: IAM policies, MFA, CloudTrail for auditing\n\n**Flipkart / Razorpay / Swiggy (backend SDE, DevOps):**\n- VPC design, subnet architecture\n- Auto Scaling with load balancers\n- Lambda vs EC2 trade-offs\n- ElastiCache (Redis) caching patterns\n- RDS Multi-AZ vs Read Replicas\n- S3 event triggers for Lambda\n- CloudWatch for monitoring and alerting\n\n**Senior Solutions Architect / Cloud Architect:**\n- Multi-region architecture for disaster recovery (RPO/RTO)\n- Well-Architected Framework (5 pillars: operational excellence, security, reliability, performance efficiency, cost optimisation)\n- Cost optimisation: Reserved Instances vs Spot Instances vs On-Demand\n- Data residency compliance for Indian regulations (DPDP Act 2023)\n- AWS Organizations for multi-account strategy"
-      },
-    ],
-    faqs: [
-      {
-        question: "What AWS topics are tested in Indian tech interviews in 2026?",
-        answer: "AWS interview topics at Indian companies vary by role: IT services (TCS/Infosys/Wipro) test basic cloud concepts and core services (EC2, S3, IAM, VPC, RDS). Product companies (Flipkart, Razorpay, Swiggy) test VPC networking, auto-scaling, Lambda vs EC2 trade-offs, ElastiCache, and RDS replication. Senior/architect roles test Well-Architected Framework, multi-region disaster recovery, cost optimisation (Reserved vs Spot instances), and compliance (DPDP Act data residency)."
-      },
-      {
-        question: "What AWS certification is most valuable for Indian engineers in 2026?",
-        answer: "The AWS Certified Solutions Architect Associate (SAA-C03) is the most valued AWS certification at Indian IT companies and is frequently listed as preferred/required for cloud roles at TCS, Infosys, Wipro, and HCL. It requires 2-3 weeks of study and tests core service knowledge. For SWE roles at product companies, the AWS Certified Developer Associate is slightly more relevant (focuses on Lambda, DynamoDB, CodePipeline). AWS Cloud Practitioner is minimal value for technical roles — it's for business/non-technical stakeholders."
-      },
-      {
-        question: "What is the difference between EC2 and Lambda?",
-        answer: "EC2 is a virtual machine you provision and manage — you control the OS, runtime, and scaling; you pay for uptime regardless of traffic. Lambda is serverless — you upload code and AWS runs it on demand; you pay only when invoked (per execution + duration, no idle cost). Key trade-off: EC2 is better for long-running stateful workloads and full OS control; Lambda is better for event-driven short-duration workloads. Lambda cold starts (100ms-2s) make it unsuitable for very-low-latency synchronous APIs without Provisioned Concurrency."
-      },
-      {
-        question: "Is AWS knowledge required for software engineering roles in India?",
-        answer: "AWS knowledge is required or strongly preferred at most product companies in India in 2026. For backend SDE roles at Flipkart, Razorpay, Swiggy, PhonePe: familiarity with EC2, S3, RDS, Lambda, and VPC is expected. For IT services (TCS, Infosys): basic cloud concepts are tested for cloud practice roles; general SWE roles don't require AWS. For dedicated DevOps, cloud engineer, or SRE roles: deep AWS knowledge is mandatory. An AWS certification strengthens your profile for any cloud-adjacent role."
-      },
-    ],
-    relatedSlugs: ["system-design-interview-questions-india-2026", "nodejs-interview-questions-india-2026", "sql-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Cognizant Technical Interview Practice", slug: "Cognizant Technical Interview Practice" }, { label: "Cognizant Technical Interview Questions", slug: "cognizant-technical-interview-questions" }],
-    cta: "AWS architecture questions require you to reason through trade-offs out loud — 'I'd choose RDS Multi-AZ over a Read Replica here because the goal is availability, not read performance.' HireStepX's voice mock interviews specifically train this kind of structured technical reasoning, making cloud questions feel natural rather than panicked.",
-    relatedLinks: [
-      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
-      { label: "Node.js Interview Questions India 2026", href: "/blog/nodejs-interview-questions-india-2026" },
-    ],
-  },
-  {
-    slug: "product-manager-interview-questions-india-2026",
-    title: "Product Manager Interview Questions India 2026 — PM Roles at Flipkart, Swiggy, Razorpay",
-    metaDescription: "Product manager interview questions India 2026. Covers PM interview framework, product sense questions, analytical questions, execution rounds, and PM salaries at Indian product companies like Flipkart, Swiggy, and Razorpay.",
-    company: "General",
-    category: "Full Guide",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
-    heroAlt: "Product roadmap representing product manager interview questions India 2026",
-    datePublished: "2026-07-13",
-    intro: "Product management interviews in India have grown significantly in 2024–2026 as Indian product companies (Flipkart, Swiggy, Zomato, Razorpay, PhonePe, Zerodha) and global tech companies (Google, Microsoft, Meta India) build stronger PM functions. The PM interview differs fundamentally from engineering interviews: there are no correct answers — you're assessed on structured thinking, product sense, data fluency, and communication. This guide covers the PM interview framework used at Indian companies and the exact questions and evaluation rubrics used.",
-    sections: [
-      {
-        heading: "Product Manager Interview Structure at Indian Companies",
-        content: "Indian product companies typically run 4–6 interview rounds for PM roles:\n\n**Round 1: Screening with HR/Recruiter (30 min)**\n- Background, motivation, why this company/role\n- Screening for basic PM knowledge and culture fit\n\n**Round 2: Product Sense / Design Round (45–60 min)**\n- 'Design a product for X user problem'\n- 'Improve product Y'\n- 'What's your favourite product and how would you make it better?'\n- Tests: product thinking framework, user empathy, prioritisation, metrics definition\n\n**Round 3: Analytical / Metrics Round (45–60 min)**\n- 'Our DAU dropped 20% last week — how would you investigate?'\n- 'How would you measure the success of feature X?'\n- 'How would you A/B test this?'\n- Tests: data-driven decision making, metric definition, root cause analysis, statistical reasoning\n\n**Round 4: Execution / Strategy Round (45–60 min)**\n- 'Walk me through how you'd launch feature X'\n- 'What trade-offs did you make in your last feature decision?'\n- 'How do you prioritise between 10 requested features?'\n- Tests: execution discipline, stakeholder management, prioritisation frameworks\n\n**Round 5: Leadership / Behavioural (45 min)**\n- 'Tell me about a time you had to make a difficult product decision with incomplete data'\n- 'Describe a product that failed under your ownership. What did you learn?'\n- 'How do you manage conflict between engineering, design, and business?'\n\n**Round 6: CEO / Founder / VP Product (for senior PM roles)**\n- Strategic alignment: is this candidate's product thinking aligned with company direction?\n- Leadership: can this person lead a product area, not just execute?"
-      },
-      {
-        heading: "Product Sense Questions — Framework and Examples",
-        content: "Product sense is the most important PM skill assessed in Indian interviews. Interviewers look for structured, user-first thinking.\n\n**The product sense framework:**\n1. **Clarify** — ask 2–3 questions to narrow scope ('Is this for Indian users or global? Mobile or web?')\n2. **User segments** — who uses this product? Create 2–3 distinct user personas\n3. **User goals / pain points** — what is each segment trying to accomplish? What frustrates them?\n4. **Prioritise** — pick one primary user segment to focus on\n5. **Solutions** — generate 3–5 solutions to the prioritised pain points\n6. **Evaluate** — rank solutions by impact, feasibility, and strategic fit\n7. **Metrics** — define 2–3 metrics to measure success of your chosen solution\n\n**Common product sense question — 'Design a feature for Swiggy':**\nInterviewer: 'How would you improve Swiggy's delivery tracking experience?'\n\nStrong answer structure:\n'Before I dive in, let me clarify — are we focused on existing delivery tracking, or should I think more broadly about the post-order experience? [waits] Great. Let me think about the user segments using Swiggy's tracking. I'd segment into: impatient first-timers (high anxiety about delivery accuracy), regulars who just want quick status updates, and corporate users tracking bulk orders. For the scope of this question, I'll focus on regular users — the largest segment. Their pain points: uncertainty about exact arrival time, frustration when ETA shifts, and inability to communicate with the delivery partner. Solutions I'd explore: (1) ML-based dynamic ETA with 90% confidence interval rather than a point estimate, (2) real-time chat with delivery partner, (3) proactive push notifications when ETA shifts by >5 minutes, (4) package handoff confirmation photo. I'd prioritise proactive ETA shift notifications first — highest signal-to-noise, solves the core anxiety without requiring the user to actively check. Metric: reduction in in-app 'Where is my order?' support tickets + post-delivery rating for delivery experience.'"
-      },
-      {
-        heading: "Metrics and Analytical Questions — Data-Driven PM",
-        content: "Indian product companies — especially Flipkart, PhonePe, Razorpay — heavily emphasise data-driven PM thinking.\n\n**The metric investigation framework ('DAU dropped 20%'):**\n1. **Clarify the anomaly**: Is this global or a specific segment? Web or app? Which geography? Did anything change in the product or infrastructure?\n2. **Break down the metric**: DAU = returning users + new users. Which dropped? If both, investigate acquisition AND retention separately\n3. **Segment further**: By device (Android vs iOS), by user cohort (age, geography, acquisition channel), by feature area\n4. **Hypotheses**: Internal causes (bug, feature rollout, push notification outage, performance degradation) vs external (competitor launch, app store issue, seasonal effect)\n5. **Data to pull**: MAU/DAU trend, funnel drop-off (launch → home → search → add to cart → checkout), segment breakdown, recent deployments, support ticket volume\n\n**Defining success metrics — framework:**\nFor any feature, define:\n- **Primary metric** (the one you're optimising): often a user behaviour that signals value delivered (DAU for engagement, GMV for commerce)\n- **Secondary metrics** (guardrail metrics): what you're monitoring to ensure you're not breaking something else (DAU up but orders down = bad; need both)\n- **Counter-metrics**: what you'd expect to go DOWN if the feature is working (support tickets, time to complete a task)\n\n**A/B test design questions — tested at Flipkart, PhonePe:**\n- 'How would you A/B test a new checkout flow?'\nAnswer elements: control vs treatment definition, randomisation unit (user vs session), sample size calculation (power analysis), success metric, minimum detectable effect, test duration, guardrail metrics, launch criteria"
-      },
-      {
-        heading: "PM at Indian Product Companies — What's Different",
-        content: "Indian PM interviews have specific characteristics that differ from global PM interviews:\n\n**India-specific product considerations:**\n- **India's user heterogeneity**: a feature for 1.4B users must work for both a first-smartphone user in tier-3 Uttar Pradesh AND a power user in Bengaluru tech park. Best PM candidates show awareness of this range\n- **Connectivity constraints**: 4G penetration is 70%+ but reliability varies. Product decisions must account for offline-first, low-bandwidth variants\n- **Payment stack**: UPI (free, instant, universal) has changed checkout conversion dramatically. India-focused PMs are expected to know UPI, BNPL (Buy Now Pay Later), COD (40%+ of e-commerce), and how payment method affects conversion\n- **Trust and security UX**: Indian users have high SMS/OTP familiarity (used for everything) but may distrust biometric or stored card payment — UX that feels 'familiar' differs from global norms\n\n**PM salary at Indian product companies (2026):**\n- APM/Junior PM (0–2 years): ₹18–30 LPA (total)\n- PM II (2–5 years): ₹28–55 LPA\n- Senior PM (5–8 years): ₹50–90 LPA\n- Group PM (8–12 years): ₹80–140 LPA\n- Director of Product: ₹130–250 LPA\n\n**Companies with strong PM functions in India:**\nFlipkart (strong e-commerce PM culture), Google India (global PM standards), Swiggy (hyperlocal expertise), Razorpay (fintech depth), PhonePe (payments scale), CRED (premium consumer product), Zerodha (fintech self-serve), Meesho (social commerce)"
-      },
-    ],
-    faqs: [
-      {
-        question: "What questions are asked in PM interviews at Indian companies?",
-        answer: "PM interview questions at Indian product companies fall into 4 categories: (1) Product sense — 'Design/improve X product' (tested at every company); (2) Analytical — 'DAU dropped 20%, how do you investigate?', 'How would you measure success of feature Y?'; (3) Execution — 'Walk me through how you launched a feature', 'How do you prioritise 10 requests?'; (4) Behavioural — STAR stories about product failures, stakeholder conflicts, data-driven decisions. Flipkart and PhonePe emphasise analytics heavily; Swiggy and Zomato emphasise hyperlocal product instincts; CRED emphasises product taste and premium UX."
-      },
-      {
-        question: "What is the product sense framework for PM interviews?",
-        answer: "Product sense framework for PM interviews: (1) Clarify scope (2-3 questions); (2) Define user segments (2-3 personas); (3) Identify pain points per segment; (4) Prioritise one segment; (5) Generate 3-5 solutions to prioritised pain points; (6) Evaluate solutions by impact, feasibility, strategic fit; (7) Define success metrics. The most common mistake is jumping to solutions without establishing user segments and pain points — interviewers specifically watch for this structure."
-      },
-      {
-        question: "What is PM salary in India in 2026?",
-        answer: "PM salary in India 2026 by level: APM/Junior PM (0-2 years) ₹18-30 LPA total compensation, PM II (2-5 years) ₹28-55 LPA, Senior PM (5-8 years) ₹50-90 LPA, Group PM (8-12 years) ₹80-140 LPA, Director of Product ₹130-250 LPA. Highest-paying PM employers in India: Google, Meta, Microsoft, Flipkart, Swiggy, Razorpay, PhonePe, CRED. Total compensation includes base salary + ESOPs (stock options) which can be substantial at funded startups."
-      },
-      {
-        question: "How is the PM interview at Indian companies different from US companies?",
-        answer: "Key differences in PM interviews at Indian vs US companies: (1) India-market context is tested — interviewers expect awareness of UPI payments, COD, tier-2/3 users, offline-first design, and India's heterogeneous user base; (2) Analytical emphasis is higher at Indian product companies — data fluency is more strictly assessed than at some US companies; (3) STAR behavioural questions use India-specific contexts ('tell me about a feature you built for a market outside your own experience'); (4) Technical depth is expected higher — Indian PMs are expected to discuss API design, database trade-offs, and system architecture at a working level."
-      },
-    ],
-    relatedSlugs: ["system-design-interview-questions-india-2026", "star-method-interview-answers-india-2026", "flipkart-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Product Manager Interview Practice", slug: "Product Manager Interview Practice" }, { label: "Amazon Pm Interview Questions", slug: "amazon-pm-interview-questions" }],
-    cta: "Product sense questions are uniquely hard to practice alone because you can't evaluate your own answer structure — you need an interviewer to probe your reasoning. HireStepX's AI interviewer asks product sense questions, follows up with 'why?' and 'what about this user segment?', and evaluates whether your framework is actually user-first. Practice until the structured approach is automatic.",
-    relatedLinks: [
-      { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
-      { label: "STAR Method Interview India 2026", href: "/blog/star-method-interview-india-2026" },
-    ],
-  },
-  {
     slug: "leetcode-preparation-guide-india-2026",
     title: "LeetCode Preparation Guide India 2026 — How to Crack DSA for Product Company Interviews",
     metaDescription: "LeetCode preparation guide India 2026 — how to crack DSA for product company interviews. Covers study plans for 8, 16, and 24 weeks, topic order, which problems to solve, and how Indian companies use LeetCode in interviews.",
     company: "General",
-    category: "Full Guide",
+    category: "Company Guides",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=500&fit=crop",
     heroAlt: "Code on screen representing LeetCode preparation guide India 2026",
@@ -4975,70 +4218,11 @@ const posts: BlogPost[] = [
     ],
   },
   {
-    slug: "internship-interview-tips-india-2026",
-    title: "Internship Interview Tips India 2026 — How to Get Your First Tech Internship",
-    metaDescription: "Internship interview tips India 2026 for engineering students. How to crack tech internships at product companies, IT services, startups. Covers resume, online assessments, coding rounds, and HR interviews for 2nd and 3rd year students.",
-    company: "General",
-    category: "Career Guide",
-    readTime: "9 min",
-    heroImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=500&fit=crop",
-    heroAlt: "Students in a college campus representing internship interviews India 2026",
-    datePublished: "2026-07-15",
-    intro: "The tech internship market in India has changed dramatically since 2022: product companies (Flipkart, Swiggy, Razorpay, Adobe, Microsoft, Amazon) now offer 2–6 month internships with stipends of ₹50,000–₹1,50,000/month, many converting to full-time offers. Competition is intense — Google's STEP program, Amazon's SDE internship, and Flipkart's intern program receive tens of thousands of applications from just IITs and NITs. This guide is for students at all colleges — from IITs to tier-3 engineering colleges — giving an honest picture of how to get a tech internship in India in 2026.",
-    sections: [
-      {
-        heading: "Types of Tech Internships in India 2026",
-        content: "Understanding the internship landscape helps you target correctly:\n\n**Tier 1 — Product Company / MNC Internships (₹60K–₹1.5L/month):**\n- Google STEP / SWE Intern, Microsoft Explore / SWE Intern, Amazon SWE Intern, Meta Intern\n- Flipkart SWE Intern, Swiggy Tech Intern, Razorpay Intern, PhonePe Tech Intern\n- Selection rate: 1–5% from applications; most applicants are from IIT/NIT/IIIT\n- Timeline: apply October–December for summer internships (May–July)\n- Conversion rate to PPO (Pre-Placement Offer): 50–80% at most MNCs if performance is strong\n\n**Tier 2 — Funded Startups (₹20K–₹60K/month):**\n- Early-stage startups (Series A-C), edtech, fintech, SaaS companies\n- Less competitive; strong projects + GitHub profile matter more than college tier\n- Apply via AngelList (now Wellfound), LinkedIn, direct company careers pages\n- Timeline: rolling admissions, apply year-round\n\n**Tier 3 — IT Services Internships (₹5K–₹20K/month):**\n- TCS iON Summer Internship, Infosys InStep, Wipro internship programs\n- Lower technical bar; resume and GPA matter more\n- Less valuable for product company placement goals; consider only as a fallback or if no other option\n\n**Off-campus vs On-campus:**\n- On-campus: college placement cell invites companies; you register and sit for their test. Requires CGPA cutoff (usually 7.0–8.0+)\n- Off-campus: apply directly. No CGPA restriction; your skills carry more weight. Most product company internships can be applied off-campus via their careers portal"
-      },
-      {
-        heading: "Resume for Internship Applications in India",
-        content: "Your resume is the first filter — a weak resume means no online assessment invite.\n\n**One-page mandatory:** For students with <2 years of experience, your resume must be exactly 1 page. Recruiters spend 6–8 seconds on an intern resume.\n\n**Sections in order:**\n1. **Contact**: Name, email, phone, LinkedIn URL, GitHub URL (crucial for tech internships)\n2. **Education**: College, degree, CGPA (include only if ≥7.5; otherwise omit and let interviewers ask)\n3. **Skills**: Programming languages (Python, Java, C++), frameworks, databases, tools — one line per category\n4. **Projects** (most important for internship resumes): 2–3 projects with GitHub links\n5. **Experience**: internships, part-time, open source (if any)\n6. **Achievements**: competitive programming rankings, hackathon wins, scholarships\n\n**Projects section — the internship resume differentiator:**\nProjects separate candidates at the internship stage more than CGPA does. For each project:\n- One-line description of WHAT it is\n- Technologies used (React, Node.js, PostgreSQL, AWS)\n- The problem it solves or the scale it handles\n- GitHub link (and deployed link if available)\n\n**Strong project example:**\n```\nOrder Management System (github.com/you/oms)\nBuilt a full-stack order management API handling 500+ concurrent users\nTech: Node.js, Express, PostgreSQL, Redis, Docker, deployed on AWS EC2\n```\n\n**Weak project example:**\n```\nLibrary Management System\nCreated a system to manage books and users\nTech: Java, MySQL\n```\n\n**GitHub profile matters:** A good GitHub with 5–10 repos (even small ones), green contribution graph, and readable code is often the first thing a technical recruiter checks before deciding to move forward."
-      },
-      {
-        heading: "Online Assessment (OA) — The First Filter",
-        content: "Most tech internship applications go through an Online Assessment before the interview rounds.\n\n**OA formats by company type:**\n\n**Product companies (Amazon, Flipkart, Microsoft):**\n- 2 coding problems, 75–90 minutes\n- LeetCode Easy to Medium difficulty\n- HackerRank or HackerEarth platform\n- Passing score: usually all test cases on both problems\n\n**IT services (TCS NQT, Infosys Spark, Cognizant GenC):**\n- Aptitude (Quantitative, Verbal, Logical Reasoning)\n- 1–2 coding problems (Easy)\n- Duration: 2–3 hours total\n- Multiple sections with separate cutoffs\n\n**OA preparation tips:**\n1. **Practice the platform**: register on HackerRank and HackerEarth, solve their practice problems to get familiar with the interface\n2. **Know your data structures**: arrays, strings, linked lists, trees, hashmaps — these 5 cover 80% of Easy-Medium OA problems\n3. **Edge cases first**: always think about null/empty/single element before submitting\n4. **Use brute force if stuck**: a brute-force solution that passes 6/10 test cases is better than no submission. Optimise after\n5. **Time management**: if stuck after 20 minutes, move to the next problem and come back\n\n**Common OA mistakes:**\n- Spending 45 minutes on problem 1 and not attempting problem 2\n- Not reading the problem constraints (if n ≤ 1000, O(n²) is fine; if n ≤ 10^6, need O(n log n) or better)\n- Forgetting to flush output buffers (in C++) — causes wrong answers on otherwise correct code"
-      },
-      {
-        heading: "Interview Rounds for Tech Internships",
-        content: "Most product company internship interview processes have 1–3 rounds:\n\n**Round 1: Coding Interview (45–60 min)**\n- 1–2 LeetCode Easy-Medium problems\n- Unlike full-time interviews, interviewers are often more lenient about partial solutions\n- Communication matters as much as correctness: explain your approach before coding\n- If you can't solve optimally, mention the brute force first then try to optimise\n\n**Round 2: Technical / Hiring Manager (30–45 min)**\n- Discussion of your projects: 'Walk me through this project', 'Why did you choose React over Vue?'\n- CS fundamentals: OOPS, DBMS (for backend roles), OS basics\n- Behavioural: 'Why do you want to intern at this company?', 'Tell me about a challenging project'\n\n**Common intern interview questions:**\n- 'What's your most challenging project and what made it hard?'\n- 'Explain how HTTP works' (for web/backend roles)\n- 'What is a REST API vs GraphQL?'\n- 'Have you used Git in a team project?'\n- 'What do you do when you're stuck on a problem for a long time?'\n\n**Interview body language and communication:**\n- For intern interviews, companies know you're a student — they're assessing potential and coachability, not polished expertise\n- It's perfectly fine to say 'I haven't used that technology but I've worked with X which is similar'\n- Asking clarifying questions before coding shows engineering maturity\n- Expressing genuine curiosity ('What tech stack does the team use?') signals the right attitude"
-      },
-      {
-        heading: "Off-Campus Internship Application Strategy",
-        content: "Most internship guides focus on on-campus placement. This section is for students whose college placement cell doesn't have your target companies — the majority of engineering students in India.\n\n**Direct application (most effective):**\n1. Go to company's careers page, search 'intern' or 'internship'\n2. Apply directly with your resume\n3. No CGPA cutoff for off-campus applications in most cases\n4. Email a referral request to LinkedIn connections at that company (warm referral 3× your callback rate)\n\n**LinkedIn for internship hunting:**\n- Set 'Open to Work' badge visible to recruiters\n- Connect with recent interns at target companies and ask for referrals\n- Message format: 'Hi [Name], I noticed you're a [role] at [Company]. I'm a 3rd year CSE student interested in their internship program. Would you be able to refer me or share any advice? Happy to share my resume.' Short, respectful, specific\n\n**Internshala for startup internships:**\n- Best platform for startup and SME internships in India\n- Filter by: tech, stipend ≥₹15K, work from office/home, duration\n- Apply to 20–30 listings at once — response rate is low, so volume matters\n\n**Hackathons as internship pathways:**\n- Many Indian startups hire directly from hackathons (HackInOut, Smart India Hackathon, ETHIndia, Codeforces)\n- A hackathon project is also a strong resume item\n- Some companies run their own hackathons with internship offers for winners (Flipkart GRiD, Goldman Sachs HackerStreet)\n\n**Open source contribution:**\n- Contribute to projects on GitHub (even documentation or small bug fixes)\n- Google Summer of Code (GSoC), MLH Fellowship, Outreachy — all provide stipends and strong resume credentials that open product company doors regardless of college tier"
-      },
-    ],
-    faqs: [
-      {
-        question: "How do I get a tech internship in India if I'm not from an IIT or NIT?",
-        answer: "Tech internship strategy for non-IIT/NIT students: (1) Build strong projects — 2-3 deployed projects with GitHub links matter more than college tier for off-campus applications; (2) Apply off-campus directly to company careers pages — most product company internship portals have no college filter; (3) Use LinkedIn referrals — connect with recent interns at target companies and request referrals; (4) Target Tier-2 product companies (funded startups, mid-size product companies) which are less IIT-focused; (5) Participate in open source (GSoC, MLH Fellowship) — these are prestigious regardless of college; (6) Use competitive programming rankings — a Codeforces Specialist rating or LeetCode top 5% rating catches recruiter attention."
-      },
-      {
-        question: "What is the stipend for tech internships at Indian product companies in 2026?",
-        answer: "Tech internship stipends at Indian companies in 2026: Google/Microsoft/Meta: ₹80,000-₹1,50,000/month. Amazon India: ₹70,000-₹1,00,000/month. Flipkart/Swiggy/Zomato: ₹50,000-₹80,000/month. Razorpay/PhonePe/CRED: ₹40,000-₹70,000/month. Funded startups (Series A-C): ₹20,000-₹50,000/month. IT services companies (TCS/Infosys/Wipro): ₹5,000-₹20,000/month. Stipends for product companies are significantly higher than IT services — a 2-month Google internship pays more than 6 months at TCS."
-      },
-      {
-        question: "What is the conversion rate from internship to PPO (Pre-Placement Offer) in India?",
-        answer: "PPO conversion rates at Indian tech companies in 2026: MNCs (Google, Microsoft, Amazon, Meta): 50-80% if performance is strong; offers are often at a higher band than campus placements. Indian product companies (Flipkart, Swiggy, Razorpay): 40-70% depending on business conditions; 2023-2024 saw reduced PPO rates due to hiring slowdown, recovering in 2026. IT services (TCS, Infosys): near 90% PPO rate but the base offer is lower than a direct campus placement. A PPO from a product company is highly valued — it removes the uncertainty of campus placement season and often comes with a higher CTC."
-      },
-      {
-        question: "How hard is the coding test for tech internships at product companies in India?",
-        answer: "Coding test difficulty for tech internship OAs at Indian companies: Amazon/Flipkart/Microsoft intern OA: LeetCode Easy-Medium — 2 problems in 75-90 minutes. Array manipulation, string operations, basic tree/graph problems. At least 80% test cases needed to pass. Adobe/Walmart/VMware intern OA: LeetCode Easy-Medium, sometimes a debugging or output-prediction problem alongside coding. IT services intern OA (TCS/Infosys): aptitude + Easy coding problems. Main filter is the aptitude section, not coding. Preparation: 4-6 weeks solving LeetCode Easy-Medium (50-80 problems) is sufficient for most product company intern OAs."
-      },
-    ],
-    relatedSlugs: ["fresher-resume-tips-india-2026", "campus-placement-preparation-india-2026", "tcs-nqt-preparation-guide-india-2026"],
-    practicePageSlugs: [{ label: "Fresher Interview Practice", slug: "Fresher Interview Practice" }, { label: "Fresher Interview Questions", slug: "fresher-interview-questions" }],
-    cta: "Internship interviews at product companies are the first time most students interview in English under pressure — technical questions in English, HR rounds in English, and needing to explain your projects clearly and confidently. HireStepX's voice mock interviews let you practice explaining your projects out loud before the real interview, so you're fluent and confident rather than fumbling for words.",
-    relatedLinks: [
-      { label: "Fresher Resume Tips India 2026", href: "/blog/fresher-resume-tips-india-2026" },
-      { label: "Campus Placement Preparation India 2026", href: "/blog/campus-placement-preparation-india-2026" },
-    ],
-  },
-  {
     slug: "interview-preparation-tips-india-2026",
     title: "Interview Preparation Tips India 2026 — Complete Guide for Tech Freshers to Experienced",
     metaDescription: "Interview preparation tips India 2026 — complete guide for freshers to 5-year experienced engineers. Covers preparation timeline, study plan, mock interviews, HR questions, salary negotiation, and common mistakes Indian candidates make.",
     company: "General",
-    category: "Career Guide",
+    category: "Career",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1565688534245-05d6b5be184a?w=1200&h=500&fit=crop",
     heroAlt: "Person preparing for an interview representing interview preparation tips India 2026",
@@ -5097,7 +4281,7 @@ const posts: BlogPost[] = [
     title: "Campus Placement Preparation India 2026 — Complete Guide for Engineering Students",
     metaDescription: "Campus placement preparation India 2026 — complete guide for engineering students. Covers placement season timeline, aptitude, coding tests, GD/PI rounds, company selection strategy, and how to crack placements at non-IIT colleges.",
     company: "General",
-    category: "Career Guide",
+    category: "Career",
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&h=500&fit=crop",
     heroAlt: "College campus representing campus placement preparation India 2026",
@@ -5156,7 +4340,7 @@ const posts: BlogPost[] = [
     title: "What to Expect on Placement Day India 2026 — A Guide for Engineering Students",
     metaDescription: "What to expect on placement day India 2026. Real experiences from engineering students at placements in IITs, NITs, and private colleges. Covers the full day timeline, waiting anxiously, multiple interview rounds, and what happens after.",
     company: "General",
-    category: "Career Guide",
+    category: "Career",
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1560472355-536de3962603?w=1200&h=500&fit=crop",
     heroAlt: "Students waiting outside interview room on placement day in India",
@@ -5354,40 +4538,6 @@ const posts: BlogPost[] = [
     relatedSlugs: ["data-analyst-interview-questions-india-2026", "flipkart-interview-questions-guide", "system-design-interview-for-freshers-india"],
     practicePageSlugs: [{ label: "Product Management Behavioral", slug: "product-management-behavioral" }, { label: "Hr Interview Questions", slug: "hr-interview-questions" }],
     cta: "Practise PM behavioural and product sense questions with HireStepX's AI interviewer. Get real-time feedback on your framework and clarity.",
-    relatedLinks: [],
-  },
-  {
-    slug: "hr-interview-questions-answers-india-2026",
-    title: "Top 30 HR Interview Questions and Answers for Indian Job Seekers 2026",
-    metaDescription: "Complete HR interview prep for Indian candidates 2026. Best answers for 'Tell me about yourself', 'Why should we hire you?', salary questions, and tricky HR round questions.",
-    company: "General",
-    category: "Behavioral",
-    readTime: "14 min",
-    heroImage: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=800&q=80",
-    heroAlt: "HR interviewer speaking with candidate in Indian office",
-    datePublished: "2026-07-12",
-    intro: "The HR round is where many Indian candidates stumble even after clearing technical tests. It feels like a formality — until you say the wrong thing about salary, joining date, or 'where else are you interviewing.' This guide gives you the exact answers that work in the Indian context for 2026.",
-    sections: [
-      { heading: "The 10 HR Questions Asked in Every Indian Interview",
-        content: "These ten questions appear in virtually every HR round across TCS, Infosys, Flipkart, and startups alike. Having a crisp, genuine answer ready for each one prevents the most common HR round failures.\n\n• Tell me about yourself — use PPF: current role, key achievement, why this company\n• Why do you want to leave your current company? — always give a growth/learning reason, never badmouth\n• Why this company specifically? — mention a product, policy, or mission that genuinely interests you\n• What are your strengths? — pick one relevant strength and back it with a specific example\n• What is your biggest weakness? — pick a real (not fake) weakness and show what you are doing about it\n• Where do you see yourself in 5 years? — align with the company's growth trajectory\n• What is your expected CTC? — give a range based on market research; mention you are flexible\n• Do you have any other offers? — be honest; it gives you negotiation leverage\n• When can you join? — know your notice period and state it clearly\n• Do you have any questions for us? — always ask 2–3 genuine questions", },
-      { heading: "Salary Questions: How to Answer Without Undercutting Yourself",
-        content: "The salary question is where most Indian candidates lose thousands of rupees per month by either revealing a number too early or underpricing themselves out of nervousness.\n\n• Never give a number first: 'Could you share the budgeted range for this role?' deflects cleanly\n• If pressed: give a range where your target is the floor — e.g., '18–22 LPA' when you want 18+\n• Always anchor to market: 'Based on Glassdoor and my conversations with peers in similar roles...'\n• Mention total compensation: base, bonus, ESOPs — not just fixed salary\n• If current CTC is asked: give it honestly, then add 'I am looking for a meaningful step up given X and Y'", },
-      { heading: "Why Do You Want to Leave? — The Minefield",
-        content: "This question has destroyed more HR rounds than any other. The rule is simple: never badmouth your current employer, manager, or colleagues.\n\n", },
-      { heading: "Questions About Failure and Conflict",
-        content: "Indian HR rounds increasingly include behavioural questions modelled on Amazon Leadership Principles. Have your STAR stories ready.\n\n• 'Tell me about a time you failed' — pick a real failure with a clear lesson; avoid trivial ones\n• 'Describe a conflict with a team member' — show that you resolved it professionally and the outcome was better\n• 'Tell me about a time you disagreed with your manager' — show you raised it diplomatically and respected the final call\n• 'Give me an example of handling a difficult deadline' — demonstrate how you managed priorities and communicated proactively\n• The worst answer: 'I have never really had a conflict / failure' — signals low self-awareness", },
-      { heading: "Questions to Ask the Interviewer",
-        content: "Asking no questions is a missed opportunity. These questions work well in Indian HR rounds and signal genuine interest.\n\n• 'What does success look like for someone in this role in the first 90 days?'\n• 'How does the team handle disagreements about product or technical direction?'\n• 'What is the one thing about working here that surprised you positively after joining?'\n• 'What are the growth paths typically available from this role?'\n• Do NOT ask: 'How many leaves do I get?', 'Can I work from home?', 'What is the increment cycle?' — save these for post-offer negotiation" },
-    ],
-    faqs: [
-      { question: "Should I be honest about having competing offers?", answer: "Yes. Saying 'I have a competing offer but this role is my preference' is completely professional and often accelerates the process. Never lie about offers — Indian hiring communities are small and interviewers talk." },
-      { question: "How do I answer 'Are you okay with relocating?' when I am not?", answer: "Be honest early: 'I am currently based in Bangalore and looking for roles here. Is that an option?' It is better to clarify now than join and leave within 6 months." },
-      { question: "Can I negotiate after a verbal offer in India?", answer: "Yes — and you should. Once you have the offer letter in hand, a polite counter-offer is standard practice. Ask for 10–20% above the stated figure with a clear reason." },
-      { question: "What if the interviewer asks about my family background or marriage plans?", answer: "These questions are legally questionable but still common in India. You can redirect politely: 'I keep my personal life separate from my professional commitments — happy to talk about my work track record instead.'" },
-    ],
-    relatedSlugs: ["walk-me-through-your-resume-answer-guide", "tell-me-about-yourself-experienced-professionals-india", "where-do-you-see-yourself-in-5-years-answer"],
-    practicePageSlugs: [{ label: "Hr Interview Questions", slug: "hr-interview-questions" }, { label: "Behavioral Interview Questions", slug: "behavioral-interview-questions" }],
-    cta: "Practise your HR round answers out loud with HireStepX's AI mock interviewer and get feedback on clarity, confidence, and structure.",
     relatedLinks: [],
   },
   {
@@ -5925,93 +5075,6 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "python-interview-questions-india-2026",
-    title: "Python Interview Questions for Indian Companies 2026",
-    metaDescription: "Top Python interview questions asked at Indian product companies, startups, and IT firms in 2026. Data structures, OOP, decorators, Django/FastAPI, and practical coding questions.",
-    company: "General",
-    category: "Technical",
-    readTime: "11 min",
-    heroImage: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&q=80",
-    heroAlt: "Python developer coding at workstation",
-    datePublished: "2026-07-20",
-    intro: "Python is the most versatile language in Indian tech interviews — used for backend development, data engineering, ML pipelines, scripting, and automation. The questions you face depend heavily on the role, but this guide covers the core Python concepts that appear across all of them.",
-    sections: [
-      { heading: "Core Language Questions", content: "These fundamentals appear in virtually every Python interview in India regardless of role.\n\nMutable vs immutable: lists, dicts, and sets are mutable; tuples, strings, and frozensets are not. Classic trap: using a mutable default argument in a function (def foo(x=[]) is a bug).\n\nList comprehensions vs generator expressions: list comprehensions create the full list in memory; generators are lazy. Use generators for large datasets. Classic question: 'Convert [1,2,3,4,5] to a list of squares of even numbers in one line.'\n\nDecorators: a function that wraps another function. Know how to write one from scratch — @wraps, preserving the original function's __name__ and __doc__. Common real-world examples: logging, timing, authentication checks.\n\n*args and **kwargs: positional and keyword argument unpacking. Common question: 'Write a function that accepts any number of arguments and returns their average.'" },
-      { heading: "OOP in Python", content: "Python OOP is tested differently from Java or C++ — the dynamic typing changes the flavour of questions.\n\nDunder methods (__init__, __str__, __repr__, __len__, __eq__): making your class work naturally with Python built-ins. Common question: 'Implement a class that makes len(obj) work without explicitly calling obj.count().'\n\nClassmethod vs staticmethod vs instance method: @classmethod receives the class as the first argument (cls); @staticmethod receives neither self nor cls — it's just a namespace function. When to use each.\n\nInheritance and MRO (Method Resolution Order): in multiple inheritance, Python uses the C3 linearisation algorithm. Common question: 'In class D(B, C) where both B and C inherit from A, which version of A's method does D call?'\n\nProperty decorator: @property for computed attributes with optional @attr.setter for validation." },
-      { heading: "Data Structures and Algorithms in Python", content: "Python-specific DSA knowledge separates strong candidates from those who only know theory.\n\ndict.get() vs dict[]: dict.get(key, default) does not raise KeyError — use it in production. collections.defaultdict and Counter: know when each saves code and time. heapq module: Python's heap is a min-heap by default; for max-heap, store negated values. Common question: 'Find the top 3 most frequent words in a list without sorting the entire list.' — the answer is heapq.nlargest with Counter.\n\nsorted() vs .sort(): sorted() returns a new list; .sort() is in-place. Both accept a key function — 'Sort this list of tuples by the second element in descending order.'" },
-      { heading: "Python for Backend and Data Engineering", content: "Role-specific Python knowledge distinguishes candidates at product companies and data teams.\n\nFastAPI and Django: FastAPI for performance-critical APIs with type hints; Django for full-featured web applications. Know the async/await model in FastAPI. Pandas: groupby, merge, pivot_table, and handling missing data — see data analyst guide for more detail. asyncio: event loop, async/await, Task vs coroutine. Common question: 'What is the difference between threading and asyncio in Python and when would you use each?'\n\nContext managers: with statement and __enter__/__exit__ protocol. Writing a custom context manager with contextlib.contextmanager. Common real-world use: ensuring a database connection is closed even if an exception occurs." },
-      { heading: "Python Gotchas Interviewers Love", content: "These are the questions designed to catch candidates who know Python by habit rather than by understanding.\n\nLate binding in closures: functions in a loop that capture the loop variable capture a reference, not a value — the classic lambda in a loop bug. Mutable default arguments: def foo(lst=[]) — the list is created once at function definition, not on each call. Integer caching: Python caches small integers (-5 to 256) — x = 257; y = 257; x is y may be False. Global interpreter lock (GIL): CPython threads cannot truly run in parallel on multiple CPU cores — use multiprocessing for CPU-bound tasks." },
-    ],
-    faqs: [
-      { question: "Which Python version should I know for interviews in India?", answer: "Python 3.10+ is the current standard. Know f-strings (Python 3.6+), walrus operator := (3.8+), and structural pattern matching (3.10+) at a conceptual level. Interviewers rarely ask about version-specific syntax but do expect Python 3 fluency." },
-      { question: "Do I need to know Django or Flask for Python backend roles?", answer: "For backend developer roles, yes. FastAPI is growing in popularity; Django REST Framework remains the most common. Flask knowledge helps for smaller services. Know at least one framework well enough to build a CRUD API from scratch." },
-      { question: "How important is Python for data analyst roles in India?", answer: "Very important for product company DA roles — Pandas, NumPy, and Matplotlib are expected. For DA roles at IT service companies, Excel + SQL may be sufficient. Python proficiency in data wrangling commands a 15–25% salary premium over Excel-only analysts." },
-      { question: "What Python topics are most important for data engineering interviews?", answer: "PySpark for distributed processing, Pandas for batch ETL, asyncio for pipeline performance, and packaging/virtual environment management (venv, pip, Poetry). Most Indian data engineering interviews also test SQL heavily alongside Python." },
-    ],
-    relatedSlugs: ["data-analyst-interview-questions-india-2026", "system-design-interview-for-freshers-india", "leetcode-preparation-guide-india-2026"],
-    practicePageSlugs: [{ label: "Technical Interview Questions", slug: "technical-interview-questions" }],
-    cta: "Practise Python and technical interview questions with HireStepX's AI mock interviewer and get scored feedback.",
-    relatedLinks: [],
-  },
-  {
-    slug: "java-interview-questions-india-2026",
-    title: "Java Interview Questions for Indian Companies 2026",
-    metaDescription: "Top Java interview questions at Indian IT companies, product startups, and banks in 2026. Collections, multithreading, Spring Boot, JVM internals, and coding problems with answers.",
-    company: "General",
-    category: "Technical",
-    readTime: "12 min",
-    heroImage: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80",
-    heroAlt: "Java developer writing code on laptop",
-    datePublished: "2026-07-21",
-    intro: "Java remains the most widely used backend language at Indian banks, insurance companies, e-commerce platforms, and IT service firms. Whether you are targeting TCS, Infosys, HDFC Bank, Flipkart, or a fintech startup, Java questions form a major part of the technical interview. This guide covers what actually gets asked in 2026.",
-    sections: [
-      { heading: "OOP Concepts in Java", content: "OOP is the entry-level filter in every Java interview in India. Memorising definitions is not enough — you need to explain with examples.\n\nInheritance vs Composition: when to use 'is-a' (extends) vs 'has-a' (field of another class). Common question: 'Why is composition preferred over inheritance?' — answer centres on tight coupling. Polymorphism: method overloading (compile-time, same class) vs method overriding (runtime, subclass). Abstract class vs interface: abstract class can have state (fields) and partial implementation; interface in Java 8+ can have default methods. Common question: 'When would you use an abstract class over an interface?' Encapsulation: why private fields with getters/setters — data validation in the setter is the key justification." },
-      { heading: "Java Collections Framework", content: "Collections are tested in depth at every level from fresher to senior.\n\nList implementations: ArrayList (O(1) random access, O(n) insert/delete) vs LinkedList (O(n) access, O(1) insert/delete at known node). Which to use when. HashMap internals: hash function, bucket array, collision handling via chaining (linked list) or open addressing. Java 8+ uses balanced tree (TreeMap) for buckets with 8+ entries. Classic question: 'What happens if two keys have the same hashCode()?' HashSet vs TreeSet: HashSet O(1) lookup; TreeSet O(log n) but sorted. Comparable vs Comparator: Comparable for natural ordering (in the class); Comparator for custom ordering (external). Iterator vs for-each: Iterator allows safe removal during iteration; for-each does not." },
-      { heading: "Multithreading and Concurrency", content: "Multithreading is where Java interviews get hard — and where most Indian candidates are weakest.\n\nThread lifecycle: NEW → RUNNABLE → RUNNING → WAITING/BLOCKED → TERMINATED. Synchronized keyword: method-level vs block-level — block-level is preferred for finer-grained locking. volatile keyword: ensures visibility of variable changes across threads — does NOT make operations atomic. Common trap: 'Is volatile sufficient for a counter that two threads increment?' — answer is no; use AtomicInteger or synchronised. Deadlock: four conditions (mutual exclusion, hold-and-wait, no preemption, circular wait) and prevention strategies. ExecutorService vs raw Thread: ExecutorService (ThreadPoolExecutor) for managed thread pools in production." },
-      { heading: "Java 8+ Features", content: "Java 8 features are tested at every level — treating streams as a box tick is a mistake.\n\nLambda expressions: functional interface implementations without anonymous class boilerplate. Streams API: filter, map, reduce, collect — know how to chain them and when a stream is lazily evaluated. Optional: avoid NullPointerException chains — know .orElse(), .orElseGet(), .orElseThrow(). Functional interfaces: Predicate, Function, Consumer, Supplier — the four most common. Common coding question: 'Given a list of employees, find the average salary of employees in the IT department using streams.'" },
-      { heading: "Spring Boot Questions", content: "Spring Boot is the dominant enterprise framework in India and is tested in mid-level and senior Java interviews.\n\n@RestController vs @Controller: RestController combines Controller + ResponseBody — returns JSON by default. Dependency Injection: constructor injection vs field injection — constructor injection is preferred for testability and immutability. JPA and Hibernate: Entity, Repository pattern, lazy vs eager loading — N+1 query problem is a classic interview question. Spring Security: JWT-based authentication flow, filter chain, how @PreAuthorize works. Common question: 'Walk me through what happens when a REST request hits your Spring Boot application from the HTTP call to the database and back.'" },
-    ],
-    faqs: [
-      { question: "What Java version should I target for interviews in India in 2026?", answer: "Java 17 (LTS) is the current enterprise standard in India. Interviewers expect Java 8 features fluency at minimum, and awareness of Java 11+ module system, records, and sealed classes at senior level." },
-      { question: "Is Spring Boot mandatory for Java interviews?", answer: "For backend developer and software engineer roles at product companies, yes — Spring Boot knowledge is expected beyond 1 year of experience. For fresher interviews at IT service companies, core Java and basic Spring concepts are sufficient." },
-      { question: "What is the N+1 query problem and why does it matter in Java interviews?", answer: "The N+1 problem occurs when your code fires 1 query to fetch N records and then N additional queries to fetch related data for each record. In Hibernate/JPA, this happens with lazy-loaded associations. The fix is to use JOIN FETCH or @BatchSize annotations. It is a very common Spring Boot interview question." },
-      { question: "How do HashMap and HashSet differ internally in Java?", answer: "HashSet is implemented as a HashMap where the value is always a constant dummy object (PRESENT). The set behaviour comes from HashMap's key uniqueness constraint. So all HashMap internals apply to HashSet — same hash collision handling, same load factor." },
-    ],
-    relatedSlugs: ["system-design-interview-for-freshers-india", "tcs-nqt-2026-complete-guide", "hcl-technologies-interview-questions-2026"],
-    practicePageSlugs: [{ label: "Technical Interview Questions", slug: "technical-interview-questions" }],
-    cta: "Practise Java interview questions including Spring Boot and collections with HireStepX's AI mock interviewer.",
-    relatedLinks: [],
-  },
-  {
-    slug: "aws-interview-questions-india-2026",
-    title: "AWS Interview Questions for Indian Companies 2026",
-    metaDescription: "Top AWS interview questions for cloud engineer and DevOps roles at Indian companies in 2026. EC2, S3, Lambda, VPC, IAM, RDS, and real scenario-based questions with answers.",
-    company: "General",
-    category: "Technical",
-    readTime: "11 min",
-    heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
-    heroAlt: "Cloud infrastructure visualization representing AWS",
-    datePublished: "2026-07-21",
-    intro: "AWS is the dominant cloud platform in Indian enterprises, with most large IT service companies, banks, and product startups running workloads on AWS. Cloud engineer and DevOps roles grew by over 40% in India in 2025, and AWS knowledge is now expected even in backend developer interviews.",
-    sections: [
-      { heading: "Core Services: What Indian Interviews Test Most", content: "Indian AWS interviews focus on practical service knowledge over theoretical certification content.\n\nEC2: instance types (compute vs memory optimised), auto-scaling groups, placement groups, spot vs reserved vs on-demand pricing. Common question: 'Your EC2 instance is experiencing high latency during business hours — how do you diagnose and fix it?'\n\nS3: storage classes (Standard, IA, Glacier), lifecycle policies, bucket policies vs IAM policies, pre-signed URLs for temporary access. Common question: 'How do you serve a private S3 file to authenticated users in your application without making the bucket public?'\n\nRDS vs DynamoDB: relational (RDS) for structured, ACID-compliant data; DynamoDB for high-throughput NoSQL. Multi-AZ deployment vs Read Replicas — know the difference (high availability vs read scaling).\n\nLambda: event-driven execution, cold start problem, memory vs execution time trade-off, concurrent execution limits." },
-      { heading: "Networking and Security", content: "VPC architecture and security questions separate cloud engineers from cloud users.\n\nVPC fundamentals: CIDR blocks, public vs private subnets, internet gateway vs NAT gateway. A private subnet routes internet traffic through NAT — not directly through the internet gateway. Security Groups vs Network ACLs: SGs are stateful (inbound rule automatically allows response); NACLs are stateless and evaluated in order by rule number. Common question: 'Your EC2 in a private subnet cannot reach the internet even though NAT gateway exists — what do you check?'\n\nIAM: least privilege principle, roles vs users, instance profiles for EC2, assume-role for cross-account access. Classic question: 'How would you give a Lambda function access to an S3 bucket without hardcoding credentials?' — answer is an IAM role attached to the Lambda." },
-      { heading: "Architecture and Design Questions", content: "Mid-level and senior AWS interviews ask you to design scalable, cost-effective architectures.\n\nCommon scenario: 'Design a file upload system where users upload images, the images are processed and stored, and users can retrieve them later.' — answer involves S3, Lambda (trigger on upload), SQS for async processing, CloudFront for delivery. High-availability patterns: Multi-AZ deployments, auto-scaling, health checks, graceful degradation. Cost optimisation: S3 Intelligent-Tiering, Reserved Instances for predictable workloads, Savings Plans, and right-sizing EC2 instances. Disaster recovery: RTO vs RPO trade-offs, S3 cross-region replication, Route 53 health checks for failover." },
-      { heading: "CloudWatch, CI/CD, and DevOps Services", content: "Operations and monitoring questions appear in DevOps and cloud engineer roles.\n\nCloudWatch: metrics vs logs vs alarms. Setting up an alarm that notifies SNS when CPU exceeds 80% for 5 minutes. Log insights queries for troubleshooting. CodePipeline + CodeBuild + CodeDeploy: AWS's native CI/CD stack — know the role of each service in a pipeline. ECS vs EKS: ECS for AWS-native container management; EKS for Kubernetes on AWS. Common question at Indian startups: 'We run 50 microservices — should we use ECS or EKS and why?' Elastic Beanstalk vs custom infrastructure: Beanstalk for simplicity (auto-manages EC2, ASG, ELB); custom for fine-grained control." },
-      { heading: "AWS Certifications and Their Value in India", content: "Indian employers' appetite for AWS certifications has grown significantly.\n\nMost valued in India: AWS Solutions Architect Associate (SAA-C03) — the most recognised entry credential. AWS Developer Associate: preferred for software engineers moving into cloud roles. AWS DevOps Professional: commands the highest salary premium for experienced hires. Salary impact: AWS SAA certification adds approximately ₹2–5 LPA to compensation for candidates with 2–5 years of experience. Preparation: A Cloud Guru, Stephane Maarek's Udemy course, and AWS's official practice exams — in that order." },
-    ],
-    faqs: [
-      { question: "Do I need an AWS certification to get a cloud job in India?", answer: "Not required but strongly recommended. The AWS Solutions Architect Associate certification is the most respected entry-level credential. Many Indian companies use certification as a first filter for cloud engineer JDs." },
-      { question: "What is the salary for AWS cloud engineers in India in 2026?", answer: "Cloud engineer (0–2 years): ₹8–16 LPA. Mid-level (2–5 years with SAA): ₹18–35 LPA. Senior cloud/DevOps engineer: ₹40–70 LPA. AWS architects at large enterprises: ₹70 LPA+." },
-      { question: "What is the difference between AWS Security Groups and NACLs?", answer: "Security Groups are stateful firewalls at the instance level — if you allow inbound traffic on port 443, the return traffic is automatically allowed. NACLs are stateless and applied at the subnet level — you must explicitly allow both inbound and outbound rules. NACLs are evaluated in order by rule number; the first match wins." },
-      { question: "Which AWS services are asked most in Indian product company interviews?", answer: "EC2, S3, RDS, Lambda, VPC, IAM, and CloudWatch cover 80% of what Indian product companies ask. Add SQS/SNS for async messaging, ECS/EKS for containers, and Route 53 for DNS/routing for senior roles." },
-    ],
-    relatedSlugs: ["devops-interview-questions-india-2026", "system-design-interview-for-freshers-india", "java-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Technical Interview Questions", slug: "technical-interview-questions" }],
-    cta: "Practise AWS and cloud architecture interview questions with HireStepX's AI mock interviewer.",
-    relatedLinks: [],
-  },
-  {
     slug: "devops-interview-questions-india-2026",
     title: "DevOps Interview Questions for Indian Companies 2026",
     metaDescription: "Top DevOps interview questions in India 2026. CI/CD pipelines, Docker, Kubernetes, Terraform, monitoring, and real scenario questions for DevOps engineer roles.",
@@ -6067,35 +5130,6 @@ const posts: BlogPost[] = [
     relatedSlugs: ["goldman-sachs-india-campus-interview-guide", "jpmorgan-chase-india-interview-guide-2026", "hr-interview-questions-answers-india-2026"],
     practicePageSlugs: [{ label: "Consulting HR Questions", slug: "hr-interview-questions" }],
     cta: "Practise Deloitte-style behavioural and consulting interview questions with HireStepX's AI mock interviewer.",
-    relatedLinks: [],
-  },
-  {
-    slug: "sql-interview-questions-india-2026",
-    title: "SQL Interview Questions for Indian Companies 2026",
-    metaDescription: "Top SQL interview questions at Indian product companies, banks, and IT firms in 2026. JOINs, window functions, subqueries, indexing, and practical query writing with answers.",
-    company: "General",
-    category: "Technical",
-    readTime: "12 min",
-    heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&q=80",
-    heroAlt: "Data engineer writing SQL queries on laptop",
-    datePublished: "2026-07-22",
-    intro: "SQL is the most universally tested technical skill in Indian interviews — it shows up in data analyst, backend developer, data engineer, business analyst, and even product manager interviews. This guide covers every level from basic queries to window functions and performance tuning.",
-    sections: [
-      { heading: "JOINs: The Core Filter Question", content: "JOIN questions appear in nearly every technical interview in India. Understanding the logic behind each JOIN type — not just the syntax — is what interviewers test.\n\nINNER JOIN: returns rows where the join condition matches in both tables. NULL values in the join column are excluded. LEFT JOIN: all rows from the left table, matched rows from the right (NULLs where no match). Use LEFT JOIN + WHERE right.col IS NULL to find rows with no match. RIGHT JOIN: rarely used — LEFT JOIN with tables reversed is equivalent and clearer. FULL OUTER JOIN: all rows from both tables; NULLs where no match on either side. CROSS JOIN: Cartesian product — every row of left with every row of right. Use for generating combinations.\n\nCommon question: 'Find all customers who have never placed an order.' — SELECT c.* FROM customers c LEFT JOIN orders o ON c.id = o.customer_id WHERE o.customer_id IS NULL." },
-      { heading: "Window Functions", content: "Window functions are the single most important SQL topic in 2026 Indian interviews — especially for data analyst and data engineer roles.\n\nROW_NUMBER(): unique row number within each partition — no ties. RANK(): same rank for ties, with gaps after. DENSE_RANK(): same rank for ties, no gaps. Classic question: 'Find the second highest salary in each department.' — SELECT * FROM (SELECT *, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) rk FROM employees) t WHERE rk = 2.\n\nSUM OVER: running total — SUM(revenue) OVER (PARTITION BY region ORDER BY date). LAG / LEAD: access the previous/next row's value — useful for month-over-month growth: (current - LAG(current)) / LAG(current). NTILE(n): divide rows into n buckets — useful for quartile analysis." },
-      { heading: "Subqueries and CTEs", content: "Subqueries and CTEs are tested for complex data retrieval problems.\n\nSubquery types: scalar (returns one value), row (returns one row), table (returns a table). Correlated subquery: references the outer query — runs once per row of the outer query, so it is slow. Common question: 'Find employees whose salary is above the average salary of their department.' — correlated subquery or PARTITION BY AVG.\n\nCTE (WITH clause): named temporary result set that makes complex queries readable. Recursive CTE: for hierarchical data (org charts, category trees). Common question: 'List the entire management chain above a given employee ID.' — requires a recursive CTE. CTEs vs subqueries: CTEs are evaluated once (in most databases); subqueries may be re-evaluated. CTEs also support recursion." },
-      { heading: "Indexing and Query Performance", content: "Performance questions appear in mid-level and senior data engineering interviews at Indian companies.\n\nWhat an index does: creates a B-tree (or hash) structure for fast lookups — trades storage and write performance for read speed. Clustered vs non-clustered: clustered index determines physical row order (one per table); non-clustered is a separate structure pointing to rows. When NOT to index: columns with low cardinality (e.g., a boolean), small tables, columns used only in SELECT (not WHERE/JOIN). EXPLAIN PLAN / EXPLAIN ANALYZE: how to read query execution plans — look for full table scans on large tables, which signal a missing index. Common question: 'This query takes 8 seconds on a 10M row table — how do you make it faster?' — check WHERE clause columns, JOIN conditions, and whether a composite index would help." },
-      { heading: "Practical Query Questions", content: "These are the actual write-a-query questions that appear in Indian interviews.\n\n'Find customers who placed orders in both January and February.' — self-join or GROUP BY with HAVING COUNT(DISTINCT month) = 2. 'Find the top 3 selling products in each category.' — RANK() OVER (PARTITION BY category ORDER BY sales DESC) then filter WHERE rank <= 3. 'Calculate month-over-month revenue growth as a percentage.' — LAG(revenue) OVER (ORDER BY month) for previous month, then (current - prev) / prev * 100. 'Find duplicate records in a table and keep only the latest one.' — ROW_NUMBER() OVER (PARTITION BY email ORDER BY created_at DESC) then keep where row_number = 1." },
-    ],
-    faqs: [
-      { question: "Which SQL dialect should I know for Indian interviews?", answer: "PostgreSQL and MySQL cover 90% of what Indian companies use. PostgreSQL is dominant at product startups; MySQL at legacy web applications. SQL Server is common at banks and enterprises. The window function syntax is nearly identical across all of them." },
-      { question: "Is NoSQL knowledge required alongside SQL in Indian interviews?", answer: "For backend developer roles at product companies, basic MongoDB knowledge (find, aggregate, index) is helpful. For data engineering roles, knowing when to use Cassandra vs PostgreSQL is expected. Pure SQL expertise is sufficient for data analyst roles." },
-      { question: "How do I prepare for SQL coding questions in interviews?", answer: "Practice on StrataScratch (closest to real interview questions), LeetCode SQL section (medium difficulty), and SQLZoo for interactive learning. 50 practice problems covering JOINs, window functions, and CTEs is a solid baseline for most Indian interviews." },
-      { question: "What is the difference between WHERE and HAVING in SQL?", answer: "WHERE filters rows before aggregation; HAVING filters groups after aggregation (after GROUP BY). You cannot use aggregate functions like COUNT() or SUM() in a WHERE clause — they go in HAVING. Common question: 'Find departments with more than 10 employees.' — SELECT dept, COUNT(*) FROM employees GROUP BY dept HAVING COUNT(*) > 10." },
-    ],
-    relatedSlugs: ["data-analyst-interview-questions-india-2026", "python-interview-questions-india-2026", "java-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Technical Interview Questions", slug: "technical-interview-questions" }],
-    cta: "Practise SQL and data interview questions with HireStepX's AI mock interviewer and get instant feedback.",
     relatedLinks: [],
   },
   {
@@ -6183,35 +5217,6 @@ const posts: BlogPost[] = [
     relatedSlugs: ["salary-negotiation-after-offer-letter-india", "hr-interview-questions-answers-india-2026", "product-manager-interview-guide-india-startups"],
     practicePageSlugs: [{ label: "HR Interview Questions", slug: "hr-interview-questions" }],
     cta: "Know your worth — practise salary negotiation and offer discussion scenarios with HireStepX's AI mock interviewer.",
-    relatedLinks: [],
-  },
-  {
-    slug: "linkedin-profile-tips-indian-job-seekers-2026",
-    title: "LinkedIn Profile Optimisation for Indian Job Seekers 2026",
-    metaDescription: "How to optimise your LinkedIn profile to get recruiter attention in India 2026. Headline, about section, experience, skills, and activity strategies that actually generate inbound.",
-    company: "General",
-    category: "Career",
-    readTime: "9 min",
-    heroImage: "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=800&q=80",
-    heroAlt: "Professional updating LinkedIn profile on laptop",
-    datePublished: "2026-07-23",
-    intro: "LinkedIn is the primary sourcing channel for most technical and business hiring in India — yet most Indian professionals have profiles that read like a dusty resume attached to a blank wall. A well-optimised LinkedIn profile generates 5–15 inbound recruiter messages per month for mid-level engineers and business professionals. This guide tells you exactly what to change.",
-    sections: [
-      { heading: "The Headline: The Most Important 220 Characters", content: "Your LinkedIn headline is shown in search results, connection requests, and message previews — it is what determines whether a recruiter clicks on your profile.\n\nDefault (wrong): 'Software Engineer at Infosys' — every SDE at Infosys has this headline. Better headline formula: [Current Role] | [1–2 Specific Skills] | [What You Are Seeking or Passionate About]. Example (engineer): 'Backend Engineer | Java, Kafka, AWS | Building high-throughput payment systems | Open to senior engineering roles'. Example (fresher): 'Final Year B.Tech CSE | Python, React, DSA | Campus 2026 | Seeking SDE roles'. Include 'Open to Work' in your settings (the green banner is optional — many active seekers prefer not to show it but keep the recruiter-visible toggle on)." },
-      { heading: "About Section: Your 2,000-Character Pitch", content: "Most Indian profiles either leave the About section blank or paste their full resume into it. Both are wrong.\n\nThe About section should: (1) Hook with one compelling sentence about what you do and your impact level. (2) Tell your professional story in 2–3 sentences — not a timeline, but a narrative. (3) List 3–4 specific skills or achievements with numbers. (4) End with a call to action: what you are looking for and how to reach you.\n\nExample hook: 'I build the backend systems that process ₹500 crore daily at a Series C fintech — and I am looking for my next challenge at 10X that scale.'\n\nAvoid: third-person ('Jay is a passionate engineer...'), buzzwords without substance ('dynamic team player'), and anything over 300 words." },
-      { heading: "Experience Section: Show Impact, Not Responsibility", content: "The experience section is where Indian profiles are weakest — most list job descriptions, not achievements.\n\nWeak: 'Responsible for developing features for the e-commerce platform using Java and Spring Boot.' Strong: 'Built the real-time inventory sync service (Java + Kafka) that reduced stockout errors from 12% to 1.8% across 500 warehouses.'\n\nThe formula: Action verb + what you built/did + the specific outcome (with numbers). Even if you do not have impressive metrics, specificity beats vagueness: 'Led migration of 3 legacy services to microservices' is better than 'worked on microservices migration.'\n\nMedia attachments: add a screenshot of a live project, a slide from a presentation, or a link to your GitHub. Visual proof increases profile credibility significantly." },
-      { heading: "Skills and Endorsements", content: "LinkedIn's Skills section influences search ranking more than most users realise.\n\nAdd your top 10–15 skills — LinkedIn limits the 'featured skills' to 5, so choose the ones most relevant to your target roles. Technical skills first, soft skills never (no recruiter searches for 'team player'). Endorsements: ask 2–3 colleagues to endorse your top 5 skills — reciprocate by endorsing theirs. The number of endorsements for a skill affects whether LinkedIn surfaces your profile in that skill search. LinkedIn Learning certifications: add relevant completions — they appear in the Certifications section and add legitimacy to skill claims." },
-      { heading: "Activity: The Multiplier Most Miss", content: "A perfect profile that sits idle generates minimal inbound. LinkedIn's algorithm rewards active users with dramatically higher visibility.\n\nPost once per week: share a technical observation, a career lesson, or a project update. Do not overthink format — 3–5 lines with a specific takeaway outperforms polished long-form posts. Comment strategically: 2–3 substantive comments per day on posts from people in your target companies — this surfaces you to their network. Connect proactively: send 5–10 connection requests per week to engineers, recruiters, or hiring managers at target companies — include a 1-sentence personalised note. Most Indian professionals do not do this; those who do get noticed." },
-    ],
-    faqs: [
-      { question: "Should I have a profile photo on LinkedIn?", answer: "Yes, always. Profiles with photos receive 14x more views. Use a clear, professional headshot — a plain background, good lighting, and your face filling 60% of the frame. A phone selfie with good lighting is perfectly fine; a studio photo is not necessary." },
-      { question: "How do I turn on 'Open to Work' without my current employer seeing it?", answer: "Go to your profile → Open to → Finding a new job → Choose 'Recruiters only' (not 'All LinkedIn members'). This hides the green banner from your profile publicly, while making you visible to recruiters at companies not connected to your current employer." },
-      { question: "Does LinkedIn Premium help job seekers in India?", answer: "LinkedIn Premium Career (₹1,600/month approximately) gives you InMail credits, 'who viewed your profile' insights, and 'Top Applicant' badge. The InMail credits are genuinely useful for reaching out to hiring managers directly. However, a well-optimised free profile generally outperforms a poorly optimised Premium profile." },
-      { question: "How important is the LinkedIn profile URL?", answer: "Customise it to linkedin.com/in/yourname — it is cleaner on your resume and CV. Go to Edit Profile → Edit public profile → Customise URL. Use firstname-lastname or firstnamelastname (no special characters)." },
-    ],
-    relatedSlugs: ["salary-negotiation-after-offer-letter-india", "hr-interview-questions-answers-india-2026", "walk-me-through-your-resume-answer-guide"],
-    practicePageSlugs: [{ label: "HR Interview Questions", slug: "hr-interview-questions" }],
-    cta: "Turn your LinkedIn presence into interviews with HireStepX — practise mock interviews so you are ready when recruiters call.",
     relatedLinks: [],
   },
   {
@@ -6536,35 +5541,6 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "machine-learning-interview-questions-india-2026",
-    title: "Machine Learning Interview Questions for Indian Companies 2026",
-    metaDescription: "Top ML interview questions at Indian product companies and AI startups in 2026. Supervised learning, neural networks, model evaluation, MLOps, and practical ML system design.",
-    company: "General",
-    category: "Technical",
-    readTime: "12 min",
-    heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800&q=80",
-    heroAlt: "Machine learning engineer reviewing model training metrics",
-    datePublished: "2026-07-26",
-    intro: "Machine learning engineer and applied scientist roles in India have grown dramatically since 2024, with every product company building internal AI capabilities. The ML interview is one of the hardest in the Indian tech job market — it tests statistics, algorithm knowledge, coding, and system design all in one process.",
-    sections: [
-      { heading: "Supervised Learning Fundamentals", content: "These are the entry-level filter questions in every Indian ML interview.\n\nLinear Regression: assumptions (linearity, independence, homoscedasticity, normality of errors), how to diagnose violations, what happens when assumptions break. Common question: 'You build a linear regression model with R² = 0.95 — is it good?' — the answer depends on whether you checked for overfitting and whether R² is on train or test data. Logistic Regression: sigmoid function, log-loss, when to use over a neural network. Not just for binary classification — multinomial logistic regression with softmax for multi-class. Decision Trees: how splits are chosen (Gini impurity, information gain), why they overfit, how pruning helps. Random Forest: bagging + feature randomness — why it beats a single tree and when it beats XGBoost. SVM: the maximum margin intuition, kernel trick for non-linear separation — when SVM is better than gradient boosting (small dataset, high-dimensional text data)." },
-      { heading: "Model Evaluation and Selection", content: "Evaluation questions are consistently asked in Indian ML interviews because candidates often learn to train models without learning to evaluate them.\n\nClassification metrics: precision, recall, F1, AUC-ROC — which metric to use when. For fraud detection: recall over precision (missing fraud is worse than a false alert). For medical screening: recall. For spam detection: precision (false positives are more annoying than a missed spam). Confusion matrix: true positives, false positives, true negatives, false negatives — draw it and calculate metrics from given numbers on the spot. Regression metrics: MAE vs RMSE — RMSE penalises large errors more; choose based on whether outlier errors are particularly costly. Cross-validation: stratified k-fold for imbalanced classes. Class imbalance: SMOTE (oversampling), class weight parameter, threshold tuning — common in Indian fintech/insurance ML interviews." },
-      { heading: "Deep Learning and Neural Networks", content: "Deep learning questions appear in senior ML and NLP roles at Indian product companies and AI startups.\n\nBackpropagation: chain rule applied to compute gradients — understand the flow conceptually, not just the formula. Activation functions: ReLU (and why it replaced sigmoid — vanishing gradient problem), sigmoid for binary output, softmax for multi-class output. Optimisers: SGD, Adam (adaptive learning rates) — when Adam is better. Batch normalisation: normalises layer inputs to stabilise and accelerate training. Dropout: regularisation technique — randomly zero out neurons during training to prevent co-adaptation. CNNs: convolution + pooling + fully connected — for image classification, object detection. Common question: 'Why does a CNN work better than a fully connected network for images?' — local feature detection, weight sharing, translation invariance. Transformers: attention mechanism, why self-attention works for sequential data, BERT vs GPT architecture difference." },
-      { heading: "MLOps and Production ML Questions", content: "Senior ML engineers at Indian product companies are expected to know how to take models to production.\n\nModel serving: REST API via FastAPI or Flask, batch inference vs real-time inference trade-offs. Feature stores: centralised repository for computed features — why feature stores prevent training-serving skew (the most common production ML failure). Model monitoring: data drift (input distribution shifts), concept drift (label distribution shifts), prediction drift (output distribution shifts). How to detect each and set up alerts. A/B testing for ML models: shadow mode (new model gets traffic but results are not shown), canary deployment (route 5% traffic to new model), champion-challenger. Retraining pipelines: when to trigger retraining (schedule, drift threshold, performance degradation), how to validate before promoting to production." },
-      { heading: "ML System Design", content: "ML system design is tested for senior ML engineer roles at Flipkart, Amazon, and growth-stage Indian AI startups.\n\nCommon problem: 'Design a recommendation system for Swiggy.' Expected structure: (1) Clarify the objective — orders? engagement? diversity? (2) Feature design — user history, restaurant features, context (time, location, weather). (3) Candidate generation — ALS matrix factorisation or embeddings for recall. (4) Ranking — gradient boosted model or two-tower neural network. (5) Online serving — latency requirements, caching strategy. (6) Evaluation — offline (MAP@K, NDCG) and online (CTR, conversion rate). (7) Monitoring — feature drift, cold start for new users. Fraud detection, search ranking, and content recommendation are the three most common ML system design problems in Indian interviews." },
-    ],
-    faqs: [
-      { question: "What is the salary for machine learning engineers in India in 2026?", answer: "Junior ML Engineer (0–2 years): ₹12–25 LPA. Mid-level (2–5 years): ₹28–55 LPA. Senior ML Engineer at Flipkart/Amazon/Swiggy: ₹60–1.2 Cr. AI research scientists at Microsoft/Google India: ₹1–2 Cr+." },
-      { question: "Do I need a master's degree for ML jobs in India?", answer: "Not for ML engineer roles at product companies — strong project experience and a good GitHub portfolio can substitute. An MS or PhD is expected for research scientist roles at Microsoft Research, Google DeepMind India, or AI-focused startups." },
-      { question: "What ML frameworks should I know for Indian interviews?", answer: "PyTorch is now the dominant framework in both industry and research. Scikit-learn for classical ML is still expected. TensorFlow/Keras knowledge is useful but declining in importance. Hugging Face for NLP/LLM tasks is increasingly expected for NLP roles." },
-      { question: "How do I build ML experience if I am still a student in India?", answer: "Kaggle competitions (even reaching the top 25% is meaningful on a resume), research under a professor, contributions to open-source ML projects, and end-to-end personal projects deployed on HuggingFace Spaces or Streamlit are the four best approaches." },
-    ],
-    relatedSlugs: ["data-science-interview-questions-india-2026", "python-interview-questions-india-2026", "system-design-interview-for-freshers-india"],
-    practicePageSlugs: [{ label: "Technical Interview Questions", slug: "technical-interview-questions" }],
-    cta: "Practise ML interview questions including system design and model evaluation with HireStepX's AI mock interviewer.",
-    relatedLinks: [],
-  },
-  {
     slug: "fresher-resume-tips-india-2026",
     title: "Fresher Resume Tips for Indian Job Seekers: Stand Out in 2026",
     metaDescription: "How to write a fresher resume that gets shortlisted in India 2026. Format, what to include, project section, skills section, and ATS optimisation for IT and non-IT freshers.",
@@ -6707,35 +5683,6 @@ const posts: BlogPost[] = [
     relatedSlugs: ["highest-paying-it-companies-india-2026", "startup-vs-mnc-india-career-choice-guide", "google-india-off-campus-how-to-crack"],
     practicePageSlugs: [{ label: "HR Interview Questions", slug: "hr-interview-questions" }],
     cta: "Whatever path you choose, prepare for the interviews with HireStepX's AI mock interviewer to give yourself the best shot.",
-    relatedLinks: [],
-  },
-  {
-    slug: "product-manager-interview-questions-india-2026",
-    title: "Product Manager Interview Questions for Indian Companies 2026",
-    metaDescription: "Top product manager interview questions at Indian startups and product companies in 2026. Product sense, estimation, root cause analysis, and prioritisation frameworks with answers.",
-    company: "General",
-    category: "Technical",
-    readTime: "12 min",
-    heroImage: "https://images.unsplash.com/photo-1553484771-047a44eee27a?w=800&q=80",
-    heroAlt: "Product manager leading a strategy session with the team",
-    datePublished: "2026-07-28",
-    intro: "Product manager interviews in India have become more structured and rigorous since 2023 — companies like Swiggy, Razorpay, Meesho, CRED, and Flipkart now run 4–6 round processes that test product sense, analytical thinking, technical understanding, and stakeholder communication. This guide covers every stage.",
-    sections: [
-      { heading: "The Indian PM Interview Process", content: "PM interviews at Indian product companies typically run 4–6 rounds over 3–6 weeks.\n\nRound 1: Recruiter screen — background, motivation, why PM, why this company. Round 2: Product sense — design a product for a given user problem. Round 3: Analytical / metrics — how to measure success of a feature, root cause analysis of a metric drop. Round 4: Execution / strategy — how would you build and launch X feature. Round 5: Behavioural — STAR-format stories about cross-functional leadership, handling ambiguity, disagreement with stakeholders. Round 6 (senior roles): Hiring manager round — strategic thinking, vision, team fit. The weighting between product sense and analytical rounds varies by company — Swiggy and Meesho weight analytics more heavily; CRED and Razorpay weight product sense and design thinking." },
-      { heading: "Product Sense Questions", content: "Product sense is the most distinctive PM interview skill — it cannot be memorised, only developed.\n\nCommon prompt: 'Design a feature to improve user retention on Swiggy.' Strong answers follow this structure: Clarify the user segment and context (new users? lapsed users? heavy users?), Identify user pain points through empathy (not assumptions), Generate multiple solutions at different levels of effort, Evaluate trade-offs explicitly (impact vs effort vs risk), Commit to a recommendation with clear reasoning.\n\nCommon mistake: jumping straight to the solution without understanding the user. Interviewers penalise this — it signals weak product instinct. India-specific product sense: demonstrate awareness of India's user diversity — rural vs urban, low-end Android vs iPhone, 2G vs 5G, multiple Indian languages, UPI-native payments, WhatsApp as the primary communication channel." },
-      { heading: "Metrics and Analytical Questions", content: "Metrics questions test whether you can think rigorously about product success and failure.\n\nGoal metric definition: 'What metrics would you track for Razorpay's merchant onboarding flow?' — know the difference between north star metrics (DAU, GMV), input metrics (funnel step completion rates), and guardrail metrics (payment success rate, fraud rate). Root cause analysis: 'Meesho's DAU dropped 15% last Tuesday — what happened and how do you investigate?' — structured approach: isolate the drop by platform/geography/feature, check for technical incidents, correlate with product releases, check external events (competitor launch, holiday). A/B testing: when to run a test, minimum detectable effect calculation, pitfalls (novelty effect, network effects, cannibalization between variants)." },
-      { heading: "Estimation Questions", content: "Estimation (market sizing) questions test first-principles thinking, not the ability to recall data.\n\nCommon prompts: 'How many UPI transactions happen per day in India?' 'What is the market size for online grocery delivery in Tier-2 Indian cities?' Framework: identify the universe (India has 1.4 billion people, ~250M households, ~200M smartphone users). Segment it logically. Apply usage rates. Arrive at a number. State your assumptions clearly. What interviewers evaluate: your decomposition approach (are you breaking the problem into sensible parts?), your ability to sense-check (does your number feel plausible?), your confidence in stating assumptions while acknowledging uncertainty." },
-      { heading: "Prioritisation Framework Questions", content: "Prioritisation is tested in execution rounds — it shows whether you can make structured decisions under resource constraints.\n\nCommon prompt: 'You have 4 features requested by the CEO, one enterprise client, your data team, and your design team — how do you prioritise?' Frameworks to know: RICE (Reach, Impact, Confidence, Effort), MoSCoW (Must/Should/Could/Won't), and the simple Impact vs Effort 2x2. Know all three; use the one that fits the context. More importantly: state the company's north star metric first. Everything gets prioritised against that. An Indian-specific prioritisation context: 'Our main user in Tier-2 India has a 2G connection and a ₹8,000 Android — how do you prioritise features given this constraint?'" },
-    ],
-    faqs: [
-      { question: "What is the salary for product managers in India in 2026?", answer: "APM (0–1 year): ₹15–25 LPA at top companies. PM (2–4 years): ₹25–50 LPA. Senior PM: ₹50–90 LPA. Group PM/Principal PM: ₹90 LPA–1.5 Cr. ESOP grants add 15–40% to total compensation at unicorns and late-stage startups." },
-      { question: "Do I need an MBA to become a PM at an Indian product company?", answer: "Not at most Indian product companies — many PMs at Swiggy, CRED, Razorpay, and Flipkart are engineers without MBAs. An IIM/ISB MBA helps for MBA-PM roles at larger companies and for transitioning to strategy/GM roles. Technical PMs (who work on developer tools, APIs, infrastructure) rarely need an MBA." },
-      { question: "What is an APM (Associate Product Manager) programme in India?", answer: "APMs are structured entry-level PM rotational programmes. Flipkart, Google India, Amazon India, and several Indian unicorns run APM programmes. They are intensely competitive — typically accepting 5–15 people per cohort from hundreds of applicants. They are the best path to PM for engineers without prior PM experience." },
-      { question: "How do I prepare for PM interviews in India without prior PM experience?", answer: "Build a portfolio of case studies — take 3 products you use daily, identify a pain point, and design a feature. Write them up as 2-page documents. Practice product sense questions daily with a partner. Read Shreyas Doshi, Lenny Rachitsky, and Gibson Biddle newsletters. Contribute to product decisions in your current role — even as an engineer, proposing feature improvements documented with metrics counts." },
-    ],
-    relatedSlugs: ["product-manager-interview-guide-india-startups", "data-science-interview-questions-india-2026", "highest-paying-it-companies-india-2026"],
-    practicePageSlugs: [{ label: "HR Interview Questions", slug: "hr-interview-questions" }],
-    cta: "Practise PM interview questions including product sense and metric analysis with HireStepX's AI mock interviewer.",
     relatedLinks: [],
   },
   {
@@ -7193,174 +6140,6 @@ const posts: BlogPost[] = [
     relatedSlugs: ["how-to-answer-what-are-your-weaknesses-india", "why-should-we-hire-you-answer-india", "star-method-interview-examples-india"],
     practicePageSlugs: [{ label: "HR Interview Practice", slug: "hr-interview-questions" }, { label: "Behavioural Interview Practice", slug: "behavioral-interview" }],
     cta: "Practise 'Tell me about yourself' with HireStepX's AI interviewer. Get real-time feedback on clarity, pacing, and content — then drill the follow-up questions that come right after.",
-    relatedLinks: [],
-  },
-
-  {
-    slug: "campus-placement-preparation-guide-india-2026",
-    title: "Campus Placement Preparation Guide for Indian Engineering Students 2026",
-    metaDescription: "Complete campus placement preparation guide for Indian engineering students in 2026. Aptitude, coding, GD, HR rounds, timeline, and company-specific tips for TCS, Infosys, Amazon, and more.",
-    company: "General",
-    category: "Career",
-    readTime: "12 min",
-    heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80",
-    heroAlt: "Engineering students preparing for campus placements",
-    datePublished: "2026-08-01",
-    intro: "Campus placement season is the defining event of an engineering student's final year in India. The difference between a placed student and an unplaced one is rarely intelligence — it is preparation timing, knowledge of the process, and consistent practice. This guide walks you through the complete preparation timeline, round-by-round strategy, and company-specific tips to maximise your placement outcome.",
-    sections: [
-      {
-        heading: "The campus placement timeline in India",
-        content: "Understanding when to start is the first advantage:\n\n• Pre-final year (3rd year): Begin DSA fundamentals (arrays, strings, recursion). Start competitive programming on LeetCode or Codeforces. Build your first internship-worthy project.\n• Final year August–September: Mass recruiters (TCS, Infosys, Wipro, Cognizant, Capgemini) open. Aptitude + communication + basic coding is sufficient.\n• Final year October–November: Mid-tier product companies and consulting firms visit. Stronger DSA + aptitude + domain knowledge required.\n• Final year December–February: Top-tier companies (Amazon, Microsoft, Flipkart, Goldman Sachs, etc.) visit IITs, NITs, and select private colleges. Competitive DSA + system design basics + behavioural preparation required.\n\nStudents who start preparation in 3rd year consistently outperform students who start in the final year, even with equal intelligence.",
-      },
-      {
-        heading: "Round-by-round preparation strategy",
-        content: "Aptitude and reasoning: IndiaBIX for practice. TCS iON PrepHub for TCS-specific. Focus on: number series, percentages, time-speed-distance, logical reasoning, data interpretation. Target 90%+ accuracy on practice tests before the actual exam.\n\nCoding round: For mass recruiters, basic loops + arrays + strings + simple patterns are sufficient. For product companies, solve 150+ LeetCode problems (mix of easy and medium). For FAANG-tier, solve 300+ problems including graph, DP, and trees.\n\nGroup Discussion: Pick 5–10 current topics (AI in India, DPDP Act, startup ecosystem, 5G rollout) and prepare a 2-minute opening on each. GDs are won by candidates who synthesise others' points, not by those who talk the most.\n\nTechnical interview: Know your resume cold — every line is fair game. Prepare 2–3 CS fundamentals areas (DBMS, OS, networking, OOP depending on your resume). Code on paper or whiteboard before the interview.\n\nHR interview: Prepare: Tell me about yourself, Strengths/weaknesses, Why this company, Where do you see yourself in 5 years, Salary expectations. Practise until your answers take 60–90 seconds each.",
-      },
-      {
-        heading: "Company-specific preparation",
-        content: "TCS NQT: The TCS National Qualifier Test has Verbal Ability, Reasoning Ability, Numerical Ability, Programming Logic, and Coding sections. Practice on the official TCS iON portal. Score above 70th percentile to qualify for Dream/Prime roles.\n\nInfosys InfyTQ: Complete the InfyTQ certification in Python or Java (available free). This directly helps in Infosys placement as scores are considered in shortlisting.\n\nWipro WILP / Elite: Aptitude-heavy. Focus on Quants and Logical Reasoning. Communication test is included — practise verbal English.\n\nAmazon SDE: 2 coding rounds (LeetCode medium-hard), 1 Bar Raiser round with Leadership Principles questions. Prepare all 16 Leadership Principles with STAR examples.\n\nMicrosoft SDE: Coding (medium LeetCode), followed by behavioural questions based on growth mindset. Less LP-heavy than Amazon but more system design discussion than most campus loops.\n\nGoogle STEP/SWE: Highest bar. Strong graph, DP, and string algorithm proficiency required. Practice Google-style questions on Kickstart and past Google Interview questions collections.",
-      },
-      {
-        heading: "What colleges have the best placement records",
-        content: "For benchmark, the median placed student's CTC by college tier:\n\n• IIT Bombay / Delhi: ₹20–28 LPA median, Dream offers ₹50–80 LPA+\n• IIT (other): ₹14–22 LPA median\n• NIT Trichy / Warangal / Surathkal: ₹10–18 LPA median\n• NIT (other) / BITS Pilani: ₹8–15 LPA median\n• Top private (VJTI, Thapar, Manipal, VIT): ₹5–10 LPA median\n• Other colleges: ₹3.5–6 LPA median\n\nIf your college is not top-tier, off-campus applications to mass recruiters + building a strong GitHub/LeetCode profile can help you escape the college-tier ceiling. The interview is an equaliser — candidates from tier-3 colleges regularly clear FAANG interviews through sustained practice.",
-      },
-    ],
-    faqs: [
-      { question: "What CGPA is required for campus placements?", answer: "Most companies set a minimum 60% (6.0 CGPA) with no active backlogs. Top companies like TCS Prime, Infosys DSE, and Wipro Elite sometimes raise this to 65–70%. Some dream companies require 7.0+." },
-      { question: "Can I sit for placements if I have a backlog?", answer: "Most major recruiters do not allow active backlogs at the time of the placement test. Clear all backlogs before your placement season begins — even one active backlog disqualifies you from most drives." },
-      { question: "How many company drives should I apply to?", answer: "Apply to all eligible drives, but prepare strategically for the ones you genuinely want. Applying broadly keeps options open; targeted preparation wins the offers." },
-      { question: "Is off-campus placement possible if my college placement is poor?", answer: "Yes — many working engineers today were placed off-campus. Apply directly via company careers portals, LinkedIn, and referrals. Build a strong LeetCode profile (500+ problems solved) and a GitHub with real projects." },
-    ],
-    relatedSlugs: ["tcs-nqt-campus-placement-guide-india-2026", "infosys-infytq-placement-guide-india-2026", "tell-me-about-yourself-answer-india-2026"],
-    practicePageSlugs: [{ label: "HR Interview Practice", slug: "hr-interview-questions" }, { label: "Campus Placement Practice", slug: "campus-placement" }],
-    cta: "Get campus-placement-ready with HireStepX. Practise aptitude, coding discussions, and HR rounds with our AI interviewer — and get a scored report after every session.",
-    relatedLinks: [],
-  },
-
-  {
-    slug: "wipro-interview-questions-2026",
-    title: "Wipro Interview Questions and Preparation Guide 2026",
-    metaDescription: "Complete Wipro interview preparation guide 2026. Wipro Elite and WILP rounds, aptitude test, technical interview, HR questions, and tips for freshers and experienced candidates.",
-    company: "Wipro",
-    category: "Company Guides",
-    readTime: "9 min",
-    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-    heroAlt: "Professional preparing for a Wipro job interview",
-    datePublished: "2026-08-01",
-    intro: "Wipro Technologies is one of India's largest IT services companies, hiring thousands of freshers and experienced professionals every year. The Wipro placement process has distinct tracks — Elite and Turbo for freshers, WILP for working professionals — each with a different difficulty level and selection process. This guide covers what to expect in each round and how to prepare effectively.",
-    sections: [
-      {
-        heading: "Wipro hiring tracks",
-        content: "Wipro recruits through multiple tracks depending on your background:\n\n• Wipro Elite: The standard fresher track for engineering graduates with 60%+ throughout. Process: Aptitude + Logical + Verbal → Written Communication Test → Technical Interview → HR Interview. Package: ₹3.5 LPA base.\n• Wipro Turbo: Higher package track (₹6.5–7.5 LPA) requiring stronger coding skills. Additional coding round compared to Elite. CGPA cutoff typically higher.\n• Wipro WILP (Work Integrated Learning Program): For experienced professionals re-entering or up-skilling. Involves a project-based selection process.\n• Lateral hiring: Experienced hires (2+ years) apply directly via the Wipro careers portal or LinkedIn. No aptitude test — straight to technical interviews.",
-      },
-      {
-        heading: "Aptitude and reasoning round",
-        content: "The Wipro aptitude test consists of:\n\n• Quantitative Ability: Percentages, profit and loss, time and work, time-speed-distance, number series, simple and compound interest. Difficulty: moderate. Aim for 80%+ accuracy.\n• Logical Reasoning: Syllogisms, blood relations, direction sense, coding-decoding, arrangements. Difficulty: moderate.\n• Verbal English: Reading comprehension, sentence correction, fill in the blanks, para jumbles. Key differentiator for many candidates — prepare specifically for this section.\n• Written Communication Test: A short essay (150–200 words) on a given topic. Written in English. Graded on clarity, grammar, and structure. Common topics: technology impact, work-from-home, sustainability.\n\nPrep resources: IndiaBIX for quantitative and reasoning. Previous year Wipro question papers (available on PrepInsta). Practice the written communication section specifically — many candidates neglect it.",
-      },
-      {
-        heading: "Technical interview preparation",
-        content: "Wipro technical interviews for freshers focus on fundamentals — not competitive DSA:\n\n• C/C++/Java basics: Data types, operators, control flow, functions, pointers (C/C++), OOP concepts (Java). Know your preferred language thoroughly.\n• Data Structures: Arrays, linked lists, stacks, queues, trees. Know time complexities and be able to code simple implementations on a whiteboard.\n• DBMS: SQL queries (SELECT, JOIN, GROUP BY, HAVING, subqueries), normalisation (1NF, 2NF, 3NF, BCNF), ACID properties, indexing basics.\n• Operating Systems: Process vs thread, scheduling algorithms, deadlock (conditions, prevention, detection), paging vs segmentation.\n• Resume-based questions: Every line of your resume is fair game. If you listed Python, expect Python questions. If you listed a project, know it inside out.\n\nFor experienced candidates: domain knowledge (the specific technology stack of the role you applied for) is heavily tested alongside project experience.",
-      },
-      {
-        heading: "Wipro HR interview questions",
-        content: "Common HR questions at Wipro:\n\n• Tell me about yourself.\n• Why do you want to join Wipro?\n• Where do you see yourself in 5 years?\n• Are you comfortable relocating to any Wipro office in India?\n• Do you have any plans for higher education (MBA, MS)?\n• What do you know about Wipro?\n• Are you comfortable with the service agreement (if applicable)?\n\nKey tip for the 'Why Wipro?' question: Research Wipro's specific service verticals (BFSI, healthcare, manufacturing, retail), recent acquisitions (Capco, Rizing, InfoReliance), and any CSR or ESG initiatives you genuinely find interesting. Generic answers like 'Wipro is a global leader' are common and unremarkable.",
-      },
-      {
-        heading: "Wipro experience and salary expectations",
-        content: "Fresher packages at Wipro in 2026:\n\n• Wipro Elite: ₹3.5 LPA base + benefits. Take-home varies by tax bracket but is typically ₹23,000–26,000/month for most freshers.\n• Wipro Turbo: ₹6.5–7.5 LPA. Significantly higher total take-home.\n\nFor experienced lateral hires, Wipro typically matches your current CTC with a 15–25% hike depending on the band.\n\nGrowth at Wipro: Freshers typically move to Band B2 after 1–1.5 years. Internal appraisals in March/April. Average hike in good years: 8–12%. Wipro is known for having structured L&D programs and training tracks if you want to move into consulting, cloud, or digital.",
-      },
-    ],
-    faqs: [
-      { question: "Does Wipro have a service bond?", answer: "Wipro typically does not impose a monetary service bond on freshers. Check your specific offer letter as terms can change. WILP has a course fee component with a recovery clause if you leave during the programme." },
-      { question: "How long does the Wipro hiring process take?", answer: "From aptitude test to offer letter: typically 3–8 weeks for campus hiring. For lateral hiring, 2–6 weeks depending on the number of rounds and HR scheduling." },
-      { question: "Can I negotiate the Wipro fresher package?", answer: "For freshers, the offer is standardised within a track (Elite or Turbo) and is generally not negotiable. For lateral hires, Wipro negotiates on base salary and sometimes on joining bonus." },
-      { question: "What technologies does Wipro commonly hire for?", answer: "Java, Python, .NET, SAP (ABAP, BW, Basis), Salesforce, ServiceNow, Oracle Fusion, and cloud (AWS, Azure, GCP) skills are in the highest demand at Wipro." },
-    ],
-    relatedSlugs: ["tcs-interview-questions-2026", "infosys-interview-questions-and-process", "cognizant-genc-interview-preparation-guide-2026"],
-    practicePageSlugs: [{ label: "Wipro Interview Practice", slug: "wipro" }, { label: "HR Interview Practice", slug: "hr-interview-questions" }],
-    cta: "Practise for Wipro's technical and HR rounds with HireStepX's AI mock interviewer. Get a detailed feedback report after every session.",
-    relatedLinks: [],
-  },
-
-  {
-    slug: "system-design-interview-beginner-india-2026",
-    title: "System Design Interview Guide for Beginners in India 2026",
-    metaDescription: "System design interview guide for beginner software engineers in India 2026. Core concepts, how to structure your answer, common system design questions, and preparation resources.",
-    company: "General",
-    category: "Technical",
-    readTime: "11 min",
-    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",
-    heroAlt: "Software engineer whiteboarding a system design diagram",
-    datePublished: "2026-08-02",
-    intro: "System design interviews are the gateway to senior engineer roles at Indian product companies. Many engineers who are strong at coding struggle in system design because they do not know how to structure an answer to an open-ended question. This guide teaches you the framework, the core concepts, and how to approach the most common system design questions asked at Indian companies in 2026.",
-    sections: [
-      {
-        heading: "When do you face system design interviews in India?",
-        content: "System design interviews are typically introduced at:\n\n• 2–3 years of experience at most Indian product companies (Razorpay, Swiggy, CRED, Meesho, etc.)\n• From SDE-2 level at FAANG India offices (Amazon, Microsoft, Google)\n• Always at senior SDE, Staff, and Principal levels\n\nFor freshers and engineers with fewer than 2 years of experience: system design is usually not part of the process. Focus on DSA and fundamentals first. Some companies introduce a light 'high-level design' discussion even at SDE-1 — in that case, knowing the basics below is enough.",
-      },
-      {
-        heading: "The RESHADED framework for system design answers",
-        content: "A reliable structure for any system design question:\n\n• R — Requirements: Clarify functional requirements (what the system does) and non-functional requirements (scale, latency, availability, consistency). Never start designing until you understand these.\n• E — Estimation: Estimate scale. Daily active users, read/write ratio, storage needs, bandwidth. Order-of-magnitude estimates are sufficient.\n• S — Storage: What data do you store? What database type? Relational (MySQL, PostgreSQL) vs NoSQL (MongoDB, Cassandra, DynamoDB) vs key-value store (Redis).\n• H — High-level design: Draw the major components: client, load balancer, API servers, database, cache, message queue. Connect them with arrows.\n• A — API design: Define the key API endpoints (REST or GraphQL) your system needs.\n• D — Deep dive: Pick 2–3 components and go deep. The interviewer will guide you. Common dives: database schema, caching strategy, handling failures, scaling.\n• E — Edge cases: What happens when a component fails? How do you handle the thundering herd? What about data consistency across regions?\n• D — Discuss trade-offs: Every design choice has trade-offs. Name them explicitly — SQL vs NoSQL, consistency vs availability, synchronous vs asynchronous.",
-      },
-      {
-        heading: "Core concepts every Indian engineer must know",
-        content: "These are the building blocks that come up in almost every system design interview:\n\n• Load balancing: Round-robin, least connections, consistent hashing. When to use a hardware vs software load balancer.\n• Caching: Cache-aside, write-through, write-behind. Redis vs Memcached. Cache invalidation strategies. CDN caching for static assets.\n• Database sharding: Horizontal partitioning. Shard key selection. Hotspot problem.\n• Database replication: Master-slave (now primary-replica) vs multi-master. Replication lag. Read replicas for scaling reads.\n• Message queues: Kafka, RabbitMQ, SQS. When to use async processing. Consumer groups. Dead-letter queues.\n• CAP theorem: You cannot have Consistency, Availability, and Partition Tolerance simultaneously. Know what your system prioritises.\n• Rate limiting: Token bucket, leaky bucket, sliding window algorithms.\n• Content Delivery Networks (CDN): Cloudfront, Akamai. Edge caching. When to use a CDN.",
-      },
-      {
-        heading: "Most common system design questions at Indian companies",
-        content: "Based on interview reports from Indian engineers:\n\n• Design URL shortener (Bitly / TinyURL): Classic beginner question. Covers hashing, databases, caching, redirect mechanics.\n• Design Instagram / photo sharing: Covers blob storage (S3), CDN, notification systems, feed generation (fanout on write vs fanout on read).\n• Design WhatsApp / chat system: Covers WebSockets, message queues, database design for messages, end-to-end encryption overview.\n• Design a notification system: Covers message queues, push vs pull, delivery guarantees, retry logic.\n• Design rate limiter: Covers algorithms, Redis, distributed consistency.\n• Design Swiggy / food delivery system: Common at Indian company interviews specifically. Covers real-time location tracking, order state machine, driver assignment algorithms.\n• Design UPI payment system: Common at Razorpay, PhonePe, Paytm. Covers two-phase commit, idempotency, reconciliation, fraud detection.\n• Design a search autocomplete system: Covers Trie data structure, caching, indexing.",
-      },
-      {
-        heading: "Preparation resources for system design in India",
-        content: "Best resources used by Indian engineers:\n\n• Grokking the System Design Interview (Educative.io): The most popular paid course — structured case studies for each system type.\n• System Design Primer (GitHub, Donne Martin): Free, comprehensive, covers all core concepts with diagrams. Recommended starting point.\n• ByteByteGo (Alex Xu): Newsletter and YouTube channel covering system design questions from recent FAANG interviews.\n• High Scalability blog (highscalability.com): Real architecture case studies from companies like Netflix, Twitter, and Airbnb.\n• Engineering blogs: Swiggy Tech, PhonePe Tech, Razorpay Engineering, Flipkart Tech — actual engineering decisions with trade-off discussions.\n\nPractice approach: Study 1 design per day for 30 days. After studying, try designing it from scratch without looking at notes. Then compare.",
-      },
-    ],
-    faqs: [
-      { question: "Do I need to know specific cloud services for system design interviews?", answer: "Knowing AWS/GCP equivalents helps (S3 for blob storage, SQS for queues, ElastiCache for Redis, etc.) but interviewers generally accept generic equivalents. Knowing the cloud-native names shows extra depth." },
-      { question: "How long should a system design interview answer take?", answer: "Typically 45–60 minutes total. Spend the first 10 minutes on requirements and estimation, 15 minutes on high-level design, 15–20 minutes on deep dives (guided by the interviewer), and the last 5 minutes on edge cases and trade-offs." },
-      { question: "Can a fresher prepare system design?", answer: "Freshers can learn the concepts and terminology, which helps in 'high-level design' questions some companies ask at SDE-1. But genuinely learning system design requires engineering experience — the concepts land better once you have built and debugged real distributed systems." },
-      { question: "Is there a difference between system design interviews at startups vs FAANG in India?", answer: "Yes. FAANG India expects you to go deep into distributed systems, fault tolerance, and scaling. Indian startups often focus more on practical product design (data modelling, API design, basic scaling) without requiring deep knowledge of distributed consensus or global-scale CDN topology." },
-    ],
-    relatedSlugs: ["data-engineer-interview-questions-india-2026", "fullstack-developer-interview-questions-india-2026", "dsa-preparation-for-interviews-india-2026"],
-    practicePageSlugs: [{ label: "Technical Interview Practice", slug: "software-engineer" }, { label: "System Design Practice", slug: "senior-software-engineer" }],
-    cta: "Practise talking through system design with HireStepX's AI interviewer. It prompts you with clarifying questions, just like a real interviewer — so you build the skill of thinking out loud.",
-    relatedLinks: [],
-  },
-
-  {
-    slug: "hr-interview-questions-answers-india-2026",
-    title: "HR Interview Questions and Answers for Indian Job Seekers 2026",
-    metaDescription: "Top HR interview questions and best answers for Indian candidates in 2026. Tell me about yourself, salary expectations, notice period, strengths and weaknesses, and more with sample answers.",
-    company: "General",
-    category: "Behavioral",
-    readTime: "10 min",
-    heroImage: "https://images.unsplash.com/photo-1521791055366-0d553381ad47?w=800&q=80",
-    heroAlt: "HR interviewer and candidate during a job interview in India",
-    datePublished: "2026-08-02",
-    intro: "The HR interview round is the final gate between you and an offer letter at most Indian companies. Many candidates treat it as a formality after clearing the technical rounds — and then lose the offer in the HR round. This guide covers the 15 most common HR interview questions asked at Indian companies, with sample answers and the reasoning behind each.",
-    sections: [
-      {
-        heading: "Why HR interviews matter more than you think",
-        content: "In India's job market, the HR round serves several functions simultaneously:\n\n• Cultural fit check: Is this candidate likely to stay and integrate well?\n• Communication assessment: Can they represent the company in client-facing situations?\n• Offer negotiation: What does the candidate expect, and can we close?\n• Red flag screening: Are there inconsistencies in their story, unrealistic expectations, or attitude concerns?\n\nHR interviewers are trained to listen for specific signals. Your answers should be genuine but prepared — knowing what signals you are sending is the difference between a candidate who 'just talked' and one who made a strong impression.",
-      },
-      {
-        heading: "The 15 most common HR questions in India with sample answers",
-        content: "1. Tell me about yourself: Use the 3-part formula (Present → Past → Future). Target 75–90 seconds. See our dedicated guide for sample answers.\n\n2. Why do you want to leave your current company? (If experienced): Frame around growth, not escape. 'I have grown significantly at [Company] and I am looking for a role where I can [specific next challenge]. This opportunity fits because [specific reason].' Never speak negatively about your current employer.\n\n3. What are your salary expectations? Research the market. Give a range (not a single number) grounded in data. 'Based on market data for this role and my experience, I am looking at ₹X–Y LPA. I am open to a conversation once we both feel this is the right fit.'\n\n4. What is your notice period? State your current notice period accurately. If you can negotiate it, say so. 'My notice period is 2 months, but I have been able to negotiate early releases in the past and would be happy to try.\"\n\n5. Where do you see yourself in 5 years? Show growth without showing you want to immediately leave. 'In 5 years I see myself as a technical lead or senior specialist in [domain], having delivered significant projects in [area]. I want to grow within a company that invests in its people.'\n\n6. What are your greatest strengths? Give 2–3 genuine strengths with one brief example each. Avoid clichés like 'hard worker' or 'team player' without specifics.\n\n7. What is your greatest weakness? Use the growth formula (genuine weakness + what you are doing about it + evidence of improvement). See our dedicated weakness answer guide.\n\n8. Why should we hire you? Match your top 3 skills/experiences to the job's top 3 requirements. Add a statement of genuine motivation about the company. See our dedicated guide.\n\n9. Are you comfortable relocating? If yes, say so directly. If you have constraints, be honest — 'I am open to Bengaluru, Hyderabad, and Pune. I have a family commitment that makes a few locations challenging, but I am happy to discuss specifics.'\n\n10. Do you have any other offers? You can mention it honestly without disclosing exact numbers. 'I do have one other process at the final stage, which has motivated me to make a decision soon. However, this role is my first preference because [specific reason].'\n\n11. Why this company specifically? Give a researched answer — product, culture, or specific team work you find interesting. One-line company fact + personal connection.\n\n12. How do you handle pressure or tight deadlines? Give a STAR example from real experience.\n\n13. Tell me about a conflict you had at work. Give a real example where you resolved it professionally. Show that you value relationships and outcomes over being right.\n\n14. What motivates you? Connect intrinsic motivators (learning, impact, craft) to the nature of the role.\n\n15. Do you have any questions for me? Always have 2–3 questions ready. Good ones: 'What does success look like in this role in the first 6 months?' 'What does the team dynamics look like?' 'What is the onboarding process?'",
-      },
-      {
-        heading: "Questions you should never be caught off guard by",
-        content: "These questions trip candidates who have not thought them through:\n\n• 'Why did you have a gap in employment?' — Have a genuine, calm answer ready. Relocation, family responsibility, health, upskilling, and entrepreneurship are all acceptable answers.\n• 'Your CGPA is quite low — can you explain?' — Acknowledge it, give context (family circumstance, health, a rough semester) if applicable, then redirect to your skills and experience. Do not be defensive.\n• 'You have changed jobs frequently. Why?' — Frame each move as a deliberate learning choice, not a flight from a bad situation. If any move was involuntary (layoff, company closure), say so directly — interviewers respect honesty.\n• 'What will you do if you don't get this job?' — This is a resilience and maturity check. 'I will continue my search, but I genuinely believe this role is a strong match and I am optimistic about this conversation.'",
-      },
-    ],
-    faqs: [
-      { question: "Can I negotiate a job offer after the HR interview?", answer: "Yes — the HR interview is often where negotiation begins. It is entirely appropriate to ask: 'Is there flexibility in the compensation?' once you have an offer. The worst answer is no, and you lose nothing by asking professionally." },
-      { question: "How should I dress for an HR interview in India?", answer: "For corporate IT and consulting: business casual (formal trousers, neat shirt, clean shoes). For startups: smart casual. For BFSI or traditional corporate: formal. When in doubt, overdress slightly — no one has ever lost an offer for looking too professional." },
-      { question: "Is it OK to take notes during an HR interview?", answer: "Yes — taking brief notes (especially when the interviewer shares company information or asks multi-part questions) signals attention and preparation. Ask before you start: 'Do you mind if I take a few notes?'" },
-      { question: "How long after an HR interview should I follow up?", answer: "If the interviewer says 'we will get back in X days,' wait until that date plus one business day before following up. If no timeline was given, follow up after 5–7 business days with a brief, polite email." },
-    ],
-    relatedSlugs: ["tell-me-about-yourself-answer-india-2026", "how-to-answer-what-are-your-weaknesses-india", "salary-negotiation-after-job-offer-india-guide"],
-    practicePageSlugs: [{ label: "HR Interview Practice", slug: "hr-interview-questions" }, { label: "Behavioural Round Practice", slug: "behavioral-interview" }],
-    cta: "Practise every HR question with HireStepX's AI interviewer. Get scored on confidence, structure, and content — then see the model answer to compare.",
     relatedLinks: [],
   },
 
@@ -9144,43 +7923,6 @@ const posts: BlogPost[] = [
   },
 
   {
-    slug: "sql-interview-questions-india-2026",
-    title: "SQL Interview Questions for Indian Companies 2026",
-    metaDescription: "Top SQL interview questions for Indian product companies and IT firms in 2026. Joins, subqueries, window functions, indexes, query optimisation, and practical SQL problems asked at Paytm, Flipkart, and Indian banks.",
-    company: "General",
-    category: "Technical",
-    readTime: "9 min",
-    heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&q=80",
-    heroAlt: "Data analyst preparing SQL interview questions for Indian companies",
-    datePublished: "2026-08-18",
-    intro: "SQL is tested in almost every technical interview in India — for software engineers, data analysts, data engineers, and even product managers. At Indian fintech companies (Paytm, Razorpay), BFSI tech (HDFC, ICICI), and e-commerce companies (Flipkart, Meesho), SQL questions come up in technical rounds regularly. This guide covers every SQL concept tested in Indian interviews with examples and expected answers.",
-    sections: [
-      {
-        heading: "Joins — the most tested SQL concept",
-        content: "Q: What is the difference between INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN?\n\nINNER JOIN: Returns only rows with matching values in both tables. If no match, the row is excluded from results.\n\nLEFT JOIN (LEFT OUTER JOIN): Returns all rows from the left table, and matched rows from the right table. Unmatched right rows get NULL.\n\nRIGHT JOIN (RIGHT OUTER JOIN): Returns all rows from the right table, and matched rows from the left table. Unmatched left rows get NULL. Rarely used — can always be rewritten as LEFT JOIN with tables swapped.\n\nFULL OUTER JOIN: Returns all rows from both tables. Unmatched rows on either side get NULL. Note: MySQL does not natively support FULL OUTER JOIN — simulate with UNION of LEFT JOIN and RIGHT JOIN.\n\nCommon interview query: 'Find all customers who have NOT placed any orders.'\nSELECT c.customer_id, c.name FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id WHERE o.order_id IS NULL;\n\nSelf JOIN: A table joined with itself. Common use: find pairs of rows with a relationship, find employees and their managers.\nSELECT e.name AS employee, m.name AS manager FROM employees e JOIN employees m ON e.manager_id = m.employee_id;",
-      },
-      {
-        heading: "Aggregations, subqueries, and window functions",
-        content: "Aggregate functions: COUNT, SUM, AVG, MAX, MIN with GROUP BY. HAVING filters after GROUP BY (WHERE filters before).\n\nCommon interview query: 'Find customers who have placed more than 3 orders in the last 30 days.'\nSELECT customer_id, COUNT(*) AS order_count FROM orders WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' GROUP BY customer_id HAVING COUNT(*) > 3;\n\nSubqueries: A query nested inside another query.\n'Find employees whose salary is above the average salary.'\nSELECT name, salary FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);\n\nCTEs (Common Table Expressions): Named subqueries using WITH clause. More readable than deeply nested subqueries.\nWITH high_value_orders AS ( SELECT customer_id FROM orders WHERE amount > 10000 ) SELECT c.name FROM customers c JOIN high_value_orders h ON c.customer_id = h.customer_id;\n\nWindow functions: Perform calculations across rows related to the current row without collapsing them.\n• ROW_NUMBER(): Unique sequential number per partition\n• RANK(): Same rank for ties, gaps in numbering\n• DENSE_RANK(): Same rank for ties, no gaps\n• LAG(col, n): Value n rows before current row\n• LEAD(col, n): Value n rows after current row\n\n'Find the second highest salary in each department.'\nSELECT department, name, salary FROM ( SELECT department, name, salary, DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS rank FROM employees ) ranked WHERE rank = 2;",
-      },
-      {
-        heading: "Indexes and query optimisation",
-        content: "Q: What is an index and how does it work? An index is a data structure (typically a B-tree) that allows the database to find rows matching a condition without scanning the entire table. Without an index: O(n) scan. With a B-tree index: O(log n) lookup.\n\nTypes of indexes in PostgreSQL/MySQL:\n• B-tree (default): Equality and range queries. Used for most columns.\n• Hash index: Equality only. Faster for exact matches.\n• Composite index: Multiple columns. Most efficient when query conditions match the index column order left-to-right.\n• Unique index: Enforces uniqueness + speeds up lookups.\n• Partial index (PostgreSQL): Index only rows matching a condition (WHERE status = 'active') — smaller and faster for filtered queries.\n\nQ: When does an index NOT help? When the query returns more than 10–15% of table rows (full scan is cheaper). When the column has very low cardinality (gender with 2 values — index rarely used). When the indexed column is used inside a function: WHERE UPPER(email) = 'X' does not use an index on email — use a functional index or normalise the data.\n\nQ: What is EXPLAIN / EXPLAIN ANALYZE? EXPLAIN shows the query execution plan (which index is used, join method, estimated rows). EXPLAIN ANALYZE runs the query and shows actual vs estimated statistics. Use it to diagnose slow queries and verify indexes are being used.",
-      },
-    ],
-    faqs: [
-      { question: "What is the difference between DELETE, TRUNCATE, and DROP?", answer: "DELETE: removes rows one by one, can have a WHERE clause, is transaction-safe, fires triggers. TRUNCATE: removes all rows at once (faster), is DDL in MySQL (cannot be rolled back), does not fire row-level triggers. DROP: removes the entire table structure and all data. Cannot be undone." },
-      { question: "What is normalisation and what are the normal forms?", answer: "Normalisation reduces data redundancy and improves integrity. 1NF: eliminate repeating groups (each column has atomic values). 2NF: eliminate partial dependencies (all non-key attributes depend on the full primary key). 3NF: eliminate transitive dependencies (non-key attributes depend only on the primary key). Denormalisation is deliberately breaking normal forms for read performance." },
-      { question: "Is SQL or NoSQL better for Indian fintech applications?", answer: "Structured transactional data (orders, payments, user accounts) requires SQL's ACID guarantees. NoSQL (MongoDB, Cassandra) is appropriate for high-volume semi-structured data (logs, product catalogues, session data). Most Indian fintech companies use both." },
-      { question: "What SQL platform should I practise on for Indian interviews?", answer: "PostgreSQL is the most interview-relevant platform in India — most product companies use it. LeetCode's Database section for query practice. HackerRank's SQL challenges for company-styled problems. SQLZoo for interactive learning." },
-    ],
-    relatedSlugs: ["postgresql-interview-questions-india-2026", "data-engineer-interview-questions-india-2026", "data-science-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Data Analyst Practice", slug: "data-analyst" }, { label: "Backend Engineer Practice", slug: "software-engineer" }],
-    cta: "SQL questions come up in every type of Indian technical interview. Practise explaining query logic and explaining your optimisation decisions with HireStepX's AI mock interviewer.",
-    relatedLinks: [],
-  },
-
-  {
     slug: "how-to-crack-wipro-interview-2026",
     title: "How to Crack the Wipro Interview 2026: Complete Guide",
     metaDescription: "Complete Wipro interview guide 2026. NLTH and Elite aptitude rounds, technical interview, communication assessment, and preparation tips for freshers and experienced candidates at Wipro.",
@@ -10195,7 +8937,7 @@ const posts: BlogPost[] = [
     practicePageSlugs: [{ label: "Technical Interview Practice", slug: "technical-interview-questions" }, { label: "Behavioral Interview Practice", slug: "behavioral-interview-questions" }],
     cta: "Every mock interview session makes the real one easier. Start practising with HireStepX's AI mock interviewer today — available 24/7, gives specific feedback, and tracks your improvement over time.",
     relatedLinks: [],
-  },
+  }
 ];
 
 /* ─── Helpers ─── */
