@@ -403,7 +403,7 @@ export function SalaryCompanyPage({
                     marginBottom: 20,
                   }}
                 >
-                  Total CTC ranges for {role.roleLabel}s at {companyLabel} India — from fresher to
+                  Total CTC ranges for {role.roleLabel}s at {companyLabel} India, from fresher to
                   senior level.
                 </p>
 

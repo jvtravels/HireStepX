@@ -7251,6 +7251,464 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
+
+  /* ── Wave 11: Enterprise GCCs ─────────────────────────────── */
+  "sap-labs": {
+    "software-engineer": {
+      entry: { totalMin: 15, totalMax: 24, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox + Glassdoor (SAP Labs India SDE-1 2026)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox + Levels.fyi (SAP India SDE-2 median ₹31L)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 70, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (SAP Labs India Senior SDE)", lastVerified: "2026-07-21" },
+    },
+  },
+  "siemens-india": {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox (Siemens Technology India Graduate Engineer)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (Siemens India Senior Developer)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 7, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "bosch-india": {
+    "software-engineer": {
+      entry: { totalMin: 9, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox (Bosch Global Software Technologies Associate Software Engineer)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (BGSW Software Engineer 3-5yr)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "texas-instruments": {
+    "software-engineer": {
+      entry: { totalMin: 25, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (TI India campus ₹25-38L, 2025-2026)", lastVerified: "2026-07-21", notes: "TI India among top-3 semiconductor campus payers." },
+      mid: { totalMin: 40, totalMax: 65, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (TI India SWE-3)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 68, totalMax: 110, equityMin: 20, equityMax: 45, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi", lastVerified: "2026-07-21" },
+    },
+  },
+  "intel-india": {
+    "software-engineer": {
+      entry: { totalMin: 20, totalMax: 32, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Intel India new-grad)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 34, totalMax: 55, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Intel India ICG2-ICG3)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 58, totalMax: 95, equityMin: 18, equityMax: 40, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "arm-india": {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (ARM India campus 2025-2026)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 32, totalMax: 52, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (ARM India SE2)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 55, totalMax: 90, equityMin: 18, equityMax: 40, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  thoughtworks: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "AmbitionBox (Thoughtworks India Application Developer 2026)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 28, equityType: "none", source: "Glassdoor (Thoughtworks India Consultant)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 30, totalMax: 52, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — TWKS Nasdaq", source: "Glassdoor (Thoughtworks India Lead Consultant)", lastVerified: "2026-07-21", notes: "RSU available at senior/lead levels." },
+    },
+  },
+  "samsung-india": {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox (Samsung R&D India Software Engineer campus)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 24, totalMax: 40, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (SRIB Senior Software Engineer)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 42, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "ericsson-india": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox (Ericsson India Software Developer entry)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "nokia-india": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox (Nokia India R&D Software Engineer entry)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "ntt-data": {
+    "software-engineer": {
+      entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "AmbitionBox (NTT Data India Associate Software Engineer)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 12, totalMax: 20, equityType: "none", source: "Glassdoor (NTT Data India Software Engineer 3-5yr)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 22, totalMax: 36, equityType: "none", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  globallogic: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — Hitachi-owned", source: "AmbitionBox (GlobalLogic India Software Engineer entry)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor (GlobalLogic India Senior Engineer)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 26, totalMax: 44, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+
+  /* ── Wave 12: Indian FinTech / Neo-banks / Payments ────────── */
+  juspay: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Juspay Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 24, totalMax: 38, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  slice: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Slice Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 44, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 46, totalMax: 72, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  jupiter: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Jupiter Money Mumbai)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 68, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "fi-money": {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Fi Money Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 15, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  policybazaar: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — PB Fintech listed", source: "AmbitionBox + Glassdoor 2026 (PB Fintech Gurugram)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 24, totalMax: 40, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 42, totalMax: 68, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  nium: {
+    "software-engineer": {
+      entry: { totalMin: 20, totalMax: 32, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Nium Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 32, totalMax: 52, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 55, totalMax: 90, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "m2p-fintech": {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (M2P Chennai)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 40, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 42, totalMax: 65, equityMin: 7, equityMax: 15, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  khatabook: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Khatabook Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 40, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 42, totalMax: 65, equityMin: 7, equityMax: 15, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  smallcase: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (smallcase Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  zeta: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Zeta Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 48, totalMax: 78, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  navi: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Navi Technologies Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 24, totalMax: 38, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 7, equityMax: 15, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  kreditbee: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (KreditBee Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 34, totalMax: 55, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  moneyview: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (MoneyView Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  fibe: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Fibe / EarlySalary Pune)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  sharechat: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (ShareChat Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 70, equityMin: 9, equityMax: 20, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  scaler: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 24, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Scaler Academy Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  moengage: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (MoEngage Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 44, totalMax: 70, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  clevertap: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 24, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (CleverTap Mumbai)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 24, totalMax: 40, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 42, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  druva: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Druva Pune)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 46, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 48, totalMax: 80, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  darwinbox: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Darwinbox Hyderabad)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  truecaller: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 — TRUE Nasdaq Stockholm", source: "AmbitionBox + Glassdoor 2026 (Truecaller Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 46, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 48, totalMax: 80, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  inmobi: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (InMobi Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 24, totalMax: 40, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 42, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  naukri: {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Info Edge listed", source: "AmbitionBox + Glassdoor 2026 (Info Edge Noida)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 34, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+
+  /* ── Wave 13: More Startups / SaaS / Healthtech ────────────── */
+  practo: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Practo Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 34, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  shiprocket: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Shiprocket Delhi)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 34, totalMax: 56, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  udaan: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Udaan Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  moglix: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Moglix Noida)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  ninjacart: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Ninjacart Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  licious: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Licious Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  vedantu: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox + Glassdoor 2026 (Vedantu Bengaluru post-reset)", lastVerified: "2026-07-21", notes: "Post-2023 Vedantu reset; ESOP credibility uncertain. Negotiate for fixed." },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 34, totalMax: 56, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "rebel-foods": {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Rebel Foods Mumbai)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  purplle: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Purplle Mumbai)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  blackbuck: {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — NSE ZINKA listed", source: "AmbitionBox + Glassdoor 2026 (Zinka Logistics Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  shadowfax: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Shadowfax Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  hasura: {
+    "software-engineer": {
+      entry: { totalMin: 20, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Hasura Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 32, totalMax: 52, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 55, totalMax: 88, equityMin: 12, equityMax: 28, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  gupshup: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Gupshup Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  exotel: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Exotel Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 34, totalMax: 55, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "capillary-tech": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Capillary Technologies Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 34, totalMax: 56, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  plivo: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Plivo Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  indmoney: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (INDmoney Gurugram)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  rupeek: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Rupeek Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 34, totalMax: 55, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  niyo: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Niyo Solutions Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "apollo-247": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Apollo Hospitals listed", source: "AmbitionBox + Glassdoor 2026 (Apollo Hospitals Digital Hyderabad)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "ecom-express": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — NSE listed", source: "AmbitionBox + Glassdoor 2026 (Ecom Express Delhi)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 44, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  yulu: {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Yulu Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 28, totalMax: 46, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  sigmoid: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Sigmoid Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 20, totalMax: 34, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  mindtickle: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Mindtickle Pune)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  medibuddy: {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (MediBuddy Bengaluru)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 24, totalMax: 38, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  tracxn: {
+    "software-engineer": {
+      mid: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — NSE TRACXN listed", source: "AmbitionBox + Glassdoor 2026 (Tracxn Bengaluru)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 20, totalMax: 34, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "country-delight": {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Country Delight Gurugram)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  rivigo: {
+    "software-engineer": {
+      mid: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Rivigo Gurugram)", lastVerified: "2026-07-21" },
+      senior: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  sumologic: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Sumo Logic Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  clari: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026 (Clari Bengaluru / Hyderabad)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 38, totalMax: 62, equityMin: 7, equityMax: 16, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
 };
 
 /**

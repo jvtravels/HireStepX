@@ -70,7 +70,7 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
       {isOffline && (
         <div role="alert" style={stOfflineToast}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          <span style={stEmberText}>Offline — session saved locally</span>
+          <span style={stEmberText}>Offline: session saved locally</span>
         </div>
       )}
       {showTts && (
@@ -82,7 +82,7 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
       {ttsFailed && (
         <div role="alert" aria-live="assertive" style={stTtsFailedBanner}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-          <span style={stEmberText}>Audio unavailable — please read questions on screen and type your answers.</span>
+          <span style={stEmberText}>Audio unavailable. Please read questions on screen and type your answers.</span>
         </div>
       )}
     </div>
@@ -269,7 +269,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
             const firstName = interviewerName?.split(" ")[0] || "AI";
             if (phase === "thinking") return `${firstName} is preparing…`;
             if (phase === "speaking") return `${firstName} is speaking…`;
-            if (phase === "listening") return "Your turn — speak now";
+            if (phase === "listening") return "Your turn: speak now";
             return "Complete";
           })()}
         </span>
