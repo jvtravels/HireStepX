@@ -1,8 +1,7 @@
 /* Family G / B57 — the upgrade-nudge headline must never pitch an
  * impossible goal. At a perfect 100 the report used to say "Want to see if
  * you can beat it?", contradicting the 100/100 it just rendered. The copy
- * is now score-aware; these lock the branch boundary and the offer subcopy
- * (unchanged across branches). */
+ * is now score-aware and session-count-aware. */
 import { describe, it, expect } from "vitest";
 import { upgradeNudgeCopy } from "../sessionReport/upgradeNudgeCopy";
 
@@ -13,7 +12,7 @@ describe("upgradeNudgeCopy — B57 score-aware headline", () => {
     expect(c.headline).toMatch(/perfect 100/i);
   });
 
-  it("a non-perfect score keeps the beat-it framing and shows the number", () => {
+  it("a non-perfect score >= 60 keeps the beat-it framing and shows the number", () => {
     const c = upgradeNudgeCopy(72);
     expect(c.headline).toBe("You scored 72. Want to see if you can beat it?");
   });
@@ -22,9 +21,27 @@ describe("upgradeNudgeCopy — B57 score-aware headline", () => {
     expect(upgradeNudgeCopy(99).headline).toMatch(/beat it/i);
   });
 
-  it("the offer subcopy is identical across branches", () => {
-    expect(upgradeNudgeCopy(100).subcopy).toBe(upgradeNudgeCopy(50).subcopy);
-    expect(upgradeNudgeCopy(50).subcopy).toMatch(/Sprint Pack/);
+  it("low score (< 60) uses improvement trajectory framing", () => {
+    const c = upgradeNudgeCopy(45);
+    expect(c.headline).toMatch(/45/);
+    expect(c.headline).toMatch(/80\+/);
+  });
+
+  it("first session (priorSessionCount=0) uses '1 free session left' framing", () => {
+    const c = upgradeNudgeCopy(68, 0);
+    expect(c.headline).toMatch(/1 free session left/i);
+    expect(c.subcopy).toMatch(/second session is still free/i);
+  });
+
+  it("first session at perfect 100 still shows '1 free session left' framing", () => {
+    const c = upgradeNudgeCopy(100, 0);
+    expect(c.headline).toMatch(/1 free session left/i);
+  });
+
+  it("second session and beyond shows upgrade framing", () => {
+    const c = upgradeNudgeCopy(72, 1);
+    expect(c.headline).toBe("You scored 72. Want to see if you can beat it?");
+    expect(c.subcopy).toMatch(/Sprint Pack/);
   });
 
   it.each([
@@ -43,8 +60,8 @@ describe("upgradeNudgeCopy — B57 score-aware headline", () => {
   });
 
   it("a non-finite score degrades to 0, never NaN in the copy", () => {
-    expect(upgradeNudgeCopy(Number.NaN).headline).toBe(
-      "You scored 0. Want to see if you can beat it?",
-    );
+    const c = upgradeNudgeCopy(Number.NaN);
+    expect(c.headline).toContain("You scored 0.");
+    expect(c.headline).not.toContain("NaN");
   });
 });

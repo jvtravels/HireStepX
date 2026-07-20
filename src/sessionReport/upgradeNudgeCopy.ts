@@ -19,18 +19,44 @@ export interface UpgradeNudgeCopy {
  * point to prove, and the beat-it framing is fair there. */
 const PERFECT_SCORE = 100;
 
-const SUBCOPY = "Get 5 more sessions for ₹39 — track your improvement across a Sprint Pack.";
+const SUBCOPY_SPRINT = "Get 5 more sessions for ₹39 — track your improvement across a Sprint Pack.";
+const SUBCOPY_SINGLE = "Grab one more session for ₹9, or upgrade to Starter for ₹249/week.";
 
-export function upgradeNudgeCopy(score: number): UpgradeNudgeCopy {
+/**
+ * @param score     0–100 session score
+ * @param priorSessionCount  Sessions completed before this one (0 = first session, 1 = second, …).
+ *                           When passed, the copy reflects where the user is in the free funnel.
+ */
+export function upgradeNudgeCopy(score: number, priorSessionCount?: number): UpgradeNudgeCopy {
   const safe = Number.isFinite(score) ? Math.max(0, Math.min(PERFECT_SCORE, Math.round(score))) : 0;
+
+  // First session (priorSessionCount === 0): 1 free session still remaining.
+  // Frame it as "use your last free session" rather than a hard upgrade push.
+  if (priorSessionCount === 0) {
+    return {
+      headline: `You scored ${safe}. 1 free session left — make it count.`,
+      subcopy: "Your second session is still free. After that, plans start at ₹9 per session.",
+    };
+  }
+
+  // Second or later session for free users: they've likely hit or are close to the limit.
   if (safe >= PERFECT_SCORE) {
     return {
       headline: "You scored a perfect 100. Keep the streak going?",
-      subcopy: SUBCOPY,
+      subcopy: SUBCOPY_SPRINT,
     };
   }
+
+  // Low score (< 60): emphasise improvement trajectory over score-beating.
+  if (safe < 60) {
+    return {
+      headline: `You scored ${safe}. The gap between this and 80+ closes fast with one more session.`,
+      subcopy: SUBCOPY_SINGLE,
+    };
+  }
+
   return {
     headline: `You scored ${safe}. Want to see if you can beat it?`,
-    subcopy: SUBCOPY,
+    subcopy: SUBCOPY_SPRINT,
   };
 }

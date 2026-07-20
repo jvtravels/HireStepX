@@ -90,8 +90,8 @@ export type {
    highest-curiosity moment in the product. Better here than at the
    session-limit gate when the user is already frustrated and blocked. */
 
-function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: () => void }) {
-  const copy = upgradeNudgeCopy(score);
+function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: number; priorSessionCount?: number; onUpgrade?: () => void }) {
+  const copy = upgradeNudgeCopy(score, priorSessionCount);
   return (
     <div
       role="complementary"
@@ -562,7 +562,7 @@ export default function SessionReportView({
             <a href="/contact" style={{ color: t.inkFaint, textUnderlineOffset: 2 }}>Dispute a score</a> if something looks wrong.
           </p>
           {isFreeUser && (
-            <UpgradeNudgeStrip score={data.overallScore} onUpgrade={onUpgrade} />
+            <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
           )}
           {credibility && credibility.hasIssues && (
             <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
