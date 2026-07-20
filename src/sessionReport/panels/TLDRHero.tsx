@@ -212,10 +212,16 @@ export function TLDRHero({
     const askedFor = outcome.candidateAsk;
     if (askedFor !== null && askedFor > opening) {
       const askPct = Math.round(((askedFor - opening) / opening) * 100);
+      /* S4S5-B5: hint "above their first offer" read as "the deal landed 97%
+       * above the opening" — ambiguous when the final offer didn't move at all.
+       * Distinguish ask (what you named) from outcome (what landed). */
+      const offerMoved = delta > 0;
       stats.push({
         label: "How much you pushed back",
         value: `+${askPct}%`,
-        hint: "above their first offer",
+        hint: offerMoved
+          ? `your counter-ask above their opening offer`
+          : `your counter-ask above their opening — the offer didn't move`,
         tone: askPct >= 25 ? "good" : askPct >= 10 ? "warn" : "bad",
       });
     } else {
