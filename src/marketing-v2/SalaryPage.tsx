@@ -629,13 +629,13 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
           className="sal-hub-header"
           style={{
             paddingTop: ED_PADDING.heroTop,
-            paddingBottom: 48,
+            paddingBottom: 52,
             borderBottom: `1px solid ${t.line}`,
             background: t.creamRaised,
           }}
         >
-          <div style={{ ...container, textAlign: "center" }}>
-            <p className="ed-rise" style={{ ...eyebrow, marginBottom: 16 }}>
+          <div style={container}>
+            <p className="ed-rise" style={{ ...eyebrow, marginBottom: 14 }}>
               Salary Guides · India 2026
             </p>
             <h1 className="ed-rise ed-d1" style={{
@@ -646,17 +646,35 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               letterSpacing: "-0.025em",
               color: t.coal,
               margin: "0 0 20px",
+              maxWidth: "20ch",
+              textWrap: "balance" as never,
             }}>
               What {entries.length} Indian companies{" "}
               <em style={{ fontStyle: "italic", color: t.copper }}>actually pay.</em>
             </h1>
-            <p className="ed-rise ed-d2" style={{ ...leadStyle, margin: "0 auto 32px", textAlign: "center" }}>
+            <p className="ed-rise ed-d2" style={{ ...leadStyle, marginBottom: 28 }}>
               Total CTC from TCS freshers to Goldman Sachs — sourced from AmbitionBox,
               Glassdoor, and Levels.fyi. Updated July 2026.
             </p>
 
-            {/* Search bar */}
-            <div style={{ maxWidth: 480, margin: "0 auto", position: "relative" }}>
+            {/* Context chips — mirrors blog post header */}
+            <div className="ed-rise ed-d3" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 32 }}>
+              <span style={{ ...chipStyle, background: t.copperWash, color: t.copper, border: `1px solid ${t.copperBorder}` }}>
+                {entries.length} companies
+              </span>
+              <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
+                Total CTC in LPA
+              </span>
+              <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
+                AmbitionBox · Glassdoor · Levels.fyi
+              </span>
+              <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
+                Updated July 2026
+              </span>
+            </div>
+
+            {/* Search bar — left-aligned, generous width */}
+            <div style={{ maxWidth: 520, position: "relative" }}>
               <svg
                 width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke={t.inkFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
