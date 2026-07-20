@@ -97,3 +97,37 @@ describe("S13-B5: joining-bonus lever has direction guard in prompt", () => {
     expect(TURN_HELPERS).toContain("from us (the employer)");
   });
 });
+
+const ENGINE_SOURCE = readFileSync(
+  join(__dirname, "..", "useInterviewEngine.ts"),
+  "utf-8",
+);
+
+// OA-B17: advancing lock (advancingRef) must be released BEFORE setPhase("thinking")
+// in the success path of handleNextQuestion. If it isn't, short TTS cycles
+// (thinking → speaking → listening) complete before the 4-second backstop fires,
+// landing back in the "listening" phase with advancingRef still true — the user's
+// first tap on the next question is silently dropped. The structural fix is an
+// explicit clearTimeout + ref reset immediately before setPhase. Source-level
+// assertion is the right granularity for a React state-machine invariant.
+describe("OA-B17: advancingRef released before phase flip in success path", () => {
+  it("clearTimeout(advancingSafetyTimer) appears before setPhase('thinking') in the advance path", () => {
+    const clearIdx = ENGINE_SOURCE.lastIndexOf("clearTimeout(advancingSafetyTimer)");
+    const phaseIdx = ENGINE_SOURCE.lastIndexOf('setPhase("thinking")');
+    expect(clearIdx).toBeGreaterThan(-1);
+    expect(phaseIdx).toBeGreaterThan(-1);
+    // The final explicit clear (in the success path) must precede the final setPhase("thinking")
+    expect(clearIdx).toBeLessThan(phaseIdx);
+  });
+
+  it("advancingRef.current = false appears immediately before setPhase('thinking') in the advance success block", () => {
+    // Locate the OA-B17 comment that marks the fix, and confirm the pattern follows it
+    expect(ENGINE_SOURCE).toContain("OA-B17: the advance is complete — release the lock before phase flips");
+    const markerIdx = ENGINE_SOURCE.indexOf("OA-B17: the advance is complete");
+    const refResetIdx = ENGINE_SOURCE.indexOf("advancingRef.current = false;", markerIdx);
+    const phaseIdx = ENGINE_SOURCE.indexOf('setPhase("thinking")', markerIdx);
+    expect(refResetIdx).toBeGreaterThan(-1);
+    expect(phaseIdx).toBeGreaterThan(-1);
+    expect(refResetIdx).toBeLessThan(phaseIdx);
+  });
+});
