@@ -20,6 +20,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { detectConcurrentSession } from "./_record-session-start-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -107,6 +108,34 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: true, recorded: false, reason: "already counted" }), { status: 200, headers });
     }
 
+    // OA-B50: detect concurrent sessions across devices. BroadcastChannel
+    // only guards same-browser tabs; mobile + desktop running simultaneously
+    // can't detect each other client-side. The server check: if any recent
+    // started IDs are not yet present in the sessions table, they're in-flight
+    // on another device. Non-critical — soft warning only, never blocks.
+    let concurrent = false;
+    const recentPriorStarts = existingStarts.filter(id => id !== sessionId).slice(-5);
+    if (recentPriorStarts.length > 0) {
+      try {
+        const idParam = recentPriorStarts.map(id => encodeURIComponent(id)).join(",");
+        const sessionsCheckRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/sessions?id=in.(${idParam})&select=id`,
+          { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
+        );
+        if (sessionsCheckRes.ok) {
+          const savedRows = await sessionsCheckRes.json().catch(() => []);
+          const savedIds = new Set<string>(
+            Array.isArray(savedRows) ? savedRows.map((r: { id: string }) => r.id) : [],
+          );
+          concurrent = detectConcurrentSession({
+            existingStarts,
+            currentSessionId: sessionId,
+            savedSessionIds: savedIds,
+          });
+        }
+      } catch { /* non-critical — never block session start */ }
+    }
+
     const existingTimestamps: string[] = Array.isArray(row.practice_timestamps) ? row.practice_timestamps : [];
     const nowIso = new Date().toISOString();
     /* Cap at 500 timestamps + 50 session-id IDs — both bounds match
@@ -173,7 +202,7 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: false, recorded: false }), { status: 500, headers });
     }
 
-    return new Response(JSON.stringify({ ok: true, recorded: true }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: true, recorded: true, concurrent }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("record-session-start threw", {

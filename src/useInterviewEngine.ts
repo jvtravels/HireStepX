@@ -334,7 +334,12 @@ export function useInterviewEngine() {
     (async () => {
       try {
         const { apiFetch } = await import("./apiClient");
-        await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
+        const startResult = await apiFetch<{ ok: boolean; recorded?: boolean; concurrent?: boolean }>("/api/record-session-start", { sessionId, type: interviewType });
+        // OA-B50: server detected an in-flight session on another device — warn so the
+        // user knows they may consume a second credit.
+        if (startResult.data?.concurrent) {
+          toast("Heads-up: it looks like another session is active on a different device. Running two sessions simultaneously may use extra practice credits.", "info");
+        }
       } catch (e1) {
         console.warn("[interview] record-session-start failed, retrying in 2s:", e1 instanceof Error ? e1.message : e1);
         await new Promise(r => setTimeout(r, 2000));
