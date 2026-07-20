@@ -126,15 +126,34 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     expect(r.band).toBe("strongHire");
   });
 
-  it("never touches a walk-away, even with high skills", () => {
+  it("never touches a walk-away for leverage/anchoring/closing — but caps Concession Strategy (S3-B4)", () => {
     const r = groundNegotiationReport(
       inflatedSkills(), 82, "hire",
       outcome({ outcome: "walked_away", gapClosurePct: 0 }), FLIPKART_BANDS,
     );
-    // Declining a lowball is not a fold — leverage may legitimately be high.
+    // Declining a lowball is not a fold — leverage, anchoring, and closing may
+    // legitimately be high on a walk-away (you DID anchor and use leverage).
     expect(byName(r.skills, "Leverage Use")).toBe(95);
+    expect(byName(r.skills, "Anchoring")).toBe(95);
+    expect(byName(r.skills, "Package Thinking")).toBe(95);
+    // Overall and band are preserved — walk-away is not a weak outcome.
     expect(r.overallScore).toBe(82);
     expect(r.band).toBe("hire");
+    // S3-B4: "Concession Strategy" at 95 on a walk-away is misleading — no
+    // give-and-take occurred to evaluate. Capped at a neutral band (≤60).
+    expect(byName(r.skills, "Concession Strategy")).toBeLessThanOrEqual(60);
+  });
+
+  it("S3-B4: Concession Strategy cap on walk-away is monotonic (never raises a low score)", () => {
+    const lowConcession = inflatedSkills().map((s) =>
+      s.name === "Concession Strategy" ? { ...s, score: 40 } : s,
+    );
+    const r = groundNegotiationReport(
+      lowConcession, 65, "leanHire",
+      outcome({ outcome: "walked_away", gapClosurePct: 0 }), FLIPKART_BANDS,
+    );
+    // A scorer that already gave a low concession score must not be raised.
+    expect(byName(r.skills, "Concession Strategy")).toBe(40);
   });
 
   it("does not second-guess the scorer when gap closure is unknown", () => {

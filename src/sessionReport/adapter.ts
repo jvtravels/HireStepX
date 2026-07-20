@@ -616,6 +616,19 @@ export function filterNegotiationStrengths(
 const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
 const NOT_CLOSED_CEILING = 45;
 
+/* S3-B4 — "Concession Strategy" capped on walk-away.
+ * "Concession Strategy" (LLM evaluator scheme) implies give-and-take execution
+ * that is provably impossible when the candidate walked away — no concessions
+ * were ever exchanged. The LLM hands out 95 because "you didn't cave", which
+ * conflates walk-away discipline with concession execution. Cap to a neutral
+ * band (60) so the progress bar doesn't claim "Concession Strategy: Master"
+ * for a session where no concessions were actually made or evaluated. Leverage,
+ * Anchoring, and Closing are intentionally left untouched: all three are
+ * demonstrable on a walk-away (you anchored, used leverage, and DID close —
+ * just not in the recruiter's favour). */
+const NEG_CONCESSION_ONLY_RE = /concession/i;
+const WALK_AWAY_CONCESSION_CEILING = 60;
+
 /* REPORT-4b (2026-07-13, live staging — session 686b5699). candidateAsk is the
  * kernel's single source (persisted OR transcript-recovered) for "did the
  * candidate name a counter" — the exact field the strengths filter
@@ -698,7 +711,18 @@ export function groundNegotiationReport(
     );
     return { skills: groundedSkills, overallScore, band };
   }
-  if (outcome.outcome !== "accepted") return unchanged; // walk-away → untouched
+  if (outcome.outcome === "walked_away") {
+    // S3-B4: cap concession-execution axes only — leverage, anchoring, and
+    // closing are all demonstrable (and legitimately high) on a walk-away.
+    const groundedSkills = skills.map((s) =>
+      NEG_CONCESSION_ONLY_RE.test(s.name)
+        ? { ...s, score: Math.min(s.score, WALK_AWAY_CONCESSION_CEILING) }
+        : s,
+    );
+    const anyChanged = groundedSkills.some((s, i) => s.score !== skills[i].score);
+    return anyChanged ? { skills: groundedSkills, overallScore, band } : unchanged;
+  }
+  if (outcome.outcome !== "accepted") return unchanged; // no_agreement handled above
   const gap = outcome.gapClosurePct;
   if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
 
