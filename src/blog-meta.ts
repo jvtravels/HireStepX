@@ -1277,6 +1277,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "How hard is Cognizant's coding test for freshers?", answer: "Cognizant's coding test for GenC track is one of the easier IT services company coding tests — 2 problems solvable with basic programming knowledge (loops, arrays, strings, simple sorting). GenC Next requires 3 problems at Easy to LeetCode Medium level. For GenC, candidates who can write working Python or Java for basic array/string problems (reverse a string, find missing number, Armstrong number check) will pass comfortably. Focus more preparation time on the analytical and English sections — they carry equal weight." },
     ],
   },
+  {
+    slug: "amazon-interview-questions-india-2026",
+    title: "Amazon Interview Questions India 2026 — Leadership Principles, DSA, System Design (All Rounds)",
+    metaDescription: "Amazon interview questions India 2026 with answers. Covers Amazon Leadership Principles (all 16 LPs), DSA rounds, system design, SDE-1 and SDE-2 preparation, and Amazon India salary ₹25–80 LPA.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&h=630&fit=crop",
+    company: "Amazon", category: "Full Guide",
+    faqs: [
+      { question: "What is Amazon's interview process for SDE-1 in India in 2026?", answer: "Amazon SDE-1 India interview process: (1) Online Assessment — 2 LeetCode Medium coding problems + LP-style written questions; (2) Phone Screen — 1 coding problem + 1-2 LP questions; (3) Virtual Loop of 5-6 rounds — each round has 2 coding problems and 2 Leadership Principles behavioural questions; one round is System Design basics; one round is the Bar Raiser (hardest round, veto power). All rounds are conducted remotely via Amazon Chime." },
+      { question: "What are Amazon's Leadership Principles and why do they matter in interviews?", answer: "Amazon has 16 Leadership Principles (LPs) that define how Amazonians are expected to make decisions. Every interview round includes 2-3 LP questions using STAR format — these are scored as rigorously as the technical rounds. The most tested LPs in Indian hiring loops: Customer Obsession, Ownership, Invent and Simplify, Dive Deep, Bias for Action, Deliver Results, and Earn Trust. A technically strong candidate who gives weak LP answers can be rejected. Prepare 2-3 specific STAR stories per LP." },
+      { question: "What is Amazon India's salary for SDE-1 in 2026?", answer: "Amazon India SDE-1 total compensation in 2026: Base ₹18-32 LPA + RSU stock (₹8-20 LPA vested over 4 years, back-weighted 5%/15%/40%/40%) + signing bonus (₹2-5 LPA Year 1 only). Total Year 1 compensation is approximately ₹28-52 LPA. Note Amazon's stock vesting is heavily back-loaded — 80% of stock vests in Years 3 and 4, so candidates who leave early give up most of their stock value." },
+      { question: "What DSA topics does Amazon focus on in interviews?", answer: "Amazon's most-tested DSA topics: Arrays and strings (two pointers, sliding window, Kadane's algorithm), Trees (binary tree traversals, LCA, level-order BFS), Graphs (BFS/DFS, number of islands), Dynamic Programming (knapsack, LCS, coin change), and data structure design problems (LRU Cache, implementing a stack with min). Difficulty: LeetCode Medium for SDE-1, Medium-Hard for SDE-2. Amazon interviewers expect verbal explanation of approach and complexity before coding." },
+    ],
+  },
+  {
+    slug: "dsa-interview-preparation-guide-india-2026",
+    title: "DSA Interview Preparation Guide India 2026 — From Zero to Product Company Ready",
+    metaDescription: "Complete DSA interview preparation guide India 2026. Arrays, strings, linked lists, trees, graphs, dynamic programming — with a 12-week study plan, LeetCode problem list, and strategies for TCS, Flipkart, Amazon, and Google India.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=1200&h=630&fit=crop",
+    company: "Tech", category: "Technical",
+    faqs: [
+      { question: "How long does it take to prepare for DSA interviews for Indian product companies?", answer: "Timeline by target company tier: IT services premium tracks (TCS Digital, Infosys Power Programmer) — 4-6 weeks. Tier-2 Indian product companies (Freshworks, Zoho) — 8-10 weeks. Tier-1 Indian product companies (Flipkart, Swiggy, Razorpay) — 12 weeks. FAANG India (Amazon, Google, Microsoft, Meta) — 16-20 weeks minimum. These assume 2-3 hours of daily focused practice. Candidates who cram for 8-10 hours daily can compress timelines by 30-40%, but retention and problem-solving intuition suffer." },
+      { question: "Which LeetCode problems should I solve for Indian product company interviews?", answer: "Start with the Blind 75 list (covers all core patterns). Then add Striver's SDE Sheet (popular in India, 191 problems with company tags) or NeetCode 150. For company-specific prep: filter LeetCode by company name (Amazon, Flipkart, etc.) and solve the most-recent 30 problems in your target company's list. The Blind 75 + company-specific recent problems covers 85% of what's actually asked." },
+      { question: "What is the easiest DSA topic to start with for beginners?", answer: "Start with Arrays — they are the simplest to reason about, have the most problems at every level, and nearly every other data structure builds on array concepts. After arrays, move to HashMaps (solving the frequency-counting and lookup problems that arrays struggle with), then Strings, then Linked Lists. Avoid starting with trees, graphs, or DP — these require the foundation topics to be solid first." },
+      { question: "Is DSA tested at IT services companies in India?", answer: "Basic DSA is tested at IT services companies' premium tracks: TCS NQT Advanced has 2 coding problems (Easy to Medium), Infosys Power Programmer requires 2 coding problems (Medium), Wipro Elite requires 2 problems (Easy to Medium), Cognizant GenC Next requires 3 problems (Easy to Medium). Standard IT services tracks (TCS Ninja, Infosys System Engineer, Wipro standard) have easier coding sections — basic loops, arrays, and strings. Product company DSA (LeetCode Medium-Hard) is not tested at IT services companies." },
+    ],
+  },
+  {
+    slug: "hcl-interview-questions-india-2026",
+    title: "HCL Technologies Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
+    metaDescription: "HCL Technologies interview questions India 2026 for freshers and experienced candidates. Covers HCL online test, technical round, HR round, HCL TechBee programme, salary ₹3.5–35 LPA, and preparation tips.",
+    datePublished: "2026-07-21",
+    heroImage: "https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=1200&h=630&fit=crop",
+    company: "HCL", category: "Full Guide",
+    faqs: [
+      { question: "What is HCL's interview process for freshers in 2026?", answer: "HCL's fresher interview process has 3 stages: (1) Online Assessment — verbal ability, analytical reasoning, quantitative aptitude, technical MCQ, and a basic coding problem; (2) Technical Interview — C/Java/Python fundamentals, data structures, DBMS/SQL, OS concepts, and one coding problem on paper; (3) HR Interview — standard HR questions, location preference, shift readiness. HCL's technical interview is moderately difficult — similar to Wipro, easier than Infosys." },
+      { question: "What is HCL Technologies salary for freshers in India 2026?", answer: "HCL's fresher salary in India 2026: Graduate Engineer Trainee (standard) ₹3.5 LPA, select campus hires ₹4.5 LPA, HCL SuperStar track (limited seats) ₹6 LPA. TechBee Technology Associates (Class 12 entrants) start at ₹2.7–3.5 LPA. Take-home is approximately 75-80% of CTC. HCL is in the middle tier among IT services freshers pay: above Wipro's standard, below Infosys Power Programmer and Cognizant GenC Next." },
+      { question: "What is HCL TechBee and who should apply?", answer: "HCL TechBee is a programme for Class 12 (10+2) graduates to join HCL directly after school — no engineering degree required before joining. Students undergo a 1-year paid training programme, then join HCL as Technology Associates, and pursue a B.Tech degree part-time through partnering universities. TechBee is best for students who want to earn and build work experience while studying, or those for whom a 4-year private engineering college fee is prohibitive." },
+      { question: "Is HCL a good company for freshers compared to TCS and Infosys?", answer: "HCL compares favourably to TCS and Infosys in several ways for freshers: faster promotion cycles (merit-based vs seniority), stronger engineering culture (particularly in embedded systems, aerospace software, and engineering services), and comparable onsite opportunities. The starting package is slightly lower than Infosys's premium tracks. HCL is a particularly good choice for candidates interested in engineering software (rather than pure IT services) or who have strong C/C++ or embedded systems backgrounds." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
