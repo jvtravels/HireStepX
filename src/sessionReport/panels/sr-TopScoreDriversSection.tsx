@@ -24,6 +24,7 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
     .map((x) => x.row);
   const top = ranked.slice(0, 3);
   const totalImpact = top.reduce((sum, r) => sum + severityWeight(r.severity), 0);
+  const topN = top.length;
 
   const impactChip = (
     <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase" }}>
@@ -36,8 +37,8 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
       headingId="ir-score-drivers-heading"
       num="01b"
       label="Score drivers — what hit hardest"
-      title="Top 3 score drivers"
-      subtitle="Each flag is weighted by severity (high = 3, medium = 2, low = 1). These three account for most of the score gap."
+      title={topN < 3 ? `Top ${topN === 1 ? "" : topN + " "}score driver${topN === 1 ? "" : "s"}` : "Top 3 score drivers"}
+      subtitle={`Each flag is weighted by severity (high = 3, medium = 2, low = 1). ${topN === 1 ? "This accounts for most of the score gap." : `These ${topN === 2 ? "two" : "three"} account for most of the score gap.`}`}
       aside={impactChip}
     >
       <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>

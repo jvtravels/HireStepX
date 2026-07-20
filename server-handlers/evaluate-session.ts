@@ -217,10 +217,16 @@ interface PriorReportSummary {
   weakestSkills: Array<{ name: string; score: number }>;
 }
 
-async function loadPriorReports(currentSessionId: string, userId: string): Promise<PriorReportSummary[]> {
+async function loadPriorReports(currentSessionId: string, userId: string, focus?: string): Promise<PriorReportSummary[]> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return [];
   try {
-    const q = `sessions?user_id=eq.${encodeURIComponent(userId)}&id=neq.${encodeURIComponent(currentSessionId)}&report_json=not.is.null&order=created_at.desc&limit=3&select=id,created_at,report_json`;
+    /* Scope prior context to same focus when focus is set — cross-focus insights
+       are misleading (behavioral patterns for a campus fresher, negotiation data
+       for a behavioral session). For campus-placement the scope is strict: prior
+       behavioral sessions from a 89-session SPD user dominate and produce wrong
+       "persistent gaps" (STAR structure, Ownership) that don't apply to freshers. */
+    const focusFilter = focus ? `&focus=eq.${encodeURIComponent(focus)}` : "";
+    const q = `sessions?user_id=eq.${encodeURIComponent(userId)}&id=neq.${encodeURIComponent(currentSessionId)}&report_json=not.is.null${focusFilter}&order=created_at.desc&limit=3&select=id,created_at,report_json`;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${q}`, {
       headers: {
         apikey: SUPABASE_SERVICE_KEY,
@@ -579,7 +585,7 @@ export default async function handler(req: Request): Promise<Response> {
     /* Focus type wins over role family — an HR round or a salary negotiation is
        graded on what the interviewer actually evaluated, not the candidate's
        role-family proxies (#99). See resolveSkillAxes in the helpers. */
-    const skillAxes = resolveSkillAxes(meta?.type, roleFamily);
+    const skillAxes = resolveSkillAxes(meta?.type, roleFamily, meta?.focus);
     const durationSec = meta?.duration || 600;
     const coreMetrics = computeCoreMetrics(transcript, durationSec);
     const advancedDelivery = computeAdvancedDelivery(transcript, durationSec);
@@ -608,7 +614,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Cross-session memory: fetch the user's last 3 reports (structured
     // coaching signal only — no transcripts) so the LLM can call out
     // improvements, regressions, and persistent issues.
-    const priorReports = auth.userId ? await loadPriorReports(sessionId, auth.userId) : [];
+    const priorReports = auth.userId ? await loadPriorReports(sessionId, auth.userId, meta?.focus) : [];
 
     // Build transcript block — keep all turn indices intact (perQuestion[].idx
     // references them) but vary the per-turn char cap by position. The arc is
@@ -683,8 +689,8 @@ export default async function handler(req: Request): Promise<Response> {
        define quality in this focus (see data/focus-signature-metrics.ts).
        Labels are pinned in code; the model fills value + tone. Lands in the
        dynamic section after the rubric so it doesn't break prompt caching. */
-    const signatureMetricsPrompt = formatSignatureMetricsPrompt(meta?.type);
-    const perQuestionMetricsPrompt = formatPerQuestionMetricsPrompt(meta?.type);
+    const signatureMetricsPrompt = formatSignatureMetricsPrompt(meta?.focus || meta?.type);
+    const perQuestionMetricsPrompt = formatPerQuestionMetricsPrompt(meta?.focus || meta?.type);
     /* Sector-grounded HR norms for the prompt. Dynamic (per-company) so it lands
        after the static blocks — keeps prompt caching intact. Gives the LLM real
        sector facts so its motivationAfter / bgvGaps guidance is company-true and
@@ -720,7 +726,9 @@ EXEMPLARS — CRITICAL RULES:
 - VARY exemplars across all questions — each topPerformerAnswer.text must tell a DIFFERENT story/situation. Do not reuse the same project or incident across multiple questions.
 - For intro/"tell me about yourself" questions: exemplar opens with degree, college, strongest project or internship, then pivots to why this company/role.
 
-COACHING TONE: Coach within fresher context. Say "tie your final-year project to the business outcome more clearly" — not "reference your previous role's production impact". If CGPA is ≥7.5, coach the candidate to mention it proactively.`
+COACHING TONE: Coach within fresher context. Say "tie your final-year project to the business outcome more clearly" — not "reference your previous role's production impact". If CGPA is ≥7.5, coach the candidate to mention it proactively.
+
+BGV / BACKGROUND-VERIFICATION FLAGS: Do NOT fire "company mentioned in interview isn't on resume" flags for campus/fresher sessions. Freshers mentioning internship companies, practice examples, or aspirational companies in answers is EXPECTED — it is not a BGV gap. Set bgvGaps to [] (empty array) for all campus placement sessions.`
       : "";
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
@@ -1392,7 +1400,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
          label matches the pinned spec for this focus, in canonical order.
          Empty array for focuses without a spec or when the model omitted
          them; the card degrades to the coaching pair. */
-      focusMetrics: normalizeFocusMetrics((parsed as Record<string, unknown>).focusMetrics, meta?.type),
+      focusMetrics: normalizeFocusMetrics((parsed as Record<string, unknown>).focusMetrics, meta?.focus || meta?.type),
       /* HR-round enrichment — only populated when meta.type === "hr-round"
          and the LLM returned the hrReport block. normalizeHrReport returns
          null when either the LLM omitted the block or both motivation fields

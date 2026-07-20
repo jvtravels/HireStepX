@@ -421,6 +421,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         const mapped = sessions.map(s => ({
           id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
           focus: s.focus, duration: s.duration,
+          company: s.target_company ?? undefined,
           /* Canonical score = the report's blended-and-anchored overall when a
              report has been generated (report_json.overallScore), else the
              quick eval persisted at save time (sessions.score). The report

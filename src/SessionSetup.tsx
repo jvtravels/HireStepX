@@ -10,7 +10,7 @@ import { captureClientEvent } from "./posthogClient";
    Indigo is interactive · Copper is editorial · Never mix. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
-import { profileFromRole, type InterviewFocus } from "./roleInterviewMatrix";
+import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
@@ -276,7 +276,11 @@ const COMING_SOON_FOCUSES = new Set<InterviewFocus>([
   "Government / PSU",
 ]);
 
-function getRecommendedFocus(role?: string): string {
+function getRecommendedFocus(role?: string, experienceLevel?: string): string {
+  // Profile-level "fresher" setting wins over role-name heuristics so a user
+  // who calls themselves "Software Engineer" but is a fresh graduate still
+  // lands on the campus-placement flow by default.
+  if (experienceLevel === "fresher") return "Campus Placement";
   if (!role) return "Behavioral";
   const r = role.toLowerCase();
   if (/engineer|developer|sde|swe|programmer|coder/i.test(r)) return "Technical Leadership";
@@ -704,7 +708,21 @@ export default function SessionSetup() {
   const drillKey = searchParams.get("drill") || "";
   const drillCta = drillKey ? DRILL_TO_CTA[drillKey] || null : null;
 
-  const [targetRole, setTargetRole] = useState(prefillRole || user?.targetRole || "");
+  // When the user arrives via ?focus=campus-placement but has a non-student
+  // Settings role (e.g. "Senior Product Designer"), seeding that role would
+  // contaminate the entire campus session. In that case, start blank and let
+  // the user type their actual campus role — only explicit ?role= wins.
+  const [targetRole, setTargetRole] = useState(() => {
+    if (prefillRole) return prefillRole;
+    if (preselectedFocus === "campus-placement") {
+      const profileRole = user?.targetRole || "";
+      const isStudentLike =
+        inferRoleFamily(profileRole) === "student" ||
+        inferSeniority(profileRole) === "fresher";
+      if (!isStudentLike) return "";
+    }
+    return user?.targetRole || "";
+  });
   const [roleTouched, setRoleTouched] = useState(false);
   const [companyTouched, setCompanyTouched] = useState(false);
   // User-added companies persisted in localStorage. Re-read on mount so
@@ -749,13 +767,13 @@ export default function SessionSetup() {
     if (rd && rd._type === "fallback") return rd.experience?.[0]?.company || "";
     return "";
   });
-  const recommendedFocus = getRecommendedFocus(user?.targetRole);
+  const recommendedFocus = getRecommendedFocus(user?.targetRole, user?.experienceLevel);
   const [interviewFocus, setInterviewFocus] = useState<string[]>(() => {
     if (preselectedFocus) {
       const match = Object.entries(focusToType).find(([, v]) => v === preselectedFocus);
       if (match) return [match[0]];
     }
-    return [getRecommendedFocus(user?.targetRole)];
+    return [getRecommendedFocus(user?.targetRole, user?.experienceLevel)];
   });
 
   /* Auto-correct the focus selection when the user changes their role
@@ -763,9 +781,19 @@ export default function SessionSetup() {
      currently-picked focus is no longer relevant for the new role,
      swap to a sensible default (the role's recommended focus if it's
      in the new relevant set, else the first available). Empty/unknown
-     role → no filter → no auto-correct. */
+     role → no filter → no auto-correct.
+
+     Exception: when the focus was explicitly preselected via URL param
+     (e.g. a dashboard deep-link ?focus=campus-placement), never
+     auto-correct it away — the URL is an explicit user intent signal that
+     outranks the role-matrix heuristic. The user can still change the
+     chip manually. roleTouched tracks this: the effect only fires once
+     the user has actually changed the role field after arrival. */
   useEffect(() => {
     if (!relevantFocusSet) return;
+    // Don't auto-correct a URL-preselected focus on the initial render
+    // before the user has changed the role field themselves.
+    if (preselectedFocus && !roleTouched) return;
     const current = interviewFocus[0];
     // A "Coming soon" focus is never a valid selection — fall through and
     // pick a live one even if it's in the relevant set (handles persisted
@@ -775,7 +803,7 @@ export default function SessionSetup() {
       !COMING_SOON_FOCUSES.has(current as InterviewFocus) &&
       relevantFocusSet.has(current as InterviewFocus)
     ) return;
-    const recommended = getRecommendedFocus(targetRole);
+    const recommended = getRecommendedFocus(targetRole, user?.experienceLevel);
     const fallback =
       !COMING_SOON_FOCUSES.has(recommended as InterviewFocus) &&
       relevantFocusSet.has(recommended as InterviewFocus)

@@ -150,6 +150,18 @@ export const ROLE_SKILLS: Record<string, string[]> = {
   behavioral: ["Structure", "Ownership", "Impact", "Communication", "Composure"],
 };
 
+/* Campus / fresher sessions are graded on entry-level hiring dimensions, not
+   mid-senior competencies. "Trade-off Reasoning" or "Technical Depth" score 40
+   means nothing to a fresher preparing for TCS NQT — these five axes map to
+   what campus interviewers actually evaluate. */
+export const CAMPUS_SKILL_AXES: readonly string[] = [
+  "Technical Knowledge",
+  "STAR Structure",
+  "Company Fit Narration",
+  "Communication Clarity",
+  "Background Articulation",
+];
+
 /* HR-round sessions are graded on the 8 HR rubric dimensions, not the
    candidate's role-family competencies — so the DimensionGate in the report
    gets real per-axis scores instead of role-family proxies. */
@@ -206,20 +218,24 @@ const RECOGNIZED_INSIGHT_METRICS: ReadonlySet<string> = new Set(
     ...Object.values(ROLE_SKILLS).flat(),
     ...HR_ROUND_SKILL_AXES,
     ...NEGOTIATION_SKILL_AXES,
+    ...CAMPUS_SKILL_AXES,
     ...RECOGNIZED_DELIVERY_METRICS,
   ].map(canonicalizeAxisName),
 );
 
-/* Single source of truth for the report's skill axes. Focus type wins over
-   role family: an HR round or a salary negotiation is graded on what the
-   interviewer actually evaluated, regardless of the candidate's role. Falls
-   back to role-family competencies (then behavioral) for everything else. */
+/* Single source of truth for the report's skill axes. Focus/type wins over
+   role family: an HR round, negotiation, or campus-placement session is graded
+   on what the interviewer actually evaluated, not the candidate's seniority
+   level. Falls back to role-family competencies (then behavioral) for everything
+   else. */
 export function resolveSkillAxes(
   metaType: string | undefined,
   roleFamily: string | undefined,
+  focus?: string | undefined,
 ): string[] {
   if (metaType === "hr-round") return [...HR_ROUND_SKILL_AXES];
   if (metaType === "salary-negotiation") return [...NEGOTIATION_SKILL_AXES];
+  if (focus === "campus-placement") return [...CAMPUS_SKILL_AXES];
   const family = (roleFamily || "behavioral") as keyof typeof ROLE_SKILLS;
   return [...(ROLE_SKILLS[family] || ROLE_SKILLS.behavioral)];
 }

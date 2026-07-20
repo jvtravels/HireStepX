@@ -102,7 +102,11 @@ export function computeSpeechMetrics(transcript: { speaker: string; text: string
   const userText = userEntries.map(t => t.text).join(" ");
   const words = userText.split(/\s+/).filter(Boolean);
   const wordCount = words.length;
-  const userMinutes = Math.max(1, durationSec / 60 * 0.5); // ~50% of time is user speaking
+  // Estimate user speaking time as ~50% of session, minimum 1 minute.
+  // But for very sparse answers (<30 words) this formula yields nonsensically
+  // low WPM (e.g. 14 wpm for a 14-word mini session against a 1-min floor).
+  // Use 0 as a sentinel for "not enough signal" in that case.
+  const userMinutes = Math.max(1, durationSec / 60 * 0.5);
 
   // Filler words
   let fillerCount = 0;
@@ -111,10 +115,10 @@ export function computeSpeechMetrics(transcript: { speaker: string; text: string
     const matches = userText.match(regex);
     if (matches) fillerCount += matches.length;
   }
-  const fillerPerMin = fillerCount / userMinutes;
+  const fillerPerMin = wordCount >= 30 ? fillerCount / userMinutes : 0;
 
-  // Speaking pace (words per minute)
-  const pace = Math.round(wordCount / userMinutes);
+  // Speaking pace — suppress (0) when answers are too sparse to give a valid reading.
+  const pace = wordCount >= 30 ? Math.round(wordCount / userMinutes) : 0;
 
   // Silence ratio — approximate from answer lengths vs total time
   const estimatedSpeakingTime = (wordCount / 150) * 60; // at 150 wpm

@@ -53,6 +53,8 @@ export interface RealSession {
   duration: number;
   score: number;
   questions: number;
+  /** Company the candidate targeted at session setup, from target_company column. */
+  company?: string;
   ai_feedback?: string;
   skill_scores?: Record<string, number> | null;
   /** Plain-language coaching pair from the evaluator (mvp-8+), read out of
@@ -194,6 +196,7 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
       dateLabel,
       type,
       role: targetRole || "Target Role",
+      company: rs.company,
       score: rs.score,
       change: rs.score - prevScore,
       duration: `${durationMin} min`,
@@ -238,6 +241,12 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
     real = loadRealSessionsLocal();
   }
   real.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Ghost sessions (0 questions answered) must not contaminate LAST SCORE or
+  // avg-score KPIs. The dead-session guard in evaluate-session.ts prevents new
+  // ghost evaluations, but historical ones may have score ~30 from an LLM that
+  // ran on an interviewer-only transcript. Filtering by questions > 0 targets
+  // exactly these sessions while keeping all real sessions regardless of score.
+  real = real.filter(s => (s.questions ?? 0) > 0);
   const realConverted = realSessionsToDashboard(real, targetRole);
   const recentSessions = realConverted;
 
@@ -1299,17 +1308,26 @@ export interface SessionTrendPoint { id: string; date: string; score: number }
  * oldest-first. Read via the already-authenticated supabase client (RLS
  * scopes to the current user by session.id foreign key).
  */
-export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrendPoint[]> {
+export async function fetchRecentSessionScores(
+  limit = 10,
+  focus?: string,
+): Promise<SessionTrendPoint[]> {
   const { getSupabase } = await import("./supabase");
   const client = await getSupabase();
   const { data: sessionData } = await client.auth.getSession();
   const userId = sessionData.session?.user?.id;
   if (!userId) return [];
-  const { data, error } = await client
+  let query = client
     .from("sessions")
     .select("id, created_at, score")
     .eq("user_id", userId)
-    .gt("score", 0)
+    .gt("score", 0);
+  // Filter to the same focus type so the trend line is apples-to-apples.
+  // campus-placement sessions are stored as type="behavioral" — the focus
+  // column is what distinguishes them. Without this filter, a campus
+  // report's trend mixes in salary-negotiation, behavioral, etc.
+  if (focus) query = query.eq("focus", focus);
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {

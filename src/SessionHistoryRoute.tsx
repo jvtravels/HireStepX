@@ -43,7 +43,10 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
   const fresh = humanDate(d.date, now);
   return {
     id: d.id,
-    type: d.type,
+    // Campus placement is stored as type="behavioral" in DB; use the focus
+    // discriminator for the display label so the history card reads
+    // "Campus Placement" rather than the misleading "Behavioral".
+    type: d.focus === "campus-placement" ? "Campus Placement" : d.type,
     role: d.role,
     /* Empty string when company is missing; the row template
        conditionally renders the company suffix, so we don't surface
@@ -224,10 +227,10 @@ export default function SessionHistoryRoute() {
          and the "View results" CTA users see right after an interview
          ends — one report surface, not two divergent ones. */
       onOpenReport={id => router.push(`/session/${id}`)}
-      /* Row-level "Practice this again" carries the original session's
-         setup forward so the user lands in a pre-populated interview
-         setup. Query params mirror the dashboard's deep-link contract
-         for /interview. Missing fields drop cleanly. */
+      /* Row-level "Practice this again" routes through /session/new so
+         the user can review and confirm setup before starting — avoids
+         silently burning a session credit on a misclick. URL params
+         pre-populate the form with the original session's context. */
       onRerun={s => {
         const params = new URLSearchParams();
         /* Use the raw focus slug (e.g. "campus-placement") to derive
@@ -244,7 +247,7 @@ export default function SessionHistoryRoute() {
         if (s.company) params.set("company", s.company);
         if (s.difficulty) params.set("difficulty", s.difficulty);
         const qs = params.toString();
-        router.push(qs ? `/interview?${qs}` : "/interview");
+        router.push(qs ? `/session/new?${qs}` : "/session/new");
       }}
     />
   );

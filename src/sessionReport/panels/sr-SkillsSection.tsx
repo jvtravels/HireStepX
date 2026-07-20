@@ -6,7 +6,7 @@ import { t, f, radius } from "../tokens";
 import type { Skill } from "../types";
 import { SrSectionShell } from "./_primitives";
 
-export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: string; tip: string } }) {
+export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill[]; weakest: { name: string; tip: string }; onDrillSkill?: (skillName: string) => void }) {
   const max = 100;
   const legend = (
     <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
@@ -104,7 +104,7 @@ export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: {
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.5, margin: "0 0 14px" }}>
             {weakest.tip}
           </p>
-          <button type="button" className="ir-cta-primary" style={{ width: "100%", justifyContent: "center" }}>
+          <button type="button" className="ir-cta-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => onDrillSkill?.(weakest.name)}>
             Drill this skill
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="5" y1="12" x2="19" y2="12" />

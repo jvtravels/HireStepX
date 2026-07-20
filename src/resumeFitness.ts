@@ -21,7 +21,7 @@ import type { ResumeProfile } from "./dashboardData";
 
 export const SCORING_VERSION = 1;
 
-export type InterviewType = "behavioral" | "technical" | "system_design" | "case";
+export type InterviewType = "behavioral" | "technical" | "system_design" | "case" | "campus";
 
 export type FitnessBand = "low" | "fair" | "good" | "excellent";
 
@@ -55,6 +55,12 @@ const SIGNAL_TERMS: Record<InterviewType, string[]> = {
     "analysis", "strategy", "growth", "revenue", "metrics", "kpi", "framework",
     "market", "competitive", "p&l", "roi", "stakeholder", "business",
     "consultant", "consulting", "product strategy", "go-to-market",
+  ],
+  campus: [
+    "project", "internship", "college", "university", "academic", "cgpa", "gpa",
+    "hackathon", "open source", "coursework", "certification", "extracurricular",
+    "volunteer", "club", "research", "thesis", "publication", "workshop",
+    "training", "bootcamp",
   ],
 };
 
@@ -155,7 +161,13 @@ export function computeResumeFitness(profile: ResumeProfile, interviewType: Inte
   } else if (band === "good") {
     rationale = `Solid ${interviewType.replace("_", " ")} fit — ${signalHits} signals${quantified ? `, ${quantified} quantified wins` : ""}.`;
   } else if (band === "fair") {
-    rationale = `Partial ${interviewType.replace("_", " ")} fit — add more ${interviewType === "behavioral" ? "leadership/impact verbs" : interviewType === "technical" ? "concrete tech keywords" : interviewType === "system_design" ? "scale/architecture details" : "metrics and outcomes"}.`;
+    const fairHint =
+      interviewType === "behavioral" ? "leadership/impact verbs" :
+      interviewType === "technical" ? "concrete tech keywords" :
+      interviewType === "system_design" ? "scale/architecture details" :
+      interviewType === "campus" ? "projects, internships, and academic achievements" :
+      "metrics and outcomes";
+    rationale = `Partial ${interviewType.replace("_", " ")} fit — add more ${fairHint}.`;
   } else {
     rationale = `Weak ${interviewType.replace("_", " ")} fit — resume has few signals for this interview type.`;
   }
@@ -170,5 +182,6 @@ export function computeAllFitness(profile: ResumeProfile): Record<InterviewType,
     technical: computeResumeFitness(profile, "technical"),
     system_design: computeResumeFitness(profile, "system_design"),
     case: computeResumeFitness(profile, "case"),
+    campus: computeResumeFitness(profile, "campus"),
   };
 }

@@ -837,6 +837,7 @@ export default function DashboardResume() {
     technical: "Technical depth",
     system_design: "System design",
     case: "Case-study problem-solving",
+    campus: "Campus placement",
   }), []);
   const coverage = useMemo<Array<{ label: string; band: FitnessBand; score: number; type: InterviewType }>>(() => {
     if (!profile) return [];

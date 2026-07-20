@@ -48,6 +48,7 @@ const typeLabel: Record<InterviewType, string> = {
   technical: "TECH",
   system_design: "SYS",
   case: "CASE",
+  campus: "CAM",
 };
 
 export default function CatalogueGrid({

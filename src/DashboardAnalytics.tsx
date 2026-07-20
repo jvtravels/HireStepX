@@ -129,7 +129,14 @@ export default function AnalyticsPage() {
   const avgImprovement = sk.length > 0 ? Math.round(totalImprovement / sk.length) : 0;
 
   const typeBreakdown = sessionTypes.filter(t => t !== "All").map(type => {
-    const typeSessions = sessions.filter(s => s.type === type);
+    // campus-placement is stored as type="Behavioral" in the DB — the focus
+    // column distinguishes it. Reclassify for the breakdown so Campus
+    // Placement sessions don't inflate the Behavioral bucket.
+    const typeSessions = sessions.filter(s => {
+      if (type === "Campus Placement") return s.focus === "campus-placement";
+      if (s.focus === "campus-placement") return false;
+      return s.type === type;
+    });
     return { type, count: typeSessions.length, avgScore: typeSessions.length ? Math.round(typeSessions.reduce((s, sess) => s + sess.score, 0) / typeSessions.length) : 0 };
   }).filter(t => t.count > 0);
 
@@ -146,7 +153,11 @@ export default function AnalyticsPage() {
   // Targeted session start
   const startTargeted = (type?: string) => {
     if (atSessionLimit) { setShowUpgradeModal(true); return; }
-    router.push(type ? `/session/new?type=${type}` : "/session/new");
+    if (type === "campus-placement") {
+      router.push("/session/new?type=behavioral&focus=campus-placement");
+    } else {
+      router.push(type ? `/session/new?type=${type}` : "/session/new");
+    }
   };
 
   // Weekly practice heatmap — respects selected date range

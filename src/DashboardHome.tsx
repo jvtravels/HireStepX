@@ -278,7 +278,7 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
 
 const OUTCOME_DISMISS_KEY = "hirestepx_outcome_dismissed";
 
-function OutcomePrompt({ firstSessionDate }: { firstSessionDate: string | null | undefined }) {
+function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: string | null | undefined; isCampus?: boolean }) {
   const [status, setStatus] = useState<"idle" | "open" | "done" | "dismissed">("idle");
   const [applied, setApplied] = useState(false);
   const [interviewed, setInterviewed] = useState(false);
@@ -353,7 +353,7 @@ function OutcomePrompt({ firstSessionDate }: { firstSessionDate: string | null |
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
-            How did your job search go?
+            {isCampus ? "How did your campus placement go?" : "How did your job search go?"}
           </p>
           <button
             type="button" onClick={dismiss} aria-label="Dismiss outcome prompt"
@@ -362,12 +362,19 @@ function OutcomePrompt({ firstSessionDate }: { firstSessionDate: string | null |
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(
-            [
-              { label: "Applied for a role", value: applied, set: setApplied },
-              { label: "Got an interview",   value: interviewed, set: setInterviewed },
-              { label: "Received an offer",  value: offer, set: setOffer },
-              { label: "Accepted the offer", value: accepted, set: setAccepted },
-            ] as { label: string; value: boolean; set: (v: boolean) => void }[]
+            isCampus
+              ? [
+                  { label: "Applied to placement drives",    value: applied,     set: setApplied },
+                  { label: "Cleared aptitude / tech round",  value: interviewed, set: setInterviewed },
+                  { label: "Got an offer letter",            value: offer,       set: setOffer },
+                  { label: "Joined the company",             value: accepted,    set: setAccepted },
+                ]
+              : [
+                  { label: "Applied for a role", value: applied,     set: setApplied },
+                  { label: "Got an interview",   value: interviewed, set: setInterviewed },
+                  { label: "Received an offer",  value: offer,       set: setOffer },
+                  { label: "Accepted the offer", value: accepted,    set: setAccepted },
+                ]
           ).map(({ label, value, set }) => (
             <label key={label} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
               fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
@@ -567,8 +574,20 @@ export default function DashboardHome() {
      CTA href so it always matches what /session/new actually receives. */
   const goToNextMove = () => {
     let drillKey: string | null = null;
+    let effectiveHref = nextMove.ctaHref;
     try {
-      drillKey = new URL(nextMove.ctaHref, "https://hirestepx.local").searchParams.get("drill");
+      const parsed = new URL(nextMove.ctaHref, "https://hirestepx.local");
+      drillKey = parsed.searchParams.get("drill");
+      // For campus-placement CTAs, carry the last campus session's role +
+      // company so SessionSetup doesn't fall back to the Settings profile role.
+      if (nextMove.coachingSessionFocus === "campus-placement") {
+        const lastCampus = core.recentSessions.find(
+          (s) => s.focus === "campus-placement"
+        );
+        if (lastCampus?.role) parsed.searchParams.set("role", lastCampus.role);
+        if (lastCampus?.company) parsed.searchParams.set("company", lastCampus.company);
+        effectiveHref = parsed.pathname + "?" + parsed.searchParams.toString();
+      }
     } catch {
       drillKey = null;
     }
@@ -577,7 +596,7 @@ export default function DashboardHome() {
       weakest_skill_name: nextMove.weakestSkillName ?? null,
       drill_key: drillKey,
     });
-    goToInterview("next-move-primary", nextMove.ctaHref)();
+    goToInterview("next-move-primary", effectiveHref)();
   };
 
   /* Fire dashboard_loaded exactly once per mount, after the first
@@ -860,10 +879,14 @@ export default function DashboardHome() {
                 </h2>
               </div>
               <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 14px" }}>
-                After four sessions, your coach surfaces a specific pattern from
-                your STAR breakdowns. Keep going.
+                {hasPatternData
+                  ? "Your patterns are tracked across sessions. Open your Readiness Index for a full coaching breakdown — blind spots, skill decay, and follow-up prep."
+                  : "After four sessions, your coach surfaces a specific pattern from your STAR breakdowns. Keep going."}
               </p>
-              <PrimaryCta size="sm" fullWidth onClick={goToInterview("ai-insight-real")}>Start a session</PrimaryCta>
+              {hasPatternData
+                ? <PrimaryCta size="sm" fullWidth onClick={() => router.push("/analytics")}>Open Readiness Index →</PrimaryCta>
+                : <PrimaryCta size="sm" fullWidth onClick={goToInterview("ai-insight-real")}>Start a session</PrimaryCta>
+              }
             </Card>
           )}
 
@@ -890,7 +913,7 @@ export default function DashboardHome() {
           <ResumeFreshnessStrip parsedAt={user?.resumeData?.parsedAt} onRefresh={goToResume} />
 
           {/* Job-search outcome prompt — fires 30 days after first session. */}
-          <OutcomePrompt firstSessionDate={user?.practiceTimestamps?.[0]} />
+          <OutcomePrompt firstSessionDate={user?.practiceTimestamps?.[0]} isCampus={core.recentSessions.some(s => s.focus === "campus-placement")} />
 
           {/* Resume, inline single line. Copy generic (no fake "4 days ago"). */}
           <div style={{
@@ -1243,7 +1266,7 @@ function RecentSessionsList({ real, fallback, demoMode, hasResume, hasTargetRole
       {real.map((s, i) => (
         <SessionRow
           key={s.id}
-          title={`${s.type}${s.role ? `, ${s.role}` : ""}`}
+          title={`${s.focus === "campus-placement" ? "Campus Placement" : s.type}${s.role ? `, ${s.role}` : ""}`}
           date={`${s.dateLabel}, ${s.duration}`}
           score={s.score}
           icon={Icons.practice}

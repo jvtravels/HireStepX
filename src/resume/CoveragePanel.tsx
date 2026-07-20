@@ -25,12 +25,13 @@ interface Props {
   targetRole: string | null | undefined;
 }
 
-const INTERVIEW_TYPES: InterviewType[] = ["behavioral", "technical", "system_design", "case"];
+const INTERVIEW_TYPES: InterviewType[] = ["behavioral", "technical", "system_design", "case", "campus"];
 const INTERVIEW_LABEL: Record<InterviewType, string> = {
   behavioral: "Behavioral",
   technical: "Technical",
   system_design: "System Design",
   case: "Case",
+  campus: "Campus",
 };
 
 export default function CoveragePanel({ profile, targetRole }: Props) {

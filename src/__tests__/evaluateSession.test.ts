@@ -31,6 +31,7 @@ import {
   coerceNoticeDays,
   NEGOTIATION_SKILL_AXES,
   HR_ROUND_SKILL_AXES,
+  CAMPUS_SKILL_AXES,
   ROLE_SKILLS,
   DEFAULT_BANDS,
   type TranscriptTurn,
@@ -87,6 +88,25 @@ describe("resolveSkillAxes (#99 negotiation taxonomy)", () => {
     axes.push("tampered");
     expect(NEGOTIATION_SKILL_AXES).not.toContain("tampered");
     expect(NEGOTIATION_SKILL_AXES).toHaveLength(6);
+  });
+
+  it("returns campus skill axes when focus is campus-placement, regardless of type or role family", () => {
+    expect(resolveSkillAxes("behavioral", "swe", "campus-placement")).toEqual([...CAMPUS_SKILL_AXES]);
+    expect(resolveSkillAxes(undefined, "pm", "campus-placement")).toEqual([...CAMPUS_SKILL_AXES]);
+    expect(resolveSkillAxes("behavioral", undefined, "campus-placement")).toEqual([...CAMPUS_SKILL_AXES]);
+    expect(resolveSkillAxes("behavioral", "behavioral", "campus-placement")).toContain("Technical Knowledge");
+    expect(resolveSkillAxes("behavioral", "swe", "campus-placement")).not.toContain("Trade-off Reasoning");
+  });
+
+  it("type wins over focus: hr-round beats campus-placement focus", () => {
+    expect(resolveSkillAxes("hr-round", "swe", "campus-placement")).toEqual([...HR_ROUND_SKILL_AXES]);
+  });
+
+  it("campus axes are a fresh array (mutation does not corrupt constant)", () => {
+    const axes = resolveSkillAxes("behavioral", "swe", "campus-placement");
+    axes.push("tampered");
+    expect(CAMPUS_SKILL_AXES).not.toContain("tampered");
+    expect(CAMPUS_SKILL_AXES).toHaveLength(5);
   });
 });
 

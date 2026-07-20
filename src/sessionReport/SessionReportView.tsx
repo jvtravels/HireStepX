@@ -595,11 +595,19 @@ export default function SessionReportView({
           <TopScoreDriversSection questions={data.questions} />
           <CoreMetricsSection metrics={data.metrics} />
           {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
-          <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
+          <SkillsSection
+            skills={data.skills}
+            weakest={data.weakestSkill}
+            onDrillSkill={
+              onDrillSkill && data.weakestSkill
+                ? () => onDrillSkill(data.weakestSkill.name)
+                : undefined
+            }
+          />
           {data.thoughtBubble && data.thoughtBubble.length > 0 && (
             <ThoughtBubbleSection segments={data.thoughtBubble} />
           )}
-          <PerQuestionSection questions={data.questions} />
+          <PerQuestionSection questions={data.questions} onTryQuestionAgain={onTryQuestionAgain} />
           <CoachNotesSection
             insights={behaviouralCrossSessionInsights}
             storyReuse={data.negotiationOutcome ? undefined : data.storyReuseFindings}

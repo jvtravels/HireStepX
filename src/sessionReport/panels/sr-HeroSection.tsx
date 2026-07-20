@@ -227,14 +227,18 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 Top Strengths
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                {data.strengths.map((s) => (
+                {data.strengths.length > 0 ? data.strengths.map((s) => (
                   <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.4 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     {s}
                   </li>
-                ))}
+                )) : (
+                  <li style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, fontStyle: "italic" }}>
+                    Not enough signal to surface strengths — try a longer session.
+                  </li>
+                )}
               </ul>
             </div>
             <div>

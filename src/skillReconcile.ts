@@ -45,6 +45,12 @@ const ROLE_VOCAB: Record<InterviewType, string[]> = {
     "market", "competitive", "p&l", "roi", "stakeholder", "business",
     "consultant", "consulting", "product strategy", "go-to-market",
   ],
+  campus: [
+    "project", "internship", "college", "university", "academic", "cgpa", "gpa",
+    "hackathon", "open source", "coursework", "certification", "extracurricular",
+    "volunteer", "club", "research", "thesis", "publication", "workshop",
+    "training", "bootcamp",
+  ],
 };
 
 /**

@@ -413,6 +413,8 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
 
 export function BlindSpots({ d }: { d: Fixture }) {
   const router = useRouter();
+  const isCampus = d.target.role === "Campus / Fresher";
+  const practiceUrl = isCampus ? "/session/new?type=behavioral&focus=campus-placement" : "/session/new";
   return (
     <Card as="section" id="zone-actions" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -431,7 +433,7 @@ export function BlindSpots({ d }: { d: Fixture }) {
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
                 <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
               </div>
-              <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
+              <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
                 style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                 Practice
               </button>
@@ -772,6 +774,8 @@ function FlagRow({ flag }: { flag: TypedFlag }) {
 
 export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) {
   const router = useRouter();
+  const isCampus = d.target.role === "Campus / Fresher";
+  const practiceUrl = isCampus ? "/session/new?type=behavioral&focus=campus-placement" : "/session/new";
   return (
     <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
       <Card as="section">
@@ -790,7 +794,7 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
                 <span style={{ flex: 1, minWidth: 0, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
-                <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
+                <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
                   style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
               </li>
             ))}
@@ -811,7 +815,7 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
               <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, lineHeight: 1.5, flex: 1 }}>
                 Fixing this one flag is your fastest RI gain. It appeared in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
               </p>
-              <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap"
+              <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap"
                 style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${t.indigo}`, background: t.white, color: t.indigoDeep, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
                 Practice now →
               </button>
@@ -828,6 +832,8 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
 /* Likely follow-ups — aggregated to a prep list. */
 export function FollowUpPrep({ d }: { d: Fixture }) {
   const router = useRouter();
+  const isCampus = d.target.role === "Campus / Fresher";
+  const practiceUrl = isCampus ? "/session/new?type=behavioral&focus=campus-placement" : "/session/new";
   if (!d.followUps.length) return null;
   return (
     <Card as="section">
@@ -846,7 +852,7 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
               <div style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.45 }}>{q.question}</div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
-            <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
+            <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
               style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
           </li>
         ))}
