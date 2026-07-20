@@ -91,7 +91,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "phonepe",
     searchPhrase: "PhonePe Software Engineer Salary India 2026",
     metaDescription:
-      "PhonePe salary for SWEs, PMs, and designers India 2026. Total CTC ranges verified from AmbitionBox and Glassdoor India.",
+      "PhonePe salary India 2026 — SWE entry ₹11–31 LPA, mid ₹20–55 LPA, senior ₹38–105 LPA. Pre-IPO ESOP with 4-year vesting. India's largest UPI app comp guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -118,7 +118,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "swiggy",
     searchPhrase: "Swiggy Software Engineer Salary India 2026",
     metaDescription:
-      "Swiggy salary for SWEs and PMs in India 2026. Total CTC ranges from AmbitionBox, Glassdoor, and Swiggy DRHP IPO filings.",
+      "Swiggy salary India 2026 — SDE-1 ₹10–29 LPA, SDE-2 ₹19–52 LPA, SDE-3 ₹37–100 LPA. RSU liquid post-November 2024 IPO. Negotiate your joining bonus and fixed pay.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -131,7 +131,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "zomato",
     searchPhrase: "Zomato Software Engineer Salary India 2026",
     metaDescription:
-      "Zomato salary for SWEs, PMs, and data roles in India 2026. Verified CTC bands from AmbitionBox, Glassdoor, and Zomato DRHP disclosures.",
+      "Zomato salary India 2026 — SDE-1 ₹14–22 LPA, SDE-2 ₹24–40 LPA, SDE-3 ₹40–65 LPA. RSU vests over 4 years on a listed stock. Bengaluru comp guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -144,7 +144,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "meesho",
     searchPhrase: "Meesho Software Engineer Salary India 2026",
     metaDescription:
-      "Meesho salary for SWEs and PMs India 2026. Total CTC ranges from AmbitionBox and Glassdoor — Tier 2/3 e-commerce growth play.",
+      "Meesho salary India 2026 — SDE-1 ₹16–24 LPA, SDE-2 ₹26–42 LPA, SDE-3 ₹42–68 LPA. RSU liquid since December 2025 IPO. Tier-2 e-commerce full comp guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -182,7 +182,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "microsoft",
     searchPhrase: "Microsoft Software Engineer Salary India 2026",
     metaDescription:
-      "Microsoft SWE salary India 2026 — SDE-1 to Principal. Total CTC from Levels.fyi, Glassdoor, and AmbitionBox covering Hyderabad and Bengaluru.",
+      "Microsoft SWE salary India 2026 — L59/60 ₹28–42 LPA, L61 ₹45–75 LPA, L63 ₹75–120 LPA in Hyderabad. RSU vests over 5 years. Level calibration is the key negotiation lever.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -231,7 +231,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "ltimindtree",
     searchPhrase: "LTIMindtree Salary for Freshers India 2026",
     metaDescription:
-      "LTIMindtree fresher and mid-level salary India 2026. Engineer to Lead bands from AmbitionBox and Glassdoor.",
+      "LTIMindtree salary India 2026 — fresher Engineer ₹4–7 LPA, mid-level ₹8–18 LPA, senior ₹18–35 LPA. Post-merger pay guide for LTI and Mindtree joiners.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -243,7 +243,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "freshworks",
     searchPhrase: "Freshworks Software Engineer Salary India 2026",
     metaDescription:
-      "Freshworks salary for SWEs in India 2026. Total CTC bands from AmbitionBox and Glassdoor covering Chennai and Bengaluru offices.",
+      "Freshworks salary India 2026 — SE entry ₹14–22 LPA, mid ₹22–38 LPA, senior ₹40–70 LPA. Nasdaq-listed RSU is liquid. Chennai & Bengaluru CTC comparison.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -280,7 +280,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "accenture",
     searchPhrase: "Accenture Salary for Freshers India 2026",
     metaDescription:
-      "Accenture fresher and analyst salary India 2026. Associate Software Engineer to Consultant bands from AmbitionBox and Glassdoor.",
+      "Accenture salary India 2026 — ASE fresher ₹4.5–6.5 LPA, Analyst ₹8–12 LPA, Consultant ₹12–22 LPA. Track comparison and what to negotiate in your offer letter.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
@@ -293,7 +293,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "ibm",
     searchPhrase: "IBM Software Engineer Salary India 2026",
     metaDescription:
-      "IBM software engineer salary India 2026 — Band 6 to Band 10. Total CTC ranges from Levels.fyi covering Bengaluru, Hyderabad, and Pune offices.",
+      "IBM software engineer salary India 2026 — Band 6 ₹18–24 LPA, Band 7-8 ₹24–38 LPA, Band 9-10 ₹38–65 LPA. Bengaluru, Hyderabad & Pune CTC guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Consultant / BA" },
