@@ -2762,6 +2762,183 @@ const posts: BlogPost[] = [
       { label: "DSA 60-Day Preparation Plan", href: "/blog/dsa-60-day-preparation-plan" },
     ],
   },
+  {
+    slug: "aptitude-questions-it-companies-india-2026",
+    title: "Aptitude Questions for IT Companies India 2026 — TCS NQT, Infosys, Wipro, Cognizant",
+    metaDescription: "Aptitude questions for IT company placements India 2026. Covers quantitative, verbal, and logical reasoning for TCS NQT, Infosys InfyTQ, Wipro NLTH, Cognizant, and Accenture with solved examples and preparation strategy.",
+    company: "General",
+    category: "Campus Placement",
+    readTime: "11 min",
+    heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=500&fit=crop",
+    heroAlt: "Person solving aptitude questions on paper for IT company placement",
+    datePublished: "2026-07-20",
+    intro: "The aptitude test is the first and often the most decisive filter in IT company campus placements. Candidates who outperform their peers in technical skill frequently fail at this stage because they treat aptitude as something to 'brush up on' in the last week. The test is not difficult — it tests standard Class 10–12 mathematics and reasoning skills — but it is timed, and speed with accuracy is what it measures. This guide covers the exact topics tested at each major IT company with solved examples and a preparation plan that builds both speed and accuracy.",
+    sections: [
+      {
+        heading: "Aptitude Test Format by Company",
+        content: "Each company's test has a different structure. Preparing for the wrong format wastes time:\n\n**TCS NQT (National Qualifier Test)**\n- Sections: Traits (personality), Verbal Ability, Reasoning Ability, Numerical Ability, Coding (Foundation + Advanced)\n- Duration: 180 minutes total across sections\n- Difficulty: Moderate (below CAT but above most state-level tests)\n- Cut-off: Not published; approximately 65–70th percentile passes\n- Platform: TCS iON; can be taken multiple times in a year\n\n**Infosys InfyTQ + Hackwithinfy**\n- InfyTQ: 80-question test (English + Maths + Reasoning + Pseudo Code); 80 minutes\n- Hackwithinfy: 3 coding problems in 3 hours; top performers get Specialist Programmer interviews\n- Cut-off: 65% to advance for standard roles; higher bar for SP track\n\n**Wipro NLTH (National Level Talent Hunt)**\n- Sections: Verbal, Quantitative, Logical, Written English, Online Programming Test\n- Duration: 90–105 minutes\n- Coding section: 1–2 problems, easy difficulty\n\n**Cognizant GenC / GenC Pro**\n- GenC: Aptitude (Quant + Verbal + Reasoning) + Interview\n- GenC Pro: Additional technical test (coding + CS fundamentals)\n- Platform: AMCAT-based\n\n**Accenture**\n- Sections: Cognitive Assessment + Coding + Communication (written + speaking)\n- The communication assessment is unique to Accenture — tests writing quality and spoken clarity\n\n**Capgemini IntelliAdapt**\n- Adaptive test: harder questions appear as you answer correctly\n- Sections: Quantitative, Logical, Verbal, Pseudo Code Analysis\n- Pseudo Code questions are unique to Capgemini — trace through a code block and predict output"
+      },
+      {
+        heading: "Quantitative Aptitude — Topic-by-Topic with Examples",
+        content: "Quant is the section where most candidates lose marks due to miscalculation, not ignorance. Practice with a stopwatch.\n\n**1. Percentages (appears in almost every test)**\n\nExample: A product costs ₹800. After a 15% discount and a 10% tax on the discounted price, what is the final price?\nSolution: Discounted price = 800 × 0.85 = ₹680. Tax = 680 × 0.10 = ₹68. Final = ₹748.\nTip: Always apply discounts multiplicatively, not by adding/subtracting percentages first.\n\n**2. Time-Speed-Distance**\n\nExample: Two trains start from cities A and B, 300 km apart, towards each other. Train A travels at 60 km/h, Train B at 90 km/h. In how many hours do they meet?\nSolution: Combined speed = 60 + 90 = 150 km/h. Time = 300/150 = 2 hours.\nTip: 'Towards each other' = add speeds. 'Same direction' = subtract speeds.\n\n**3. Time and Work**\n\nExample: A can complete a job in 12 days, B in 18 days. How many days do they take working together?\nSolution: A's rate = 1/12, B's rate = 1/18. Combined = 1/12 + 1/18 = 3/36 + 2/36 = 5/36. Days = 36/5 = 7.2 days.\nTip: Always work in rates (jobs per day), not days per job.\n\n**4. Profit and Loss**\n\nExample: A shopkeeper buys an article for ₹500 and marks it up 40%. He then gives a 10% discount. What is his profit percentage?\nSolution: Marked price = 500 × 1.40 = ₹700. Selling price = 700 × 0.90 = ₹630. Profit = 130. Profit % = 130/500 × 100 = 26%.\n\n**5. Simple and Compound Interest**\n\nExample: ₹10,000 invested at 10% compound interest for 2 years. What is the final amount?\nSolution: A = P(1 + r/100)^n = 10000 × (1.1)^2 = 10000 × 1.21 = ₹12,100.\nTip: Simple interest = PRT/100. Compound interest always results in more than simple interest for the same rate and time.\n\n**6. Permutations and Combinations (TCS NQT emphasis)**\n\nExample: How many 3-letter codes can be formed from the letters A, B, C, D, E if repetition is not allowed?\nSolution: 5P3 = 5!/(5-3)! = 5×4×3 = 60 codes.\n\n**7. Probability**\n\nExample: A bag has 4 red and 6 blue balls. What is the probability of drawing 2 red balls?\nSolution: P = (4C2)/(10C2) = 6/45 = 2/15."
+      },
+      {
+        heading: "Verbal Ability — What Is Actually Tested",
+        content: "Verbal sections test reading speed and grammar, not vocabulary. Focus preparation accordingly.\n\n**Reading Comprehension (RC)**\n- 2–3 passages, 3–5 questions each\n- Time trap: candidates read the entire passage before questions. Better approach: skim the passage once (2 minutes), then read each question, then go back to the relevant paragraph only.\n- Common question types: main idea, specific detail, inference, vocabulary in context, author's tone\n- Practice: 2 RC passages per day from The Hindu or Economic Times editorials. Time yourself.\n\n**Sentence Completion and Error Identification**\n- Subject-verb agreement: 'A group of students [is/are] waiting' → 'is' (group = collective noun, singular)\n- Tense consistency: 'She went to the store and [buys/bought] milk' → 'bought'\n- Prepositions: 'interested in', 'capable of', 'familiar with' — these are fixed collocations; memorise the common ones\n\n**Vocabulary**\n- Synonyms and antonyms: focus on adjectives that describe personality or situations (benevolent, austere, taciturn, loquacious, obsequious)\n- One-word substitutions: 'one who travels at night' = noctambulist; 'one who does not believe in God' = atheist; 'one who studies stars' = astronomer\n- Para-jumbles: look for the sentence that must come first (usually introduces a person, concept, or event), then find logical connectors (however, therefore, additionally)\n\n**Written English (Accenture-specific)**\n- Given a situation, write 3–4 sentences in business English\n- Common prompts: 'Write a formal email requesting a deadline extension', 'Write a short note explaining why you'd be a good fit'\n- Judge on: sentence structure, grammar accuracy, appropriate formality level"
+      },
+      {
+        heading: "Logical Reasoning — Patterns and Practice",
+        content: "Logical reasoning is the most improvable section with practice. Most question types follow predictable patterns.\n\n**Seating Arrangement (most common question type)**\nSetup: 5 people sit in a row. A is to the left of B. C is not adjacent to D. E is at one end.\nApproach:\n1. Start with absolute positions (E is at one end — place E at position 1 or 5)\n2. Apply constraints one at a time\n3. Use elimination for remaining positions\n\n**Blood Relations**\nCommon relation chain: 'A is B's father's sister's son' = A is B's cousin.\nTip: Draw a family tree. Don't try to resolve these in your head.\n\n**Syllogisms**\nPremise 1: All cats are animals.\nPremise 2: All animals have tails.\nConclusion: All cats have tails. [VALID]\n\nCommon trap: 'Some cats are black. All black things are beautiful. Therefore all cats are beautiful.' [INVALID — 'some' does not extend to 'all']\n\n**Number Series**\nExample: 2, 6, 12, 20, 30, ___\nPattern: differences are 4, 6, 8, 10 → next difference = 12 → answer = 42\nAlt approach: 1×2, 2×3, 3×4, 4×5, 5×6 → answer = 6×7 = 42\n\n**Coding-Decoding**\nExample: In a code, MANGO = NBOPH. What is CAT?\nPattern: each letter shifted by 1 (M→N, A→B, N→O, G→H, O→P)\nAnswer: CAT = DBU\n\n**Statement and Assumption**\nStatement: 'Eat Healthy. Stay Strong.'\nAssumption 1: Health is linked to strength. [VALID — this is implied by the statement]\nAssumption 2: People do not currently eat healthy. [NOT valid — the statement doesn't imply the current state]"
+      },
+      {
+        heading: "Preparation Plan — 4 Weeks to Aptitude Test Ready",
+        content: "**Week 1: Quantitative Foundation**\n- Days 1–2: Percentages + Profit/Loss (20 problems each)\n- Days 3–4: Time-Speed-Distance + Time-Work (20 problems each)\n- Days 5–6: Simple/Compound Interest + Ratio-Proportion\n- Day 7: Full quant mock (25 questions, 30 min) + review mistakes\n\n**Week 2: Verbal Foundation**\n- Days 1–2: Reading Comprehension (2 passages/day, timed)\n- Days 3–4: Sentence completion + error identification (20/day)\n- Days 5–6: Para-jumbles + one-word substitutions\n- Day 7: Full verbal mock (20 questions, 20 min) + review\n\n**Week 3: Logical Reasoning**\n- Days 1–2: Seating arrangements (5 problems/day)\n- Days 3–4: Blood relations + syllogisms (20/day)\n- Days 5–6: Number series + coding-decoding (20/day)\n- Day 7: Full reasoning mock (20 questions, 25 min) + review\n\n**Week 4: Company-Specific + Full Mocks**\n- Days 1–2: TCS NQT sample papers (3 full tests available on TCS iON)\n- Days 3–4: Infosys InfyTQ sample tests\n- Days 5–6: Wipro/Cognizant/Accenture company-specific mocks\n- Day 7: Final full 3-hour mock simulating actual test conditions\n\n**Resources:**\n- IndiaBix.com: Best free source for aptitude questions with solutions\n- Prepinsta: Company-specific test formats and previous year papers\n- TCS iON free mock: Available directly on the TCS NQT portal\n- RS Aggarwal Verbal and Non-Verbal Reasoning: Physical book; the gold standard for blood relations, series, and seating arrangements"
+      },
+    ],
+    faqs: [
+      {
+        question: "Which aptitude topics are most important for TCS placement?",
+        answer: "For TCS NQT: Quantitative (percentages, time-work, time-speed-distance, permutations-combinations, probability), Verbal (reading comprehension, sentence completion, para-jumbles), and Reasoning (series, coding-decoding, blood relations). The NQT coding section requires LeetCode Easy to Medium ability in any language."
+      },
+      {
+        question: "How many days is enough to prepare for an IT company aptitude test?",
+        answer: "4 weeks of focused daily practice (1–2 hours per day) is sufficient for most IT services company aptitude tests. Week 1: Quantitative. Week 2: Verbal. Week 3: Logical Reasoning. Week 4: Company-specific mocks. Speed and accuracy come from repetition, not last-minute cramming."
+      },
+      {
+        question: "What is the cut-off for TCS NQT 2026?",
+        answer: "TCS does not publish official cut-offs. Based on placement reports, scoring in the 65th–70th percentile or above is sufficient to advance to the interview round. The NQT is adaptive — difficult questions appear if you answer correctly, and the final score reflects relative performance, not absolute correct answers."
+      },
+      {
+        question: "Is IndiaBix good for aptitude preparation?",
+        answer: "Yes — IndiaBix.com is the most reliable free resource for aptitude question practice in India. It has thousands of solved questions across all aptitude topics with detailed explanations. Supplement with company-specific papers from Prepinsta and official portals (TCS iON mock tests) for format familiarity."
+      },
+    ],
+    relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "off-campus-placement-guide-freshers-india-2026"],
+    practicePageSlugs: [
+      { label: "Campus Placement Mock Interview", slug: "tcs-ninja-interview-questions" },
+    ],
+    cta: "Aptitude clears the first filter — but the interview round is where HireStepX helps. Once you've passed the aptitude test at TCS, Infosys, or Wipro, practice your technical and HR rounds with voice-based AI mock interviews that score your answers using the same STAR framework your interviewers are trained on.",
+    relatedLinks: [
+      { label: "TCS Interview Questions 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
+      { label: "Infosys Interview Questions 2026", href: "/blog/infosys-interview-questions-2026" },
+    ],
+  },
+  {
+    slug: "cpp-interview-questions-freshers-india-2026",
+    title: "C++ Interview Questions for Freshers India 2026 — OOP, STL, Memory Management",
+    metaDescription: "C++ interview questions for freshers in India 2026. Covers OOP concepts, STL containers, pointers and memory management, virtual functions, templates, and common coding problems asked at TCS, Wipro, and product companies.",
+    company: "Tech",
+    category: "Technical",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=500&fit=crop",
+    heroAlt: "Code on screen representing C++ interview preparation",
+    datePublished: "2026-07-20",
+    intro: "C++ is still one of the most tested languages in Indian fresher interviews, particularly at IT services companies (TCS, Wipro, Infosys), embedded systems roles, and fintech companies that deal with low-latency infrastructure. Unlike Java or Python where most fresher questions are OOP fundamentals, C++ interviews go deeper — pointers, memory management, the STL, and the differences between C and C++ are all fair game. This guide covers what is actually asked in 2026, not a generic C++ textbook.",
+    sections: [
+      {
+        heading: "OOP in C++ — Questions That Actually Come Up",
+        content: "OOP questions in C++ interviews differ from Java OOP questions because C++ adds complexity: multiple inheritance, virtual functions, and explicit memory management.\n\n**1. What is the difference between class and struct in C++?**\nIn C++, the only difference is the default access modifier: class members are private by default, struct members are public by default. Both can have methods, constructors, and inheritance.\n```cpp\nstruct Point { int x, y; }; // x, y are public by default\nclass Circle { int radius; }; // radius is private by default\n```\n\n**2. Explain virtual functions and vtable.**\nA virtual function allows derived class methods to override base class methods called through a base class pointer. The vtable (virtual table) is a lookup table maintained by the compiler for each class with virtual functions.\n```cpp\nclass Animal {\npublic:\n    virtual void sound() { cout << \"Generic sound\"; }\n};\nclass Dog : public Animal {\npublic:\n    void sound() override { cout << \"Bark\"; }\n};\nAnimal* a = new Dog();\na->sound(); // Prints \"Bark\" — runtime polymorphism\n```\n\n**3. What is a pure virtual function? What is an abstract class?**\nA pure virtual function has no implementation in the base class: `virtual void func() = 0;`. A class with at least one pure virtual function is an abstract class and cannot be instantiated.\n\n**4. What is the difference between function overloading and function overriding?**\n- Overloading: Same function name, different parameters, in the same class (compile-time polymorphism)\n- Overriding: Derived class redefines a base class virtual function (runtime polymorphism)\n\n**5. Explain multiple inheritance in C++. What is the diamond problem?**\n```cpp\nclass A { public: void func() {} };\nclass B : public A {};\nclass C : public A {};\nclass D : public B, public C {}; // D has two copies of A — diamond problem\n```\nSolution: Use virtual inheritance: `class B : virtual public A {};`\n\n**6. What is the difference between public, private, and protected inheritance?**\n- public inheritance: public and protected members of base stay accessible\n- private inheritance: all base members become private in derived class\n- protected inheritance: public base members become protected"
+      },
+      {
+        heading: "Pointers and Memory Management",
+        content: "Pointers and memory management are C++-specific and account for a large fraction of C++ interview questions. These do not appear in Java or Python interviews.\n\n**1. What is the difference between a pointer and a reference?**\n- A pointer can be null, can be reassigned, and can be incremented\n- A reference must be initialised, cannot be null, and cannot be reseated to another variable\n- References are generally safer; pointers are needed for dynamic memory and optional arguments\n\n**2. What is the difference between stack and heap memory?**\n- Stack: automatic allocation/deallocation, fixed size, fast, stores local variables\n- Heap: dynamic allocation (new/delete), larger, slower, programmer manages lifecycle\n```cpp\nint x = 10; // stack\nint* p = new int(10); // heap — must be deleted\ndelete p; // free heap memory\n```\n\n**3. What is a memory leak? How do you avoid it?**\nA memory leak occurs when heap-allocated memory is not freed. Avoid with:\n- Always pair `new` with `delete`\n- Use smart pointers: `std::unique_ptr`, `std::shared_ptr` (C++11+)\n- RAII (Resource Acquisition Is Initialization) pattern\n\n**4. What is a dangling pointer?**\nA pointer that points to memory that has already been freed:\n```cpp\nint* p = new int(5);\ndelete p;\n// p is now a dangling pointer — accessing *p is undefined behaviour\np = nullptr; // fix: set to nullptr after delete\n```\n\n**5. What is the difference between shallow copy and deep copy?**\n- Shallow copy: copies pointer addresses (both objects point to same memory)\n- Deep copy: copies the actual data to new memory (independent copies)\nIf a class has pointer members, the default copy constructor does shallow copy — define your own copy constructor for deep copy.\n\n**6. What are smart pointers? Explain unique_ptr and shared_ptr.**\n- `unique_ptr`: exclusive ownership; cannot be copied, only moved; automatically frees memory when out of scope\n- `shared_ptr`: shared ownership via reference counting; memory freed when last shared_ptr goes out of scope\n- `weak_ptr`: non-owning reference; does not affect reference count; used to break circular dependencies"
+      },
+      {
+        heading: "STL — Standard Template Library",
+        content: "STL questions are very common in product company C++ interviews. Know the containers, their time complexities, and when to use each.\n\n**Common STL Containers:**\n\n| Container | Underlying | Access | Insert/Delete | Use when |\n|---|---|---|---|---|\n| vector | Dynamic array | O(1) random | O(n) middle, O(1) amortised end | Default sequence container |\n| list | Doubly linked list | O(n) | O(1) anywhere | Frequent insert/delete in middle |\n| deque | Double-ended queue | O(1) | O(1) both ends | Queue + random access |\n| map | Red-Black tree | O(log n) | O(log n) | Sorted key-value pairs |\n| unordered_map | Hash table | O(1) average | O(1) average | Fast lookup, order doesn't matter |\n| set | Red-Black tree | O(log n) | O(log n) | Unique sorted elements |\n| priority_queue | Heap | O(1) top | O(log n) | Min/max queries |\n| stack | deque/vector | O(1) top | O(1) | LIFO operations |\n| queue | deque | O(1) front | O(1) | FIFO operations |\n\n**Frequently asked STL questions:**\n1. What is the difference between map and unordered_map?\n2. How does a priority_queue work? Write code to find the Kth largest element.\n3. What is the difference between vector::push_back and emplace_back?\n4. How do you iterate over an unordered_map?\n5. What happens if you access a map key that doesn't exist?\n   Answer: It is default-inserted with a zero-initialised value — this is a common bug.\n\n**STL algorithms you should know:**\n- `sort()`, `find()`, `count()`, `binary_search()`, `lower_bound()`, `upper_bound()`\n- `accumulate()`, `max_element()`, `min_element()`\n- `reverse()`, `unique()`, `next_permutation()`"
+      },
+      {
+        heading: "C++ Coding Problems Asked at Fresher Interviews",
+        content: "Fresher C++ coding questions test basic algorithms and C++ syntax simultaneously. Companies expect you to write runnable C++ code, not pseudocode.\n\n**Problem 1: Reverse a string without using library functions**\n```cpp\n#include <iostream>\n#include <string>\nusing namespace std;\nstring reverseStr(string s) {\n    int l = 0, r = s.length() - 1;\n    while (l < r) {\n        swap(s[l], s[r]);\n        l++; r--;\n    }\n    return s;\n}\n```\n\n**Problem 2: Find if a number is a perfect number**\n(A perfect number equals the sum of its divisors: 6 = 1+2+3)\n```cpp\nbool isPerfect(int n) {\n    int sum = 1;\n    for (int i = 2; i * i <= n; i++) {\n        if (n % i == 0) {\n            sum += i;\n            if (i != n / i) sum += n / i;\n        }\n    }\n    return sum == n && n != 1;\n}\n```\n\n**Problem 3: Implement a stack using an array**\n```cpp\nclass Stack {\n    int arr[100], top = -1;\npublic:\n    void push(int x) { arr[++top] = x; }\n    int pop() { return arr[top--]; }\n    int peek() { return arr[top]; }\n    bool isEmpty() { return top == -1; }\n};\n```\n\n**Problem 4: Count occurrences of each character (using map)**\n```cpp\n#include <unordered_map>\nvoid charCount(string s) {\n    unordered_map<char, int> freq;\n    for (char c : s) freq[c]++;\n    for (auto& [ch, cnt] : freq)\n        cout << ch << \": \" << cnt << \"\\n\";\n}\n```\n\n**Problem 5: Check if a string is a palindrome**\n```cpp\nbool isPalindrome(string s) {\n    int l = 0, r = s.length() - 1;\n    while (l < r) {\n        if (s[l++] != s[r--]) return false;\n    }\n    return true;\n}\n```"
+      },
+      {
+        heading: "C vs C++ — Questions That Trip Freshers",
+        content: "Many freshers use C for college coursework and switch to C++ for interviews. Interviewers frequently test the boundaries.\n\n**Key differences C vs C++ (commonly asked):**\n\n| Feature | C | C++ |\n|---|---|---|\n| Paradigm | Procedural only | Procedural + OOP |\n| Classes | Not supported | Core feature |\n| Function overloading | Not supported | Supported |\n| Templates | Not supported | Supported |\n| Exception handling | Not supported | try/catch/throw |\n| References | Not supported | Supported |\n| Default arguments | Not supported | Supported |\n| new/delete | Not available (use malloc/free) | Preferred way to allocate |\n| bool type | No native bool (use int) | Native bool |\n| Inline functions | Limited (macros) | Supported |\n\n**Why use malloc/free vs new/delete?**\n- malloc: allocates raw memory, does not call constructors; returns void*\n- new: allocates memory AND calls the constructor; type-safe\n- For C++ objects, always use new/delete. Never mix (don't use free() on memory allocated with new)\n\n**What is a namespace? Why is 'using namespace std' considered bad practice?**\nNamespace groups names to avoid conflicts. `using namespace std` pulls all of std into the global scope, which can cause naming conflicts in large codebases. Best practice: use `std::cout`, `std::vector` explicitly."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is C++ still asked in IT company interviews in India 2026?",
+        answer: "Yes. TCS, Wipro, Infosys, and many product companies accept C++ in coding rounds. Embedded systems, game development, fintech low-latency systems, and trading platform roles specifically require C++. For general IT services freshers, C++ is one of three main accepted languages alongside Java and Python."
+      },
+      {
+        question: "What C++ topics are most important for freshers?",
+        answer: "OOP fundamentals (classes, inheritance, virtual functions, polymorphism), pointers and memory management (new/delete, smart pointers, memory leaks), and STL containers (vector, map, unordered_map, set). These three areas cover 80% of C++ fresher interview questions."
+      },
+      {
+        question: "What is the difference between C and C++ in an interview?",
+        answer: "C is procedural only; C++ adds OOP (classes, inheritance, polymorphism), templates, exception handling, references, function overloading, the STL, and new/delete for memory management. C++ also adds type safety features and inline functions. Interviewers frequently ask you to compare them."
+      },
+      {
+        question: "Is C++ harder to learn than Java for interviews?",
+        answer: "C++ has more complexity — pointers, memory management, multiple inheritance, and templates have no Java equivalent. However, C++ questions are similar to Java OOP questions at the fresher level plus the pointer/memory layer. If you know C++ well, Java interviews are easier to prepare for. If you only know Java, C++ interviews require significant additional preparation."
+      },
+    ],
+    relatedSlugs: ["java-interview-questions-freshers-india-2026", "python-interview-questions-freshers-india-2026", "dsa-60-day-preparation-plan"],
+    practicePageSlugs: [
+      { label: "Technical Interview Practice", slug: "tcs-ninja-interview-questions" },
+    ],
+    cta: "C++ technical rounds test both code correctness and your ability to explain memory management and OOP design decisions out loud. HireStepX's voice-based technical interview practice is specifically useful here — explaining why you chose a shared_ptr over a raw pointer, or why you used a map vs an unordered_map, is a skill you build by saying it, not just by knowing it.",
+    relatedLinks: [
+      { label: "Java Interview Questions Freshers 2026", href: "/blog/java-interview-questions-freshers-india-2026" },
+      { label: "DSA 60-Day Preparation Plan", href: "/blog/dsa-60-day-preparation-plan" },
+    ],
+  },
+  {
+    slug: "backend-developer-salary-india-2026",
+    title: "Backend Developer Salary India 2026 — Node.js, Java, Python, Go by City and Experience",
+    metaDescription: "Backend developer salary in India 2026 by language (Node.js, Java, Go, Python), city (Bengaluru, Hyderabad, Pune), and experience level. Fresher to senior complete guide with negotiation tips.",
+    company: "Industry",
+    category: "Salary Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
+    heroAlt: "Server infrastructure representing backend developer salary guide India",
+    datePublished: "2026-07-20",
+    intro: "Backend developer salaries in India vary by two factors most candidates don't fully account for: the technology stack and the company tier. A Java developer at TCS earns a fundamentally different salary from a Java developer at Amazon India — and a Go developer at a fintech startup earns differently from both. This guide maps the salary landscape across stacks, experience levels, and cities, and explains which technology investments produce the highest salary outcomes.",
+    sections: [
+      {
+        heading: "Backend Developer Salary by Experience Level",
+        content: "These are total CTC ranges (base + variable + equity if applicable) from Glassdoor, AmbitionBox, and Levels.fyi India data as of 2026.\n\n**Fresher / 0–1 year:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services (TCS/Infosys/Wipro) | ₹3.5–9 LPA |\n| Mid-tier IT (Mphasis/Capgemini/HCL) | ₹4–7 LPA |\n| Tier-1 Indian Product (Flipkart/Razorpay) | ₹18–32 LPA |\n| FAANG India (Amazon/Google/Microsoft) | ₹22–49 LPA |\n| Funded Startup (Series B+) | ₹12–24 LPA |\n\n**2–4 years experience:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services | ₹6–16 LPA |\n| Mid-tier IT | ₹9–22 LPA |\n| Tier-1 Indian Product | ₹28–60 LPA |\n| FAANG India | ₹38–88 LPA |\n| Funded Startup | ₹20–45 LPA |\n\n**5–8 years experience:**\n| Company Type | Salary Range |\n|---|---|\n| IT Services | ₹14–32 LPA |\n| Mid-tier IT | ₹16–40 LPA |\n| Tier-1 Indian Product | ₹50–110 LPA |\n| FAANG India | ₹65–130+ LPA |\n| Funded Startup | ₹40–80 LPA |"
+      },
+      {
+        heading: "Salary by Technology Stack",
+        content: "Technology stack choice has a measurable impact on salary, driven by demand-supply dynamics in the Indian market.\n\n**Java (highest demand in India)**\n- IT Services fresher: ₹4–7 LPA (Java is the dominant language in TCS/Infosys projects)\n- Fintech backend Java developer (3 yrs): ₹18–35 LPA\n- Java Spring Boot microservices developer (5 yrs): ₹30–55 LPA\n- Java is the safest language for IT services; less premium at product companies vs Node.js or Go\n\n**Node.js / JavaScript**\n- High demand at product startups and e-commerce companies\n- Node.js backend developer (2 yrs): ₹14–28 LPA at product companies\n- Node.js developer (4 yrs): ₹25–50 LPA\n- Advantage: full-stack developers (React + Node.js) command a premium at startups\n\n**Python**\n- Python backend (Django/FastAPI) developer (2 yrs): ₹12–24 LPA\n- ML-adjacent Python backend (2 yrs, knows NumPy/Pandas/SQL): ₹18–35 LPA\n- Python is high-demand at AI/ML companies, data-heavy startups\n- Pure Python backend (without ML skills) earns slightly less than Java or Go at senior levels\n\n**Go (Golang)**\n- Highest salary premium of any backend language in India as of 2026\n- Go developer (2 yrs): ₹18–35 LPA at product companies\n- Go developer (4 yrs): ₹32–60 LPA\n- Premium driven by: Go is used for high-performance, high-concurrency systems (infra, payments, microservices at scale). Very few engineers in India are fluent in Go.\n- Companies hiring Go in India: PhonePe, Razorpay, Swiggy, ClearTax, CRED (partial)\n\n**Rust**\n- Emerging in India — primarily at infrastructure, systems, and crypto/DeFi companies\n- Salary premium similar to Go but much smaller talent pool and fewer roles\n- Worth learning if targeting systems engineering or infrastructure roles at 4+ years\n\n**PHP / Ruby / .NET**\n- PHP and Ruby on Rails: declining demand, lower salaries than Java/Node.js/Python\n- .NET (C#): Specific demand from enterprise clients in BFSI and healthcare; IT services companies use it for Microsoft Azure projects\n- If you're starting fresh, invest in Java, Node.js, Python, or Go — not PHP"
+      },
+      {
+        heading: "Backend Salary by City in India",
+        content: "City differences in backend developer salaries are smaller than most candidates expect at the fresher level, but compound significantly at senior levels.\n\n**Bengaluru (highest salaries)**\n- The primary hub for product companies, FAANG India, and funded startups\n- Backend developer salaries 10–20% higher than Pune for the same role and company\n- Cost of living: High (rent ₹15K–40K for 1BHK in tech areas)\n- Net take-home advantage: Moderate vs Pune or Hyderabad\n\n**Hyderabad**\n- Strong Microsoft, Amazon, Google presence (all have large Hyderabad offices)\n- Salaries comparable to Bengaluru at FAANG India companies\n- Cost of living: Notably lower than Bengaluru\n- Net take-home advantage: Significant vs Bengaluru for FAANG employees\n\n**Pune**\n- Strong IT services presence (Infosys, Wipro, Cognizant, Capgemini)\n- Product company presence growing (Swiggy, Razorpay have Pune offices)\n- Salaries 5–15% below Bengaluru for the same product company role\n- Cost of living: Lower than Bengaluru; good quality of life\n\n**Chennai**\n- Strong IT services base (TCS, Cognizant, Freshworks headquarters)\n- Freshworks is the top-paying tech employer in Chennai\n- Salaries 10–20% below Bengaluru for product roles\n- Lower competition for mid-level roles vs Bengaluru\n\n**Noida/Delhi NCR**\n- Paytm, MakeMyTrip, Naukri (Info Edge), PolicyBazaar headquarters\n- Salaries at funded companies comparable to Bengaluru\n- Commute is a significant quality-of-life factor in Delhi NCR"
+      },
+      {
+        heading: "What Maximises Backend Developer Salary in India",
+        content: "Based on compensation data patterns, three factors have the largest impact on backend salary outcomes:\n\n**1. Company tier matters more than technology stack for juniors**\nA Java developer at Amazon India (₹22–32 LPA fresher) earns more than a Go developer at a mid-tier startup (₹14–20 LPA fresher) in their first role. Focus on company tier first, technology second, at the 0–3 year stage.\n\n**2. Stack choice compounds at mid-level (3–6 years)**\nAt 3–5 years of experience, Go or Node.js developers at product companies earn 20–40% more than Java developers at the same level at IT services companies. Stack diversification (Java + Kafka + Kubernetes, or Node.js + Redis + Docker) significantly improves salary outcomes.\n\n**3. System design ability is the single biggest salary lever at senior levels**\nAt 5+ years, the salary gap between engineers who can design distributed systems and those who cannot is ₹20–50 LPA at the same company. System design is not taught in college — it requires deliberate study and practice.\n\n**Actionable trajectory for maximum salary growth:**\n- Year 0–2: Join the highest-tier company you can get into (FAANG India or Tier-1 Indian product)\n- Year 2–4: Deepen one language (Go preferred for premium; Java for volume) + learn distributed systems fundamentals\n- Year 4–6: Contribute to a visible technical project (open source, internal platform, performance improvement)\n- Year 6+: Target Staff Engineer or Engineering Manager track at Tier-1 companies (₹70–150+ LPA)\n\n**Negotiation**: Always have a competing offer when negotiating a raise or new offer. Bengaluru backend developers report that a competing offer increases leverage more than any other single factor in salary negotiations."
+      },
+    ],
+    faqs: [
+      {
+        question: "What is the average backend developer salary in India in 2026?",
+        answer: "The average backend developer salary in India in 2026 is ₹6–16 LPA across all experience levels and company types. For product companies specifically, the range is ₹18–60 LPA for 2–5 years of experience. IT services companies pay ₹4–16 LPA for the same experience range."
+      },
+      {
+        question: "Which backend language pays most in India?",
+        answer: "Go (Golang) commands the highest salary premium per year of experience in India as of 2026, followed by Node.js. Java has the highest absolute volume of backend jobs. Python is highest demand for ML-adjacent roles. For maximum salary, Go or Node.js at a product company outperforms Java at IT services."
+      },
+      {
+        question: "Is backend development a good career in India in 2026?",
+        answer: "Yes. Backend development is the foundation of every digital product and has consistently high demand. The India-specific advantage is that backend engineers with distributed systems skills (Kafka, Redis, gRPC, Kubernetes) are in short supply relative to demand, particularly at fintech and e-commerce companies."
+      },
+      {
+        question: "What is a backend developer salary at Amazon India?",
+        answer: "Amazon India SDE-1 (backend) total compensation in 2026 is ₹22–32 LPA including base, joining bonus, and RSU. SDE-2 is ₹38–65 LPA. These figures reflect the Bengaluru and Hyderabad office bands."
+      },
+    ],
+    relatedSlugs: ["python-developer-salary-india-2026", "react-developer-salary-india-2026", "salary-negotiation-tips-india-2026"],
+    practicePageSlugs: [],
+    cta: "Backend developer interviews at product companies test both system design and data structures — the combination that determines whether you reach Tier-1 salaries. HireStepX includes system design mock interviews in addition to behavioral and coding rounds, so you can practice the full loop before your actual interview.",
+    relatedLinks: [
+      { label: "Python Developer Salary India 2026", href: "/blog/python-developer-salary-india-2026" },
+      { label: "Salary Negotiation Tips India 2026", href: "/blog/salary-negotiation-tips-india-2026" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */

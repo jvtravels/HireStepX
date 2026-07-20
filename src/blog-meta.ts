@@ -857,6 +857,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "Is Wipro a top company for engineers in India?", answer: "Wipro is a reputable IT services employer. It is not considered a top company in the product engineering sense used by the FAANG/Tier-1 framework." },
     ],
   },
+  {
+    slug: "aptitude-questions-it-companies-india-2026",
+    title: "Aptitude Questions for IT Companies India 2026 — TCS NQT, Infosys, Wipro, Cognizant",
+    metaDescription: "Aptitude questions for IT company placements India 2026. Covers quantitative, verbal, and logical reasoning for TCS NQT, Infosys InfyTQ, Wipro NLTH, Cognizant, and Accenture with solved examples and preparation strategy.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=630&fit=crop",
+    company: "General", category: "Campus Placement",
+    faqs: [
+      { question: "Which aptitude topics are most important for TCS placement?", answer: "For TCS NQT: Quantitative (percentages, time-work, time-speed-distance, permutations-combinations, probability), Verbal (reading comprehension, sentence completion, para-jumbles), and Reasoning (series, coding-decoding, blood relations). The NQT coding section requires LeetCode Easy to Medium ability in any language." },
+      { question: "How many days is enough to prepare for an IT company aptitude test?", answer: "4 weeks of focused daily practice (1–2 hours per day) is sufficient for most IT services company aptitude tests. Week 1: Quantitative. Week 2: Verbal. Week 3: Logical Reasoning. Week 4: Company-specific mocks. Speed and accuracy come from repetition, not last-minute cramming." },
+      { question: "What is the cut-off for TCS NQT 2026?", answer: "TCS does not publish official cut-offs. Based on placement reports, scoring in the 65th–70th percentile or above is sufficient to advance to the interview round. The NQT is adaptive — difficult questions appear if you answer correctly, and the final score reflects relative performance, not absolute correct answers." },
+      { question: "Is IndiaBix good for aptitude preparation?", answer: "Yes — IndiaBix.com is the most reliable free resource for aptitude question practice in India. It has thousands of solved questions across all aptitude topics with detailed explanations. Supplement with company-specific papers from Prepinsta and official portals (TCS iON mock tests) for format familiarity." },
+    ],
+  },
+  {
+    slug: "cpp-interview-questions-freshers-india-2026",
+    title: "C++ Interview Questions for Freshers India 2026 — OOP, STL, Memory Management",
+    metaDescription: "C++ interview questions for freshers in India 2026. Covers OOP concepts, STL containers, pointers and memory management, virtual functions, templates, and common coding problems asked at TCS, Wipro, and product companies.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=630&fit=crop",
+    company: "Tech", category: "Technical",
+    faqs: [
+      { question: "Is C++ still asked in IT company interviews in India 2026?", answer: "Yes. TCS, Wipro, Infosys, and many product companies accept C++ in coding rounds. Embedded systems, game development, fintech low-latency systems, and trading platform roles specifically require C++. For general IT services freshers, C++ is one of three main accepted languages alongside Java and Python." },
+      { question: "What C++ topics are most important for freshers?", answer: "OOP fundamentals (classes, inheritance, virtual functions, polymorphism), pointers and memory management (new/delete, smart pointers, memory leaks), and STL containers (vector, map, unordered_map, set). These three areas cover 80% of C++ fresher interview questions." },
+      { question: "What is the difference between C and C++ in an interview?", answer: "C is procedural only; C++ adds OOP (classes, inheritance, polymorphism), templates, exception handling, references, function overloading, the STL, and new/delete for memory management. C++ also adds type safety features and inline functions. Interviewers frequently ask you to compare them." },
+      { question: "Is C++ harder to learn than Java for interviews?", answer: "C++ has more complexity — pointers, memory management, multiple inheritance, and templates have no Java equivalent. However, C++ questions are similar to Java OOP questions at the fresher level plus the pointer/memory layer. If you know C++ well, Java interviews are easier to prepare for. If you only know Java, C++ interviews require significant additional preparation." },
+    ],
+  },
+  {
+    slug: "backend-developer-salary-india-2026",
+    title: "Backend Developer Salary India 2026 — Node.js, Java, Python, Go by City and Experience",
+    metaDescription: "Backend developer salary in India 2026 by language (Node.js, Java, Go, Python), city (Bengaluru, Hyderabad, Pune), and experience level. Fresher to senior complete guide with negotiation tips.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=630&fit=crop",
+    company: "Industry", category: "Salary Guide",
+    faqs: [
+      { question: "What is the average backend developer salary in India in 2026?", answer: "The average backend developer salary in India in 2026 is ₹6–16 LPA across all experience levels and company types. For product companies specifically, the range is ₹18–60 LPA for 2–5 years of experience. IT services companies pay ₹4–16 LPA for the same experience range." },
+      { question: "Which backend language pays most in India?", answer: "Go (Golang) commands the highest salary premium per year of experience in India as of 2026, followed by Node.js. Java has the highest absolute volume of backend jobs. Python is highest demand for ML-adjacent roles. For maximum salary, Go or Node.js at a product company outperforms Java at IT services." },
+      { question: "Is backend development a good career in India in 2026?", answer: "Yes. Backend development is the foundation of every digital product and has consistently high demand. The India-specific advantage is that backend engineers with distributed systems skills (Kafka, Redis, gRPC, Kubernetes) are in short supply relative to demand, particularly at fintech and e-commerce companies." },
+      { question: "What is a backend developer salary at Amazon India?", answer: "Amazon India SDE-1 (backend) total compensation in 2026 is ₹22–32 LPA including base, joining bonus, and RSU. SDE-2 is ₹38–65 LPA. These figures reflect the Bengaluru and Hyderabad office bands." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
