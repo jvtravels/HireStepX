@@ -193,9 +193,14 @@ describe("pickNextMove", () => {
       expect(out.headline).toContain("5-day streak");
     });
 
-    it("no weakness, streak < 3 → generic welcome-back", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 1 });
+    it("no weakness, streak < 3 → generic welcome-back for returning users", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 1, sessionCount: 1 });
       expect(out.headline).toBe("Pick up where you left off.");
+    });
+
+    it("no weakness, streak < 3, first-time user (sessionCount=0) → first-session headline", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 0, sessionCount: 0 });
+      expect(out.headline).toMatch(/first mock interview/i);
     });
   });
 

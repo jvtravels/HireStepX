@@ -5261,7 +5261,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["dsa-interview-preparation-guide-india-2026", "google-interview-questions-india-2026", "amazon-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "DSA Interview Practice", slug: "dsa-interview-questions" },
+      { label: "DSA Interview Practice", slug: "amazon-system-design-interview-questions" },
     ],
     cta: "LeetCode problems tell you whether your code is correct — they don't tell you whether your communication, pacing, and explanation would pass an actual interview. HireStepX's voice mock interviews simulate the real interview dynamic: you narrate your approach, explain complexity, handle edge cases under time pressure, and get feedback on both correctness and communication.",
     relatedLinks: [
