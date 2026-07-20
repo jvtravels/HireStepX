@@ -21,6 +21,10 @@ export const COMPANY_LABEL: Record<string, string> = {
   nvidia: "NVIDIA",
   openai: "OpenAI",
   anthropic: "Anthropic",
+  databricks: "Databricks",
+  zepto: "Zepto",
+  unacademy: "Unacademy",
+  physicswallah: "PhysicsWallah",
 
   // Indian product & unicorns
   flipkart: "Flipkart",

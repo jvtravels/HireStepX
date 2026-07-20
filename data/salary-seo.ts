@@ -674,6 +674,140 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Pure cash + heavy performance bonus — no equity at India offices; Hyderabad campus focus",
     sitemapPriority: 0.76,
   },
+  /* ── Big Tech Wave 6 ──────────────────────────────────────── */
+  {
+    slug: "apple",
+    searchPhrase: "Apple India Software Engineer Salary 2026",
+    metaDescription:
+      "Apple India salary 2026 — SWE entry ₹30–44 LPA, mid ₹50–80 LPA, senior ₹85–140 LPA. ML Engineer entry ₹20–51 LPA. Apple Silicon / Apple Intelligence Bengaluru campus RSU guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "ml-engineer", label: "ML Engineer" },
+      { roleKey: "firmware-engineer", label: "Firmware Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
+    questionSlug: undefined,
+    hubNote: "No joining bonus at ICT2 — negotiate RSU grant size and first appraisal date in writing",
+    sitemapPriority: 0.83,
+  },
+  {
+    slug: "stripe",
+    searchPhrase: "Stripe India Software Engineer Salary 2026",
+    metaDescription:
+      "Stripe India salary 2026 — SWE entry ₹32–48 LPA, mid ₹50–85 LPA, senior ₹85–140 LPA plus RSU. Bengaluru payments infrastructure team CTC and negotiation guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "ml-engineer", label: "ML Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Writing-clarity bar higher than FAANG peers — Stripe weights culture-fit in offers",
+    sitemapPriority: 0.79,
+  },
+  {
+    slug: "databricks",
+    searchPhrase: "Databricks India Software Engineer Salary 2026",
+    metaDescription:
+      "Databricks India salary 2026 — SWE entry ₹35–75 LPA, mid ₹60–100 LPA, senior ₹95–155 LPA. Pre-IPO RSU liquid via tender offers. Bengaluru GCC CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "ml-engineer", label: "ML Engineer" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO RSU — confirm next tender offer date before signing; last tender 2024 at ~$50/share",
+    sitemapPriority: 0.80,
+  },
+  /* ── MBB Consulting ──────────────────────────────────────────── */
+  {
+    slug: "mckinsey",
+    searchPhrase: "McKinsey India Consultant Salary 2026",
+    metaDescription:
+      "McKinsey India salary 2026 — Business Analyst entry ₹16–24 LPA, Associate (post-MBA) ₹32–50 LPA, Engagement Manager ₹60–95 LPA. No equity. India case interview prep.",
+    roles: [
+      { roleKey: "consultant", label: "Strategy Consultant" },
+    ],
+    questionSlug: "mckinsey-case-study-interview-questions",
+    hubNote: "Base is fixed for MBA entry — negotiate bonus target and early performance review cycle",
+    sitemapPriority: 0.80,
+  },
+  {
+    slug: "bcg",
+    searchPhrase: "BCG India Consultant Salary 2026",
+    metaDescription:
+      "BCG India salary 2026 — Associate entry ₹16–24 LPA, Consultant (post-MBA) ₹30–48 LPA, Project Leader ₹55–90 LPA. No equity. BCG case interview prep guide India.",
+    roles: [
+      { roleKey: "consultant", label: "Strategy Consultant" },
+    ],
+    questionSlug: "bcg-case-interview-practice",
+    hubNote: "BCG bonus ceiling highest among MBB — negotiate performance-bonus cap explicitly at offer stage",
+    sitemapPriority: 0.80,
+  },
+  {
+    slug: "bain",
+    searchPhrase: "Bain & Company India Consultant Salary 2026",
+    metaDescription:
+      "Bain & Company India salary 2026 — AC entry ₹16–25 LPA, Consultant (post-MBA) ₹32–52 LPA, Manager ₹60–95 LPA. No equity. Bain case interview prep guide India.",
+    roles: [
+      { roleKey: "consultant", label: "Strategy Consultant" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Bain India bonus ceiling highest in MBB globally — benchmark against McKinsey before signing",
+    sitemapPriority: 0.79,
+  },
+  /* ── Quick Commerce ────────────────────────────────────────── */
+  {
+    slug: "zepto",
+    searchPhrase: "Zepto Software Engineer Salary India 2026",
+    metaDescription:
+      "Zepto salary India 2026 — SWE entry ₹22–32 LPA, mid ₹32–50 LPA, senior ₹50–80 LPA. Pre-IPO ESOP. India's fastest-growing quick commerce unicorn. Mumbai CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "operations", label: "Operations Manager" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP (Series-G ₹70,000 Cr valuation 2024) — IPO expected but timeline not confirmed",
+    sitemapPriority: 0.74,
+  },
+  /* ── AI Companies ───────────────────────────────────────────── */
+  {
+    slug: "openai",
+    searchPhrase: "OpenAI India AI Engineer Salary 2026",
+    metaDescription:
+      "OpenAI India salary 2026 — AI Engineer mid ₹100–200 LPA, senior ₹200–350 LPA plus RSU. Fewer than 20 India hires per year. Research-quality bar. SF-anchored CTC guide.",
+    roles: [
+      { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Research-paper quality bar — fewer than 20 India hires per year; LeetCode prep is insufficient",
+    sitemapPriority: 0.79,
+  },
+  /* ── EdTech ────────────────────────────────────────────────── */
+  {
+    slug: "unacademy",
+    searchPhrase: "Unacademy Software Engineer Salary India 2026",
+    metaDescription:
+      "Unacademy salary India 2026 — SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹26–42 LPA. ESOP credibility low post-2024 reset. Bengaluru edtech CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "teacher", label: "Educator / Content Expert" },
+    ],
+    questionSlug: undefined,
+    hubNote: "ESOP credibility low post-2024 reset — negotiate cash-heavy; discount ESOP in offer valuation",
+    sitemapPriority: 0.68,
+  },
+  {
+    slug: "physicswallah",
+    searchPhrase: "PhysicsWallah Software Engineer Salary India 2026",
+    metaDescription:
+      "PhysicsWallah (PW) salary India 2026 — SWE entry ₹10–16 LPA, mid ₹18–30 LPA, senior ₹30–48 LPA. ESOP credibility improved post-IPO signal. Most stable edtech employer 2026.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "teacher", label: "Educator / Content Expert" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Safest ESOP among Indian edtech — PW IPO signal lifted equity credibility vs Unacademy/Byju's",
+    sitemapPriority: 0.69,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
