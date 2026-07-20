@@ -8,37 +8,42 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
-  title: "Company Salary Guides India 2026 | HireStepX",
-  description:
-    "Salary ranges for TCS, Infosys, Razorpay, Google, Amazon, Goldman Sachs, JP Morgan, and more in India 2026. CTC data sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
-  keywords: [
-    "software engineer salary India 2026",
-    "TCS salary freshers 2026",
-    "Razorpay salary India",
-    "Infosys salary 2026",
-    "Google salary India",
-    "Amazon SDE salary India",
-    "company salary guide India",
-  ],
-  alternates: { canonical: "/salary" },
-  openGraph: {
-    type: "website",
+export function generateMetadata(): Metadata {
+  const count = SALARY_SEO_PAGES.length;
+  const ogDesc = `Salary ranges for ${count} companies — total CTC sourced from AmbitionBox, Glassdoor, and Levels.fyi.`;
+  return {
     title: "Company Salary Guides India 2026 | HireStepX",
     description:
-      "Salary ranges for 23 companies — total CTC sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
-    url: "https://hirestepx.com/salary",
-    siteName: "HireStepX",
-    locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Company Salary Guides India 2026 | HireStepX" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Company Salary Guides India 2026 | HireStepX",
-    description: "Salary ranges for 23 companies — total CTC sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
-    images: ["https://hirestepx.com/opengraph-image"],
-  },
-};
+      "Salary ranges for TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs, JP Morgan, and more in India 2026. CTC data sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
+    keywords: [
+      "software engineer salary India 2026",
+      "TCS salary freshers 2026",
+      "Razorpay salary India",
+      "Infosys salary 2026",
+      "Google salary India",
+      "Amazon SDE salary India",
+      "Meta India salary 2026",
+      "Uber India salary 2026",
+      "company salary guide India",
+    ],
+    alternates: { canonical: "/salary" },
+    openGraph: {
+      type: "website",
+      title: "Company Salary Guides India 2026 | HireStepX",
+      description: ogDesc,
+      url: "https://hirestepx.com/salary",
+      siteName: "HireStepX",
+      locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Company Salary Guides India 2026 | HireStepX" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Company Salary Guides India 2026 | HireStepX",
+      description: ogDesc,
+      images: ["https://hirestepx.com/opengraph-image"],
+    },
+  };
+}
 
 export default async function SalaryIndexPage() {
   const { headers } = await import("next/headers");
@@ -105,7 +110,7 @@ export default async function SalaryIndexPage() {
     "@type": "ItemList",
     name: "Company Salary Guides India 2026",
     description:
-      "Total CTC ranges for 23 companies hiring in India — sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
+      `Total CTC ranges for ${entries.length} companies hiring in India — sourced from AmbitionBox, Glassdoor, and Levels.fyi.`,
     numberOfItems: entries.length,
     itemListElement: entries.map((e, i) => ({
       "@type": "ListItem",

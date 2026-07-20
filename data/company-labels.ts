@@ -31,11 +31,15 @@ export const COMPANY_LABEL: Record<string, string> = {
   paytm: "Paytm",
   cred: "CRED",
   zerodha: "Zerodha",
+  groww: "Groww",
   meesho: "Meesho",
   oyo: "OYO",
   freshworks: "Freshworks",
   zoho: "Zoho",
   sarvam: "Sarvam AI",
+
+  intuit: "Intuit",
+  "walmart-global-tech": "Walmart Global Tech",
 
   // Service IT
   tcs: "TCS",
@@ -45,6 +49,7 @@ export const COMPANY_LABEL: Record<string, string> = {
   accenture: "Accenture",
   ltimindtree: "LTIMindtree",
   hcl: "HCL",
+  persistent: "Persistent Systems",
   capgemini: "Capgemini",
   ibm: "IBM",
   techmahindra: "Tech Mahindra",

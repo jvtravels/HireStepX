@@ -380,6 +380,147 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Pre-IPO ESOP — secondary sales have occurred but liquidity not guaranteed",
     sitemapPriority: 0.78,
   },
+  {
+    slug: "meta",
+    searchPhrase: "Meta India Software Engineer Salary 2026",
+    metaDescription:
+      "Meta India salary 2026 — SWE E4 ₹38–68 LPA, E5 ₹58–95 LPA, E6 ₹90–160 LPA in Bengaluru. RSU vests quarterly (no cliff post-2022). Level calibration and refresher cadence guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+    ],
+    questionSlug: "meta-india-interview-questions-india-2026",
+    hubNote: "RSU cliff in yr 1 — total comp skews yr 2–4",
+    sitemapPriority: 0.82,
+  },
+  {
+    slug: "uber",
+    searchPhrase: "Uber India Software Engineer Salary 2026",
+    metaDescription:
+      "Uber India salary 2026 — SWE entry ₹28–48 LPA, mid ₹45–80 LPA, senior ₹70–130 LPA in Bengaluru. Listed UBER equity explained. CTC breakdown for SWE, PM & ML roles.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "ml-engineer", label: "ML Engineer" },
+    ],
+    questionSlug: "uber-interview-questions-india-2026",
+    hubNote: "Stock appreciation matters — UBER listed equity",
+    sitemapPriority: 0.78,
+  },
+  {
+    slug: "oracle",
+    searchPhrase: "Oracle India Software Engineer Salary 2026",
+    metaDescription:
+      "Oracle India salary 2026 — SWE entry ₹16–28 LPA, mid ₹28–52 LPA, senior ₹50–90 LPA across Bengaluru & Hyderabad. ORCL RSU explained. Enterprise SaaS comp guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+    ],
+    questionSlug: "oracle-interview-questions-india-2026",
+    hubNote: "ORCL RSU + above-average fixed for enterprise; slower growth than startups",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "adobe",
+    searchPhrase: "Adobe India Software Engineer Salary 2026",
+    metaDescription:
+      "Adobe India salary 2026 — SWE entry ₹26–44 LPA, mid ₹42–72 LPA, senior ₹68–115 LPA in Noida & Bengaluru. ADBE RSU + ESPP breakdown. Creative Cloud & enterprise CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ux-designer", label: "UX Designer" },
+    ],
+    questionSlug: "adobe-interview-questions-india-2026",
+    hubNote: "ADBE RSU strong historically — creative domain + SaaS comp",
+    sitemapPriority: 0.78,
+  },
+  {
+    slug: "atlassian",
+    searchPhrase: "Atlassian India Software Engineer Salary 2026",
+    metaDescription:
+      "Atlassian India salary 2026 — SWE entry ₹24–42 LPA, mid ₹40–70 LPA, senior ₹65–110 LPA in Bengaluru. TEAM stock RSU explained. ITSM & DevTools team CTC breakdown.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "ux-designer", label: "UX Designer" },
+    ],
+    questionSlug: "atlassian-interview-questions-india-2026",
+    hubNote: "TEAM stock volatile post-2022 — verify RSU grant price at offer",
+    sitemapPriority: 0.76,
+  },
+  {
+    slug: "groww",
+    searchPhrase: "Groww Software Engineer Salary India 2026",
+    metaDescription:
+      "Groww salary India 2026 — SWE entry ₹14–26 LPA, mid ₹25–48 LPA, senior ₹45–80 LPA. Pre-IPO ESOP at ~$8B valuation. Bengaluru fintech unicorn full CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+    ],
+    questionSlug: "groww-interview-questions-india-2026",
+    hubNote: "Pre-IPO ESOP — secondary market trades at ~$8B valuation",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "zerodha",
+    searchPhrase: "Zerodha Software Engineer Salary India 2026",
+    metaDescription:
+      "Zerodha salary India 2026 — SWE entry ₹12–22 LPA, mid ₹20–38 LPA, senior ₹35–65 LPA. Bootstrapped — no equity, pure cash comp. India's most profitable broker CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+    ],
+    questionSlug: "zerodha-interview-questions-india-2026",
+    hubNote: "Bootstrapped — zero equity, but India's most profitable startup; best fixed pay for this tier",
+    sitemapPriority: 0.76,
+  },
+  {
+    slug: "intuit",
+    searchPhrase: "Intuit India Software Engineer Salary 2026",
+    metaDescription:
+      "Intuit India salary 2026 — SWE entry ₹22–38 LPA, mid ₹36–65 LPA, senior ₹60–100 LPA in Bengaluru. INTU RSU explained. Quickbooks & TurboTax engineering CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+    ],
+    questionSlug: "intuit-interview-questions-india-2026",
+    hubNote: "INTU RSU — strong eng culture, solid total comp for Tier-2 FAANG",
+    sitemapPriority: 0.75,
+  },
+  {
+    slug: "walmart-global-tech",
+    searchPhrase: "Walmart Global Tech India Software Engineer Salary 2026",
+    metaDescription:
+      "Walmart Global Tech salary India 2026 — SWE entry ₹22–36 LPA, mid ₹35–62 LPA, senior ₹58–100 LPA in Bengaluru. WMT-listed RSU liquidity guide. Full CTC breakdown.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+    ],
+    questionSlug: "walmart-global-tech-interview-questions-india-2026",
+    hubNote: "WMT stock stable — RSU liquidity is solid for non-FAANG",
+    sitemapPriority: 0.75,
+  },
+  {
+    slug: "persistent",
+    searchPhrase: "Persistent Systems Software Engineer Salary India 2026",
+    metaDescription:
+      "Persistent Systems salary India 2026 — SWE fresher ₹5.5–11 LPA, mid ₹11–22 LPA, senior ₹22–40 LPA. Healthcare IT & BFS specialist. Pune & Nagpur CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "devops-sre", label: "DevOps / SRE" },
+    ],
+    questionSlug: "persistent-systems-interview-questions-india-2026",
+    hubNote: "Strong in healthcare IT and BFS — above-market for pure IT services",
+    sitemapPriority: 0.72,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */

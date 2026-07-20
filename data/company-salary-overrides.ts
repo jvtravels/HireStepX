@@ -7157,6 +7157,68 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 35, totalMax: 75, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Senior)", lastVerified: "2026-05-08", notes: "Senior brand/growth — own the IPL P&L. Negotiation focus: Brand/growth ownership + ESOP." },
     },
   },
+
+  /* ─── 2026 Wave-3 expansion: 10 new salary pages July 2026 ─── */
+
+  /* Intuit India (Bengaluru) — Quickbooks/TurboTax, strong eng culture */
+  intuit: {
+    "software-engineer": {
+      entry: { totalMin: 22, totalMax: 38, baseMin: 17, baseMax: 28, equityMin: 5, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Junior SWE. INTU RSU vest 4yr / 1yr cliff. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 36, totalMax: 65, baseMin: 28, baseMax: 50, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Mid SWE (3-5 YOE). Negotiation focus: level calibration + RSU refreshers." },
+      senior: { totalMin: 60, totalMax: 100, baseMin: 45, baseMax: 75, equityMin: 15, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Senior SWE. Negotiation focus: fixed + RSU grant size + refreshers." },
+    },
+    "product-manager": {
+      entry: { totalMin: 20, totalMax: 36, baseMin: 15, baseMax: 27, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Junior PM / APM. Negotiation focus: scope + fixed." },
+      mid: { totalMin: 34, totalMax: 62, baseMin: 26, baseMax: 47, equityMin: 7, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Mid PM. Negotiation focus: product scope + RSU." },
+      senior: { totalMin: 58, totalMax: 96, baseMin: 43, baseMax: 72, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Senior PM. Negotiation focus: product org scope + equity." },
+    },
+    "data-analyst": {
+      entry: { totalMin: 16, totalMax: 30, baseMin: 12, baseMax: 22, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Junior Data Analyst. Negotiation focus: fixed." },
+      mid: { totalMin: 28, totalMax: 52, baseMin: 21, baseMax: 39, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Mid Data Analyst. Negotiation focus: fixed + analytics scope." },
+      senior: { totalMin: 48, totalMax: 85, baseMin: 36, baseMax: 64, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Senior Data Analyst. Negotiation focus: fixed + senior IC path." },
+    },
+  },
+
+  /* Walmart Global Tech (Bengaluru) — WMT-listed RSU, US retail tech.
+   * Note: "walmart global tech" (with spaces) is an older seed-dataset key.
+   * This entry uses the kebab-case slug that matches the salary page URL. */
+  "walmart-global-tech": {
+    "software-engineer": {
+      entry: { totalMin: 22, totalMax: 36, baseMin: 17, baseMax: 27, equityMin: 5, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Junior SWE. WMT RSU stable. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 35, totalMax: 62, baseMin: 26, baseMax: 47, equityMin: 8, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Mid SWE. Negotiation focus: level calibration + RSU." },
+      senior: { totalMin: 58, totalMax: 100, baseMin: 43, baseMax: 75, equityMin: 14, equityMax: 27, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Senior SWE. Negotiation focus: fixed + equity. WMT RSU liquidity solid." },
+    },
+    "product-manager": {
+      entry: { totalMin: 20, totalMax: 34, baseMin: 15, baseMax: 26, equityMin: 4, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Junior PM. Negotiation focus: scope + fixed." },
+      mid: { totalMin: 33, totalMax: 60, baseMin: 25, baseMax: 45, equityMin: 7, equityMax: 15, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Mid PM. Negotiation focus: product scope + RSU refreshers." },
+      senior: { totalMin: 55, totalMax: 96, baseMin: 41, baseMax: 72, equityMin: 13, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Senior PM. Negotiation focus: org scope + fixed." },
+    },
+    "data-analyst": {
+      entry: { totalMin: 16, totalMax: 28, baseMin: 12, baseMax: 21, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Junior Data Analyst. Negotiation focus: fixed." },
+      mid: { totalMin: 28, totalMax: 50, baseMin: 21, baseMax: 38, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Mid Data Analyst. Negotiation focus: fixed + analytics impact." },
+      senior: { totalMin: 46, totalMax: 82, baseMin: 34, baseMax: 62, equityMin: 10, equityMax: 21, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "WGT Senior Data Analyst. Negotiation focus: fixed + data platform scope." },
+    },
+  },
+
+  /* Persistent Systems (Pune/Nagpur) — mid-tier IT services/product,
+   * healthcare IT and BFS specialist. No equity for non-senior levels. */
+  persistent: {
+    "software-engineer": {
+      entry: { totalMin: 5.5, totalMax: 11, baseMin: 5.5, baseMax: 11, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Junior SWE / fresher. No equity — pure cash comp. Negotiation focus: fixed + variable structure." },
+      mid: { totalMin: 11, totalMax: 22, baseMin: 10, baseMax: 20, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Mid SWE. Healthcare IT / BFS expertise commands premium. Negotiation focus: fixed + skill-band upgrade." },
+      senior: { totalMin: 22, totalMax: 40, baseMin: 20, baseMax: 36, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Senior SWE. Top of band = architects with domain expertise. Negotiation focus: fixed + onsite probability." },
+    },
+    "business-analyst": {
+      entry: { totalMin: 5, totalMax: 10, baseMin: 5, baseMax: 10, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Junior BA. Negotiation focus: fixed + domain (healthcare/BFS)." },
+      mid: { totalMin: 10, totalMax: 20, baseMin: 9, baseMax: 18, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Mid BA. Negotiation focus: domain expertise + fixed." },
+      senior: { totalMin: 18, totalMax: 35, baseMin: 16, baseMax: 32, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Senior BA. Negotiation focus: client-facing scope + fixed." },
+    },
+    "devops-sre": {
+      entry: { totalMin: 5, totalMax: 10, baseMin: 5, baseMax: 10, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Junior DevOps. Negotiation focus: fixed + cloud skill premium." },
+      mid: { totalMin: 10, totalMax: 20, baseMin: 9, baseMax: 18, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Mid DevOps/SRE. Cloud + K8s skills command premium. Negotiation focus: fixed + certifications." },
+      senior: { totalMin: 20, totalMax: 38, baseMin: 18, baseMax: 34, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Senior DevOps/SRE. Negotiation focus: fixed + platform ownership." },
+    },
+  },
 };
 
 /**
