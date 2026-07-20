@@ -7219,6 +7219,38 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 20, totalMax: 38, baseMin: 18, baseMax: 34, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Senior DevOps/SRE. Negotiation focus: fixed + platform ownership." },
     },
   },
+
+  /* Slug aliases — resolveOverrides() does slug → slug.replace(/-/g," ") but
+     cannot handle special chars (apostrophes, dots, ampersands, numeric prefix).
+     These aliases map the URL slug to the correct override data. */
+  "procter-gamble": {
+    marketing: {
+      entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-07-21", notes: "P&G premium MNC MT — top of FMCG MBA market." },
+      mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 60, totalMax: 110, equityType: "none", source: "Glassdoor", lastVerified: "2026-07-21" },
+      lead: { totalMin: 90, totalMax: 160, equityType: "none", source: "Glassdoor (P&G Marketing Director India)", lastVerified: "2026-07-21" },
+      executive: { totalMin: 150, totalMax: 350, equityType: "none", source: "Glassdoor (P&G VP / CMO / President India)", lastVerified: "2026-07-21" },
+    },
+  },
+  byjus: {
+    "software-engineer": {
+      entry: { totalMin: 7, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr — value uncertain post-reset", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-07-21", notes: "Post-2024 BYJU's reset; ESOP value highly discounted." },
+      mid: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  curefit: {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-07-21" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
+  "tata-1mg": {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr — Tata-acquired", source: "AmbitionBox 2026", lastVerified: "2026-07-21", notes: "Tata 1mg; RSU in Tata listed entity." },
+      senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+  },
 };
 
 /**

@@ -1066,6 +1066,491 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Zomato-group RSU (listed on NSE) — RSU credibility solid post-Zomato IPO; comp below Zepto",
     sitemapPriority: 0.73,
   },
+  /* ── Wave 9: Global tech (non-FAANG) ───────────────────────── */
+  {
+    slug: "linkedin",
+    searchPhrase: "LinkedIn Software Engineer Salary India 2026",
+    metaDescription:
+      "LinkedIn India salary 2026 — SWE entry ₹28–42 LPA, mid ₹50–80 LPA. Microsoft-owned RSU (MSFT). Bengaluru engineering hub covering feed, AI, and infrastructure. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Microsoft-owned RSU (MSFT stock) — FAANG-adjacent compensation, entry ₹28–42L",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "netflix",
+    searchPhrase: "Netflix Software Engineer Salary India 2026",
+    metaDescription:
+      "Netflix India salary 2026 — SWE mid ₹65–95 LPA, senior ₹95–160 LPA. Netflix RSU (NFLX listed). Premium streaming tech team opened 2024. Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Netflix India is a tiny, elite team — pay is among the highest in India; mid starts at ₹65L",
+    sitemapPriority: 0.75,
+  },
+  {
+    slug: "nvidia",
+    searchPhrase: "NVIDIA Software Engineer Salary India 2026",
+    metaDescription:
+      "NVIDIA India salary 2026 — SWE entry ₹25.8–41 LPA, mid ₹50–90 LPA, senior ₹95–160 LPA. NVDA RSU (NASDAQ). AI hardware and GPU computing leader. Pune and Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NVDA RSU (NASDAQ) — AI-hardware premium; entry ₹25–41L; highest IC6 in India semiconductor sector",
+    sitemapPriority: 0.79,
+  },
+  {
+    slug: "cisco",
+    searchPhrase: "Cisco Software Engineer Salary India 2026",
+    metaDescription:
+      "Cisco India salary 2026 — SWE entry ₹17–25 LPA, mid ₹27–46 LPA, senior ₹50–90 LPA. CSCO RSU (NASDAQ). Bengaluru is Cisco's largest global engineering hub outside the US. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "CSCO RSU (NASDAQ) — established FAANG-adjacent pay; Bengaluru is Cisco's #1 global hub ex-US",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "qualcomm",
+    searchPhrase: "Qualcomm Software Engineer Salary India 2026",
+    metaDescription:
+      "Qualcomm India salary 2026 — SWE entry ₹16–25 LPA, mid ₹25–38 LPA, senior ₹31–57 LPA. QCOM RSU. Hyderabad and Bengaluru chip design and modem engineering. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "QCOM RSU (NASDAQ) — semiconductor premium; Hyderabad is India's largest chip-design hub",
+    sitemapPriority: 0.76,
+  },
+  {
+    slug: "mediatek",
+    searchPhrase: "MediaTek Software Engineer Salary India 2026",
+    metaDescription:
+      "MediaTek India salary 2026 — SWE entry ₹16–24 LPA, mid ₹24–40 LPA, senior ₹40–65 LPA. MediaTek RSU. Bengaluru SoC and modem engineering. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "MediaTek RSU — Taiwan-headquartered semiconductor; India team focuses on SoC and connectivity chipsets",
+    sitemapPriority: 0.74,
+  },
+  {
+    slug: "servicenow",
+    searchPhrase: "ServiceNow Software Engineer Salary India 2026",
+    metaDescription:
+      "ServiceNow India salary 2026 — SWE entry ₹26–38 LPA, mid ₹38–60 LPA, senior ₹60–110 LPA. NOW RSU (NYSE). Enterprise workflow SaaS. Hyderabad GCC — one of India's best-paying SaaS employers.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NOW RSU (NYSE) — top-paying enterprise SaaS GCC in India; entry ₹26–38L rivals FAANG",
+    sitemapPriority: 0.78,
+  },
+  {
+    slug: "workday",
+    searchPhrase: "Workday Software Engineer Salary India 2026",
+    metaDescription:
+      "Workday India salary 2026 — SWE entry ₹22–33 LPA, mid ₹33–50 LPA, senior ₹50–67 LPA. WDAY RSU (NASDAQ). HR and finance cloud SaaS. Hyderabad GCC CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "WDAY RSU (NASDAQ) — enterprise SaaS; solid pay; Hyderabad GCC covers HR-tech and finance-cloud product",
+    sitemapPriority: 0.76,
+  },
+  /* ── Wave 9: Remaining Big 4 (EY, KPMG, PwC) ──────────────── */
+  {
+    slug: "ey",
+    searchPhrase: "EY India Salary Consultant 2026",
+    metaDescription:
+      "EY India salary 2026 — Analyst/Consultant entry ₹4.9–11.2 LPA, mid ₹10–18 LPA, senior ₹16–22 LPA. Big 4 consulting and advisory. Mumbai, Bengaluru, Delhi NCR CTC guide.",
+    roles: [{ roleKey: "consultant", label: "Consultant" }],
+    questionSlug: undefined,
+    hubNote: "Big 4 cash-only — no equity at EY India; comp below MBB but broader roles across audit, tax, advisory",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "kpmg",
+    searchPhrase: "KPMG India Salary Consultant 2026",
+    metaDescription:
+      "KPMG India salary 2026 — Analyst entry ₹5–10 LPA, Consultant ₹10–17 LPA, Senior Consultant ₹17–22 LPA. Big 4 audit, tax, and advisory. Mumbai and Bengaluru CTC guide.",
+    roles: [{ roleKey: "consultant", label: "Consultant" }],
+    questionSlug: undefined,
+    hubNote: "Big 4 cash-only — KPMG India; audit + advisory; below EY avg at senior consultant level",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "pwc",
+    searchPhrase: "PwC India Salary Consultant 2026",
+    metaDescription:
+      "PwC India salary 2026 — Analyst entry ₹5.5–10.5 LPA, Consultant ₹11–18 LPA, Senior Consultant ₹18–24 LPA. Big 4 consulting. Mumbai, Kolkata, Bengaluru CTC guide.",
+    roles: [{ roleKey: "consultant", label: "Consultant" }],
+    questionSlug: undefined,
+    hubNote: "Big 4 cash-only — PwC India; strong tax and deals practice; advisory similar to EY/KPMG",
+    sitemapPriority: 0.72,
+  },
+  /* ── Wave 9: D2C / Consumer Tech ──────────────────────────── */
+  {
+    slug: "lenskart",
+    searchPhrase: "Lenskart Software Engineer Salary India 2026",
+    metaDescription:
+      "Lenskart salary India 2026 — SWE entry ₹12–20 LPA, mid ₹22–38 LPA, senior ₹38–60 LPA. Listed RSU (2025 IPO). India's largest omnichannel eyewear brand. Gurugram CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Listed RSU (Lenskart IPO 2025) — solid equity credibility; D2C + offline retail tech focus",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "mamaearth",
+    searchPhrase: "Mamaearth Software Engineer Salary India 2026",
+    metaDescription:
+      "Mamaearth (Honasa Consumer) salary India 2026 — SWE mid ₹18–28 LPA, senior ₹30–50 LPA. Honasa RSU (NSE listed). India's largest D2C beauty brand. Gurugram CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Honasa Consumer RSU (NSE listed) — Mamaearth parent; listed equity but small tech team",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "boat",
+    searchPhrase: "boAt Software Engineer Salary India 2026",
+    metaDescription:
+      "boAt salary India 2026 — SWE mid ₹14–24 LPA, senior ₹24–40 LPA. Pre-IPO ESOP. India's #1 consumer electronics brand in audio. New Delhi CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — boAt (Imagine Marketing) IPO pending; ESOP credibility moderate; consumer electronics",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "wakefit",
+    searchPhrase: "Wakefit Software Engineer Salary India 2026",
+    metaDescription:
+      "Wakefit salary India 2026 — SWE mid ₹16–26 LPA, senior ₹26–42 LPA. Pre-IPO ESOP. India's leading D2C sleep and furniture brand. Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — Wakefit; D2C furniture; smaller tech team; credibility tied to eventual IPO",
+    sitemapPriority: 0.69,
+  },
+  /* ── Wave 9: Banking / Financial Services ──────────────────── */
+  {
+    slug: "axis",
+    searchPhrase: "Axis Bank Salary India 2026",
+    metaDescription:
+      "Axis Bank salary India 2026 — Relationship Manager entry ₹4–6.5 LPA, mid ₹7–14 LPA, senior ₹15–26 LPA. India's third-largest private bank. Mumbai HQ. CTC guide.",
+    roles: [{ roleKey: "sales", label: "Relationship Manager" }],
+    questionSlug: undefined,
+    hubNote: "Listed NSE/BSE — Axis Bank; retail banking and RM roles dominate hiring; no standard SWE grade data",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "kotak",
+    searchPhrase: "Kotak Mahindra Bank Salary India 2026",
+    metaDescription:
+      "Kotak Mahindra Bank salary India 2026 — Relationship Manager entry ₹4.5–7 LPA, mid ₹8–15 LPA, senior ₹16–30 LPA. India's fourth-largest private bank. Mumbai HQ. CTC guide.",
+    roles: [{ roleKey: "sales", label: "Relationship Manager" }],
+    questionSlug: undefined,
+    hubNote: "Listed NSE — Kotak Mahindra; strong wealth management and retail banking franchise; RM pay above Axis",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "sbi",
+    searchPhrase: "State Bank of India SBI Salary 2026",
+    metaDescription:
+      "SBI salary 2026 — IT Officer / Specialist Officer entry ₹8–12 LPA, mid ₹14–22 LPA. India's largest public-sector bank. Stable government employment with 7th CPC pay structure. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "PSU job stability — SBI bonds 2yr; IT Officer entry ₹8–12L; pension + post-retirement benefits are key",
+    sitemapPriority: 0.72,
+  },
+  /* ── Wave 9: FinTech / InsurTech ───────────────────────────── */
+  {
+    slug: "bharatpe",
+    searchPhrase: "BharatPe Software Engineer Salary India 2026",
+    metaDescription:
+      "BharatPe salary India 2026 — SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. Pre-IPO ESOP. India's largest merchant QR payment network. New Delhi CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — BharatPe; fintech SME lending and payments; ESOP credibility moderate at Series F",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "cashfree",
+    searchPhrase: "Cashfree Payments Software Engineer Salary India 2026",
+    metaDescription:
+      "Cashfree Payments salary India 2026 — SWE mid ₹18–30 LPA, senior ₹32–50 LPA. Pre-IPO ESOP. India's leading payment gateway. Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — Cashfree; payment gateway; no entry band data; mid starts at ₹18L",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "acko",
+    searchPhrase: "Acko Insurance Software Engineer Salary India 2026",
+    metaDescription:
+      "Acko Insurance salary India 2026 — SWE entry ₹9–25 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. Pre-IPO ESOP. India's largest digital-native insurance platform. Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — Acko; insurtech; wide entry range ₹9–25L reflects very junior vs. campus hire spread",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "digit",
+    searchPhrase: "Go Digit Insurance Software Engineer Salary India 2026",
+    metaDescription:
+      "Go Digit Insurance salary India 2026 — SWE mid ₹18–30 LPA, senior ₹32–50 LPA. Go Digit RSU (NSE listed). India's first listed digital general insurer. Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Listed RSU (NSE: GODIGIT) — solid equity credibility; India's first listed digital insurer",
+    sitemapPriority: 0.71,
+  },
+  /* ── Wave 9: FMCG / Conglomerates ─────────────────────────── */
+  {
+    slug: "hul",
+    searchPhrase: "HUL Hindustan Unilever Salary India 2026",
+    metaDescription:
+      "HUL salary India 2026 — UFLP Marketing Trainee entry ₹18–27 LPA, Brand Manager mid ₹30–50 LPA. HUL RSU (Unilever listed). India's most-coveted FMCG employer. Mumbai CTC guide.",
+    roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
+    questionSlug: undefined,
+    hubNote: "HUL RSU (Unilever listed) — UFLP is India's #1 FMCG MBA program; top brand management career track",
+    sitemapPriority: 0.74,
+  },
+  {
+    slug: "itc",
+    searchPhrase: "ITC Limited Salary India 2026",
+    metaDescription:
+      "ITC salary India 2026 — Management Trainee entry ₹16–22 LPA, Brand Manager mid ₹26–40 LPA. No equity — cash-heavy comp. India's largest FMCG conglomerate. Kolkata/Bengaluru CTC guide.",
+    roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
+    questionSlug: undefined,
+    hubNote: "Cash-only — ITC; no standard equity program; strong brand management and sales career track",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "godrej",
+    searchPhrase: "Godrej Group Salary India 2026",
+    metaDescription:
+      "Godrej Group salary India 2026 — GLP Management Trainee entry ₹16–24 LPA, Brand Manager mid ₹22–38 LPA. Cash-only. Diversified FMCG and real estate conglomerate. Mumbai CTC guide.",
+    roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
+    questionSlug: undefined,
+    hubNote: "Cash-only — Godrej GLP is premier conglomerate MT; below HUL UFLP but diverse brand portfolio",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "nestle",
+    searchPhrase: "Nestlé India Salary 2026",
+    metaDescription:
+      "Nestlé India salary 2026 — Management Trainee entry ₹14–22 LPA, Brand Manager mid ₹22–35 LPA. Cash-only. Swiss FMCG giant. Gurugram HQ. CTC guide.",
+    roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
+    questionSlug: undefined,
+    hubNote: "Cash-only — Nestlé India; strong nutrition FMCG brand management track; below HUL but above Godrej avg",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "dmart",
+    searchPhrase: "D-Mart DMart Operations Salary India 2026",
+    metaDescription:
+      "DMart salary India 2026 — Operations Trainee entry ₹4–7 LPA, Operations Manager mid ₹10–16 LPA, senior ₹20–35 LPA. No equity. India's most profitable retail chain (Avenue Supermarts). CTC guide.",
+    roles: [{ roleKey: "operations", label: "Operations Manager" }],
+    questionSlug: undefined,
+    hubNote: "Cash-only — DMart (Avenue Supermarts) listed; retail ops pay is low but growth to GM/VP is rapid",
+    sitemapPriority: 0.69,
+  },
+  /* ── Wave 9: Enterprise SaaS / Tech GCC ───────────────────── */
+  {
+    slug: "vmware",
+    searchPhrase: "VMware Broadcom Software Engineer Salary India 2026",
+    metaDescription:
+      "VMware (Broadcom) India salary 2026 — SWE entry ₹18–28 LPA, mid ₹32–50 LPA, senior ₹50–78 LPA. Broadcom RSU. Bengaluru virtualization and cloud infrastructure engineering. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Broadcom RSU (AVGO NASDAQ) — post-acquisition hiring reduced; strong legacy compensation; cloud infra focus",
+    sitemapPriority: 0.74,
+  },
+  /* ── Wave 10: Banking GCCs ─────────────────────────────────── */
+  {
+    slug: "citi",
+    searchPhrase: "Citi Citibank India Software Engineer Salary 2026",
+    metaDescription:
+      "Citi India GCC salary 2026 — SWE mid ₹28–45 LPA, senior ₹50–80 LPA. Citi RSU (NYSE: C). Pune technology centre — one of India's largest US banking GCCs. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NYSE RSU (Citi C stock) — mid ₹28–45L; Pune is Citi's largest India GCC; US banking tech focus",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "hsbc",
+    searchPhrase: "HSBC India Software Engineer Salary 2026",
+    metaDescription:
+      "HSBC India GTC salary 2026 — SWE mid ₹22–38 LPA, senior ₹40–65 LPA. HSBC RSU (LSE listed). Hyderabad and Pune Global Technology Centre. UK banking GCC. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "HSBC RSU (LSE listed) — Hyderabad GTC; UK bank; pay slightly below JPMorgan/Goldman at mid level",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "deutsche-bank",
+    searchPhrase: "Deutsche Bank India Software Engineer Salary 2026",
+    metaDescription:
+      "Deutsche Bank India salary 2026 — SWE mid ₹26–42 LPA, senior ₹45–72 LPA. DB RSU (Frankfurt listed). Pune and Mumbai technology centres — European banking GCC. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "DB RSU (Frankfurt listed) — European banking GCC; Pune is DB's largest India hub; pay below JPMorgan",
+    sitemapPriority: 0.72,
+  },
+  /* ── Wave 10: Indian Unicorns / Startups ──────────────────── */
+  {
+    slug: "ola",
+    searchPhrase: "Ola Cabs Software Engineer Salary India 2026",
+    metaDescription:
+      "Ola Cabs salary India 2026 — SWE entry ₹14–22 LPA, mid ₹22–38 LPA, senior ₹38–65 LPA. Pre-IPO ESOP. India's largest ride-hailing platform. Bengaluru engineering. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — Ola Cabs (ANI Technologies); post-restructure; ESOP credibility tied to potential IPO",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "metropolis",
+    searchPhrase: "Metropolis Healthcare Software Engineer Salary India 2026",
+    metaDescription:
+      "Metropolis Healthcare salary India 2026 — SWE mid ₹10–18 LPA, senior ₹18–30 LPA. No equity. India's leading diagnostic chain (listed on NSE). Mumbai tech team. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NSE listed (METROPOLIS) — healthcare diagnostics tech; no standard RSU; pay below product unicorns",
+    sitemapPriority: 0.68,
+  },
+  {
+    slug: "curefit",
+    searchPhrase: "Cure.fit Software Engineer Salary India 2026",
+    metaDescription:
+      "Cure.fit salary India 2026 — SWE mid ₹18–30 LPA, senior ₹32–52 LPA. Pre-IPO ESOP. Health and fitness platform (Cult.fit, EatFit, MindFit). Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — Cure.fit / Cult.fit; fitness-tech; ESOP credibility moderate; mid starts at ₹18L",
+    sitemapPriority: 0.70,
+  },
+  {
+    slug: "cars24",
+    searchPhrase: "CARS24 Software Engineer Salary India 2026",
+    metaDescription:
+      "CARS24 salary India 2026 — SWE entry ₹10–18 LPA, mid ₹18–32 LPA, senior ₹32–50 LPA. Pre-IPO ESOP. India's largest used-car marketplace. Gurugram CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — CARS24; used-car marketplace; ESOP credibility moderate; Series F unicorn",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "byjus",
+    searchPhrase: "BYJU'S Software Engineer Salary India 2026",
+    metaDescription:
+      "BYJU'S salary India 2026 — SWE entry ₹7–12 LPA, mid ₹14–22 LPA post-restructuring. ESOP value highly uncertain post-2024 reset. EdTech pioneer. Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "ESOP value uncertain — BYJU'S post-2024 restructuring; fixed pay stabilising; ESOP credibility very low",
+    sitemapPriority: 0.68,
+  },
+  {
+    slug: "pine-labs",
+    searchPhrase: "Pine Labs Software Engineer Salary India 2026",
+    metaDescription:
+      "Pine Labs salary India 2026 — SWE mid ₹22–36 LPA, senior ₹38–60 LPA. Pre-IPO ESOP (IPO filed). India's largest merchant commerce platform. Noida and Bengaluru CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP (IPO filed 2025) — Pine Labs; strong payments and merchant tech focus; IPO lifts credibility",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "star-health",
+    searchPhrase: "Star Health Insurance Software Engineer Salary India 2026",
+    metaDescription:
+      "Star Health Insurance salary India 2026 — SWE mid ₹14–22 LPA, senior ₹24–38 LPA. Star Health RSU (NSE listed). India's largest standalone health insurer. Chennai CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NSE listed (STARHEALTH) — InsurTech; equity is liquid but comp below pure-tech unicorns",
+    sitemapPriority: 0.69,
+  },
+  {
+    slug: "icici-lombard",
+    searchPhrase: "ICICI Lombard Software Engineer Salary India 2026",
+    metaDescription:
+      "ICICI Lombard salary India 2026 — SWE mid ₹14–22 LPA, senior ₹24–38 LPA. ICICI Lombard RSU (NSE listed). India's leading private general insurer. Mumbai CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NSE listed (ICICIGI) — general insurance; part of ICICI group; listed RSU is liquid",
+    sitemapPriority: 0.69,
+  },
+  {
+    slug: "bajaj-finance",
+    searchPhrase: "Bajaj Finance Software Engineer Salary India 2026",
+    metaDescription:
+      "Bajaj Finance salary India 2026 — SWE mid ₹16–26 LPA, senior ₹28–45 LPA. Bajaj Finance RSU (NSE listed). India's largest NBFC. Pune tech and digital team. CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NSE listed (BAJFINANCE) — NBFC; listed RSU; strong digital banking and lending product team",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "tata-motors",
+    searchPhrase: "Tata Motors Software Engineer Salary India 2026",
+    metaDescription:
+      "Tata Motors salary India 2026 — SWE mid ₹16–24 LPA, Mechanical Engineer entry ₹4.5–7.5 LPA. Tata Motors RSU (NSE listed). India's leading automotive and EV manufacturer. Pune CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "mechanical-engineer", label: "Mechanical Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "NSE listed RSU — Tata Motors; diversified automotive + EV; software and hardware engineering",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "tata-1mg",
+    searchPhrase: "Tata 1mg Software Engineer Salary India 2026",
+    metaDescription:
+      "Tata 1mg salary India 2026 — SWE mid ₹18–30 LPA, senior ₹32–50 LPA. Tata RSU (Tata Digital). India's leading online pharmacy and health marketplace. Gurugram CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "Tata RSU via Tata Digital — health-tech; Tata 1mg is a Tata-acquired startup; IPO expected",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "dr-lal-pathlabs",
+    searchPhrase: "Dr Lal PathLabs Software Engineer Salary India 2026",
+    metaDescription:
+      "Dr Lal PathLabs salary India 2026 — SWE mid ₹12–20 LPA, senior ₹22–35 LPA. NSE listed RSU (LALPATHLAB). India's #1 diagnostic chain. Delhi NCR CTC guide.",
+    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    questionSlug: undefined,
+    hubNote: "NSE listed RSU (LALPATHLAB) — diagnostics tech; small tech team; comp below product unicorns",
+    sitemapPriority: 0.68,
+  },
+  {
+    slug: "procter-gamble",
+    searchPhrase: "P&G Procter Gamble India Salary 2026",
+    metaDescription:
+      "P&G India salary 2026 — MBA Management Trainee entry ₹22–32 LPA, Brand Manager mid ₹35–60 LPA. Cash-only. India's #1 premium FMCG company. Mumbai HQ. CTC guide.",
+    roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
+    questionSlug: undefined,
+    hubNote: "Cash-only (no equity) — P&G India; top FMCG MBA program; ₹22–32L entry is highest in Indian FMCG",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "mahindra",
+    searchPhrase: "Mahindra Group Software Engineer Salary India 2026",
+    metaDescription:
+      "Mahindra Group salary India 2026 — SWE mid ₹14–22 LPA, Mechanical Engineer entry ₹7–11 LPA, senior ₹28–48 LPA. Diversified conglomerate (auto, IT, agri). Mumbai CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "mechanical-engineer", label: "Mechanical Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Mahindra group — conglomerate; Tech Mahindra separate entity; M&M and subsidiary RSU for senior roles",
+    sitemapPriority: 0.71,
+  },
+  {
+    slug: "spinny",
+    searchPhrase: "Spinny Product Designer UX Salary India 2026",
+    metaDescription:
+      "Spinny salary India 2026 — Product Designer entry ₹10–14 LPA, mid ₹19–25 LPA, senior ₹27–31 LPA. Pre-IPO ESOP. Online car marketplace. Gurugram CTC guide.",
+    roles: [{ roleKey: "ux-designer", label: "Product Designer" }],
+    questionSlug: undefined,
+    hubNote: "Pre-IPO ESOP — Spinny; car marketplace; known for strong design culture; ESOP credibility moderate",
+    sitemapPriority: 0.68,
+  },
+  {
+    slug: "citadel",
+    searchPhrase: "Citadel Software Engineer Salary India 2026",
+    metaDescription:
+      "Citadel India salary 2026 — SWE / Quant entry ₹55–90 LPA, mid ₹90–160 LPA. No public equity. World's top-performing hedge fund. Hyderabad quant engineering team. CTC guide.",
+    roles: [{ roleKey: "data-scientist", label: "Quantitative Researcher" }],
+    questionSlug: undefined,
+    hubNote: "Elite quant fund — Citadel; cash-only bonus; ₹55–90L entry rivals FAANG equity; Hyderabad team",
+    sitemapPriority: 0.76,
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */

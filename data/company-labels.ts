@@ -88,6 +88,64 @@ export const COMPANY_LABEL: Record<string, string> = {
   "hdfc-bank": "HDFC Bank",
   icici: "ICICI",
 
+  // Enterprise tech GCCs
+  qualcomm: "Qualcomm India",
+  mediatek: "MediaTek India",
+  servicenow: "ServiceNow India",
+  workday: "Workday India",
+  vmware: "VMware (Broadcom)",
+
+  // Big 4 consulting
+  ey: "EY India",
+  kpmg: "KPMG India",
+  pwc: "PwC India",
+
+  // Banking GCCs
+  axis: "Axis Bank",
+  kotak: "Kotak Mahindra Bank",
+  sbi: "State Bank of India",
+  citi: "Citi India",
+  hsbc: "HSBC India",
+  "deutsche-bank": "Deutsche Bank India",
+
+  // FinTech / InsurTech
+  bharatpe: "BharatPe",
+  cashfree: "Cashfree Payments",
+  acko: "Acko Insurance",
+  digit: "Go Digit Insurance",
+  "pine-labs": "Pine Labs",
+  "star-health": "Star Health Insurance",
+  "icici-lombard": "ICICI Lombard",
+  "bajaj-finance": "Bajaj Finance",
+
+  // D2C / Consumer
+  lenskart: "Lenskart",
+  mamaearth: "Mamaearth",
+  boat: "boAt",
+  wakefit: "Wakefit",
+  dmart: "D-Mart",
+  spinny: "Spinny",
+  cars24: "CARS24",
+
+  // Healthcare
+  metropolis: "Metropolis Healthcare",
+  curefit: "Cure.fit",
+  "dr-lal-pathlabs": "Dr Lal PathLabs",
+  "tata-1mg": "Tata 1mg",
+
+  // Mobility / Auto
+  ola: "Ola Cabs",
+  "tata-motors": "Tata Motors",
+  mahindra: "Mahindra Group",
+
+  // EdTech
+  byjus: "BYJU'S",
+
+  // FMCG
+  godrej: "Godrej Group",
+  nestle: "Nestlé India",
+  "procter-gamble": "P&G India",
+
   // Indian B2B SaaS
   postman: "Postman",
   browserstack: "BrowserStack",
