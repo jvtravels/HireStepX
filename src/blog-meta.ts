@@ -1025,6 +1025,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What certifications increase DevOps salary in India?", answer: "Highest ROI certifications in order: CKA (Certified Kubernetes Administrator) adds ₹4–8 LPA; AWS Certified DevOps Engineer – Professional adds ₹3–6 LPA; AWS Certified Solutions Architect – Professional adds ₹4–7 LPA at cloud-heavy roles. Terraform Associate is useful for IT services but less differentiated at product companies." },
     ],
   },
+  {
+    slug: "tell-me-about-yourself-answer-fresher-india-2026",
+    title: "Tell Me About Yourself — Best Answer for Freshers India 2026 (With 10 Sample Scripts)",
+    metaDescription: "Best answers for 'tell me about yourself' for freshers in India 2026. 10 word-for-word sample scripts for engineering, MBA, BCA, and non-tech graduates — covering IT services (TCS/Infosys), product companies, and campus placements.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=630&fit=crop",
+    company: "General", category: "HR Round",
+    faqs: [
+      { question: "How do I start 'tell me about yourself' as a fresher with no experience?", answer: "Start with your degree and what you focused on, then move to your strongest project with a specific result (even a college project counts — 'a final-year project that did X' is a real outcome). Skip straight to why this role is your next step. Don't apologise for having no experience — frame your projects as evidence of ability, which they are." },
+      { question: "How long should 'tell me about yourself' be?", answer: "60–90 seconds when spoken at a normal, calm pace. That translates to roughly 150–200 words. Anything under 45 seconds is too thin. Anything over 2 minutes loses the interviewer. Practice with a timer until you consistently land in the 75-second range." },
+      { question: "Should I mention my hobbies in 'tell me about yourself'?", answer: "Only if the hobby is genuinely relevant to the role. If you're applying for a game development role and you mod games as a hobby, mention it. For most software and data roles, hobbies like 'cricket' or 'reading' add no value and waste your 90 seconds. Use that time to add one more project outcome instead." },
+      { question: "What if I have a low CGPA — should I mention it?", answer: "No. 'Tell me about yourself' is not the place to bring up your CGPA. If the interviewer asks about it later, address it then. In your opening answer, emphasise what you built and learned — projects, internships, certifications, and specific skills. A strong project answer often makes the CGPA question irrelevant." },
+    ],
+  },
+  {
+    slug: "makemytrip-interview-questions-india-2026",
+    title: "MakeMyTrip Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
+    metaDescription: "MakeMyTrip interview questions 2026 for SDE, data science, and PM roles. Covers the full interview process, DSA and system design for travel-tech, product case studies, MakeMyTrip salary ₹15–80 LPA, and preparation tips.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&h=630&fit=crop",
+    company: "Travel", category: "Full Guide",
+    faqs: [
+      { question: "Is MakeMyTrip a good company for software engineers in India?", answer: "MakeMyTrip is a solid mid-tier product company. The travel-tech engineering problems (dynamic pricing, GDS integration, fault-tolerant booking flows) are genuinely interesting. Compensation is mid-tier — above IT services, below Zomato/Swiggy/Razorpay. Many engineers use it as a step up from IT services before targeting Tier-1 companies." },
+      { question: "How hard is MakeMyTrip's interview?", answer: "MakeMyTrip's SDE interview is medium difficulty — LeetCode Medium is sufficient for the coding rounds. System design requires travel-domain context (GDS, dynamic pricing, booking flows) but is not as rigorous as Swiggy or Zomato. Comparable in difficulty to Nykaa and Ola." },
+      { question: "What is MakeMyTrip SDE salary in Gurugram?", answer: "MakeMyTrip SDE salary in Gurugram in 2026: SDE-1 ₹15–25 LPA, SDE-2 ₹25–48 LPA, Senior SDE ₹45–75 LPA. ESOPs are liquid (Nasdaq listed). Gurugram salaries are 5–10% below Bengaluru at comparable companies." },
+      { question: "Does MakeMyTrip have good work-life balance?", answer: "MakeMyTrip is generally known for reasonable work-life balance compared to Swiggy or Razorpay. The on-call burden depends on the team — the core booking and payments teams have higher on-call expectations. The hotel content and recommendation teams typically have lighter operational load." },
+    ],
+  },
+  {
+    slug: "machine-learning-engineer-salary-india-2026",
+    title: "Machine Learning Engineer Salary India 2026 — PyTorch, LLMs, MLOps by City and Experience",
+    metaDescription: "Machine learning engineer salary in India 2026 by skill (PyTorch, TensorFlow, LLMs, MLOps), city, and experience. Fresher to senior CTC ranges, highest-paying AI companies, and which ML specialisations command the biggest premiums.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&h=630&fit=crop",
+    company: "Industry", category: "Salary Guide",
+    faqs: [
+      { question: "What is the ML engineer salary for freshers in India 2026?", answer: "ML engineer fresher salary in India 2026: IT services AI teams ₹5–10 LPA, funded AI startups ₹12–22 LPA, Tier-1 product companies ₹18–32 LPA, FAANG India ₹24–45 LPA. The range is wide because ML skills vary enormously — a fresher who can fine-tune an LLM and deploy it to production is valued far above one who has only done Kaggle competitions." },
+      { question: "Which ML specialisation pays most in India in 2026?", answer: "LLM inference optimisation and fine-tuning pay the highest premiums in India in 2026. MLOps and ML platform engineering come second. Computer vision for edge deployment and NLP for Indian-language AI are also high-demand with strong salary growth. Classic ML roles (tabular models, basic forecasting) at IT services companies pay the least." },
+      { question: "Is a PhD required for high-paying ML jobs in India?", answer: "No for most production ML engineer roles. A PhD is required primarily for Research Scientist roles at Google DeepMind India, Microsoft Research, or Meta AI India. Production ML engineering roles at Flipkart, Razorpay, Swiggy, and funded startups hire strong engineers with B.Tech/M.Tech + relevant experience. Strong open-source contributions or a deployed production ML system often substitute for a PhD in practice." },
+      { question: "What is the difference between ML engineer and data scientist salary in India?", answer: "ML engineers in India typically earn 20–40% more than data scientists at the same experience level. At 3 years: data scientist ₹20–55 LPA vs ML engineer ₹28–70 LPA at product companies. The difference grows at senior levels. ML engineers are expected to own production systems — that responsibility commands a premium." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
