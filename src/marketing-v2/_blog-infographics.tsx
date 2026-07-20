@@ -208,6 +208,225 @@ export function TierCompare({ cards }: { cards: TierCardData[] }) {
   );
 }
 
+/* ── Prep Timeline ───────────────────────────────────────────────── */
+interface TimelinePhase {
+  period: string;   // e.g. "Month 1–3"
+  label: string;
+  tasks: string[];
+  milestone?: string;
+}
+
+export function PrepTimeline({ phases, caption }: { phases: TimelinePhase[]; caption?: string }) {
+  return (
+    <div style={{
+      margin: "24px 0",
+      padding: "20px 24px 16px",
+      background: t.creamSoft,
+      border: `1px solid ${t.line}`,
+      borderRadius: 12,
+    }}>
+      {caption && (
+        <div style={{
+          fontFamily: fonts.sans, fontSize: 10, fontWeight: 700,
+          color: t.inkFaint, letterSpacing: "0.1em", textTransform: "uppercase",
+          marginBottom: 16,
+        }}>{caption}</div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {phases.map((ph, i) => (
+          <div key={i} style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
+            {/* Left: period label + line */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 80, flexShrink: 0 }}>
+              <div style={{
+                fontFamily: fonts.sans, fontSize: 9, fontWeight: 700,
+                color: t.copper, letterSpacing: "0.06em", textAlign: "center",
+                background: t.copper100, borderRadius: 99, padding: "3px 8px",
+                whiteSpace: "nowrap",
+              }}>{ph.period}</div>
+              {i < phases.length - 1 && (
+                <div style={{ width: 1, flex: 1, background: t.line, margin: "6px 0" }} />
+              )}
+            </div>
+            {/* Right: content */}
+            <div style={{ paddingBottom: i < phases.length - 1 ? 20 : 0, flex: 1 }}>
+              <div style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 700,
+                color: t.coal, marginBottom: 6,
+              }}>{ph.label}</div>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
+                {ph.tasks.map((task, j) => (
+                  <li key={j} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <span style={{ color: t.copper, fontSize: 10, paddingTop: 2, flexShrink: 0 }}>▸</span>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45 }}>{task}</span>
+                  </li>
+                ))}
+              </ul>
+              {ph.milestone && (
+                <div style={{
+                  marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5,
+                  background: t.copper, borderRadius: 99, padding: "3px 10px",
+                }}>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 9, fontWeight: 700, color: "#fff", letterSpacing: "0.04em" }}>
+                    ✓ {ph.milestone}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Comparison Table ────────────────────────────────────────────── */
+interface CompareColumn {
+  name: string;
+  highlight?: boolean;
+}
+
+interface CompareRow {
+  label: string;
+  values: string[];
+}
+
+export function ComparisonTable({
+  columns,
+  rows,
+  caption,
+}: {
+  columns: CompareColumn[];
+  rows: CompareRow[];
+  caption?: string;
+}) {
+  return (
+    <div style={{ margin: "24px 0", overflowX: "auto" }}>
+      <table style={{
+        width: "100%", borderCollapse: "collapse",
+        fontFamily: fonts.sans, fontSize: 12,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
+        borderRadius: 10, overflow: "hidden",
+      }}>
+        <thead>
+          <tr>
+            <th style={{
+              padding: "12px 14px", textAlign: "left",
+              fontWeight: 700, fontSize: 10, color: t.inkFaint,
+              letterSpacing: "0.08em", textTransform: "uppercase",
+              background: t.cream, borderBottom: `1px solid ${t.line}`,
+              borderRight: `1px solid ${t.line}`,
+            }}></th>
+            {columns.map((col, i) => (
+              <th key={i} style={{
+                padding: "12px 14px", textAlign: "center",
+                fontWeight: 700, fontSize: 11, color: col.highlight ? t.copper : t.coal,
+                background: col.highlight ? t.copper100 : t.cream,
+                borderBottom: `1px solid ${t.line}`,
+                borderRight: i < columns.length - 1 ? `1px solid ${t.line}` : undefined,
+              }}>{col.name}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ background: i % 2 === 0 ? t.creamSoft : t.cream }}>
+              <td style={{
+                padding: "11px 14px", fontWeight: 700, fontSize: 11, color: t.coal,
+                borderBottom: i < rows.length - 1 ? `1px solid ${t.line}` : undefined,
+                borderRight: `1px solid ${t.line}`, whiteSpace: "nowrap",
+              }}>{row.label}</td>
+              {row.values.map((val, j) => (
+                <td key={j} style={{
+                  padding: "11px 14px", textAlign: "center", color: t.inkSoft,
+                  borderBottom: i < rows.length - 1 ? `1px solid ${t.line}` : undefined,
+                  borderRight: j < row.values.length - 1 ? `1px solid ${t.line}` : undefined,
+                  background: columns[j]?.highlight ? `${t.copper100}66` : undefined,
+                }}>{val}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {caption && (
+        <div style={{
+          fontFamily: fonts.sans, fontSize: 10, color: t.inkFaintWeak,
+          marginTop: 8, textAlign: "center",
+        }}>{caption}</div>
+      )}
+    </div>
+  );
+}
+
+/* ── Skill Matrix ────────────────────────────────────────────────── */
+interface SkillItem {
+  topic: string;
+  level: "beginner" | "intermediate" | "advanced";
+  importance: "high" | "medium" | "low";
+  note?: string;
+}
+
+const LEVEL_COLOR: Record<string, string> = {
+  beginner: "#2C6E44",
+  intermediate: "#C98B2A",
+  advanced: "#B8551F",
+};
+const IMP_LABEL: Record<string, string> = {
+  high: "★★★",
+  medium: "★★",
+  low: "★",
+};
+
+export function SkillMatrix({ skills, caption }: { skills: SkillItem[]; caption?: string }) {
+  return (
+    <div style={{ margin: "24px 0" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+        gap: 8,
+      }}>
+        {skills.map((s, i) => (
+          <div key={i} style={{
+            padding: "12px 14px",
+            background: t.creamSoft,
+            border: `1px solid ${t.line}`,
+            borderLeft: `3px solid ${LEVEL_COLOR[s.level]}`,
+            borderRadius: 8,
+          }}>
+            <div style={{
+              fontFamily: fonts.sans, fontSize: 12, fontWeight: 700,
+              color: t.coal, marginBottom: 4,
+            }}>{s.topic}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{
+                fontFamily: fonts.sans, fontSize: 9, fontWeight: 700,
+                color: LEVEL_COLOR[s.level], textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}>{s.level}</span>
+              <span style={{
+                fontFamily: fonts.sans, fontSize: 10,
+                color: t.copper, letterSpacing: "0.02em",
+              }}>{IMP_LABEL[s.importance]}</span>
+            </div>
+            {s.note && (
+              <div style={{
+                fontFamily: fonts.sans, fontSize: 10, color: t.inkFaint,
+                marginTop: 4, lineHeight: 1.4,
+              }}>{s.note}</div>
+            )}
+          </div>
+        ))}
+      </div>
+      {caption && (
+        <div style={{
+          fontFamily: fonts.sans, fontSize: 10, color: t.inkFaintWeak,
+          marginTop: 8, textAlign: "center",
+        }}>{caption}</div>
+      )}
+    </div>
+  );
+}
+
 /* ── Framework Steps ─────────────────────────────────────────────── */
 interface FrameworkStep {
   number: string;
