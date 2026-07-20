@@ -52,6 +52,85 @@ export interface SalaryPageProps {
   calibrationDate: string;
 }
 
+/* ─── Company logo domains (Clearbit) ───────────────────────────── */
+
+const COMPANY_DOMAIN: Record<string, string> = {
+  accenture: "accenture.com",
+  adobe: "adobe.com",
+  amazon: "amazon.com",
+  "angel-one": "angelone.in",
+  anthropic: "anthropic.com",
+  apple: "apple.com",
+  "ather-energy": "atherenergy.com",
+  atlassian: "atlassian.com",
+  bain: "bain.com",
+  barclays: "barclays.com",
+  bcg: "bcg.com",
+  blinkit: "blinkit.com",
+  capgemini: "capgemini.com",
+  cognizant: "cognizant.com",
+  cred: "cred.club",
+  databricks: "databricks.com",
+  "de-shaw": "deshaw.com",
+  deloitte: "deloitte.com",
+  dream11: "dream11.com",
+  flipkart: "flipkart.com",
+  freshworks: "freshworks.com",
+  goldman: "goldmansachs.com",
+  google: "google.com",
+  groww: "groww.in",
+  hcl: "hcltech.com",
+  "hdfc-bank": "hdfcbank.com",
+  ibm: "ibm.com",
+  icici: "icicibank.com",
+  infosys: "infosys.com",
+  intuit: "intuit.com",
+  "jane-street": "janestreet.com",
+  jpmc: "jpmorgan.com",
+  ltimindtree: "ltimindtree.com",
+  mckinsey: "mckinsey.com",
+  meesho: "meesho.com",
+  meta: "meta.com",
+  microsoft: "microsoft.com",
+  millennium: "mlp.com",
+  "morgan-stanley": "morganstanley.com",
+  mphasis: "mphasis.com",
+  myntra: "myntra.com",
+  nykaa: "nykaa.com",
+  "ola-electric": "olaelectric.com",
+  openai: "openai.com",
+  optiver: "optiver.com",
+  oracle: "oracle.com",
+  oyo: "oyorooms.com",
+  paytm: "paytm.com",
+  persistent: "persistent.com",
+  phonepe: "phonepe.com",
+  physicswallah: "pw.live",
+  rapido: "rapido.bike",
+  razorpay: "razorpay.com",
+  salesforce: "salesforce.com",
+  "sarvam-ai": "sarvam.ai",
+  stripe: "stripe.com",
+  swiggy: "swiggy.com",
+  tcs: "tcs.com",
+  techmahindra: "techmahindra.com",
+  "tower-research": "tower-research.com",
+  uber: "uber.com",
+  unacademy: "unacademy.com",
+  upstox: "upstox.com",
+  "walmart-global-tech": "walmart.com",
+  wipro: "wipro.com",
+  zepto: "zeptonow.com",
+  zerodha: "zerodha.com",
+  zoho: "zoho.com",
+  zomato: "zomato.com",
+};
+
+function companyLogoUrl(slug: string): string | null {
+  const domain = COMPANY_DOMAIN[slug];
+  return domain ? `https://logo.clearbit.com/${domain}` : null;
+}
+
 /* ─── Helpers ────────────────────────────────────────────────────── */
 
 const LEVEL_ORDER = ["entry", "mid", "senior", "lead", "executive"] as const;
@@ -748,13 +827,33 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
                   : 0;
                 const hasBar = entry.entryMax != null;
 
+                const logoUrl = companyLogoUrl(entry.slug);
                 return (
                   <a key={entry.slug} href={`/salary/${entry.slug}`} className="sal-card">
-                    {/* Company name + tier badge */}
+                    {/* Logo + company name + tier badge */}
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-                      <p style={{ fontFamily: fonts.sans, fontWeight: 700, fontSize: 16, color: t.coal, margin: 0, lineHeight: 1.2 }}>
-                        {entry.label}
-                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {logoUrl && (
+                          <img
+                            src={logoUrl}
+                            alt={`${entry.label} logo`}
+                            width={28}
+                            height={28}
+                            style={{
+                              borderRadius: 6,
+                              border: `1px solid ${t.line}`,
+                              objectFit: "contain",
+                              flexShrink: 0,
+                              background: "#fff",
+                              padding: 2,
+                            }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                        )}
+                        <p style={{ fontFamily: fonts.sans, fontWeight: 700, fontSize: 16, color: t.coal, margin: 0, lineHeight: 1.2 }}>
+                          {entry.label}
+                        </p>
+                      </div>
                       <span style={{
                         fontFamily: fonts.mono, fontSize: 9, fontWeight: 700,
                         letterSpacing: "0.10em", textTransform: "uppercase" as const,
