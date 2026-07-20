@@ -922,6 +922,137 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     hubNote: "Pre-IPO ESOP (IPO filed 2025) — Ather is the quality-focused EV brand vs Ola Electric",
     sitemapPriority: 0.70,
   },
+  /* ── Indian B2B SaaS ────────────────────────────────────────── */
+  {
+    slug: "postman",
+    searchPhrase: "Postman Software Engineer Salary India 2026",
+    metaDescription:
+      "Postman India salary 2026 — SWE entry ₹25–35 LPA, mid ₹38–65 LPA, senior ₹65–120 LPA. Pre-IPO ESOP. World's most-used API platform. Bengaluru HQ CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "marketing", label: "Developer Advocate" },
+    ],
+    questionSlug: undefined,
+    hubNote: "ESOP-heavy at mid-level — negotiate ESOP refresh cadence alongside fixed; late-stage private",
+    sitemapPriority: 0.77,
+  },
+  {
+    slug: "browserstack",
+    searchPhrase: "BrowserStack Software Engineer Salary India 2026",
+    metaDescription:
+      "BrowserStack India salary 2026 — SWE entry ₹17–22 LPA, mid ₹22–32 LPA, senior ₹30–50 LPA. Pre-IPO ESOP. Bootstrapped, profitable. Mumbai CTC and negotiation guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "qa-engineer", label: "QA / Automation Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Bootstrapped and profitable — fixed-heavy offers; ESOP is real but modest vs VC-backed peers",
+    sitemapPriority: 0.73,
+  },
+  {
+    slug: "chargebee",
+    searchPhrase: "Chargebee Software Engineer Salary India 2026",
+    metaDescription:
+      "Chargebee India salary 2026 — SWE entry ₹12–20 LPA, mid ₹18–32 LPA, senior ₹32–55 LPA. Pre-IPO ESOP. B2B subscription management SaaS. Chennai CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Late-stage private (Insight Partners backed) — ESOP value depends on IPO; negotiate fixed first",
+    sitemapPriority: 0.70,
+  },
+  /* ── Travel Tech ─────────────────────────────────────────────── */
+  {
+    slug: "makemytrip",
+    searchPhrase: "MakeMyTrip Software Engineer Salary India 2026",
+    metaDescription:
+      "MakeMyTrip salary India 2026 — SWE entry ₹12–18 LPA, mid ₹22–36 LPA, senior ₹36–60 LPA. Nasdaq-listed RSU (MMYT). India's largest travel platform. Gurugram CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Nasdaq-listed RSU (MMYT) — solid equity credibility; travel recovery driving compensation growth",
+    sitemapPriority: 0.72,
+  },
+  {
+    slug: "ixigo",
+    searchPhrase: "ixigo Software Engineer Salary India 2026",
+    metaDescription:
+      "ixigo salary India 2026 — SWE entry ₹8–14 LPA, mid ₹14–26 LPA, senior ₹26–45 LPA. Listed ESOP (NSE: IXIGO). India's #1 rail ticket booking app. Gurugram CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "ux-designer", label: "Product Designer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
+    questionSlug: undefined,
+    hubNote: "NSE-listed since 2024 — ESOP liquidity better than pre-IPO peers; rail search is the core moat",
+    sitemapPriority: 0.70,
+  },
+  /* ── AI Wave 8 ───────────────────────────────────────────────── */
+  {
+    slug: "perplexity",
+    searchPhrase: "Perplexity AI Engineer Salary India 2026",
+    metaDescription:
+      "Perplexity AI salary India 2026 — AI Engineer mid ₹80–140 LPA, senior ₹140–240 LPA plus RSU. AI-native search engine. SF-anchored bands. India remote hires.",
+    roles: [
+      { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
+    ],
+    questionSlug: undefined,
+    hubNote: "SF-anchored RSU — latest valuation $14B (2025); India remote hires in AI research and backend",
+    sitemapPriority: 0.76,
+  },
+  {
+    slug: "krutrim",
+    searchPhrase: "Krutrim AI Engineer Salary India 2026",
+    metaDescription:
+      "Krutrim salary India 2026 — AI Engineer mid ₹45–75 LPA, senior ₹85–140 LPA. ESOP (Ola spinoff). India's first AI unicorn. Bengaluru CTC and equity guide.",
+    roles: [
+      { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Ola spinoff (Bhavish Aggarwal) — ESOP credibility linked to Ola group trajectory; India-first AI mission",
+    sitemapPriority: 0.72,
+  },
+  /* ── Banking GCC Wave 8 ──────────────────────────────────────── */
+  {
+    slug: "wells-fargo",
+    searchPhrase: "Wells Fargo India Software Engineer Salary 2026",
+    metaDescription:
+      "Wells Fargo India salary 2026 — SWE entry ₹16–26 LPA, mid ₹28–45 LPA, senior ₹45–70 LPA. RSU. Hyderabad and Chennai GCC. US retail and investment banking tech CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Wells Fargo India GCC — RSU is WFC NYSE stock; Hyderabad campus is mid-tier banking GCC",
+    sitemapPriority: 0.71,
+  },
+  /* ── Logistics ───────────────────────────────────────────────── */
+  {
+    slug: "delhivery",
+    searchPhrase: "Delhivery Software Engineer Salary India 2026",
+    metaDescription:
+      "Delhivery salary India 2026 — SWE entry ₹12–18 LPA, mid ₹22–36 LPA, senior ₹36–58 LPA. Listed RSU (DELHIVERY NSE). India's #1 logistics tech company. Gurugram CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "NSE-listed RSU (DELHIVERY) — solid equity credibility; logistics ML and supply-chain tech focus",
+    sitemapPriority: 0.71,
+  },
+  /* ── Grocery / Retail Tech ──────────────────────────────────── */
+  {
+    slug: "bigbasket",
+    searchPhrase: "BigBasket Software Engineer Salary India 2026",
+    metaDescription:
+      "BigBasket salary India 2026 — SWE mid ₹22–36 LPA, senior ₹36–58 LPA. Tata-group RSU. India's largest online grocery platform and a Tata Digital subsidiary. Bengaluru CTC guide.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+    ],
+    questionSlug: undefined,
+    hubNote: "Tata-group RSU — listed via Tata Digital parent; compensation below pure-play unicorns",
+    sitemapPriority: 0.71,
+  },
   /* ── Quick Commerce ──────────────────────────────────────────── */
   {
     slug: "blinkit",

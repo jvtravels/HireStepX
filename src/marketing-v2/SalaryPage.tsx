@@ -713,7 +713,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
             background: t.creamRaised,
           }}
         >
-          <div style={container}>
+          <div style={{ ...container, textAlign: "center" }}>
             <p className="ed-rise" style={{ ...eyebrow, marginBottom: 14 }}>
               Salary Guides · India 2026
             </p>
@@ -725,22 +725,18 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               letterSpacing: "-0.025em",
               color: t.coal,
               margin: "0 0 20px",
-              maxWidth: "20ch",
               textWrap: "balance" as never,
             }}>
-              What {entries.length} Indian companies{" "}
+              What Indian companies{" "}
               <em style={{ fontStyle: "italic", color: t.copper }}>actually pay.</em>
             </h1>
-            <p className="ed-rise ed-d2" style={{ ...leadStyle, marginBottom: 28 }}>
+            <p className="ed-rise ed-d2" style={{ ...leadStyle, margin: "0 auto 28px", textAlign: "center" }}>
               Total CTC from TCS freshers to Goldman Sachs — sourced from AmbitionBox,
               Glassdoor, and Levels.fyi. Updated July 2026.
             </p>
 
-            {/* Context chips — mirrors blog post header */}
-            <div className="ed-rise ed-d3" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 32 }}>
-              <span style={{ ...chipStyle, background: t.copperWash, color: t.copper, border: `1px solid ${t.copperBorder}` }}>
-                {entries.length} companies
-              </span>
+            {/* Context chips */}
+            <div className="ed-rise ed-d3" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 32, justifyContent: "center" }}>
               <span style={{ ...chipStyle, background: t.creamSoft, color: t.inkSoft, border: `1px solid ${t.line}` }}>
                 Total CTC in LPA
               </span>
@@ -752,8 +748,8 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               </span>
             </div>
 
-            {/* Search bar — left-aligned, generous width */}
-            <div style={{ maxWidth: 520, position: "relative" }}>
+            {/* Search bar — centered */}
+            <div style={{ maxWidth: 520, margin: "0 auto", position: "relative" }}>
               <svg
                 width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke={t.inkFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"

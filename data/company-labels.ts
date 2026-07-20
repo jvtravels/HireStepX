@@ -88,6 +88,28 @@ export const COMPANY_LABEL: Record<string, string> = {
   "hdfc-bank": "HDFC Bank",
   icici: "ICICI",
 
+  // Indian B2B SaaS
+  postman: "Postman",
+  browserstack: "BrowserStack",
+  chargebee: "Chargebee",
+
+  // Travel tech
+  makemytrip: "MakeMyTrip",
+  ixigo: "ixigo",
+
+  // AI search
+  perplexity: "Perplexity",
+  krutrim: "Krutrim",
+
+  // Banking GCCs
+  "wells-fargo": "Wells Fargo India",
+
+  // Logistics
+  delhivery: "Delhivery",
+
+  // Grocery / retail
+  bigbasket: "BigBasket",
+
   // FMCG / conglomerate
   hul: "HUL",
   "p&g": "P&G",
