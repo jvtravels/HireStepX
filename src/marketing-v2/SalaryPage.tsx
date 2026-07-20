@@ -727,12 +727,12 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               margin: "0 0 20px",
               textWrap: "balance" as never,
             }}>
-              What Indian companies{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>actually pay.</em>
+              Know the number{" "}
+              <em style={{ fontStyle: "italic", color: t.copper }}>before the offer.</em>
             </h1>
             <p className="ed-rise ed-d2" style={{ ...leadStyle, margin: "0 auto 28px", textAlign: "center" }}>
-              Total CTC from TCS freshers to Goldman Sachs — sourced from AmbitionBox,
-              Glassdoor, and Levels.fyi. Updated July 2026.
+              CTC ranges across India's top companies — from TCS to Goldman Sachs,
+              freshers to senior engineers.
             </p>
 
             {/* Search bar — centered */}
