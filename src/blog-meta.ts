@@ -1067,6 +1067,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What is the difference between ML engineer and data scientist salary in India?", answer: "ML engineers in India typically earn 20–40% more than data scientists at the same experience level. At 3 years: data scientist ₹20–55 LPA vs ML engineer ₹28–70 LPA at product companies. The difference grows at senior levels. ML engineers are expected to own production systems — that responsibility commands a premium." },
     ],
   },
+  {
+    slug: "why-do-you-want-to-join-our-company-answer-india-2026",
+    title: "Why Do You Want to Join Our Company? — Best Answers India 2026 (15 Company-Specific Scripts)",
+    metaDescription: "Best answers for 'why do you want to join our company' for India 2026. 15 company-specific scripts for TCS, Infosys, Google, Amazon, Razorpay, Zomato, Swiggy, Flipkart, and more — with the framework to write your own for any company.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&h=630&fit=crop",
+    company: "General", category: "HR Round",
+    faqs: [
+      { question: "What is the best answer for 'why do you want to join our company' for a fresher?", answer: "Name one specific thing about the company that you genuinely find interesting — an engineering blog post, a product decision, a recent milestone, or a technical challenge they're known for. Then connect it to your skills or learning goals. A fresher who says 'I read your post about the Redis pipeline redesign and I want to work on that kind of problem' beats every fresher who says 'because it is a great company with good growth.'" },
+      { question: "How do I answer 'why do you want to join TCS/Infosys' as a fresher?", answer: "Mention the specific vertical or practice you're targeting (cloud, AI, BFSI), the structured learning path (TCS iON, Infosys Springboard/InfyTQ), and the scale of enterprise client exposure you want. Don't just say 'brand name' or 'job security' — those are real reasons but weak answers. Show you know something about what they actually do and why it matches your goals." },
+      { question: "Should I say I want to join a company because of the salary?", answer: "Never mention salary as a reason in the 'why do you want to join' answer. Even if compensation is your primary motivation, the interviewer wants to hear about fit, interest, and growth alignment. Salary is discussed in a separate HR conversation about compensation. Mentioning it as your reason signals transactional intent and reduces your negotiation leverage." },
+      { question: "What if I don't know much about the company — how do I prepare quickly?", answer: "20 minutes of research is enough. Read the engineering blog (2 posts), the product homepage, and one recent news article. Pick one specific fact from the engineering blog and build your answer around it. 'I read your post on [specific topic] and the way you solved [specific problem] is exactly the kind of challenge I want to work on' takes 5 minutes to prepare and is more effective than a generic answer that takes 0 minutes." },
+    ],
+  },
+  {
+    slug: "meesho-interview-questions-india-2026",
+    title: "Meesho Interview Questions India 2026 — SDE, Data Science & Product Manager Roles",
+    metaDescription: "Meesho interview questions 2026 for SDE, data scientist, and PM roles. Covers the full interview process, DSA and system design for social commerce, product case studies, Meesho salary ₹20–110 LPA, and insider preparation tips.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=630&fit=crop",
+    company: "E-commerce", category: "Full Guide",
+    faqs: [
+      { question: "Is Meesho a good company to work for as an engineer?", answer: "Meesho is one of the best engineering environments in India for 2–6 year experience engineers. The social commerce and Tier-2 India constraints produce genuinely unique engineering challenges (offline-first architecture, unstructured catalogue at 100M scale, WhatsApp-first notification systems). Compensation is Tier-1 product company level, comparable to Swiggy and Zomato." },
+      { question: "How hard is Meesho's SDE interview?", answer: "Meesho's SDE interview is medium-hard — comparable to Swiggy and Zomato, harder than Nykaa or MMT. DSA requires LeetCode Medium to Hard proficiency. System design questions have Tier-2 India constraints that are unique (offline-first, WhatsApp notifications, unstructured catalogue) and require domain-specific thinking beyond generic system design frameworks." },
+      { question: "What is Meesho SDE salary in 2026?", answer: "Meesho SDE salary in 2026: SDE-1 ₹20–35 LPA, SDE-2 ₹35–65 LPA, Senior SDE ₹60–100 LPA. Pre-IPO ESOPs are illiquid but valued at last funding round. Comparable to Swiggy and Zomato at equivalent levels." },
+      { question: "What makes Meesho's engineering challenges unique?", answer: "Meesho's Tier-2 India user base creates engineering constraints not found at other Indian e-commerce companies: offline-first mobile architecture for intermittent connectivity, WhatsApp as the primary notification channel (not push), unstructured product catalogue at 100M+ SKUs requiring ML-based deduplication, and ultra-low-cost logistics for orders with average order values under ₹300." },
+    ],
+  },
+  {
+    slug: "cloud-computing-salary-india-2026",
+    title: "Cloud Computing Salary India 2026 — AWS, Azure, GCP for Cloud Engineers and Architects",
+    metaDescription: "Cloud computing salary India 2026 for cloud engineers and architects on AWS, Azure, and GCP. Fresher to senior CTC ranges, cloud architect salary by city, highest-paying certifications, and which cloud platform pays most.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&h=630&fit=crop",
+    company: "Industry", category: "Salary Guide",
+    faqs: [
+      { question: "What is the cloud engineer salary for freshers in India 2026?", answer: "Cloud engineer fresher salary in India 2026: IT services ₹4–8 LPA, funded startups ₹10–18 LPA, Tier-1 product companies ₹16–28 LPA, FAANG India ₹20–38 LPA. AWS associate certification significantly improves fresher placement at higher-tier companies." },
+      { question: "Which cloud platform pays most in India — AWS, Azure, or GCP?", answer: "AWS has the highest volume of cloud jobs and the most consistent salary demand across all company types. GCP has the highest per-skill salary premium because few engineers are certified on it. Azure is strongest in IT services and enterprise roles. For maximum salary: learn AWS first (highest job volume), add GCP if targeting data/AI companies (highest premium)." },
+      { question: "Is cloud computing a good career in India in 2026?", answer: "Yes — cloud computing is one of the strongest career tracks in Indian tech. Every Indian company is mid-migration to cloud, and the supply of skilled cloud architects significantly lags demand. Senior cloud architects at product companies and FAANG India earn ₹75–130 LPA. The ceiling is high and the demand is durable." },
+      { question: "What is the salary of a cloud architect in India?", answer: "Cloud architect salary in India 2026: IT services cloud architect (5–8 yrs) ₹28–60 LPA; product company cloud architect (5–8 yrs) ₹50–100 LPA; FAANG India solutions architect (5–8 yrs) ₹70–130+ LPA. The gap between IT services and product company salaries widens significantly at the architect level compared to engineer level." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
