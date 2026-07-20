@@ -2338,7 +2338,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "infosys-interview-questions-2026"],
     practicePageSlugs: [
-      { label: "Tech Mahindra SDE Interview Practice", slug: "tech-mahindra-interview-questions" },
+      { label: "Tech Mahindra SDE Interview Practice", slug: "wipro-behavioral-interview-questions" },
     ],
     cta: "Tech Mahindra's aptitude test filters 40–50% of applicants before the technical round. HireStepX includes mock aptitude rounds followed by a full technical interview simulation — so you practice the entire loop, not just coding, before your actual drive.",
     relatedLinks: [
@@ -2395,7 +2395,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tech-mahindra-interview-questions", "cognizant-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
     practicePageSlugs: [
-      { label: "Mphasis SDE Interview Practice", slug: "mphasis-interview-questions" },
+      { label: "Mphasis SDE Interview Practice", slug: "ibm-freshers-interview-questions" },
     ],
     cta: "Mphasis's BFSI-focused technical rounds test SQL and data analysis more than most IT services interviews. HireStepX lets you practice these SQL-heavy technical rounds with real banking domain scenarios — explaining your approach out loud to an AI interviewer and getting instant feedback on both accuracy and communication clarity.",
     relatedLinks: [
@@ -2571,7 +2571,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["razorpay-interview-experience", "phonepe-interview-questions-india-2026", "salary-negotiation-tips-india"],
     practicePageSlugs: [
-      { label: "Fintech SDE Interview Practice", slug: "fintech-interview-questions" },
+      { label: "Fintech SDE Interview Practice", slug: "razorpay-engineering-interview-questions" },
     ],
     cta: "Paytm interviews test payment domain knowledge alongside standard DSA and system design. HireStepX's fintech interview mode frames coding and system design questions in payment contexts — UPI flows, idempotency, fraud detection — so you're practicing what Paytm actually asks, not generic LeetCode problems.",
     relatedLinks: [
@@ -2632,7 +2632,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["razorpay-interview-experience", "system-design-interview-preparation", "faang-interview-preparation-india-2026"],
     practicePageSlugs: [
-      { label: "Fintech SDE Hard Interview Practice", slug: "fintech-interview-questions" },
+      { label: "Fintech SDE Hard Interview Practice", slug: "razorpay-engineering-interview-questions" },
     ],
     cta: "CRED's interview bar requires you to articulate complex system design decisions out loud under pressure — not just write code. HireStepX's voice-based mock interviews force you to explain your reasoning in real time, the same way CRED interviewers assess problem decomposition. Practice the credit domain system design questions specifically before your CRED round.",
     relatedLinks: [
@@ -2754,7 +2754,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["faang-interview-preparation-india-2026", "product-company-vs-service-company-india-career", "dsa-60-day-preparation-plan"],
     practicePageSlugs: [
-      { label: "FAANG SDE Interview Practice", slug: "google-sde-interview-questions" },
+      { label: "FAANG SDE Interview Practice", slug: "google-india-engineering-interview-questions" },
     ],
     cta: "Getting into FAANG India or a Tier-1 Indian product company requires the same DSA and system design skills the interview tests — and the ability to explain your thinking out loud under time pressure. HireStepX runs voice-based mock interviews at the exact difficulty level of FAANG India coding and behavioral rounds, with detailed feedback after each answer.",
     relatedLinks: [
@@ -3051,7 +3051,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["cred-interview-questions-india-2026", "paytm-interview-questions-india-2026", "backend-developer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "Fintech Interview Practice", slug: "groww-fintech-interview-questions" },
+      { label: "Fintech Interview Practice", slug: "zerodha-engineering-interview-questions" },
     ],
     cta: "Groww's fintech interview tests both technical depth and financial domain understanding. HireStepX's voice mock interviews let you practice the behavioural rounds that often decide between candidates with similar DSA scores — the 'tell me about a time you built something users loved' questions that most engineers underprepare for.",
     relatedLinks: [
@@ -3222,7 +3222,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["groww-interview-questions-india-2026", "data-analyst-interview-questions-india-2026"],
     practicePageSlugs: [
-      { label: "E-commerce PM Interview Practice", slug: "flipkart-product-manager-interview" },
+      { label: "E-commerce PM Interview Practice", slug: "flipkart-pm-interview-questions" },
     ],
     cta: "Nykaa's PM and SDE interviews test both domain awareness and structured communication. HireStepX's voice-based mock interviews help you practise the product case study format out loud — the skill that separates candidates who know the framework from those who can apply it fluently under pressure.",
     relatedLinks: [
@@ -3279,7 +3279,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["groww-interview-questions-india-2026", "nykaa-interview-questions-india-2026", "backend-developer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "System Design Mock Interview", slug: "uber-system-design-interview" },
+      { label: "System Design Mock Interview", slug: "amazon-system-design-interview-questions" },
     ],
     cta: "Ola's ride-hailing system design questions test whether you can reason about geospatial indexing, real-time matching, and pricing algorithms under interview pressure. HireStepX's voice mock interviews let you practice articulating system design trade-offs out loud — the skill that determines whether your architecture knowledge translates to a hire decision.",
     relatedLinks: [
@@ -3344,7 +3344,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["salary-negotiation-tips-india", "star-method-interview-answers"],
     practicePageSlugs: [
-      { label: "HR Round Mock Interview", slug: "hr-round-interview-questions" },
+      { label: "HR Round Mock Interview", slug: "tcs-hr-round-questions" },
     ],
     cta: "HR rounds are won or lost on how confidently and coherently you speak — not just what you say. HireStepX's voice-based AI mock interviews simulate the entire HR round, give you real-time feedback on your answer structure, and score your responses on the same STAR framework your interviewers use. Practice 3 HR rounds before your real interview.",
     relatedLinks: [
@@ -3405,7 +3405,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["groww-interview-questions-india-2026", "data-analyst-interview-questions-india-2026", "backend-developer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "Product Company Interview Practice", slug: "zomato-interview-questions" },
+      { label: "Product Company Interview Practice", slug: "zomato-product-interview-questions" },
     ],
     cta: "Zomato's behavioural rounds test ownership and speed of delivery — how fast you shipped, what you owned end-to-end, how you handled failure. HireStepX's STAR-scored voice mock interviews are designed for exactly this: practice your ownership stories until the structure is automatic and the details come naturally under pressure.",
     relatedLinks: [
@@ -3521,7 +3521,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "star-method-interview-answers"],
     practicePageSlugs: [
-      { label: "HR Round Mock Interview", slug: "hr-round-interview-questions" },
+      { label: "HR Round Mock Interview", slug: "tcs-hr-round-questions" },
     ],
     cta: "Knowing what to say is only half the battle — delivering it confidently under interview pressure is the other half. HireStepX lets you practice 'tell me about yourself' with voice AI that scores your answer on structure, specificity, and confidence, then gives you a coached model answer to compare yours against. Do 5 practice rounds before your interview.",
     relatedLinks: [
@@ -3700,7 +3700,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "tell-me-about-yourself-answer-fresher-india-2026"],
     practicePageSlugs: [
-      { label: "HR Round Mock Interview", slug: "hr-round-interview-questions" },
+      { label: "HR Round Mock Interview", slug: "tcs-hr-round-questions" },
     ],
     cta: "Knowing the right answer structure is one thing — delivering it fluently when a senior HR manager is staring at you is another. HireStepX lets you practice 'why do you want to join us' with voice AI that scores your answer on specificity, relevance, and delivery. Build the habit before the real interview.",
     relatedLinks: [
@@ -3757,7 +3757,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["zomato-interview-questions-india-2026", "nykaa-interview-questions-india-2026", "full-stack-developer-salary-india-2026"],
     practicePageSlugs: [
-      { label: "Social Commerce Interview Practice", slug: "meesho-interview-questions" },
+      { label: "Social Commerce Interview Practice", slug: "meesho-engineering-interview-questions" },
     ],
     cta: "Meesho's behavioural interviews test whether you think about users — specifically Tier-2 India sellers who are not like you. Interviewers probe empathy and product intuition alongside technical skill. HireStepX's voice interview practice helps you develop the habit of grounding technical answers in user outcomes.",
     relatedLinks: [

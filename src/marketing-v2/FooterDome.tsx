@@ -18,6 +18,7 @@ import { tokens as t, fonts } from "../auth/_tokens";
 
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
+  ["AI Mock Interview", "/ai-mock-interview"],
   ["How it works", "/how-it-works"],
   ["Companies", "/companies"],
   ["Interview Prep", "/interview-prep"],
