@@ -34,6 +34,8 @@ export interface NextMoveInput {
    * skill-only fallback.
    */
   topGaps?: string[];
+  /** Total completed sessions — used to differentiate a first-time cold start from a returning-user cold start. */
+  sessionCount?: number;
 }
 
 export interface NextMoveChip {
@@ -201,7 +203,7 @@ const PRACTICE_THRESHOLD = 70;
 const CHIP_MAX = 48;
 
 export function pickNextMove(input: NextMoveInput): NextMove {
-  const { skills, currentStreak, smartSchedule, topGaps } = input;
+  const { skills, currentStreak, smartSchedule, topGaps, sessionCount } = input;
 
   // First-priority gap: the highest-severity gap from the user's last
   // insight, IF it's one we have coaching CTA copy for. Unknown gap
@@ -257,13 +259,16 @@ export function pickNextMove(input: NextMoveInput): NextMove {
       ? `/session/new?focus=${encodeURIComponent(weakestSkillName)}`
       : "/session/new";
 
+  const isFirstTime = (sessionCount ?? 0) === 0;
   const headline = matchedGap
     ? matchedGap.cta.headline
     : weakestSkillLabel
       ? `Your ${weakestSkillLabel} is the highest-leverage thing to practice today.`
       : currentStreak >= 3
         ? `You're on a ${currentStreak}-day streak — don't break it.`
-        : "Pick up where you left off.";
+        : isFirstTime
+          ? "Your first mock interview takes 15 minutes. You'll get a score, STAR breakdown, and coaching notes."
+          : "Pick up where you left off.";
 
   const coachingFocus: CoachingFocus | null = matchedGap
     ? { gapCode: matchedGap.code, label: matchedGap.cta.label }

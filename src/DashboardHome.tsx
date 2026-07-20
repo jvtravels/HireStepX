@@ -499,11 +499,13 @@ export default function DashboardHome() {
    * it reads the user's weakest skill, last-session gap flags, and streak to
    * produce a targeted headline + CTA (with a `drill` deep-link). Was
    * previously hardcoded to the same STAR copy for everyone. */
+  const totalSessionCount = user?.practiceTimestamps?.length ?? 0;
   const nextMove = useMemo(() => pickNextMove({
     skills: core.skills.map((s) => ({ name: s.name, score: s.score })),
     currentStreak: core.currentStreak,
     topGaps: core.topGaps,
-  }), [core.skills, core.currentStreak, core.topGaps]);
+    sessionCount: totalSessionCount,
+  }), [core.skills, core.currentStreak, core.topGaps, totalSessionCount]);
 
   /* Supporting line under the hero headline, derived from what drove the CTA.
    * The session-type label uses coachingSessionFocus so campus-placement and
@@ -1254,10 +1256,10 @@ function RecentSessionsList({ real, fallback, demoMode, hasResume, hasTargetRole
         padding: "18px 4px",
       }}>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
-          No sessions yet. Start your first 25 minute practice and your history
-          shows up here.
+          Your first session takes 15 minutes. You&apos;ll get a score, STAR breakdown,
+          and the exact phrases to improve — emailed to you right after.
         </p>
-        <PrimaryCta size="sm" onClick={onStart}>Start your first session</PrimaryCta>
+        <PrimaryCta size="sm" onClick={onStart}>Start your first free session</PrimaryCta>
       </div>
     );
   }
