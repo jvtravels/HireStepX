@@ -1151,6 +1151,48 @@ export const BLOG_META: BlogMeta[] = [
       { question: "How do I explain a career gap due to health reasons without disclosing details?", answer: "You are not required to disclose your diagnosis. Simply say: 'I took time off for a health issue that required treatment and recovery. I'm fully recovered now.' If the interviewer presses for details, it is appropriate to say: 'I'd prefer to keep the medical details private, but I'm happy to provide confirmation of my current fitness to work from my doctor if that's required for the role.' Most interviewers will not press further." },
     ],
   },
+  {
+    slug: "system-design-interview-questions-india-2026",
+    title: "System Design Interview Questions India 2026 — With Answers (3–10 YOE Engineers)",
+    metaDescription: "System design interview questions India 2026 with detailed answers. Covers URL shortener, WhatsApp, Netflix, Swiggy, payment systems, rate limiter, and how to crack system design rounds at Flipkart, Swiggy, Razorpay, and FAANG India.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=630&fit=crop",
+    company: "Tech", category: "Technical",
+    faqs: [
+      { question: "What system design questions are commonly asked in India interviews in 2026?", answer: "The most frequently asked system design questions in Indian product company interviews in 2026: URL shortener, WhatsApp / messaging system, food delivery system (Swiggy/Zomato-style), Netflix / video streaming, Uber / ride-hailing, rate limiter, payment processing system (UPI-flavoured), news feed (Instagram/Twitter), notification system, and search autocomplete. Indian-specific variants (UPI, hyperlocal delivery, cricket scorecard) appear at companies operating in those domains." },
+      { question: "At what experience level are system design interviews asked in India?", answer: "System design interviews typically begin at: SDE-2 / 3+ years experience at FAANG India (Google, Amazon, Microsoft, Meta); 2–3 years at Tier-1 Indian product companies (Flipkart, Swiggy, Razorpay, Meesho, Zomato); and 1–2 years at some funded startups. IT services companies (TCS, Infosys, Wipro, Accenture) do not typically include system design in standard interviews — it's primarily a product company evaluation." },
+      { question: "How should I structure my system design interview answer?", answer: "Use this 5-step structure: (1) Clarify requirements — ask about scale, core features, consistency requirements, and latency targets before drawing anything; (2) Capacity estimation — back-of-envelope calculations for storage, throughput, and bandwidth; (3) High-level design — start with the simplest architecture that works, then add components as constraints require; (4) Deep dive — discuss 2-3 critical components in detail; (5) Scaling and failure scenarios — how does the system handle 10× load or component failures. Interviewers evaluate process as much as output." },
+      { question: "What resources should I use to prepare for system design interviews in India?", answer: "Best system design resources for Indian engineers in 2026: (1) System Design Primer on GitHub — free and comprehensive; (2) 'Designing Data-Intensive Applications' by Martin Kleppmann — the definitive book, worth buying; (3) ByteByteGo newsletter and YouTube channel — weekly teardowns of real systems; (4) AlgoMaster.io — structured curriculum with Indian company-specific questions; (5) Practice with a mock interviewer — system design is a verbal skill that requires talking through trade-offs, not just reading about them." },
+    ],
+  },
+  {
+    slug: "tcs-nqt-preparation-guide-india-2026",
+    title: "TCS NQT Preparation Guide 2026 — Pattern, Syllabus, Cutoff, and Strategy",
+    metaDescription: "TCS NQT preparation guide 2026. Full NQT exam pattern, section-wise syllabus, expected cutoff scores, coding round tips, and 30-day preparation strategy for freshers targeting TCS placement.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=1200&h=630&fit=crop",
+    company: "TCS", category: "Full Guide",
+    faqs: [
+      { question: "What is TCS NQT and how is it different from TCS regular aptitude test?", answer: "TCS NQT (National Qualifier Test) replaced TCS's earlier aptitude tests as a standardised score-based exam valid for 1 year. It has two tiers: NQT Foundation (all candidates, 90 minutes — verbal + reasoning + numerical) and NQT Advanced (shortlisted candidates — advanced aptitude + coding). NQT Foundation scores are used for TCS Ninja hiring (₹3.36 LPA); NQT Foundation + Advanced scores for TCS Digital hiring (₹7 LPA)." },
+      { question: "What is a good score in TCS NQT 2026?", answer: "Based on historically reported data: a safe score for TCS Ninja consideration is 65+ out of 100 on the NQT Foundation. Top-priority interview calls typically go to candidates scoring 75+. TCS applies both a total score cutoff (approximately 50–55 minimum) and a section-wise threshold (approximately 30–35% per section). A strong score in any single section cannot compensate for bombing another section." },
+      { question: "How many days are needed to prepare for TCS NQT?", answer: "30 days of focused preparation (2–3 hours daily) is sufficient for most engineering freshers to clear TCS NQT comfortably. The first 2 weeks cover concepts and problem types; the third week builds speed and accuracy; the fourth week is full mock tests. Engineers with strong mathematics backgrounds may need only 15–20 days. The verbal section is the most common underestimated area — allocate at least 20% of preparation time to it regardless of your English proficiency." },
+      { question: "What happens after clearing TCS NQT?", answer: "After clearing TCS NQT: (1) Technical Interview — OOP, data structures, DBMS, resume projects, one coding problem; (2) Managerial Interview — behavioural questions, TCS service line interest, willingness to relocate; (3) HR Round — standard HR questions, location preference, TCS's 2-year service bond agreement. The full post-NQT process typically takes 4–8 weeks from test to offer letter, depending on batch size and business need." },
+    ],
+  },
+  {
+    slug: "wipro-interview-questions-india-2026",
+    title: "Wipro Interview Questions India 2026 — Freshers & Experienced (All Rounds + Salary)",
+    metaDescription: "Wipro interview questions India 2026 for freshers and experienced candidates. Covers Wipro NLTH online test, technical round, HR round, Wipro salary ₹3.5–40 LPA, and preparation strategy for campus and off-campus hiring.",
+    datePublished: "2026-07-20",
+    heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=630&fit=crop",
+    company: "Wipro", category: "Full Guide",
+    faqs: [
+      { question: "What is Wipro's interview process for freshers in 2026?", answer: "Wipro's fresher interview process has 3 stages: (1) Online Assessment — aptitude (20 questions), coding (2 problems in 45 min), and essay writing (200-250 words, 10 min); (2) Technical Interview — OOP, data structures, DBMS (SQL), OS concepts, and resume project discussion; (3) HR Round — standard HR questions, location preference, salary discussion. The essay writing section is unique to Wipro among IT services companies." },
+      { question: "What is Wipro's salary for freshers in India 2026?", answer: "Wipro's fresher salary in India 2026 ranges from ₹3.5 LPA (standard NTH package) to ₹6.5 LPA (Elite batch). Wipro Turbo (selected campuses) offers ₹4.5 LPA. Take-home is approximately 75-80% of CTC. Wipro's fresher salaries are comparable to Cognizant but lower than Infosys's higher-tier offers or product companies." },
+      { question: "Is Wipro interview harder than TCS?", answer: "Wipro's interview is broadly comparable to TCS in difficulty. The aptitude section is similar. Wipro adds an essay writing section (unique) and its coding section is slightly easier than TCS NQT Advanced. The technical round is similar — OOP, DBMS, OS, one coding problem. Wipro's HR round tends to be briefer than TCS's managerial round. Neither is significantly harder than the other — prepare similarly for both." },
+      { question: "How should I prepare for Wipro's essay writing section?", answer: "Practice writing 200-250 word structured essays in under 10 minutes. Use a 4-paragraph structure: (1) define topic and state position, (2) main argument with one specific example, (3) acknowledge counter-argument and address it, (4) conclusion with a forward-looking statement. Practice 5-10 essays before the exam on tech/business/social topics. Focus on: grammar accuracy, structure, taking a clear position, and staying within the word limit. This section eliminates candidates who treat it as an afterthought." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
