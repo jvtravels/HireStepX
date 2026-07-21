@@ -22840,6 +22840,91 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
 
 };
 
+/* ─── Auto internal links ───────────────────────────────────────────────────
+   Returns contextual links based on the post's category and company.
+   Rendered after the FAQ and existing relatedLinks — no per-post changes.   */
+const COMPANY_SALARY_SLUG: Record<string, string> = {
+  "TCS": "tcs", "Infosys": "infosys", "Wipro": "wipro", "HCL": "hcl",
+  "Accenture": "accenture", "Cognizant": "cognizant", "Capgemini": "capgemini",
+  "Tech Mahindra": "techmahindra", "Mphasis": "mphasis", "LTIMindtree": "ltimindtree",
+  "ThoughtWorks": "thoughtworks",
+  "Google": "google", "Amazon": "amazon", "Microsoft": "microsoft",
+  "Meta": "meta", "Apple": "apple", "Netflix": "netflix",
+  "Flipkart": "flipkart", "Swiggy": "swiggy", "Zomato": "zomato",
+  "Razorpay": "razorpay", "PhonePe": "phonepe", "Paytm": "paytm",
+  "CRED": "cred", "Meesho": "meesho", "Zepto": "zepto",
+  "Zerodha": "zerodha", "Groww": "groww", "Upstox": "upstox",
+  "Goldman Sachs": "goldman", "JP Morgan": "jpmorgan", "JPMorgan": "jpmorgan",
+  "JPMorgan Chase": "jpmorgan", "Barclays": "barclays",
+  "Deloitte": "deloitte", "McKinsey": "mckinsey", "BCG": "bcg", "Bain": "bain",
+  "Adobe": "adobe", "Salesforce": "salesforce", "Oracle": "oracle",
+  "IBM": "ibm", "SAP": "sap", "Atlassian": "atlassian",
+  "Uber": "uber", "Airbnb": "airbnb", "Stripe": "stripe",
+  "Postman": "postman", "BrowserStack": "browserstack",
+  "Freshworks": "freshworks", "Zoho": "zoho", "Dream11": "dream11",
+  "ShareChat": "sharechat", "MakeMyTrip": "makemytrip",
+  "OYO": "oyo", "Blinkit": "blinkit", "Myntra": "myntra", "Nykaa": "nykaa",
+  "Angel One": "angelone", "Bajaj Finance": "bajajfinance",
+  "HDFC Bank": "hdfc", "ICICI Bank": "icici", "Axis Bank": "axis",
+  "Nvidia": "nvidia", "Intel": "intel", "Qualcomm": "qualcomm",
+  "Cisco": "cisco", "VMware": "vmware", "LinkedIn": "linkedin", "Walmart": "walmart",
+  "Citadel": "citadel", "D.E. Shaw": "deshaw", "Optiver": "optiver",
+  "Millennium": "millennium", "PayPal": "paypal",
+  "PhysicsWallah": "physicswallah", "Vedantu": "vedantu", "Scaler": "scaler",
+};
+
+function getAutoLinks(post: BlogPost): { label: string; href: string }[] {
+  const links: { label: string; href: string }[] = [];
+  const { category, company } = post;
+
+  if (category === "Company Guides" && company && company !== "General") {
+    const slug = COMPANY_SALARY_SLUG[company];
+    links.push({ label: `${company} salary guide`, href: slug ? `/salary#${slug}` : "/salary" });
+    links.push({ label: `Practice ${company} interview`, href: "/interview" });
+  }
+  if (category === "Salary Guide") {
+    links.push({ label: "All company salary guides", href: "/salary" });
+    links.push({ label: "Practice salary negotiation", href: "/interview" });
+  }
+  if (category === "Technical") {
+    links.push({ label: "Practice with AI mock interview", href: "/interview" });
+    links.push({ label: "Compare company salaries", href: "/salary" });
+  }
+  if (category === "Career") {
+    links.push({ label: "Practice for your next move", href: "/interview" });
+    links.push({ label: "Know your market salary", href: "/salary" });
+  }
+  if (category === "Freshers") {
+    links.push({ label: "Practice campus placement interviews", href: "/interview" });
+    links.push({ label: "Fresher salary benchmarks", href: "/salary" });
+  }
+  if (category === "Behavioral") {
+    links.push({ label: "Practice behavioral questions with AI", href: "/interview" });
+    links.push({ label: "Interview question bank", href: "/questions" });
+  }
+  if (category === "Role Guides") {
+    links.push({ label: "Practice role-specific questions", href: "/interview" });
+    links.push({ label: "Salary benchmarks by role", href: "/salary" });
+  }
+  if (category === "Strategy" || category === "Interview Skills" || category === "Interview Tips") {
+    links.push({ label: "Apply this in a live mock interview", href: "/interview" });
+    links.push({ label: "Practice question bank", href: "/questions" });
+  }
+  if (category === "Industry Insights") {
+    links.push({ label: "Company salary benchmarks", href: "/salary" });
+    links.push({ label: "Practice industry interviews", href: "/interview" });
+  }
+  if (category === "HR") {
+    links.push({ label: "Practice HR round questions", href: "/interview" });
+  }
+  if (category === "Product") {
+    links.push({ label: "Practice PM interviews", href: "/interview" });
+    links.push({ label: "PM salary guide", href: "/salary" });
+  }
+
+  return links;
+}
+
 /* ─── Single blog post ─── */
 function BlogPostPage({ post }: { post: BlogPost }) {
   const related = getRelatedPosts(post.relatedSlugs);
@@ -23037,6 +23122,31 @@ function BlogPostPage({ post }: { post: BlogPost }) {
               </div>
             </section>
           )}
+
+          {/* Auto-generated contextual resource links — one function, all posts */}
+          {(() => {
+            const autoLinks = getAutoLinks(post);
+            const existingHrefs = new Set([
+              ...(post.relatedLinks ?? []).map(l => l.href),
+              ...(post.practicePageSlugs ?? []).map(p => `/questions/${p.slug}`),
+            ]);
+            const fresh = autoLinks.filter(l => !existingHrefs.has(l.href));
+            if (fresh.length === 0) return null;
+            return (
+              <section style={{ marginTop: 32, paddingTop: 32, borderTop: `1px solid ${t.line}` }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.inkFaint, letterSpacing: "0.12em", textTransform: "uppercase" as const, margin: "0 0 12px" }}>
+                  Explore more
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 10 }}>
+                  {fresh.map(({ label, href }) => (
+                    <Link key={href} href={href} style={{ display: "inline-block", padding: "9px 16px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal, transition: "border-color 0.15s, color 0.15s" }}>
+                      {label} →
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
 
         </div>{/* end reading column */}
 
