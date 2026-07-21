@@ -27,10 +27,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  /* Bumped 2026-07-21: +17 salary pages across waves 3–5 (Meta, Uber, Oracle,
-     Adobe, Atlassian, Groww, Zerodha, Intuit, Walmart Global Tech, Persistent,
-     Salesforce, OYO, Nykaa, Myntra, Dream11, Rapido, ICICI) + quant/finance firms
-     (Morgan Stanley, HDFC Bank, Tower Research Capital, Jane Street, DE Shaw) — 49 total. */
+  /* Bumped 2026-07-21: +189 interview prep pages across Waves 4-6b covering 193 companies:
+     fintech, banking, GCCs, semiconductor, healthcare, logistics, EdTech, D2C, EV, B2B SaaS,
+     quant — plus all salary-to-interview questionSlug cross-links wired up. */
   const seoPagesLastModified = new Date("2026-07-21");
 
   const staticEntries: MetadataRoute.Sitemap = [
