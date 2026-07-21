@@ -502,12 +502,20 @@ export default function DashboardHome() {
    * produce a targeted headline + CTA (with a `drill` deep-link). Was
    * previously hardcoded to the same STAR copy for everyone. */
   const totalSessionCount = user?.practiceTimestamps?.length ?? 0;
+  const hasResume = !!user?.resumeData;
   const nextMove = useMemo(() => pickNextMove({
     skills: core.skills.map((s) => ({ name: s.name, score: s.score })),
     currentStreak: core.currentStreak,
     topGaps: core.topGaps,
     sessionCount: totalSessionCount,
   }), [core.skills, core.currentStreak, core.topGaps, totalSessionCount]);
+
+  /* When a brand-new user hasn't uploaded a resume yet, the coaching engine
+   * has nothing to personalise against — show a resume-first nudge instead
+   * of a "start a session" CTA that leads to generic questions. This aligns
+   * the hero card with the Recent Sessions empty state below (which also
+   * gates on resume). Both surfaces then agree on the correct first action. */
+  const isFirstTimerWithoutResume = totalSessionCount === 0 && !hasResume;
 
   /* Supporting line under the hero headline, derived from what drove the CTA.
    * The session-type label uses coachingSessionFocus so campus-placement and
@@ -519,11 +527,13 @@ export default function DashboardHome() {
       default: return "HR round";
     }
   })();
-  const nextMoveSubtitle = nextMove.coachingFocus
-    ? `From your last ${coachingSessionLabel} we flagged: ${nextMove.coachingFocus.label}.`
-    : nextMove.weakestSkillLabel
-      ? `A focused 25-minute drill on ${nextMove.weakestSkillLabel} moves your readiness fastest.`
-      : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns.";
+  const nextMoveSubtitle = isFirstTimerWithoutResume
+    ? "Upload your resume so every mock interview question matches your real background, experience, and target role."
+    : nextMove.coachingFocus
+      ? `From your last ${coachingSessionLabel} we flagged: ${nextMove.coachingFocus.label}.`
+      : nextMove.weakestSkillLabel
+        ? `A focused 25-minute drill on ${nextMove.weakestSkillLabel} moves your readiness fastest.`
+        : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns.";
 
   /* Locale-formatted date is rendered client-only to avoid SSR/CSR
    * hydration mismatches (server TZ vs. user TZ produces different
@@ -713,7 +723,9 @@ export default function DashboardHome() {
                   fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
                   letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px",
                 }}>
-                  {nextMove.headline}
+                  {isFirstTimerWithoutResume
+                    ? "Start with your resume — every question adapts to your experience."
+                    : nextMove.headline}
                 </p>
                 <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
                   {nextMoveSubtitle}
@@ -731,12 +743,16 @@ export default function DashboardHome() {
                   </p>
                 )}
                 <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-                  {isFree && sessionsRemaining === 0 && creditBalance === 0 ? (
+                  {isFirstTimerWithoutResume ? (
+                    <PrimaryCta onClick={goToResume}>Upload resume</PrimaryCta>
+                  ) : isFree && sessionsRemaining === 0 && creditBalance === 0 ? (
                     <PrimaryCta onClick={() => setShowUpgradeModal(true)}>Get more sessions</PrimaryCta>
                   ) : (
                     <PrimaryCta onClick={goToNextMove}>{nextMove.ctaLabel}</PrimaryCta>
                   )}
-                  <OutlineCta onClick={goToInterview("next-move-outline")}>Pick a different focus</OutlineCta>
+                  {!isFirstTimerWithoutResume && (
+                    <OutlineCta onClick={goToInterview("next-move-outline")}>Pick a different focus</OutlineCta>
+                  )}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
