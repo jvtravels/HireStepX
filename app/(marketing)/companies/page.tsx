@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
+import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -27,7 +28,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Company Interview Questions — All Companies India 2026 | HireStepX",
   description:
-    "Interview questions for 50+ companies in India — TCS, Infosys, Google, Amazon, Flipkart, Razorpay, and more. Practice with AI voice mock interviews.",
+    "Interview questions for 200+ companies in India — TCS, Infosys, Google, Amazon, Flipkart, Razorpay, and more. Practice with AI voice mock interviews.",
   keywords: [
     "company interview questions India",
     "TCS interview questions 2026",
@@ -56,10 +57,14 @@ export const metadata: Metadata = {
 
 /* ── Label maps ─────────────────────────────────────────────────────── */
 
+const COMPANY_LABEL = ALL_LABELS;
+
 const FOCUS_LABEL: Record<string, string> = {
   behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
   "case-study": "Case Study", "campus-placement": "Campus Placement",
   hr: "HR Round", "salary-negotiation": "Salary Negotiation",
+  management: "Management", "government-psu": "Govt / PSU", strategic: "Strategic",
+  general: "General", leadership: "Leadership", panel: "Panel", quant: "Quant",
 };
 
 /* ── Company groupings ──────────────────────────────────────────────── */
@@ -68,31 +73,91 @@ type GroupDef = { id: string; label: string; description: string; companies: str
 const GROUPS: GroupDef[] = [
   {
     id: "service-it",
-    label: "Service IT Companies",
+    label: "Service IT",
     description: "India's largest employers. TCS, Infosys, and Wipro alone hire 100,000+ freshers per year. Focus: aptitude, CS fundamentals, HR.",
-    companies: ["tcs", "infosys", "wipro", "cognizant", "accenture", "ltimindtree", "hcl", "capgemini", "ibm"],
+    companies: ["tcs", "infosys", "wipro", "cognizant", "accenture", "ltimindtree", "hcl", "capgemini", "ibm", "techmahindra", "mphasis", "persistent", "ntt-data", "globallogic", "thoughtworks"],
   },
   {
     id: "indian-product",
-    label: "Indian Product Companies",
+    label: "Indian Product",
     description: "Fast-scaling unicorns and product-first startups. Higher pay, harder interviews, more ownership.",
-    companies: ["flipkart", "razorpay", "swiggy", "zomato", "phonepe", "paytm", "cred", "zerodha", "meesho", "oyo", "freshworks", "zoho"],
+    companies: ["flipkart", "razorpay", "swiggy", "zomato", "phonepe", "paytm", "cred", "zerodha", "meesho", "oyo", "freshworks", "zoho", "nykaa", "mamaearth", "myntra", "bigbasket", "blinkit", "makemytrip", "ixigo", "dream11", "lenskart", "boat", "naukri", "sharechat", "truecaller", "groww", "dmart", "wakefit", "zepto", "udaan"],
   },
   {
     id: "faang",
     label: "FAANG & Global Tech",
     description: "The highest bar in the industry. 3–6 months of preparation needed for a competitive shot.",
-    companies: ["google", "amazon", "microsoft", "meta", "apple", "netflix", "linkedin", "adobe"],
+    companies: ["google", "amazon", "microsoft", "meta", "apple", "netflix", "linkedin", "adobe", "uber", "stripe", "salesforce", "atlassian", "workday", "servicenow", "vmware", "nvidia", "openai", "anthropic", "perplexity", "postman", "chargebee", "clevertap", "moengage", "inmobi", "druva", "browserstack", "darwinbox"],
   },
   {
     id: "consulting-finance",
     label: "Consulting & Finance",
     description: "Case-study driven hiring with a completely different evaluation framework from tech.",
-    companies: ["mckinsey", "bcg", "bain", "deloitte", "goldman", "jpmc"],
+    companies: ["mckinsey", "bcg", "bain", "deloitte", "goldman", "jpmc", "ey", "kpmg", "pwc"],
+  },
+  {
+    id: "fintech",
+    label: "Fintech & WealthTech",
+    description: "India's fastest-growing hiring segment. Payments APIs, lending platforms, wealthtech, and neo-banking.",
+    companies: ["bajaj-finance", "fibe", "kreditbee", "moneyview", "rupeek", "fi-money", "niyo", "smallcase", "indmoney", "zeta", "nium", "upstox", "angel-one", "jupiter", "navi", "slice", "cashfree", "juspay", "pine-labs", "bharatpe", "acko", "policybazaar", "icici-lombard", "digit"],
+  },
+  {
+    id: "banking",
+    label: "Banking & Financial Services",
+    description: "Indian private banks, global investment banks, and payments networks.",
+    companies: ["hdfc-bank", "icici", "hdfc", "axis", "kotak", "sbi", "barclays", "hsbc", "citi", "deutsche-bank", "bny-mellon", "standard-chartered", "wells-fargo", "morgan-stanley", "mastercard", "visa-india", "fiserv"],
+  },
+  {
+    id: "semiconductor",
+    label: "Semiconductor & GCCs",
+    description: "Chip design, embedded systems, and large enterprise tech Global Capability Centers.",
+    companies: ["intel-india", "qualcomm", "arm-india", "mediatek", "bosch-india", "texas-instruments", "samsung", "samsung-india", "nvidia", "ericsson-india", "nokia-india", "cisco", "oracle", "sap-labs", "siemens-india", "walmart-global-tech", "lowes-india", "target-india"],
+  },
+  {
+    id: "healthcare",
+    label: "Healthcare & Diagnostics",
+    description: "Health tech platforms at the intersection of clinical data and consumer software.",
+    companies: ["apollo-247", "practo", "medibuddy", "tata-1mg", "dr-lal-pathlabs", "metropolis", "star-health", "curefit"],
+  },
+  {
+    id: "logistics",
+    label: "Logistics & Quick Commerce",
+    description: "India's delivery infrastructure. Real-time systems, routing, and warehouse tech at national scale.",
+    companies: ["delhivery", "shadowfax", "shiprocket", "rapido", "blackbuck", "moglix", "ninjacart"],
+  },
+  {
+    id: "edtech",
+    label: "EdTech & Skilling",
+    description: "Built for India's 300M+ student population. Mobile-first learning at low bandwidth.",
+    companies: ["scaler", "vedantu", "unacademy", "byjus", "physicswallah"],
+  },
+  {
+    id: "d2c",
+    label: "D2C & Consumer Brands",
+    description: "Century-old FMCG giants and digital-native D2C brands hiring tech and analytics talent.",
+    companies: ["godrej", "nestle", "hul", "itc", "p&g", "tata-steel", "purplle", "licious", "rebel-foods"],
+  },
+  {
+    id: "ev",
+    label: "EV & Mobility",
+    description: "India's EV transition driving demand for embedded software and platform engineering.",
+    companies: ["ola-electric", "ather-energy", "ola", "cars24", "spinny", "tata-motors", "mahindra", "bajaj"],
+  },
+  {
+    id: "saas",
+    label: "B2B SaaS & Dev Tools",
+    description: "Global-from-day-one product companies built out of India — high engineering culture and strong product sense.",
+    companies: ["hasura", "gupshup", "exotel", "plivo", "intuit", "mindtickle", "sigmoid", "tracxn", "khatabook", "krutrim", "sarvam"],
+  },
+  {
+    id: "quant",
+    label: "Quant & Algo Trading",
+    description: "The highest-paying roles in finance. Elite math, coding, and probability under time pressure.",
+    companies: ["optiver", "millennium", "jane-street", "de-shaw", "citadel"],
   },
   {
     id: "campus-freshers",
-    label: "Freshers & Campus HR Prep",
+    label: "Campus & Freshers",
     description: "HR round questions that appear in 95%+ of Indian campus drives — with structured answer frameworks for freshers.",
     companies: ["campus"],
   },
@@ -155,14 +220,14 @@ export default async function CompaniesIndexPage() {
         <div style={{ borderBottom: `1px solid ${t.line}`, background: t.creamSoft, overflowX: "auto" as const }}>
           <div className="ed-container">
             <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0 }}>
-              {([
-                { group: GROUPS[0], hint: "TCS · Infosys · Wipro" },
-                { group: GROUPS[1], hint: "Flipkart · Razorpay · Swiggy" },
-                { group: GROUPS[2], hint: "Google · Amazon · Microsoft" },
-                { group: GROUPS[3], hint: "McKinsey · BCG · Deloitte" },
-                { group: GROUPS[4], hint: "HR rounds · Campus drives" },
-              ] as const).map(({ group, hint }, gi) => {
+              {GROUPS.map((group, gi) => {
                 const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
+                if (count === 0) return null;
+                const hint = group.companies
+                  .filter((c) => SEO_PAGES.some((p) => p.company === c))
+                  .slice(0, 2)
+                  .map((c) => COMPANY_LABEL[c] ?? c)
+                  .join(" · ");
                 return (
                   <Link
                     key={group.id}
@@ -171,7 +236,7 @@ export default async function CompaniesIndexPage() {
                     style={{ display: "flex", flexDirection: "column" as const, gap: 2, padding: "16px 24px 14px", textDecoration: "none", borderRight: gi < GROUPS.length - 1 ? `1px solid ${t.line}` : "none", flexShrink: 0, whiteSpace: "nowrap" as const }}
                   >
                     <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{group.label}</span>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{hint} · {count} guides</span>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{hint} · {count}</span>
                   </Link>
                 );
               })}
