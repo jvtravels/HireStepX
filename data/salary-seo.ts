@@ -646,7 +646,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "data-scientist", label: "Quantitative Researcher" },
     ],
-    questionSlug: undefined,
+    questionSlug: "tower-research-quant-interview-questions",
     hubNote: "Pure cash comp: no equity, heavy performance bonus; highest fresher comp in India for quant",
     sitemapPriority: 0.76,
   },
@@ -713,7 +713,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "ml-engineer", label: "ML Engineer" },
       { roleKey: "data-scientist", label: "Data Scientist" },
     ],
-    questionSlug: undefined,
+    questionSlug: "databricks-data-engineer-interview-questions",
     hubNote: "Pre-IPO RSU: confirm next tender offer date before signing; last tender 2024 at ~$50/share",
     sitemapPriority: 0.80,
   },
@@ -829,7 +829,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
     ],
-    questionSlug: undefined,
+    questionSlug: "sarvam-ai-ml-engineer-interview-questions",
     hubNote: "India's leading vernacular AI: BharatGPT, Sarvam-2B; pre-Series C ESOP",
     sitemapPriority: 0.73,
   },
@@ -1514,7 +1514,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "P&G India salary 2026: MBA Management Trainee entry ₹22–32 LPA, Brand Manager mid ₹35–60 LPA. Cash-only. India's #1 premium FMCG company. Mumbai HQ. CTC guide.",
     roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
-    questionSlug: undefined,
+    questionSlug: "procter-gamble-india-interview-questions",
     hubNote: "Cash-only (no equity): P&G India; top FMCG MBA program; ₹22–32L entry is highest in Indian FMCG",
     sitemapPriority: 0.73,
   },

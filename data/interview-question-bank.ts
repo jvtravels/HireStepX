@@ -86,7 +86,7 @@ export type CompanyKey =
   | "druva" | "darwinbox" | "truecaller" | "inmobi" | "naukri"
   | "sigmoid" | "mindtickle" | "tracxn"
   /* Conglomerates / PSUs */
-  | "hdfc-ltd" | "tata-steel-india" | "sarvam-ai" | "krutrim" | "perplexity"
+  | "hdfc-ltd" | "tata-steel-india" | "sarvam-ai" | "krutrim" | "perplexity" | "databricks" | "tower-research"
   /* Generic campus / fresher pages not tied to a single company. */
   | "campus";
 
