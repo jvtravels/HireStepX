@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 export const metadata: Metadata = {
   title: "About HireStepX — India's AI Mock Interview Platform 2026 | HireStepX",
   description:
-    "India's AI mock interview platform. Voice interviews for TCS, Google, Flipkart, and 50+ companies. STAR scoring and skill-decay tracking. 2 sessions free.",
+    "India's AI mock interview platform. Voice interviews for TCS, Google, Flipkart, and 200+ companies. STAR scoring and skill-decay tracking. 2 sessions free.",
   keywords: [
     "about HireStepX",
     "AI mock interview platform India",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About HireStepX — India's AI Mock Interview Platform",
-    description: "HireStepX helps Indian job seekers practice for TCS, Google, Flipkart, Amazon, and 50+ companies with AI voice interviews and scored feedback.",
+    description: "HireStepX helps Indian job seekers practice for TCS, Google, Flipkart, Amazon, and 200+ companies with AI voice interviews and scored feedback.",
     url: "https://hirestepx.com/about",
     type: "website",
     siteName: "HireStepX",
@@ -46,7 +46,7 @@ const ORG_SCHEMA = {
     width: 200,
     height: 48,
   },
-  description: "India's AI-powered mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 50+ companies with voice AI interviews and scored feedback.",
+  description: "India's AI-powered mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies with voice AI interviews and scored feedback.",
   foundingDate: "2024",
   foundingLocation: {
     "@type": "Place",
@@ -91,7 +91,7 @@ const APP_SCHEMA = {
     priceCurrency: "INR",
     description: "2 free AI mock interview sessions, no credit card required",
   },
-  description: "AI-powered mock interview platform for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, and 50+ companies with voice interviews and scored reports.",
+  description: "AI-powered mock interview platform for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies with voice interviews and scored reports.",
   inLanguage: "en-IN",
   datePublished: "2024-01-01",
   dateModified: "2026-07-15",

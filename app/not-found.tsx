@@ -4,7 +4,7 @@ import MarketingShell from "./(marketing)/MarketingShell";
 
 export const metadata: Metadata = {
   title: "Page Not Found | HireStepX",
-  description: "The page you're looking for doesn't exist. Practice AI mock interviews for TCS, Google, Flipkart, and 50+ companies.",
+  description: "The page you're looking for doesn't exist. Practice AI mock interviews for TCS, Google, Flipkart, and 200+ companies.",
   robots: "noindex",
 };
 

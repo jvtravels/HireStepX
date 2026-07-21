@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     type: "article",
     title: "AI Mock Interview Practice — Free, Voice-Based | HireStepX",
     description:
-      "Practice AI mock interviews for free. Voice-based AI interviewer, STAR scoring, and company-specific questions for Google, TCS, Flipkart, and 50+ companies.",
+      "Practice AI mock interviews for free. Voice-based AI interviewer, STAR scoring, and company-specific questions for Google, TCS, Flipkart, and 200+ companies.",
     url: "https://hirestepx.com/ai-mock-interview",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AI Mock Interview Practice — Free | HireStepX",
-    description: "Voice-based AI mock interviews with STAR scoring. 2 free sessions, no card. Practice for Google, TCS, Flipkart, and 50+ companies.",
+    description: "Voice-based AI mock interviews with STAR scoring. 2 free sessions, no card. Practice for Google, TCS, Flipkart, and 200+ companies.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -99,7 +99,7 @@ const HOW_IT_WORKS = [
   {
     step: "2",
     title: "Pick a company and interview type",
-    desc: "Choose from 50+ companies and 10 interview formats: behavioral, technical, HR, case study, salary negotiation, and more.",
+    desc: "Choose from 200+ companies and 10 interview formats: behavioral, technical, HR, case study, salary negotiation, and more.",
   },
   {
     step: "3",
@@ -158,7 +158,7 @@ export default async function AiMockInterviewPage() {
         name: "What companies can I practice AI mock interviews for?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "HireStepX supports 50+ target companies including Google, Amazon, Microsoft, Meta, Flipkart, Swiggy, Zomato, Razorpay, CRED, Meesho, PhonePe, Nykaa, Ola, Paytm, Goldman Sachs, McKinsey, Deloitte, TCS, Infosys, Wipro, Cognizant, Accenture, HCL, and Capgemini. Each company has a distinct interview pattern and question bank.",
+          text: "HireStepX supports 200+ target companies including Google, Amazon, Microsoft, Meta, Flipkart, Swiggy, Zomato, Razorpay, CRED, Meesho, PhonePe, Nykaa, Ola, Paytm, Goldman Sachs, McKinsey, Deloitte, TCS, Infosys, Wipro, Cognizant, Accenture, HCL, and Capgemini. Each company has a distinct interview pattern and question bank.",
         },
       },
       {
@@ -476,7 +476,7 @@ export default async function AiMockInterviewPage() {
             ))}
           </div>
           <Link href="/companies" style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", fontWeight: 500 }}>
-            See all 50+ companies →
+            See all 200+ companies →
           </Link>
         </section>
 

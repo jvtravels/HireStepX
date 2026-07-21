@@ -4,7 +4,7 @@ import HomepageV2 from "@/marketing-v2/HomepageV2";
 export const metadata: Metadata = {
   title: "HireStepX — AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
   description:
-    "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 50+ companies. Voice AI scores answers in real time. 2 sessions free.",
+    "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies. Voice AI scores answers in real time. 2 sessions free.",
   keywords: [
     "AI mock interview India",
     "mock interview practice India",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     title: "HireStepX — AI Mock Interview Practice India 2026",
-    description: "Practice interviews for TCS, Google, Flipkart, and 50+ companies. Voice AI scores your answers in real time. 2 sessions free.",
+    description: "Practice interviews for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers in real time. 2 sessions free.",
     url: "https://hirestepx.com",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AI Mock Interview Practice India 2026 | HireStepX",
-    description: "Practice for TCS, Google, Flipkart, and 50+ companies. Voice AI scores your answers. 2 sessions free.",
+    description: "Practice for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers. 2 sessions free.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -77,7 +77,7 @@ const WEBSITE_SCHEMA = {
   "@type": "WebSite",
   name: "HireStepX",
   url: "https://hirestepx.com",
-  description: "AI mock interview practice for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, McKinsey, and 50+ companies.",
+  description: "AI mock interview practice for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, McKinsey, and 200+ companies.",
   inLanguage: "en-IN",
   potentialAction: {
     "@type": "SearchAction",

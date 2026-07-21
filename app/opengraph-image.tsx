@@ -117,7 +117,7 @@ export default async function OpengraphImage() {
             <span style={{ color: "#A39C8B" }}>·</span>
             <span>STAR scoring</span>
             <span style={{ color: "#A39C8B" }}>·</span>
-            <span>50+ companies</span>
+            <span>200+ companies</span>
           </div>
           <div
             style={{

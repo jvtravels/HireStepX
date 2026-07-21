@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     type: "article",
     title: "Interview Preparation Guide India 2026 | HireStepX",
     description:
-      "Complete interview preparation guide for Indian job seekers. AI mock interviews for 50+ companies, 2 sessions free.",
+      "Complete interview preparation guide for Indian job seekers. AI mock interviews for 200+ companies, 2 sessions free.",
     url: "https://hirestepx.com/interview-prep",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Interview Preparation Guide India 2026 | HireStepX",
-    description: "Complete guide + AI mock interview practice for 50+ Indian companies.",
+    description: "Complete guide + AI mock interview practice for 200+ Indian companies.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };

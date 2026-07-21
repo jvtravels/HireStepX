@@ -189,7 +189,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "Can I practice for specific companies like TCS, Infosys, or Google?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. We support 50+ target companies including Google, Amazon, TCS, Infosys, Flipkart, Razorpay, McKinsey, Deloitte, and more, each with distinct interview patterns." },
+        acceptedAnswer: { "@type": "Answer", text: "Yes. We support 200+ target companies including Google, Amazon, TCS, Infosys, Flipkart, Razorpay, McKinsey, Deloitte, and more, each with distinct interview patterns." },
       },
       {
         "@type": "Question",
@@ -221,7 +221,7 @@ const structuredData = [
     url: "https://hirestepx.com",
     logo: "https://hirestepx.com/wordmark.png",
     description:
-      "AI-powered mock interview platform for job seekers in India. Practice for Google, TCS, Flipkart, and 50+ companies.",
+      "AI-powered mock interview platform for job seekers in India. Practice for Google, TCS, Flipkart, and 200+ companies.",
     foundingDate: "2024",
     address: {
       "@type": "PostalAddress",

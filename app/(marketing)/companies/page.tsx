@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 50+ companies — AI voice mock interviews available free.",
+    description: "Practice guides for 200+ companies — AI voice mock interviews available free.",
     url: "https://hirestepx.com/companies",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 50+ companies — AI voice mock interviews available free.",
+    description: "Practice guides for 200+ companies — AI voice mock interviews available free.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -171,7 +171,7 @@ export default async function CompaniesIndexPage() {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Company Interview Questions — India 2026",
-    description: "Curated interview preparation guides for 50+ companies hiring in India",
+    description: "Curated interview preparation guides for 200+ companies hiring in India",
     numberOfItems: SEO_PAGES.length,
     itemListElement: GROUPS.map((g, gi) => ({
       "@type": "ListItem",
