@@ -6,6 +6,7 @@ import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { useAuth, hasStoredSession } from "../AuthContext";
 import { captureClientEvent } from "../posthogClient";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
+import { CopyEmailLink } from "../_CopyEmailLink";
 export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3633,12 +3634,12 @@ export function FAQV2() {
           }}
         >
           Still curious?{" "}
-          <a
-            href="mailto:hello@hirestepx.com"
+          <CopyEmailLink
+            email="hello@hirestepx.com"
             style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}
           >
             Ask us directly →
-          </a>
+          </CopyEmailLink>
         </p>
       </div>
     </section>

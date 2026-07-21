@@ -8,6 +8,7 @@ const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ 
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
 import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
+import { CopyEmailLink } from "./_CopyEmailLink";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
 
@@ -813,7 +814,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     } catch {
                       // Persisted path failed — fall back to the user's email client
                       // so the feedback isn't lost.
-                      window.location.href = `mailto:hello@hirestepx.com?body=${encodeURIComponent(msg)}`;
+                      navigator.clipboard?.writeText("hello@hirestepx.com").catch(() => {});
                     } finally {
                       setHelpSending(false);
                     }
@@ -837,9 +838,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               {/* Secondary email fallback */}
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center" as const, margin: "10px 0 0" }}>
                 Or email{" "}
-                <a href="mailto:hello@hirestepx.com" style={{ color: T.copper, textDecoration: "none", fontWeight: 500 }}>
-                  hello@hirestepx.com
-                </a>
+                <CopyEmailLink email="hello@hirestepx.com" style={{ color: T.copper, textDecoration: "none", fontWeight: 500 }} />
               </p>
             </div>
           </div>

@@ -8,7 +8,7 @@
    Keep the markup minimal and inline — any external dependency (fonts,
    tokens, providers) might be the thing that's broken. */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const SUPPORT_EMAIL = "hello@hirestepx.com";
 
@@ -19,6 +19,17 @@ export default function GlobalLayoutError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [emailCopied, setEmailCopied] = useState(false);
+
+  const copyEmail = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(SUPPORT_EMAIL).then(() => {
+        setEmailCopied(true);
+        setTimeout(() => setEmailCopied(false), 2000);
+      }).catch(() => { /* silent */ });
+    }
+  };
+
   useEffect(() => {
     try {
       console.error("[app/global-error] layout crashed:", error.message, error.digest);
@@ -89,8 +100,10 @@ export default function GlobalLayoutError({
           >
             Reload
           </button>
-          <a
-            href={`mailto:${SUPPORT_EMAIL}`}
+          <button
+            type="button"
+            onClick={copyEmail}
+            title={emailCopied ? "Copied!" : `Click to copy ${SUPPORT_EMAIL}`}
             style={{
               fontSize: 14,
               fontWeight: 500,
@@ -99,11 +112,12 @@ export default function GlobalLayoutError({
               border: "1px solid #6E6759",
               padding: "12px 28px",
               borderRadius: 8,
-              textDecoration: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
             }}
           >
-            Contact support
-          </a>
+            {emailCopied ? "Copied!" : "Contact support"}
+          </button>
         </div>
       </body>
     </html>

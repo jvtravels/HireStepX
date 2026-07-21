@@ -5,6 +5,7 @@ import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { NavV2, MobileStickyCTA } from "./HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { captureClientEvent } from "../posthogClient";
+import { CopyEmailLink } from "../_CopyEmailLink";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing pages v2
@@ -1220,8 +1221,8 @@ export function ContactV2() {
               >
                 <div>
                   <p style={{ ...eyebrow, marginBottom: 12 }}>Email us</p>
-                  <a
-                    href="mailto:hello@hirestepx.com"
+                  <CopyEmailLink
+                    email="hello@hirestepx.com"
                     style={{
                       fontFamily: fonts.sans,
                       fontSize: 15,
@@ -1230,9 +1231,7 @@ export function ContactV2() {
                       textDecoration: "none",
                       wordBreak: "break-all",
                     }}
-                  >
-                    hello@hirestepx.com
-                  </a>
+                  />
                 </div>
 
                 <div>
@@ -1708,7 +1707,7 @@ export function PrivacyV2() {
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
       <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
-      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <code>grievance@hirestepx.com</code>.</p>
+      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />.</p>
 
       <h2>Cookies</h2>
       <p>Strictly-necessary cookies only by default (session token, CSRF). Analytics cookies (PostHog) load only after explicit consent via the banner on first visit. No third-party advertising or tracking cookies, ever.</p>
@@ -1768,7 +1767,7 @@ export function RefundPolicyV2() {
       <p>Full refund within 7 days of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge — your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
 
       <h2>How to request a refund</h2>
-      <p>Email <code>hello@hirestepx.com</code> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
+      <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
 
       <h2>Disputes</h2>
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
@@ -1792,9 +1791,9 @@ export function GrievanceOfficerV2() {
         <li><strong>Designation:</strong> Grievance Officer, HireStepX</li>
         <li>
           <strong>Email:</strong>{" "}
-          <a href="mailto:grievance@hirestepx.com">grievance@hirestepx.com</a>
+          <CopyEmailLink email="grievance@hirestepx.com" />
           {" "}(also reachable at{" "}
-          <a href="mailto:hello@hirestepx.com">hello@hirestepx.com</a>)
+          <CopyEmailLink email="hello@hirestepx.com" />)
         </li>
         <li>
           <strong>Registered address:</strong> HireStepX (Hirloop), India
@@ -1804,7 +1803,7 @@ export function GrievanceOfficerV2() {
       <h2>How to file a grievance</h2>
       <p>
         Email your complaint to{" "}
-        <a href="mailto:grievance@hirestepx.com">grievance@hirestepx.com</a>{" "}
+        <CopyEmailLink email="grievance@hirestepx.com" />{" "}
         with the subject line <em>"Grievance – [brief description]"</em>. Include:
       </p>
       <ul>
@@ -1845,7 +1844,7 @@ export function GrievanceOfficerV2() {
       <p>
         For general support, refunds, or billing questions, see our{" "}
         <a href="/refund">Refund Policy</a> or email{" "}
-        <a href="mailto:hello@hirestepx.com">hello@hirestepx.com</a>.
+        <CopyEmailLink email="hello@hirestepx.com" />.
       </p>
     </LegalPage>
   );
@@ -1932,18 +1931,20 @@ export function PaymentFailedPage() {
               >
                 Try again <span style={{ fontSize: 16 }}>→</span>
               </a>
-              <a
-                href="mailto:hello@hirestepx.com"
+              <CopyEmailLink
+                email="hello@hirestepx.com"
                 style={{
                   ...ctaGhost("md"),
                   minWidth: 240,
                   justifyContent: "center",
                   fontSize: 14,
+                  display: "inline-flex",
+                  textDecoration: "none",
                 }}
                 className="mv2-tap-44"
               >
                 Contact support
-              </a>
+              </CopyEmailLink>
             </div>
           </div>
 
@@ -1966,9 +1967,7 @@ export function PaymentFailedPage() {
               }}
             >
               <strong style={{ color: t.coal }}>If your account was debited,</strong> email us at{" "}
-              <a href="mailto:hello@hirestepx.com" style={{ color: t.indigo, textDecoration: "underline", textUnderlineOffset: 3 }}>
-                hello@hirestepx.com
-              </a>{" "}
+              <CopyEmailLink email="hello@hirestepx.com" style={{ color: t.indigo, textDecoration: "underline", textUnderlineOffset: "3px" }} />{" "}
               with your UPI transaction ID and we{"'"}ll credit your account within 2 hours.
             </p>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { CopyEmailLink } from "../src/_CopyEmailLink";
 
 const STORAGE_KEY = "hsx_beta_banner_dismissed";
 
@@ -41,17 +42,16 @@ export function BetaBanner() {
     >
       <span>
         HireStepX is now in Beta! Be among the first to practice smarter and land your dream role.{" "}
-        <a
-          href="mailto:hello@hirestepx.com"
+        <CopyEmailLink
+          email="hello@hirestepx.com"
           style={{
             color: "#FAF7F0",
-            textDecoration: "underline",
-            textUnderlineOffset: 2,
+            textUnderlineOffset: "2px",
             fontWeight: 700,
           }}
         >
           Share your feedback
-        </a>
+        </CopyEmailLink>
       </span>
       <button
         onClick={dismiss}

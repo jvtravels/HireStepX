@@ -13,6 +13,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { c, font } from "@/tokens";
+import { CopyEmailLink } from "@/_CopyEmailLink";
 
 const SUPPORT_EMAIL = "hello@hirestepx.com";
 
@@ -132,8 +133,8 @@ export default function GlobalRouteError({
         >
           Back home
         </Link>
-        <a
-          href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("HireStepX error")}${error.digest ? `&body=${encodeURIComponent(`Ref: ${error.digest}`)}` : ""}`}
+        <CopyEmailLink
+          email={SUPPORT_EMAIL}
           style={{
             fontFamily: font.ui,
             fontSize: 14,
@@ -147,7 +148,7 @@ export default function GlobalRouteError({
           }}
         >
           Contact support
-        </a>
+        </CopyEmailLink>
       </div>
     </div>
   );
