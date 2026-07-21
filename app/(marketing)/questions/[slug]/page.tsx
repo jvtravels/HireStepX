@@ -43,6 +43,29 @@ const FOCUS_LABEL: Record<string, string> = {
 };
 
 
+/* ─── Company category map for related-page ranking ────────────────────── */
+const CATEGORY: Record<string, string> = (() => {
+  const groups: [string, string[]][] = [
+    ["service-it", ["tcs","infosys","wipro","cognizant","accenture","ltimindtree","hcl","capgemini","ibm","techmahindra","mphasis","persistent","ntt-data","globallogic","thoughtworks"]],
+    ["indian-product", ["flipkart","razorpay","swiggy","zomato","phonepe","paytm","cred","zerodha","meesho","oyo","freshworks","zoho","nykaa","mamaearth","myntra","bigbasket","blinkit","makemytrip","ixigo","dream11","lenskart","boat","naukri","sharechat","truecaller","groww","dmart","wakefit","zepto","udaan"]],
+    ["faang", ["google","amazon","microsoft","meta","apple","netflix","linkedin","adobe","uber","stripe","salesforce","atlassian","workday","servicenow","vmware","nvidia","openai","anthropic","perplexity","postman","chargebee","clevertap","moengage","inmobi","druva","browserstack","darwinbox"]],
+    ["consulting", ["mckinsey","bcg","bain","deloitte","goldman","jpmc","ey","kpmg","pwc"]],
+    ["fintech", ["bajaj-finance","fibe","kreditbee","moneyview","rupeek","fi-money","niyo","smallcase","indmoney","zeta","nium","upstox","angel-one","jupiter","navi","slice","cashfree","juspay","pine-labs","bharatpe","acko","policybazaar","icici-lombard","digit"]],
+    ["banking", ["hdfc-bank","icici","hdfc","axis","kotak","sbi","barclays","hsbc","citi","deutsche-bank","bny-mellon","standard-chartered","wells-fargo","morgan-stanley","mastercard","visa-india","fiserv"]],
+    ["semiconductor", ["intel-india","qualcomm","arm-india","mediatek","bosch-india","texas-instruments","samsung","samsung-india","nvidia","ericsson-india","nokia-india","cisco","oracle","sap-labs","siemens-india","walmart-global-tech","lowes-india","target-india"]],
+    ["healthcare", ["apollo-247","practo","medibuddy","tata-1mg","dr-lal-pathlabs","metropolis","star-health","curefit"]],
+    ["logistics", ["delhivery","shadowfax","shiprocket","rapido","blackbuck","moglix","ninjacart"]],
+    ["edtech", ["scaler","vedantu","unacademy","byjus","physicswallah"]],
+    ["d2c", ["godrej","nestle","hul","itc","p&g","tata-steel","purplle","licious","rebel-foods"]],
+    ["ev", ["ola-electric","ather-energy","ola","cars24","spinny","tata-motors","mahindra","bajaj"]],
+    ["saas", ["hasura","gupshup","exotel","plivo","intuit","mindtickle","sigmoid","tracxn","khatabook","krutrim","sarvam"]],
+    ["quant", ["optiver","millennium","jane-street","de-shaw","citadel"]],
+  ];
+  const map: Record<string, string> = {};
+  for (const [cat, companies] of groups) for (const c of companies) map[c] = cat;
+  return map;
+})();
+
 /* ─── Question fetching with tier fallback ──────────────────────────────── */
 
 function questionsForPage(p: SeoPage): BankEntry[] {
@@ -245,12 +268,16 @@ export default async function QuestionsSlugPage({
     keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
   };
 
-  /* Related pages: same company OR same focus area, up to 4. */
-  const relatedPages = SEO_PAGES.filter(
-    (p: SeoPage) =>
-      p.slug !== slug &&
-      (p.company === page.company || p.focus === page.focus),
-  )
+  /* Related pages: (1) same company, (2) same category peers, (3) same focus. */
+  const pageCategory = CATEGORY[page.company];
+  const sameCompany = SEO_PAGES.filter((p: SeoPage) => p.slug !== slug && p.company === page.company);
+  const sameCat = pageCategory
+    ? SEO_PAGES.filter((p: SeoPage) => p.slug !== slug && p.company !== page.company && CATEGORY[p.company] === pageCategory)
+    : [];
+  const sameFocus = SEO_PAGES.filter(
+    (p: SeoPage) => p.slug !== slug && p.company !== page.company && CATEGORY[p.company] !== pageCategory && p.focus === page.focus,
+  );
+  const relatedPages = [...sameCompany, ...sameCat, ...sameFocus]
     .slice(0, 4)
     .map((p: SeoPage) => ({ slug: p.slug, searchPhrase: p.searchPhrase }));
 
