@@ -38,10 +38,18 @@ describe("upgradeNudgeCopy — B57 score-aware headline", () => {
     expect(c.headline).toMatch(/1 free session left/i);
   });
 
-  it("second session and beyond shows upgrade framing", () => {
+  it("first session CTA navigates to /session/new, not the upgrade modal", () => {
+    const c = upgradeNudgeCopy(68, 0);
+    expect(c.ctaHref).toBe("/session/new");
+    expect(c.ctaLabel).toMatch(/free/i);
+  });
+
+  it("second session and beyond shows upgrade framing with Sprint Pack CTA", () => {
     const c = upgradeNudgeCopy(72, 1);
     expect(c.headline).toBe("You scored 72. Want to see if you can beat it?");
     expect(c.subcopy).toMatch(/Sprint Pack/);
+    expect(c.ctaLabel).toMatch(/Sprint Pack/);
+    expect(c.ctaHref).toBeUndefined();
   });
 
   it.each([

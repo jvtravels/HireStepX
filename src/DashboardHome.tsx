@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
-import { useDashboardSessions } from "./DashboardContext";
+import { useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
@@ -478,6 +478,8 @@ export default function DashboardHome() {
   const router = useRouter();
   useDocTitle("Dashboard");
   const core = useDashboardSessions();
+  const { isFree, sessionsRemaining, creditBalance } = useDashboardSubscription();
+  const { setShowUpgradeModal } = useDashboardUI();
 
   const displayName = useMemo(() => {
     const name = user?.name?.trim();
@@ -716,8 +718,24 @@ export default function DashboardHome() {
                 <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
                   {nextMoveSubtitle}
                 </p>
+                {isFree && sessionsRemaining === 1 && (
+                  <p style={{
+                    margin: "8px 0 0",
+                    fontFamily: f.sans,
+                    fontSize: 12,
+                    color: t.copper,
+                    fontWeight: 600,
+                    letterSpacing: "0.01em",
+                  }}>
+                    1 free session remaining after this
+                  </p>
+                )}
                 <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-                  <PrimaryCta onClick={goToNextMove}>{nextMove.ctaLabel}</PrimaryCta>
+                  {isFree && sessionsRemaining === 0 && creditBalance === 0 ? (
+                    <PrimaryCta onClick={() => setShowUpgradeModal(true)}>Get more sessions</PrimaryCta>
+                  ) : (
+                    <PrimaryCta onClick={goToNextMove}>{nextMove.ctaLabel}</PrimaryCta>
+                  )}
                   <OutlineCta onClick={goToInterview("next-move-outline")}>Pick a different focus</OutlineCta>
                 </div>
               </div>

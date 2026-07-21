@@ -92,10 +92,25 @@ export type {
 
 function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: number; priorSessionCount?: number; onUpgrade?: () => void }) {
   const copy = upgradeNudgeCopy(score, priorSessionCount);
+  const ctaStyle: React.CSSProperties = {
+    flexShrink: 0,
+    fontFamily: f.sans,
+    fontSize: 13,
+    fontWeight: 600,
+    padding: "9px 20px",
+    borderRadius: 8,
+    background: t.indigo ?? "#4f46e5",
+    color: "#fff",
+    border: 0,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    textDecoration: "none",
+    display: "inline-block",
+  };
   return (
     <div
       role="complementary"
-      aria-label="Upgrade to keep practising"
+      aria-label="Continue practising"
       className="hsx-upgrade-strip"
       style={{
         display: "flex",
@@ -112,7 +127,7 @@ function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: num
       <style>{`
         @media (max-width: 480px) {
           .hsx-upgrade-strip { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          .hsx-upgrade-strip button { width: 100% !important; justify-content: center !important; }
+          .hsx-upgrade-strip a, .hsx-upgrade-strip button { width: 100% !important; text-align: center !important; }
         }
       `}</style>
       <div style={{ minWidth: 0 }}>
@@ -123,24 +138,11 @@ function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: num
           {copy.subcopy}
         </p>
       </div>
-      <button
-        onClick={onUpgrade}
-        style={{
-          flexShrink: 0,
-          fontFamily: f.sans,
-          fontSize: 13,
-          fontWeight: 600,
-          padding: "9px 20px",
-          borderRadius: 8,
-          background: t.indigo ?? "#4f46e5",
-          color: "#fff",
-          border: 0,
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Get Sprint Pack — ₹39
-      </button>
+      {copy.ctaHref ? (
+        <a href={copy.ctaHref} style={ctaStyle}>{copy.ctaLabel}</a>
+      ) : (
+        <button onClick={onUpgrade} style={ctaStyle}>{copy.ctaLabel}</button>
+      )}
     </div>
   );
 }
