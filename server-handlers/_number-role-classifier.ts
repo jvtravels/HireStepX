@@ -98,11 +98,13 @@ export interface NumberRoleResult {
 
 const USD_TO_INR = 83;
 /* Window sizes for left/right cue search around each number span.
- * 40 chars before the number captures typical "I am currently
- * earning around ₹..." phrasings without crossing sentence boundaries.
- * 25 chars after captures trailing qualifiers ("...24 LPA CTC
- * overall right now"). */
-const LEFT_WINDOW = 40;
+ * 65 chars before the number captures longer phrasings like "my current
+ * CTC is somewhere between 25 and 27 lakhs" where the "current CTC" cue
+ * is >40 chars before the second number. 40 was too narrow: the "between"
+ * keyword (a TARGET cue) sat inside the old window and won the competition
+ * over the explicit "current CTC" cue that sat just outside it. (S30-B1/B2)
+ * 25 chars after captures trailing qualifiers ("...24 LPA CTC overall right now"). */
+const LEFT_WINDOW = 65;
 const RIGHT_WINDOW = 25;
 /* Output sanity clamp (also enforced by the kernel's `clampInr`).
  * Anything outside [1, 5000] LPA is implausible for an Indian
@@ -169,6 +171,15 @@ const CURRENT_CUES: CueTable = {
      * target frame ("mujhe … chahiye"), so target binds are untouched. */
     /\babhi\s+main\b/i,
     /\bfil[h]?aal\b/i,
+    /* S39-B1 (2026-07-21): Hinglish possessive current-CTC frames. "Mera current
+     * CTC 30 lakhs hai" — "mera" (my) is a Hindi possessive that unambiguously
+     * scopes the figure to the speaker's own pay. "hamara" (our) covers the
+     * same possessive when candidates speak for their household/team-context.
+     * Neither was in the table before; figures in these frames fell through
+     * pickRole's Gricean default and mis-bound to current only when the bot
+     * happened to have asked for current CTC. */
+    /\bmera(?:\s+current)?\s+(?:ctc|salary|package|comp(?:ensation)?)\b/i,
+    /\bhamara\s+(?:ctc|salary)\b/i,
   ],
   right: [
     /\bpe\s+h(?:oo?n|u|un)\b/i,
@@ -325,6 +336,15 @@ const TARGET_CUES: CueTable = {
     /\b(?:less|lower)\s+than\b/i,
     /\b(?:no|not\s+a\s+rupee)\s+less\b/i,
     /\bat\s+least\b/i,
+    /* S40-B1/S41-B1 (2026-07-21): "at least N" and "minimum N" both introduce
+     * a TARGET floor. `at least` was already here but `minimum` was absent —
+     * "minimum 42 lakhs" scored zero target cues and fell through to the
+     * current default. `kam se kam` is the Hindi equivalent and covers Hinglish
+     * disclosures. These reinforce TARGET scoring, not FLOOR: unlike an explicit
+     * walk-away ("can't go below"), these are ask-anchors that correctly
+     * bind to target (see isFloorScopedSpan which guards the true walk-away case). */
+    /\bminimum\b/i,
+    /\bkam\s+se\s+kam\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bbottom\s+line\b/i,
     /\bfirm\s+(?:at|on)\b/i,
@@ -336,8 +356,13 @@ const TARGET_CUES: CueTable = {
     /\bmil\s+jaye\b/i,
     /\bmilna\s+chahiye\b/i,
     /\bexpect\s+kar(?:ta|ti)\s+hu\b/i,
-    /\bchahta\s+hu\b/i,
-    /\bchahti\s+hu\b/i,
+    /* S39-B1 (2026-07-21): Expand Hinglish target-verb right-cues to cover the
+     * full conjugation family — "chahiye" is already above; "chahta/chahti" must
+     * also cover hoon/hun/oon (formal and informal first-person present) so that
+     * "42 lakhs chahta hoon" and "42 chahti hun" bind to TARGET, not fall through
+     * to the Gricean current default. The old bare `hu` forms missed the longer
+     * conjugations that Sarvam/Azure STT often transcribes in full. */
+    /\bchaht[aie]\s+h(?:u|oo?n|un)\b/i,
     /* Ask-anchor framing stated AFTER the number ("55 total, that's my
      * number", "55, non-negotiable", "55, no less"). Same rationale as the
      * ask-anchor block above — these are target assertions, never current. */

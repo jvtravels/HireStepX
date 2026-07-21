@@ -124,6 +124,37 @@ const ENGLISH_NUM_RE = new RegExp(
   "gi",
 );
 
+/* Magnitude constants shared by multiple substitution functions and the
+ * resolveBareRupee / plausibility-ceiling logic below. Defined here (before the
+ * substitution functions) so substituteCompoundCroreLakh (S38-B1) and
+ * substituteMonthlyInHand (S28-B1) can reference them without forward-ref errors. */
+const RUPEES_PER_LAKH = 100_000;
+const MAX_PLAUSIBLE_LPA = 5000;
+
+/* S38-B1 (2026-07-21): "one crore twenty lakhs" — substituteEnglishNumbers
+ * converts "one"→"1" and "twenty"→"20", giving "1 crore 20 lakhs" which
+ * parseSalaryFacts reads as [100 LPA, 20 LPA] instead of the correct 120 LPA.
+ * We must convert compound crore+lakh forms BEFORE word substitution runs.
+ * Also handles: "1 crore 20 lakhs" → "120 LPA", "2 crore 50 lakhs" → "250 LPA".
+ * Decimal crore ("1.2 crore") is already handled by UNIT_NUM_RE (crore → ×100). */
+const COMPOUND_CRORE_LAKH_RE =
+  /(\d+(?:\.\d+)?)\s*crores?\s+(\d+(?:\.\d+)?)\s*lakhs?/gi;
+
+/** Convert "N crore M lakhs" compound forms to "NNN LPA" BEFORE English number
+ *  substitution runs — otherwise "1 crore 20 lakhs" parses as two separate
+ *  facts. Pure. Exposed so number-role-classifier can apply the same pass (S38-B1). */
+export function substituteCompoundCroreLakh(s: string): string {
+  if (!s) return s;
+  return s.replace(COMPOUND_CRORE_LAKH_RE, (whole, croreStr: string, lakhStr: string) => {
+    const crore = parseFloat(croreStr);
+    const lakh = parseFloat(lakhStr);
+    if (!Number.isFinite(crore) || !Number.isFinite(lakh)) return whole;
+    const totalLpa = crore * 100 + lakh;
+    if (totalLpa <= 0 || totalLpa > MAX_PLAUSIBLE_LPA) return whole;
+    return `${Number.isInteger(totalLpa) ? totalLpa : Number(totalLpa.toFixed(2))} LPA`;
+  });
+}
+
 /** Substitute spelled-out English number-words in the salary range
  *  [1, 99] with their digit equivalent. Exposed so other parsers
  *  (`_number-role-classifier`) can apply the same normalization at
@@ -168,6 +199,27 @@ export function substituteThousandScale(s: string): string {
     const lpa = (n * 1000) / 100000; // ₹N,000 → LPA
     if (lpa < 1) return " "; // sub-₹1L annual — suppress, don't false-bind
     return ` ${Number.isInteger(lpa) ? lpa : Number(lpa.toFixed(2))} LPA `;
+  });
+}
+
+/* S28-B1 (2026-07-21): "₹2.5 lakh per month in-hand" — monthly in-hand figures
+ * were not converted to annual. "2.5 lakh per month" = 30 LPA but the parser
+ * read it as 2.5 LPA. We detect "N lakh(s)/LPA per month" patterns and
+ * substitute with the annual equivalent (×12) AFTER substituteThousandScale. */
+const MONTHLY_LAKH_RE =
+  /(\d+(?:\.\d+)?)\s*(?:lakhs?|lacs?|lax|LPA|L)\s+per\s+month\b/gi;
+
+/** Convert "N lakh(s) per month" / "N LPA per month" to the annual "NN.N LPA"
+ *  equivalent (×12). Runs AFTER substituteThousandScale. Pure. Exposed so
+ *  number-role-classifier can share the same normalization (S28-B1). */
+export function substituteMonthlyInHand(s: string): string {
+  if (!s) return s;
+  return s.replace(MONTHLY_LAKH_RE, (whole, numStr: string) => {
+    const monthly = parseFloat(numStr);
+    if (!Number.isFinite(monthly) || monthly <= 0) return whole;
+    const annual = monthly * 12;
+    if (annual > MAX_PLAUSIBLE_LPA) return whole;
+    return `${Number.isInteger(annual) ? annual : Number(annual.toFixed(2))} LPA`;
   });
 }
 
@@ -247,6 +299,18 @@ const RANGE_RE = new RegExp(
   "gi",
 );
 
+/* S30-B1 (2026-07-21): "My current CTC is between 25 and 27 lakhs" — "and" is
+ * NOT a range separator in RANGE_RE (only "-/–/to"). "25" had no unit token so
+ * parseSalaryFacts extracted only "27 lakhs" = 27 LPA and dropped "25". The fix:
+ * a dedicated BETWEEN_RANGE_RE that matches "between N and M UNIT" before PASS 1,
+ * converting it to a canonical "N-M UNIT" form that RANGE_RE will then consume.
+ * "and" as a range separator is ONLY valid when preceded by "between" — this avoids
+ * false-positives like "equity and 30 LPA" being read as a range. */
+const BETWEEN_RANGE_RE = new RegExp(
+  `\\bbetween\\s+(?:₹\\s*)?(\\d+(?:\\.\\d+)?)\\s+and\\s+(?:₹\\s*)?(\\d+(?:\\.\\d+)?)\\s*(${UNIT_TOKEN})\\b`,
+  "gi",
+);
+
 function normaliseUnit(raw: string | undefined): SalaryUnit {
   if (!raw) return "raw";
   const u = raw.toLowerCase();
@@ -289,8 +353,9 @@ function toLpa(value: number, unit: SalaryUnit): number {
  *   - in-between (e.g. ₹35,000) → too big for LPA, too small for absolute:
  *       ambiguous (monthly? noise?) → keep value, mark LOW so the
  *       downstream plausibility band can drop it rather than trust it. */
-const RUPEES_PER_LAKH = 100_000;
-const MAX_PLAUSIBLE_LPA = 5000;
+/* RUPEES_PER_LAKH and MAX_PLAUSIBLE_LPA are defined earlier (before the
+ * substitution functions) so substituteCompoundCroreLakh and
+ * substituteMonthlyInHand can reference them without a forward-reference error. */
 
 /* OA-B15 (2026-07-17): a unit-bearing figure whose LPA magnitude is absurd —
  * "₹1 lakh crore" → 1 crore-of-lakh = 100,000 LPA, or "1000 crore" → 100,000
@@ -441,18 +506,33 @@ function isUnaryNegated(text: string, start: number): boolean {
 
 /* ─────────────── public API ─────────────── */
 
+/** Normalise "between N and M UNIT" to "N-M UNIT" so RANGE_RE in PASS 1 can
+ *  consume it. The "and" separator is ONLY treated as a range connector when it
+ *  appears in the "between … and …" idiom (S30-B1). Pure. */
+export function substituteBetweenAndRange(s: string): string {
+  if (!s) return s;
+  return s.replace(BETWEEN_RANGE_RE, (_whole, low: string, high: string, unit: string) =>
+    `${low}-${high} ${unit}`,
+  );
+}
+
 /** Extract typed salary facts from arbitrary text. Range-aware:
  *  matches like "22-24 LPA" produce two SalaryFacts with
  *  `isRangeLower=true` / `isRangeUpper=true` and `rangePeer` set so
  *  the consumer can detect the pairing. */
 export function parseSalaryFacts(textIn: string): SalaryFact[] {
   if (!textIn) return [];
-  /* STT fragility (2026-05-22): normalize English number-words to digits
-   * BEFORE running the regex bank. "thirty six LPA" → "36 LPA" → matches.
-   * Without this pre-pass, the entire downstream pipeline (kernel fact
-   * binding, salary clamping, hike math, telemetry) silently drops
-   * spelled-out salary disclosures. */
-  const text = substituteVagueSalaryDecades(substituteThousandScale(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn))))));
+  /* Normalization pipeline (in order):
+   *  1. stripUrls                  — drop URL digits before any parse
+   *  2. substituteForeignCurrency  — AED/GBP/EUR → LPA tokens
+   *  3. substituteAbsoluteRupees   — comma-grouped ₹ amounts → LPA tokens
+   *  4. substituteCompoundCroreLakh — "N crore M lakhs" → LPA (S38-B1, before word sub)
+   *  5. substituteEnglishNumbers   — "thirty six" → "36"
+   *  6. substituteThousandScale    — "50 thousand" → LPA or suppress
+   *  7. substituteMonthlyInHand    — "N lakh per month" → annual LPA (S28-B1)
+   *  8. substituteVagueSalaryDecades — "mid 30s" → "35 LPA"
+   *  9. substituteBetweenAndRange  — "between N and M UNIT" → "N-M UNIT" (S30-B1) */
+  const text = substituteBetweenAndRange(substituteVagueSalaryDecades(substituteMonthlyInHand(substituteThousandScale(substituteEnglishNumbers(substituteCompoundCroreLakh(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn)))))))));
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */

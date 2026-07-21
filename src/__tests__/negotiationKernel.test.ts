@@ -463,6 +463,7 @@ describe("parseCandidateAnswer", () => {
         deadlineExplicit: false,
         conditionalAcceptance: false,
         conditionalEvidence: null,
+        requestsHold: false,
         hasAny: false,
       },
       candidateProfile: { ...EMPTY_CANDIDATE_PROFILE },

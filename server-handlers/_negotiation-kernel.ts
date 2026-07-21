@@ -385,7 +385,9 @@ export type DiscoveryTopic =
   | "acknowledge-existing-offer"
   | "acknowledge-retention-offer"
   | "match-existing-offer-prose"
-  | "retention-trump-warning";
+  | "retention-trump-warning"
+  /* S23-B1 (2026-07-21) — recruiter grants thinking time to the candidate. */
+  | "hold-grant";
 
 /** Exhaustiveness helper. Used in topic switches so adding a new
  *  DiscoveryTopic literal lights up at every consumer site that hasn't
@@ -443,6 +445,8 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "acknowledge-retention-offer",
   "match-existing-offer-prose",
   "retention-trump-warning",
+  /* S23-B1 (2026-07-21) — recruiter grants thinking time. */
+  "hold-grant",
 ]);
 
 export function isDiscoveryTopic(s: string): s is DiscoveryTopic {
@@ -1204,6 +1208,13 @@ export interface NegotiationState {
    * the turn the lever fires. Defensive single-fire layered on top of
    * the proofRequestedAtTurn gate on competingOfferDetail. */
   fakeLeverageChallengeFiredAtTurn?: number | null;
+  /* S23-B1 (2026-07-21) — hold-phase single-fire turn marker. Null on
+   * init; stamped by applyAiMove the turn the recruiter grants thinking
+   * time ("Of course — take until Thursday. Let me know."). Planner
+   * gates the hold-grant branch on this being null so it fires at most
+   * once per session (the candidate can ask repeatedly but the recruiter
+   * grants time once and the normal negotiation resumes). */
+  holdGrantedAtTurn?: number | null;
   /* PDF#42 BUG-A (2026-05-21) — competitor-match single-fire marker.
    * Null on init; stamped by applyAiMove when actionKind ===
    * "competitor-match". Planner reads it as the single-fire gate so
@@ -2913,6 +2924,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     politeWalkawayFiredAtTurn: null,
     hikeStrongDefenseFiredAtTurn: null,
     fakeLeverageChallengeFiredAtTurn: null,
+    holdGrantedAtTurn: null,
     competitorMatchFiredAtTurn: null,
     ctcInflationAnchorCtcLpa: null,
     /* Audit follow-up (2026-05-21) — kernel chaos test caught schema
@@ -2979,6 +2991,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       deadlineExplicit: false,
       conditionalAcceptance: false,
       conditionalEvidence: null,
+      requestsHold: false,
       hasAny: false,
     },
     candidateProfile: seededProfile,
@@ -3995,7 +4008,7 @@ export function parseCandidateAnswer(
       equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, equityExists: null, hasAny: false },
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, amount: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: false },
-      decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
+      decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, requestsHold: false, hasAny: false },
       candidateProfile: { ...EMPTY_CANDIDATE_PROFILE },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
@@ -7079,6 +7092,10 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   ) {
     next.competitorMatchFiredAtTurn = state.turnIndex;
   }
+  /* S23-B1 (2026-07-21) — hold-grant single-fire stamp. */
+  if (move.actionKind === "hold-grant" && state.holdGrantedAtTurn == null) {
+    next.holdGrantedAtTurn = state.turnIndex;
+  }
   /* Paraphrase-loop feature (2026-05-29) — single-fire marker. */
   if (move.actionKind === "paraphrase-recap" && state.paraphraseFired !== true) {
     next.paraphraseFired = true;
@@ -7834,6 +7851,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
     throw new Error("state.fakeLeverageChallengeFiredAtTurn");
   }
   if (
+    s.holdGrantedAtTurn !== undefined &&
+    s.holdGrantedAtTurn !== null &&
+    !isFiniteNonNegInt(s.holdGrantedAtTurn)
+  ) {
+    throw new Error("state.holdGrantedAtTurn");
+  }
+  if (
     s.competitorMatchFiredAtTurn !== undefined &&
     s.competitorMatchFiredAtTurn !== null &&
     !isFiniteNonNegInt(s.competitorMatchFiredAtTurn)
@@ -8344,6 +8368,8 @@ export function deserializeState(json: string): NegotiationState {
       (s.hikeStrongDefenseFiredAtTurn as number | null | undefined) ?? null,
     fakeLeverageChallengeFiredAtTurn:
       (s.fakeLeverageChallengeFiredAtTurn as number | null | undefined) ?? null,
+    holdGrantedAtTurn:
+      (s.holdGrantedAtTurn as number | null | undefined) ?? null,
     competitorMatchFiredAtTurn:
       (s.competitorMatchFiredAtTurn as number | null | undefined) ?? null,
     ctcInflationAnchorCtcLpa:
@@ -8416,9 +8442,13 @@ export function deserializeState(json: string): NegotiationState {
       workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false,
     },
     competingOfferDetail: backfillCompetingOfferDetail(s.competingOfferDetail),
-    decisionDeadline: (s.decisionDeadline as DecisionDeadlineResult | undefined) ?? {
-      deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false,
-    },
+    decisionDeadline: (() => {
+      /* S23-B1 back-compat: sessions serialized before requestsHold shipped
+       * won't have that field; backfill to false so old sessions still work. */
+      const dd = s.decisionDeadline as DecisionDeadlineResult & { requestsHold?: boolean } | undefined;
+      if (!dd) return { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, requestsHold: false, hasAny: false };
+      return { ...dd, requestsHold: dd.requestsHold ?? false };
+    })(),
     candidateProfile: backfillCandidateProfile(s.candidateProfile),
     miscSignals: (s.miscSignals as MiscSignalsResult | undefined) ?? {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,

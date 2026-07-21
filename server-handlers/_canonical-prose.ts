@@ -1060,10 +1060,19 @@ const PROSE_ARMS: ProseArmRegistry = {
     return "Let me see what else we can structure on the fitment.";
   },
 
-  "hold-firm": (_action, state) =>
-    state.highestOfferMade > 0
+  "hold-firm": (action, state) => {
+    /* S23-B1 (2026-07-21) — time-bridge prose when the candidate asked for
+     * thinking time. The recruiter acknowledges gracefully and steps back
+     * rather than continuing to push. */
+    if (action.grantTime) {
+      return state.highestOfferMade > 0
+        ? `Of course — take some time to think it through. The offer stands at ₹${state.highestOfferMade}L. Let me know whenever you're ready.`
+        : "Of course — take some time to think it through. Let me know whenever you're ready.";
+    }
+    return state.highestOfferMade > 0
       ? `We'll hold the fitment at ₹${state.highestOfferMade}L as per our band for this grade. Take some time on it and revert.`
-      : "We'll hold here as per our band for this grade. Take some time on it and revert.",
+      : "We'll hold here as per our band for this grade. Take some time on it and revert.";
+  },
 
   "rescission": () =>
     "Given how this discussion has gone, we won't be able to move ahead with this offer.",

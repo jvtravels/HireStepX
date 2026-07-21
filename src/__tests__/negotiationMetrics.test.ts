@@ -90,6 +90,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       deadlineExplicit: false,
       conditionalAcceptance: false,
       conditionalEvidence: null,
+      requestsHold: false,
       hasAny: false,
     },
     candidateProfile: { ...EMPTY_CANDIDATE_PROFILE },

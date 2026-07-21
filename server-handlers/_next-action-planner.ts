@@ -437,7 +437,10 @@ export type NextAction =
        * non-cash lever. Prevents the silent total→fixed over-concession. */
       fixedAskAboveBand?: number;
     }
-  | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
+  | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop";
+      /** S23-B1 (2026-07-21) — when true, the candidate asked for thinking
+       *  time and the recruiter is granting it ("time-bridge" response). */
+      grantTime?: boolean }
   | { kind: "rescission" }
   /* Fix 4 (2026-05-16) — formal close recap. Fires when phase is
    * closing-push or accepted AND the candidate has verbally accepted.
@@ -2529,6 +2532,43 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
+  }
+
+  /* S23-B1 (2026-07-21) — hold-phase: candidate asked the recruiter for
+   * thinking time ("can I take until Thursday?", "need a couple of days").
+   *
+   * Real recruiters respond with a brief, warm time-bridge — "Of course —
+   * take until Thursday. Just let me know." — rather than continuing to
+   * push levers. The kernel currently ignores this signal and plows ahead
+   * with normal negotiation, causing the recruiter to hallucinate progress
+   * and the candidate to feel steamrolled.
+   *
+   * Guards:
+   *   - Only fires when state.decisionDeadline.requestsHold is true
+   *     (detected this turn or carried from a prior merge).
+   *   - Single-fire: holdGrantedAtTurn must be null so the recruiter
+   *     doesn't re-grant time on every subsequent turn.
+   *   - Not in a terminal phase (accepted/walked/stalemate).
+   *   - Suppressed when conditionalAcceptance is also true — a
+   *     conditional accept has its own close gate above and must not
+   *     divert to a hold. */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.decisionDeadline?.requestsHold === true &&
+    state.decisionDeadline?.conditionalAcceptance !== true &&
+    state.holdGrantedAtTurn == null
+  ) {
+    return {
+      kind: "hold-firm",
+      mode: "verbal-accept",
+      grantTime: true,
+      _move: {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade > 0 ? state.highestOfferMade : null,
+        actionKind: "hold-grant",
+        rationale: "grant-time: candidate requested thinking time; recruiter grants a time-bridge and stands by",
+      },
+    } as PlannedAction;
   }
 
   /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.

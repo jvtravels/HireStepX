@@ -37,6 +37,17 @@ export interface DecisionDeadlineResult {
   /** Brief evidence snippet (≤120 chars) of the conditional clause —
    *  e.g. "if you match 30 LPA, I'll sign today". */
   conditionalEvidence: string | null;
+  /** S23-B1 (2026-07-21) — candidate is asking the RECRUITER for
+   *  time to deliberate ("can I take until Thursday to think this
+   *  over?", "I need a couple of days to decide"). Distinct from
+   *  `deadlineExplicit`, which captures the candidate's OWN external
+   *  deadline to respond to a current employer or another company.
+   *  When true, the planner emits a single time-bridge response
+   *  ("Of course — take until [day]. Let me know what you decide.")
+   *  rather than continuing to push levers. Single-fire via
+   *  state.holdGrantedAtTurn so the recruiter doesn't grant time
+   *  repeatedly on consecutive holds. */
+  requestsHold: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -46,8 +57,41 @@ const EMPTY: DecisionDeadlineResult = {
   deadlineExplicit: false,
   conditionalAcceptance: false,
   conditionalEvidence: null,
+  requestsHold: false,
   hasAny: false,
 };
+
+/* S23-B1 (2026-07-21) — candidate asking the RECRUITER for thinking
+ * time. Patterns require an EXPLICIT time quantum or "until <day>" so
+ * a generic "let me think about it" (used as a filler in negotiation)
+ * does NOT trip this. All patterns tie a deliberation verb to a
+ * CONCRETE time request directed AT the recruiter — either a day name,
+ * a duration ("a couple of days"), or an explicit "get back to you."
+ * Hinglish variants covered for Indian-market completeness. */
+const REQUESTS_HOLD_PATTERNS: ReadonlyArray<RegExp> = [
+  /* "can I take until Thursday / till tomorrow / until the weekend" */
+  /\bcan\s+I\s+take\s+(?:until|till|to)\b/i,
+  /* "take some time / a day / a few days / a couple of days to think" —
+   * requires an explicit duration (NOT just "take time" without quantum). */
+  /\btake\s+(?:a\s+(?:day|few\s+days?|couple\s+(?:of\s+)?days?|week))\s+(?:to\s+(?:think|decide|consider|discuss|mull|reflect))/i,
+  /* "need a couple of days / some time to decide / get back" —
+   * requires explicit duration. "need some time to think" alone is too
+   * broad; pairing with "to decide/get back" scopes it to recruiter-directed. */
+  /\bneed\s+(?:a\s+(?:couple|few)\s+(?:of\s+)?days?|a\s+day|a\s+week)\s+(?:to\s+(?:think|decide|consider|discuss|mull|reflect)|to\s+get\s+back)/i,
+  /* "let me think it over" / "let me sleep on it" / "let me mull it over" —
+   * "think it over" (with "it") is deliberate; "think about it" alone
+   * is excluded (too common as a filler). Sleep-on and mull-over are
+   * unambiguous "I need time" idioms. */
+  /\blet\s+me\s+(?:think\s+(?:it\s+)?over|sleep\s+on\s+(?:it|this)|mull\s+(?:it|this)\s+over)\b/i,
+  /* "can I get back to you by tomorrow / this week" — MUST have "by" + time */
+  /\bcan\s+I\s+(?:get\s+back|revert|come\s+back)\s+(?:to\s+you\s+)?by\b/i,
+  /* "I'll let you know by / revert by Thursday" — MUST have "by" to qualify */
+  /\b(?:i.?ll?\s+)?(?:let\s+you\s+know|revert|get\s+back|come\s+back)\s+(?:to\s+you\s+)?by\s+(?:tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|eod|end\s+of\s+(?:the\s+)?(?:day|week))\b/i,
+  /* "give me a day / a couple of days / a week to think" */
+  /\bgive\s+me\s+(?:a\s+(?:day|couple\s+of\s+days?|few\s+days?|week)|time\s+to\s+(?:think|decide|discuss))\b/i,
+  /* Hinglish: "thoda time chahiye", "soch ke batata hoon", "sochke batata" */
+  /\b(?:thoda\s+time\s+(?:chahiye|dedo|do)|soch\s*ke\s+(?:batata|bataata|revert|confirm)\b|sochu\s+(?:toh|to|thoda|phir))\b/i,
+];
 
 /* Weekday → "days from now" assuming a Monday baseline. The kernel
  * doesn't know the current weekday, so we use a heuristic midweek
@@ -214,16 +258,29 @@ export function extractDecisionDeadline(text: string): DecisionDeadlineResult {
   const conditionalEvidence = extractConditional(text);
   const conditionalAcceptance = conditionalEvidence != null;
 
+  /* S23-B1 (2026-07-21) — candidate asking the RECRUITER for deliberation
+   * time. Only fires when no conditional acceptance is present (a
+   * conditional acceptance has its own close path and must not be
+   * re-routed to hold). Also suppressed when deadlineExplicit is the
+   * ONLY signal that fired, since a bare deadline ("I need to reply by
+   * Friday") is the candidate's own constraint, not a request to pause
+   * the negotiation. The REQUESTS_HOLD_PATTERNS must fire independently. */
+  const requestsHold =
+    !conditionalAcceptance &&
+    REQUESTS_HOLD_PATTERNS.some((p) => p.test(text));
+
   const hasAny =
     deadlineDays != null ||
     deadlineExplicit ||
-    conditionalAcceptance;
+    conditionalAcceptance ||
+    requestsHold;
 
   return {
     deadlineDays,
     deadlineExplicit,
     conditionalAcceptance,
     conditionalEvidence,
+    requestsHold,
     hasAny,
   };
 }
@@ -242,16 +299,23 @@ export function mergeDecisionDeadline(
       ? Math.min(next.deadlineDays, p.deadlineDays)
       : next.deadlineDays ?? p.deadlineDays;
 
+  /* requestsHold — monotone-up: once the candidate asks for time, the
+   * state stays "hold requested" until the kernel grants time (single-
+   * fire gate on holdGrantedAtTurn). If the candidate repeats the
+   * request later (e.g. "still not sure, another day?") we keep it true
+   * so the planner acknowledges rather than ignoring them again. */
   const merged: DecisionDeadlineResult = {
     deadlineDays: mergedDays,
     deadlineExplicit: p.deadlineExplicit || next.deadlineExplicit,
     conditionalAcceptance: next.conditionalAcceptance,
     conditionalEvidence: next.conditionalEvidence ?? p.conditionalEvidence,
+    requestsHold: p.requestsHold || next.requestsHold,
     hasAny: false,
   };
   merged.hasAny =
     merged.deadlineDays != null ||
     merged.deadlineExplicit ||
-    merged.conditionalAcceptance;
+    merged.conditionalAcceptance ||
+    merged.requestsHold;
   return merged;
 }
