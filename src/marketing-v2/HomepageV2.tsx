@@ -2956,6 +2956,19 @@ export function BuiltForIndiaV2() {
             >
               Campus placement guide <span className="mv2-dark-arrow" aria-hidden>→</span>
             </a>
+            <a
+              href="/interview-prep"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Company interview guides <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
           </div>
 
         </div>

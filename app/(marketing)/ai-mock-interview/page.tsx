@@ -82,12 +82,22 @@ const VS_ROWS = [
 const TOP_COMPANIES = [
   { label: "Google", slug: "google-behavioral-interview-questions" },
   { label: "Amazon", slug: "amazon-leadership-principles-interview" },
+  { label: "Microsoft", slug: "microsoft-india-sde-interview-questions" },
+  { label: "Meta", slug: "meta-engineering-interview-questions" },
   { label: "Flipkart", slug: "flipkart-product-manager-interview" },
   { label: "TCS", slug: "tcs-ninja-interview-questions" },
-  { label: "Razorpay", slug: "razorpay-product-manager-interview" },
-  { label: "Goldman Sachs", slug: "goldman-sachs-finance-interview" },
   { label: "Infosys", slug: "infosys-behavioral-interview-questions" },
+  { label: "Wipro", slug: "wipro-freshers-interview-questions" },
+  { label: "Razorpay", slug: "razorpay-product-manager-interview" },
   { label: "Swiggy", slug: "swiggy-product-manager-interview" },
+  { label: "Goldman Sachs", slug: "goldman-sachs-finance-interview" },
+  { label: "J.P. Morgan", slug: "jpmorgan-interview-questions-india" },
+  { label: "HDFC Bank", slug: "hdfc-bank-software-engineer-interview-questions" },
+  { label: "Upstox", slug: "upstox-swe-interview-questions" },
+  { label: "Zerodha", slug: "zerodha-engineering-interview-questions" },
+  { label: "Meesho", slug: "meesho-engineering-interview-questions" },
+  { label: "Optiver", slug: "optiver-quant-interview-questions" },
+  { label: "Scaler", slug: "scaler-software-engineer-interview-questions" },
 ];
 
 const HOW_IT_WORKS = [
