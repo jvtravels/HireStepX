@@ -6935,6 +6935,33 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 4 (30-45 min): team-fit and leadership round on ownership, product sense, and working in a fast-moving AI company.",
     ],
   },
+  /* ── Wave 6b: Millennium (quant) ── */
+  {
+    slug: "millennium-quant-interview-questions",
+    searchPhrase: "Millennium India Quant Interview Questions India 2026",
+    company: "millennium", roleFamily: "quant", focus: "technical",
+    intro: "Millennium's India quant and technology interviews screen for sharp probability reasoning, clean coding, and a genuine feel for markets. In 2026 expect an early quantitative and coding screen, then rounds on probability, statistics, expected value, and time-series or data-handling problems, often tied to how a strategy would behave in live trading. Because Millennium runs a multi-manager pod model, interviewers care that you can reason precisely about risk and edge, not just recite formulas.",
+    framework: { name: "Edge and Rigour", summary: "Pair rigorous probability and statistics with clean, testable code and a clear story for where a trading edge comes from and how it decays" },
+    metaKeywords: ["Millennium interview questions", "Millennium quant interview India 2026", "Millennium hedge fund interview", "Millennium quant developer questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What does Millennium test in quant interviews?", a: "Probability, statistics, expected value, and combinatorics, plus coding in Python or C++ and questions on time-series, signals, and how a strategy behaves under real market conditions." },
+      { q: "Is Millennium more quant research or quant dev focused?", a: "Both tracks exist. Researchers face heavier statistics and signal questions; quant developers face more systems, latency, and clean-code problems, though probability shows up in every loop." },
+      { q: "Does Millennium ask about risk and pods?", a: "Yes. Because it runs a multi-manager pod structure, interviewers often probe how you think about drawdown, position sizing, and keeping a strategy within a risk budget." },
+    ],
+    recruitmentSteps: [
+      "Apply or get sourced; complete an online quantitative and coding assessment",
+      "Technical screen on probability, statistics, and a coding problem",
+      "Onsite or virtual loop covering quant reasoning, coding, and market intuition",
+      "Final rounds with a portfolio manager or team lead, then offer discussion",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): online quantitative and coding assessment in Python or C++ with probability and data questions.",
+      "Round 2 (45-60 min): probability, statistics, and expected-value interview with brain teasers and estimation problems.",
+      "Round 3 (60 min): coding and systems round on clean implementation, time-series handling, and testing a simple strategy.",
+      "Round 4 (45 min): market-intuition and behavioural round with a PM on edge, risk, and why quant trading.",
+    ],
+  },
 ];
 
 /** Lookup helper. */
