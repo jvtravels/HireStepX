@@ -14198,7 +14198,7 @@ const posts: BlogPost[] = [
     readTime: "9 min read",
     heroImage: "https://images.unsplash.com/photo-1568516173541-47b49b19ac4b?w=1200&q=80",
     heroAlt: "Uber ride-sharing app representing Uber India's engineering in Bengaluru",
-    datePublished: "2026-10-19",
+    datePublished: "2026-07-21",
     intro: "Uber India (Bengaluru: 2,500+ engineers; Hyderabad: 500+ engineers) is one of the most technically rigorous global tech employers in India. Behind the consumer app is a platform that processes millions of trips daily across 70+ countries, with geospatial engineering, real-time matching algorithms, and payments infrastructure that are among the hardest engineering problems in consumer tech. This guide covers the interview process, what Uber India engineers work on, the geospatial system design topics you must prepare, and salary benchmarks.",
     sections: [
       {
@@ -14237,7 +14237,7 @@ const posts: BlogPost[] = [
     readTime: "9 min read",
     heroImage: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80",
     heroAlt: "Airbnb accommodation representing the travel technology platform engineering",
-    datePublished: "2026-10-20",
+    datePublished: "2026-07-21",
     intro: "Airbnb India (Bengaluru, 800+ engineers) is one of the most design-conscious and engineering-quality-focused global tech employers in India. The Bengaluru office owns engineering for core Airbnb platform components — search, payments, host tools, and trust and safety — and operates with a culture that values both technical excellence and user empathy. This guide covers the distinctive Airbnb interview process (including the unique 'life story' round), what teams work on, salary benchmarks, and what makes Airbnb's engineering culture different.",
     sections: [
       {
@@ -14276,7 +14276,7 @@ const posts: BlogPost[] = [
     readTime: "9 min read",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
     heroAlt: "Stripe payment terminal representing the global payments infrastructure company",
-    datePublished: "2026-10-21",
+    datePublished: "2026-07-21",
     intro: "Stripe India (Bengaluru, 300+ engineers) is one of the most engineering-quality-obsessed employers in India. Stripe processes hundreds of billions of dollars in payments annually for 3 million+ businesses globally, and its API is widely considered the gold standard for developer-facing product design. The Bengaluru office owns significant portions of Stripe's core platform, and the interview process is distinctive: it tests real engineering skills (debugging, code review) rather than algorithmic puzzle-solving. This guide covers the interview, what Stripe India builds, and compensation.",
     sections: [
       {
@@ -14315,7 +14315,7 @@ const posts: BlogPost[] = [
     readTime: "10 min read",
     heroImage: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&q=80",
     heroAlt: "Cloud computing data centre representing AWS, GCP, and Azure engineering careers",
-    datePublished: "2026-10-22",
+    datePublished: "2026-07-21",
     intro: "Cloud computing has shifted from a technology trend to the default infrastructure layer for every new application built in India. As Indian companies accelerate their cloud migration and cloud-native startups proliferate, the demand for cloud engineers, architects, and specialists has grown faster than supply. This guide covers the roles in highest demand, which certifications actually matter, salary benchmarks across employers, and the clearest path into cloud engineering for IT professionals and software engineers alike.",
     sections: [
       {
@@ -14354,7 +14354,7 @@ const posts: BlogPost[] = [
     readTime: "10 min read",
     heroImage: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80",
     heroAlt: "Cybersecurity digital lock representing security engineering careers in India",
-    datePublished: "2026-10-23",
+    datePublished: "2026-07-21",
     intro: "Cybersecurity is one of the fastest-growing career paths in Indian tech in 2026. The combination of India's Digital Personal Data Protection Act (DPDP Act 2023), RBI's cybersecurity guidelines for financial institutions, and a surge in cyberattacks targeting Indian enterprises has created strong demand for security professionals at every level. This guide covers the roles in demand, which certifications matter, salary benchmarks, and how software engineers can transition into application security.",
     sections: [
       {
@@ -14393,7 +14393,7 @@ const posts: BlogPost[] = [
     readTime: "10 min read",
     heroImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1200&q=80",
     heroAlt: "Indian startup office representing the vibrant startup engineering ecosystem",
-    datePublished: "2026-10-24",
+    datePublished: "2026-07-21",
     intro: "India's startup ecosystem remains one of the world's most active, with 100+ unicorns, a maturing Series B/C/D market, and a cohort of pre-IPO companies offering the highest ESOP upside available in Indian tech. For software engineers, startups offer something large companies cannot: product ownership from day one, faster career progression, and equity that could be life-changing if the company succeeds. This guide covers the best startups by engineering quality and growth stage, how ESOPs work, and what to look for when evaluating startup opportunities.",
     sections: [
       {
@@ -14432,7 +14432,7 @@ const posts: BlogPost[] = [
     readTime: "11 min read",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80",
     heroAlt: "Product team in whiteboard session representing PM interview preparation",
-    datePublished: "2026-10-25",
+    datePublished: "2026-07-21",
     intro: "Product management roles at Indian tech companies have grown significantly in the last 5 years as companies have professionalised their product functions beyond the founder-driven product approach of early stages. A strong PM role at Flipkart, Swiggy, Razorpay, or Groww is one of the highest-leverage positions in Indian tech: you define what gets built, for whom, and why. This guide covers every PM interview question type, the frameworks Indian PMs use, salary benchmarks, and how to transition from software engineering into product management.",
     sections: [
       {
@@ -14471,7 +14471,7 @@ const posts: BlogPost[] = [
     readTime: "11 min read",
     heroImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&q=80",
     heroAlt: "Data science visualization representing machine learning and statistical analysis",
-    datePublished: "2026-10-26",
+    datePublished: "2026-07-21",
     intro: "Data science roles at Indian product companies have matured significantly: the stereotype of a data scientist as a generalist who cleans data and runs models has given way to specialised roles (ML Engineer, NLP Engineer, Recommendation Scientist, Experimentation Analyst). This guide covers every question type tested in Indian data scientist interviews, the statistics and ML depth expected, Python and SQL requirements, and what distinguishes candidates who get offers from those who do not.",
     sections: [
       {
@@ -14510,7 +14510,7 @@ const posts: BlogPost[] = [
     readTime: "7 min read",
     heroImage: "https://images.unsplash.com/photo-1453928582365-b6ad33cbcf64?w=1200&q=80",
     heroAlt: "Person looking forward representing career planning in software engineering",
-    datePublished: "2026-10-27",
+    datePublished: "2026-07-21",
     intro: "Where do you see yourself in 5 years is one of the most predictable interview questions in Indian tech, yet most engineers answer it poorly: either with vague generalities ('I want to grow professionally') or falsely specific plans ('I want to be a VP of Engineering'). Neither convinces interviewers. This guide explains what the question is actually testing, gives you frameworks for experienced engineers and freshers, provides full example answers, and lists the five answers that immediately raise red flags.",
     sections: [
       {
@@ -14549,7 +14549,7 @@ const posts: BlogPost[] = [
     readTime: "12 min read",
     heroImage: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=1200&q=80",
     heroAlt: "Engineer coding at laptop representing coding interview preparation",
-    datePublished: "2026-10-28",
+    datePublished: "2026-07-21",
     intro: "The coding interview is the highest-stakes filter in Indian tech hiring: pass it and you get to the interesting rounds; fail it and the process ends. Yet most engineers prepare suboptimally: grinding 500 random LeetCode problems without a structured strategy, or practising in silence when interviews require explaining your thinking. This guide provides a realistic timeline, the specific DSA topics by priority, a structured 8-week plan, and how preparation differs for Indian product companies versus FAANG India.",
     sections: [
       {
