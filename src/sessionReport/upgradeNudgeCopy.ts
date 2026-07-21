@@ -20,7 +20,7 @@ export interface UpgradeNudgeCopy {
 const PERFECT_SCORE = 100;
 
 const SUBCOPY_SPRINT = "Get 5 more sessions for ₹39 — track your improvement across a Sprint Pack.";
-const SUBCOPY_SINGLE = "Grab one more session for ₹9, or upgrade to Starter for ₹249/week.";
+const SUBCOPY_SINGLE = "Grab one more session for ₹9, or get the Sprint Pack (₹39 · 5 sessions).";
 
 /**
  * @param score     0–100 session score

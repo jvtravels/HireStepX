@@ -345,7 +345,7 @@ async function sendFirstSessionCompletedEmail(
             button("View report", reportUrl) +
             button("Start session 2", nextUrl) +
             para(
-              "After your second session you can upgrade to keep practicing — plans start at ₹249/week.",
+              "After your second session you can upgrade to keep practicing — ₹9 per session or ₹39 for 5 sessions (Sprint Pack).",
               { small: true, muted: true },
             ),
         }),
@@ -391,7 +391,7 @@ async function sendFreeLimitReachedEmail(
           body:
             title("Both free sessions", { accentWord: "done." }) +
             para(`Hi ${greeting}, you've completed both of your free mock interviews. Your report is ready — you've already built muscle memory that candidates who don't practice at all don't have.`) +
-            para(`To keep going, upgrade to Starter (₹249/week, 3 sessions) or grab a single session for ₹9. No subscription required.`) +
+            para(`To keep going, get the Sprint Pack (₹39 · 5 sessions) or grab a single session for ₹9. No subscription required.`) +
             button("View report", reportUrl) +
             button("Upgrade to keep practicing", upgradeUrl) +
             para(

@@ -34,9 +34,9 @@ describe("planCtaLabel", () => {
   });
 
   it("keeps existing Free behaviour intact", () => {
-    // Active free → upsell.
+    // Active free → see plans (modal shows Per Session + Sprint Pack, not Pro).
     expect(planCtaLabel({ starterExhausted: false, freeExhausted: false, creditBalance: 0 }))
-      .toBe("Upgrade to Pro");
+      .toBe("See plans");
     // Exhausted free, no credits → unlock prompt.
     expect(planCtaLabel({ starterExhausted: false, freeExhausted: true, creditBalance: 0 }))
       .toBe("Unlock sessions now");
@@ -54,8 +54,8 @@ describe("planCtaLabel", () => {
 });
 
 describe("planCtaTitle", () => {
-  it("pitches Pro only for the upgrade CTA", () => {
-    expect(planCtaTitle("Upgrade to Pro")).toMatch(/Pro/);
+  it("surfaces pricing in the tooltip for the see-plans CTA", () => {
+    expect(planCtaTitle("See plans")).toMatch(/₹9/);
   });
 
   it("describes buying sessions for every buy CTA", () => {

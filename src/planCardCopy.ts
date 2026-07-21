@@ -46,12 +46,12 @@ export type PlanCtaState = {
 export function planCtaLabel(s: PlanCtaState): string {
   if (s.starterExhausted) return "Buy more sessions";
   if (s.freeExhausted) return s.creditBalance > 0 ? "Buy more sessions" : "Unlock sessions now";
-  return "Upgrade to Pro";
+  return "See plans";
 }
 
 /** Tooltip/aria description matched to the CTA — buy vs. the Pro pitch. */
 export function planCtaTitle(label: string): string {
-  return label === "Upgrade to Pro"
-    ? "See what's included in Pro — unlimited sessions, STAR coaching, skill tracking"
+  return label === "See plans"
+    ? "Get more sessions — ₹9 per session or ₹39 for 5 (Sprint Pack)"
     : "Buy more interview sessions";
 }
