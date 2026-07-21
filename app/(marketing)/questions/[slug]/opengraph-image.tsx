@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { getSeoPageBySlug } from "../../../../data/seo-pages";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 
-export const runtime = "edge";
+// Not edge runtime — seo-pages.ts bundle exceeds 1 MB edge limit.
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
