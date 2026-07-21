@@ -20,7 +20,7 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 export const metadata: Metadata = {
   title: "Interview Questions by Company & Role India 2026 | HireStepX",
   description:
-    "Curated interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 60+ companies. Practice with AI voice feedback. 2 sessions free.",
+    "Curated interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 200+ companies. Practice with AI voice feedback. 2 sessions free.",
   keywords: [
     "interview questions",
     "company interview questions",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     type: "website",
     title: "Interview Questions by Company & Role | HireStepX",
     description:
-      "Curated interview questions for 60+ companies. Practice answering them with AI voice feedback.",
+      "Curated interview questions for 200+ companies. Practice answering them with AI voice feedback.",
     url: "https://hirestepx.com/questions",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Interview Questions by Company & Role | HireStepX",
-    description: "Curated interview questions for 60+ companies. Practice with AI voice feedback.",
+    description: "Curated interview questions for 200+ companies. Practice with AI voice feedback.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
