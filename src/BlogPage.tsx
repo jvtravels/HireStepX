@@ -24268,6 +24268,7 @@ function getAutoLinks(post: BlogPost): { label: string; href: string }[] {
     const slug = COMPANY_SALARY_SLUG[company];
     links.push({ label: `${company} salary guide`, href: slug ? `/salary#${slug}` : "/salary" });
     links.push({ label: `Practice ${company} interview`, href: "/interview" });
+    links.push({ label: "All company interview guides", href: "/companies" });
   }
   if (category === "Salary Guide") {
     links.push({ label: "All company salary guides", href: "/salary" });
@@ -24276,37 +24277,49 @@ function getAutoLinks(post: BlogPost): { label: string; href: string }[] {
   if (category === "Technical") {
     links.push({ label: "Practice with AI mock interview", href: "/interview" });
     links.push({ label: "Compare company salaries", href: "/salary" });
+    links.push({ label: "Interview preparation hub", href: "/interview-prep" });
   }
   if (category === "Career") {
     links.push({ label: "Practice for your next move", href: "/interview" });
     links.push({ label: "Know your market salary", href: "/salary" });
+    links.push({ label: "Interview preparation hub", href: "/interview-prep" });
   }
   if (category === "Freshers") {
     links.push({ label: "Practice campus placement interviews", href: "/interview" });
     links.push({ label: "Fresher salary benchmarks", href: "/salary" });
+    links.push({ label: "Campus placement preparation guide", href: "/for-students" });
   }
   if (category === "Behavioral") {
     links.push({ label: "Practice behavioral questions with AI", href: "/interview" });
     links.push({ label: "Interview question bank", href: "/questions" });
+    links.push({ label: "Interview preparation hub", href: "/interview-prep" });
   }
   if (category === "Role Guides") {
     links.push({ label: "Practice role-specific questions", href: "/interview" });
     links.push({ label: "Salary benchmarks by role", href: "/salary" });
+    links.push({ label: "Interview preparation hub", href: "/interview-prep" });
   }
   if (category === "Strategy" || category === "Interview Skills" || category === "Interview Tips") {
     links.push({ label: "Apply this in a live mock interview", href: "/interview" });
     links.push({ label: "Practice question bank", href: "/questions" });
+    links.push({ label: "Interview preparation hub", href: "/interview-prep" });
   }
   if (category === "Industry Insights") {
     links.push({ label: "Company salary benchmarks", href: "/salary" });
     links.push({ label: "Practice industry interviews", href: "/interview" });
+    links.push({ label: "All company interview guides", href: "/companies" });
   }
   if (category === "HR") {
     links.push({ label: "Practice HR round questions", href: "/interview" });
+    links.push({ label: "Interview preparation hub", href: "/interview-prep" });
   }
   if (category === "Product") {
     links.push({ label: "Practice PM interviews", href: "/interview" });
     links.push({ label: "PM salary guide", href: "/salary" });
+  }
+  if (category === "Campus Placement") {
+    links.push({ label: "Campus placement preparation guide", href: "/for-students" });
+    links.push({ label: "Practice campus interviews", href: "/interview" });
   }
 
   return links;
