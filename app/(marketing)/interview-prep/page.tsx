@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
+import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -23,7 +24,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Interview Preparation Guide India 2026 — AI Mock Interviews | HireStepX",
   description:
-    "Interview prep guide for India 2026. AI mock interviews for TCS, Infosys, Google, Amazon, Flipkart, and 50+ companies. All formats covered.",
+    "Interview prep guide for India 2026. AI mock interviews for TCS, Infosys, Google, Amazon, Flipkart, and 200+ companies. All formats covered.",
   keywords: [
     "interview preparation India 2026",
     "how to prepare for job interview India",
@@ -54,29 +55,31 @@ export const metadata: Metadata = {
 };
 
 /* ── Company groupings ──────────────────────────────────────────────── */
-const COMPANY_LABEL: Record<string, string> = {
-  google: "Google", amazon: "Amazon", microsoft: "Microsoft", meta: "Meta",
-  apple: "Apple", netflix: "Netflix", linkedin: "LinkedIn", adobe: "Adobe",
-  flipkart: "Flipkart", razorpay: "Razorpay", swiggy: "Swiggy", zomato: "Zomato",
-  phonepe: "PhonePe", paytm: "Paytm", cred: "CRED", zerodha: "Zerodha",
-  meesho: "Meesho", oyo: "OYO", freshworks: "Freshworks", zoho: "Zoho",
-  tcs: "TCS", infosys: "Infosys", wipro: "Wipro", cognizant: "Cognizant",
-  accenture: "Accenture", ltimindtree: "LTIMindtree", hcl: "HCL",
-  capgemini: "Capgemini", ibm: "IBM",
-  mckinsey: "McKinsey", bcg: "BCG", bain: "Bain", deloitte: "Deloitte",
-  goldman: "Goldman Sachs", jpmc: "JPMorgan",
-};
+const COMPANY_LABEL = ALL_LABELS;
 
 const FOCUS_LABEL: Record<string, string> = {
   behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
   "case-study": "Case Study", "campus-placement": "Campus Placement",
   hr: "HR Round", "salary-negotiation": "Salary Negotiation",
+  management: "Management", "government-psu": "Government / PSU", strategic: "Strategic",
+  general: "General", leadership: "Leadership", panel: "Panel", quant: "Quant",
 };
 
-const SERVICE_COMPANIES = ["tcs", "infosys", "wipro", "cognizant", "accenture", "ltimindtree", "hcl", "capgemini", "ibm"];
-const PRODUCT_COMPANIES = ["flipkart", "razorpay", "swiggy", "zomato", "phonepe", "paytm", "cred", "zerodha", "meesho", "oyo", "freshworks", "zoho"];
-const FAANG_COMPANIES = ["google", "amazon", "microsoft", "meta", "apple", "netflix", "linkedin", "adobe"];
-const CONSULTING_COMPANIES = ["mckinsey", "bcg", "bain", "deloitte", "goldman", "jpmc"];
+const SERVICE_COMPANIES = ["tcs", "infosys", "wipro", "cognizant", "accenture", "ltimindtree", "hcl", "capgemini", "ibm", "techmahindra", "mphasis", "persistent", "ntt-data", "globallogic", "thoughtworks"];
+const PRODUCT_COMPANIES = ["flipkart", "razorpay", "swiggy", "zomato", "phonepe", "paytm", "cred", "zerodha", "meesho", "oyo", "freshworks", "zoho", "nykaa", "mamaearth", "myntra", "bigbasket", "blinkit", "makemytrip", "ixigo", "dream11", "lenskart", "boat", "naukri", "sharechat", "truecaller", "groww", "dmart", "wakefit", "zepto", "udaan"];
+const FAANG_COMPANIES = ["google", "amazon", "microsoft", "meta", "apple", "netflix", "linkedin", "adobe", "uber", "stripe", "salesforce", "atlassian", "workday", "servicenow", "vmware", "nvidia", "openai", "anthropic", "perplexity", "postman", "chargebee", "clevertap", "moengage", "inmobi", "druva", "browserstack", "darwinbox"];
+const CONSULTING_COMPANIES = ["mckinsey", "bcg", "bain", "deloitte", "goldman", "jpmc", "ey", "kpmg", "pwc"];
+const FINTECH_COMPANIES = ["bajaj-finance", "fibe", "kreditbee", "moneyview", "rupeek", "fi-money", "niyo", "smallcase", "indmoney", "zeta", "nium", "upstox", "angel-one", "jupiter", "navi", "slice", "cashfree", "juspay", "pine-labs", "bharatpe", "acko", "policybazaar", "icici-lombard", "digit"];
+const BANKING_COMPANIES = ["hdfc-bank", "icici", "hdfc", "axis", "kotak", "sbi", "barclays", "hsbc", "citi", "deutsche-bank", "bny-mellon", "standard-chartered", "wells-fargo", "morgan-stanley", "mastercard", "visa-india", "fiserv"];
+const SEMICONDUCTOR_COMPANIES = ["intel-india", "qualcomm", "arm-india", "mediatek", "bosch-india", "texas-instruments", "samsung", "samsung-india", "nvidia", "ericsson-india", "nokia-india", "cisco", "oracle", "sap-labs", "siemens-india", "walmart-global-tech", "lowes-india", "target-india"];
+const HEALTHCARE_COMPANIES = ["apollo-247", "practo", "medibuddy", "tata-1mg", "dr-lal-pathlabs", "metropolis", "star-health", "curefit"];
+const LOGISTICS_COMPANIES = ["delhivery", "shadowfax", "shiprocket", "rapido", "blackbuck", "moglix", "ninjacart"];
+const EDTECH_COMPANIES = ["scaler", "vedantu", "unacademy", "byjus", "physicswallah"];
+const D2C_COMPANIES = ["godrej", "nestle", "hul", "itc", "p&g", "tata-steel", "purplle", "licious", "rebel-foods"];
+const QUANT_COMPANIES = ["optiver", "millennium", "jane-street", "de-shaw", "citadel"];
+const SAAS_COMPANIES = ["hasura", "gupshup", "exotel", "plivo", "intuit", "mindtickle", "sigmoid", "tracxn", "khatabook", "krutrim", "sarvam"];
+const EV_COMPANIES = ["ola-electric", "ather-energy", "ola", "cars24", "spinny", "tata-motors", "mahindra", "bajaj"];
+const CAMPUS_COMPANIES = ["campus"];
 
 function pageGroup(companies: string[]) {
   return SEO_PAGES.filter((p) => companies.includes(p.company));
@@ -338,6 +341,105 @@ export default async function InterviewPrepPage() {
             heading="Consulting & Finance"
             description="Case-driven hiring with a structured evaluation rubric. Completely different format from tech."
             pages={pageGroup(CONSULTING_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Fintech & WealthTech ─────────────────────────────────── */}
+          <CompanyGroup
+            heading="Fintech & WealthTech"
+            description="India's fastest-growing hiring segment. Expect system design at scale, payments APIs, and strong product sense around India-specific financial products."
+            pages={pageGroup(FINTECH_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Banking & Financial Services ─────────────────────────── */}
+          <CompanyGroup
+            heading="Banking & Financial Services"
+            description="Indian private banks, global investment banks, and payments networks. Tech roles need strong distributed systems; business roles need finance domain knowledge."
+            pages={pageGroup(BANKING_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Semiconductor, Hardware & GCCs ───────────────────────── */}
+          <CompanyGroup
+            heading="Semiconductor, Hardware & Global Capability Centers"
+            description="Embedded systems, chip design, and large enterprise tech GCCs. Often overlooked but pay competitively and offer high technical depth with job stability."
+            pages={pageGroup(SEMICONDUCTOR_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Healthcare & Diagnostics ─────────────────────────────── */}
+          <CompanyGroup
+            heading="Healthcare & Diagnostics"
+            description="Health tech companies building at the intersection of clinical data and software. Strong on product sense, compliance awareness, and user empathy for patients."
+            pages={pageGroup(HEALTHCARE_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Logistics & Quick Commerce ───────────────────────────── */}
+          <CompanyGroup
+            heading="Logistics, Supply Chain & Quick Commerce"
+            description="India's delivery infrastructure layer. Interviews focus on real-time systems, routing algorithms, warehouse management, and scale-under-constraint engineering."
+            pages={pageGroup(LOGISTICS_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── EdTech & Skilling ────────────────────────────────────── */}
+          <CompanyGroup
+            heading="EdTech & Skilling Platforms"
+            description="Built for India's 300M+ student population. Product and engineering roles need deep understanding of low-bandwidth delivery, vernacular content, and mobile-first learning."
+            pages={pageGroup(EDTECH_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── D2C & Consumer Brands ────────────────────────────────── */}
+          <CompanyGroup
+            heading="D2C, FMCG & Consumer Brands"
+            description="From century-old FMCG giants to digital-native brands. Tech and analytics roles focus on supply chain, demand forecasting, and digital commerce at Indian scale."
+            pages={pageGroup(D2C_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── EV & Mobility ────────────────────────────────────────── */}
+          <CompanyGroup
+            heading="EV, Automotive & Mobility"
+            description="India's EV transition is creating strong demand for embedded software, battery management, and platform engineering talent. Niche but high-growth."
+            pages={pageGroup(EV_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── B2B SaaS & Developer Tools ───────────────────────────── */}
+          <CompanyGroup
+            heading="B2B SaaS & Developer Tools"
+            description="Global-from-day-one product companies built out of India. Strong engineering culture, high bar for product thinking, and often the best engineering environments in the country."
+            pages={pageGroup(SAAS_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Quant & Algorithmic Trading ──────────────────────────── */}
+          <CompanyGroup
+            heading="Quant & Algorithmic Trading"
+            description="The highest-paying engineering and research roles in finance. Require elite mathematical ability, strong coding, and comfort with probability and statistics under time pressure."
+            pages={pageGroup(QUANT_COMPANIES)}
+            companyLabel={COMPANY_LABEL}
+            focusLabel={FOCUS_LABEL}
+          />
+
+          {/* ── Campus Placement ─────────────────────────────────────── */}
+          <CompanyGroup
+            heading="Campus Placement Preparation"
+            description="General campus placement guides covering aptitude, group discussions, and HR rounds that cut across all companies and sectors."
+            pages={pageGroup(CAMPUS_COMPANIES)}
             companyLabel={COMPANY_LABEL}
             focusLabel={FOCUS_LABEL}
           />
