@@ -221,7 +221,10 @@ ${preheader(escapeHtml(opts.preview))}
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${C.white};border:1px solid ${C.line};border-radius:14px;overflow:hidden;">
       <tr><td style="padding:40px 44px;">
-        <div style="font-family:${SERIF};font-size:18px;font-weight:500;color:${C.coal};letter-spacing:-0.01em;padding-bottom:22px;margin-bottom:28px;border-bottom:1px solid ${C.line};">HireStepX</div>
+        <div style="padding-bottom:22px;margin-bottom:28px;border-bottom:1px solid ${C.line};display:flex;align-items:center;gap:10px;">
+          <img src="https://hirestepx.com/favicon.svg" alt="HireStepX" width="36" height="36" style="display:inline-block;border-radius:50%;border:0;outline:none;vertical-align:middle;" />
+          <span style="font-family:${SERIF};font-size:18px;font-weight:500;color:${C.coal};letter-spacing:-0.01em;vertical-align:middle;">HireStepX</span>
+        </div>
         ${opts.body}
         ${footer()}
       </td></tr>
