@@ -14110,26 +14110,6 @@ function BlogIndex() {
         )}
       </div>
 
-      {/* Pillar cross-links — topical authority signal to Google */}
-      <div style={{ background: t.creamRaised, borderTop: `1px solid ${t.line}`, padding: "32px 48px" }}>
-        <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-          <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginRight: 8 }}>
-            Also on HireStepX
-          </span>
-          {[
-            { label: "Company Interview Guides", href: "/interview-prep" },
-            { label: "Practice Questions", href: "/questions" },
-            { label: "Salary Guides India 2026", href: "/salary" },
-            { label: "AI Mock Interview", href: "/ai-mock-interview" },
-            { label: "Campus Placement Guide", href: "/for-students" },
-          ].map(({ label, href }) => (
-            <Link key={href} href={href} style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal, textDecoration: "none", padding: "7px 14px", border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: "#fff" }}>
-              {label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {/* Closing CTA */}
       <VideoCtaV2 />
     </BlogShell>
