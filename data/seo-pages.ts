@@ -2901,7 +2901,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
 
   {
-    slug: "p&g-behavioral-interview-questions",
+    slug: "pg-behavioral-interview-questions",
     searchPhrase: "Procter and Gamble India Interview Questions 2026",
     company: "p&g", roleFamily: "behavioral", focus: "behavioral",
     intro: "P&G India's interview process is famously example-driven: every question asks for a specific past situation, and vague or hypothetical answers are explicitly penalized in scoring. The company uses a proprietary Success Drivers framework to evaluate candidates, covering innovation, leadership, and the ability to turn insight into action. Expect 4 to 5 rounds across behavioral, functional, and leadership dimensions, with a written test filtering candidates before any interviews begin.",
