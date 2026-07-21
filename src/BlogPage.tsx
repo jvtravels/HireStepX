@@ -21955,22 +21955,6 @@ function BlogIndex() {
         {paginated.length > 0 ? (
           <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
             {paginated.slice(0, 3).map((p) => <CompactCard key={p.slug} post={p} />)}
-            {paginated.length > 3 && (
-              <div className="blog-cta-interrupt" style={{ gridColumn: "1 / -1", margin: "4px 0", borderRadius: 16, border: `1.5px solid ${t.copper}`, background: `linear-gradient(135deg, ${t.copper100} 0%, #fff 100%)`, padding: "28px 36px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap" as const }}>
-                <div>
-                  <p style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 6px", letterSpacing: "-0.02em" }}>
-                    Reading only gets you so far.{" "}
-                    <em style={{ color: t.copper, fontStyle: "italic" }}>Practise with AI voice.</em>
-                  </p>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-                    HireStepX gives you a real interview with AI that talks, listens, and scores your answers. 2 sessions free, no card needed.
-                  </p>
-                </div>
-                <Link href="/interview" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: "#fff", background: t.coal, border: "none", borderRadius: 10, padding: "13px 24px", textDecoration: "none", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
-                  Start 2 free sessions <span aria-hidden>→</span>
-                </Link>
-              </div>
-            )}
             {paginated.slice(3).map((p) => <CompactCard key={p.slug} post={p} />)}
           </div>
         ) : (
