@@ -405,7 +405,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "data-scientist", label: "Data Scientist" },
       { roleKey: "ml-engineer", label: "ML Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "uber-swe-interview-questions",
     hubNote: "Stock appreciation matters: UBER listed equity",
     sitemapPriority: 0.78,
   },
@@ -419,7 +419,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "oracle-swe-interview-questions",
     hubNote: "ORCL RSU + above-average fixed for enterprise; slower growth than startups",
     sitemapPriority: 0.77,
   },
@@ -447,7 +447,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "ux-designer", label: "UX Designer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "atlassian-swe-interview-questions",
     hubNote: "TEAM stock volatile post-2022: verify RSU grant price at offer",
     sitemapPriority: 0.76,
   },
@@ -461,7 +461,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "groww-swe-interview-questions",
     hubNote: "Pre-IPO ESOP: secondary market trades at ~$8B valuation",
     sitemapPriority: 0.77,
   },
@@ -489,7 +489,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "intuit-software-engineer-interview-questions",
     hubNote: "INTU RSU: strong eng culture, solid total comp for Tier-2 FAANG",
     sitemapPriority: 0.75,
   },
@@ -503,7 +503,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "walmart-global-tech-software-engineer-interview-questions",
     hubNote: "WMT stock stable: RSU liquidity is solid for non-FAANG",
     sitemapPriority: 0.75,
   },
@@ -517,7 +517,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "business-analyst", label: "Business Analyst" },
       { roleKey: "devops-sre", label: "DevOps / SRE" },
     ],
-    questionSlug: undefined,
+    questionSlug: "persistent-swe-interview-questions",
     hubNote: "Strong in healthcare IT and BFS: above-market for pure IT services",
     sitemapPriority: 0.72,
   },
@@ -621,7 +621,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "finance", label: "Investment Banking Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "morgan-stanley-swe-interview-questions",
     hubNote: "No joining bonus at India offices: negotiate base + RSU cliff schedule",
     sitemapPriority: 0.74,
   },
@@ -634,7 +634,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "finance", label: "Relationship Manager" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "hdfc-bank-software-engineer-interview-questions",
     hubNote: "No equity: banking stability + variable performance bonus; PF contribution included in CTC",
     sitemapPriority: 0.70,
   },
@@ -658,7 +658,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "data-scientist", label: "Quantitative Researcher / Trader" },
     ],
-    questionSlug: undefined,
+    questionSlug: "jane-street-swe-interview-questions",
     hubNote: "Highest comp for India freshers: pure cash, no equity; only 10–15 India hires per year",
     sitemapPriority: 0.78,
   },
@@ -670,7 +670,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "data-scientist", label: "Quantitative Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "de-shaw-swe-interview-questions",
     hubNote: "Pure cash + heavy performance bonus: no equity at India offices; Hyderabad campus focus",
     sitemapPriority: 0.76,
   },
@@ -686,7 +686,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "firmware-engineer", label: "Firmware Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
     ],
-    questionSlug: undefined,
+    questionSlug: "apple-swe-interview-questions",
     hubNote: "No joining bonus at ICT2: negotiate RSU grant size and first appraisal date in writing",
     sitemapPriority: 0.83,
   },
@@ -699,7 +699,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "ml-engineer", label: "ML Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "stripe-swe-interview-questions",
     hubNote: "Writing-clarity bar higher than FAANG peers: Stripe weights culture-fit in offers",
     sitemapPriority: 0.79,
   },
@@ -750,7 +750,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "consultant", label: "Strategy Consultant" },
     ],
-    questionSlug: undefined,
+    questionSlug: "bain-consultant-interview-questions",
     hubNote: "Bain India bonus ceiling highest in MBB globally: benchmark against McKinsey before signing",
     sitemapPriority: 0.79,
   },
@@ -764,7 +764,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "operations", label: "Operations Manager" },
     ],
-    questionSlug: undefined,
+    questionSlug: "zepto-swe-interview-questions",
     hubNote: "Pre-IPO ESOP (Series-G ₹70,000 Cr valuation 2024): IPO expected but timeline not confirmed",
     sitemapPriority: 0.74,
   },
@@ -777,7 +777,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
     ],
-    questionSlug: undefined,
+    questionSlug: "openai-swe-interview-questions",
     hubNote: "Research-paper quality bar: fewer than 20 India hires per year; LeetCode prep is insufficient",
     sitemapPriority: 0.79,
   },
@@ -791,7 +791,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "teacher", label: "Educator / Content Expert" },
     ],
-    questionSlug: undefined,
+    questionSlug: "unacademy-software-engineer-interview-questions",
     hubNote: "ESOP credibility low post-2024 reset: negotiate cash-heavy; discount ESOP in offer valuation",
     sitemapPriority: 0.68,
   },
@@ -804,7 +804,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "teacher", label: "Educator / Content Expert" },
     ],
-    questionSlug: undefined,
+    questionSlug: "physicswallah-software-engineer-interview-questions",
     hubNote: "Safest ESOP among Indian edtech: PW IPO signal lifted equity credibility vs Unacademy/Byju's",
     sitemapPriority: 0.69,
   },
@@ -817,7 +817,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
     ],
-    questionSlug: undefined,
+    questionSlug: "anthropic-swe-interview-questions",
     hubNote: "Remote India hires only: SF-anchored bands; safety alignment focus is a differentiator",
     sitemapPriority: 0.78,
   },
@@ -842,7 +842,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "data-scientist", label: "Quantitative Researcher / Trader" },
     ],
-    questionSlug: undefined,
+    questionSlug: "optiver-quant-interview-questions",
     hubNote: "Pure cash HFT: similar comp profile to Tower Research but derivatives-specialist focus",
     sitemapPriority: 0.75,
   },
@@ -854,7 +854,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "data-scientist", label: "Quantitative Analyst" },
     ],
-    questionSlug: undefined,
+    questionSlug: "millennium-quant-interview-questions",
     hubNote: "Multi-strategy hedge fund: pure cash + PnL bonus; Bengaluru office is a quant research centre",
     sitemapPriority: 0.73,
   },
@@ -867,7 +867,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "barclays-software-engineer-interview-questions",
     hubNote: "Barclays Pune GCC is a mid-tier finance employer: RSU + role scope is the negotiation lever",
     sitemapPriority: 0.71,
   },
@@ -880,7 +880,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "upstox-swe-interview-questions",
     hubNote: "Pre-IPO ESOP (RKSV group): Upstox IPO expected but not filed; discount ESOP accordingly",
     sitemapPriority: 0.71,
   },
@@ -892,7 +892,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "angel-one-swe-interview-questions",
     hubNote: "Listed equity (ANGELONE): RSU credibility solid; fintech trading systems experience valued",
     sitemapPriority: 0.70,
   },
@@ -906,7 +906,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "hardware-engineer", label: "Hardware / Embedded Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "ola-electric-software-engineer-interview-questions",
     hubNote: "Listed equity (OLAELECTRIC IPO Aug 2024): RSU credibility improving; volatile stock price",
     sitemapPriority: 0.72,
   },
@@ -918,7 +918,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "hardware-engineer", label: "Hardware / Embedded Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "ather-energy-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP (IPO filed 2025): Ather is the quality-focused EV brand vs Ola Electric",
     sitemapPriority: 0.70,
   },
@@ -933,7 +933,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "marketing", label: "Developer Advocate" },
     ],
-    questionSlug: undefined,
+    questionSlug: "postman-swe-interview-questions",
     hubNote: "ESOP-heavy at mid-level: negotiate ESOP refresh cadence alongside fixed; late-stage private",
     sitemapPriority: 0.77,
   },
@@ -946,7 +946,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "qa-engineer", label: "QA / Automation Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "browserstack-swe-interview-questions",
     hubNote: "Bootstrapped and profitable: fixed-heavy offers; ESOP is real but modest vs VC-backed peers",
     sitemapPriority: 0.73,
   },
@@ -958,7 +958,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "chargebee-swe-interview-questions",
     hubNote: "Late-stage private (Insight Partners backed): ESOP value depends on IPO; negotiate fixed first",
     sitemapPriority: 0.70,
   },
@@ -971,7 +971,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "makemytrip-software-engineer-interview-questions",
     hubNote: "Nasdaq-listed RSU (MMYT): solid equity credibility; travel recovery driving compensation growth",
     sitemapPriority: 0.72,
   },
@@ -985,7 +985,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "ux-designer", label: "Product Designer" },
       { roleKey: "product-manager", label: "Product Manager" },
     ],
-    questionSlug: undefined,
+    questionSlug: "ixigo-software-engineer-interview-questions",
     hubNote: "NSE-listed since 2024: ESOP liquidity better than pre-IPO peers; rail search is the core moat",
     sitemapPriority: 0.70,
   },
@@ -998,7 +998,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
     ],
-    questionSlug: undefined,
+    questionSlug: "perplexity-software-engineer-interview-questions",
     hubNote: "SF-anchored RSU: latest valuation $14B (2025); India remote hires in AI research and backend",
     sitemapPriority: 0.76,
   },
@@ -1010,7 +1010,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
     ],
-    questionSlug: undefined,
+    questionSlug: "krutrim-swe-interview-questions",
     hubNote: "Ola spinoff (Bhavish Aggarwal): ESOP credibility linked to Ola group trajectory; India-first AI mission",
     sitemapPriority: 0.72,
   },
@@ -1023,7 +1023,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "wells-fargo-software-engineer-interview-questions",
     hubNote: "Wells Fargo India GCC: RSU is WFC NYSE stock; Hyderabad campus is mid-tier banking GCC",
     sitemapPriority: 0.71,
   },
@@ -1036,7 +1036,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "delhivery-software-engineer-interview-questions",
     hubNote: "NSE-listed RSU (DELHIVERY): solid equity credibility; logistics ML and supply-chain tech focus",
     sitemapPriority: 0.71,
   },
@@ -1049,7 +1049,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "bigbasket-software-engineer-interview-questions",
     hubNote: "Tata-group RSU: listed via Tata Digital parent; compensation below pure-play unicorns",
     sitemapPriority: 0.71,
   },
@@ -1062,7 +1062,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "blinkit-swe-interview-questions",
     hubNote: "Zomato-group RSU (listed on NSE): RSU credibility solid post-Zomato IPO; comp below Zepto",
     sitemapPriority: 0.73,
   },
@@ -1073,7 +1073,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "LinkedIn India salary 2026: SWE entry ₹28–42 LPA, mid ₹50–80 LPA. Microsoft-owned RSU (MSFT). Bengaluru engineering hub covering feed, AI, and infrastructure. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "linkedin-pm-interview-questions",
     hubNote: "Microsoft-owned RSU (MSFT stock): FAANG-adjacent compensation, entry ₹28–42L",
     sitemapPriority: 0.77,
   },
@@ -1083,7 +1083,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Netflix India salary 2026: SWE mid ₹65–95 LPA, senior ₹95–160 LPA. Netflix RSU (NFLX listed). Premium streaming tech team opened 2024. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "netflix-engineering-interview-questions",
     hubNote: "Netflix India is a tiny, elite team: pay is among the highest in India; mid starts at ₹65L",
     sitemapPriority: 0.75,
   },
@@ -1093,7 +1093,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "NVIDIA India salary 2026: SWE entry ₹25.8–41 LPA, mid ₹50–90 LPA, senior ₹95–160 LPA. NVDA RSU (NASDAQ). AI hardware and GPU computing leader. Pune and Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "nvidia-swe-interview-questions",
     hubNote: "NVDA RSU (NASDAQ): AI-hardware premium; entry ₹25–41L; highest IC6 in India semiconductor sector",
     sitemapPriority: 0.79,
   },
@@ -1103,7 +1103,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Cisco India salary 2026: SWE entry ₹17–25 LPA, mid ₹27–46 LPA, senior ₹50–90 LPA. CSCO RSU (NASDAQ). Bengaluru is Cisco's largest global engineering hub outside the US. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "cisco-swe-interview-questions",
     hubNote: "CSCO RSU (NASDAQ): established FAANG-adjacent pay; Bengaluru is Cisco's #1 global hub ex-US",
     sitemapPriority: 0.77,
   },
@@ -1113,7 +1113,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Qualcomm India salary 2026: SWE entry ₹16–25 LPA, mid ₹25–38 LPA, senior ₹31–57 LPA. QCOM RSU. Hyderabad and Bengaluru chip design and modem engineering. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "qualcomm-india-software-engineer-interview-questions",
     hubNote: "QCOM RSU (NASDAQ): semiconductor premium; Hyderabad is India's largest chip-design hub",
     sitemapPriority: 0.76,
   },
@@ -1123,7 +1123,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "MediaTek India salary 2026: SWE entry ₹16–24 LPA, mid ₹24–40 LPA, senior ₹40–65 LPA. MediaTek RSU. Bengaluru SoC and modem engineering. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "mediatek-software-engineer-interview-questions",
     hubNote: "MediaTek RSU: Taiwan-headquartered semiconductor; India team focuses on SoC and connectivity chipsets",
     sitemapPriority: 0.74,
   },
@@ -1133,7 +1133,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "ServiceNow India salary 2026: SWE entry ₹26–38 LPA, mid ₹38–60 LPA, senior ₹60–110 LPA. NOW RSU (NYSE). Enterprise workflow SaaS. Hyderabad GCC: one of India's best-paying SaaS employers.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "servicenow-software-engineer-interview-questions",
     hubNote: "NOW RSU (NYSE): top-paying enterprise SaaS GCC in India; entry ₹26–38L rivals FAANG",
     sitemapPriority: 0.78,
   },
@@ -1143,7 +1143,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Workday India salary 2026: SWE entry ₹22–33 LPA, mid ₹33–50 LPA, senior ₹50–67 LPA. WDAY RSU (NASDAQ). HR and finance cloud SaaS. Hyderabad GCC CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "workday-software-engineer-interview-questions",
     hubNote: "WDAY RSU (NASDAQ): enterprise SaaS; solid pay; Hyderabad GCC covers HR-tech and finance-cloud product",
     sitemapPriority: 0.76,
   },
@@ -1154,7 +1154,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "EY India salary 2026: Analyst/Consultant entry ₹4.9–11.2 LPA, mid ₹10–18 LPA, senior ₹16–22 LPA. Big 4 consulting and advisory. Mumbai, Bengaluru, Delhi NCR CTC guide.",
     roles: [{ roleKey: "consultant", label: "Consultant" }],
-    questionSlug: undefined,
+    questionSlug: "ey-consultant-interview-questions",
     hubNote: "Big 4 cash-only: no equity at EY India; comp below MBB but broader roles across audit, tax, advisory",
     sitemapPriority: 0.72,
   },
@@ -1164,7 +1164,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "KPMG India salary 2026: Analyst entry ₹5–10 LPA, Consultant ₹10–17 LPA, Senior Consultant ₹17–22 LPA. Big 4 audit, tax, and advisory. Mumbai and Bengaluru CTC guide.",
     roles: [{ roleKey: "consultant", label: "Consultant" }],
-    questionSlug: undefined,
+    questionSlug: "kpmg-consultant-interview-questions",
     hubNote: "Big 4 cash-only: KPMG India; audit + advisory; below EY avg at senior consultant level",
     sitemapPriority: 0.72,
   },
@@ -1174,7 +1174,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "PwC India salary 2026: Analyst entry ₹5.5–10.5 LPA, Consultant ₹11–18 LPA, Senior Consultant ₹18–24 LPA. Big 4 consulting. Mumbai, Kolkata, Bengaluru CTC guide.",
     roles: [{ roleKey: "consultant", label: "Consultant" }],
-    questionSlug: undefined,
+    questionSlug: "pwc-consultant-interview-questions",
     hubNote: "Big 4 cash-only: PwC India; strong tax and deals practice; advisory similar to EY/KPMG",
     sitemapPriority: 0.72,
   },
@@ -1185,7 +1185,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Lenskart salary India 2026: SWE entry ₹12–20 LPA, mid ₹22–38 LPA, senior ₹38–60 LPA. Listed RSU (2025 IPO). India's largest omnichannel eyewear brand. Gurugram CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "lenskart-swe-interview-questions",
     hubNote: "Listed RSU (Lenskart IPO 2025): solid equity credibility; D2C + offline retail tech focus",
     sitemapPriority: 0.73,
   },
@@ -1195,7 +1195,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Mamaearth (Honasa Consumer) salary India 2026: SWE mid ₹18–28 LPA, senior ₹30–50 LPA. Honasa RSU (NSE listed). India's largest D2C beauty brand. Gurugram CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "mamaearth-swe-interview-questions",
     hubNote: "Honasa Consumer RSU (NSE listed): Mamaearth parent; listed equity but small tech team",
     sitemapPriority: 0.70,
   },
@@ -1205,7 +1205,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "boAt salary India 2026: SWE mid ₹14–24 LPA, senior ₹24–40 LPA. Pre-IPO ESOP. India's #1 consumer electronics brand in audio. New Delhi CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "boat-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: boAt (Imagine Marketing) IPO pending; ESOP credibility moderate; consumer electronics",
     sitemapPriority: 0.70,
   },
@@ -1215,7 +1215,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Wakefit salary India 2026: SWE mid ₹16–26 LPA, senior ₹26–42 LPA. Pre-IPO ESOP. India's leading D2C sleep and furniture brand. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "wakefit-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: Wakefit; D2C furniture; smaller tech team; credibility tied to eventual IPO",
     sitemapPriority: 0.69,
   },
@@ -1226,7 +1226,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Axis Bank salary India 2026: Relationship Manager entry ₹4–6.5 LPA, mid ₹7–14 LPA, senior ₹15–26 LPA. India's third-largest private bank. Mumbai HQ. CTC guide.",
     roles: [{ roleKey: "sales", label: "Relationship Manager" }],
-    questionSlug: undefined,
+    questionSlug: "axis-bank-software-engineer-interview-questions",
     hubNote: "Listed NSE/BSE: Axis Bank; retail banking and RM roles dominate hiring; no standard SWE grade data",
     sitemapPriority: 0.70,
   },
@@ -1236,7 +1236,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Kotak Mahindra Bank salary India 2026: Relationship Manager entry ₹4.5–7 LPA, mid ₹8–15 LPA, senior ₹16–30 LPA. India's fourth-largest private bank. Mumbai HQ. CTC guide.",
     roles: [{ roleKey: "sales", label: "Relationship Manager" }],
-    questionSlug: undefined,
+    questionSlug: "kotak-mahindra-bank-software-engineer-interview-questions",
     hubNote: "Listed NSE: Kotak Mahindra; strong wealth management and retail banking franchise; RM pay above Axis",
     sitemapPriority: 0.70,
   },
@@ -1246,7 +1246,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "SBI salary 2026: IT Officer / Specialist Officer entry ₹8–12 LPA, mid ₹14–22 LPA. India's largest public-sector bank. Stable government employment with 7th CPC pay structure. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "sbi-software-engineer-interview-questions",
     hubNote: "PSU job stability: SBI bonds 2yr; IT Officer entry ₹8–12L; pension + post-retirement benefits are key",
     sitemapPriority: 0.72,
   },
@@ -1257,7 +1257,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "BharatPe salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. Pre-IPO ESOP. India's largest merchant QR payment network. New Delhi CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "bharatpe-swe-interview-questions",
     hubNote: "Pre-IPO ESOP: BharatPe; fintech SME lending and payments; ESOP credibility moderate at Series F",
     sitemapPriority: 0.72,
   },
@@ -1267,7 +1267,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Cashfree Payments salary India 2026: SWE mid ₹18–30 LPA, senior ₹32–50 LPA. Pre-IPO ESOP. India's leading payment gateway. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "cashfree-payments-swe-interview-questions",
     hubNote: "Pre-IPO ESOP: Cashfree; payment gateway; no entry band data; mid starts at ₹18L",
     sitemapPriority: 0.71,
   },
@@ -1277,7 +1277,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Acko Insurance salary India 2026: SWE entry ₹9–25 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. Pre-IPO ESOP. India's largest digital-native insurance platform. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "acko-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: Acko; insurtech; wide entry range ₹9–25L reflects very junior vs. campus hire spread",
     sitemapPriority: 0.72,
   },
@@ -1287,7 +1287,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Go Digit Insurance salary India 2026: SWE mid ₹18–30 LPA, senior ₹32–50 LPA. Go Digit RSU (NSE listed). India's first listed digital general insurer. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "digit-software-engineer-interview-questions",
     hubNote: "Listed RSU (NSE: GODIGIT): solid equity credibility; India's first listed digital insurer",
     sitemapPriority: 0.71,
   },
@@ -1298,7 +1298,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "HUL salary India 2026: UFLP Marketing Trainee entry ₹18–27 LPA, Brand Manager mid ₹30–50 LPA. HUL RSU (Unilever listed). India's most-coveted FMCG employer. Mumbai CTC guide.",
     roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
-    questionSlug: undefined,
+    questionSlug: "hul-behavioral-interview-questions",
     hubNote: "HUL RSU (Unilever listed): UFLP is India's #1 FMCG MBA program; top brand management career track",
     sitemapPriority: 0.74,
   },
@@ -1308,7 +1308,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "ITC salary India 2026: Management Trainee entry ₹16–22 LPA, Brand Manager mid ₹26–40 LPA. No equity: cash-heavy comp. India's largest FMCG conglomerate. Kolkata/Bengaluru CTC guide.",
     roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
-    questionSlug: undefined,
+    questionSlug: "itc-behavioral-interview-questions",
     hubNote: "Cash-only: ITC; no standard equity program; strong brand management and sales career track",
     sitemapPriority: 0.71,
   },
@@ -1318,7 +1318,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Godrej Group salary India 2026: GLP Management Trainee entry ₹16–24 LPA, Brand Manager mid ₹22–38 LPA. Cash-only. Diversified FMCG and real estate conglomerate. Mumbai CTC guide.",
     roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
-    questionSlug: undefined,
+    questionSlug: "godrej-software-engineer-interview-questions",
     hubNote: "Cash-only: Godrej GLP is premier conglomerate MT; below HUL UFLP but diverse brand portfolio",
     sitemapPriority: 0.71,
   },
@@ -1328,7 +1328,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Nestlé India salary 2026: Management Trainee entry ₹14–22 LPA, Brand Manager mid ₹22–35 LPA. Cash-only. Swiss FMCG giant. Gurugram HQ. CTC guide.",
     roles: [{ roleKey: "marketing", label: "Marketing Manager" }],
-    questionSlug: undefined,
+    questionSlug: "nestle-software-engineer-interview-questions",
     hubNote: "Cash-only: Nestlé India; strong nutrition FMCG brand management track; below HUL but above Godrej avg",
     sitemapPriority: 0.71,
   },
@@ -1338,7 +1338,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "DMart salary India 2026: Operations Trainee entry ₹4–7 LPA, Operations Manager mid ₹10–16 LPA, senior ₹20–35 LPA. No equity. India's most profitable retail chain (Avenue Supermarts). CTC guide.",
     roles: [{ roleKey: "operations", label: "Operations Manager" }],
-    questionSlug: undefined,
+    questionSlug: "dmart-software-engineer-interview-questions",
     hubNote: "Cash-only: DMart (Avenue Supermarts) listed; retail ops pay is low but growth to GM/VP is rapid",
     sitemapPriority: 0.69,
   },
@@ -1349,7 +1349,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "VMware (Broadcom) India salary 2026: SWE entry ₹18–28 LPA, mid ₹32–50 LPA, senior ₹50–78 LPA. Broadcom RSU. Bengaluru virtualization and cloud infrastructure engineering. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "vmware-software-engineer-interview-questions",
     hubNote: "Broadcom RSU (AVGO NASDAQ): post-acquisition hiring reduced; strong legacy compensation; cloud infra focus",
     sitemapPriority: 0.74,
   },
@@ -1360,7 +1360,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Citi India GCC salary 2026: SWE mid ₹28–45 LPA, senior ₹50–80 LPA. Citi RSU (NYSE: C). Pune technology centre: one of India's largest US banking GCCs. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "citi-software-engineer-interview-questions",
     hubNote: "NYSE RSU (Citi C stock): mid ₹28–45L; Pune is Citi's largest India GCC; US banking tech focus",
     sitemapPriority: 0.73,
   },
@@ -1370,7 +1370,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "HSBC India GTC salary 2026: SWE mid ₹22–38 LPA, senior ₹40–65 LPA. HSBC RSU (LSE listed). Hyderabad and Pune Global Technology Centre. UK banking GCC. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "hsbc-software-engineer-interview-questions",
     hubNote: "HSBC RSU (LSE listed): Hyderabad GTC; UK bank; pay slightly below JPMorgan/Goldman at mid level",
     sitemapPriority: 0.73,
   },
@@ -1380,7 +1380,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Deutsche Bank India salary 2026: SWE mid ₹26–42 LPA, senior ₹45–72 LPA. DB RSU (Frankfurt listed). Pune and Mumbai technology centres: European banking GCC. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "deutsche-bank-software-engineer-interview-questions",
     hubNote: "DB RSU (Frankfurt listed): European banking GCC; Pune is DB's largest India hub; pay below JPMorgan",
     sitemapPriority: 0.72,
   },
@@ -1391,7 +1391,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Ola Cabs salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–38 LPA, senior ₹38–65 LPA. Pre-IPO ESOP. India's largest ride-hailing platform. Bengaluru engineering. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "ola-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: Ola Cabs (ANI Technologies); post-restructure; ESOP credibility tied to potential IPO",
     sitemapPriority: 0.72,
   },
@@ -1401,7 +1401,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Metropolis Healthcare salary India 2026: SWE mid ₹10–18 LPA, senior ₹18–30 LPA. No equity. India's leading diagnostic chain (listed on NSE). Mumbai tech team. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "metropolis-software-engineer-interview-questions",
     hubNote: "NSE listed (METROPOLIS): healthcare diagnostics tech; no standard RSU; pay below product unicorns",
     sitemapPriority: 0.68,
   },
@@ -1411,7 +1411,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Cure.fit salary India 2026: SWE mid ₹18–30 LPA, senior ₹32–52 LPA. Pre-IPO ESOP. Health and fitness platform (Cult.fit, EatFit, MindFit). Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "curefit-swe-interview-questions",
     hubNote: "Pre-IPO ESOP: Cure.fit / Cult.fit; fitness-tech; ESOP credibility moderate; mid starts at ₹18L",
     sitemapPriority: 0.70,
   },
@@ -1421,7 +1421,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "CARS24 salary India 2026: SWE entry ₹10–18 LPA, mid ₹18–32 LPA, senior ₹32–50 LPA. Pre-IPO ESOP. India's largest used-car marketplace. Gurugram CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "cars24-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: CARS24; used-car marketplace; ESOP credibility moderate; Series F unicorn",
     sitemapPriority: 0.71,
   },
@@ -1431,7 +1431,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "BYJU'S salary India 2026: SWE entry ₹7–12 LPA, mid ₹14–22 LPA post-restructuring. ESOP value highly uncertain post-2024 reset. EdTech pioneer. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "byjus-software-engineer-interview-questions",
     hubNote: "ESOP value uncertain: BYJU'S post-2024 restructuring; fixed pay stabilising; ESOP credibility very low",
     sitemapPriority: 0.68,
   },
@@ -1441,7 +1441,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Pine Labs salary India 2026: SWE mid ₹22–36 LPA, senior ₹38–60 LPA. Pre-IPO ESOP (IPO filed). India's largest merchant commerce platform. Noida and Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "pine-labs-swe-interview-questions",
     hubNote: "Pre-IPO ESOP (IPO filed 2025): Pine Labs; strong payments and merchant tech focus; IPO lifts credibility",
     sitemapPriority: 0.72,
   },
@@ -1451,7 +1451,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Star Health Insurance salary India 2026: SWE mid ₹14–22 LPA, senior ₹24–38 LPA. Star Health RSU (NSE listed). India's largest standalone health insurer. Chennai CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "star-health-software-engineer-interview-questions",
     hubNote: "NSE listed (STARHEALTH): InsurTech; equity is liquid but comp below pure-tech unicorns",
     sitemapPriority: 0.69,
   },
@@ -1461,7 +1461,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "ICICI Lombard salary India 2026: SWE mid ₹14–22 LPA, senior ₹24–38 LPA. ICICI Lombard RSU (NSE listed). India's leading private general insurer. Mumbai CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "icici-lombard-software-engineer-interview-questions",
     hubNote: "NSE listed (ICICIGI): general insurance; part of ICICI group; listed RSU is liquid",
     sitemapPriority: 0.69,
   },
@@ -1471,7 +1471,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Bajaj Finance salary India 2026: SWE mid ₹16–26 LPA, senior ₹28–45 LPA. Bajaj Finance RSU (NSE listed). India's largest NBFC. Pune tech and digital team. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "bajaj-finance-software-engineer-interview-questions",
     hubNote: "NSE listed (BAJFINANCE): NBFC; listed RSU; strong digital banking and lending product team",
     sitemapPriority: 0.71,
   },
@@ -1484,7 +1484,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "mechanical-engineer", label: "Mechanical Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "tata-motors-software-engineer-interview-questions",
     hubNote: "NSE listed RSU: Tata Motors; diversified automotive + EV; software and hardware engineering",
     sitemapPriority: 0.71,
   },
@@ -1494,7 +1494,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Tata 1mg salary India 2026: SWE mid ₹18–30 LPA, senior ₹32–50 LPA. Tata RSU (Tata Digital). India's leading online pharmacy and health marketplace. Gurugram CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "tata-1mg-swe-interview-questions",
     hubNote: "Tata RSU via Tata Digital: health-tech; Tata 1mg is a Tata-acquired startup; IPO expected",
     sitemapPriority: 0.71,
   },
@@ -1504,7 +1504,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Dr Lal PathLabs salary India 2026: SWE mid ₹12–20 LPA, senior ₹22–35 LPA. NSE listed RSU (LALPATHLAB). India's #1 diagnostic chain. Delhi NCR CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "dr-lal-pathlabs-swe-interview-questions",
     hubNote: "NSE listed RSU (LALPATHLAB): diagnostics tech; small tech team; comp below product unicorns",
     sitemapPriority: 0.68,
   },
@@ -1527,7 +1527,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "mechanical-engineer", label: "Mechanical Engineer" },
     ],
-    questionSlug: undefined,
+    questionSlug: "mahindra-swe-interview-questions",
     hubNote: "Mahindra group: conglomerate; Tech Mahindra separate entity; M&M and subsidiary RSU for senior roles",
     sitemapPriority: 0.71,
   },
@@ -1537,7 +1537,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Spinny salary India 2026: Product Designer entry ₹10–14 LPA, mid ₹19–25 LPA, senior ₹27–31 LPA. Pre-IPO ESOP. Online car marketplace. Gurugram CTC guide.",
     roles: [{ roleKey: "ux-designer", label: "Product Designer" }],
-    questionSlug: undefined,
+    questionSlug: "spinny-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: Spinny; car marketplace; known for strong design culture; ESOP credibility moderate",
     sitemapPriority: 0.68,
   },
@@ -1547,7 +1547,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Citadel India salary 2026: SWE / Quant entry ₹55–90 LPA, mid ₹90–160 LPA. No public equity. World's top-performing hedge fund. Hyderabad quant engineering team. CTC guide.",
     roles: [{ roleKey: "data-scientist", label: "Quantitative Researcher" }],
-    questionSlug: undefined,
+    questionSlug: "citadel-swe-interview-questions",
     hubNote: "Elite quant fund: Citadel; cash-only bonus; ₹55–90L entry rivals FAANG equity; Hyderabad team",
     sitemapPriority: 0.76,
   },
@@ -1558,7 +1558,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "SAP Labs India salary 2026: SWE entry ₹15–24 LPA, mid ₹26–42 LPA, senior ₹44–70 LPA. SAP RSU (SAP SE Nasdaq-listed). Bengaluru HQ. ERP, cloud, AI engineering. Full CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "sap-labs-india-software-engineer-interview-questions",
     hubNote: "SAP SE RSU: Germany's largest software co; Bengaluru is largest India engineering hub",
     sitemapPriority: 0.73,
   },
@@ -1568,7 +1568,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Siemens India salary 2026: SWE entry ₹10–16 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. Siemens RSU (SIE Xetra). Bengaluru and Pune. Industrial IoT, automation, and energy tech.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "siemens-india-software-engineer-interview-questions",
     hubNote: "German industrial tech GCC: SIE RSU; deep industrial IoT and automation engineering",
     sitemapPriority: 0.71,
   },
@@ -1578,7 +1578,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Bosch India (BGSW) salary 2026: SWE entry ₹9–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. Bosch RSU. Bengaluru R&D centre. Automotive software, IoT, and AI engineering roles.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "bosch-india-software-engineer-interview-questions",
     hubNote: "Bosch Global Software Technologies: automotive IoT; one of India's largest R&D centres",
     sitemapPriority: 0.71,
   },
@@ -1588,7 +1588,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Texas Instruments India salary 2026: SWE entry ₹25–38 LPA, mid ₹40–65 LPA, senior ₹68–110 LPA. TI RSU (TXN Nasdaq). Bengaluru and Hyderabad. Analog and embedded chip design.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "texas-instruments-software-engineer-interview-questions",
     hubNote: "Premium semiconductor GCC: TXN RSU; Bengaluru is TI's largest non-US engineering site",
     sitemapPriority: 0.75,
   },
@@ -1598,7 +1598,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Intel India salary 2026: SWE entry ₹20–32 LPA, mid ₹34–55 LPA, senior ₹58–95 LPA. Intel RSU (INTC Nasdaq). Bengaluru HQ. Processor architecture, compiler, and AI chip engineering.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "intel-india-software-engineer-interview-questions",
     hubNote: "Semiconductor giant India GCC: INTC RSU; processor and compiler engineering focus",
     sitemapPriority: 0.74,
   },
@@ -1608,7 +1608,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "ARM India salary 2026: SWE entry ₹18–28 LPA, mid ₹32–52 LPA, senior ₹55–90 LPA. ARM RSU (ARM Nasdaq, IPO 2023). Bengaluru chip design centre. CPU architecture and IP licensing engineering.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "arm-india-software-engineer-interview-questions",
     hubNote: "ARM Nasdaq IPO 2023: RSU valuable; Bengaluru is primary India engineering site for CPU IP",
     sitemapPriority: 0.74,
   },
@@ -1618,7 +1618,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Thoughtworks salary India 2026: SWE entry ₹8–14 LPA, mid ₹16–28 LPA, senior ₹30–52 LPA. No equity for most India roles. Global IT consultancy. Bengaluru and Pune. Agile and XP culture.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "thoughtworks-india-software-engineer-interview-questions",
     hubNote: "Global IT consultancy: strong engineering culture (TDD, XP); listed TWKS Nasdaq",
     sitemapPriority: 0.71,
   },
@@ -1628,7 +1628,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Samsung R&D India (SRIB) salary 2026: SWE entry ₹14–22 LPA, mid ₹24–40 LPA, senior ₹42–68 LPA. Samsung RSU. Bengaluru and Noida. Android OS, AI, and semiconductor R&D.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "samsung-india-software-engineer-interview-questions",
     hubNote: "Samsung R&D India: Korean chaebol RSU; Bengaluru is Samsung's largest India R&D centre",
     sitemapPriority: 0.73,
   },
@@ -1638,7 +1638,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Ericsson India salary 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. Ericsson RSU (ERIC Nasdaq). Bengaluru and Chennai. 5G RAN, telecom protocol, and OSS/BSS engineering.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "ericsson-india-software-engineer-interview-questions",
     hubNote: "Telecom giant India GCC: ERIC RSU; 5G and telecom protocol stack engineering",
     sitemapPriority: 0.70,
   },
@@ -1648,7 +1648,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Nokia India salary 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. Nokia RSU (NOKIA Helsinki). Bengaluru and Chennai. 5G network software, cloud RAN, and IP routing.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "nokia-india-software-engineer-interview-questions",
     hubNote: "Telecom equipment GCC: Nokia Helsinki RSU; cloud RAN and 5G protocol engineering",
     sitemapPriority: 0.70,
   },
@@ -1658,7 +1658,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "NTT Data India salary 2026: SWE entry ₹6–10 LPA, mid ₹12–20 LPA, senior ₹22–36 LPA. No equity for India roles. Japanese IT services giant. Bengaluru and Chennai. Full CTC breakdown.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "ntt-data-software-engineer-interview-questions",
     hubNote: "Japanese IT services giant: NTT group; no India equity; comp close to mid-tier IT services",
     sitemapPriority: 0.69,
   },
@@ -1668,7 +1668,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "GlobalLogic salary India 2026: SWE entry ₹8–12 LPA, mid ₹14–24 LPA, senior ₹26–44 LPA. Hitachi RSU. Noida, Bengaluru, Hyderabad. Product engineering services for global tech companies.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "globallogic-india-software-engineer-interview-questions",
     hubNote: "Hitachi-acquired (2021): product engineering services; Hitachi RSU; strong embedded domain",
     sitemapPriority: 0.70,
   },
@@ -1679,7 +1679,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Juspay salary India 2026: SWE entry ₹14–22 LPA, mid ₹24–38 LPA, senior ₹40–65 LPA. ESOP. India's payments infra company (BHIM, Amazon Pay, Reliance backend). Bengaluru. CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "juspay-swe-interview-questions",
     hubNote: "Payments infra: powers BHIM and Amazon Pay; Haskell-first backend; strong eng bar",
     sitemapPriority: 0.71,
   },
@@ -1689,7 +1689,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Slice salary India 2026: SWE entry ₹18–28 LPA, mid ₹28–44 LPA, senior ₹46–72 LPA. ESOP. Bengaluru-based neo-bank and credit card issuer (now merged with North East Small Finance Bank).",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "slice-software-engineer-interview-questions",
     hubNote: "Neo-bank merged with NESFB (2024): becoming licensed bank; ESOP credibility improving",
     sitemapPriority: 0.70,
   },
@@ -1699,7 +1699,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Jupiter Money salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–42 LPA, senior ₹44–68 LPA. ESOP. Mumbai neo-bank built on Federal Bank partnership. Smart savings and money management app.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "jupiter-software-engineer-interview-questions",
     hubNote: "Neo-bank on Federal Bank rails: ESOP; Mumbai-centric; consumer finance product",
     sitemapPriority: 0.70,
   },
@@ -1709,7 +1709,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Fi Money salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Bengaluru savings and investment app built on Federal Bank. Smart deposits and US stock investing.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "fi-money-software-engineer-interview-questions",
     hubNote: "Neo-bank on Federal Bank rails: ESOP; strong engineering team ex-Google, Flipkart",
     sitemapPriority: 0.69,
   },
@@ -1719,7 +1719,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "PolicyBazaar (PB Fintech) salary India 2026: SWE entry ₹14–22 LPA, mid ₹24–40 LPA, senior ₹42–68 LPA. Listed RSU (NSE: POLICYBZR). India's largest insurance and lending marketplace. Gurugram.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "policybazaar-software-engineer-interview-questions",
     hubNote: "Listed (NSE: POLICYBZR): RSU liquid; insurance + lending marketplace at scale",
     sitemapPriority: 0.72,
   },
@@ -1729,7 +1729,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Nium salary India 2026: SWE entry ₹20–32 LPA, mid ₹32–52 LPA, senior ₹55–90 LPA. ESOP (Singapore unicorn). Bengaluru HQ in India. Global B2B payments and embedded finance platform.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "nium-software-engineer-interview-questions",
     hubNote: "Singapore payments unicorn: global B2B payments; ESOP at $2.1B valuation",
     sitemapPriority: 0.71,
   },
@@ -1749,7 +1749,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Khatabook salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–40 LPA, senior ₹42–65 LPA. ESOP. Bengaluru SMB fintech: digital ledger, payments, and credit for small businesses.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "khatabook-software-engineer-interview-questions",
     hubNote: "SMB fintech: 10M+ merchants on digital ledger; ESOP; Bengaluru HQ",
     sitemapPriority: 0.69,
   },
@@ -1759,7 +1759,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "smallcase salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–42 LPA, senior ₹44–68 LPA. ESOP. Bengaluru investment platform for thematic stock baskets. Partnered with all major brokers.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "smallcase-software-engineer-interview-questions",
     hubNote: "Investment platform: broker-integrated; ESOP at growing pre-IPO valuation",
     sitemapPriority: 0.70,
   },
@@ -1769,7 +1769,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Zeta salary India 2026: SWE entry ₹18–28 LPA, mid ₹28–45 LPA, senior ₹48–78 LPA. ESOP (unicorn, $1.5B). Bengaluru banking tech SaaS: next-gen core banking for Kotak, HDFC, global banks.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "zeta-software-engineer-interview-questions",
     hubNote: "Banking SaaS unicorn ($1.5B): powers next-gen core banking; strong eng culture; ESOP",
     sitemapPriority: 0.71,
   },
@@ -1779,7 +1779,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Navi Technologies salary India 2026: SWE entry ₹14–22 LPA, mid ₹24–38 LPA, senior ₹40–65 LPA. ESOP. Sachin Bansal's fintech: health insurance, personal loans, UPI payments. Bengaluru.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "navi-software-engineer-interview-questions",
     hubNote: "Sachin Bansal (ex-Flipkart) fintech: health insurance + loans; ESOP pre-IPO",
     sitemapPriority: 0.70,
   },
@@ -1789,7 +1789,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "KreditBee salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. ESOP. Bengaluru lending fintech: personal loans, credit line, and BNPL for salaried and self-employed.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "kreditbee-software-engineer-interview-questions",
     hubNote: "Lending fintech: 40M+ registered users; ESOP; Bengaluru; RBI-regulated NBFC",
     sitemapPriority: 0.69,
   },
@@ -1799,7 +1799,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "MoneyView salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Bengaluru personal finance and lending app: credit score tracking, personal loans, investing.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "moneyview-software-engineer-interview-questions",
     hubNote: "Personal finance unicorn: credit scoring + loans; ESOP at $1B+ valuation",
     sitemapPriority: 0.69,
   },
@@ -1809,7 +1809,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Fibe salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Pune-based salary advance and personal lending fintech (rebranded from EarlySalary). CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "fibe-software-engineer-interview-questions",
     hubNote: "Salary-advance fintech (EarlySalary renamed Fibe): Pune HQ; ESOP pre-IPO",
     sitemapPriority: 0.68,
   },
@@ -1819,7 +1819,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "ShareChat salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–42 LPA, senior ₹44–70 LPA. ESOP. India's largest regional-language social media platform. Bengaluru. Moj (short video) engineering.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "sharechat-swe-interview-questions",
     hubNote: "Regional social media: 400M+ users; Moj (TikTok alternative); ESOP pre-IPO",
     sitemapPriority: 0.71,
   },
@@ -1829,7 +1829,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Scaler salary India 2026: SWE entry ₹16–24 LPA, mid ₹26–42 LPA, senior ₹44–68 LPA. ESOP. Bengaluru ed-tech bootcamp for software engineers. Also runs InterviewBit. Backed by Tiger Global.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "scaler-software-engineer-interview-questions",
     hubNote: "Ed-tech/coding bootcamp: powers InterviewBit; Tiger Global-backed; ESOP",
     sitemapPriority: 0.70,
   },
@@ -1839,7 +1839,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "MoEngage salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–42 LPA, senior ₹44–70 LPA. ESOP. Bengaluru SaaS: AI-powered customer engagement and marketing automation for consumer brands.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "moengage-swe-interview-questions",
     hubNote: "Customer engagement SaaS: 1,000+ global brands; ESOP; Bengaluru HQ",
     sitemapPriority: 0.70,
   },
@@ -1849,7 +1849,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "CleverTap salary India 2026: SWE entry ₹16–24 LPA, mid ₹24–40 LPA, senior ₹42–68 LPA. ESOP. Mumbai SaaS: mobile engagement and analytics platform for consumer apps. Backed by Tiger Global.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "clevertap-swe-interview-questions",
     hubNote: "Mobile analytics SaaS: 2,000+ global apps; ESOP; Mumbai HQ; Tiger Global-backed",
     sitemapPriority: 0.70,
   },
@@ -1859,7 +1859,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Druva salary India 2026: SWE entry ₹18–28 LPA, mid ₹28–46 LPA, senior ₹48–80 LPA. ESOP. Pune cloud data protection SaaS: backup, disaster recovery, and governance on AWS.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "druva-swe-interview-questions",
     hubNote: "Cloud backup SaaS unicorn ($2B+): Pune HQ; ESOP; AWS-native; strong B2B SaaS engineering",
     sitemapPriority: 0.70,
   },
@@ -1869,7 +1869,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Darwinbox salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. Hyderabad HCM SaaS: cloud HR platform used by 700+ enterprises across Asia.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "darwinbox-swe-interview-questions",
     hubNote: "HCM SaaS (HR platform): 700+ enterprises; ESOP unicorn; Hyderabad HQ",
     sitemapPriority: 0.70,
   },
@@ -1879,7 +1879,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Truecaller India salary 2026: SWE entry ₹18–28 LPA, mid ₹28–46 LPA, senior ₹48–80 LPA. RSU (TRUE Nasdaq Stockholm). Bengaluru engineering team. Spam ID and call verification app with 360M+ users.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "truecaller-swe-interview-questions",
     hubNote: "Listed Stockholm (TRUE): RSU liquid; 360M+ users in India; payments (Truecaller Pay)",
     sitemapPriority: 0.72,
   },
@@ -1889,7 +1889,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "InMobi salary India 2026: SWE entry ₹14–22 LPA, mid ₹24–40 LPA, senior ₹42–68 LPA. ESOP. Bengaluru mobile advertising platform. Also owns Glance (lock-screen content) and Roposo (social commerce).",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "inmobi-swe-interview-questions",
     hubNote: "Mobile ad platform: Glance, Roposo portfolio; ESOP; Bengaluru; SoftBank-backed",
     sitemapPriority: 0.70,
   },
@@ -1899,7 +1899,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Naukri (Info Edge) salary India 2026: SWE entry ₹10–18 LPA, mid ₹20–34 LPA, senior ₹36–58 LPA. Listed RSU (NSE: NAUKRI). India's largest job portal. Noida HQ. Also owns 99acres, Jeevansathi.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "naukri-infoedge-swe-interview-questions",
     hubNote: "Listed (NSE: NAUKRI): RSU liquid; Info Edge: Naukri, 99acres, Jeevansathi portfolio",
     sitemapPriority: 0.71,
   },
@@ -1910,7 +1910,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Practo salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–34 LPA, senior ₹36–58 LPA. ESOP. Bengaluru health-tech: doctor discovery, online consultation, clinic management SaaS.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "practo-software-engineer-interview-questions",
     hubNote: "Health-tech: 100K+ doctors on platform; ESOP; Bengaluru; multi-market (SEA, LatAm)",
     sitemapPriority: 0.69,
   },
@@ -1920,7 +1920,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Shiprocket salary India 2026: SWE entry ₹12–18 LPA, mid ₹20–32 LPA, senior ₹34–56 LPA. ESOP. Delhi-based shipping aggregator for D2C brands. IPO-filed. 100,000+ merchants on platform.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "shiprocket-software-engineer-interview-questions",
     hubNote: "Shipping aggregator: IPO-filed; ESOP credibility lifting; 100K+ merchants; Delhi HQ",
     sitemapPriority: 0.70,
   },
@@ -1930,7 +1930,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Udaan salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. Bengaluru B2B trade platform connecting manufacturers, distributors, and retailers.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "udaan-software-engineer-interview-questions",
     hubNote: "B2B commerce unicorn: $3B valuation; ESOP; supply chain + trade financing tech",
     sitemapPriority: 0.70,
   },
@@ -1940,7 +1940,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Moglix salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Noida B2B industrial marketplace: manufacturing procurement, supply chain, and SaaS.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "moglix-software-engineer-interview-questions",
     hubNote: "B2B industrial marketplace: $2.6B valuation; ESOP; manufacturing supply chain tech",
     sitemapPriority: 0.69,
   },
@@ -1950,7 +1950,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Ninjacart salary India 2026: SWE entry ₹12–18 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. ESOP. Bengaluru B2B fresh produce supply chain: farm-to-business in 5+ cities.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "ninjacart-software-engineer-interview-questions",
     hubNote: "Agri-tech supply chain: Walmart-backed; ESOP; cold-chain and logistics tech",
     sitemapPriority: 0.68,
   },
@@ -1960,7 +1960,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Licious salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Bengaluru D2C meat and seafood brand: cold-chain delivery in 8+ cities.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "licious-software-engineer-interview-questions",
     hubNote: "D2C meat unicorn: cold-chain logistics tech; ESOP; first Indian FMCG-tech D2C unicorn",
     sitemapPriority: 0.68,
   },
@@ -1970,7 +1970,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Vedantu salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–32 LPA, senior ₹34–56 LPA. ESOP. Bengaluru live-class EdTech: LIVE tutoring for K-12 students (JEE, NEET, CBSE prep).",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "vedantu-software-engineer-interview-questions",
     hubNote: "Live-class EdTech: ESOP post-2023 reset; Bengaluru; JEE/NEET LIVE tutoring tech",
     sitemapPriority: 0.68,
   },
@@ -1980,7 +1980,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Rebel Foods salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Mumbai cloud kitchen operator: Faasos, Behrouz Biryani, Oven Story. IPO-aspiring.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "rebel-foods-software-engineer-interview-questions",
     hubNote: "Cloud kitchen unicorn: Faasos, Behrouz brands; ESOP; Mumbai HQ; IPO aspirant",
     sitemapPriority: 0.69,
   },
@@ -1990,7 +1990,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Purplle salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Mumbai D2C beauty marketplace. Goldman Sachs and Sequoia-backed. AI-powered beauty recommendations.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "purplle-software-engineer-interview-questions",
     hubNote: "Beauty marketplace D2C: Goldman Sachs-backed; ESOP; Mumbai; AI recommendations",
     sitemapPriority: 0.69,
   },
@@ -2000,7 +2000,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "BlackBuck (Zinka Logistics) salary India 2026: SWE entry ₹10–16 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. Listed RSU (NSE: ZINKA). Bengaluru truck marketplace and telematics platform.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "blackbuck-software-engineer-interview-questions",
     hubNote: "Listed (NSE: ZINKA) since 2024: RSU liquid; India's largest truck marketplace",
     sitemapPriority: 0.69,
   },
@@ -2010,7 +2010,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Shadowfax salary India 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. ESOP. Bengaluru gig-logistics platform: hyperlocal delivery for Meesho, JioMart, AJIO.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "shadowfax-software-engineer-interview-questions",
     hubNote: "Gig-logistics unicorn: hyperlocal delivery for major e-commerce; ESOP; Bengaluru",
     sitemapPriority: 0.68,
   },
@@ -2020,7 +2020,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Hasura salary India 2026: SWE entry ₹20–32 LPA, mid ₹32–52 LPA, senior ₹55–88 LPA. ESOP. Bengaluru YC-backed GraphQL engine startup: instant APIs on databases and event streaming.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "hasura-software-engineer-interview-questions",
     hubNote: "YC-backed GraphQL OSS startup: Haskell core; $100M raised; strong global dev mindshare",
     sitemapPriority: 0.71,
   },
@@ -2030,7 +2030,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Gupshup salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. San Francisco / Bengaluru conversational AI platform: WhatsApp Business API, chatbots, AI agents.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "gupshup-software-engineer-interview-questions",
     hubNote: "Conversational AI unicorn: WhatsApp Business API leader; ESOP; $1.4B valuation",
     sitemapPriority: 0.70,
   },
@@ -2040,7 +2040,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Exotel salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. ESOP. Bengaluru cloud telephony and CPaaS platform: virtual numbers, IVR, and call centre APIs.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "exotel-software-engineer-interview-questions",
     hubNote: "Cloud telephony leader India: call centre APIs; ESOP; Bengaluru; $100M+ raised",
     sitemapPriority: 0.69,
   },
@@ -2060,7 +2060,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Plivo salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. Bengaluru CPaaS: SMS, voice, and WhatsApp APIs for businesses. Profitable bootstrapped startup.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "plivo-software-engineer-interview-questions",
     hubNote: "Profitable CPaaS: bootstrapped and cash-flow positive; ESOP; Bengaluru HQ",
     sitemapPriority: 0.69,
   },
@@ -2070,7 +2070,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "INDmoney salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Gurugram wealth management super-app: US stocks, India mutual funds, and NPS investing.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "indmoney-software-engineer-interview-questions",
     hubNote: "Wealth super-app: US stocks for India investors; ESOP unicorn; Gurugram HQ",
     sitemapPriority: 0.70,
   },
@@ -2080,7 +2080,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Rupeek salary India 2026: SWE entry ₹14–20 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. ESOP. Bengaluru gold loan fintech: doorstep gold loan collection and digital lending platform.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "rupeek-software-engineer-interview-questions",
     hubNote: "Gold loan fintech: doorstep model; ESOP; Bengaluru; $600M+ raised from Goldman Sachs",
     sitemapPriority: 0.68,
   },
@@ -2090,7 +2090,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Niyo salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Bengaluru neo-banking app: zero forex card, NRI banking, blue-collar salary management.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "niyo-software-engineer-interview-questions",
     hubNote: "Neo-bank: zero forex card popular with travelers; blue-collar payroll; ESOP; Bengaluru",
     sitemapPriority: 0.68,
   },
@@ -2100,7 +2100,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Apollo 24/7 salary India 2026: SWE entry ₹12–18 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. Apollo RSU (NSE: APOLLOHOSP). Hyderabad health platform: telemedicine, pharmacy, diagnostics.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "apollo-247-software-engineer-interview-questions",
     hubNote: "Apollo Hospitals digital arm: parent listed (NSE: APOLLOHOSP); health-tech growing team",
     sitemapPriority: 0.69,
   },
@@ -2130,7 +2130,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Sigmoid salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–34 LPA, senior ₹36–58 LPA. ESOP. Bengaluru data engineering consultancy: big data pipelines, ML platforms for global Fortune 500.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "sigmoid-software-engineer-interview-questions",
     hubNote: "Data engineering consultancy: Spark/Kafka/Airflow experts; ESOP; Bengaluru HQ",
     sitemapPriority: 0.68,
   },
@@ -2140,7 +2140,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Mindtickle salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. Pune revenue enablement SaaS: sales coaching, readiness, and conversation intelligence.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "mindtickle-software-engineer-interview-questions",
     hubNote: "Revenue enablement SaaS: $100M+ ARR; ESOP; Pune HQ; serving Fortune 500 sales teams",
     sitemapPriority: 0.69,
   },
@@ -2150,7 +2150,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "MediBuddy salary India 2026: SWE mid ₹14–22 LPA, senior ₹24–38 LPA. ESOP. Bengaluru corporate health benefits platform: telemedicine, OPD, and wellness for 30M+ employees.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "medibuddy-software-engineer-interview-questions",
     hubNote: "Corporate health benefits platform: 30M+ covered lives; ESOP; Bengaluru; B2B2C model",
     sitemapPriority: 0.68,
   },
@@ -2160,7 +2160,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Tracxn salary India 2026: SWE mid ₹10–18 LPA, senior ₹20–34 LPA. Listed RSU (NSE: TRACXN). Bengaluru startup intelligence SaaS: market research and deal sourcing for VCs and corporates.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "tracxn-software-engineer-interview-questions",
     hubNote: "Listed startup intelligence (NSE: TRACXN): RSU; Bengaluru; VC market research SaaS",
     sitemapPriority: 0.67,
   },
@@ -2212,7 +2212,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Lowe's India GCC salary 2026: SWE entry ₹14–22 LPA, mid ₹22–38 LPA, senior ₹38–65 LPA. RSU on NYSE (LOW). Bengaluru retail-tech GCC building the digital backbone of a $90B US home improvement retailer.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "lowes-india-software-engineer-interview-questions",
     hubNote: "US retail GCC; Bengaluru; NYSE listed; RSU; cloud and retail-tech focus",
     sitemapPriority: 0.72,
   },
@@ -2222,7 +2222,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Target India salary 2026: SWE entry ₹16–26 LPA, mid ₹26–45 LPA, senior ₹45–78 LPA. RSU on NYSE (TGT). Bengaluru GCC (TCI) driving supply chain, data science, and full-stack engineering for a $110B US retailer.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "target-india-software-engineer-interview-questions",
     hubNote: "US retail GCC Bengaluru; NYSE; RSU; data science + supply chain engineering",
     sitemapPriority: 0.73,
   },
@@ -2232,7 +2232,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "BNY Mellon India salary 2026: SWE entry ₹15–24 LPA, mid ₹24–42 LPA, senior ₹42–70 LPA. RSU on NYSE (BK). Pune and Chennai fintech GCC for the world's largest custody bank with $47T in assets.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "bny-mellon-software-engineer-interview-questions",
     hubNote: "World's largest custody bank GCC; Pune + Chennai; NYSE; RSU; fintech engineering",
     sitemapPriority: 0.71,
   },
@@ -2242,7 +2242,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Standard Chartered India salary 2026: SWE entry ₹14–22 LPA, mid ₹22–40 LPA, senior ₹40–68 LPA. RSU on LSE. Chennai GBS hub for a global emerging-markets bank; heavy on Python, cloud, and risk analytics.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "standard-chartered-software-engineer-interview-questions",
     hubNote: "Emerging-markets bank GBS Chennai; LSE listed; RSU; Python + risk analytics",
     sitemapPriority: 0.70,
   },
@@ -2252,7 +2252,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Mastercard India salary 2026: SWE entry ₹18–30 LPA, mid ₹30–52 LPA, senior ₹52–90 LPA. RSU on NYSE (MA). Pune and Vadodara tech centres building payments infrastructure processing 150B+ transactions annually.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "mastercard-software-engineer-interview-questions",
     hubNote: "Global payments network; NYSE; RSU; Pune + Vadodara; 150B+ txn/yr",
     sitemapPriority: 0.76,
   },
@@ -2262,7 +2262,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Visa India salary 2026: SWE entry ₹20–32 LPA, mid ₹32–55 LPA, senior ₹55–95 LPA. RSU on NYSE (V). Bengaluru Visa Worldwide Technology Centre building real-time payments, fraud ML, and developer APIs.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "visa-india-software-engineer-interview-questions",
     hubNote: "Global payments network; NYSE; RSU; Bengaluru; real-time payments + fraud ML",
     sitemapPriority: 0.77,
   },
@@ -2272,7 +2272,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Fiserv India salary 2026: SWE entry ₹12–20 LPA, mid ₹20–36 LPA, senior ₹36–60 LPA. RSU on Nasdaq (FI). Pune and Hyderabad fintech GCC for a $18B revenue payment processing and banking software giant.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "fiserv-software-engineer-interview-questions",
     hubNote: "Fintech GCC Pune + Hyderabad; Nasdaq listed; RSU; banking software + payments",
     sitemapPriority: 0.70,
   },
@@ -2282,7 +2282,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Sarvam AI salary India 2026: SWE entry ₹18–30 LPA, mid ₹30–55 LPA, senior ₹55–95 LPA. ESOP. Bengaluru AI lab building India's own LLMs, TTS, and STT in 10 Indian languages; Series A backed.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "sarvam-swe-interview-questions",
     hubNote: "India-native LLM lab Bengaluru; Series A; ESOP; 10 Indian languages AI",
     sitemapPriority: 0.74,
   },
@@ -2292,7 +2292,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "HDFC Ltd salary India 2026: SWE entry ₹10–17 LPA, mid ₹17–30 LPA, senior ₹30–52 LPA. Mumbai-headquartered financial services conglomerate; tech roles in mortgages, wealth management, and digital banking platforms.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "hdfc-swe-interview-questions",
     hubNote: "Financial services conglomerate Mumbai; BSE/NSE; mortgage + wealth management tech",
     sitemapPriority: 0.69,
   },
