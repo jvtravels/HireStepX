@@ -4667,6 +4667,925 @@ export const SEO_PAGES: SeoPage[] = [
       "HR Round (30 min): behavioral fit, role expectations, and compensation.",
     ],
   },
+  /* ── Wave 5: Global banks, GCCs, FinTech, D2C, Consulting ── */
+  {
+    slug: "barclays-software-engineer-interview-questions",
+    searchPhrase: "Barclays India Software Engineer Interview Questions 2026",
+    company: "barclays", roleFamily: "swe", focus: "technical",
+    intro: "Barclays hires engineers into its Global Technology Centres in Pune and Chennai, where teams build trading, payments, and risk platforms in Java, Python, and increasingly cloud-native stacks. The 2026 loop blends solid DSA on HackerRank or CoderPad with strong core-Java and low-latency questions, because much of the codebase is high-throughput banking infrastructure. Expect interviewers to probe concurrency, garbage collection, and how you reason about correctness under load, alongside a values-led behavioral round mapped to Barclays' RISES framework.",
+    framework: { name: "RISES values", summary: "Respect, Integrity, Service, Excellence, Stewardship: Barclays maps behavioral answers to these five values." },
+    metaKeywords: ["barclays india swe interview", "barclays software engineer interview questions 2026", "barclays pune interview", "barclays technical interview india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "How many rounds is the Barclays India SWE interview?", a: "Typically 3 to 4 rounds: an online coding or aptitude test, one or two technical interviews (DSA plus core Java or Python), and a values-based behavioral round tied to the RISES framework." },
+      { q: "What programming languages does Barclays test?", a: "Java is most common for backend and platform roles, with Python and SQL frequently tested. Front-end teams may ask about JavaScript and React. Pick the language you are strongest in for DSA rounds." },
+      { q: "Is DSA difficulty at Barclays FAANG level?", a: "No. Barclays DSA sits at easy-to-medium difficulty covering arrays, strings, hashmaps, trees, and basic dynamic programming. Depth of core-language and system knowledge matters more than hard algorithm puzzles." }
+    ],
+    recruitmentSteps: [
+      "Application via careers portal or campus drive; referrals help visibility",
+      "Online assessment: coding plus aptitude and logical reasoning",
+      "Technical interviews: DSA, core language depth, and problem solving",
+      "Values and behavioral round mapped to the RISES framework",
+      "HR discussion covering role fit, location, and compensation"
+    ],
+    interviewRounds: [
+      "Online Assessment (60 to 90 min): DSA coding problems plus aptitude and logical reasoning; the primary screening filter.",
+      "Technical Round 1 (45 to 60 min): easy-to-medium DSA with follow-ups, plus core Java or Python concepts like collections, concurrency, and memory.",
+      "Technical Round 2 (45 to 60 min): deeper problem solving, SQL, and a light system or design discussion for experienced roles.",
+      "Values and HR Round (30 to 45 min): behavioral questions mapped to RISES, motivation for banking technology, and logistics."
+    ],
+  },
+  {
+    slug: "hsbc-software-engineer-interview-questions",
+    searchPhrase: "HSBC India Software Engineer Interview Questions 2026",
+    company: "hsbc", roleFamily: "swe", focus: "technical",
+    intro: "HSBC's technology hubs in Pune, Hyderabad, Bengaluru, and Kolkata run large digital-banking, wealth, and payments platforms, and the 2026 SWE loop reflects an enterprise-Java and cloud-migration focus. Interviews weight core Java, Spring Boot, microservices, and SQL heavily, with easy-to-medium DSA acting as a screen rather than the main event. Expect scenario questions on REST API design, transaction consistency, and secure handling of customer data, followed by a values-based round tied to HSBC's courageous-integrity and customer-first principles.",
+    framework: { name: "HSBC values", summary: "We value difference, we succeed together, we take responsibility, we get it done: answers should map to these." },
+    metaKeywords: ["hsbc india swe interview", "hsbc software engineer interview questions 2026", "hsbc pune hyderabad interview", "hsbc technical interview india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What tech stack does HSBC focus on in India interviews?", a: "Core Java, Spring and Spring Boot, microservices, REST APIs, and SQL dominate backend interviews. Cloud topics on AWS or GCP and CI/CD appear for senior roles as HSBC continues its cloud migration." },
+      { q: "How hard is the DSA at HSBC?", a: "DSA is easy to medium, covering arrays, strings, hashmaps, linked lists, and basic recursion. HSBC leans more on core-language depth, framework knowledge, and design reasoning than on hard algorithms." },
+      { q: "Does HSBC ask system design questions?", a: "For mid and senior roles, yes: expect scenario-based design of a banking service, discussion of microservices, transaction consistency, and data security. Freshers get lighter, single-service design questions." }
+    ],
+    recruitmentSteps: [
+      "Application through careers site, campus drive, or referral",
+      "Online assessment: coding plus aptitude, sometimes a versant or communication check",
+      "Technical interviews: core Java or Python, frameworks, SQL, and DSA",
+      "Design or scenario round for mid and senior candidates",
+      "Managerial and HR round covering values, fit, and compensation"
+    ],
+    interviewRounds: [
+      "Online Assessment (60 to 90 min): coding problems plus aptitude and logical reasoning; freshers may also take a communication test.",
+      "Technical Round 1 (45 to 60 min): core Java or Python, Spring, collections, multithreading, and easy-to-medium DSA.",
+      "Technical Round 2 (45 to 60 min): SQL, REST API and microservices design, and a scenario on transaction consistency or data security.",
+      "Managerial and HR Round (30 to 45 min): values-based behavioral questions, motivation, location, and offer discussion."
+    ],
+  },
+  {
+    slug: "citi-software-engineer-interview-questions",
+    searchPhrase: "Citi India Software Engineer Interview Questions 2026",
+    company: "citi", roleFamily: "swe", focus: "technical",
+    intro: "Citi's technology and analytics centres in Pune, Chennai, and Bengaluru build institutional banking, markets, and treasury platforms, so 2026 SWE interviews favor engineers comfortable with Java, Python, and data-heavy systems. The loop pairs easy-to-medium DSA with deep core-language, database, and design questions, and often includes an aptitude and logical-reasoning assessment for campus and early-career hires. Expect questions on multithreading, SQL query optimization, and secure, resilient service design, plus a behavioral round on ownership and collaboration in a large regulated environment.",
+    framework: { name: "Leadership standards", summary: "Develop talent, drive value, deliver with pride, and champion progress: Citi frames behavioral answers around these." },
+    metaKeywords: ["citi india swe interview", "citi software engineer interview questions 2026", "citibank technical interview india", "citi pune chennai interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What does Citi ask in SWE technical rounds?", a: "Core Java or Python, OOP, multithreading, SQL and query optimization, and easy-to-medium DSA on arrays, strings, and trees. Senior roles add microservices and system design." },
+      { q: "Is there an aptitude test at Citi?", a: "For campus and early-career roles, yes: an online assessment usually combines coding with quantitative aptitude and logical reasoning before technical interviews." },
+      { q: "How should I prepare for Citi's behavioral round?", a: "Prepare STAR stories on ownership, teamwork, and handling pressure in regulated settings, and map them to Citi's leadership standards. Show awareness of risk and compliance in your technical decisions." }
+    ],
+    recruitmentSteps: [
+      "Application via Citi careers, campus placement, or referral",
+      "Online assessment: coding plus quantitative and logical aptitude",
+      "Technical interviews: core language, DSA, SQL, and design",
+      "Hiring manager technical and behavioral discussion",
+      "HR round covering fit, location, and compensation"
+    ],
+    interviewRounds: [
+      "Online Assessment (60 to 90 min): coding problems with quantitative aptitude and logical reasoning; the main screening filter.",
+      "Technical Round 1 (45 to 60 min): core Java or Python, OOP, multithreading, and easy-to-medium DSA with follow-ups.",
+      "Technical Round 2 (45 to 60 min): SQL and query optimization, service design, and scenario questions on reliability and security.",
+      "Hiring Manager and HR Round (30 to 45 min): behavioral questions on ownership and teamwork mapped to leadership standards, plus offer logistics."
+    ],
+  },
+  {
+    slug: "deutsche-bank-software-engineer-interview-questions",
+    searchPhrase: "Deutsche Bank India Software Engineer Interview Questions 2026",
+    company: "deutsche-bank", roleFamily: "swe", focus: "technical",
+    intro: "Deutsche Bank's technology centres in Pune and Bengaluru run trading, risk, and cloud-platform engineering, and the 2026 SWE loop leans toward strong core computer-science fundamentals over trick algorithm puzzles. Interviews weigh core Java, multithreading, JVM internals, SQL, and design heavily, with medium DSA used to gauge problem solving rather than to stump you. Campus and early-career candidates typically start with an online coding and aptitude test, followed by technical rounds and a behavioral discussion on Deutsche Bank's collaborative, low-ego engineering culture.",
+    framework: { name: "Fundamentals-first", summary: "Show depth in language internals, concurrency, and databases before reaching for clever algorithms." },
+    metaKeywords: ["deutsche bank india swe interview", "deutsche bank software engineer interview questions 2026", "deutsche bank pune interview", "deutsche bank technical interview india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What core Java topics does Deutsche Bank test?", a: "Collections, multithreading and concurrency, exception handling, JVM memory and garbage collection, and design patterns come up often. Interviewers probe why, not just what, so understand internals." },
+      { q: "How difficult is Deutsche Bank's DSA?", a: "Medium difficulty: arrays, strings, hashmaps, trees, recursion, and some dynamic programming. Clean reasoning and complexity analysis matter more than solving the hardest possible problem." },
+      { q: "Does Deutsche Bank ask system design?", a: "For mid and senior engineers, yes: expect design of a resilient service or data pipeline, with discussion of scalability, consistency, and monitoring. Freshers get lighter design and OOP questions." }
+    ],
+    recruitmentSteps: [
+      "Application through careers portal, campus drive, or referral",
+      "Online assessment: coding plus aptitude and logical reasoning",
+      "Technical interviews: core language internals, DSA, SQL, and design",
+      "System design or deep-dive round for experienced roles",
+      "Behavioral and HR round on culture fit and compensation"
+    ],
+    interviewRounds: [
+      "Online Assessment (60 to 90 min): DSA coding problems with aptitude and logical reasoning; the first filter.",
+      "Technical Round 1 (45 to 60 min): core Java internals, multithreading, JVM, and medium DSA with complexity discussion.",
+      "Technical Round 2 (45 to 60 min): SQL, design patterns, and a system or service design scenario for experienced candidates.",
+      "Behavioral and HR Round (30 to 45 min): questions on collaboration, ownership, and motivation, plus location and offer details."
+    ],
+  },
+  {
+    slug: "wells-fargo-software-engineer-interview-questions",
+    searchPhrase: "Wells Fargo India Software Engineer Interview Questions 2026",
+    company: "wells-fargo", roleFamily: "swe", focus: "technical",
+    intro: "Wells Fargo's India and Philippines technology centres in Hyderabad, Bengaluru, and Chennai build consumer-banking, lending, and risk platforms, so 2026 SWE interviews emphasize enterprise Java, Spring Boot, SQL, and cloud alongside easy-to-medium DSA. The loop typically opens with an online coding and aptitude assessment, then technical rounds probing core language, microservices, and database design, with senior roles adding system design. A behavioral round tied to Wells Fargo's risk-aware, customer-first values closes the process, so prepare STAR stories that show sound judgment in a regulated setting.",
+    framework: { name: "Risk-aware delivery", summary: "Pair correct, testable code with awareness of controls, data privacy, and customer impact in every answer." },
+    metaKeywords: ["wells fargo india swe interview", "wells fargo software engineer interview questions 2026", "wells fargo hyderabad interview", "wells fargo technical interview india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What technologies does Wells Fargo test in India?", a: "Core Java, Spring and Spring Boot, microservices, REST APIs, SQL, and cloud on AWS or GCP for backend roles. Front-end teams ask about JavaScript, Angular, or React." },
+      { q: "How tough is the DSA at Wells Fargo?", a: "Easy to medium: arrays, strings, hashmaps, linked lists, and basic trees and recursion. Depth in core language, frameworks, and SQL usually carries more weight than hard algorithms." },
+      { q: "What does the Wells Fargo behavioral round focus on?", a: "Ownership, teamwork, and sound judgment under a risk and compliance lens. Bring STAR stories that show how you weighed customer impact and controls when making a technical decision." }
+    ],
+    recruitmentSteps: [
+      "Application via Wells Fargo careers, campus drive, or referral",
+      "Online assessment: coding plus aptitude and logical reasoning",
+      "Technical interviews: core Java or Python, frameworks, SQL, and DSA",
+      "System design round for mid and senior candidates",
+      "Values-based behavioral and HR round on fit and compensation"
+    ],
+    interviewRounds: [
+      "Online Assessment (60 to 90 min): DSA coding with aptitude and logical reasoning; the primary screen.",
+      "Technical Round 1 (45 to 60 min): core Java or Python, Spring, collections, and easy-to-medium DSA with follow-ups.",
+      "Technical Round 2 (45 to 60 min): SQL, microservices and REST design, and a system design scenario for experienced roles.",
+      "Behavioral and HR Round (30 to 45 min): risk-aware STAR stories, motivation for banking technology, and offer logistics."
+    ],
+  },
+  {
+    slug: "slice-software-engineer-interview-questions",
+    searchPhrase: "Slice Software Engineer Interview Questions India 2026",
+    company: "slice", roleFamily: "swe", focus: "technical",
+    intro: "Slice (now operating with its North East Small Finance Bank licence) runs a fintech-flavoured SDE loop that mixes DSA with payments and credit domain reasoning. Expect a coding round that leans on medium DSA (arrays, hashmaps, strings, trees) plus a machine-coding or low-level-design round where you build something like a transaction ledger or rate limiter cleanly. Interviewers probe how you reason about idempotency, retries, and reconciliation because Slice moves real money over UPI rails, so 'it compiles' is never the bar. The panel weights code quality, testability, and clear trade-off talk over raw problem count.",
+    framework: { name: "Money-safe LLD", summary: "Model entities first, then idempotency and retry paths, then failure and reconciliation, then tests." },
+    metaKeywords: ["slice sde interview", "slice software engineer interview india", "slice fintech interview questions 2026", "slice coding round"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "How many rounds does the Slice SDE interview have?", a: "Slice SDE interviews typically run 3 to 4 rounds: an online or telephonic DSA coding round, a machine-coding or low-level design round, a technical deep-dive on your projects and system reasoning, and a hiring-manager plus culture conversation." },
+      { q: "What coding topics does Slice test?", a: "Slice focuses on medium DSA: arrays, strings, hashmaps, two-pointers, trees, and occasional graphs, alongside low-level design of small systems like a ledger or rate limiter. Clean, testable, extensible code matters more than solving many problems." },
+      { q: "Does Slice ask fintech domain questions?", a: "Yes. Because Slice runs real UPI and credit flows, expect questions on idempotent payments, retry and reconciliation logic, and how you keep money movement consistent under failure. Domain reasoning separates strong candidates." }
+    ],
+    recruitmentSteps: [
+      "Resume screen: fintech or high-scale backend experience and referrals help visibility",
+      "Online or telephonic coding round: medium DSA, roughly 60 minutes",
+      "Machine coding or low-level design: build a small clean system in about 90 minutes",
+      "Technical deep-dive on past projects and system reasoning",
+      "Hiring manager and culture round: ownership, communication, and values fit"
+    ],
+    interviewRounds: [
+      "Coding Round (60 min): 1 to 2 medium DSA problems on arrays, strings, hashmaps, or trees. This is the primary filter.",
+      "Machine Coding or LLD (90 min): Build a small working system such as a transaction ledger or rate limiter with clean OOP and edge-case handling.",
+      "Technical Deep-Dive (45 to 60 min): Walk through a past project end to end and reason about idempotency, retries, and reconciliation under failure.",
+      "Hiring Manager and Culture (45 min): Ownership stories, collaboration, and alignment with Slice's builder culture."
+    ],
+  },
+  {
+    slug: "jupiter-software-engineer-interview-questions",
+    searchPhrase: "Jupiter Money Software Engineer Interview Questions India 2026",
+    company: "jupiter", roleFamily: "swe", focus: "technical",
+    intro: "Jupiter Money runs a neobanking SDE loop where DSA is table stakes and system reasoning around banking partnerships carries real weight. Expect a coding round on medium DSA (arrays, strings, hashmaps, trees, occasional DP) followed by a low-level or system design round where you model something like account statements, transaction categorisation, or a rewards ledger. Because Jupiter sits on top of partner banks and card networks, interviewers ask how you handle eventual consistency, webhook-driven updates, and reconciliation between your system and a bank of record. Clear trade-off talk and production-readiness thinking matter more than clever one-liners.",
+    framework: { name: "Partner-bank consistency", summary: "Define source of truth, then async webhook updates, then reconciliation and idempotency, then observability." },
+    metaKeywords: ["jupiter money sde interview", "jupiter software engineer interview india", "jupiter neobank interview questions 2026", "jupiter money coding round"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "How many rounds does the Jupiter Money SDE interview have?", a: "Jupiter SDE interviews usually run 3 to 4 rounds: an online or telephonic DSA round, a low-level or system design round, a technical deep-dive on your past work, and a hiring-manager plus culture conversation." },
+      { q: "What technical topics does Jupiter test?", a: "Jupiter tests medium DSA (arrays, strings, hashmaps, trees, some DP) plus design of banking features like statements, transaction categorisation, or reward ledgers. Reasoning about eventual consistency with partner banks is a common theme." },
+      { q: "Does Jupiter ask neobanking domain questions?", a: "Yes. Since Jupiter runs on partner banks and card networks, expect questions on webhook-driven updates, reconciliation against a bank of record, and idempotent handling of financial events under retries." }
+    ],
+    recruitmentSteps: [
+      "Resume screen: backend or fintech experience and referrals improve visibility",
+      "Online or telephonic coding round: medium DSA, roughly 60 minutes",
+      "Low-level or system design round: model a banking feature with clean structure",
+      "Technical deep-dive on past projects and consistency reasoning",
+      "Hiring manager and culture round: ownership, communication, and values fit"
+    ],
+    interviewRounds: [
+      "Coding Round (60 min): 1 to 2 medium DSA problems on arrays, strings, hashmaps, or trees. The main early filter.",
+      "LLD or System Design (60 to 90 min): Design a banking feature like account statements or a rewards ledger, focusing on data modelling and consistency.",
+      "Technical Deep-Dive (45 to 60 min): Explain a past project and reason about webhook updates, reconciliation, and idempotency with partner banks.",
+      "Hiring Manager and Culture (45 min): Ownership stories, collaboration, and fit with Jupiter's product-led engineering culture."
+    ],
+  },
+  {
+    slug: "navi-software-engineer-interview-questions",
+    searchPhrase: "Navi Software Engineer Interview Questions India 2026",
+    company: "navi", roleFamily: "swe", focus: "system-design",
+    intro: "Navi Technologies, founded by Sachin Bansal, runs a demanding SDE loop that skews toward strong DSA and scalable system design across lending, UPI, insurance, and mutual funds. Expect at least one hard DSA round (trees, graphs, dynamic programming, greedy) and a system design round where you design at scale: think a loan-disbursal pipeline, a UPI transaction service, or a high-throughput notification system. Navi is known for a high engineering bar and fast-moving teams, so interviewers push on capacity estimation, consistency versus availability trade-offs, and how your design fails gracefully under load. Depth of reasoning beats memorised templates here.",
+    framework: { name: "Scale-and-fail design", summary: "Estimate QPS and storage, choose data model, define consistency trade-offs, then failure and degradation paths." },
+    metaKeywords: ["navi sde interview", "navi software engineer interview india", "navi system design 2026", "navi technologies coding round"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "How many rounds does the Navi SDE interview have?", a: "Navi SDE interviews typically run 4 to 5 rounds: an online DSA assessment, one or two problem-solving coding rounds, a system design round for SDE-2 and above, and a hiring-manager plus culture round." },
+      { q: "What system design topics does Navi ask?", a: "Navi asks you to design at scale: loan-disbursal pipelines, UPI transaction services, or high-throughput notification systems. Start with capacity estimates, then data model, consistency trade-offs, and graceful failure under load." },
+      { q: "How hard is Navi's DSA bar?", a: "Navi sets a high DSA bar. Expect medium to hard problems on trees, graphs, dynamic programming, and greedy techniques, with follow-ups on time and space complexity. Depth of reasoning matters more than pattern recall." }
+    ],
+    recruitmentSteps: [
+      "Resume screen: strong backend and DSA signal; referrals help significantly",
+      "Online assessment: 2 to 3 DSA problems, roughly 90 minutes",
+      "Problem-solving coding rounds: medium to hard DSA with complexity follow-ups",
+      "System design round: scalable architecture and trade-offs (SDE-2+ primarily)",
+      "Hiring manager and culture round: ownership, speed, and values fit"
+    ],
+    interviewRounds: [
+      "Online Assessment (90 min): 2 to 3 medium-hard DSA problems. Most candidates are filtered here.",
+      "Problem Solving x1 to x2 (45 to 60 min each): Harder DSA on trees, graphs, and DP with follow-up complexity and edge-case questions.",
+      "System Design (60 min, SDE-2+): Design a lending, UPI, or notification system at scale. Begin with capacity estimates before jumping to a solution.",
+      "Hiring Manager and Culture (45 min): Ownership, comfort with fast iteration, and alignment with Navi's high-bar engineering culture."
+    ],
+  },
+  {
+    slug: "policybazaar-software-engineer-interview-questions",
+    searchPhrase: "PolicyBazaar Software Engineer Interview Questions India 2026",
+    company: "policybazaar", roleFamily: "swe", focus: "technical",
+    intro: "PolicyBazaar (PB Fintech) runs a practical SDE loop weighted toward DSA fundamentals and hands-on backend or full-stack skills over abstract theory. Expect a coding round on medium DSA (arrays, strings, hashmaps, linked lists, trees) plus a technical round on your primary stack, commonly Java or Node with SQL and REST API design. Because the platform handles insurance quotes, lead funnels, and high traffic during campaigns, interviewers ask about database indexing, query optimisation, caching, and how you keep APIs fast under spikes. Clear fundamentals and real project depth land better than name-dropping frameworks.",
+    framework: { name: "Fundamentals-first backend", summary: "Solid DSA, then clean API and schema design, then indexing and caching for traffic spikes." },
+    metaKeywords: ["policybazaar sde interview", "policybazaar software engineer interview india", "pb fintech interview questions 2026", "policybazaar coding round"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "How many rounds does the PolicyBazaar SDE interview have?", a: "PolicyBazaar SDE interviews usually run 3 to 4 rounds: an online or written coding round on DSA, one or two technical rounds on your stack and problem solving, and a hiring-manager plus HR round." },
+      { q: "What technical topics does PolicyBazaar test?", a: "PolicyBazaar tests medium DSA (arrays, strings, hashmaps, linked lists, trees) and stack depth in Java or Node with SQL, plus REST API design, database indexing, query optimisation, and caching for traffic spikes." },
+      { q: "Does PolicyBazaar focus more on theory or hands-on skills?", a: "PolicyBazaar leans hands-on. Interviewers probe real project decisions, schema and API design, and how you optimise queries and caching under high traffic rather than abstract computer-science theory." }
+    ],
+    recruitmentSteps: [
+      "Resume screen: relevant backend or full-stack experience; referrals help",
+      "Online or written coding round: medium DSA, roughly 60 to 90 minutes",
+      "Technical round on stack: Java or Node, SQL, REST API and schema design",
+      "Second technical round: problem solving, indexing, caching, and system reasoning",
+      "Hiring manager and HR round: fit, expectations, and compensation"
+    ],
+    interviewRounds: [
+      "Coding Round (60 to 90 min): Medium DSA on arrays, strings, hashmaps, linked lists, and trees. The primary early filter.",
+      "Technical Round 1 (45 to 60 min): Deep dive on your stack, REST API design, SQL queries, and past project decisions.",
+      "Technical Round 2 (45 to 60 min): Problem solving plus database indexing, query optimisation, and caching for high-traffic scenarios.",
+      "Hiring Manager and HR (30 to 45 min): Ownership, communication, expectations, and compensation discussion."
+    ],
+  },
+  {
+    slug: "acko-software-engineer-interview-questions",
+    searchPhrase: "Acko Software Engineer Interview Questions India 2026",
+    company: "acko", roleFamily: "swe", focus: "technical",
+    intro: "Acko, India's digital-first insurer, runs a solid SDE loop that pairs strong DSA with clean low-level design and insurtech domain reasoning. Expect a coding round on medium to hard DSA (arrays, strings, hashmaps, trees, graphs) and a machine-coding or LLD round where you build something like a policy-pricing engine, claims workflow, or notification service with clean, extensible OOP. Because Acko owns the full insurance stack from quote to claim, interviewers ask how you model state machines, handle idempotent events, and keep data consistent across policy and claims services. Code quality, testability, and design clarity carry real weight here.",
+    framework: { name: "Domain-driven LLD", summary: "Model the insurance state machine, then clean extensible OOP, then idempotent events and consistency, then tests." },
+    metaKeywords: ["acko sde interview", "acko software engineer interview india", "acko insurance interview questions 2026", "acko machine coding round"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "How many rounds does the Acko SDE interview have?", a: "Acko SDE interviews typically run 3 to 4 rounds: an online DSA coding round, a machine-coding or low-level design round, a technical deep-dive on projects and design reasoning, and a hiring-manager plus culture round." },
+      { q: "What does Acko's machine coding round involve?", a: "Acko's machine coding or LLD round asks you to build a working system such as a policy-pricing engine, claims workflow, or notification service in about 90 minutes, with clean OOP, edge-case handling, and extensibility over just a compiling program." },
+      { q: "Does Acko ask insurtech domain questions?", a: "Yes. Because Acko owns quote-to-claim flows, expect questions on modelling policy and claims state machines, idempotent event handling, and keeping data consistent across services under failure." }
+    ],
+    recruitmentSteps: [
+      "Resume screen: backend or full-stack depth; referrals improve visibility",
+      "Online coding round: medium to hard DSA, roughly 60 to 90 minutes",
+      "Machine coding or low-level design: build a clean system in about 90 minutes",
+      "Technical deep-dive on projects and design and consistency reasoning",
+      "Hiring manager and culture round: ownership, communication, and values fit"
+    ],
+    interviewRounds: [
+      "Coding Round (60 to 90 min): Medium to hard DSA on arrays, strings, hashmaps, trees, and graphs. The main early filter.",
+      "Machine Coding or LLD (90 min): Build a working system such as a policy-pricing engine or claims workflow with clean, extensible OOP and edge-case handling.",
+      "Technical Deep-Dive (45 to 60 min): Walk through a past project and reason about state machines, idempotent events, and cross-service consistency.",
+      "Hiring Manager and Culture (45 min): Ownership stories, collaboration, and alignment with Acko's digital-first culture."
+    ],
+  },
+  {
+    slug: "servicenow-software-engineer-interview-questions",
+    searchPhrase: "ServiceNow India Software Engineer Interview Questions 2026",
+    company: "servicenow", roleFamily: "swe", focus: "technical",
+    intro: "ServiceNow's Hyderabad and Bangalore engineering centers hire heavily for platform, ITSM, and AI features, and the interview leans on solid data structures plus practical Java and JavaScript reasoning rather than exotic algorithm tricks. Expect an online assessment followed by multiple technical rounds where interviewers probe how you handle real trade-offs: concurrency, memory, and clean object-oriented design. Compared to pure product startups, ServiceNow interviewers weight code quality and maintainability alongside correctness.",
+    framework: { name: "Correct, then clean", summary: "Solve the problem with correct complexity first, then refactor toward readable, testable, well-named code the interviewer can follow." },
+    metaKeywords: ["servicenow india interview questions", "servicenow software engineer interview 2026", "servicenow hyderabad swe interview", "servicenow coding round india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What is the ServiceNow India interview process?", a: "An online coding assessment, then 2 to 4 technical rounds on DSA, Java or JavaScript, and OOP design, followed by a managerial or hiring-manager round." },
+      { q: "Which languages does ServiceNow test?", a: "Java and JavaScript are most common because the platform runs on both. You can usually solve DSA problems in the language you are strongest in." },
+      { q: "How hard is the ServiceNow coding assessment?", a: "Medium difficulty. Expect array, string, hashing, and tree problems with reasonable time limits; the bar is clean, correct solutions over brute force." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: relevant projects, internships, and platform or web experience",
+      "Online assessment: DSA coding problems plus some MCQs on CS fundamentals",
+      "Technical rounds: 2 to 4 rounds on DSA, OOP, and language depth",
+      "Hiring-manager or HR round: team fit, projects, and expectations",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): 2 to 3 DSA problems on arrays, strings, and hashing, sometimes with CS fundamentals MCQs.",
+      "Technical Round 1 (45-60 min): live coding on data structures with follow-ups on complexity and edge cases.",
+      "Technical Round 2 (45-60 min): OOP design, Java or JavaScript internals, and reasoning about maintainable, testable code.",
+      "Hiring-Manager Round (30-45 min): your past projects, collaboration style, and why ServiceNow; behavioral and team-fit focused.",
+    ],
+  },
+  {
+    slug: "workday-software-engineer-interview-questions",
+    searchPhrase: "Workday India Software Engineer Interview Questions 2026",
+    company: "workday", roleFamily: "swe", focus: "technical",
+    intro: "Workday's Pune development center builds large-scale enterprise HCM and financial-management software, so its interviews test strong Java fundamentals, data structures, and the ability to reason about a service that must stay correct at enterprise scale. The process typically runs an online assessment followed by several technical rounds mixing DSA with object-oriented and API design. Interviewers care about correctness, thread safety, and how you handle nulls and error cases as much as raw algorithm speed.",
+    framework: { name: "Enterprise-grade thinking", summary: "Treat every problem as production code: handle edge cases, nulls, and concurrency explicitly before optimizing for speed." },
+    metaKeywords: ["workday india interview questions", "workday software engineer interview 2026", "workday pune swe interview", "workday java coding round"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What is the Workday India interview process?", a: "An online coding assessment, then 3 to 4 technical rounds on DSA, Java, and design, followed by a hiring-manager or values round." },
+      { q: "Does Workday interview in Java?", a: "Yes. Java is the primary stack in Pune, so expect Java depth: collections, concurrency, JVM basics, and object-oriented design alongside DSA." },
+      { q: "Is Workday DSA hard?", a: "It is medium in difficulty. Focus on clean, correct solutions with proper edge-case handling rather than the hardest competitive-programming problems." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: Java and backend experience, projects, and internships",
+      "Online assessment: DSA coding problems and CS fundamentals",
+      "Technical rounds: 3 to 4 rounds on DSA, Java depth, and OOP or API design",
+      "Hiring-manager or values round: team fit and Workday values",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): DSA coding problems on arrays, strings, trees, and hashing.",
+      "Technical Round 1 (45-60 min): live DSA coding with complexity analysis and edge-case discussion.",
+      "Technical Round 2 (45-60 min): Java depth including collections, concurrency, and JVM behavior, plus OOP design.",
+      "Hiring-Manager or Values Round (30-45 min): behavioral questions, past projects, and alignment with Workday's core values.",
+    ],
+  },
+  {
+    slug: "vmware-software-engineer-interview-questions",
+    searchPhrase: "VMware India Software Engineer Interview Questions 2026",
+    company: "vmware", roleFamily: "swe", focus: "system-design",
+    intro: "VMware's Bangalore center, now under Broadcom, works on virtualization, networking, storage, and cloud infrastructure, so its interviews go deep on operating systems, distributed systems, and low-level design alongside DSA. Expect strong emphasis on system design and OS internals such as memory management, scheduling, and concurrency, reflecting the systems-heavy nature of the products. Compared to web-focused companies, VMware interviewers reward candidates who reason clearly about the layers beneath the application.",
+    framework: { name: "Systems from the ground up", summary: "Anchor design answers in OS and networking fundamentals: memory, threads, and failure handling before higher-level architecture." },
+    metaKeywords: ["vmware india interview questions", "vmware broadcom software engineer interview 2026", "vmware bangalore system design interview", "vmware os interview questions india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What is the VMware India interview process?", a: "An online or phone screen, then 3 to 5 technical rounds covering DSA, OS and systems fundamentals, and system design, followed by a managerial round." },
+      { q: "How systems-heavy is the VMware interview?", a: "Very. Expect deep OS questions on memory management, scheduling, concurrency, and sometimes networking and virtualization concepts alongside coding." },
+      { q: "Does VMware ask system design?", a: "Yes, for most SDE roles beyond entry level. Design rounds focus on distributed systems, scalability, and reliability of infrastructure services." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: systems, C or C++, and infrastructure experience",
+      "Online or phone screen: DSA and CS fundamentals",
+      "Technical rounds: 3 to 5 rounds on DSA, OS, and system design",
+      "Managerial round: team fit, projects, and depth discussion",
+    ],
+    interviewRounds: [
+      "Online or Phone Screen (45-60 min): DSA coding plus OS and CS fundamentals questions.",
+      "Technical Round 1 (60 min): DSA problem solving with complexity analysis and C or C++ depth where relevant.",
+      "Technical Round 2 (60 min): OS internals such as memory management, scheduling, multithreading, and sometimes networking or virtualization.",
+      "System Design and Managerial Round (60 min): design a scalable, reliable infrastructure service, then behavioral and team-fit discussion.",
+    ],
+  },
+  {
+    slug: "texas-instruments-software-engineer-interview-questions",
+    searchPhrase: "Texas Instruments India Software Engineer Interview Questions 2026",
+    company: "texas-instruments", roleFamily: "swe", focus: "technical",
+    intro: "Texas Instruments India (Bangalore) hires software and embedded engineers to work close to the hardware, so interviews lean heavily on C, pointers, memory, and embedded systems fundamentals alongside data structures. Expect strong emphasis on low-level reasoning: bit manipulation, microcontroller concepts, and how code maps to hardware, which is unusual for candidates coming from pure web backgrounds. TI runs a structured process with an online test followed by technical rounds, and campus hiring pulls from top engineering colleges.",
+    framework: { name: "Close to the metal", summary: "Reason about memory, pointers, and hardware behavior explicitly; embedded correctness matters more than clever abstractions." },
+    metaKeywords: ["texas instruments india interview questions", "ti embedded software engineer interview 2026", "texas instruments bangalore interview", "ti c programming interview questions india"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What is the Texas Instruments India interview process?", a: "An online test, then 2 to 3 technical rounds covering C, embedded systems, DSA, and microcontroller fundamentals, followed by an HR round." },
+      { q: "Does TI focus on C and embedded systems?", a: "Yes. Expect deep C questions on pointers, memory, bit manipulation, and embedded concepts such as interrupts, registers, and microcontroller behavior." },
+      { q: "Is the TI online test hard?", a: "It is moderately hard, mixing aptitude, C output prediction, and DSA. Strong C fundamentals matter more than competitive-programming speed." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: C, embedded, or electronics background and relevant projects",
+      "Online test: aptitude, C fundamentals, and DSA",
+      "Technical rounds: 2 to 3 rounds on C, embedded systems, and DSA",
+      "HR round: cultural fit, location, and career goals",
+    ],
+    interviewRounds: [
+      "Online Test (60-90 min): aptitude, C output-prediction questions, and DSA problems.",
+      "Technical Round 1 (45-60 min): C depth including pointers, memory layout, bit manipulation, and DSA coding.",
+      "Technical Round 2 (45-60 min): embedded systems concepts such as interrupts, microcontrollers, registers, and hardware-software interaction.",
+      "HR Round (20-30 min): standard questions on relocation, motivation, and long-term goals.",
+    ],
+  },
+  {
+    slug: "samsung-india-software-engineer-interview-questions",
+    searchPhrase: "Samsung R&D India Software Engineer Interview Questions 2026",
+    company: "samsung-india", roleFamily: "swe", focus: "technical",
+    intro: "Samsung R&D Institute India (SRIB, Bangalore) is one of the largest R&D centers outside Korea and hires aggressively for Android platform, AI/ML, multimedia, and connectivity teams. The interview is distinctly C++ and algorithm-heavy compared to product startups, and the bar for data structures stays high regardless of the team you target. SRIB runs one of the largest campus programs in India through its in-house online test, pulling from IITs, NITs, and BITS.",
+    framework: { name: "Algorithm-first, then platform", summary: "Nail the DSA solution with correct complexity, then layer platform context such as Android or embedded constraints only after the algorithm is solid." },
+    metaKeywords: ["samsung r&d india interview questions", "samsung srib interview process 2026", "samsung bangalore swe interview", "samsung india software engineer interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What is the Samsung R&D India interview process?", a: "Samsung's in-house online test, then 2 to 3 technical rounds on DSA, C++, and OS fundamentals, plus a domain round for Android or AI/ML teams, and an HR round." },
+      { q: "How hard is the Samsung SRIB online test?", a: "Harder than average. Expect medium-hard DSA problems with strict time limits; C++ is preferred and many rate it tougher than typical service-company assessments." },
+      { q: "Does Samsung ask OS and embedded concepts?", a: "Yes, especially for platform and firmware teams: memory management, scheduling, multithreading, and sometimes cache architecture appear in technical rounds." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: CGPA cutoff, typically 7.0 or above, and relevant project or internship experience",
+      "Samsung Online Test: DSA problems on Samsung's proprietary platform",
+      "Technical rounds: DSA coding plus C++ and OS fundamentals",
+      "Domain and HR rounds: team-specific depth and cultural fit",
+    ],
+    interviewRounds: [
+      "Samsung Online Test (up to 180 min): a small number of DSA problems from medium to hard, C++ strongly preferred and time-pressured.",
+      "Technical Round 1 (60 min): DSA on a shared editor followed by C++ and OS questions on pointers, virtual functions, multithreading, or memory layout.",
+      "Technical Round 2 (45-60 min): domain depth by team; Android candidates get Binder IPC, HAL, or ART internals, AI/ML candidates get ML fundamentals and optimization basics.",
+      "HR Round (20-30 min): relocation to Bangalore, long-term goals, and why Samsung over a startup; straightforward after clearing technical rounds.",
+    ],
+  },
+  {
+    slug: "mediatek-software-engineer-interview-questions",
+    searchPhrase: "MediaTek India Software Engineer Interview Questions 2026",
+    company: "mediatek", roleFamily: "swe", focus: "technical",
+    intro: "MediaTek's India software roles at Bengaluru and Noida lean heavily embedded and systems-level, so expect C over high-level languages, pointer arithmetic, bit manipulation, and memory-layout questions rather than web-stack trivia. The loop usually runs an online test on a platform like HackerRank or eLitmus followed by two or three technical rounds, and campus hires face aptitude plus C and data-structures sections up front. Interviewers probe operating-systems fundamentals (scheduling, interrupts, RTOS basics), how firmware talks to hardware over I2C, SPI, and UART, and your reasoning on time and space complexity for constrained devices.",
+    framework: { name: "Systems-first reasoning", summary: "Start from hardware constraints, then memory model, then algorithm, then verify with edge cases on limited resources." },
+    metaKeywords: ["mediatek india interview", "mediatek software engineer interview 2026", "mediatek embedded interview questions", "mediatek c interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "What language should you prepare for a MediaTek software interview?",
+        a: "C is the priority for MediaTek's embedded and systems roles: pointers, bit manipulation, memory layout, and structs. C++ helps for driver and platform teams. Data structures and OS fundamentals matter more than any web framework.",
+      },
+      {
+        q: "Does MediaTek India have an online test?",
+        a: "Yes. Most MediaTek India loops open with an online assessment (often HackerRank or eLitmus for campus) covering aptitude, C output prediction, and data-structures problems before the technical interview rounds.",
+      },
+      {
+        q: "What topics does MediaTek focus on beyond coding?",
+        a: "Operating-system fundamentals (scheduling, interrupts, RTOS), computer architecture, and communication protocols like I2C, SPI, and UART come up often, alongside time and space complexity reasoning for constrained embedded devices.",
+      },
+    ],
+    recruitmentSteps: [
+      "Application or campus shortlist: resume screen or eligibility cutoff",
+      "Online assessment: aptitude, C output questions, and data-structures problems",
+      "Technical interviews: 2-3 rounds on C, DSA, OS, and protocols",
+      "HR round: fit, relocation, and compensation discussion",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): aptitude plus C output prediction and data-structures coding, often on HackerRank or eLitmus.",
+      "Technical Round 1 (45-60 min): C fundamentals, pointers, bit manipulation, and core data structures with complexity analysis.",
+      "Technical Round 2 (45-60 min): operating systems, computer architecture, and hardware protocols (I2C, SPI, UART); project deep dive for experienced hires.",
+      "HR Round (20-30 min): role fit, location preference, and salary expectations.",
+    ],
+  },
+  {
+    slug: "siemens-india-software-engineer-interview-questions",
+    searchPhrase: "Siemens India Software Engineer Interview Questions 2026",
+    company: "siemens-india", roleFamily: "swe", focus: "technical",
+    intro: "Siemens hires software engineers in India across Siemens Technology, Siemens Digital Industries Software, and Siemens Healthineers, so the exact stack varies from C and C++ for industrial and embedded teams to Java, Python, and cloud for digital-enterprise groups. The process typically runs an online assessment, one or two technical interviews, and a managerial plus HR round, and for experienced candidates the strongest signal is a clear walkthrough of your own project architecture. Expect solid data-structures and OOP questions, domain fit for the specific business unit, and behavioral questions grounded in Siemens values around ownership and collaboration.",
+    framework: { name: "Project-anchored answers", summary: "Tie every technical claim back to a concrete decision you made in a real project, then justify the trade-off." },
+    metaKeywords: ["siemens india interview", "siemens software engineer interview 2026", "siemens technology interview questions", "siemens india hiring process"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "What technologies does Siemens India interview on?",
+        a: "It depends on the business unit: C and C++ for embedded and industrial teams, Java, Python, or cloud for Siemens Digital Industries Software and enterprise groups. Data structures and OOP are common across all units.",
+      },
+      {
+        q: "How many rounds is the Siemens India software interview?",
+        a: "Usually 3-4: an online assessment, one or two technical interviews, and a managerial plus HR round. Experienced candidates often get a deeper project and system discussion.",
+      },
+      {
+        q: "Does Siemens ask behavioral questions?",
+        a: "Yes. Expect questions on ownership, cross-team collaboration, and handling ambiguity, framed around Siemens values. Use concrete examples with your specific role and outcome.",
+      },
+    ],
+    recruitmentSteps: [
+      "Application or referral: resume screen mapped to a specific business unit",
+      "Online assessment: aptitude plus coding and technical MCQs",
+      "Technical interviews: 1-2 rounds on DSA, OOP, and unit-specific stack",
+      "Managerial and HR round: project fit, behavioral, and compensation",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): aptitude, coding problems, and technical multiple-choice tied to the target stack.",
+      "Technical Round 1 (45-60 min): data structures, OOP, and language fundamentals; project walkthrough for experienced hires.",
+      "Technical Round 2 or Managerial (45-60 min): design discussion, domain fit for the business unit, and depth on your past work.",
+      "HR Round (20-30 min): values-based behavioral questions, location, and salary discussion.",
+    ],
+  },
+  {
+    slug: "bosch-india-software-engineer-interview-questions",
+    searchPhrase: "Bosch India Software Engineer Interview Questions 2026",
+    company: "bosch-india", roleFamily: "swe", focus: "technical",
+    intro: "Bosch Global Software Technologies (BGSW, formerly RBEI) is the main software arm hiring engineers in Bengaluru, Coimbatore, and Hyderabad, with heavy demand in automotive and embedded software, so C and embedded C dominate for those teams while data and cloud groups use Python and Java. The loop generally runs an online test, a technical interview or two, and an HR round, and campus hires face aptitude plus a coding section first. Interviewers dig into C fundamentals, microcontrollers and communication protocols like CAN, embedded and RTOS concepts, and for automotive teams they value awareness of standards such as AUTOSAR and MISRA C.",
+    framework: { name: "Constraint-driven design", summary: "Reason from real-time and safety constraints outward: deterministic timing first, then memory, then correctness under fault." },
+    metaKeywords: ["bosch india interview", "bgsw interview questions", "bosch software engineer interview 2026", "bosch embedded c interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "What is BGSW and who does it hire?",
+        a: "Bosch Global Software Technologies is Bosch's software subsidiary in India, hiring across automotive, embedded, data, and cloud engineering in cities like Bengaluru, Coimbatore, and Hyderabad. Embedded and automotive roles are the largest share.",
+      },
+      {
+        q: "What should you prepare for a Bosch embedded interview?",
+        a: "C and embedded C fundamentals, microcontrollers, communication protocols like CAN, RTOS concepts, and time and space complexity. For automotive teams, awareness of AUTOSAR and MISRA C standards helps.",
+      },
+      {
+        q: "Does Bosch India have an aptitude test?",
+        a: "Yes, especially for campus and early-career hiring. The online assessment usually combines aptitude with a coding or technical section before the interview rounds.",
+      },
+    ],
+    recruitmentSteps: [
+      "Application or campus shortlist: resume screen or eligibility cutoff",
+      "Online assessment: aptitude plus coding and technical questions",
+      "Technical interviews: 1-2 rounds on C, embedded, and DSA",
+      "HR round: fit, standards awareness, and compensation",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): aptitude with a coding and technical section, standard for campus and lateral funnels.",
+      "Technical Round 1 (45-60 min): C and embedded C fundamentals, microcontrollers, and data structures with complexity reasoning.",
+      "Technical Round 2 (45-60 min): protocols like CAN, RTOS concepts, and project deep dive; AUTOSAR and MISRA C for automotive teams.",
+      "HR Round (20-30 min): role and values fit, location, and salary discussion.",
+    ],
+  },
+  {
+    slug: "ntt-data-software-engineer-interview-questions",
+    searchPhrase: "NTT Data India Software Engineer Interview Questions 2026",
+    company: "ntt-data", roleFamily: "swe", focus: "technical",
+    intro: "NTT Data is an IT services and consulting employer in India with delivery centers in Bengaluru, Chennai, Hyderabad, and Noida, so its software hiring resembles other services firms: an aptitude and coding assessment, a technical interview on your primary stack, and an HR round. Expect breadth over depth for fresher and mid roles, with strong questions on data structures, SQL and databases, and whichever ecosystem your resume claims (Java and Spring, .NET, Python, or cloud). Communication and client-facing readiness carry real weight because these are billable, project-facing roles, so practice explaining your projects clearly and concisely.",
+    framework: { name: "Clarity for the client", summary: "Explain each technical answer as if to a non-expert stakeholder, then add the depth an interviewer wants." },
+    metaKeywords: ["ntt data india interview", "ntt data software engineer interview 2026", "ntt data hiring process", "ntt data technical interview questions"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds does NTT Data India have?",
+        a: "Typically 3: an online aptitude and coding assessment, a technical interview on your primary stack and fundamentals, and an HR round covering fit, communication, and compensation.",
+      },
+      {
+        q: "What does NTT Data test in the technical round?",
+        a: "Data structures and algorithms at moderate depth, SQL and database concepts, OOP, and your claimed stack such as Java and Spring, .NET, Python, or cloud. Project explanations matter as much as coding.",
+      },
+      {
+        q: "Is communication important for NTT Data interviews?",
+        a: "Yes. These are client-facing, billable services roles, so clear articulation of your work and readiness to collaborate with clients are evaluated in the technical and HR rounds.",
+      },
+    ],
+    recruitmentSteps: [
+      "Application or campus shortlist: resume screen or eligibility cutoff",
+      "Online assessment: aptitude, logical reasoning, and coding",
+      "Technical interview: DSA, SQL, and your primary stack plus project discussion",
+      "HR round: communication, client-readiness, and compensation",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): aptitude, logical and verbal reasoning, and coding problems.",
+      "Technical Interview (45-60 min): data structures, SQL and databases, OOP, and stack-specific questions with a project walkthrough.",
+      "HR Round (20-30 min): communication, client-facing readiness, location flexibility, and salary discussion.",
+    ],
+  },
+  {
+    slug: "walmart-global-tech-software-engineer-interview-questions",
+    searchPhrase: "Walmart Global Tech India Software Engineer Interview Questions 2026",
+    company: "walmart-global-tech", roleFamily: "swe", focus: "system-design",
+    intro: "Walmart Global Tech India, based mainly in Bengaluru and Chennai, runs a FAANG-adjacent loop with a genuinely hard bar: an online assessment on a platform like HackerRank, two or three DSA rounds, a system design round for SDE-2 and above, and a hiring-manager or leadership round mapped to Walmart's leadership principles. DSA questions skew medium to hard across arrays and strings, trees and graphs, dynamic programming, and heaps, and the coding rounds expect clean, runnable code with edge cases handled. System design is retail and supply-chain flavored: think inventory at massive scale, order fulfillment, cart and checkout, and catalog search, where you should start from capacity estimates and defend trade-offs explicitly.",
+    framework: { name: "Estimate-then-design", summary: "Open with QPS and storage math, then data model, then bottlenecks, then trade-offs, all in retail-scale terms." },
+    metaKeywords: ["walmart global tech interview", "walmart india software engineer interview 2026", "walmart system design interview", "walmart global tech dsa questions"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds is the Walmart Global Tech India interview?",
+        a: "Usually 4-5: an online assessment, two or three DSA rounds, a system design round for SDE-2 and above, and a hiring-manager or leadership round aligned to Walmart's leadership principles.",
+      },
+      {
+        q: "How hard is the Walmart Global Tech DSA bar?",
+        a: "Medium to hard, comparable to top product companies. Focus on arrays and strings, trees and graphs, dynamic programming, and heaps, with clean, runnable code and edge cases handled.",
+      },
+      {
+        q: "What system design topics does Walmart ask?",
+        a: "Retail and supply-chain scenarios: inventory at massive scale, order fulfillment, cart and checkout, and catalog search. Start from capacity estimates and defend trade-offs explicitly.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: competitive; referrals help visibility",
+      "Online Assessment: DSA problems on a platform like HackerRank",
+      "DSA interviews: 2-3 rounds of medium-hard problem solving",
+      "System design and leadership rounds: architecture plus principle-based behavioral",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): medium-hard DSA problems, the primary filter.",
+      "DSA Rounds x2-3 (45-60 min each): arrays, strings, trees, graphs, DP, and heaps with clean, runnable code and edge cases.",
+      "System Design (60 min, SDE-2+): retail-scale problems like inventory, fulfillment, and catalog search starting from capacity estimates.",
+      "Hiring Manager or Leadership (45 min): behavioral questions mapped to Walmart's leadership principles with concrete ownership stories.",
+    ],
+  },
+  {
+    slug: "boat-software-engineer-interview-questions",
+    searchPhrase: "boAt Software Engineer Interview Questions India 2026",
+    company: "boat", roleFamily: "swe", focus: "technical",
+    intro: "boAt (Imagine Marketing) hires software engineers mainly for its D2C commerce stack, IoT companion apps, and internal supply-chain tools, so its loop leans practical over algorithm-heavy. Expect 3 to 4 rounds: a DSA and fundamentals screen, a hands-on coding or take-home round tied to web or app work, and a manager plus culture conversation. Because boAt is a lean, fast-moving consumer brand, interviewers weight product sense and shipping speed alongside code, and questions often reference real problems like flash-sale traffic, order tracking, and wearable-app sync.",
+    framework: { name: "Ship-it problem solving", summary: "Clarify the requirement, pick the simplest correct approach, code it cleanly, then discuss edge cases and how you would ship and monitor it." },
+    metaKeywords: ["boat software engineer interview", "boat interview questions india", "boat swe interview 2026", "boat technical interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds does the boAt software engineer interview have in 2026?",
+        a: "Typically 3 to 4 rounds: a DSA and fundamentals screen, a hands-on coding or take-home round tied to web or app work, and a hiring manager plus culture fit conversation. Some tracks add an online assessment first.",
+      },
+      {
+        q: "Is boAt's SWE interview algorithm-heavy?",
+        a: "Less than a pure product company. You should be solid on arrays, strings, hashmaps, and basic trees, but boAt weights practical coding, framework knowledge, and product sense for its D2C and IoT app work more heavily.",
+      },
+      {
+        q: "What stack does boAt hire for?",
+        a: "Commonly JavaScript or TypeScript with React or Node for web, plus Android, iOS, or React Native for the companion app, and backend or data roles around commerce and supply chain. Confirm the exact stack in the JD.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: consumer-brand and D2C experience or strong project work helps; referrals speed things up",
+      "Online assessment or DSA screen: arrays, strings, hashmaps, and basic problem solving",
+      "Technical or take-home round: build or extend a small feature in your stack with clean, testable code",
+      "Hiring manager and culture round: ownership, shipping speed, and product thinking",
+    ],
+    interviewRounds: [
+      "DSA and fundamentals (45 to 60 min): medium-easy coding on arrays, strings, hashmaps, and language or framework basics.",
+      "Hands-on coding or take-home (60 to 90 min): implement or debug a realistic web or app feature; clean structure and edge cases matter more than tricks.",
+      "Hiring manager and culture (30 to 45 min): past ownership, how fast you ship, and how you reason about a consumer product at scale.",
+    ],
+  },
+  {
+    slug: "wakefit-software-engineer-interview-questions",
+    searchPhrase: "Wakefit Software Engineer Interview Questions India 2026",
+    company: "wakefit", roleFamily: "swe", focus: "technical",
+    intro: "Wakefit is a Bengaluru D2C sleep and furniture brand, so its engineering hires center on the e-commerce stack, order and logistics tooling, and internal manufacturing or inventory systems. The loop usually runs 3 to 4 rounds and is practical: a DSA and fundamentals screen, one or two technical rounds on your stack (often full-stack or backend), and a manager plus culture conversation. Interviewers care that you can reason about real retail problems such as SKU catalogs, delivery slots, returns, and offer or discount logic, and they value engineers who ship reliably in a lean team.",
+    framework: { name: "Retail-first engineering", summary: "Understand the business rule, model the data cleanly, code a correct solution, then cover edge cases like stock, pricing, and failures." },
+    metaKeywords: ["wakefit software engineer interview", "wakefit interview questions india", "wakefit swe interview 2026", "wakefit technical interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds does the Wakefit software engineer interview have?",
+        a: "Usually 3 to 4 rounds: a DSA and fundamentals screen, one or two technical rounds on your stack, and a hiring manager plus culture fit conversation. Some roles add a short online assessment.",
+      },
+      {
+        q: "What topics does Wakefit focus on in technical rounds?",
+        a: "Core DSA (arrays, strings, hashmaps, sorting), language and framework fundamentals, database and API design, and practical e-commerce logic like catalog, cart, pricing, and order flows.",
+      },
+      {
+        q: "What stack does Wakefit use?",
+        a: "Commonly a JavaScript or TypeScript and Node or React web stack with a SQL database, plus backend roles around commerce, logistics, and internal tools. Check the specific JD for exact requirements.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: e-commerce, full-stack, or backend project experience helps; referrals improve visibility",
+      "DSA or online screen: arrays, strings, hashmaps, and basic algorithmic problem solving",
+      "Technical rounds: coding plus API and database design tied to retail and order scenarios",
+      "Hiring manager and culture round: ownership, reliability, and fit for a lean D2C team",
+    ],
+    interviewRounds: [
+      "DSA and fundamentals (45 to 60 min): medium-easy coding and language or framework basics.",
+      "Technical or design (60 min): build or extend a feature and discuss data modeling and API design for a catalog, cart, or order use case.",
+      "Hiring manager and culture (30 to 45 min): past projects, ownership, and how you handle a fast-moving retail codebase.",
+    ],
+  },
+  {
+    slug: "dmart-software-engineer-interview-questions",
+    searchPhrase: "DMart Software Engineer Interview Questions India 2026",
+    company: "dmart", roleFamily: "swe", focus: "technical",
+    intro: "DMart (Avenue Supermarts) runs one of India's largest offline retail chains, and its DMart Ready online arm plus store and supply-chain systems drive most software hiring. The engineering loop is practical and business-oriented, usually 3 to 4 rounds: a technical or DSA screen, one or two rounds on coding and system or database design, and a managerial round. Because DMart is cost-disciplined and operations-heavy, interviewers probe how you build reliable, maintainable systems for billing, inventory, and order fulfillment rather than exotic algorithms, and they value engineers who understand retail scale and uptime.",
+    framework: { name: "Operations-grade code", summary: "Clarify the retail workflow, design a simple reliable data model, handle inventory and billing edge cases, then discuss failure and recovery." },
+    metaKeywords: ["dmart software engineer interview", "dmart interview questions india", "avenue supermarts swe interview 2026", "dmart technical interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds does the DMart software engineer interview have?",
+        a: "Typically 3 to 4 rounds: a technical or DSA screen, one or two coding and design rounds covering databases and systems, and a managerial or HR round. Exact structure varies by team and level.",
+      },
+      {
+        q: "What does DMart focus on in technical interviews?",
+        a: "Core DSA and OOP, SQL and database design, API and backend fundamentals, and practical retail and supply-chain logic like billing, inventory, order fulfillment, and reporting. Reliability and maintainability are weighted heavily.",
+      },
+      {
+        q: "What technology does DMart use?",
+        a: "A mix of Java or .NET backends, SQL databases, and web or mobile front ends for DMart Ready, store, and supply-chain systems. Some roles involve ERP, integrations, and internal tools; confirm in the JD.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: retail, backend, or full-stack experience and strong fundamentals help",
+      "Technical or DSA screen: OOP, arrays, strings, and SQL basics",
+      "Coding and design rounds: database schema, API design, and system reliability for retail workflows",
+      "Managerial and HR round: ownership, communication, stability, and fit",
+    ],
+    interviewRounds: [
+      "Technical screen (45 to 60 min): DSA fundamentals, OOP, and SQL queries.",
+      "Coding and design (60 min): implement a billing, inventory, or order feature and design its schema and APIs with reliability in mind.",
+      "Managerial and HR (30 to 45 min): past work, ownership, communication, and long-term fit in an operations-heavy environment.",
+    ],
+  },
+  {
+    slug: "bigbasket-software-engineer-interview-questions",
+    searchPhrase: "BigBasket Software Engineer Interview Questions India 2026",
+    company: "bigbasket", roleFamily: "swe", focus: "system-design",
+    intro: "BigBasket (a Tata group company) runs India's grocery e-commerce at heavy scale across express and scheduled delivery, dark stores, and BB Now, so its SWE loop pushes hard on system design and backend depth. Expect 4 to 5 rounds: an online assessment or DSA screen, one or two coding rounds, a system design round, and a hiring manager round. Design questions are grocery-specific: inventory and slot availability across dark stores, cart and pricing at peak load, delivery routing, and handling perishables and stockouts, so you should reason about consistency, caching, and read-heavy catalog traffic with concrete numbers.",
+    framework: { name: "Scale-and-consistency design", summary: "Estimate QPS and data size, choose the store and cache, then defend consistency and availability trade-offs for inventory, slots, and cart." },
+    metaKeywords: ["bigbasket software engineer interview", "bigbasket system design india", "bigbasket swe interview 2026", "bigbasket technical interview"],
+    sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "How many rounds does the BigBasket software engineer interview have?",
+        a: "Usually 4 to 5 rounds: an online assessment or DSA screen, one or two coding rounds, a system design round for mid and senior levels, and a hiring manager round.",
+      },
+      {
+        q: "What system design questions does BigBasket ask?",
+        a: "Grocery-specific problems such as inventory and delivery-slot availability across dark stores, cart and pricing under peak load, order and delivery tracking, and handling perishables and stockouts. Reason with real capacity estimates.",
+      },
+      {
+        q: "What DSA topics show up in BigBasket interviews?",
+        a: "Arrays, strings, hashmaps, sorting, trees, and graphs at medium difficulty, plus complexity analysis. Backend candidates also get concurrency, database, and caching questions tied to high read traffic.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: backend or full-stack scale experience and strong fundamentals help; referrals improve odds",
+      "Online assessment or DSA screen: medium DSA problems and problem solving",
+      "Coding rounds: data structures, complexity, and clean implementation",
+      "System design round: grocery-scale architecture with inventory, slots, and delivery",
+      "Hiring manager round: ownership, trade-off reasoning, and team fit",
+    ],
+    interviewRounds: [
+      "Online assessment or DSA screen (60 to 90 min): medium DSA problems on arrays, strings, hashmaps, and trees or graphs.",
+      "Coding rounds (45 to 60 min each): implement solutions with correct edge-case handling and discuss time and space complexity.",
+      "System design (60 min): design inventory, slot availability, or cart at scale across dark stores; defend consistency, caching, and availability trade-offs with numbers.",
+      "Hiring manager (30 to 45 min): ownership stories, trade-off reasoning, and fit for a high-scale grocery platform.",
+    ],
+  },
+  {
+    slug: "udaan-software-engineer-interview-questions",
+    searchPhrase: "Udaan Software Engineer Interview Questions India 2026",
+    company: "udaan", roleFamily: "swe", focus: "system-design",
+    intro: "Udaan is a B2B e-commerce and supply-chain platform connecting manufacturers, wholesalers, and retailers, so its SWE loop is design-heavy and backend-focused. Expect 4 to 5 rounds: a DSA or online assessment, one or two coding rounds, a system design round, and a hiring manager round. Design questions map to B2B commerce and logistics: catalog and pricing across sellers, credit and lending flows, order and inventory management, and last-mile fulfillment, so you should reason about high write volume, consistency for financial data, and multi-tenant scale with concrete estimates and clear trade-offs.",
+    framework: { name: "B2B systems design", summary: "Estimate load and data, model multi-seller catalog and orders, then defend consistency, idempotency, and scaling choices for commerce and credit flows." },
+    metaKeywords: ["udaan software engineer interview", "udaan system design india", "udaan swe interview 2026", "udaan technical interview"],
+    sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "How many rounds does the Udaan software engineer interview have?",
+        a: "Typically 4 to 5 rounds: a DSA screen or online assessment, one or two coding rounds, a system design round for mid and senior levels, and a hiring manager round.",
+      },
+      {
+        q: "What system design questions does Udaan ask?",
+        a: "B2B commerce and logistics problems: multi-seller catalog and pricing, order and inventory management, credit or lending flows, and last-mile fulfillment. Reliability and consistency for financial data are weighted heavily.",
+      },
+      {
+        q: "What DSA topics appear in Udaan interviews?",
+        a: "Medium to hard problems on arrays, strings, hashmaps, trees, graphs, and dynamic programming, with strong complexity analysis. Backend candidates also face concurrency, database, and caching questions.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: backend or distributed-systems experience and strong fundamentals help; referrals improve visibility",
+      "DSA screen or online assessment: medium to hard problems and problem solving",
+      "Coding rounds: data structures, complexity, and clean, correct implementation",
+      "System design round: B2B commerce, credit, and logistics architecture at scale",
+      "Hiring manager round: ownership, trade-off reasoning, and team fit",
+    ],
+    interviewRounds: [
+      "DSA screen or online assessment (60 to 90 min): medium to hard problems on arrays, strings, hashmaps, trees, graphs, and DP.",
+      "Coding rounds (45 to 60 min each): implement solutions with edge cases and discuss time and space complexity.",
+      "System design (60 min): design multi-seller catalog, order and inventory, or credit flows at scale; defend consistency, idempotency, and scaling trade-offs.",
+      "Hiring manager (30 to 45 min): ownership stories, trade-off reasoning, and fit for a B2B supply-chain platform.",
+    ],
+  },
+  {
+    slug: "pwc-consultant-interview-questions",
+    searchPhrase: "PwC India Consultant Interview Questions 2026",
+    company: "pwc", roleFamily: "consultant", focus: "case-study",
+    intro: "PwC India hires consultants into Advisory and Management Consulting practices through a loop that blends a case study, behavioural fit, and practice-specific technical depth. Cases lean practical and industry-flavoured rather than pure guesstimate: expect market entry, cost reduction, digital transformation, or operating-model problems tied to a real sector like BFSI, retail, or public sector. PwC weights structure, hypothesis-driven thinking, and business judgement over exotic frameworks; interviewers want you to size the problem, prioritise, and land a clear recommendation with a first-cut number. Behavioural rounds probe teamwork, client-handling maturity, and alignment with the firm's values.",
+    framework: { name: "Issue Tree", summary: "Clarify the objective, break the problem into MECE branches, hypothesise, test with data, then recommend." },
+    metaKeywords: ["pwc india consultant interview", "pwc case study interview india", "pwc advisory interview questions", "pwc interview 2026"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds are in a PwC India consultant interview?",
+        a: "Typically 2 to 4 rounds: an aptitude or online assessment, one or two case plus technical interviews with managers, and a partner or director fit round. Campus loops can compress this into a single day.",
+      },
+      {
+        q: "What kind of cases does PwC ask?",
+        a: "Practical, industry-anchored cases: market entry, cost reduction, digital transformation, or operating-model design tied to sectors like BFSI, retail, or public sector. Structure and a clear recommendation matter more than a fancy framework.",
+      },
+      {
+        q: "Does PwC test technical skills for consultants?",
+        a: "Yes, depending on the practice. Advisory candidates may face questions on Excel, data analysis, SQL, or domain concepts (finance, risk, tech), alongside the case and behavioural discussion.",
+      },
+    ],
+    recruitmentSteps: [
+      "Application and resume screen: relevant internships, GPA, and practice fit are weighed",
+      "Online assessment: aptitude, numerical reasoning, and sometimes a situational judgement test",
+      "Case plus technical interviews: one or two rounds with managers covering a business case and domain depth",
+      "Partner or director fit round: values alignment, client maturity, and motivation for PwC",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): aptitude, numerical and verbal reasoning, sometimes a situational judgement component. This is an early filter.",
+      "Case plus Technical (45-60 min each, one or two rounds): a practical, industry-flavoured case (market entry, cost reduction, transformation) plus questions on Excel, data, or your domain. Show MECE structure and a first-cut number.",
+      "Partner or Director Fit (30-45 min): behavioural and values-based discussion covering teamwork, client-handling, and why PwC. Prepare 2-3 STAR stories.",
+    ],
+  },
+  {
+    slug: "bain-consultant-interview-questions",
+    searchPhrase: "Bain India Consultant Interview Questions 2026",
+    company: "bain", roleFamily: "consultant", focus: "case-study",
+    intro: "Bain India runs one of the most demanding consulting loops in the country, with rounds split between rigorous case interviews and a distinctive fit conversation. Bain's cases are almost always interviewer-led: they hand you a real client-style problem (profitability, market sizing, M&A, growth strategy) and expect you to drive the structure, do clean mental math, and continually synthesise your findings back to the question. What sets Bain apart is the emphasis on the answer-first mindset and commercial instinct: interviewers want you to form early hypotheses, prioritise the branches that move the needle, and state a crisp recommendation. The fit round is not a formality; Bain screens hard for the 'A Bainie never lets another Bainie fail' collaborative culture.",
+    framework: { name: "Answer-First (Hypothesis-Led)", summary: "State a hypothesis up front, structure MECE branches to test it, drive the math, then synthesise a clear recommendation." },
+    metaKeywords: ["bain india consultant interview", "bain case interview india", "bain associate consultant interview", "bain interview 2026"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds does the Bain India consultant interview have?",
+        a: "Usually two rounds, each with two interviews that combine a case and fit discussion. Later rounds are led by more senior interviewers (managers and partners), and campus loops often run in a single day.",
+      },
+      {
+        q: "Are Bain cases candidate-led or interviewer-led?",
+        a: "Bain cases are typically interviewer-led: the interviewer guides you through a structured problem while you drive the analysis, math, and synthesis. You are still expected to structure the problem and form hypotheses.",
+      },
+      {
+        q: "How important is the fit interview at Bain?",
+        a: "Very important. Bain screens seriously for cultural fit and its collaborative 'never let a Bainie fail' ethos. Prepare structured stories on leadership, teamwork, and impact, not just case skills.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume and cover letter screen: strong academics, leadership, and problem-solving signals",
+      "Aptitude or online test: numerical and logical reasoning (varies by campus or lateral track)",
+      "Round 1 interviews: two case plus fit interviews with consultants and managers",
+      "Round 2 interviews: two case plus fit interviews with managers and partners",
+    ],
+    interviewRounds: [
+      "Round 1 (two interviews, 45 min each): interviewer-led cases (profitability, market sizing, growth) plus fit questions. Show clean math, MECE structure, and hypothesis-led thinking.",
+      "Round 2 (two interviews, 45 min each): tougher cases with managers and partners, deeper commercial judgement, and a more searching fit conversation on leadership and culture.",
+      "Fit and Partner Discussion (within the rounds): behavioural stories on impact and teamwork, plus a genuine two-way conversation about why Bain and why consulting.",
+    ],
+  },
+  {
+    slug: "practo-software-engineer-interview-questions",
+    searchPhrase: "Practo Software Engineer Interview Questions India 2026",
+    company: "practo", roleFamily: "swe", focus: "technical",
+    intro: "Practo, the Bengaluru-based digital healthcare platform, runs a software engineering loop that starts with a DSA-heavy coding screen and moves into practical problem solving and system design. Expect the online or first technical round to focus on data structures and algorithms at LeetCode medium level: arrays, strings, hashmaps, trees, and dynamic programming show up often. Later rounds go deeper on how you build real systems: API design, database modelling, and low-level design for features like appointment booking, doctor discovery, or consultation flows. Because Practo handles sensitive health data at consumer scale, interviewers care about correctness, edge cases, and reliability, not just a passing solution. Behavioural and hiring-manager rounds probe ownership and how you reason about trade-offs under real constraints.",
+    framework: { name: "Clarify-Design-Test", summary: "Clarify requirements and edge cases, design the data structures and API, then walk through complexity and test cases before coding." },
+    metaKeywords: ["practo software engineer interview", "practo sde interview india", "practo coding interview questions", "practo interview 2026"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds are in a Practo software engineer interview?",
+        a: "Commonly 3 to 5 rounds: an online or first-round DSA coding screen, one or two deeper technical rounds (DSA plus low-level or system design), and a hiring-manager or behavioural round.",
+      },
+      {
+        q: "What coding topics does Practo focus on?",
+        a: "Data structures and algorithms at LeetCode medium level: arrays, strings, hashmaps, trees and graphs, and dynamic programming. Later rounds add API design, database modelling, and low-level design of real product features.",
+      },
+      {
+        q: "Does Practo ask system design questions?",
+        a: "Yes, especially for mid and senior roles. Expect low-level and system design around Practo-style features such as appointment booking, doctor search, and consultation flows, with attention to reliability and data correctness.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: relevant projects, internships, and coding fundamentals",
+      "Online or first-round coding test: 1-2 DSA problems at medium difficulty",
+      "Technical interviews: DSA plus low-level or system design over one or two rounds",
+      "Hiring-manager and HR round: ownership, trade-off reasoning, and culture fit",
+    ],
+    interviewRounds: [
+      "Coding Screen (60-90 min): 1-2 DSA problems (arrays, strings, hashmaps, trees, DP) at LeetCode medium level. Correctness and complexity analysis are the filter.",
+      "Technical Deep Dive (45-60 min, one or two rounds): live problem solving plus low-level or system design for a real feature like appointment booking or doctor discovery, with API and database modelling.",
+      "Hiring Manager and HR (30-45 min): ownership stories, how you handle trade-offs and edge cases, and fit with Practo's mission and team.",
+    ],
+  },
+  {
+    slug: "apollo-247-software-engineer-interview-questions",
+    searchPhrase: "Apollo 24/7 Software Engineer Interview Questions India 2026",
+    company: "apollo-247", roleFamily: "swe", focus: "technical",
+    intro: "Apollo 24/7, the digital health arm of Apollo Hospitals, hires software engineers to build a high-traffic platform spanning online consultations, pharmacy, and diagnostics. The interview loop opens with a DSA and coding round at medium difficulty and progresses into practical engineering: API and database design, low-level design, and system design scaled to a consumer healthcare app. Because the platform touches e-pharmacy orders, lab bookings, and doctor consultations, interviewers probe how you handle concurrency, inventory, order state machines, and data reliability rather than only algorithmic tricks. Expect stack-specific depth for the role you apply to (backend often Java or Node with SQL and NoSQL, frontend on React), plus a hiring-manager round on ownership and how you ship under real deadlines.",
+    framework: { name: "Requirements-to-Design", summary: "Nail functional and non-functional requirements, model the data and APIs, then reason about scale, consistency, and failure cases." },
+    metaKeywords: ["apollo 247 software engineer interview", "apollo 247 sde interview india", "apollo 247 coding interview", "apollo 24/7 interview 2026"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds are in an Apollo 24/7 software engineer interview?",
+        a: "Typically 3 to 5 rounds: a DSA or coding screen, one or two technical rounds covering low-level and system design plus stack depth, and a hiring-manager or HR round.",
+      },
+      {
+        q: "What does Apollo 24/7 test beyond DSA?",
+        a: "API and database design, low-level design, and system design for consumer healthcare features such as e-pharmacy orders, lab test bookings, and online consultations, with focus on concurrency, order state, and data reliability.",
+      },
+      {
+        q: "What tech stack should I prepare for at Apollo 24/7?",
+        a: "It varies by role. Backend candidates often see Java or Node.js with SQL and NoSQL databases; frontend candidates are tested on React and JavaScript fundamentals. Confirm the stack in the job description before you prep.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: projects, internships, and relevant stack experience",
+      "Coding or DSA screen: 1-2 medium-difficulty problems, often timed online",
+      "Technical rounds: low-level design, system design, and role-specific stack depth",
+      "Hiring-manager and HR round: ownership, delivery under deadlines, and culture fit",
+    ],
+    interviewRounds: [
+      "Coding Screen (60-90 min): 1-2 DSA problems at medium level (arrays, strings, hashmaps, trees, DP). Passing tests plus clean complexity reasoning is expected.",
+      "Technical Design (45-60 min, one or two rounds): low-level and system design for real features like e-pharmacy orders or lab bookings, covering data modelling, concurrency, and order state machines, plus stack-specific questions.",
+      "Hiring Manager and HR (30-45 min): ownership stories, shipping under deadlines, and alignment with Apollo's healthcare mission.",
+    ],
+  },
+  {
+    slug: "metropolis-software-engineer-interview-questions",
+    searchPhrase: "Metropolis Healthcare Software Engineer Interview Questions India 2026",
+    company: "metropolis", roleFamily: "swe", focus: "technical",
+    intro: "Metropolis Healthcare, one of India's largest diagnostics chains, hires software engineers to build the systems behind lab test ordering, sample tracking, report delivery, and its consumer and B2B apps. The interview loop is technical-first: expect a DSA and coding round at easy-to-medium difficulty, then rounds on practical engineering such as API design, SQL and database modelling, and role-specific stack depth. Because the domain covers lab operations, patient reports, and integrations with labs and hospitals, interviewers value correctness, data integrity, and clean design over algorithmic flair. Prepare to discuss real projects end to end: how you modelled the data, handled edge cases, and shipped. A hiring-manager round then covers ownership, collaboration with non-engineering teams, and fit with a healthcare-operations context.",
+    framework: { name: "Data-First Design", summary: "Model the entities and relationships first, define clean APIs and queries, then handle edge cases and data-integrity constraints." },
+    metaKeywords: ["metropolis healthcare software engineer interview", "metropolis sde interview india", "metropolis coding interview", "metropolis interview 2026"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      {
+        q: "How many rounds are in a Metropolis Healthcare software engineer interview?",
+        a: "Usually 3 to 4 rounds: a coding or DSA screen, one or two technical rounds on API, SQL, and stack depth, and a hiring-manager or HR round on fit and ownership.",
+      },
+      {
+        q: "What does Metropolis test in technical rounds?",
+        a: "DSA at easy-to-medium level, plus practical engineering: API design, SQL and database modelling, and role-specific stack questions. Expect a walk-through of a real project covering data design and edge cases.",
+      },
+      {
+        q: "Is domain knowledge needed for Metropolis interviews?",
+        a: "Deep diagnostics knowledge is not required, but understanding data integrity, report accuracy, and integrations across labs and hospitals helps you frame design answers well in a healthcare-operations context.",
+      },
+    ],
+    recruitmentSteps: [
+      "Resume screen: relevant projects, internships, and stack experience",
+      "Coding or DSA screen: 1-2 easy-to-medium problems",
+      "Technical rounds: API design, SQL and database modelling, and role-specific stack depth",
+      "Hiring-manager and HR round: ownership, cross-team collaboration, and culture fit",
+    ],
+    interviewRounds: [
+      "Coding Screen (45-60 min): 1-2 DSA problems at easy-to-medium level. Correct, clean solutions with basic complexity reasoning are the bar.",
+      "Technical Deep Dive (45-60 min, one or two rounds): API design, SQL and database modelling, and stack-specific questions, plus an end-to-end walk-through of a real project and its data design.",
+      "Hiring Manager and HR (30-45 min): ownership, collaboration with lab and operations teams, and fit with Metropolis's diagnostics context.",
+    ],
+  },
 ];
 
 /** Lookup helper. */
