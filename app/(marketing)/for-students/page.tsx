@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Campus Placement Interview Preparation Guide India 2026 | HireStepX",
-    description: "Complete campus placement guide for Indian freshers. AI mock interviews for 7 top service companies.",
+    description: "Complete campus placement guide for Indian freshers. AI mock interviews for the top service IT, product, and consulting companies.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
