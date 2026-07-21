@@ -5057,7 +5057,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80",
     heroAlt: "Business analyst reviewing data with stakeholders",
-    datePublished: "2026-07-22",
+    datePublished: "2026-07-21",
     intro: "Business analyst roles in India bridge the gap between business stakeholders and technical teams. The interview tests a specific combination of analytical skills, communication ability, and domain knowledge: and it is quite different from either a pure technical or pure HR interview. This guide covers the full picture.",
     sections: [
       { heading: "What Indian BA Interviews Test", content: "BA interviews in India vary significantly between IT service companies (TCS, Infosys, Wipro), product companies (Flipkart, Swiggy), and consulting firms (Deloitte, Accenture).\n\nIT service BA roles: requirements gathering, BRD/FRD documentation, UAT coordination, stakeholder management. SQL is commonly tested. Product company BA roles (often called 'product analyst' or 'operations analyst'): data-driven problem-solving, funnel analysis, process optimisation. Consulting BA roles: process mapping, change management, client communication, case-style analytical problems. Know which type of role you are targeting: the preparation differs significantly." },
@@ -5086,7 +5086,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=1200&q=80",
     heroAlt: "Professional negotiating salary over a desk",
-    datePublished: "2026-07-22",
+    datePublished: "2026-07-21",
     intro: "Most Indian professionals do not negotiate after receiving an offer letter: they accept or decline. This is one of the most expensive career mistakes you can make. A 10-minute conversation can mean ₹2–5 lakh more per year, compounding over your entire career. This guide gives you the exact words, timing, and fallback strategies.",
     sections: [
       { heading: "Why Most Indians Do Not Negotiate (and Why You Should)", content: "There are three common reasons Indian candidates accept the first offer: fear of the offer being withdrawn, cultural discomfort with direct negotiation, and not knowing their market rate. Here is the reality:\n\nOffer withdrawal is extremely rare. Hiring managers have invested weeks in your selection: withdrawing an offer because you asked for more is costly and embarrassing for them. It essentially never happens for polite, reasonable counter-offers. Market rate data is available: Glassdoor, LinkedIn Salary, AmbitionBox, and direct conversations with peers in similar roles give you anchoring data. The company expects negotiation: most offers are made with a 5–15% buffer specifically to allow for negotiation." },
@@ -5115,7 +5115,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=1200&q=80",
     heroAlt: "List of top-paying companies displayed on a recruitment website",
-    datePublished: "2026-07-22",
+    datePublished: "2026-07-21",
     intro: "Understanding salary benchmarks is not just useful for negotiation: it helps you set realistic targets, evaluate offer letters accurately, and make informed career decisions. This guide covers what Indian IT companies actually pay in 2026, from fresher to senior level, across FAANG, Indian unicorns, and service IT.",
     sections: [
       { heading: "FAANG India: The Top Tier", content: "FAANG companies in India offer the highest base salaries in Indian tech, with significant stock components.\n\nGoogle India: SWE-2 (entry level) ₹35–55 LPA base + ₹40–80 LPA RSU/year; SWE-3 ₹55–80 LPA base. Amazon India (SDE-1): ₹28–45 LPA total; (SDE-2): ₹55–85 LPA total including RSU. Meta India: ₹50–80 LPA total for E4 (entry post-campus); compensation weighted toward stock. Microsoft India: SDE-1 ₹20–35 LPA; SDE-2 ₹35–60 LPA; Principal SDE ₹80–1.2 Cr. Apple India (Bengaluru): ICT2 ₹35–55 LPA; ICT3 ₹60–90 LPA. Note: FAANG stock values fluctuate: base salary is the more stable component for financial planning." },
@@ -5144,7 +5144,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1200&q=80",
     heroAlt: "Contemporary open-plan tech office with standing desks",
-    datePublished: "2026-07-23",
+    datePublished: "2026-07-21",
     intro: "Tech Mahindra is one of India's largest IT service companies, operating at the intersection of telecom, manufacturing, and digital transformation. Its hiring process has distinctive elements: particularly the SmartHire coding assessment and the emphasis on communication skills in the HR round.",
     sections: [
       { heading: "Tech Mahindra Hiring Process Overview", content: "Tech Mahindra's campus and off-campus hiring runs through a four-stage process.\n\nStage 1: SmartHire online test (90 minutes): Aptitude (20Q), Verbal (20Q), Logical Reasoning (20Q), and Coding (2 problems). Stage 2: Technical interview (30–45 min): CS fundamentals and project discussion. Stage 3: Communication assessment: a distinctive step where your verbal English communication is evaluated, often via a structured conversation or group exercise. Stage 4: HR interview. The communication assessment reflects Tech Mahindra's heavy presence in telecom and client-facing projects where English communication is business-critical." },
@@ -5173,7 +5173,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&q=80",
     heroAlt: "Consultant presenting market analysis slides to a senior client",
-    datePublished: "2026-07-23",
+    datePublished: "2026-07-21",
     intro: "McKinsey's India offices: in Mumbai, Delhi, Bengaluru, Chennai, and Gurugram: recruit from the IIMs, ISB, XLRI, and increasingly from IITs and global graduate schools. The selection process is one of the most rigorous in the Indian job market. This guide breaks down exactly what to expect and how to prepare.",
     sections: [
       { heading: "McKinsey India Hiring Overview", content: "McKinsey hires in India across two main tracks.\n\nConsultant (post-MBA): primary hiring from IIM A/B/C, ISB, and select global MBA programmes. The application cycle aligns with MBA campus placement seasons (October–December). Business Analyst (post-undergrad/post-master's): hired from IIT, BITS Pilani, Delhi University, SRCC, and increasingly from engineering backgrounds. BA roles are a 2-year programme before MBA or promoted to Consultant. The interview process is identical for both tracks: Problem Solving Test + two rounds of case + PEI interviews." },
@@ -5202,7 +5202,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200&q=80",
     heroAlt: "Professional discussing notice period negotiation",
-    datePublished: "2026-07-23",
+    datePublished: "2026-07-21",
     intro: "The notice period is one of the biggest friction points in Indian job transitions. Three-month notice periods have become the norm at IT service companies and startups alike, and mishandling the transition can cost you a job offer or burn a professional bridge. This guide gives you a complete playbook.",
     sections: [
       { heading: "Understanding Your Legal Notice Period Obligations", content: "Your notice period obligations come from your appointment letter or employment contract: not from company policy documents.\n\nCheck your appointment letter: look for clauses about notice period duration and buy-out options. In India, there is no central law mandating a specific notice period length: it is a contractual matter between employer and employee. Most common notice periods: 1 month (startups, early-career roles), 2 months (mid-level roles), 3 months (senior roles, IT service companies, PSUs). Probation period notice: many contracts have a shorter notice period during probation (typically 1 month or even 2 weeks): check this if you are within your first 6 months." },
@@ -5231,7 +5231,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1522252234503-e356ba5e2c12?w=1200&q=80",
     heroAlt: "Oracle database product interface on an enterprise server console",
-    datePublished: "2026-07-24",
+    datePublished: "2026-07-21",
     intro: "Oracle India: with major development centres in Hyderabad and Bengaluru: is one of the most important employers for database engineers, Java developers, and cloud infrastructure engineers in the country. The interview process is rigorous and has some distinctive patterns worth knowing.",
     sections: [
       { heading: "Oracle India: What They Build", content: "Understanding what Oracle builds helps you contextualise every interview question.\n\nOracle Hyderabad (Fusion Development Centre): core development of Oracle Fusion ERP, HCM, and CX cloud suite: massive Java and database engineering codebase. Oracle Bengaluru (MySQL, OCI): MySQL server development, Oracle Cloud Infrastructure (OCI) networking and compute. Oracle India also handles significant Java platform development (core Java libraries, JVM) and Oracle Database kernel work: some of the most impactful database engineering in the world. The interview difficulty is accordingly high: these are hard engineering problems." },
@@ -5260,7 +5260,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
     heroAlt: "IBM India office building",
-    datePublished: "2026-07-24",
+    datePublished: "2026-07-21",
     intro: "IBM India operates several distinct business units that hire very differently: IBM Consulting (formerly GBS), IBM Technology (cloud, AI, infrastructure), and IBM Research India. Understanding which unit you are targeting determines your entire preparation approach.",
     sections: [
       { heading: "IBM India Business Units and Who They Hire", content: "IBM's India operations span multiple distinct businesses.\n\nIBM Consulting (Bengaluru, Delhi, Mumbai): management consulting and technology services. Hires MBAs and engineers for client delivery, process transformation, and digital projects. Similar interview style to Deloitte USI. IBM Technology (Hyderabad, Pune): cloud infrastructure, AI platform, security, and automation. More technical interview depth. IBM Research India (Bengaluru): research roles for PhD and high-performing master's graduates: AI, NLP, quantum computing. IBM Systems (Pune): infrastructure hardware and software development. Each has a different salary range and interview style: clarity on which business unit you are interviewing for is step one." },
@@ -5291,7 +5291,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1661956602116-aa51bc54a5c7?w=1200&q=80",
     heroAlt: "Salesforce CRM dashboard on a business laptop screen",
-    datePublished: "2026-07-24",
+    datePublished: "2026-07-21",
     intro: "Salesforce is one of the most in-demand skill sets in Indian IT right now: companies like TCS, Wipro, Accenture, Capgemini, and Cognizant all have large Salesforce practices, and independent Salesforce consulting firms are hiring aggressively. Whether you are targeting developer, admin, or architect roles, understanding what Indian Salesforce interviews actually ask is the fastest path to an offer.",
     sections: [
       { heading: "Salesforce Role Types and What They Test", content: "Salesforce hiring in India falls into four main role types, each with a different interview focus.\n\nSalesforce Developer: Apex (server-side), LWC (Lightning Web Components for UI), SOQL/SOSL queries, REST/SOAP integrations. The most common technical role in India. Salesforce Admin: configuration over code: objects, fields, workflows, validation rules, profiles, permission sets, reports, dashboards. Certification (Admin 201) is often a minimum requirement. Salesforce Architect: CTA (Certified Technical Architect) pathway: data modelling, enterprise integration, governor limits, org strategy. Limited hiring but highest paying. Salesforce Consultant: process consulting + configuration for specific clouds (Sales Cloud, Service Cloud, Field Service). Domain knowledge (banking, retail) is valued alongside platform knowledge." },
@@ -5320,7 +5320,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200&q=80",
     heroAlt: "UX designer working on wireframes and prototypes",
-    datePublished: "2026-07-25",
+    datePublished: "2026-07-21",
     intro: "UI/UX design interviews in India have matured significantly: top product companies like Swiggy, Razorpay, CRED, and PhonePe now run structured interview processes with portfolio reviews, design critiques, take-home assignments, and culture fit interviews. This guide covers the full picture.",
     sections: [
       { heading: "How Indian Design Interviews Are Structured", content: "The typical product company design interview process in India runs four to five stages.\n\nStage 1: Portfolio screen (async): the recruiter reviews your portfolio (Behance, Dribbble, or personal site) for visual quality, problem-solving evidence, and case study depth. Stage 2: Intro call: background discussion, understanding your process, and a quick assessment of communication quality. Stage 3: Take-home assignment: 48–72 hours to redesign a given feature or solve a design problem. Stage 4: Portfolio deep dive (live): walk the interviewer through 2 case studies, defend decisions under questioning. Stage 5: Design critique: given a live product (often the interviewer's own app), identify 3–5 UX problems and propose improvements on the spot.\n\nService IT company design roles (Infosys Design, TCS DigiAx, Wipro Design): focus is heavier on UI deliverables, Figma proficiency, and less on research methodology." },
@@ -5349,7 +5349,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
     heroAlt: "Machine learning model training metrics displayed on a dashboard",
-    datePublished: "2026-07-25",
+    datePublished: "2026-07-21",
     intro: "Data science interviews in India test a specific and sometimes inconsistent blend of skills: statistics, machine learning, SQL, Python, and business problem framing all in a single process. Companies like Flipkart, Meesho, Swiggy, Razorpay, and CRED have well-defined DS interview loops. This guide tells you what each stage actually tests.",
     sections: [
       { heading: "What Indian Data Science Interviews Actually Test", content: "The skill mix in Indian DS interviews depends heavily on role type and company stage.\n\nProduct analytics DS (Swiggy, Zomato, CRED, Meesho): heavy on SQL, A/B testing, and product metric interpretation. ML experience is nice-to-have, not required. ML engineering DS (Flipkart, Amazon, PhonePe): end-to-end ML pipeline: feature engineering, model selection, productionisation, model monitoring. Research DS (Microsoft Research India, Google DeepMind India, IBM Research): novel algorithm design, paper-level depth, typically requires a strong MS/PhD background. The mistake most Indian candidates make: preparing for an ML engineering role when applying for a product analytics role, or vice versa. Read the job description carefully for which skills are prioritised." },
@@ -5378,7 +5378,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200&q=80",
     heroAlt: "Professional networking at a tech event in India",
-    datePublished: "2026-07-25",
+    datePublished: "2026-07-21",
     intro: "Employee referrals bypass the ATS (Applicant Tracking System) black hole and get your resume in front of a human recruiter: at companies like Flipkart, Google, Amazon, and Razorpay, referred candidates are 5–10x more likely to get an interview than cold applications. This guide tells you exactly how to get them.",
     sections: [
       { heading: "Why Referrals Work Differently at Indian Tech Companies", content: "The Indian tech job market has a referral culture that is stronger than most people realise.\n\nAt most Indian product companies: referred candidates skip or get priority in the initial resume screen. Referrers receive ₹50,000–3,00,000 per successful hire (company-dependent): so employees are genuinely incentivised to refer strong candidates. ATS reality: at companies receiving 10,000+ applications per month (Flipkart, Amazon India, Swiggy), the ATS often filters out 90% of applications before a human sees them. A referral bypasses this entirely. Even at companies that do not formally acknowledge referral priority, a direct message from an employee to the hiring team gives your application a human champion." },
@@ -5407,7 +5407,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80",
     heroAlt: "Campus hire orientation session in a modern technology company",
-    datePublished: "2026-07-25",
+    datePublished: "2026-07-21",
     intro: "Cognizant hires thousands of freshers every year under its GenC (Generation Cognizant) programme, making it one of the most accessible IT service company entry points for Indian graduates. The process has evolved significantly: the new GenC and GenC Elevate tracks have distinct profiles worth understanding before you begin.",
     sections: [
       { heading: "GenC vs GenC Elevate: Two Tracks", content: "Cognizant runs two distinct fresher programmes, and confusing them leads to misaligned preparation.\n\nGenC (standard track): core IT services roles, primarily maintenance and support of existing client systems. Starting salary: ₹4–4.5 LPA. Selection: aptitude test + HR round (no separate coding test for many campuses). GenC Elevate (higher track): digital, cloud, and analytics roles. Starting salary: ₹5–5.5 LPA. Selection: aptitude test + coding test + technical interview + HR round. GenC Pro (for select campuses): the highest-paying track at ₹6.5–8 LPA, targeting premium engineering colleges. Higher coding difficulty and system design basics." },
@@ -5436,7 +5436,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=1200&q=80",
     heroAlt: "Accenture India office in a modern tech park",
-    datePublished: "2026-07-26",
+    datePublished: "2026-07-21",
     intro: "Accenture is one of the largest employers of fresh graduates in India, hiring over 50,000 people annually. Its interview process has a distinctive structure: especially the Communication Test that most candidates underestimate. This guide covers every stage for campus freshers and lateral hires.",
     sections: [
       { heading: "Accenture Campus Selection Process", content: "Accenture's campus process for freshers in India runs through five stages.\n\nStage 1: Cognitive and Technical Assessment (online, 75 min). Stage 2: Communication Test (20 min, asynchronous video). Stage 3: Technical interview (30 min, for select tracks). Stage 4: HR interview. The process is designed to be completed in a single day for campus drives, though off-campus candidates may go through it spread over 1–2 weeks. Two hiring tracks: ASE (Application/Software Engineering): technical and coding focused; ADM (Application Development & Maintenance): more operational, lighter coding requirement." },
@@ -5465,7 +5465,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1563237023-b1e970c6e0d3?w=1200&q=80",
     heroAlt: "Fresh graduate holding a polished resume in both hands",
-    datePublished: "2026-07-26",
+    datePublished: "2026-07-21",
     intro: "Your resume is the first filter in the Indian campus and off-campus placement process: and most fresher resumes fail before a human ever reads them. This guide tells you what ATS systems are looking for, what Indian recruiters look at in the first 10 seconds, and how to make your fresher resume work for you.",
     sections: [
       { heading: "The One-Page Rule for Freshers", content: "Indian recruiters processing hundreds of applications per day spend 6–10 seconds on an initial resume scan. One page is non-negotiable for freshers with under 2 years of experience.\n\nOne page forces you to prioritise: everything on the resume is there because it matters. Two pages with padding (irrelevant courses, generic hobbies, every subject studied) reads as poor judgment. Exception: PhD students and research-focused roles: up to 2 pages is acceptable for academic output. Format: clean single-column or two-column layout. Do not use templates with heavy graphics, sidebars with skill bars, or photo headers: Indian ATS systems often fail to parse these. Standard fonts: Calibri, Georgia, or Helvetica 10–11pt body, 12–14pt headings." },
@@ -5494,7 +5494,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1200&q=80",
     heroAlt: "Young professional weighing career options between startup and MNC",
-    datePublished: "2026-07-26",
+    datePublished: "2026-07-21",
     intro: "The startup vs MNC debate is one of the most common career questions for Indian engineers and business professionals: and the right answer is almost never the same for two people. This guide gives you a structured framework to make the decision based on your career stage, risk tolerance, and goals.",
     sections: [
       { heading: "What the Comparison Actually Looks Like in 2026", content: "The Indian landscape has shifted significantly since 2022: the context for this decision has changed.\n\nMNCs in India (Google, Microsoft, Amazon, Goldman, Deloitte): offer stability, structured career ladders, global exposure, and strong brand value. Salary premium over service IT is real but narrowing as product companies grow. Indian product companies (Flipkart, Swiggy, Razorpay, Meesho): increasingly offering FAANG-level salaries, more ownership, and faster decision-making than MNCs. These are a middle ground that many treat as if they were startups: they are not. Early-stage startups (Seed–Series B): genuine equity upside, high ownership, fast learning, but significant risk of failure and compensation often below market. Late-stage startups (Series C+, pre-IPO): best of both worlds if the company succeeds: but the 'startup energy' often diminishes at this stage." },
@@ -5523,7 +5523,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1528901166007-3784c7dd3e10?w=1200&q=80",
     heroAlt: "Engineering candidate preparing notes before a Google video interview",
-    datePublished: "2026-07-27",
+    datePublished: "2026-07-21",
     intro: "Google India hires around 2,000–3,000 engineers per year in Bengaluru and Hyderabad: and the vast majority of these are off-campus lateral hires, not IIT campus placements. This guide is specifically for the off-campus track: how to get noticed, the full interview process, and how to actually prepare for it.",
     sections: [
       { heading: "Getting Your Application Noticed", content: "The Google India application funnel is highly competitive: getting past the resume screen requires intentional strategy.\n\nEmployee referral: the highest-probability entry point. An employee referral at Google skips ATS screening and goes directly to a recruiter. One warm connection at Google India is worth more than 100 cold applications. Google's recruiting team: Google's internal sourcing team actively searches LinkedIn for candidates with specific skill keywords. Make sure your LinkedIn headline, about section, and skills mention the technologies Google teams use (Go, Java, Python, C++, Kubernetes, Borg/Kubernetes, distributed systems). Direct application: careers.google.com: Google uses its own ATS. Customise your resume per role; do not submit the same resume to every Google opening. Open-source contributions: visible contributions to Google-maintained projects (TensorFlow, Kubernetes, gVisor, Abseil) are noticed by Google recruiters." },
@@ -5552,7 +5552,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1546410531-bb4cdb48add7?w=1200&q=80",
     heroAlt: "Student taking an online InfyTQ certification test on laptop",
-    datePublished: "2026-07-27",
+    datePublished: "2026-07-21",
     intro: "Infosys InfyTQ is the official skills and assessment platform used for Infosys campus hiring in India. Understanding how InfyTQ works and the difference between the SP (Specialist Programmer) and SE (Systems Engineer) tracks is the starting point for every Infosys aspirant.",
     sections: [
       { heading: "SE vs SP: Two Very Different Tracks", content: "Infosys offers two distinct fresher tracks with significantly different salary packages and interview difficulty.\n\nSystems Engineer (SE) track: salary ₹3.6 LPA. Standard selection via aptitude + coding (via InfyTQ). Most campus hires go through this track. Roles: general IT service delivery: development, testing, maintenance. Specialist Programmer (SP) track: salary ₹6.5–9 LPA. Higher eligibility bar (CGPA 8.0+ from NIRF-ranked colleges or premium campuses). Additional rounds: advanced coding test + technical interview. Roles: digital, cloud, AI/ML, and product engineering projects. The SP track requires a fundamentally different preparation level: do not prepare for one track and apply to the other." },
@@ -5581,7 +5581,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&q=80",
     heroAlt: "Indian engineer contemplating higher education options",
-    datePublished: "2026-07-27",
+    datePublished: "2026-07-21",
     intro: "The post-graduation decision is one of the most consequential choices Indian engineers make: and it is often made with poor information. This guide compares GATE (M.Tech), MBA (IIM/ISB), and MS abroad (USA/Europe/Canada) honestly across career outcomes, costs, and the type of career each path enables.",
     sections: [
       { heading: "Who Each Path Is Actually For", content: "The three paths serve fundamentally different career objectives: not everyone should pursue higher education at all.\n\nGATE and M.Tech: best for engineers who want to go deeper technically, transition into research roles, join PSUs (BHEL, ONGC, NTPC), or teach at the college level. The PSU track through GATE provides excellent job security and a structured career with government benefits. MBA from IIM/ISB: best for engineers who want to shift into management, strategy, consulting, or business leadership roles. The ROI is highest for those targeting IIM A/B/C or ISB: otherwise the cost-to-outcome ratio is unfavourable. MS abroad (USA/Canada/Europe/UK): best for engineers targeting deep technical expertise in AI/ML, research careers at top companies, or a path to working and settling abroad. Increasingly required for research scientist and ML research roles at global tech companies." },
@@ -5610,7 +5610,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&q=80",
     heroAlt: "Person taking deep breath to calm interview anxiety",
-    datePublished: "2026-07-28",
+    datePublished: "2026-07-21",
     intro: "Interview anxiety is one of the most underacknowledged barriers for Indian job seekers: candidates who know the content deeply fail interviews because their anxiety prevents them from demonstrating what they know. This guide covers practical, evidence-based techniques to manage anxiety and perform at your best.",
     sections: [
       { heading: "Why Interview Anxiety Is Especially Common in India", content: "Indian job seekers face a specific set of pressure sources that amplify interview anxiety beyond what most global resources address.\n\nHigh-stakes single-shot campus placement: many freshers feel their entire career depends on the company they get placed at in their college's annual placement drive: creating intense performance pressure. Family expectations: first-generation graduates, engineers from semi-urban families, or children of working-class parents carry the weight of family pride into interviews: any perceived failure feels personal beyond the job. Competition density: 3,000 freshers competing for 100 openings at a campus drive creates visible, unavoidable social comparison pressure. Acknowledgement: recognising these as real pressures rather than personal weaknesses is the first step. Anxiety in this context is a normal human response, not a character flaw." },
@@ -5639,7 +5639,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&q=80",
     heroAlt: "Developer working on blockchain smart contract code",
-    datePublished: "2026-07-28",
+    datePublished: "2026-07-21",
     intro: "Blockchain and Web3 development roles in India grew significantly in 2024–2026 despite crypto market volatility: Indian companies like CoinDCX, CoinSwitch, Polygon (now AggLayer), and multiple fintech firms actively hire blockchain engineers. This guide covers what Indian Web3 interviews actually test.",
     sections: [
       { heading: "Blockchain Fundamentals: What Every Interview Tests", content: "These core concepts appear in every blockchain engineering interview in India regardless of role seniority.\n\nBlockchain architecture: a distributed ledger where each block contains a hash of the previous block, a timestamp, and transaction data. Immutability comes from the chain: changing a block invalidates all subsequent blocks. Consensus mechanisms: Proof of Work (Bitcoin): computationally expensive, energy-intensive; Proof of Stake (Ethereum post-Merge): validators stake ETH, selected probabilistically. PoS uses ~99.95% less energy than PoW. Public vs private blockchain: public (anyone can join, read, write: Ethereum, Bitcoin); private (permissioned: Hyperledger Fabric, used in enterprise supply chain, banking). Cryptographic foundations: hash functions (SHA-256: one-way, deterministic, avalanche effect), digital signatures (ECDSA: private key to sign, public key to verify), and Merkle trees (efficient transaction verification without downloading full blocks)." },
@@ -5670,7 +5670,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1583339793403-3d9b001b6008?w=1200&q=80",
     heroAlt: "Microsoft India office in Hyderabad",
-    datePublished: "2026-07-29",
+    datePublished: "2026-07-21",
     intro: "Microsoft India: headquartered in Hyderabad with a large Bengaluru office: is one of the most sought-after employers in Indian tech. With 20,000+ employees in India across Azure, Teams, Office, Xbox, and LinkedIn engineering, it offers strong compensation, interesting work, and a culture distinct from other FAANG companies. This guide covers the full interview process for SDE and PM roles.",
     sections: [
       { heading: "Microsoft India's Hiring Tracks", content: "Microsoft hires in India across two main engineering tracks with distinct processes.\n\nFull-time SDE: off-campus and campus lateral hires for roles in Azure, Microsoft 365, Teams, LinkedIn, and gaming. SDE salaries: ₹20–35 LPA (SDE-1), ₹35–60 LPA (SDE-2), ₹70–1.2 Cr (Principal SDE). MSIDC (Microsoft India Development Centre): the Hyderabad team builds core products, not just supporting tools: it owns significant product features shipped globally. IDC is not a services or maintenance centre; this is a common misconception. Campus hiring: Microsoft visits IITs, NITs, BITS Pilani, and top engineering colleges for SDE and PM roles. The MSIDC intern programme is the main pipeline for campus SDEs: converting summer interns to full-time offers." },
@@ -5699,7 +5699,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200&q=80",
     heroAlt: "Clean modern office lobby with reception desk",
-    datePublished: "2026-07-29",
+    datePublished: "2026-07-21",
     intro: "LTIMindtree (formed from the merger of L&T Infotech and Mindtree in 2022) is one of India's top-tier IT services companies, sitting above TCS/Infosys in technical reputation while being more accessible than product companies. Understanding the post-merger hiring process is key to preparing correctly.",
     sections: [
       { heading: "LTIMindtree vs TCS/Infosys: Where It Sits", content: "LTIMindtree occupies a distinct position in the Indian IT landscape: and preparing for it differently from TCS/Infosys pays off.\n\nTechnical bar: higher than TCS, Infosys, Wipro: more focus on coding problem-solving and project depth. Compensation: fresher packages ₹6–9 LPA, meaningfully above TCS/Infosys ₹3.5–5 LPA. Client profile: primarily BFSI (banking, financial services, insurance), retail, and manufacturing: deep domain knowledge valued. Post-merger culture: Mindtree was known for a strong engineering culture; LTI was known for BFSI domain depth. The merged entity tries to preserve both, but teams vary." },
@@ -5728,7 +5728,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1593720213428-28a5b9e94613?w=1200&q=80",
     heroAlt: "Full-stack developer working on frontend and backend code",
-    datePublished: "2026-07-29",
+    datePublished: "2026-07-21",
     intro: "Full-stack developer is one of the most in-demand job titles at Indian startups: but the role means very different things at different companies. This guide covers what Indian product companies actually test across the full frontend-to-backend-to-database stack.",
     sections: [
       { heading: "Frontend: React and JavaScript Depth", content: "Most Indian full-stack roles use React on the frontend, and interviews test hooks, state management, and performance.\n\nCore hooks: useEffect dependency array (what causes stale closures), useCallback and useMemo (when they help vs when they add overhead), useRef for DOM access and storing mutable values without triggering renders. JavaScript fundamentals: event loop and microtask queue (Promises resolve before setTimeout), prototypal inheritance vs class-based inheritance, closure over a loop variable (the classic let vs var bug), and this binding in arrow functions vs regular functions. Common question: 'Implement a debounce function from scratch.': tests closure understanding and timer management. TypeScript: generic types, union types, discriminated unions: increasingly expected at Indian product companies." },
@@ -5757,7 +5757,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80",
     heroAlt: "Cybersecurity analyst monitoring network threats",
-    datePublished: "2026-07-30",
+    datePublished: "2026-07-21",
     intro: "Cybersecurity is one of the fastest-growing job categories in India: driven by DPDP Act compliance requirements, RBI cybersecurity guidelines for banks, and a wave of ransomware and data breach incidents. Indian companies are hiring SOC analysts, penetration testers, cloud security engineers, and GRC (Governance, Risk, and Compliance) professionals at scale.",
     sections: [
       { heading: "Cybersecurity Role Types in India", content: "Cybersecurity in India spans significantly different roles: prepare for the right one.\n\nSOC Analyst (Security Operations Centre): monitor alerts from SIEM tools (Splunk, IBM QRadar, Microsoft Sentinel), investigate incidents, escalate when needed. Entry-level friendly. Starting salary: ₹5–12 LPA. Penetration Tester / Ethical Hacker: actively probe systems for vulnerabilities using tools like Metasploit, Burp Suite, Nmap. CEH or OSCP certification expected. Starting salary: ₹8–20 LPA. Cloud Security Engineer: secure AWS/Azure/GCP environments: IAM policies, security groups, encryption key management, CSPM (Cloud Security Posture Management). Starting salary: ₹14–30 LPA. GRC Analyst: Governance, Risk, and Compliance: ISO 27001, SOC 2, India's DPDP Act, RBI guidelines. Less technical, more process-oriented. Starting salary: ₹6–15 LPA. Application Security Engineer: code review for security vulnerabilities (OWASP Top 10), SAST/DAST tooling, secure SDLC. Starting salary: ₹14–28 LPA." },
@@ -5786,7 +5786,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80",
     heroAlt: "Thoughtful candidate pausing to reflect before answering a question",
-    datePublished: "2026-07-30",
+    datePublished: "2026-07-21",
     intro: "'What is your biggest weakness?' is the most uncomfortable interview question for Indian candidates: and it is asked in virtually every HR round. The good news: there is a clear formula that turns this question from a trap into a demonstration of self-awareness. This guide gives you real answers that work.",
     sections: [
       { heading: "Why Interviewers Ask This Question", content: "Understanding the intent behind the question helps you craft the right answer.\n\nInterviewers are not looking for a confession of failure. They are testing three things: self-awareness (do you know what you are not yet good at?), honesty and maturity (can you discuss imperfections without deflecting?), and growth orientation (are you working on your weak areas?). A candidate who says 'I have no real weaknesses' signals poor self-awareness. A candidate who shares a real weakness with evidence of active improvement signals exactly what interviewers want to see." },
@@ -5815,7 +5815,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1521791055366-0d553381ad47?w=1200&q=80",
     heroAlt: "Confident candidate answering a job interview question",
-    datePublished: "2026-07-30",
+    datePublished: "2026-07-21",
     intro: "'Why should we hire you?' is your opportunity to give the interviewers a direct, confident reason to choose you over other candidates. Most Indian candidates either over-explain or give a generic answer. This guide shows you how to answer specifically and persuasively.",
     sections: [
       { heading: "What the Interviewer Really Wants", content: "This question is a closing argument: your chance to synthesise why you are the right fit.\n\nThe interviewer is looking for three things: a clear articulation of your relevant strengths (not a list of everything you know), evidence that you have understood the role and the company, and confidence without arrogance. The key word in the question is 'you': make the answer about what you specifically bring, not generic qualities that any candidate could claim. Weak answer: 'I am hardworking, dedicated, and a team player.': these are unprovable claims that every candidate makes. Strong answer: 'I have done X in context Y, which is directly relevant to the challenge your team faces with Z, and I can contribute to your team in this specific way from day one.'" },
@@ -5843,7 +5843,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&q=80",
     heroAlt: "Creative professional using Adobe software on a high-end workstation",
-    datePublished: "2026-07-31",
+    datePublished: "2026-07-21",
     intro: "Adobe India: with major development centres in Noida and Bengaluru: builds core features for Creative Cloud (Photoshop, Illustrator, Premiere Pro), Document Cloud (Acrobat, Sign), and Experience Cloud (Analytics, Target, Campaign). The interview is technically rigorous and more design-thinking aware than most Indian product company interviews.",
     sections: [
       { heading: "Adobe India: What Teams Build", content: "Understanding Adobe's product portfolio helps you contextualise every interview question.\n\nCreative Cloud (Noida + Bengaluru): Photoshop, Illustrator, InDesign, Premiere Pro, After Effects: desktop and web app development, C++, Python, JavaScript. Document Cloud (Bengaluru): Acrobat, Adobe Sign: PDF processing, OCR, electronic signatures. Scale: billions of documents processed annually. Experience Cloud (Bengaluru): Analytics, Target, Audience Manager: large-scale data processing for marketing technology. Scale: tracking behaviour across millions of websites. Adobe Firefly (AI): growing team building generative AI into Creative Cloud products: ML engineering, computer vision, prompt engineering. The India teams have full ownership: Noida and Bengaluru engineers ship to the same global products as colleagues in San Jose." },
@@ -5872,7 +5872,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200&q=80",
     heroAlt: "Android Studio IDE open on laptop showing Kotlin activity code",
-    datePublished: "2026-07-31",
+    datePublished: "2026-07-21",
     intro: "Android development is one of the most critical engineering disciplines in Indian product companies: India is the world's largest Android market by device volume. Companies like Swiggy, Meesho, PhonePe, CRED, ShareChat, and BYJU's have large Android teams and competitive interviews.",
     sections: [
       { heading: "Core Kotlin and Android Questions", content: "Kotlin is now the standard language for Android development, and interviews test Kotlin-specific features alongside Android fundamentals.\n\nKotlin coroutines: structured concurrency model: coroutines vs threads (coroutines are lightweight, run on threads but suspend without blocking). suspend functions, CoroutineScope, launch vs async. Common question: 'What is the difference between launch and async in Kotlin coroutines?': launch returns Job (fire-and-forget); async returns Deferred (use await() for the result). Kotlin data classes: automatic equals(), hashCode(), copy(), toString(): why they matter for immutable state in ViewModels. Sealed classes: exhaustive when expressions: the standard pattern for representing states (Loading, Success, Error) in Android UIs. Extension functions: adding methods to existing classes without inheritance: common question: 'Write an extension function on Context to show a Toast in one line.'" },
@@ -5901,7 +5901,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1569437061190-a5d03d5e1b69?w=1200&q=80",
     heroAlt: "Candidate giving a structured STAR method answer in an interview",
-    datePublished: "2026-07-31",
+    datePublished: "2026-07-21",
     intro: "The STAR method (Situation, Task, Action, Result) is the framework behind almost every behavioural interview question: from 'Tell me about a time you faced a challenge' to 'Describe a situation where you demonstrated leadership.' This guide explains the method and gives you 10 ready-to-adapt examples tailored to Indian interview contexts.",
     sections: [
       { heading: "The STAR Framework Explained", content: "STAR provides a structure that ensures your answer is specific, relevant, and complete.\n\nSituation: set the scene briefly. Where were you, when was it, what was the context? Keep this to 1–2 sentences: interviewers want enough context to understand the story, not a full background history. Task: what was your specific responsibility in the situation? This distinguishes your role from the team's role. Action: what did YOU specifically do? This is the most important part: 60% of your answer should be here. Use 'I' not 'we'. Describe the specific steps you took, decisions you made, and why. Result: what happened because of your actions? Use numbers where possible. Quantified results are always more compelling than qualitative outcomes.\n\nCommon mistake: spending 70% of the answer on Situation and Task, with 30% on Action and Result. Flip this ratio." },
@@ -5930,7 +5930,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80",
     heroAlt: "Employee presenting a salary hike justification to their manager",
-    datePublished: "2026-07-31",
+    datePublished: "2026-07-21",
     intro: "Negotiating a salary hike within your current company is fundamentally different from negotiating a new job offer: the leverage is different, the relationship dynamic matters more, and the timing is critical. This guide covers the strategy, timing, and exact language that works in the Indian workplace.",
     sections: [
       { heading: "Why Internal Hike Negotiation Is Harder", content: "Internal salary discussions are more complicated than external offers for three reasons.\n\nNo immediate exit urgency: in an external negotiation, both parties know you could leave. Internally, your employer may believe you are comfortable and unlikely to switch. Relationship continuity: you have to work with this manager after the conversation, regardless of outcome. This creates emotional barriers that external negotiations do not have. Limited information: in an external job market, market data is readily available. Internally, you rarely know what your peers earn, which weakens your anchoring. The fix: solve these three constraints before starting the conversation: build external validation (an offer or concrete market data), create a sense of urgency (a competing offer or a natural career decision point), and frame the conversation as collaborative, not adversarial." },
@@ -5959,7 +5959,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1200&q=80",
     heroAlt: "Person browsing remote job listings on laptop from a home office",
-    datePublished: "2026-07-31",
+    datePublished: "2026-07-21",
     intro: "The remote work landscape in India has stabilised post-pandemic into a hybrid-dominant model: but fully remote roles still exist, particularly for experienced engineers, content professionals, and roles at global companies. This guide covers where to find them, how to stand out, and what to expect.",
     sections: [
       { heading: "The State of Remote Work in India in 2026", content: "Remote work in India looks very different in 2026 than it did in 2021.\n\nHybrid is the new norm: most large Indian IT companies (TCS, Infosys, Wipro, Accenture) require 2–3 days in office per week. Most product companies (Flipkart, Swiggy, Razorpay) require 3–4 days. Fully remote is now concentrated in: global companies with India-based remote positions (US/EU startups hiring Indian engineers, European product companies), Indian companies that were founded remote-first (some SaaS companies, content platforms), and freelance/contract roles. Where fully remote Indian jobs exist: software engineering (especially backend, DevOps, QA), content writing and SEO, data analysis, customer success for SaaS products, UI/UX design. Where remote is rare: roles requiring physical presence (sales, field service, manufacturing), roles requiring regulated on-site work (banking, trading floors), junior roles where learning from proximity to seniors matters." },
@@ -5990,7 +5990,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573497491765-cf27124d08dd?w=1200&q=80",
     heroAlt: "Confident professional introducing themselves in a formal interview",
-    datePublished: "2026-08-01",
+    datePublished: "2026-07-21",
     intro: "'Tell me about yourself' is asked in nearly every Indian job interview: and most candidates still answer it poorly. They either recite their resume word-for-word or ramble without direction. This guide gives you a precise formula, shows you sample answers for both freshers and experienced professionals, and explains exactly what interviewers are evaluating when they ask this question.",
     sections: [
       {
@@ -6039,7 +6039,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&q=80",
     heroAlt: "Person studying coding on a laptop to switch to software engineering",
-    datePublished: "2026-08-03",
+    datePublished: "2026-07-21",
     intro: "Switching to software engineering from a non-technical background is one of the most transformative career moves possible in India in 2026: and it is more achievable today than at any previous point. Self-study, bootcamps, open-source, and a strong portfolio have replaced the degree as proof of competence at many Indian companies. This guide gives you the honest roadmap, realistic timelines, and what to expect when you make the switch.",
     sections: [
       {
@@ -6080,7 +6080,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&q=80",
     heroAlt: "Bengaluru skyline tech hub India",
-    datePublished: "2026-08-03",
+    datePublished: "2026-07-21",
     intro: "Bengaluru remains India's undisputed tech capital in 2026, home to the highest-paying software engineering roles in the country. But rising costs and the normalisation of remote work have changed the calculus for many engineers. This guide gives you accurate, current salary benchmarks across experience levels and company types: so you can negotiate from data, not guesswork.",
     sections: [
       {
@@ -6117,7 +6117,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1200&q=80",
     heroAlt: "Whiteboard covered with algorithm diagrams and data structure charts",
-    datePublished: "2026-08-03",
+    datePublished: "2026-07-21",
     intro: "Data Structures and Algorithms (DSA) is the universal filter for software engineering interviews in India. From TCS to Google, every company tests problem-solving ability through DSA questions. The difference between candidates who clear coding rounds and those who do not is rarely raw intelligence: it is the quality and consistency of their preparation. This guide gives you the roadmap, the topic priorities, and the strategies that work.",
     sections: [
       {
@@ -6158,7 +6158,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1595113316349-9aef47aa8f8b?w=1200&q=80",
     heroAlt: "Student preparing TCS NQT mock test papers at a study table",
-    datePublished: "2026-08-04",
+    datePublished: "2026-07-21",
     intro: "The TCS National Qualifier Test (NQT) is the gateway exam for most TCS fresher recruitment in India. Clearing the NQT with a strong score qualifies you for TCS Ninja (standard track) or TCS Digital (higher package) roles. This guide covers the exact exam pattern, section-wise preparation strategies, and practice resources to maximise your NQT score in 2026.",
     sections: [
       {
@@ -6199,7 +6199,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=1200&q=80",
     heroAlt: "Intern presenting project outcomes to a team in a startup office",
-    datePublished: "2026-08-04",
+    datePublished: "2026-07-21",
     intro: "A Pre-Placement Offer (PPO) from your internship is one of the most valuable outcomes of an internship in India: it bypasses the placement process entirely and gives you a guaranteed offer before campus season even starts. But PPOs are not automatic. This guide explains what Indian companies evaluate during internships, how to position yourself for a return offer, and what to do if you do not get one.",
     sections: [
       {
@@ -6240,7 +6240,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Product manager career path roadmap drawn on a glass whiteboard",
-    datePublished: "2026-08-04",
+    datePublished: "2026-07-21",
     intro: "Product Management has become one of the most sought-after roles in Indian tech in 2026. Razorpay, PhonePe, Swiggy, Flipkart, Meesho, and FAANG India offices all have growing PM teams. But the path is less defined than engineering: and many aspiring PMs do not know where to start. This guide gives you the honest roadmap, the salary benchmarks, and the interview preparation framework for breaking into PM in India.",
     sections: [
       {
@@ -6281,7 +6281,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=80",
     heroAlt: "Engineer staring at a screen with code visible, thinking deeply",
-    datePublished: "2026-08-05",
+    datePublished: "2026-07-21",
     intro: "Many Indian engineers who can solve LeetCode hard problems still fail coding interviews. The gap is not algorithmic knowledge: it is interview technique. This guide identifies the 10 most common mistakes Indian candidates make in technical coding rounds, and gives you specific corrections for each.",
     sections: [
       {
@@ -6318,7 +6318,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1434682772039-6120b43fd3d0?w=1200&q=80",
     heroAlt: "Person standing at a career crossroads with three signposts",
-    datePublished: "2026-08-05",
+    datePublished: "2026-07-21",
     intro: "Should you do an MBA, pursue an MS abroad, or invest in upskilling within India? This is one of the highest-stakes decisions in an Indian professional's career: and most people make it with incomplete information. This guide gives you the honest, data-grounded comparison so you can make the right choice for your specific situation.",
     sections: [
       {
@@ -6359,7 +6359,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1590649948401-28b1a65d4e41?w=1200&q=80",
     heroAlt: "HR manager reviewing notice period buyout calculation document",
-    datePublished: "2026-08-05",
+    datePublished: "2026-07-21",
     intro: "Notice period negotiation is one of the most practically important: and least discussed: aspects of changing jobs in India. A 3-month notice period at your current company, combined with a new employer who wants you in 30 days, creates a gap that costs candidates real money and sometimes the offer itself. This guide explains how notice period buyouts work in India, how to negotiate them, and what to do when your current company does not cooperate.",
     sections: [
       {
@@ -6401,7 +6401,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1620810398064-aa74f9d08f4e?w=1200&q=80",
     heroAlt: "E-commerce website on laptop with shopping cart visible",
-    datePublished: "2026-08-06",
+    datePublished: "2026-07-21",
     intro: "Flipkart is one of India's most coveted tech employers: a product company built in India, solving India-scale engineering problems. The interview process is rigorous, similar in structure to Amazon's, and rewards candidates who combine strong DSA foundations with system design thinking. This guide covers the full Flipkart interview process for SDE roles and gives you targeted preparation strategies.",
     sections: [
       {
@@ -6446,7 +6446,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1553729459-8df78fdb0f57?w=1200&q=80",
     heroAlt: "Razorpay payment gateway API integration on a developer laptop",
-    datePublished: "2026-08-06",
+    datePublished: "2026-07-21",
     intro: "Razorpay is one of India's most exciting fintech companies: processing billions of dollars in payments for hundreds of thousands of Indian businesses. For engineers, it offers the rare combination of product-company engineering culture with deep fintech domain complexity. This guide walks you through the Razorpay interview process, what they look for, and how to prepare specifically for fintech system design questions.",
     sections: [
       {
@@ -6487,7 +6487,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=80",
     heroAlt: "Professional preparing for a Swiggy engineering interview",
-    datePublished: "2026-08-06",
+    datePublished: "2026-07-21",
     intro: "Swiggy is one of India's largest consumer tech companies, processing millions of food delivery orders daily across hundreds of Indian cities. The engineering challenges at Swiggy: real-time routing, dynamic pricing, live order tracking, restaurant supply chain: are uniquely complex and India-specific. This guide covers what to expect in a Swiggy SDE interview and how to prepare for their product-focused system design questions.",
     sections: [
       {
@@ -6528,7 +6528,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80",
     heroAlt: "Food delivery tech professional preparing for Zomato interview",
-    datePublished: "2026-08-07",
+    datePublished: "2026-07-21",
     intro: "Zomato is India's leading food-tech platform, operating across food delivery, quick commerce (Blinkit), and dining out. After its successful IPO and consistent profitability path, Zomato has become one of the most coveted engineering employers in India. This guide covers the Zomato SDE interview process, their unique system design questions, and what separates candidates who clear the loop from those who don't.",
     sections: [
       {
@@ -6569,7 +6569,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1593720213428-28a5b9e94613?w=1200&q=80",
     heroAlt: "Backend developer working with Node.js for an Indian company",
-    datePublished: "2026-08-07",
+    datePublished: "2026-07-21",
     intro: "Node.js is the backbone of backend development at hundreds of Indian startups and product companies. Whether you are applying to a Series A startup or a mid-size product company, Node.js interview questions test both your theoretical understanding of JavaScript's runtime model and your practical ability to build scalable APIs. This guide covers the most asked questions with clear, interview-ready answers.",
     sections: [
       {
@@ -6610,7 +6610,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=1200&q=80",
     heroAlt: "Indian developer contributing to open source on GitHub",
-    datePublished: "2026-08-08",
+    datePublished: "2026-07-21",
     intro: "Open source contributions are one of the most underutilised career accelerators for Indian engineers. A strong GitHub profile with real contributions can override a weak CGPA, compensate for a non-IIT background, and differentiate you at product companies that value demonstrated code quality over credentials. This guide explains how to start contributing and how to use it strategically in your career.",
     sections: [
       {
@@ -6651,7 +6651,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&q=80",
     heroAlt: "First-day-at-work scene with young professional at a new desk",
-    datePublished: "2026-08-08",
+    datePublished: "2026-07-21",
     intro: "Your first tech job in India is where your career actually starts: and the habits you build in the first 6 months set the trajectory for years. Many freshers with excellent campus performance struggle in their first jobs because academic success skills (memorise, replicate, score) are entirely different from professional success skills (communicate, ship, collaborate). This guide gives you the practical framework to not just survive, but accelerate in your first role.",
     sections: [
       {
@@ -6692,7 +6692,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1495465798138-718a3dd6cd69?w=1200&q=80",
     heroAlt: "Developer doing intensive one-week interview preparation with notes",
-    datePublished: "2026-08-08",
+    datePublished: "2026-07-21",
     intro: "You have an interview in 7 days. This guide gives you a focused, hour-by-hour preparation plan built specifically for Indian engineering interviews in 2026: whether you are targeting a startup, a unicorn, or a FAANG India office. No fluff, no 6-month plans. Just what moves the needle in the time you have.",
     sections: [
       {
@@ -6733,7 +6733,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1545241047-6083a3684587?w=1200&q=80",
     heroAlt: "Indian tech professional maintaining work-life balance",
-    datePublished: "2026-08-09",
+    datePublished: "2026-07-21",
     intro: "Work-life balance in Indian tech is one of the most misrepresented topics in job market discussions. Glorified hustle culture, 'we are a family' narratives, and 'you are joining a mission not a company' pitches mask widely varying realities. This guide gives you the honest picture: what the data shows, what to ask in interviews, and how to protect your wellbeing while building an excellent career.",
     sections: [
       {
@@ -6774,7 +6774,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1551836022-d3ad7f20ea85?w=1200&q=80",
     heroAlt: "PostgreSQL database schema diagram open in a database IDE",
-    datePublished: "2026-08-09",
+    datePublished: "2026-07-21",
     intro: "PostgreSQL has become the default relational database for Indian product companies and startups in 2026. Flipkart, Razorpay, PhonePe, CRED, and dozens of Indian unicorns run on Postgres. SQL and database knowledge is tested in almost every backend and full-stack interview in India: this guide covers the most important PostgreSQL concepts and interview questions you need to know.",
     sections: [
       {
@@ -6815,7 +6815,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1586282391129-76a6df230234?w=1200&q=80",
     heroAlt: "Professional carefully reading a job description on a laptop in India",
-    datePublished: "2026-08-10",
+    datePublished: "2026-07-21",
     intro: "Most Indian job seekers either apply to everything regardless of fit, or eliminate themselves from perfectly good roles because they feel they do not meet 100% of the requirements. Both strategies cost you good opportunities. This guide teaches you how to read a job description critically: separating real requirements from aspirational padding: so you can apply strategically and tailor effectively.",
     sections: [
       {
@@ -6856,7 +6856,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=1200&q=80",
     heroAlt: "Fresh graduate confidently negotiating a job offer in India",
-    datePublished: "2026-08-10",
+    datePublished: "2026-07-21",
     intro: "The common wisdom in India is that freshers cannot negotiate salaries: especially at large IT companies. This is only partially true. While mass recruiters have rigid package structures, product companies and startups have meaningful flexibility even for freshers. This guide tells you exactly what is and is not negotiable, how to negotiate without risking your offer, and what to say in the conversation.",
     sections: [
       {
@@ -6898,7 +6898,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1621619856624-42fd193a0661?w=1200&q=80",
     heroAlt: "UPI payment QR code scan on a smartphone at a retail counter",
-    datePublished: "2026-08-11",
+    datePublished: "2026-07-21",
     intro: "PhonePe has become one of India's most dominant UPI payment platforms, processing billions of transactions monthly for over 500 million registered users. Since spinning out from Flipkart and completing its own funding round, PhonePe has become one of the most sought-after engineering employers in Bengaluru. This guide covers the PhonePe SDE interview process, the types of questions asked, and what the company looks for in candidates.",
     sections: [
       {
@@ -6939,7 +6939,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1553729459-8df78fdb0f57?w=1200&q=80",
     heroAlt: "Premium black credit card on a minimal dark background",
-    datePublished: "2026-08-11",
+    datePublished: "2026-07-21",
     intro: "CRED is one of India's most distinctive tech companies: a credit card payment platform known for its obsessive product design, high-quality engineering, and a culture that genuinely values craft. The bar is extremely high and the team is intentionally small. This guide covers what the CRED interview process looks like, what they genuinely value, and how to position yourself for one of the most competitive engineering roles in Indian tech.",
     sections: [
       {
@@ -6980,7 +6980,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&q=80",
     heroAlt: "Seller preparing to ship products for a social commerce platform",
-    datePublished: "2026-08-11",
+    datePublished: "2026-07-21",
     intro: "Meesho is India's largest social commerce platform, enabling tens of millions of entrepreneurs: primarily women in tier-2 and tier-3 cities: to sell products via WhatsApp and social media. It is one of the few Indian tech companies building specifically for the next billion internet users, creating genuinely unique engineering challenges around scale, vernacular languages, and low-connectivity environments. This guide covers the Meesho interview process for SDE and data roles.",
     sections: [
       {
@@ -7021,7 +7021,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80",
     heroAlt: "Server rack in a data centre with blinking LED indicators",
-    datePublished: "2026-08-12",
+    datePublished: "2026-07-21",
     intro: "Microservices architecture is the standard at every major Indian product company: Flipkart, Swiggy, Razorpay, PhonePe, and CRED all run distributed microservices in production. Understanding microservices is no longer an advanced topic: it is expected knowledge for any SDE-2+ role at an Indian product company. This guide covers the most commonly tested microservices concepts and interview questions.",
     sections: [
       {
@@ -7062,7 +7062,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1567427017947-545c5f8cb53f?w=1200&q=80",
     heroAlt: "Object-oriented design diagram on whiteboard with developer",
-    datePublished: "2026-08-12",
+    datePublished: "2026-07-21",
     intro: "Object-Oriented Programming (OOP) concepts are a staple of technical interviews across all company types in India: from TCS and Infosys fresher rounds to SDE-2 interviews at Flipkart and Razorpay. Many candidates memorise the four pillars but struggle to apply them in design questions. This guide covers the theory with interview-ready answers and the practical application that separates strong candidates from average ones.",
     sections: [
       {
@@ -7099,7 +7099,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1580983559367-94a23d25e09a?w=1200&q=80",
     heroAlt: "Low-level system diagram showing OS kernel processes on whiteboard",
-    datePublished: "2026-08-12",
+    datePublished: "2026-07-21",
     intro: "Operating Systems (OS) is one of the four CS fundamentals tested in Indian technical interviews: alongside DBMS, Networking, and OOP. Service IT companies (TCS, Infosys, Wipro) test OS in fresher rounds. Product companies test OS concepts at SDE-2+ level in the context of distributed systems and performance. This guide covers every major OS topic with interview-ready answers.",
     sections: [
       {
@@ -7140,7 +7140,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1621839673705-6617adf9e890?w=1200&q=80",
     heroAlt: "Frontend developer inspecting a UI on two monitors side by side",
-    datePublished: "2026-08-13",
+    datePublished: "2026-07-21",
     intro: "Frontend development is one of the fastest-growing engineering specialisations at Indian product companies. Swiggy, Zomato, Razorpay, CRED, and every major Indian unicorn has significant frontend teams. Frontend interviews are distinct from backend interviews: they test JavaScript fundamentals, React patterns, browser internals, and performance optimisation in addition to general problem-solving. This guide covers what is actually tested.",
     sections: [
       {
@@ -7181,7 +7181,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1200&q=80",
     heroAlt: "Startup team gathered around a laptop in a bright meeting room",
-    datePublished: "2026-08-13",
+    datePublished: "2026-07-21",
     intro: "Freshworks is one of India's most successful software product companies: a SaaS company that went public on NASDAQ in 2021, built primarily from Chennai. Unlike most Indian tech giants that are consumer-facing, Freshworks builds B2B SaaS products (Freshdesk, Freshsales, Freshservice) serving global markets. This guide covers the Freshworks interview process, what they test, and what makes the company culture distinct.",
     sections: [
       {
@@ -7222,7 +7222,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1567418160359-5497f01c7b1b?w=1200&q=80",
     heroAlt: "Mobile phone showing stock trading portfolio with gains",
-    datePublished: "2026-08-13",
+    datePublished: "2026-07-21",
     intro: "Zerodha is India's largest retail stock broker and one of the most unusual tech companies in India: profitable since day one, bootstrapped, no external investors, and with a culture that explicitly prioritises simplicity and quality over scale and growth. The technical bar is extremely high, hiring volumes are very small, and the culture is unlike any other Indian company. This guide explains what Zerodha looks for and how to prepare.",
     sections: [
       {
@@ -7263,7 +7263,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80",
     heroAlt: "Engineer reviewing networking concepts for an Indian tech company interview",
-    datePublished: "2026-08-14",
+    datePublished: "2026-07-21",
     intro: "Computer Networking is one of the core CS fundamentals tested across Indian engineering interviews. Freshers face it in TCS and Infosys rounds. Senior engineers face it in backend and DevOps interviews where networking concepts underpin system design. This guide covers every major networking concept with interview-ready answers and explains how they appear in different interview contexts.",
     sections: [
       {
@@ -7300,7 +7300,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1200&q=80",
     heroAlt: "Side-by-side comparison of a statistical model and neural network",
-    datePublished: "2026-08-14",
+    datePublished: "2026-07-21",
     intro: "Data Scientist and ML Engineer are two of the most confused job titles in Indian tech in 2026. Many candidates apply to both interchangeably, not realising the roles require different skills, have different interview patterns, and offer different career trajectories. This guide gives you the clear, honest comparison you need to choose the right path and prepare effectively.",
     sections: [
       {
@@ -7341,7 +7341,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=1200&q=80",
     heroAlt: "Introvert studying alone at a desk preparing for an interview",
-    datePublished: "2026-08-15",
+    datePublished: "2026-07-21",
     intro: "India's interview culture: loud group discussions, energy-signalling HR rounds, high-pressure sales pitches of yourself: seems designed to favour extroverts. Many introverted engineers who are excellent at their actual work lose to louder, less-skilled candidates because they have not adapted their natural strengths to the interview format. This guide gives you a concrete playbook for how introverts can interview exceptionally well in India.",
     sections: [
       {
@@ -7382,7 +7382,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1586282391129-76a6df230234?w=1200&q=80",
     heroAlt: "Indian professional optimising their resume for job applications",
-    datePublished: "2026-08-15",
+    datePublished: "2026-07-21",
     intro: "Most Indian engineers write resumes that are technically accurate but fail to get shortlisted. The resume is read by an ATS algorithm before a human sees it, and then by a recruiter for approximately 6 seconds before they decide to proceed or reject. This guide teaches you how to write and format a resume that passes both filters: and then gives the interviewer something to ask compelling questions about.",
     sections: [
       {
@@ -7424,7 +7424,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1200&q=80",
     heroAlt: "Java Spring Boot code on a monitor in a dark-themed IDE",
-    datePublished: "2026-08-16",
+    datePublished: "2026-07-21",
     intro: "Spring Boot remains one of the most widely used Java frameworks in Indian enterprise and product companies. TCS, Infosys, Wipro, HCL, and most Indian BFSI tech teams build their backend services in Spring Boot. Even at product companies like Flipkart, PhonePe, and Razorpay, Java with Spring Boot powers critical payment and order services. This guide covers the Spring Boot questions most commonly asked in Indian technical interviews.",
     sections: [
       {
@@ -7465,7 +7465,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=1200&q=80",
     heroAlt: "AWS cloud services overview on a digital whiteboard presentation",
-    datePublished: "2026-08-16",
+    datePublished: "2026-07-21",
     intro: "Amazon Web Services is the dominant cloud platform at Indian tech companies. Flipkart, Swiggy, Razorpay, PhonePe, Meesho, and virtually every funded Indian startup run their infrastructure on AWS. AWS knowledge is now expected at SDE-2+ backend and DevOps roles, and the AWS Solutions Architect and Developer certifications are among the most valued technical credentials in India. This guide covers the AWS concepts most commonly tested in Indian technical interviews.",
     sections: [
       {
@@ -7502,7 +7502,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1580927752452-89d86da3fa0a?w=1200&q=80",
     heroAlt: "Go programming language code on a laptop screen",
-    datePublished: "2026-08-16",
+    datePublished: "2026-07-21",
     intro: "Go (Golang) has become a primary language at a growing number of Indian product companies: Zerodha (almost exclusively Go), Razorpay (Go for payment-critical services), Flipkart, Swiggy, and several Indian fintech startups. If you are applying to these companies, knowing Go well is essential. This guide covers the Go concepts most commonly tested in Indian technical interviews, from beginner Go questions to advanced concurrency patterns.",
     sections: [
       {
@@ -7539,7 +7539,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1621839673705-6617adf9e890?w=1200&q=80",
     heroAlt: "Paytm payment super app on smartphone with various service icons",
-    datePublished: "2026-08-17",
+    datePublished: "2026-07-21",
     intro: "Paytm (One97 Communications) is one of India's most well-known fintech companies: the first Indian app to reach 100 million users, a pioneer of the QR-code payment revolution, and the first Indian consumer tech company to list on the Indian stock exchanges. Despite well-documented business challenges since its 2021 IPO, Paytm remains a significant employer and an interesting place to work for engineers who want to build at Indian fintech scale. This guide covers the Paytm interview process and what to prepare.",
     sections: [
       {
@@ -7580,7 +7580,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=80",
     heroAlt: "Rows of desks in a large open-plan technology company office",
-    datePublished: "2026-08-17",
+    datePublished: "2026-07-21",
     intro: "Zoho is one of India's most distinctive tech success stories: a fully bootstrapped SaaS company with over 100 products, 100 million users worldwide, and $1 billion+ annual revenue, built almost entirely from Chennai without taking a single rupee of venture capital. Zoho's culture, hiring process, and values are genuinely different from every other Indian tech company. This guide explains what Zoho looks for and how to prepare for their unique selection process.",
     sections: [
       {
@@ -7621,7 +7621,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&q=80",
     heroAlt: "API endpoint documentation on screen with JSON response visible",
-    datePublished: "2026-08-17",
+    datePublished: "2026-07-21",
     intro: "REST API design is a core backend engineering skill tested at SDE-2+ interviews across Indian product companies. Whether it is a system design question asking you to design a payment API, an e-commerce API, or a social feed API: knowing the conventions and best practices for REST APIs helps you structure clear, professional API designs. This guide covers the REST API design principles most commonly tested at Indian technical interviews.",
     sections: [
       {
@@ -7658,7 +7658,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=1200&q=80",
     heroAlt: "Multiple browser tabs open showing coding problem sites",
-    datePublished: "2026-08-18",
+    datePublished: "2026-07-21",
     intro: "LeetCode preparation is the primary barrier between Indian engineers and product company jobs. The common mistake is grinding random problems without structure: solving 300 problems without pattern recognition is less effective than solving 150 problems with deliberate topic coverage and spaced repetition. This guide gives you a structured 3-month plan to go from beginner to interview-ready at Indian product companies.",
     sections: [
       {
@@ -7695,7 +7695,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1551808022-d3ad7f20ea85?w=1200&q=80",
     heroAlt: "Server infrastructure with network cables in a modern data centre",
-    datePublished: "2026-08-18",
+    datePublished: "2026-07-21",
     intro: "DevOps engineering is one of the highest-paying and fastest-growing career paths in Indian tech in 2026. The combination of cloud infrastructure, automation, and software delivery: bridging development and operations: is in acute demand at every Indian product company. This guide covers what the DevOps career path looks like in India, the skills required at each level, and how to break into the field.",
     sections: [
       {
@@ -7736,7 +7736,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=1200&q=80",
     heroAlt: "Person writing notes while studying with a laptop and textbook",
-    datePublished: "2026-08-19",
+    datePublished: "2026-07-21",
     intro: "Wipro is one of India's largest IT services companies and one of the most popular destinations for engineering freshers. Wipro's National Level Talent Hunt (NLTH) recruits thousands of freshers every year. Despite being a service IT company, Wipro's interview process has become more technical in recent years. This guide covers exactly what to expect and how to prepare, whether you are a fresher or an experienced candidate.",
     sections: [
       {
@@ -7777,7 +7777,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80",
     heroAlt: "Student preparing notes on a study desk with multiple books",
-    datePublished: "2026-08-19",
+    datePublished: "2026-07-21",
     intro: "Infosys is India's second-largest IT services company and one of the most common destinations for engineering freshers from tier-2 and tier-3 colleges. Infosys has three hiring tracks: the standard Systems Engineer, the Specialist Programmer (SP), and the Digital Specialist Engineer (DSE): each with different difficulty levels and starting salaries. This guide covers all three tracks and what to expect in each.",
     sections: [
       {
@@ -7818,7 +7818,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=1200&q=80",
     heroAlt: "Product team doing a sprint planning session around a whiteboard",
-    datePublished: "2026-08-19",
+    datePublished: "2026-07-21",
     intro: "Product Manager roles at Indian product companies have become some of the most coveted career positions in Indian tech: combining technical understanding, business strategy, and user empathy in a role with genuine organisational influence. The PM interview is fundamentally different from engineering interviews: it tests your thinking process, not specific technical knowledge. This guide covers the PM interview framework and the most commonly asked questions at Indian companies.",
     sections: [
       {
@@ -7859,7 +7859,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80",
     heroAlt: "Intern collaborating with senior engineer over a laptop screen",
-    datePublished: "2026-08-20",
+    datePublished: "2026-07-21",
     intro: "A strong internship is the most powerful career-shaping experience available to Indian engineering students. The right internship at a product company can transform your campus placement outcome, significantly differentiate your resume, and in many cases lead directly to a pre-placement offer (PPO) that eliminates the anxiety of campus placements. This guide covers how to find, get, and maximise a tech internship in India in 2026.",
     sections: [
       {
@@ -7901,7 +7901,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1649180556628-616b2ced15f4?w=1200&q=80",
     heroAlt: "Python snake logo sticker on a programmer laptop lid",
-    datePublished: "2026-08-20",
+    datePublished: "2026-07-21",
     intro: "Python is the most versatile language in the Indian tech interview landscape: used for backend web development, data science, machine learning, scripting, and DevOps automation. Whether you are applying for a backend SDE role at Swiggy, a data science position at Flipkart, or an ML role at a funded startup, Python fluency is expected. This guide covers the Python concepts most commonly tested across different role types at Indian companies.",
     sections: [
       {
@@ -7938,7 +7938,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1587620931903-3d8e2764d798?w=1200&q=80",
     heroAlt: "Developer typing Java code in an IDE with multiple monitors",
-    datePublished: "2026-08-21",
+    datePublished: "2026-07-21",
     intro: "Java is the most widely used programming language in Indian software development: powering the backend systems of TCS, Infosys, Wipro, and most Indian BFSI companies, as well as critical services at Flipkart, PhonePe, and Razorpay. A Java interview in India tests a combination of core language knowledge, OOP principles, collections framework, multithreading, JVM understanding, and practical Spring Boot. This guide covers what is actually tested.",
     sections: [
       {
@@ -7975,7 +7975,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1509629927-2396d7a4e3cf?w=1200&q=80",
     heroAlt: "Two professionals in a formal business meeting discussion",
-    datePublished: "2026-08-22",
+    datePublished: "2026-07-21",
     intro: "Accenture India is one of the largest IT employers in the country, with over 300,000 employees and a significant fresher intake every year. Accenture hires for two main tracks: Associate Software Engineer (ASE) and Advanced Associate Software Engineer (AASE): and the hiring process is structured and predictable. This guide covers exactly what to expect and how to prepare for the Accenture interview process.",
     sections: [
       {
@@ -8016,7 +8016,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=80",
     heroAlt: "Cognizant technology office interior with collaborative work areas",
-    datePublished: "2026-08-22",
+    datePublished: "2026-07-21",
     intro: "Cognizant Technology Solutions (CTS) is one of India's largest IT employers with a strong presence across Chennai, Hyderabad, Bengaluru, Pune, and Kolkata. Like TCS and Infosys, Cognizant has a structured fresher hiring process and has differentiated its tracks based on technical depth. This guide covers the Cognizant interview process for both the standard GenC track and the higher-paying GenC Next track.",
     sections: [
       {
@@ -8053,7 +8053,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&q=80",
     heroAlt: "HR interviewer and candidate in a structured formal interview session",
-    datePublished: "2026-08-23",
+    datePublished: "2026-07-21",
     intro: "The HR interview is the final gate in most Indian interview processes: and many technically strong candidates are rejected here because they fail to communicate clearly, answer questions authentically, or understand what the interviewer is actually evaluating. This guide covers every major HR question in India with the framework for constructing strong answers and sample responses for both freshers and experienced candidates.",
     sections: [
       {
@@ -8090,7 +8090,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&q=80",
     heroAlt: "Simple block diagram drawn on paper showing client-server architecture",
-    datePublished: "2026-08-23",
+    datePublished: "2026-07-21",
     intro: "System design is the most intimidating interview category for engineers who have not encountered it before: there is no single correct answer, no test to run, and the question can go in infinite directions. Yet with a structured approach, system design becomes one of the most learnable interview skills. This guide explains how system design is tested at Indian companies, what interviewers are actually evaluating, and walks through two complete example designs.",
     sections: [
       {
@@ -8127,7 +8127,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=1200&q=80",
     heroAlt: "Indian professional optimising their LinkedIn profile for job search",
-    datePublished: "2026-08-24",
+    datePublished: "2026-07-21",
     intro: "LinkedIn is the single most important professional platform for Indian engineers in 2026: the primary channel through which product company recruiters source candidates, the place where your professional brand is built, and the network through which referrals are generated. A weak LinkedIn profile is a constant leak in your job search funnel. This guide covers every section of a high-performing LinkedIn profile for Indian tech professionals.",
     sections: [
       {
@@ -8164,7 +8164,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c476?w=1200&q=80",
     heroAlt: "Large college campus placement fair with companies and students",
-    datePublished: "2026-08-24",
+    datePublished: "2026-07-21",
     intro: "Campus placements are the single most high-stakes career event for most Indian engineering students: determining starting salaries that compound over years and opening doors to the companies that are hardest to enter off-campus. The competition is real but the preparation is entirely predictable. This guide gives you a month-by-month preparation plan from the beginning of final year to placement day.",
     sections: [
       {
@@ -8205,7 +8205,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=1200&q=80",
     heroAlt: "Indian professional negotiating a job offer salary",
-    datePublished: "2026-08-25",
+    datePublished: "2026-07-21",
     intro: "Salary negotiation is one of the highest-ROI activities in your career: a successful negotiation on a ₹15 LPA offer can add ₹2–5 LPA annually, compounding over your entire career. Yet most Indian professionals do not negotiate, fearing the offer will be withdrawn or that asking will create a bad impression. This guide gives you the framework, data, and exact scripts to negotiate confidently in the Indian job market.",
     sections: [
       {
@@ -8247,7 +8247,7 @@ const posts: BlogPost[] = [
     readTime: "16 min",
     heroImage: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&q=80",
     heroAlt: "Binary tree structure drawn on a whiteboard with color-coded nodes",
-    datePublished: "2026-08-26",
+    datePublished: "2026-07-21",
     intro: "DSA preparation is the single biggest determinant of success in Indian product company interviews. But the advice most candidates receive is vague ('do LeetCode') or overwhelming ('solve 500 problems'). This guide gives you a precise, company-calibrated framework: what topics each company type tests, how many problems you actually need, and a week-by-week preparation structure that works for freshers and experienced engineers alike.",
     sections: [
       {
@@ -8295,7 +8295,7 @@ const posts: BlogPost[] = [
     readTime: "15 min",
     heroImage: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=1200&q=80",
     heroAlt: "Interview panel with two interviewers and a confident candidate",
-    datePublished: "2026-08-27",
+    datePublished: "2026-07-21",
     intro: "Behavioral interviews are the most misunderstood component of Indian tech hiring. Many candidates overprepare DSA and neglect behavioral rounds entirely: then get rejected at the bar-raiser or final round for weak answers to questions like 'Tell me about a time you disagreed with your manager' or 'Describe a project that failed.' This guide gives you the STAR framework, 12 high-frequency behavioral questions with sample answers calibrated for Indian professional culture, and the mistakes that Indian candidates most often make.",
     sections: [
       {
@@ -8343,7 +8343,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1200&q=80",
     heroAlt: "College student preparing for an internship interview with notes",
-    datePublished: "2026-08-27",
+    datePublished: "2026-07-21",
     intro: "Getting an internship at a top company is often harder than getting a full-time job at the same company: competition is intense, interview rounds are thorough, and the candidate pool is large. But the stakes are enormous: a strong internship at a product company is the fastest path to a Pre-Placement Offer (PPO), bypassing campus placement competition entirely. This guide covers everything an Indian engineering or MBA student needs to prepare for summer and winter internships at product companies, MNCs, and startups.",
     sections: [
       {
@@ -8387,7 +8387,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1603468620905-8e7d9a5b1c45?w=1200&q=80",
     heroAlt: "Wipro campus building with employees walking in Bengaluru",
-    datePublished: "2026-08-28",
+    datePublished: "2026-07-21",
     intro: "Wipro is one of India's largest IT employers, hiring tens of thousands of engineers annually. Understanding Wipro's hiring tracks and interview structure is essential for any engineering fresher or experienced professional targeting India's IT sector. This guide covers both the Wipro National Talent Hunt (NTH) for freshers and the Elite track for premium candidates: with specific preparation strategies for each stage.",
     sections: [
       {
@@ -8431,7 +8431,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?w=1200&q=80",
     heroAlt: "New software engineer setting up their workstation on day one",
-    datePublished: "2026-08-28",
+    datePublished: "2026-07-21",
     intro: "The transition from college to your first software engineering job is one of the most disorienting professional experiences you will have: regardless of how well-prepared you feel technically. The skills that earned you the offer (DSA, coding interviews) are largely different from the skills that will determine your trajectory in the first 2 years (communication, judgment, delivering production code, building relationships). This guide covers what actually matters in your first job: and what the top performers do differently.",
     sections: [
       {
@@ -8475,7 +8475,7 @@ const posts: BlogPost[] = [
     readTime: "15 min",
     heroImage: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1200&q=80",
     heroAlt: "Product manager drawing user journey on a whiteboard in a sprint",
-    datePublished: "2026-08-29",
+    datePublished: "2026-07-21",
     intro: "Product Manager (PM) roles at top Indian companies are among the most competitive positions in Indian tech: with hundreds of applicants for each opening at companies like Swiggy, Razorpay, and Flipkart. Unlike SDE hiring which focuses primarily on DSA, PM hiring tests a much broader set of skills: product thinking, analytical ability, executive communication, and user empathy. This guide covers the full PM interview framework with sample answers calibrated for the Indian market.",
     sections: [
       {
@@ -8523,7 +8523,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1588702547919-26089e690ecc?w=1200&q=80",
     heroAlt: "Indian professional in a well-lit home office setup for a video interview",
-    datePublished: "2026-08-29",
+    datePublished: "2026-07-21",
     intro: "Remote work opportunities for Indian professionals expanded dramatically after 2020, and in 2026 a significant number of Indian software engineers, designers, and analysts work for global companies while based in India. But succeeding in a remote job interview requires different preparation from an in-person Indian IT interview: the setup, communication style, and expectations differ substantially. This guide covers how to present yourself effectively in remote interviews and how to target remote-first global companies from India.",
     sections: [
       {
@@ -8567,7 +8567,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1200&q=80",
     heroAlt: "Job seeker reviewing resume on a laptop with coffee nearby",
-    datePublished: "2026-08-30",
+    datePublished: "2026-07-21",
     intro: "Most Indian engineering resumes are rejected before a human reads them: filtered out by Applicant Tracking Systems (ATS) that scan for keywords, formatting compatibility, and relevance signals. At companies like Amazon, Microsoft, and Flipkart, the resume-to-phone-screen rate is 3–8% for unoptimised resumes. This guide explains how ATS systems work and gives you a step-by-step optimisation process for the Indian job market.",
     sections: [
       {
@@ -8615,7 +8615,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1504279577054-cf2e38a07547?w=1200&q=80",
     heroAlt: "Two colleagues conducting a mock interview in a meeting room",
-    datePublished: "2026-08-30",
+    datePublished: "2026-07-21",
     intro: "Indian job seekers collectively spend millions of hours studying for interviews: and most of that time is spent on the wrong activity. Reading books, watching YouTube explanations, and doing LeetCode silently are all important, but they develop different skills than the interview itself. The interview is a performance under observation: and like any performance skill, it requires practice in conditions that resemble the real thing. This article explains the science behind mock interview practice and why it has a disproportionate impact on interview outcomes.",
     sections: [
       {
@@ -8665,7 +8665,7 @@ const posts: BlogPost[] = [
     readTime: "14 min",
     heroImage: "https://images.unsplash.com/photo-1593642634402-b0eb5e2edd90?w=1200&q=80",
     heroAlt: "JSX code on a monitor with React logo visible on a sticker",
-    datePublished: "2026-09-01",
+    datePublished: "2026-07-21",
     intro: "React is the dominant frontend framework at Indian product companies. Whether you are a fresher targeting a frontend SDE role or an experienced engineer moving into a React-heavy stack, this guide covers the complete spectrum of React interview questions: from the basics expected at entry level through the architecture and performance questions asked at senior level at companies like Flipkart, Razorpay, Swiggy, and FAANG India.",
     sections: [
       {
@@ -8713,7 +8713,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1547954575-855750c57bd3?w=1200&q=80",
     heroAlt: "TypeScript code with type annotations visible on a monitor",
-    datePublished: "2026-09-01",
+    datePublished: "2026-07-21",
     intro: "TypeScript has become the default for frontend and increasingly backend development at Indian product companies in 2026. Razorpay, PhonePe, Flipkart, and most tech-forward Indian startups now write TypeScript by default. This guide covers the TypeScript interview questions you will encounter at these companies: from type fundamentals to generics and the practical patterns that distinguish strong TypeScript engineers.",
     sections: [
       {
@@ -8757,7 +8757,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1655720408374-c8b5fc3a3fe6?w=1200&q=80",
     heroAlt: "Git version control branches visualization on a developer screen",
-    datePublished: "2026-09-02",
+    datePublished: "2026-07-21",
     intro: "Git knowledge is expected at every level of software engineering: from freshers joining their first team to senior engineers leading multi-team projects. Indian product company and service IT interviews increasingly include Git questions, both as standalone technical questions and embedded in practical scenarios. This guide covers everything from the basics tested at fresher level to the advanced Git operations tested at SDE-2 and above.",
     sections: [
       {
@@ -8797,7 +8797,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1488229297570-58520851e868?w=1200&q=80",
     heroAlt: "Docker and Kubernetes logos on a terminal screen with container logs scrolling",
-    datePublished: "2026-09-02",
+    datePublished: "2026-07-21",
     intro: "Docker and Kubernetes knowledge has moved from 'DevOps specialist' territory to mainstream SDE expectation at Indian product companies. In 2026, most mid-level and senior backend engineers at companies like Razorpay, Swiggy, and Meesho are expected to understand containerisation and basic orchestration. This guide covers the container and Kubernetes questions you will encounter across backend and DevOps roles at Indian product companies.",
     sections: [
       {
@@ -8837,7 +8837,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?w=1200&q=80",
     heroAlt: "Practice aptitude test book and calculator on a study desk",
-    datePublished: "2026-09-03",
+    datePublished: "2026-07-21",
     intro: "The aptitude test (also called online assessment, OA, or written test) is the first filter in almost every large Indian IT company's hiring process. TCS NQT, Infosys InfyTQ, Wipro NTSE, Accenture SEET, and Cognizant STET each have distinct formats: but all test the same core areas: quantitative aptitude, logical reasoning, verbal ability, and coding. This guide gives you company-specific formats, time-per-question targets, and strategies that Indian candidates who have cleared these tests actually use.",
     sections: [
       {
@@ -8881,7 +8881,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1200&q=80",
     heroAlt: "Group of five candidates engaged in a structured GD round",
-    datePublished: "2026-09-03",
+    datePublished: "2026-07-21",
     intro: "Group Discussions (GDs) remain a standard selection round in Indian campus placements and MBA admissions. Companies like TCS, Wipro, Infosys, Accenture, L&T, and most consulting firms use GDs to assess communication, leadership, analytical thinking, and teamwork: qualities that are difficult to evaluate in a solo interview. Many capable candidates fail GDs not because of poor knowledge but because of avoidable communication mistakes. This guide covers exactly what evaluators look for and how to perform consistently.",
     sections: [
       {
@@ -8925,7 +8925,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1504279577054-cf2e38a07547?w=1200&q=80",
     heroAlt: "Person sitting quietly with a thoughtful expression, resilience theme",
-    datePublished: "2026-09-04",
+    datePublished: "2026-07-21",
     intro: "Interview rejection is the norm, not the exception. Amazon's hire rate from application to offer is approximately 2%. Google's is under 1%. Even strong candidates at Indian product companies face rejection rates of 70-90% per interview loop. The candidates who ultimately succeed are not those who are rejected less: they are those who handle rejection more systematically. This guide gives you the practical framework for turning each rejection into improved performance on the next attempt.",
     sections: [
       {
@@ -8965,7 +8965,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=1200&q=80",
     heroAlt: "Document verification process in a professional setting",
-    datePublished: "2026-09-04",
+    datePublished: "2026-07-21",
     intro: "Background Verification (BGV) is a mandatory step in the joining process at virtually every Indian IT company, bank, and MNC. Many candidates who receive offers lose them: or face serious consequences after joining: because of avoidable discrepancies in their BGV. This guide explains what Indian companies actually verify, common pitfalls, and how to ensure your BGV goes smoothly.",
     sections: [
       {
@@ -9005,7 +9005,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1590649948401-28b1a65d4e41?w=1200&q=80",
     heroAlt: "Person carefully reading an offer letter document on a desk",
-    datePublished: "2026-09-05",
+    datePublished: "2026-07-21",
     intro: "An offer letter is a legal document, but most Indian job seekers sign it within hours of receiving it: excited, relieved, and not reading carefully. Several clauses in Indian offer letters are genuinely problematic and cost candidates money, flexibility, or career opportunities. This guide covers every red flag to check before you sign, with specific questions to ask HR when you find them.",
     sections: [
       {
@@ -9045,7 +9045,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&q=80",
     heroAlt: "Professional presenting ideas confidently to a small team",
-    datePublished: "2026-09-05",
+    datePublished: "2026-07-21",
     intro: "Communication is the skill that most Indian engineers underinvest in relative to its career impact. Technical depth gets you to senior engineer; communication ability determines whether you get to staff engineer, tech lead, or engineering manager. In interviews, poor communication routinely causes rejections despite technically correct answers. This guide focuses on the specific communication patterns that hold Indian engineers back: and gives practical techniques to improve them.",
     sections: [
       {
@@ -9091,7 +9091,7 @@ const posts: BlogPost[] = [
     readTime: "14 min",
     heroImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&q=80",
     heroAlt: "Data visualization dashboard with charts on a large monitor",
-    datePublished: "2026-09-08",
+    datePublished: "2026-07-21",
     intro: "Data science has become one of the most sought-after careers in India, with Flipkart, Amazon, Uber, Razorpay, and hundreds of startups hiring data scientists at all experience levels. But the field is also one of the most over-hyped: many candidates complete a data science course, build a portfolio project, and then struggle to get hired because they misunderstand what the job actually requires. This roadmap covers the full path from beginner to employed data scientist in the Indian market.",
     sections: [
       {
@@ -9131,7 +9131,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&q=80",
     heroAlt: "Two professionals shaking hands in an office",
-    datePublished: "2026-09-08",
+    datePublished: "2026-07-21",
     intro: "Referrals are the highest-conversion application channel at Indian tech companies. At Amazon India, Google India, and Flipkart, referred candidates are 3-5x more likely to get an interview than direct applicants. Yet most Indian candidates either never ask for referrals or ask in ways that guarantee a 'no'. This guide covers exactly how referrals work at Indian companies, what referrers are actually thinking, and how to make a referral request that gets accepted.",
     sections: [
       {
@@ -9171,7 +9171,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1523961131876-20466dd1d38b?w=1200&q=80",
     heroAlt: "Programming language logos chart showing India job market demand",
-    datePublished: "2026-09-09",
+    datePublished: "2026-07-21",
     intro: "Choosing a programming language is one of the most consequential decisions in an early software engineering career. In the Indian job market, different languages open radically different doors: and the right choice depends entirely on which companies and roles you are targeting. This guide gives a data-driven view of which languages are actually in demand across different segments of the Indian tech industry in 2026.",
     sections: [
       {
@@ -9211,7 +9211,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1435527173128-983b87201f4d?w=1200&q=80",
     heroAlt: "Student taking an online test on a laptop with timer visible",
-    datePublished: "2026-09-09",
+    datePublished: "2026-07-21",
     intro: "Online assessments (OAs) are the first technical gate at almost every Indian product company and increasingly at service IT companies. Platforms used: HackerRank (Amazon, Flipkart, Microsoft), HackerEarth (Swiggy, Meesho), Codility (European MNCs), and custom internal platforms (Google, FAANG). The OA format: timed, unproctored or lightly proctored, 2-4 problems in 90-180 minutes: requires a strategy that is distinct from whiteboard interviews. This guide covers everything from platform-specific tips to the exact decision tree for approaching each problem.",
     sections: [
       {
@@ -9251,7 +9251,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=1200&q=80",
     heroAlt: "Cloud engineer monitoring infrastructure on multiple screens",
-    datePublished: "2026-09-10",
+    datePublished: "2026-07-21",
     intro: "Cloud computing is the fastest-growing segment of the Indian IT job market. Every bank, every insurance company, every large enterprise, and every tech startup is migrating infrastructure to the cloud: and the demand for cloud engineers, DevOps engineers, and cloud architects far exceeds supply. This guide covers which cloud platform to prioritise for the Indian job market, the certifications that are actually valued, realistic salary expectations, and the fastest path to your first cloud role.",
     sections: [
       {
@@ -9291,7 +9291,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=1200&q=80",
     heroAlt: "Bootcamp students learning to code in a collaborative classroom",
-    datePublished: "2026-09-10",
+    datePublished: "2026-07-21",
     intro: "India's coding bootcamp industry has exploded: Scaler Academy, Masai School, Newton School, iNeuron, Kraftshala, Learnbay, and dozens of others now promise placement in 3-9 months. Some deliver. Many do not. The problem is that the marketing around bootcamps is often more polished than the actual outcomes. This guide cuts through the claims to help you decide whether a bootcamp is the right investment for your specific situation: and if so, which one.",
     sections: [
       {
@@ -9330,7 +9330,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1200&q=80",
     heroAlt: "Developer laptop with several personal project repositories open",
-    datePublished: "2026-09-11",
+    datePublished: "2026-07-21",
     intro: "At Indian product companies, a strong GitHub portfolio with 2-3 real, deployed side projects can compensate for a low CGPA, a tier-2 college, or a gap year. Conversely, a candidate from a tier-1 college with a strong CGPA but no real projects beyond the standard curriculum often struggles to differentiate in product company interviews. This guide covers exactly what makes a side project compelling to Indian hiring managers and how to build, document, and present your portfolio.",
     sections: [
       {
@@ -9366,7 +9366,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1553830591-3d7de29a3b78?w=1200&q=80",
     heroAlt: "Professional on a video call with laptop in a home office",
-    datePublished: "2026-09-11",
+    datePublished: "2026-07-21",
     intro: "The work-from-home landscape in Indian tech has shifted significantly since 2022. Large companies (TCS, Infosys, Wipro) have mandated 5-day office attendance. Many product companies have settled into hybrid models (3 days in office). A smaller but growing set of companies: particularly startups and companies with distributed teams: are genuinely remote-first. Understanding where companies stand and how to negotiate your working arrangement is now an important career skill for Indian tech professionals.",
     sections: [
       {
@@ -9402,7 +9402,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1606857521015-7f9e2b7a9aa8?w=1200&q=80",
     heroAlt: "Two senior engineers discussing career track choices in an office",
-    datePublished: "2026-09-12",
+    datePublished: "2026-07-21",
     intro: "After reaching senior software engineer (SDE-2/SDE-3), Indian tech professionals face a fork in the road: move into engineering management (EM) or pursue the individual contributor (IC) leadership track toward staff/principal engineer. Both paths are legitimate and valuable: but they are radically different jobs, and the choice affects day-to-day work, salary trajectory, and satisfaction for years. This guide gives a clear-eyed comparison of both tracks as they exist in the Indian tech market in 2026.",
     sections: [
       {
@@ -9438,7 +9438,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1610484826967-e7bb7be1c1f2?w=1200&q=80",
     heroAlt: "Student planning interview preparation schedule on a wall calendar",
-    datePublished: "2026-09-12",
+    datePublished: "2026-07-21",
     intro: "One of the most common questions from Indian engineers preparing for product company interviews: 'How long do I need to prepare?' The honest answer: it depends on your current skill level, target company tier, and daily time available. This guide gives structured, specific preparation timelines for three scenarios: 30 days (rapid prep for a serendipitous opportunity), 60 days (standard prep for mid-level product company roles), and 90 days (thorough prep for FAANG and top Indian unicorn roles).",
     sections: [
       {
@@ -9475,7 +9475,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Stock option grant document with equity value chart on tablet",
-    datePublished: "2026-09-15",
+    datePublished: "2026-07-21",
     intro: "ESOPs (Employee Stock Ownership Plans) are a central part of compensation at Indian tech startups. Many Indian engineers join startups with significant ESOP grants but do not fully understand what they own, when they can exercise it, how it is taxed, or what a liquidity event means. This guide breaks down everything you need to know about startup equity in the Indian context.",
     sections: [
       {
@@ -9515,7 +9515,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1455849318743-b2c55aa2af45?w=1200&q=80",
     heroAlt: "Engineer in a performance review meeting with manager in office",
-    datePublished: "2026-09-15",
+    datePublished: "2026-07-21",
     intro: "Promotion decisions at Indian tech companies feel opaque: the criteria are rarely written down, and many engineers who believe they are on track are surprised to be passed over. This guide demystifies the promotion process at Indian product companies and service IT firms.",
     sections: [
       {
@@ -9555,7 +9555,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1532619187608-e5375cab36aa?w=1200&q=80",
     heroAlt: "Angular component code in Visual Studio Code on a developer laptop",
-    datePublished: "2026-09-16",
+    datePublished: "2026-07-21",
     intro: "Angular remains the dominant frontend framework in Indian enterprise and BFSI sectors. While React leads at consumer product startups, Angular is the default at large banking applications, insurance portals, ERP systems, and enterprise software companies. This guide covers Angular interview questions asked at IT services companies, BFSI tech teams, and enterprise product companies in India.",
     sections: [
       {
@@ -9595,7 +9595,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80",
     heroAlt: "Scrum team during a standup meeting around a Kanban board",
-    datePublished: "2026-09-16",
+    datePublished: "2026-07-21",
     intro: "Agile and Scrum questions appear consistently in Indian product company interviews: both as standalone questions and embedded in behavioural scenarios. This guide covers the Agile and Scrum questions asked across experience levels at Indian tech companies.",
     sections: [
       {
@@ -9635,7 +9635,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1605792657660-592af39b3fc9?w=1200&q=80",
     heroAlt: "Person at desk with box of belongings, career pivot moment",
-    datePublished: "2026-09-17",
+    datePublished: "2026-07-21",
     intro: "Layoffs in Indian tech have become more frequent since 2022: affecting employees at FAANG India, Indian unicorns, and startups alike. Being laid off is disorienting, but it is also manageable with the right sequence of actions. This guide gives you the complete playbook for the first 30 days after a layoff in India.",
     sections: [
       {
@@ -9675,7 +9675,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1576085898323-b41b6f58a0ab?w=1200&q=80",
     heroAlt: "QA engineer reviewing test results on multiple monitors",
-    datePublished: "2026-09-17",
+    datePublished: "2026-07-21",
     intro: "Software testing and QA is one of the largest job categories in Indian IT. The shift from manual to automation testing has dramatically changed what QA interviews test in 2026. This guide covers both manual and automation QA interview questions at the full spectrum of Indian companies.",
     sections: [
       {
@@ -9715,7 +9715,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&q=80",
     heroAlt: "College student studying in a library",
-    datePublished: "2026-09-18",
+    datePublished: "2026-07-21",
     intro: "The Indian tech industry has a college tier bias at resume screening: but it is far less deterministic at the interview stage than most students believe. Every year, engineers from tier-2 and tier-3 colleges get offers at Amazon, Flipkart, Microsoft, and Google India. The path is narrower but exists.",
     sections: [
       {
@@ -9755,7 +9755,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80",
     heroAlt: "Professional reviewing a salary breakdown chart on a laptop",
-    datePublished: "2026-09-19",
+    datePublished: "2026-07-21",
     intro: "The Indian salary structure is deliberately complex: CTC, gross salary, basic pay, HRA, LTA, PF, and gratuity all interact in ways that make it hard to understand what you will actually receive. This guide gives you a clear framework for understanding, calculating, and comparing salary structures at Indian tech companies.",
     sections: [
       {
@@ -9795,7 +9795,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1200&q=80",
     heroAlt: "Professional in a confident interview posture",
-    datePublished: "2026-09-19",
+    datePublished: "2026-07-21",
     intro: "Body language accounts for a significant portion of the impression you make in a job interview: yet it is rarely discussed in Indian interview preparation guides. This guide covers the specific body language adjustments that make Indian candidates more confident and credible in both in-person and virtual interviews.",
     sections: [
       {
@@ -9837,7 +9837,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
     heroAlt: "Data engineering pipeline diagram with Spark and Kafka components",
-    datePublished: "2026-10-01",
+    datePublished: "2026-07-21",
     intro: "Data engineering is one of the fastest-growing roles in Indian tech. Product companies, fintech firms, and large enterprises are all hiring data engineers to build the pipelines that power analytics, ML, and decision-making. This guide covers the specific data engineering interview questions asked at Indian product companies and the broader tech ecosystem.",
     sections: [
       {
@@ -9877,7 +9877,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&q=80",
     heroAlt: "Java code on a monitor in a developer's workspace",
-    datePublished: "2026-10-01",
+    datePublished: "2026-07-21",
     intro: "Java and Spring Boot dominate the backend stack at Indian service IT companies (TCS, Infosys, Wipro, Cognizant) and a large proportion of Indian product companies in BFSI, enterprise SaaS, and e-commerce. This guide covers the Java and Spring Boot questions asked across experience levels at Indian companies.",
     sections: [
       {
@@ -9917,7 +9917,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1573497491765-cf27124d08dd?w=1200&q=80",
     heroAlt: "Formal HR round interview with two interviewers and one candidate",
-    datePublished: "2026-10-02",
+    datePublished: "2026-07-21",
     intro: "The HR round is often treated as a formality in Indian tech interviews: which is why many candidates underperform in it. HR rounds can disqualify candidates who sail through technical rounds, and they set expectations about compensation, start date, and fit that affect your entire tenure. This guide decodes what HR interviewers at Indian companies are actually evaluating.",
     sections: [
       {
@@ -9957,7 +9957,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1590649948401-28b1a65d4e41?w=1200&q=80",
     heroAlt: "Document pages spread on a white desk with a pen",
-    datePublished: "2026-10-02",
+    datePublished: "2026-07-21",
     intro: "A strong fresher resume is the first filter you must pass in Indian campus and off-campus hiring. Recruiters at Indian tech companies spend an average of 6-10 seconds on a resume before deciding to read further. This guide gives you the exact structure, content, and ATS optimisation needed for Indian IT job applications in 2026.",
     sections: [
       {
@@ -9997,7 +9997,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80",
     heroAlt: "Machine learning neural network visualization",
-    datePublished: "2026-10-03",
+    datePublished: "2026-07-21",
     intro: "Machine learning roles in India have expanded beyond pure research into applied ML, MLOps, and AI product engineering. Indian product companies, BFSI AI teams, and a growing number of AI startups are hiring ML engineers and data scientists who can build, evaluate, and deploy models in production. This guide covers the ML interview questions asked at these companies in 2026.",
     sections: [
       {
@@ -10037,7 +10037,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1537432952691-42a30e84b8c1?w=1200&q=80",
     heroAlt: "DevOps engineer managing CI/CD pipeline on dual monitor setup",
-    datePublished: "2026-10-03",
+    datePublished: "2026-07-21",
     intro: "DevOps and site reliability engineering are among the most in-demand roles in Indian tech in 2026. Product companies, cloud-first startups, and large enterprises are all investing in DevOps talent to accelerate delivery and improve system reliability. This guide covers the DevOps interview questions asked at Indian companies across experience levels.",
     sections: [
       {
@@ -10077,7 +10077,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1200&q=80",
     heroAlt: "Graduate in formal attire holding a folder, stepping into office",
-    datePublished: "2026-10-04",
+    datePublished: "2026-07-21",
     intro: "The first 90 days at your first IT job in India are formative: they shape your reputation, your network, and your early trajectory. Most first-year employees either impress or underperform in predictable ways. This guide tells you exactly what to do in each phase of your first year.",
     sections: [
       {
@@ -10117,7 +10117,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1596524430615-b46475ddff4e?w=1200&q=80",
     heroAlt: "Remote IT worker with headphones coding from a coworking space",
-    datePublished: "2026-10-04",
+    datePublished: "2026-07-21",
     intro: "Remote work for Indian IT professionals has matured significantly since 2020. Both domestic remote roles (India-based companies with WFH) and international remote roles (working for foreign companies from India) are viable and increasingly common in 2026. This guide covers how to find, interview for, and succeed in remote IT roles from India.",
     sections: [
       {
@@ -10157,7 +10157,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&q=80",
     heroAlt: "Product roadmap on a whiteboard with sticky notes",
-    datePublished: "2026-10-05",
+    datePublished: "2026-07-21",
     intro: "Senior engineering interviews at Indian product companies increasingly include product thinking questions: scenarios that test whether you understand what you are building, not just how to build it. This guide covers the product sense questions embedded in engineering interviews at companies like Swiggy, Flipkart, Razorpay, and FAANG India.",
     sections: [
       {
@@ -10197,7 +10197,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1520583819-87d83e1a8adb?w=1200&q=80",
     heroAlt: "SQL query results displayed in a database management console",
-    datePublished: "2026-10-05",
+    datePublished: "2026-07-21",
     intro: "SQL is tested in nearly every data-related role in India: data engineers, data analysts, backend engineers, data scientists, and business intelligence professionals. This guide covers the SQL questions asked at Indian product companies, service IT firms, and analytics companies: from basic joins to window functions and query optimisation.",
     sections: [
       {
@@ -10239,7 +10239,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=1200&q=80",
     heroAlt: "LinkedIn profile on a laptop screen",
-    datePublished: "2026-10-10",
+    datePublished: "2026-07-21",
     intro: "LinkedIn is the primary channel through which Indian tech recruiters source candidates: both for active applications and passive outreach. A well-optimized LinkedIn profile gets you inbound recruiter messages; a weak one means applying into silence. This guide covers the specific optimization levers that work for Indian tech job seekers in 2026.",
     sections: [
       {
@@ -10279,7 +10279,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200&q=80",
     heroAlt: "Professionals networking at a tech event",
-    datePublished: "2026-10-10",
+    datePublished: "2026-07-21",
     intro: "40-50% of mid-level tech hires in India happen through referrals and networks, not job boards. Yet most Indian tech professionals have an underdeveloped network and rely entirely on cold applications. This guide gives you a practical networking strategy for Indian tech in 2026: one that actually generates referrals and opportunities.",
     sections: [
       {
@@ -10319,7 +10319,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&q=80",
     heroAlt: "Engineer working on a modern product interface",
-    datePublished: "2026-10-11",
+    datePublished: "2026-07-21",
     intro: "Switching from an IT services company (TCS, Infosys, Wipro, Cognizant, HCL) to a product company (Swiggy, Razorpay, Flipkart, Meesho, PhonePe) is one of the most common career transitions in Indian tech. It is also one of the most misunderstood: many engineers underestimate the skills gap and overestimate how long it takes to bridge. This guide gives you a realistic plan.",
     sections: [
       {
@@ -10359,7 +10359,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&q=80",
     heroAlt: "Developer solving coding problems on a computer",
-    datePublished: "2026-10-11",
+    datePublished: "2026-07-21",
     intro: "Competitive programming (CP) is a force multiplier for Indian placements and job switches. Strong CP ratings open doors at Google, Amazon, Codeforces-sponsored hiring contests, and campus placements that filter on online assessments. This guide gives you the full picture of how CP translates into opportunities in Indian tech.",
     sections: [
       {
@@ -10399,7 +10399,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
     heroAlt: "Developer GitHub profile page on a laptop in a bright workspace",
-    datePublished: "2026-10-12",
+    datePublished: "2026-07-21",
     intro: "A strong GitHub profile is one of the highest-return investments an Indian tech professional can make. It is a living, verifiable credential that compensates for college tier, explains employment gaps, and demonstrates practical engineering skill in a way that a resume cannot. This guide covers how to build a GitHub profile that opens doors in the Indian tech market.",
     sections: [
       {
@@ -10439,7 +10439,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=1200&q=80",
     heroAlt: "Android development on a laptop and smartphone",
-    datePublished: "2026-10-12",
+    datePublished: "2026-07-21",
     intro: "Android development remains one of the highest-demand specialisations in Indian tech: India has the second-largest Android user base in the world, and every consumer product company (Swiggy, Meesho, PhonePe, Zepto, Blinkit) has a large Android engineering team. This guide covers Android and Kotlin interview questions at Indian product companies across experience levels.",
     sections: [
       {
@@ -10479,7 +10479,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=1200&q=80",
     heroAlt: "Indian city skyline with tech office buildings",
-    datePublished: "2026-10-13",
+    datePublished: "2026-07-21",
     intro: "Relocating for an IT job is one of the most consequential career decisions for Indian engineers outside the metros. The city you choose affects your salary, cost of living, career opportunities, and quality of life for years. This guide breaks down each major Indian tech city so you can make the relocation decision with real data.",
     sections: [
       {
@@ -10519,7 +10519,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1569437061190-a5d03d5e1b69?w=1200&q=80",
     heroAlt: "Developer solving a Python coding challenge on a dual-monitor setup",
-    datePublished: "2026-10-13",
+    datePublished: "2026-07-21",
     intro: "Python is the primary language for data engineering, machine learning, and backend development at Indian product companies and startups. Backend engineers at Swiggy, Zomato, and Meesho, and virtually all ML and data science roles across Indian tech are Python-first. This guide covers the Python interview questions asked at Indian product companies across experience levels.",
     sections: [
       {
@@ -10559,7 +10559,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1200&q=80",
     heroAlt: "Professional composing a professional resignation email on laptop",
-    datePublished: "2026-10-14",
+    datePublished: "2026-07-21",
     intro: "India notice period culture is unique: 60 to 90-day notice periods are standard at most tech companies, significantly longer than global norms. This creates friction at career transitions and is often the most stressful part of changing jobs. This guide covers every legal and practical tool available to reduce or manage your notice period in India.",
     sections: [
       {
@@ -10599,7 +10599,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80",
     heroAlt: "Cloud infrastructure rack servers in a modern data centre",
-    datePublished: "2026-10-14",
+    datePublished: "2026-07-21",
     intro: "Cloud architect and senior cloud engineer roles are among the highest-paying technical roles in Indian IT in 2026. As Indian companies migrate to AWS, GCP, and Azure, demand for engineers who can design cloud-native architectures has significantly outpaced supply. This guide covers cloud architecture interview questions at Indian product companies and enterprise cloud teams.",
     sections: [
       {
@@ -10680,7 +10680,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
     heroAlt: "ICICI Bank digital banking mobile app on smartphone screen",
-    datePublished: "2026-07-22",
+    datePublished: "2026-07-21",
     intro: "ICICI Bank has emerged as one of India's most technology-forward private sector banks, building much of its digital banking stack in-house through its dedicated technology division. The bank's iMobile Pay app has over 10 million users and its APIs power a significant portion of India's digital payment ecosystem. This guide covers what ICICI Bank looks for in software engineer candidates, the technology landscape, typical interview structure, and salary benchmarks for tech roles in 2026.",
     sections: [
       {
@@ -10720,7 +10720,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
     heroAlt: "Financial professional reviewing banking data on computer screens",
-    datePublished: "2026-07-23",
+    datePublished: "2026-07-21",
     intro: "Axis Bank is India's third-largest private sector bank and has been aggressively investing in technology modernization through its Axis 3.0 digital strategy. The bank's technology team handles everything from mobile banking and lending platforms to treasury systems and regulatory reporting. This guide covers the Axis Bank software engineer interview process, technology expectations, domain knowledge requirements, and realistic 2026 salary benchmarks for candidates targeting Axis Bank tech roles.",
     sections: [
       {
@@ -10760,7 +10760,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80",
     heroAlt: "Fintech mobile lending app displaying loan approval on smartphone",
-    datePublished: "2026-07-24",
+    datePublished: "2026-07-21",
     intro: "Bajaj Finance is India's largest NBFC (Non-Banking Financial Company) and one of the most technologically sophisticated lenders in the country. With over 80 million customers and a product range spanning consumer durable loans, personal loans, EMI cards, and digital banking via Bajaj Pay, the company's technology team operates at impressive scale. This guide covers what Bajaj Finance looks for in software engineer interviews, the fintech stack, lending domain knowledge, and 2026 salary benchmarks.",
     sections: [
       {
@@ -10800,7 +10800,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Stock trading charts and candlestick graphs on financial dashboard",
-    datePublished: "2026-07-25",
+    datePublished: "2026-07-21",
     intro: "Upstox (formerly RKSV) is one of India's fastest-growing discount brokers, competing with Zerodha for the top position in the retail trading market. With millions of active traders on the platform and systems that process thousands of orders per second during market hours, Upstox engineering deals with some of the hardest real-time systems challenges in Indian fintech. This guide covers the Upstox software engineer interview process, the fintech trading stack, key technical domains, and 2026 salary benchmarks.",
     sections: [
       {
@@ -10840,7 +10840,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&q=80",
     heroAlt: "Engineers collaborating around laptops in a modern tech office",
-    datePublished: "2026-07-26",
+    datePublished: "2026-07-21",
     intro: "Meta (formerly Facebook) has a significant engineering presence in India, primarily through its Hyderabad office. Meta India engineers work on core products used by billions worldwide, including Facebook, Instagram, WhatsApp, and Meta Ads infrastructure. Landing an L4 or L5 role at Meta India is among the most competitive software engineering challenges in the country. This guide covers the Meta interview process in detail, what each round tests, how to prepare for planetary-scale system design, and what Meta India compensation looks like in 2026.",
     sections: [
       {
@@ -10880,7 +10880,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1200&q=80",
     heroAlt: "Students learning to code on laptops in a modern educational setting",
-    datePublished: "2026-07-27",
+    datePublished: "2026-07-21",
     intro: "Scaler (InterviewBit Scaler) is India's leading intensive tech education platform, known for transforming software engineers through its curriculum and for being exceptionally rigorous in its own hiring process. Since Scaler literally teaches data structures and algorithms, their own engineering team is held to an exceptionally high bar. This guide covers the Scaler software engineer interview process, tech stack, what makes their DSA rounds uniquely challenging, and 2026 salary benchmarks for Scaler engineering roles.",
     sections: [
       {
@@ -10920,7 +10920,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=1200&q=80",
     heroAlt: "Online tutoring session with student learning through video screen",
-    datePublished: "2026-07-28",
+    datePublished: "2026-07-21",
     intro: "Vedantu is one of India's pioneering live online tutoring platforms, connecting students with teachers via interactive video sessions. Building a platform that hosts thousands of simultaneous live tutoring sessions, handles real-time interactive whiteboards, and serves students across highly variable internet connections creates genuinely difficult engineering problems. This guide covers Vedantu's software engineer interview process, the real-time video platform stack, and what makes Vedantu a unique engineering environment for candidates interested in EdTech in 2026.",
     sections: [
       {
@@ -10960,7 +10960,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=1200&q=80",
     heroAlt: "Quantitative trading screens showing market data and algorithmic trading charts",
-    datePublished: "2026-07-29",
+    datePublished: "2026-07-21",
     intro: "Optiver is one of the world's leading high-frequency trading (HFT) and market-making firms, with a significant technology and quantitative research hub in Pune, India. Landing a role at Optiver is fundamentally different from any software engineering or finance interview you have encountered. The process tests mental math speed, probability intuition, brainteaser reasoning, and low-latency programming simultaneously. This guide explains what each stage of the Optiver India interview tests, how to prepare, and what compensation looks like for quant and tech roles in 2026.",
     sections: [
       {
@@ -11000,7 +11000,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80",
     heroAlt: "Hedge fund analyst reviewing quantitative data models on multiple screens",
-    datePublished: "2026-07-30",
+    datePublished: "2026-07-21",
     intro: "Millennium Management is one of the world's largest and most successful multi-strategy hedge funds, managing over $60 billion in assets. Millennium's India offices (primarily Mumbai and Bengaluru) focus on quantitative research, systematic trading strategy development, and technology infrastructure. Getting a role at Millennium India is exceptionally competitive and the interview process reflects that. This guide explains the Millennium interview process for quant and technology roles, what each round tests, and the compensation candidates can expect in 2026.",
     sections: [
       {
@@ -11042,7 +11042,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=80",
     heroAlt: "Fresh groceries and vegetables in a shopping bag for 10-minute quick delivery",
-    datePublished: "2026-07-31",
+    datePublished: "2026-07-21",
     intro: "Zepto is India's fastest-growing quick commerce company, delivering groceries in under 10 minutes from a network of dark stores. Founded in 2021, Zepto reached unicorn status in under 18 months and is now processing millions of orders daily across 10+ Indian cities. The engineering team at Zepto works on some of the most time-sensitive logistics and inventory systems in India, making it a technically interesting employer for engineers who want their code to directly impact delivery speed.",
     sections: [
       {
@@ -11082,7 +11082,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1506617564039-2f3b650b7010?w=1200&q=80",
     heroAlt: "Online grocery delivery service with fresh food products and delivery bags",
-    datePublished: "2026-08-01",
+    datePublished: "2026-07-21",
     intro: "Blinkit (formerly Grofers) is India's second-largest quick commerce player and operates as a wholly owned subsidiary of Zomato. With a network of 1,000+ dark stores across 40+ Indian cities, Blinkit processes millions of grocery orders daily. As part of Zomato, Blinkit engineers benefit from a larger engineering organisation, shared infrastructure, and Zomato's public company stability. This guide covers the software engineer interview process at Blinkit in 2026.",
     sections: [
       {
@@ -11122,7 +11122,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&q=80",
     heroAlt: "Software developer testing web application across multiple browsers on different screens",
-    datePublished: "2026-08-02",
+    datePublished: "2026-07-21",
     intro: "BrowserStack is India's most successful SaaS developer tools company, enabling 50,000+ enterprises including Apple, Microsoft, and Twitter to test their web and mobile applications across 3,000+ browser and device combinations. With a presence in Mumbai, Bengaluru, and Dublin, BrowserStack has built a globally distributed cloud browser farm that serves as the backbone of CI/CD pipelines worldwide. This guide covers the software engineer interview process at BrowserStack in 2026.",
     sections: [
       {
@@ -11162,7 +11162,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b6f67?w=1200&q=80",
     heroAlt: "Students studying online through digital learning platform with educational videos",
-    datePublished: "2026-08-03",
+    datePublished: "2026-07-21",
     intro: "PhysicsWallah (PW) became India's most valuable EdTech unicorn by doing what BYJU'S and Vedantu could not: deliver high-quality JEE and NEET preparation at a price point that tier-2 and tier-3 India could afford. With 30 million+ registered learners, PW Vidyapeeth offline centres, and an expanding catalogue from school education through competitive exams, the engineering team at PhysicsWallah is building the content delivery and learning management infrastructure that powers India's largest affordable education brand.",
     sections: [
       {
@@ -11202,7 +11202,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=1200&q=80",
     heroAlt: "Social media video content feed on mobile app screen with Indic language content",
-    datePublished: "2026-08-04",
+    datePublished: "2026-07-21",
     intro: "ShareChat is India's largest indigenous social media platform, serving 180 million monthly active users across 15 Indian languages through its main app and Moj (short video, the TikTok alternative). ShareChat has built sophisticated ML infrastructure for content recommendation, language understanding in Indic scripts, and content moderation at scale, making it one of the most technically interesting employers in India's consumer internet space for ML-focused engineers.",
     sections: [
       {
@@ -11242,7 +11242,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80",
     heroAlt: "GPU processors and circuit boards for high-performance AI computing workloads",
-    datePublished: "2026-08-05",
+    datePublished: "2026-07-21",
     intro: "Nvidia's India operations, centred in Pune with a growing presence in Bengaluru and Hyderabad, span its entire product portfolio: GPU architecture design, CUDA compiler development, deep learning framework optimisation, autonomous driving (Nvidia DRIVE), and networking (from the Mellanox acquisition). With Nvidia's market capitalisation making it one of the world's most valuable companies following the AI boom, the Nvidia India GCC is one of the most coveted engineering employers in India in 2026.",
     sections: [
       {
@@ -11282,7 +11282,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1601001435957-74f2b3eb21ac?w=1200&q=80",
     heroAlt: "Semiconductor chip and processor components on electronic circuit board",
-    datePublished: "2026-08-06",
+    datePublished: "2026-07-21",
     intro: "Qualcomm India in Hyderabad is one of the largest R&D centres in India with over 12,000 employees, making it the biggest engineering employer in Telangana's tech sector. Qualcomm India works on Snapdragon mobile processors, 5G modem firmware, AI engine (Hexagon DSP), Android platform software, and Wi-Fi/Bluetooth chipsets. For engineers interested in embedded systems, semiconductor software, and low-level programming, Qualcomm India offers depth of work that is rare in Indian engineering.",
     sections: [
       {
@@ -11322,7 +11322,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=1200&q=80",
     heroAlt: "Apple devices including MacBook and iPhone on clean modern desk",
-    datePublished: "2026-08-07",
+    datePublished: "2026-07-21",
     intro: "Apple's India engineering presence has grown significantly, with GCCs in Hyderabad (Maps, Siri, AI) and Bengaluru (Apple Pay, Platform, Services) and a manufacturing technology hub in Chennai. Apple India interviews are known for their rigor, attention to detail, and emphasis on code correctness over speed. This guide covers the software engineer interview process for Apple India GCC roles in 2026.",
     sections: [
       {
@@ -11362,7 +11362,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=1200&q=80",
     heroAlt: "Streaming platform showing video content on television and laptop screens",
-    datePublished: "2026-08-08",
+    datePublished: "2026-07-21",
     intro: "Netflix's Bengaluru engineering hub works on Platform (device SDKs, encoding pipelines), Data Engineering (petabyte-scale analytics), and Personalisation (the recommendation engine that drives 80% of content discovery). Netflix is one of the highest-paying employers in India and has one of the most distinctive interview processes: the Netflix Culture Memo is not just marketing material but an active filter in the hiring process. This guide covers what to expect when interviewing for Netflix India engineering roles in 2026.",
     sections: [
       {
@@ -11402,7 +11402,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=1200&q=80",
     heroAlt: "Modern financial district office building with global banking technology operations",
-    datePublished: "2026-08-09",
+    datePublished: "2026-07-21",
     intro: "Barclays India, headquartered in Pune, is one of the largest global bank technology centres in India with over 10,000 employees across technology, operations, risk, and finance functions. The Pune Barclays campus (called Barclays Pune or Barclays India Technology) is the global delivery centre for Barclays' investment banking technology, covering trading systems, risk management platforms, regulatory reporting, and corporate banking infrastructure. This guide covers the software engineer interview process at Barclays India in 2026.",
     sections: [
       {
@@ -11444,7 +11444,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80",
     heroAlt: "Modern hotel lobby representing OYO's hospitality technology platform",
-    datePublished: "2026-08-10",
+    datePublished: "2026-07-21",
     intro: "OYO Rooms is one of India's most globally recognised startups, operating a hospitality technology platform across India, Southeast Asia, Europe, and the US. After a period of rapid expansion and subsequent restructuring, OYO in 2026 operates as a leaner, more focused business with a significantly streamlined engineering team. The Gurugram and Hyderabad engineering offices build the property management system (PMS), dynamic pricing engine, and partner and guest mobile applications that power OYO's global inventory.",
     sections: [
       {
@@ -11484,7 +11484,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80",
     heroAlt: "Fashion ecommerce platform representing Myntra's technology",
-    datePublished: "2026-08-11",
+    datePublished: "2026-07-21",
     intro: "Myntra is India's largest fashion and lifestyle ecommerce platform, operating as a Flipkart subsidiary and part of the Walmart India ecosystem. With over 5,000 brands and 1.5 million products, Myntra serves 50 million+ monthly active users from its Bengaluru headquarters. The engineering teams build recommendation systems, visual search, supply chain technology, and the M-Express rapid delivery infrastructure. For candidates, Myntra offers Flipkart-grade technical challenges with a distinct fashion and visual computing domain.",
     sections: [
       {
@@ -11524,7 +11524,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=80",
     heroAlt: "Airport departure lounge representing MakeMyTrip's travel tech platform",
-    datePublished: "2026-08-12",
+    datePublished: "2026-07-21",
     intro: "MakeMyTrip is India's largest online travel agency (OTA), operating the MakeMyTrip and Goibibo brands and serving over 50 million travellers annually. Listed on NASDAQ, MakeMyTrip's engineering teams in Gurugram and Bengaluru build flight booking, hotel search, holiday packages, and bus and train booking across web and mobile platforms. The company's core technical challenges are real-time inventory, dynamic pricing, and GDS (Global Distribution System) integration, making it a distinctive employer for engineers interested in travel tech at scale.",
     sections: [
       {
@@ -11564,7 +11564,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=1200&q=80",
     heroAlt: "Beauty products representing Nykaa's ecommerce platform",
-    datePublished: "2026-08-13",
+    datePublished: "2026-07-21",
     intro: "Nykaa is India's premier beauty and personal care ecommerce platform, listed on NSE (ticker: NYKAA) and operating two main brands: Nykaa Beauty and Nykaa Fashion. With over 5,000 beauty brands and 200,000+ products, Nykaa serves 35 million+ active customers from its Mumbai headquarters and Bengaluru engineering hub. The technology teams build beauty recommendation engines, visual shade-matching tools, supply chain and warehousing systems, and the Nykaa editorial platform (content + commerce).",
     sections: [
       {
@@ -11604,7 +11604,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&q=80",
     heroAlt: "Business professional in a consulting meeting representing BCG's advisory work",
-    datePublished: "2026-08-14",
+    datePublished: "2026-07-21",
     intro: "The Boston Consulting Group (BCG) India practices are based in Mumbai, Delhi, Bengaluru, and Kolkata, serving corporate clients across financial services, consumer goods, healthcare, technology, and public sector. BCG is one of the MBB (McKinsey, BCG, Bain) firms, and its India offices run one of the most sought-after interview processes in the consulting world. This guide covers BCG India's case interview format, the Personal Experience Interview (PEI), preparation strategies, and compensation benchmarks for 2026.",
     sections: [
       {
@@ -11644,7 +11644,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80",
     heroAlt: "Consulting team in a strategic meeting representing Bain's advisory work",
-    datePublished: "2026-08-15",
+    datePublished: "2026-07-21",
     intro: "Bain and Company India practices operate from Mumbai, Delhi, and Bengaluru, serving clients across private equity, consumer goods, healthcare, financial services, and technology. Bain is part of MBB (McKinsey, BCG, Bain) and is globally known for its private equity practice (Bain Capital was spun off from Bain and Company). Bain India has a distinctive written case component in the final interview round that sets it apart from McKinsey and BCG, and its scoring rubric is more explicit about the dimensions being evaluated.",
     sections: [
       {
@@ -11684,7 +11684,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Quantitative trading and data screens representing D.E. Shaw's systematic approach",
-    datePublished: "2026-08-16",
+    datePublished: "2026-07-21",
     intro: "D.E. Shaw is one of the world's most successful quantitative hedge funds, managing over USD 60 billion in assets using systematic trading strategies. The D.E. Shaw India operations are based in Hyderabad (the largest single site globally outside New York) and handle software development, quantitative research, and operations for the firm's global funds. D.E. Shaw India is consistently ranked among the top technology employers in Hyderabad, with compensation that matches or exceeds Google and Amazon India for the right candidates.",
     sections: [
       {
@@ -11724,7 +11724,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=1200&q=80",
     heroAlt: "Financial trading screens representing Citadel's systematic trading operations",
-    datePublished: "2026-08-17",
+    datePublished: "2026-07-21",
     intro: "Citadel is one of the world's premier hedge funds and market makers, operating across systematic trading, discretionary macro, and credit strategies. Citadel's India operations include a Mumbai presence for trading operations and quantitative research, and Bengaluru for technology development. Citadel and its market-making arm Citadel Securities together employ over 3,000 people globally, with the India team growing steadily as a centre for technology and quant talent.",
     sections: [
       {
@@ -11764,7 +11764,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Stock trading interface representing Angel One's fintech platform",
-    datePublished: "2026-08-18",
+    datePublished: "2026-07-21",
     intro: "Angel One (formerly Angel Broking) is one of India's largest full-service stock brokers with over 21 million registered clients. Listed on NSE (ticker: ANGELONE), Angel One has been digitising rapidly with a technology-first strategy: the Angel One app competes directly with Zerodha and Upstox for mobile-first retail investors. The Mumbai and Bengaluru engineering teams build the trading platform, ARQ AI investment advisory, and the mutual fund and IPO distribution technology.",
     sections: [
       {
@@ -11804,7 +11804,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&q=80",
     heroAlt: "Collaborative software team using tools representing Atlassian's product suite",
-    datePublished: "2026-08-19",
+    datePublished: "2026-07-21",
     intro: "Atlassian is the Australian enterprise software company behind Jira, Confluence, Trello, Bitbucket, and a portfolio of collaboration and developer tools used by over 300,000 organisations globally. Atlassian's Bengaluru engineering centre (opened in 2014, now housing 2,000+ employees) is one of the company's largest engineering hubs outside Sydney and San Francisco. Engineers here work on Atlassian's cloud platform (Atlassian Cloud), which now serves the majority of Atlassian's customer base after the company ended server-based product sales in 2024.",
     sections: [
       {
@@ -11846,7 +11846,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&q=80",
     heroAlt: "Professional presenting themselves in a job interview",
-    datePublished: "2026-08-20",
+    datePublished: "2026-07-21",
     intro: "'Tell me about yourself' is the first question in almost every Indian job interview, and it is almost universally answered poorly. Most candidates recite their resume in chronological order. Interviewers do not want to hear your resume read aloud: they want a curated 90-second pitch that answers 'why should we hire you right now for this role'. This guide gives you the framework, the templates, and the worked examples to turn this question into an advantage.",
     sections: [
       {
@@ -11885,7 +11885,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80",
     heroAlt: "Person reflecting on their professional growth and self-improvement",
-    datePublished: "2026-08-21",
+    datePublished: "2026-07-21",
     intro: "'What is your greatest weakness?' is the question Indian candidates dread most. The three most common answers are all wrong: 'I am a perfectionist' (a disguised strength, signals low self-awareness), 'I work too hard' (not a weakness), and 'I cannot think of any major weaknesses' (the worst answer of all). This guide explains what interviewers are actually testing, provides five real weakness answers that work, and explains why the best answer demonstrates something far more valuable than the absence of flaws.",
     sections: [
       {
@@ -11924,7 +11924,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80",
     heroAlt: "Students preparing for placement interviews with structured practice",
-    datePublished: "2026-08-22",
+    datePublished: "2026-07-21",
     intro: "Behavioural interviews are now standard at nearly every Indian company that matters: from TCS and Infosys to Google India and Razorpay, interviewers ask questions like 'Tell me about a time you handled conflict in a team' or 'Give me an example of when you took initiative'. The STAR method is the universal structure for answering these questions well. This guide explains STAR from scratch and gives five complete worked examples drawn from situations freshers in India actually have: college projects, hackathons, internships, and campus extracurriculars.",
     sections: [
       {
@@ -11963,7 +11963,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80",
     heroAlt: "Professional negotiating compensation in a job discussion",
-    datePublished: "2026-08-23",
+    datePublished: "2026-07-21",
     intro: "Salary negotiation is the most financially impactful skill in any Indian professional's career, yet most candidates approach it defensively, leaving significant money on the table. A 10% improvement in your starting offer at age 25 compounds across every raise, bonus, and future offer comparison for your entire career. This guide gives you the research framework, specific scripts for freshers and experienced candidates, and the answers to the hardest HR questions around salary.",
     sections: [
       {
@@ -12002,7 +12002,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&q=80",
     heroAlt: "Professional considering a career change and new opportunities",
-    datePublished: "2026-08-24",
+    datePublished: "2026-07-21",
     intro: "'Why do you want to leave your current company?' is the question designed to trip candidates into negative territory. Most candidates fear it. It is actually one of the easiest questions to answer well once you understand the framework: interviewers are not asking you to condemn your current employer. They are asking you to articulate what you want in your next role and why this specific role at their company addresses it. This guide gives you the framework, scripts for common (and difficult) situations, and the red flags that cost candidates offers.",
     sections: [
       {
@@ -12041,7 +12041,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&q=80",
     heroAlt: "Java code on a screen representing Java developer interview preparation",
-    datePublished: "2026-08-25",
+    datePublished: "2026-07-21",
     intro: "Java is the dominant backend language at Indian enterprises: TCS, Infosys, Wipro, HCL, and Cognizant collectively employ hundreds of thousands of Java developers. At product companies, Java Spring Boot powers the backends of Flipkart, Razorpay, Paytm, HDFC Bank's digital platform, PhonePe, and MakeMyTrip. The Java developer interview varies significantly between service IT and product companies in India: this guide covers both, with the technical topics, question banks, and preparation strategy for each.",
     sections: [
       {
@@ -12080,7 +12080,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
     heroAlt: "Data analysis charts and SQL queries representing data analyst interview preparation",
-    datePublished: "2026-08-26",
+    datePublished: "2026-07-21",
     intro: "Data analyst is one of India's fastest-growing job titles in 2026: every ecommerce company, fintech, bank, and D2C brand is hiring analysts to make sense of their data. The interview process combines SQL (usually the hardest filter), Python with pandas, business case analysis, and communication of insights. This guide covers the complete data analyst interview preparation for Indian companies, from TCS and HDFC Bank to Swiggy and Flipkart, with the actual question types, worked examples, and salary benchmarks.",
     sections: [
       {
@@ -12119,7 +12119,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&q=80",
     heroAlt: "Product roadmap and strategy planning representing PM interview preparation",
-    datePublished: "2026-08-27",
+    datePublished: "2026-07-21",
     intro: "Product Manager is one of India's most sought-after tech career paths in 2026, with PM salaries at top companies rivalling senior engineering roles. Indian PM interviews are known for being intellectually demanding: product design, metrics, estimation, strategy, and behavioural questions in a single process. Companies like Google India, Flipkart, Swiggy, CRED, Razorpay, and Meesho all run competitive PM hiring processes. This guide covers every question type with frameworks and worked examples specific to the Indian product market.",
     sections: [
       {
@@ -12158,7 +12158,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=1200&q=80",
     heroAlt: "React and JavaScript code representing frontend developer interview preparation",
-    datePublished: "2026-08-28",
+    datePublished: "2026-07-21",
     intro: "Frontend development in India has matured significantly: the days of HTML-only roles are gone. Modern frontend interviews at Indian product companies test JavaScript fundamentals at a high level, React hooks in depth, system design for UI (component architecture, state management, performance), and CSS layout mastery. This guide covers the complete preparation for frontend roles at Indian companies from Myntra and Swiggy to Google India and Atlassian, with question breakdowns, worked examples, and the salary benchmarks.",
     sections: [
       {
@@ -12197,7 +12197,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80",
     heroAlt: "Neural network visualization representing machine learning engineer interview preparation",
-    datePublished: "2026-08-29",
+    datePublished: "2026-07-21",
     intro: "Machine Learning Engineer is the fastest-growing tech role in India in 2026, with demand accelerating dramatically as every company adds AI features to their product. MLE interviews are distinct from data scientist interviews: they require both strong ML fundamentals and production engineering skills (model deployment, serving, monitoring). Companies like Flipkart, Myntra, Swiggy, PhonePe, Sarvam AI, Google India, and Microsoft India are all hiring aggressively. This guide covers the complete MLE interview preparation, from fundamentals to system design.",
     sections: [
       {
@@ -12238,7 +12238,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1200&q=80",
     heroAlt: "Bengaluru city skyline with tech parks representing the software engineering hub",
-    datePublished: "2026-08-30",
+    datePublished: "2026-07-21",
     intro: "Bengaluru is India's undisputed technology capital, home to the largest concentration of product companies in South Asia. In 2026, the city hosts Indian engineering offices of every major global tech company (Google, Microsoft, Amazon, Meta, Atlassian) alongside the headquarters of India's most valuable tech companies (Flipkart, Razorpay, Swiggy, CRED, Zerodha). This guide ranks the top 20 product companies in Bengaluru for software engineers, with honest assessments of compensation, culture, interview difficulty, and career trajectory.",
     sections: [
       {
@@ -12277,7 +12277,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80",
     heroAlt: "Digital payment app representing India's thriving fintech ecosystem",
-    datePublished: "2026-08-31",
+    datePublished: "2026-07-21",
     intro: "India's fintech sector is the world's most dynamic in 2026: UPI processes 15 billion transactions per month, India has the second-largest number of fintech unicorns globally, and every bank and NBFC is digitising. For software engineers, fintech offers some of India's most interesting technical problems at massive scale: real-time payment systems, fraud detection, credit underwriting, investment platforms, and insurance technology. This guide ranks India's best fintech employers for engineers, covering compensation, tech stack, culture, and interview process.",
     sections: [
       {
@@ -12316,7 +12316,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80",
     heroAlt: "Career growth and salary progression for software engineers in India",
-    datePublished: "2026-09-01",
+    datePublished: "2026-07-21",
     intro: "Software engineer salaries in India in 2026 span a 50x range: from Rs 3.5 LPA at a tier-3 IT services company to Rs 300+ LPA total compensation at FAANG for a senior engineer. The average masks everything. This guide breaks down real salary data by company tier, city, level, and tech stack, so you know exactly where you stand, what the market will pay you at your next job, and what it takes to move into a higher band.",
     sections: [
       {
@@ -12355,7 +12355,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80",
     heroAlt: "Career decision at a crossroads between service and product engineering paths",
-    datePublished: "2026-09-02",
+    datePublished: "2026-07-21",
     intro: "The IT services vs product company debate is the defining career question for Indian software engineers in 2026. TCS, Infosys, Wipro, HCL, and Cognizant collectively employ over 2 million engineers. Flipkart, Razorpay, Google India, and the broader product company ecosystem employ perhaps 200,000. The difference in compensation, work quality, career trajectory, and exit opportunities is dramatic. This guide gives you a complete, honest comparison so you can make the right decision for your specific situation.",
     sections: [
       {
@@ -12394,7 +12394,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&q=80",
     heroAlt: "College students in India preparing for campus placement interviews",
-    datePublished: "2026-09-03",
+    datePublished: "2026-07-21",
     intro: "Campus placement season is the most high-stakes 3-month window in an Indian engineering student's life. A strong placement opens doors that are significantly harder to access later: FAANG India campus packages are not available off-campus, and your first employer sets the anchor for every salary negotiation for the next 5 years. This guide gives you the complete roadmap: what to prepare, when to prepare it, and how to get offers from your target companies in the 2026 placement season.",
     sections: [
       {
@@ -12433,7 +12433,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80",
     heroAlt: "Server infrastructure and API design representing backend developer interview preparation",
-    datePublished: "2026-09-04",
+    datePublished: "2026-07-21",
     intro: "Backend developer is the most common software engineering role at Indian product companies. The backend engineer designs and implements the APIs, databases, and services that power the product. The interview tests three things: algorithms and data structures (the coding round), system design (how to build scalable backend systems), and language and framework depth (Java, Go, Python, Node.js depending on the company's stack). This guide covers all three with the specific question types, frameworks, and worked examples used in Indian backend interviews in 2026.",
     sections: [
       {
@@ -12472,7 +12472,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1518432031352-d6fc5c10da5a?w=1200&q=80",
     heroAlt: "Cloud infrastructure and Kubernetes cluster representing DevOps and SRE interview preparation",
-    datePublished: "2026-09-05",
+    datePublished: "2026-07-21",
     intro: "DevOps and Site Reliability Engineering (SRE) roles have become among the most sought-after at Indian product companies in 2026. As companies scale to 100M+ users, platform reliability is existential: Swiggy cannot afford order placement to fail during peak hours, PhonePe cannot afford payment processing to drop during festival sales. SRE engineers are paid to prevent and recover from exactly these scenarios. This guide covers the technical topics, system design questions, and cultural fit areas for DevOps and SRE interviews at Indian product companies.",
     sections: [
       {
@@ -12511,7 +12511,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=1200&q=80",
     heroAlt: "Android phone with mobile development interface representing Android developer interview preparation",
-    datePublished: "2026-09-06",
+    datePublished: "2026-07-21",
     intro: "Android is the dominant mobile platform in India: over 95% of Indian smartphones run Android, and every major Indian product company (Swiggy, Zomato, PhonePe, Myntra, Nykaa, CRED, Ola) invests heavily in their Android app. Android developer is a strong career in India in 2026: the combination of Kotlin's maturity, Jetpack Compose's growing adoption, and India's mobile-first user base makes Android engineering both technically engaging and commercially critical. This guide covers the interview preparation for Android roles at Indian product companies.",
     sections: [
       {
@@ -12550,7 +12550,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80",
     heroAlt: "Data pipeline architecture and distributed systems representing data engineer interview preparation",
-    datePublished: "2026-09-07",
+    datePublished: "2026-07-21",
     intro: "Data engineering is one of India's fastest-growing tech roles in 2026. Every product company with 100,000+ monthly active users has a data engineering team: they build the pipelines, warehouses, and real-time streaming infrastructure that analysts, data scientists, and business leaders use to understand what is happening in the product. The data engineer interview tests distributed systems knowledge (Spark, Kafka), SQL at scale, Python programming, and pipeline design. This guide covers all four with the specific questions and frameworks used in Indian data engineering interviews.",
     sections: [
       {
@@ -12589,7 +12589,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&q=80",
     heroAlt: "System architecture diagram representing system design interview preparation",
-    datePublished: "2026-09-08",
+    datePublished: "2026-07-21",
     intro: "System design is the interview round that most engineers underprepare for, and it is often the deciding factor at mid-to-senior level roles at Indian product companies. Unlike DSA (which has well-defined correct answers), system design tests your ability to make reasoned trade-offs in ambiguous, open-ended problems. The questions ('design Instagram', 'design a notification service', 'design a rate limiter') have no single right answer: what matters is your thinking process, your ability to clarify requirements, your knowledge of building blocks (databases, caches, queues, CDNs), and how you articulate trade-offs. This guide gives you the framework, the building blocks, and worked examples for 2026.",
     sections: [
       {
@@ -12630,7 +12630,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200&q=80",
     heroAlt: "Uber India office representing the ride-sharing technology company's engineering presence",
-    datePublished: "2026-09-09",
+    datePublished: "2026-07-21",
     intro: "Uber's India offices in Bengaluru and Hyderabad are among the company's most important engineering centers globally. The Bengaluru office works on Uber's core platform (ride matching, driver location, maps), while Hyderabad focuses on Uber Eats and financial systems. For Indian engineers, Uber India offers NASDAQ-listed RSUs, a collaborative engineering culture, and the opportunity to work on systems that handle millions of real-time events per second. Here is a complete guide to Uber India's interview process, what they look for, and how to prepare.",
     sections: [
       {
@@ -12669,7 +12669,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=1200&q=80",
     heroAlt: "LinkedIn app representing the professional network's engineering hub in India",
-    datePublished: "2026-09-10",
+    datePublished: "2026-07-21",
     intro: "LinkedIn's Bengaluru office is the company's largest engineering hub outside the United States, with over 2,000 engineers working on products used by LinkedIn's 1 billion global members. As a Microsoft subsidiary since 2016, LinkedIn India combines Microsoft's pay structure and benefits with LinkedIn's distinct product culture. The Bengaluru office is involved in LinkedIn's core social graph, job recommendations, feed ranking, LinkedIn Learning, and trust and safety systems. This guide covers the complete interview process, domain knowledge, and preparation strategy for LinkedIn India software engineering roles.",
     sections: [
       {
@@ -12708,7 +12708,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1560472355-536de3962603?w=1200&q=80",
     heroAlt: "Salesforce India Hyderabad office representing the CRM giant's global engineering hub",
-    datePublished: "2026-09-11",
+    datePublished: "2026-07-21",
     intro: "Salesforce's Hyderabad office is the company's largest engineering and product development centre outside the United States. With over 8,000 employees, it works on core Salesforce CRM, Einstein AI, Agentforce (AI agent platform), Slack, Tableau, and MuleSoft. Salesforce India is one of the most respected engineering employers in Hyderabad, known for strong engineering practices, above-market compensation, and a genuinely values-driven culture. This guide covers the full interview process and how to prepare.",
     sections: [
       {
@@ -12747,7 +12747,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Goldman Sachs India Bengaluru office representing the investment bank's technology engineering center",
-    datePublished: "2026-09-12",
+    datePublished: "2026-07-21",
     intro: "Goldman Sachs's Bengaluru Engineering Center (GSBEC) is one of the bank's three global technology hubs alongside New York and Salt Lake City. With over 8,000 technology professionals in Bengaluru, it works on core banking systems, quantitative trading platforms, risk management, Marcus digital banking, and developer infrastructure. For Indian software engineers, Goldman Sachs offers one of the highest-prestige technology roles in the financial sector: the GS brand opens doors to global fintech, hedge funds, and senior engineering leadership roles. This guide covers the full interview process and how to differentiate yourself.",
     sections: [
       {
@@ -12786,7 +12786,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=1200&q=80",
     heroAlt: "JPMorgan Chase India representing the global investment bank's technology engineering center",
-    datePublished: "2026-09-13",
+    datePublished: "2026-07-21",
     intro: "JPMorgan Chase's India operations (Bengaluru Software Development Center and Mumbai Technology Centre) employ over 12,000 technology professionals, making it one of the largest financial technology employers in India. JPMorgan India works on core banking infrastructure, Chase digital banking apps, payment processing, AI and machine learning, and cybersecurity. The JPMorgan brand and training investment make it an excellent stepping stone for Indian engineers targeting global finance or senior fintech roles. This guide covers the full interview process.",
     sections: [
       {
@@ -12825,7 +12825,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&q=80",
     heroAlt: "Hyderabad HITEC City skyline representing the city's thriving technology sector",
-    datePublished: "2026-09-14",
+    datePublished: "2026-07-21",
     intro: "Hyderabad is India's second-largest technology hub, home to over 1.5 million technology professionals. The city hosts some of the world's largest non-US technology campuses: Microsoft's 10,000+ engineer Hyderabad IDC is the company's largest outside Redmond, and Salesforce's 8,000+ employee Hyderabad office is its largest outside San Francisco. Unlike Bengaluru's mix of Indian product companies and global tech, Hyderabad's tech ecosystem is dominated by global tech company GCCs (Global Capability Centres) alongside India's largest service IT employers. This guide ranks and compares the top Hyderabad tech employers for software engineers in 2026.",
     sections: [
       {
@@ -12864,7 +12864,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=1200&q=80",
     heroAlt: "Developer writing code representing coding interview preparation strategy for India",
-    datePublished: "2026-09-15",
+    datePublished: "2026-07-21",
     intro: "Coding interviews are the primary filter at every Indian product company and global tech company in India. They are also the most learnable part of the entire interview process: unlike work experience or educational background (which are fixed), coding interview skill is a direct function of how well you have prepared. This guide gives you the complete preparation system: what to study, in what order, how to practise effectively, and how to perform on the day — based on what actually gets Indian engineers offers at Flipkart, Razorpay, Google India, and Amazon India in 2026.",
     sections: [
       {
@@ -12903,7 +12903,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=1200&q=80",
     heroAlt: "Salary negotiation meeting between engineer and recruiter in India tech industry",
-    datePublished: "2026-09-16",
+    datePublished: "2026-07-21",
     intro: "A significant majority of Indian software engineers do not negotiate their job offers. This is one of the most costly career mistakes you can make: at most Indian product companies and global tech companies, the first offer is 5-20% below the maximum the recruiter is authorised to offer. Not negotiating means accepting less pay for the same work, and because future offers typically use your current CTC as the anchor, the gap compounds over an entire career. This guide gives you the exact words, scripts, and tactics that work in Indian tech salary negotiations.",
     sections: [
       {
@@ -12942,7 +12942,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&q=80",
     heroAlt: "Fresh graduate reviewing resume for software engineering job application in India",
-    datePublished: "2026-09-17",
+    datePublished: "2026-07-21",
     intro: "Your resume is the first filter in every software engineering recruitment process in India. At companies that receive 50,000+ applications for 200 positions, a poorly written resume is rejected in under 10 seconds by an ATS system or a recruiter screening on autopilot. A strong resume gets you to the interview; the interview determines everything after that. This guide tells you exactly what goes on a strong Indian software engineer fresher resume in 2026, what to leave out, and how to write project descriptions that actually get callbacks.",
     sections: [
       {
@@ -12981,7 +12981,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1567520130946-5d84ce0fa530?w=1200&q=80",
     heroAlt: "Pune technology park representing the city's growing software engineering ecosystem",
-    datePublished: "2026-09-18",
+    datePublished: "2026-07-21",
     intro: "Pune is India's third-largest technology hub, with over 700,000 IT professionals and a growing ecosystem of product companies, global capability centres, and automotive tech firms. Unlike Bengaluru (dominated by Indian product companies and FAANG GCCs) or Hyderabad (strong in Microsoft and Salesforce), Pune's tech identity is shaped by three distinct strengths: service IT (Infosys, TCS, Wipro, Cognizant), automotive and embedded software (KPIT Technologies, Volkswagen Digital Solutions, Mercedes-Benz R&D), and financial technology GCCs (Deutsche Bank, BNY Mellon, Barclays). This guide ranks and compares the top Pune tech employers for software engineers in 2026.",
     sections: [
       {
@@ -13022,7 +13022,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1572044162444-ad60f128bdea?w=1200&q=80",
     heroAlt: "Adobe India office building exterior",
-    datePublished: "2026-09-19",
+    datePublished: "2026-07-21",
     intro: "Adobe India is one of the largest global tech engineering offices in India, with 7,000+ engineers in Noida working on Acrobat, Adobe Sign, and the Firefly AI platform, and 2,000+ in Bengaluru on Experience Cloud and Creative Cloud APIs. Adobe's interview process is distinctive: it tests object-oriented design and CS fundamentals more deeply than most product companies, reflecting the complexity of building creative and document software at global scale. This guide covers Adobe India's exact interview structure, what technical topics each round tests, salary benchmarks for 2026, and how to prepare effectively.",
     sections: [
       {
@@ -13061,7 +13061,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80",
     heroAlt: "Network servers and routing equipment in a data center",
-    datePublished: "2026-09-20",
+    datePublished: "2026-07-21",
     intro: "Cisco India (Bengaluru) has 10,000+ employees working on the products that run the world's internet: Webex collaboration, Cisco Catalyst networking, Cisco Meraki cloud management, SecureX cybersecurity, and ThousandEyes network intelligence. What makes Cisco's interview unique among global tech companies in India is the explicit requirement for networking domain knowledge: engineers are tested on TCP/IP, BGP, OSPF, VLANs, and SDN in addition to standard DSA and system design. This guide covers Cisco India's full interview process, the specific networking topics tested, salary benchmarks for 2026, and how to prepare for a role at one of the world's most critical infrastructure companies.",
     sections: [
       {
@@ -13100,7 +13100,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80",
     heroAlt: "Oracle India technology campus with glass buildings",
-    datePublished: "2026-09-21",
+    datePublished: "2026-07-21",
     intro: "Oracle India (Bengaluru and Hyderabad, 25,000+ combined employees) is one of the largest global tech employers in India and the only major tech company where both database expertise and Java platform knowledge are explicitly tested in engineering interviews. Oracle owns the world's most widely deployed enterprise database, the Java programming language (post-Sun Microsystems acquisition), MySQL, and is rapidly growing Oracle Cloud Infrastructure (OCI) as a direct competitor to AWS and Azure. This guide covers Oracle India's full interview process, the specific database topics that distinguish Oracle interviews, salary benchmarks for 2026, and preparation strategies.",
     sections: [
       {
@@ -13139,7 +13139,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80",
     heroAlt: "Two software engineers pair programming at a laptop",
-    datePublished: "2026-09-22",
+    datePublished: "2026-07-21",
     intro: "ThoughtWorks has the most distinctive engineering culture and interview process in India. There is no LeetCode grinding: ThoughtWorks explicitly does not believe algorithm puzzles predict engineering quality. Instead, candidates build a small working application (take-home), pair program live with a ThoughtWorker, and discuss their values and beliefs about software quality, social responsibility, and engineering ethics. The process selects for engineers who are thoughtful craftspeople and values-aligned collaborators, not algorithm speedrunners. This guide covers every stage of ThoughtWorks India's interview, what makes their culture unique, salary benchmarks for 2026, and why the lower cash compensation is a deliberate trade-off for many engineers.",
     sections: [
       {
@@ -13178,7 +13178,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200&q=80",
     heroAlt: "Chennai city skyline at dusk with IT corridor",
-    datePublished: "2026-09-23",
+    datePublished: "2026-07-21",
     intro: "Chennai is India's third-largest IT hub after Bengaluru and Hyderabad, and it is home to two of India's most distinctive software companies: Zoho Corporation (the most profitable bootstrapped software company in the world) and Freshworks (the first Indian SaaS company to list on the NASDAQ). Chennai also hosts large delivery centres for TCS (40,000+ in Chennai), Cognizant (Old Mahabalipuram Road, 30,000+), Ford Technology India, DBS Bank Technology, and a growing fintech ecosystem. This guide covers the best tech employers in Chennai for software engineers in 2026, with salary benchmarks, culture overviews, and interview preparation advice for each.",
     sections: [
       {
@@ -13217,7 +13217,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200&q=80",
     heroAlt: "Delhi NCR skyline and technology offices in Gurugram",
-    datePublished: "2026-09-24",
+    datePublished: "2026-07-21",
     intro: "The National Capital Region (NCR) — spanning Delhi, Gurugram (Gurgaon), Noida, and Faridabad — is the third-largest technology hub in India after Bengaluru and Hyderabad. NCR's technology ecosystem is distinctive: it is stronger in travel tech, fintech, logistics tech, and enterprise software than in the consumer internet that dominates Bengaluru. Adobe India in Noida is the largest global tech employer in NCR with 7,000+ engineers. Indian product companies MakeMyTrip, PolicyBazaar, InMobi, and Delhivery are the top product company choices. This guide covers every major tech employer in NCR for 2026, with salary benchmarks, work culture summaries, and interview preparation advice.",
     sections: [
       {
@@ -13256,7 +13256,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80",
     heroAlt: "AI neural network visualization with glowing nodes",
-    datePublished: "2026-09-25",
+    datePublished: "2026-07-21",
     intro: "The AI and machine learning job market in India has transformed faster between 2023 and 2026 than at any point since the smartphone revolution. GenAI Engineer and MLOps Engineer — roles that were niche in 2023 — are now among the most in-demand software engineering specialisations in India, with salary premiums of 20-40% over equivalent backend engineers. This guide covers every aspect of the AI/ML job market in India in 2026: which roles exist and what each does, which companies are hiring most aggressively, what skills each role requires, what salaries to expect, and how a software engineer with no data science background can make the transition in 6-12 months.",
     sections: [
       {
@@ -13295,7 +13295,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80",
     heroAlt: "Group of students in a discussion around a table",
-    datePublished: "2026-09-26",
+    datePublished: "2026-07-21",
     intro: "Group discussions (GDs) are a mandatory screening stage in virtually every Indian IT company's campus placement process: TCS, Infosys, Cognizant, Wipro, Accenture, Capgemini, and HCL all use GDs to filter candidates before the HR interview. Yet GDs are poorly prepared for by most candidates, who either stay silent (invisible to evaluators) or speak loudly without substance (dismissed as noise). This guide gives you a complete GD preparation framework: what evaluators are actually assessing, how to enter a discussion effectively, what topic categories appear, and how to contribute a memorable conclusion.",
     sections: [
       {
@@ -13334,7 +13334,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200&q=80",
     heroAlt: "iPhone with development tools and Swift code on a screen",
-    datePublished: "2026-09-27",
+    datePublished: "2026-07-21",
     intro: "iOS developer roles in India command a salary premium over equivalent Android developers due to genuine scarcity: fewer engineers specialise in Swift and UIKit compared to Kotlin and Android SDK. The iOS developer market in India in 2026 is driven by consumer apps (Swiggy, PhonePe, Myntra, CRED, Zepto) and global tech companies' India offices (Google, Adobe, Atlassian) that need engineers who can build high-quality iOS experiences for both Indian and global users. This guide covers every Swift and SwiftUI topic tested in Indian iOS developer interviews, architecture patterns, UIKit vs SwiftUI interview questions, and salary benchmarks for 2026.",
     sections: [
       {
@@ -13373,7 +13373,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&q=80",
     heroAlt: "Software engineer reviewing code at a standing desk",
-    datePublished: "2026-09-28",
+    datePublished: "2026-07-21",
     intro: "Promotion in Indian product companies (Flipkart, Razorpay, Swiggy, PhonePe, Meesho, Zepto) works differently from service IT companies. In service IT, promotion is predominantly tenure-based: show up, do not fail, get promoted after 2-3 years. In product companies, promotion is impact-based: engineers who do not expand their scope, demonstrate cross-team impact, and build a sponsor relationship can stay at the same level for 5+ years regardless of performance quality. This guide covers the promotion criteria that actually matter at Indian product companies, how performance review calibration works, and the three highest-leverage actions that accelerate promotion timelines.",
     sections: [
       {
@@ -13414,7 +13414,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&q=80",
     heroAlt: "Software engineer working on a laptop in a modern office",
-    datePublished: "2026-09-29",
+    datePublished: "2026-07-21",
     intro: "SAP Labs India (Bengaluru) is the largest SAP engineering center globally outside Germany, with 12,000+ engineers building SAP S/4HANA (the world's leading ERP), SAP Business Technology Platform (BTP), SAP Fiori (SAP's modern UX framework), and SAP Analytics Cloud. SAP is a uniquely positioned employer in India: it offers the stability and scale of one of the world's largest enterprise software companies while running modern cloud technology (Kubernetes, Java, React, Go) on par with any Indian product company. This guide covers SAP Labs India's full interview process, what the engineering teams build, salary benchmarks for 2026, and what to prepare.",
     sections: [
       {
@@ -13453,7 +13453,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=1200&q=80",
     heroAlt: "Atlassian office interior with modern collaborative workspace",
-    datePublished: "2026-09-30",
+    datePublished: "2026-07-21",
     intro: "Atlassian India (Bengaluru, 2,000+ engineers) is one of the best employers in India for engineers who want to work on developer tools used by 300,000+ companies globally, including Google, Microsoft, Netflix, and Spotify. Atlassian's products — Jira (project tracking), Confluence (team documentation), Bitbucket (code hosting), Jira Service Management (ITSM), and Loom (video messaging) — are embedded into the workflows of software teams everywhere. The Bengaluru office has full product ownership, pays competitively (roughly on par with LinkedIn India), and has one of India's strongest remote-first cultures. This guide covers Atlassian India's full interview process, the distinctive TEAM values round, salary benchmarks for 2026, and system design topics specific to Atlassian's product domain.",
     sections: [
       {
@@ -13492,7 +13492,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80",
     heroAlt: "PayPal payment interface on a smartphone screen",
-    datePublished: "2026-10-01",
+    datePublished: "2026-07-21",
     intro: "PayPal India spans two cities with different functions: the Chennai office handles operations, fraud analysis, and customer trust, while the Bengaluru engineering teams own core platform development including Venmo (PayPal's peer-to-peer payments product), Braintree (the merchant payment gateway), and PayPal's global fraud detection infrastructure. PayPal processes 40 million+ transactions per day, making it one of the most engineering-intensive payment platforms in the world. This guide covers PayPal India's interview process, the payments-specific system design questions unique to PayPal interviews, salary benchmarks for 2026, and career paths from PayPal India.",
     sections: [
       {
@@ -13531,7 +13531,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80",
     heroAlt: "Student studying on a laptop with online education platform",
-    datePublished: "2026-10-02",
+    datePublished: "2026-07-21",
     intro: "India's EdTech sector went through a dramatic boom-and-bust cycle between 2020 and 2023, with mass layoffs at BYJU's, Unacademy, and Vedantu after the post-pandemic demand correction. By 2026, the sector has restabilised around companies with profitable unit economics, most notably Physics Wallah (PW), upGrad, and Scaler. This guide covers the best EdTech employers for software engineers in India in 2026, with an honest assessment of stability, engineering quality, salary benchmarks, and what the engineering teams actually build.",
     sections: [
       {
@@ -13570,7 +13570,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&q=80",
     heroAlt: "Doctor consulting patient on digital health platform with smartphone",
-    datePublished: "2026-10-03",
+    datePublished: "2026-07-21",
     intro: "HealthTech is one of the fastest-growing sectors for software engineers in India, driven by digital health adoption post-COVID-19, ABDM (Ayushman Bharat Digital Mission) creating a government-backed health data infrastructure, and rising incomes enabling more healthcare spending. Practo, Tata 1mg, PharmEasy, Pristyn Care, MediBuddy, and HealthKart are the leading employers. This guide covers what each company's engineering team builds, what makes HealthTech engineering uniquely challenging, salary benchmarks for 2026, and career paths in India's healthcare technology sector.",
     sections: [
       {
@@ -13609,7 +13609,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1585974738771-84483dd9f89f?w=1200&q=80",
     heroAlt: "Software engineer working remotely from home office with multiple monitors",
-    datePublished: "2026-10-04",
+    datePublished: "2026-07-21",
     intro: "Remote work for Indian software engineers in 2026 has settled into a more nuanced reality than the 2020-2022 full-remote peak. Most major Indian companies (Flipkart, Swiggy, Razorpay, Zomato) have moved to hybrid with 2-3 days in office. However, a distinct category of fully remote roles — especially at US-based companies that hire India-based engineers full-time or as contractors — continues to grow and offers significantly higher compensation than equivalent Indian office-based roles. This guide covers which companies hire fully remote Indian engineers, what the salary differences look like, how to find these roles, and what skills make Indian engineers competitive for remote positions at global companies.",
     sections: [
       {
@@ -13648,7 +13648,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1607705703571-c5a8695f18f6?w=1200&q=80",
     heroAlt: "Code testing dashboard showing test results and coverage metrics",
-    datePublished: "2026-10-05",
+    datePublished: "2026-07-21",
     intro: "Software Development Engineer in Test (SDET) is one of the most in-demand and underappreciated engineering roles in India's product company ecosystem. Amazon, Google, Microsoft, Flipkart, Swiggy, PhonePe, and Razorpay all have large SDET teams that build and own test automation infrastructure. SDETs earn comparable total compensation to SWEs at the same experience level (including RSUs at FAANG India), but the role is less understood and often undervalued by candidates who do not realise it is a full engineering role with code ownership, not a 'testing' role. This guide covers what SDET interviews test, the technical skills required, specific test design questions asked at Indian product companies, and salary benchmarks for 2026.",
     sections: [
       {
@@ -13687,7 +13687,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=1200&q=80",
     heroAlt: "Full-stack developer working on frontend and backend code simultaneously",
-    datePublished: "2026-10-06",
+    datePublished: "2026-07-21",
     intro: "Full-stack developer is the most versatile engineering role in the Indian product company ecosystem, and also the most common interview position at startups and scale-ups with small-to-medium engineering teams. A full-stack developer who can take a feature from database schema to React UI without handoffs is disproportionately valuable in companies with 10-100 engineers. This guide covers both frontend and backend technical topics tested in full-stack interviews at Indian product companies, what the best full-stack portfolio projects look like, salary benchmarks for 2026, and the difference between a full-stack generalist and a specialist engineer.",
     sections: [
       {
@@ -13726,7 +13726,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1200&q=80",
     heroAlt: "Professional in a job interview discussing career transition",
-    datePublished: "2026-10-07",
+    datePublished: "2026-07-21",
     intro: "'Why are you leaving your current job?' is one of the most frequently asked and poorly answered questions in Indian tech interviews. Candidates either over-share (venting about their manager, complaining about salary, or revealing interpersonal conflicts), under-share (giving a vague non-answer that raises suspicion), or give an answer that contradicts the role they are interviewing for. This guide gives you the exact frameworks, example answers for different situations, and five red-flag answers that will cost you the offer.",
     sections: [
       {
@@ -13765,7 +13765,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=1200&q=80",
     heroAlt: "LinkedIn profile on laptop screen showing software engineer profile",
-    datePublished: "2026-10-08",
+    datePublished: "2026-07-21",
     intro: "LinkedIn is the primary channel through which Indian software engineers at 3+ years of experience receive inbound recruiter messages from product companies, global tech firms, and startups. Yet most Indian engineers' LinkedIn profiles are under-optimised: missing a strong headline, an empty summary, vague experience descriptions, and inconsistent skills sections. This guide covers seven specific optimisations that increase your profile's visibility in LinkedIn Recruiter searches, what to write in each section, and how to use LinkedIn strategically when job searching without alerting your current employer.",
     sections: [
       {
@@ -13793,6 +13793,398 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["fresher-resume-guide-india-2026", "salary-negotiation-tips-india-2026", "remote-jobs-india-software-engineer-2026"],
     cta: "Building your job search presence? Use HireStepX alongside your LinkedIn profile optimisation to practise answering recruiter screening questions, HR rounds, and technical interviews with AI voice coaching that gives instant feedback.",
+    relatedLinks: [],
+  },
+
+  /* ── Wave 15: Walmart/Qualcomm/VMware + Fintech/Gaming/DataEng + DevOps/Android + Interview Skills ── */
+  {
+    slug: "walmart-global-tech-india-interview-questions-2026",
+    title: "Walmart Global Tech India Interview Questions 2026: Software Engineer Guide",
+    metaDescription: "Walmart Global Tech India interview questions for software engineers in 2026. Bengaluru office: retail technology, supply chain, e-commerce, interview process, and Walmart India salary guide.",
+    company: "Walmart",
+    category: "Company Guides",
+    readTime: "9 min read",
+    heroImage: "https://images.unsplash.com/photo-1601598851547-4302969d0614?w=1200&q=80",
+    heroAlt: "Walmart Global Tech India engineering campus in Bengaluru",
+    datePublished: "2026-10-09",
+    intro: "Walmart Global Tech India (Bengaluru, 5,000+ engineers) is one of the most underrated engineering employers in India. Behind the retail brand is a sophisticated technology organisation that processes millions of transactions daily, runs one of the world's largest supply chain systems, and owns engineering for Walmart's global e-commerce platform. This guide covers the interview process, what teams work on, salary benchmarks, and how to prepare for Walmart's retail-domain system design questions.",
+    sections: [
+      {
+        heading: "Walmart Global Tech India Interview Process",
+        content: "The interview process at Walmart Global Tech India has four stages: (1) online coding assessment (HackerRank, 2-3 problems, medium difficulty, 90 minutes; emphasis on data structures, algorithms, and SQL), (2) technical phone screen (DSA and basic system concepts, 45 minutes with a Bengaluru engineer), (3) virtual on-site loop (3-4 rounds: coding, system design with retail context, a cross-functional collaboration round, and a hiring manager conversation), (4) offer stage. Walmart's system design round is distinctively retail-oriented: expect questions about supply chain, inventory management, e-commerce checkout, and flash sale systems. Candidates from product companies who have studied retail domain concepts systematically stand out.",
+      },
+      {
+        heading: "What Walmart Global Tech India Engineers Work On",
+        content: "Walmart Global Tech Bengaluru owns engineering for several of Walmart's core systems. E-commerce: Walmart.com engineering teams in Bengaluru build search, product pages, checkout, and the seller marketplace. Supply chain: demand forecasting (ML models that predict store inventory needs 8 weeks ahead), warehouse management, last-mile delivery optimisation. Payments and fintech: PhonePe (demerged from Flipkart in 2023, now independently valued at $12 billion) was built by engineers who also shaped Walmart's India payments thinking. Data and ML: price optimisation (dynamic pricing across 200 million+ SKUs), personalisation, fraud detection. Flipkart integration: since Walmart acquired Flipkart in 2018, engineering teams share platform components and data infrastructure.",
+      },
+      {
+        heading: "Walmart Global Tech India Salary Benchmarks 2026",
+        content: "Walmart Global Tech India salary ranges: SWE-1 (junior, 0-2 years): Rs 18-35 LPA total compensation. SWE-2 (mid-level, 2-5 years): Rs 30-60 LPA. Senior SWE (5-8 years): Rs 55-100 LPA. Staff SWE (8+ years): Rs 90-160 LPA. RSUs are in Walmart Inc. (WMT, NYSE-listed) and vest over 3 years. Walmart Global Tech India pays comparably to mid-tier global tech companies (Atlassian India, Salesforce India) and above most Indian product companies at equivalent levels. The retail domain expertise is transferable: engineers who understand supply chain systems and retail-scale data processing are valued at Amazon, Flipkart, and global logistics companies.",
+      },
+      {
+        heading: "How to Prepare for Walmart India System Design Interviews",
+        content: "Walmart's system design questions are grounded in retail operations. Prepare for: flash sale architecture (handle 100x traffic, prevent overselling, fair queuing for limited-inventory items), price optimisation engine (scrape competitor prices, apply business rules, A/B test price points, update prices across millions of SKUs in real time), supply chain order management (multi-supplier ordering, shipment tracking, delay handling, automated reorder logic), warehouse picking system (route optimisation for pickers, real-time inventory updates, zone management), and grocery search (handle product name typos, rank by freshness, personalise by purchase history). Study the domain: read Walmart's engineering blog, understand how supply chains work, and know the difference between demand forecasting and inventory management.",
+      },
+    ],
+    faqs: [
+      { question: "Is Walmart Global Tech India a good company for software engineers?", answer: "Yes, for engineers who want retail domain expertise, large-scale systems, and a stable global employer with RSUs. The engineering problems (supply chain at global scale, e-commerce at Walmart volume) are genuinely complex. Work-life balance is generally good compared to early-stage startups. The brand on your resume carries weight globally — Walmart processes more transactions per day than most Indian unicorns." },
+      { question: "What programming languages does Walmart Global Tech India use?", answer: "Java (primary backend language for e-commerce and supply chain systems), Scala (Spark-based data pipelines), Python (ML and data science), React and TypeScript (frontend), Go (select microservices). Walmart's tech stack is mature and Java-heavy: engineers with strong Java, Spring Boot, and distributed systems backgrounds are well-positioned." },
+      { question: "How do I get a referral at Walmart Global Tech India?", answer: "Search LinkedIn for 'Walmart Global Tech Bengaluru' and connect with engineers who have worked there 2+ years. Send a personalised message referencing their specific work (mention their blog posts or talks if available). A referral at Walmart India significantly increases resume visibility in their ATS — Walmart's internal referral programme is active and well-incentivised for employees." },
+      { question: "Does Walmart Global Tech India do lateral hiring?", answer: "Yes, Walmart Global Tech India actively hires experienced engineers at all levels (SWE-2 to Staff) throughout the year. The highest-demand roles are in e-commerce infrastructure, supply chain systems, and ML engineering. Campus hiring is also significant (IITs, NITs, BITS Pilani, and top private engineering colleges)." },
+    ],
+    relatedSlugs: ["flipkart-interview-questions-2026", "amazon-india-interview-questions-2026", "top-fintech-companies-india-2026"],
+    cta: "Preparing for Walmart Global Tech India? Use HireStepX to practise retail system design questions and behavioural interviews with AI voice coaching. Get instant scored feedback on your answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "qualcomm-india-interview-questions-2026",
+    title: "Qualcomm India Interview Questions 2026: Software Engineer and DSP Engineer Guide",
+    metaDescription: "Qualcomm India interview questions 2026. Hyderabad and Bengaluru offices: modem software, DSP, Android BSP, camera, audio, Snapdragon engineering, C++ interview questions, and Qualcomm India salary.",
+    company: "Qualcomm",
+    category: "Company Guides",
+    readTime: "10 min read",
+    heroImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80",
+    heroAlt: "Qualcomm semiconductor chip close-up representing mobile processor engineering",
+    datePublished: "2026-10-10",
+    intro: "Qualcomm India (Hyderabad: 8,000+ engineers; Bengaluru: 2,000+ engineers) is one of the deepest technical employers in India for engineers who want to work at the intersection of software and silicon. If you have ever used an Android phone in the past 10 years, you have used software built here: Qualcomm Snapdragon processors power 80%+ of Android flagships globally. This guide covers Qualcomm's distinctive interview process, the C++ and OS depth required, what teams work on, and salary benchmarks.",
+    sections: [
+      {
+        heading: "Qualcomm India Interview Process: What Makes It Different",
+        content: "Qualcomm's interview process differs significantly from web-oriented product companies: (1) online coding assessment (C++ emphasis, bit manipulation, memory management, algorithm problems, 90 minutes), (2) technical phone screen (C++ depth, data structures, OS concepts, 60 minutes), (3) virtual or on-site loop (3-4 rounds: coding in C++, system design at the embedded or BSP level, OS internals including memory management and scheduling, and a hiring manager conversation). The most common feedback from candidates who fail Qualcomm interviews: they prepared for LeetCode-style web engineer interviews but were not prepared for C++ move semantics, virtual memory paging, or interrupt handling. Qualcomm-specific preparation is essential.",
+      },
+      {
+        heading: "What Qualcomm India Engineers Work On",
+        content: "Qualcomm India owns significant portions of Snapdragon chipset software: modem software (the software stack that enables 5G NR connectivity on every Android flagship — protocol layer implementation, radio resource management, call setup and teardown), DSP programming (Hexagon DSP: camera ISP tuning, audio processing, sensor fusion, always-on voice wake detection), Android BSP (Board Support Package: the software layer between Android and Qualcomm hardware — camera HAL, display HAL, audio HAL, power management), Wi-Fi and Bluetooth firmware and Linux kernel drivers, Automotive SoC (Snapdragon Ride: ADAS and autonomous driving compute), and AR/VR (Snapdragon Spaces SDK). Engineers here work closest to the hardware of any software role in India.",
+      },
+      {
+        heading: "C++ and OS Concepts Qualcomm Tests in India",
+        content: "Qualcomm C++ depth: memory management (smart pointers: unique_ptr ownership semantics, shared_ptr reference counting, weak_ptr to break cycles; RAII pattern for resource management), multithreading (mutex, condition variables, atomic operations, lock-free algorithms, memory ordering: memory_order_relaxed vs acquire/release vs seq_cst), move semantics (rvalue references, move constructor, std::move vs std::forward, perfect forwarding), templates (variadic templates, SFINAE), and virtual function vtable mechanics. OS internals: virtual memory (page tables, TLB, page faults, huge pages), process scheduling (Linux CFS, priority inversion and priority inheritance), IPC (pipes, shared memory, message queues, Unix domain sockets), kernel vs user space boundary (system calls, context switch cost), and interrupt handling.",
+      },
+      {
+        heading: "Qualcomm India Salary Benchmarks 2026",
+        content: "Qualcomm India salary ranges: Junior SWE/DSP engineer (0-2 years): Rs 12-25 LPA total compensation. Mid-level (2-5 years): Rs 25-55 LPA. Senior (5-8 years): Rs 50-95 LPA. Principal Engineer (8+ years): Rs 90-160 LPA. RSUs are in Qualcomm Inc. (QCOM, NASDAQ-listed) and vest over 4 years. Qualcomm India pays below FAANG India but comparably to other deep-tech companies (Samsung R&D, Texas Instruments, NXP Semiconductors) in the embedded and semiconductor domain. The career exit value is significant: C++ and OS expertise from Qualcomm is valued globally at Arm, Apple Silicon team, Nvidia, and at automotive ADAS companies.",
+      },
+    ],
+    faqs: [
+      { question: "Do I need an embedded systems background to join Qualcomm India?", answer: "Not necessarily for all roles. Qualcomm India hires both embedded/systems engineers (for modem, DSP, BSP roles) and application software engineers (for tools, test frameworks, and platform software). The embedded roles require C++, OS internals, and hardware knowledge. The application roles are closer to standard SWE interviews. Clearly target the role type in your application." },
+      { question: "Which is better for a software engineer career: Qualcomm India or a product company?", answer: "Qualcomm offers unmatched depth in systems programming and hardware-software interaction. The learning in the first 3-5 years is extraordinary if you want to understand how software runs on silicon. The tradeoff: lower salary than FAANG India, less product ownership (you build components of a chip, not a user-facing product), and less startup-like agility. Best for engineers who want to become world-class systems programmers or who want to work in automotive, AR/VR, or semiconductor ecosystems globally." },
+      { question: "What is the notice period expectation at Qualcomm India?", answer: "Standard 2-month notice period for most roles at Qualcomm India. Qualcomm often negotiates notice buyouts for strong candidates: they will pay your current employer to shorten your notice period if they want you to join faster." },
+      { question: "Does Qualcomm India have a bonus structure?", answer: "Yes. Qualcomm India compensation includes base salary, performance bonus (typically 10-15% of base at target), and RSUs. The annual bonus is tied to individual performance ratings and the company's overall financial performance. RSUs vest quarterly after the 1-year cliff." },
+    ],
+    relatedSlugs: ["microsoft-india-interview-questions-2026", "google-india-interview-questions-2026", "devops-sre-interview-questions-india-2026"],
+    cta: "Preparing for Qualcomm India? Use HireStepX to practise C++ and systems programming conceptual questions in a voice interview format. Get instant feedback on your technical answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "vmware-india-interview-questions-2026",
+    title: "VMware India Interview Questions 2026: Software Engineer Guide (Bengaluru and Pune)",
+    metaDescription: "VMware India interview questions for software engineers in 2026. Bengaluru and Pune offices: virtualisation, Kubernetes, vSphere, Tanzu, NSX, interview process, and VMware India salary guide.",
+    company: "VMware",
+    category: "Company Guides",
+    readTime: "9 min read",
+    heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80",
+    heroAlt: "Server infrastructure representing VMware virtualisation and cloud technology",
+    datePublished: "2026-10-11",
+    intro: "VMware India (Bengaluru: 8,000+ engineers; Pune: 2,000+ engineers), now part of Broadcom following the 2023 acquisition, is one of the most significant infrastructure technology employers in India. If you want to work on virtualisation, Kubernetes platforms, or software-defined networking at enterprise scale, VMware India offers engineering problems that few other employers can match. This guide covers the interview process, what VMware India engineers actually work on, infrastructure system design preparation, and salary benchmarks post-Broadcom.",
+    sections: [
+      {
+        heading: "VMware India Interview Process",
+        content: "The VMware India interview process: (1) recruiter screen (30 minutes: background, work authorisation, compensation expectations), (2) technical phone screen (data structures and algorithms in C++, Java, or Go; fundamental virtualisation or cloud concepts are a plus but not required for all roles, 45-60 minutes), (3) virtual on-site loop with 3-4 rounds: coding (1-2 LeetCode-medium problems, discussed in depth), system design (infrastructure-oriented: hypervisors, Kubernetes, distributed storage, or network virtualisation depending on the team), a cross-functional collaboration round (how you work with other teams, your communication style), and a hiring manager conversation. The infrastructure system design round differentiates VMware from typical product company interviews: studying Kubernetes internals and virtualisation concepts specifically is required.",
+      },
+      {
+        heading: "What VMware India Engineers Work On",
+        content: "VMware India (Bengaluru) owns significant product engineering: vSphere engineering (the hypervisor platform that runs 70% of enterprise data centre VMs globally — ESXi, vCenter, vMotion live migration), NSX (software-defined networking: distributed firewall, overlay networking with GENEVE, micro-segmentation for zero-trust enterprise security), vSAN (software-defined storage: erasure coding, RAID-5/6 policies, stretched cluster for geo-redundancy), Tanzu (Kubernetes platform: TKG, Tanzu Hub, Tanzu Application Platform, competing with Red Hat OpenShift and AWS EKS), Carbon Black (endpoint security and threat detection, acquired by VMware). Pune teams focus on Workspace ONE (unified endpoint management) and Horizon (virtual desktops). Post-Broadcom, some teams have been restructured or consolidated.",
+      },
+      {
+        heading: "Infrastructure System Design for VMware Interviews",
+        content: "VMware interviews test infrastructure depth beyond typical web system design: How does a hypervisor manage CPU, memory, and I/O for multiple VMs? (Hardware virtualisation: VT-x for CPU, VT-d for I/O, IOMMU for DMA; memory overcommit with balloon driver and transparent page sharing; CPU scheduling with NUMA awareness). How does Kubernetes networking work end-to-end? (Pod-to-pod via CNI, kube-proxy iptables rules, Service types: ClusterIP vs NodePort vs LoadBalancer, Ingress controllers). Design a distributed storage system (vSAN-like: consistency model, RAID policies, write path through flash tier, failure tolerance levels). How does NSX micro-segmentation work? (Distributed firewall at the hypervisor kernel, policy evaluation locally without a centralised bottleneck). Design a multi-tenant Kubernetes platform (namespace quotas, network policies, RBAC, admission controllers for policy enforcement).",
+      },
+      {
+        heading: "VMware India Salary Benchmarks 2026 (Post-Broadcom)",
+        content: "VMware India (Broadcom) salary ranges: MTS-1 (junior, 0-2 years): Rs 18-35 LPA total compensation. MTS-2 (mid-level, 2-5 years): Rs 30-65 LPA. Senior MTS (5-8 years): Rs 55-105 LPA. Staff Engineer (8+ years): Rs 95-170 LPA. RSUs are now in Broadcom Inc. (AVGO, NASDAQ-listed, one of the highest-valued semiconductor and infrastructure software companies). Post-Broadcom acquisition, compensation structures have been reviewed and some roles have seen adjustments — verify current compensation details during the interview process. Infrastructure domain expertise from VMware is highly valued at cloud providers (AWS, GCP, Azure), at Kubernetes-native companies, and at enterprise software companies globally.",
+      },
+    ],
+    faqs: [
+      { question: "How has the Broadcom acquisition affected VMware India engineers?", answer: "Broadcom completed the VMware acquisition in November 2023. The impact for India engineers: some redundant roles were eliminated in the integration (primarily in areas that overlapped with Broadcom's existing software businesses), but the core VMware product engineering teams (vSphere, NSX, Tanzu, Carbon Black) have largely continued. Compensation structures were reviewed: some engineers saw comp adjustments. The VMware India offices in Bengaluru and Pune remain significant engineering centres. New hiring has resumed at Broadcom-VMware in 2025-2026 after a period of hiring freeze post-acquisition." },
+      { question: "What is the work culture like at VMware India?", answer: "VMware India (pre-Broadcom) had a strong engineering culture with good work-life balance, comprehensive benefits, and mature engineering processes (extensive code review, testing, documentation standards). Engineers describe the environment as collaborative and relatively low on politics. Post-Broadcom, the culture is evolving: Broadcom's culture is more execution-focused and cost-conscious than VMware's historically R&D-heavy approach." },
+      { question: "What backgrounds does VMware India typically hire from?", answer: "VMware India hires from: IITs, NITs, BITS Pilani (campus) for junior engineers; product companies (Infosys, TCS, but increasingly from Indian product companies: Flipkart, Swiggy, Razorpay) for lateral hires; cloud providers (AWS, GCP engineers wanting to move to infrastructure software). Engineers with Kubernetes operator development, Golang, or C++ backgrounds are particularly sought after." },
+      { question: "Is there a Kubernetes-specific interview track at VMware India?", answer: "Yes. For Tanzu and Kubernetes Platform roles at VMware India, the interview focuses heavily on Kubernetes internals (controller-runtime, kubebuilder for operators, admission webhooks, custom resource definitions), Go programming (Kubernetes ecosystem is Go-dominant), cloud-native patterns (12-factor app, GitOps with ArgoCD or Flux), and distributed systems fundamentals. If you are targeting Tanzu roles, study the Kubernetes source code, build a custom Kubernetes operator, and contribute to a CNCF project if possible." },
+    ],
+    relatedSlugs: ["devops-sre-interview-questions-india-2026", "microsoft-india-interview-questions-2026", "data-engineering-jobs-india-2026"],
+    cta: "Preparing for VMware India? Use HireStepX to practise infrastructure system design and Kubernetes conceptual questions in a voice interview format. Get instant feedback on your answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "top-fintech-companies-india-2026",
+    title: "Top Fintech Companies in India 2026: Software Engineer Career Guide",
+    metaDescription: "Top fintech companies to work at in India 2026. Razorpay, PhonePe, Paytm, BharatPe, Groww, Zerodha: salaries, engineering culture, interview process, and what makes each company unique.",
+    company: "Industry Insights",
+    category: "Industry Insights",
+    readTime: "10 min read",
+    heroImage: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=1200&q=80",
+    heroAlt: "Indian fintech payment technology representing UPI and digital finance engineering",
+    datePublished: "2026-10-12",
+    intro: "India's fintech sector is one of the most dynamic in the world, built on the UPI infrastructure that processes 16 billion transactions per month. For software engineers, Indian fintech combines the engineering challenges of financial systems (correctness, consistency, compliance) with the user scale of a 1.4 billion-person consumer market. This guide covers the top fintech companies, what makes each engineering environment distinctive, salary benchmarks, and what skills the sector demands.",
+    sections: [
+      {
+        heading: "India's Top Fintech Engineering Employers in 2026",
+        content: "The best Indian fintech company depends on what you optimise for: Razorpay (Bengaluru, 3,500+ engineers): best for payments infrastructure engineering, developer-facing product experience, and career progression in fintech. Processes Rs 10 lakh crore ($120 billion) annually. PhonePe (Bengaluru, 4,000+ engineers): best for consumer-scale engineering (500 million users, 2 million+ daily merchant transactions). Zerodha (Bengaluru, 500 engineers): best for work-life balance, profitable company culture, and deep learning with a small elite team. Groww (Bengaluru, 1,500+ engineers): best for wealth tech (mutual funds, US stocks, gold investing for a new generation of Indian retail investors). BharatPe (Delhi, 500+ engineers): merchant payments and POS, strong for engineers who want mid-stage startup energy. Slice (Bengaluru): credit card and UPI product for millennials, Series C, strong early-career learning.",
+      },
+      {
+        heading: "What Fintech Engineers Work On in India",
+        content: "Indian fintech engineering problems are genuinely hard: payment routing (UPI payment success rates vary by bank from 95% to 99.98% — intelligent routing to minimise failures is a critical reliability engineering problem), idempotency (ensuring that a payment that times out is never double-charged — idempotency key design is essential), fraud detection (real-time scoring on every transaction at millisecond latency, using ML features like velocity, device fingerprint, and merchant reputation), regulatory compliance (RBI guidelines for payment aggregators, SEBI regulations for stock brokers, IRDAI for insurance — compliance is a hard engineering constraint, not an afterthought), and reconciliation (financial reconciliation: matching every debit and credit across 20+ bank integrations, identifying and resolving breaks). These problems have no good open-source solutions — fintech engineers build proprietary systems for each.",
+      },
+      {
+        heading: "Fintech Engineer Salaries in India 2026",
+        content: "Fintech salary benchmarks (mid-level, 2-5 years, base + RSU total comp): Razorpay: Rs 30-80 LPA. PhonePe: Rs 35-90 LPA. Paytm One97: Rs 20-60 LPA. BharatPe: Rs 20-65 LPA. Groww: Rs 25-70 LPA. Zerodha: Rs 20-70 LPA (Zerodha ESOPs are especially valuable given the company's sustained profitability and potential IPO). Slice: Rs 15-50 LPA. Indian fintech salaries have risen significantly since 2020 due to UPI-driven growth and competition for engineers with payments domain knowledge. Fintech engineers with 3-5 years of experience routinely earn 20-30% more than equivalent generalist engineers because payments domain knowledge is scarce and valuable.",
+      },
+      {
+        heading: "How to Get Into Indian Fintech as a Software Engineer",
+        content: "Three paths into Indian fintech: (1) Domain preparation: understand UPI flow (NPCI, PSP, VPA, payment rails), payment gateway architecture, and RBI regulations for payment aggregators. Engineers who can speak the language of fintech in interviews stand out. (2) Referrals: fintech companies in India have active referral programmes — connect with engineers at target companies on LinkedIn, mention specific technical content from their engineering blogs (PhonePe Engineering, Razorpay Engineering Blog, and Zerodha Tech Blog are all active and technically detailed). (3) Technical preparation: payments system design (design a payment gateway, design a fraud detection system, design a reconciliation system) in addition to standard DSA preparation. Razorpay and PhonePe's system design rounds will test payments-specific knowledge.",
+      },
+    ],
+    faqs: [
+      { question: "Which Indian fintech company has the best engineering culture?", answer: "Razorpay and Zerodha consistently rank highest for engineering culture in India. Razorpay: strong engineering standards (extensive code review, well-maintained documentation, a respected engineering blog). Zerodha: small team, high ownership, no VC pressure, profitability-first culture — engineers who want depth over breadth find it outstanding. PhonePe is strong for engineers who want consumer-scale problems at UPI throughput." },
+      { question: "What programming languages do Indian fintech companies use?", answer: "Java and Go are the dominant backend languages in Indian fintech (Razorpay: Go and Java; PhonePe: Go, Java, and Kotlin; Zerodha: Go almost exclusively — Zerodha uses Go for everything including their trading platform Kite). Python for ML and data pipelines. React for frontend. PostgreSQL and MySQL for transactional data. Kafka for event streaming. Redis for caching and rate limiting." },
+      { question: "Is Indian fintech a good career choice for long-term growth?", answer: "Yes. Fintech domain expertise (UPI, payments architecture, lending technology, wealth tech) is portable globally: India's payments infrastructure is being studied and replicated in Southeast Asia, Africa, and Latin America. Engineers who understand UPI-scale payments and Indian regulatory compliance are valued internationally. Additionally, Indian fintech companies are likely to IPO in the coming years (Razorpay and PhonePe are both IPO candidates) which would significantly reward early employees with ESOPs." },
+      { question: "What is the interview process at Razorpay?", answer: "Razorpay interview: (1) online coding assessment (2-3 LeetCode-medium problems, 60-90 minutes), (2) technical phone screen (DSA, 45 minutes), (3) virtual on-site loop: 2 coding rounds, 1 system design round (payments domain: design a payment gateway, design an idempotent API system, design a fraud detection system), 1 engineering manager conversation (on collaboration, ownership, and career goals). The system design round at Razorpay rewards candidates who know how payment systems work — study idempotency, saga pattern for distributed transactions, and real-time fraud scoring architecture." },
+    ],
+    relatedSlugs: ["razorpay-interview-questions-2026", "phonepe-interview-questions-2026", "how-to-negotiate-job-offer-india-software-engineer-2026"],
+    cta: "Breaking into Indian fintech? Use HireStepX to practise payments system design and fintech behavioural questions with AI voice coaching. Get instant feedback on your answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "top-gaming-companies-india-2026",
+    title: "Top Gaming Companies in India 2026: Software Engineer Career Guide",
+    metaDescription: "Top gaming companies to work at in India 2026. Dream11, Mobile Premier League, Nazara, WinZO, nCore Games, Krafton India: salaries, engineering culture, and how to break into game development.",
+    company: "Industry Insights",
+    category: "Industry Insights",
+    readTime: "9 min read",
+    heroImage: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&q=80",
+    heroAlt: "Mobile gaming representing India's gaming industry growth",
+    datePublished: "2026-10-13",
+    intro: "India is the world's largest mobile gaming market by download volume (over 1 billion downloads annually) and the third-largest by revenue. The sector splits into two distinct engineering tracks: real-money gaming platforms (Dream11, MPL, WinZO), which use standard product engineering at consumer scale, and game development studios (Krafton India, nCore Games), which require Unity, Unreal Engine, and game-specific technical skills. This guide covers both tracks, the top employers, salary benchmarks, and how to break into Indian gaming.",
+    sections: [
+      {
+        heading: "India's Top Gaming Engineering Employers in 2026",
+        content: "Real-money gaming: Dream11 (Mumbai, 250 million users, India's largest fantasy sports platform, Rs 25-70 LPA mid-level, one of the most demanding real-time engineering environments in India), Mobile Premier League (Bengaluru, real-money gaming and esports, Rs 22-65 LPA mid-level), WinZO (Delhi, vernacular gaming in 12 Indian languages, Rs 15-45 LPA). Game development studios: Krafton India (Bengaluru, BGMI developer and new game studio, Rs 22-60 LPA), nCore Games (Bengaluru, FAU-G developer, Rs 10-35 LPA), 99Games (Udupi/Mangalore, one of India's oldest mobile game studios). Game engine companies: Unity India (Bengaluru, Rs 25-75 LPA), Epic Games India (Hyderabad, Rs 30-80 LPA, highest-paying in the sector). Tencent/NetEase India studios for mobile RPG development.",
+      },
+      {
+        heading: "What Dream11's Engineering Team Works On",
+        content: "Dream11 (Mumbai, 250 million users) has one of India's most demanding real-time engineering environments. Key systems: contest creation engine (1,000+ contests per IPL match, real-time team creation with player selection constraints, winning probability calculations), real-time score processing (ingesting live scores from multiple cricket data providers, updating 250 million users' fantasy team scores simultaneously during IPL finals — the peak concurrent load rivals or exceeds any Indian tech company's peak), payment systems (deposits and winnings payouts: Rs 100 crore+ disbursed per IPL match), fraud and collusion detection (identifying coordinated bot accounts, duplicate team detection across millions of entries), and ML for user personalisation (contest recommendations, predicted churn, targeted promotions). Dream11 processes more concurrent real-time updates during IPL finals than most Indian e-commerce platforms handle in a full day.",
+      },
+      {
+        heading: "Game Development vs Real-Money Gaming: Two Different Engineering Tracks",
+        content: "Real-money gaming (Dream11, MPL, WinZO): uses standard product engineering skills (Java/Go/Node.js backend, React frontend, PostgreSQL/Redis, Kafka). The domain challenge is real-time score processing at consumer scale and fraud detection. This track is accessible to any strong backend or full-stack engineer who understands the domain. Game development (Krafton India, nCore Games, Unity, Epic): requires Unity (C#) or Unreal Engine (C++) expertise specifically. Game-specific patterns: authoritative server model for multiplayer (server is always right, client predicts and reconciles), client-side prediction for low-latency feel, lag compensation for fair hit detection in fast-paced games, shader programming (HLSL/GLSL), mobile performance optimisation (draw call batching, texture compression, LOD systems), and memory pooling to avoid garbage collection spikes. The game dev track requires 6-18 months of Unity or Unreal study to enter from a standard SWE background.",
+      },
+      {
+        heading: "Gaming Engineer Salaries in India 2026",
+        content: "Real-money gaming: Dream11 mid-level (2-5 years): Rs 25-70 LPA. MPL mid-level: Rs 22-65 LPA. WinZO mid-level: Rs 15-45 LPA. Game development: Krafton India mid-level: Rs 22-60 LPA. Unity India mid-level: Rs 25-75 LPA. Epic Games India mid-level: Rs 30-80 LPA. Game development engineer salaries are generally 10-20% below equivalent backend engineers in India, reflecting the more specialised and smaller market for game dev skills. Real-money gaming platforms pay comparably to fintech and e-commerce companies because they use the same engineering skills at similar scale. Unity and Epic pay the highest in the game dev segment because they sell to global markets and compete for talent internationally.",
+      },
+    ],
+    faqs: [
+      { question: "How do I get a job in game development in India?", answer: "Build a portfolio: 2-3 complete games (not half-finished prototypes) deployed on the Google Play Store or itch.io. The games do not need to be commercially successful — they need to demonstrate technical skill (physics, AI, networking) and completion. For Unity roles: master C# coroutines, the Entity Component System (ECS), and Unity's animation system. For Unreal roles: understand Blueprints (Unreal's visual scripting) but C++ is required for senior roles. For Krafton India specifically: BGMI (India's PUBG Mobile) uses Unreal Engine — Unreal C++ experience is valued." },
+      { question: "Is Indian gaming a good career choice for long-term growth?", answer: "The Indian gaming market is growing at 20%+ annually (FICCI-EY 2026 report: $5 billion market by 2027). The real-money gaming sector faces regulatory risk (government has imposed 28% GST on online gaming since October 2023, which has slowed growth). Game development studios are expanding: Krafton India is building a full game development capability in Bengaluru. For engineers who love games, the Indian game dev industry is maturing. For pure compensation maximisation, fintech and e-commerce still pay more for equivalent skills." },
+      { question: "What is the interview process at Dream11?", answer: "Dream11 interview: (1) online coding assessment (2-3 problems, LeetCode medium, 60-90 minutes), (2) technical phone screen (DSA, 45 minutes), (3) virtual on-site: 2 coding rounds and 1 system design round focused on real-time systems (design a contest entry system that handles 10 million concurrent users at IPL final moment, design a real-time score update system, design a fraud detection system). The system design round rewards engineers who understand real-time streaming, concurrency, and distributed consistency under high load." },
+      { question: "Do I need to be a gamer to work at an Indian gaming company?", answer: "For real-money gaming platforms (Dream11, MPL), gaming interest is helpful but not required — these are fundamentally technology companies that happen to be in gaming. For game development studios (Krafton, nCore), passion for games is genuinely expected and will come up in interviews. For game engine companies (Unity, Epic), deep technical interest in graphics, physics simulation, or engine architecture is more important than gaming itself." },
+    ],
+    relatedSlugs: ["top-fintech-companies-india-2026", "full-stack-developer-interview-questions-india-2026", "android-developer-interview-questions-india-2026"],
+    cta: "Breaking into gaming or real-money gaming companies? Use HireStepX to practise system design and technical interviews with AI voice coaching. Get instant feedback on your answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "data-engineering-jobs-india-2026",
+    title: "Data Engineering Jobs in India 2026: Complete Career Guide",
+    metaDescription: "Complete guide to data engineering jobs in India 2026. Data engineer roles, salaries, skills (Spark, Kafka, Airflow, dbt, Snowflake, BigQuery), top hiring companies, and how to transition from software engineering.",
+    company: "Industry Insights",
+    category: "Industry Insights",
+    readTime: "10 min read",
+    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
+    heroAlt: "Data pipeline visualization representing data engineering infrastructure",
+    datePublished: "2026-10-14",
+    intro: "Data engineering is one of the highest-demand roles in Indian tech in 2026. As Indian companies accumulate petabytes of user, transaction, and operational data, the infrastructure to process, store, and serve that data has become a critical bottleneck. Data engineers build the pipelines, platforms, and data models that allow data scientists to run ML models and analysts to answer business questions. This guide covers what data engineers do, the skills required, salary benchmarks, and how software engineers can transition into the role.",
+    sections: [
+      {
+        heading: "What Does a Data Engineer Do?",
+        content: "Data engineers build and maintain the infrastructure that moves data from source systems to analytical storage. Core responsibilities: data ingestion (pulling data from production databases, APIs, and event streams into a data warehouse or lake — using Kafka for real-time and Airflow for batch), data transformation (cleaning, normalising, and modelling raw data into business-ready tables using dbt or Spark), data quality (writing tests that alert when data freshness drops or row counts change unexpectedly, managing schema evolution), data modelling (designing star schemas and data vault structures for analytical queries), and platform maintenance (managing Spark clusters on EMR, Databricks, or Dataproc; managing Airflow DAG infrastructure; maintaining Snowflake or BigQuery warehouses). Data engineers do not build ML models (that is data science) but they build the infrastructure that makes ML possible.",
+      },
+      {
+        heading: "Data Engineering Skills Required in India 2026",
+        content: "Core technical skills: Python (primary language: pandas for small data, PySpark for large-scale distributed processing, SQLAlchemy for database connectivity, great_expectations for data quality). Apache Spark (distributed data processing: understand DataFrames, Spark SQL, Structured Streaming for real-time, and cluster configuration: partitioning, shuffle operations, memory management). Apache Kafka (event streaming: produce and consume messages, understand partitioning strategy, consumer groups, offset management, Schema Registry for data contracts). Apache Airflow (workflow orchestration: build DAGs with operators and sensors, handle retry logic and SLA monitoring, test DAGs). dbt (data build tool: SQL-based transformations, automated testing with schema.yml, lineage documentation). Cloud data warehouses: Snowflake (virtual warehouses, clustering keys, zero-copy cloning) or BigQuery (partitioned tables, clustering, slot-based pricing). SQL mastery: window functions, CTEs, recursive queries, and EXPLAIN plan reading for query optimisation.",
+      },
+      {
+        heading: "Data Engineering Salaries in India 2026",
+        content: "Data engineer salary benchmarks: Junior DE (0-2 years): Rs 10-22 LPA at product companies. Mid-level (2-5 years): Rs 22-55 LPA. Senior data engineer (5-8 years): Rs 50-95 LPA. Principal / Data Architect: Rs 85-160 LPA. Top data engineering employers and salary ranges (mid-level): Flipkart Data Platform team: Rs 30-75 LPA. PhonePe analytics engineering: Rs 30-70 LPA. Google India (BigQuery team): Rs 45-100 LPA. Amazon India (AWS Glue, Redshift, EMR teams): Rs 40-90 LPA. Fractal Analytics: Rs 18-45 LPA. Mu Sigma: Rs 15-40 LPA. ThoughtWorks data practice: Rs 20-50 LPA. Data engineering at FAANG India pays comparably to SWE at the same level; at consulting and analytics companies, it pays 20-30% below equivalent product company data engineers.",
+      },
+      {
+        heading: "How to Transition from Software Engineering to Data Engineering",
+        content: "The fastest transition path from SWE to DE: (1) Python is usually already strong; extend it with PySpark and pandas proficiency. (2) SQL mastery is non-negotiable — spend 2-4 weeks mastering window functions, CTEs, and query optimisation if not already strong. (3) Build a complete portfolio project: pick a public data source (government data portal, Twitter API, Kaggle dataset), build a pipeline from ingestion (Kafka or API polling) through orchestration (Airflow) through transformation (dbt in Snowflake or BigQuery) to a visualisation layer (Metabase or Superset). Deploy it and document it. (4) Get certified: Google Professional Data Engineer or AWS Certified Data Analytics — Specialty are the most valued cloud data certifications in India. (5) Target roles: junior data engineer at mid-stage startups (they are more open to SWE-to-DE transitions than FAANG India which prefers specialised candidates). One year of DE experience opens significantly more doors at scale companies.",
+      },
+    ],
+    faqs: [
+      { question: "Is data engineering better than data science in India in 2026?", answer: "Data engineering offers higher job market demand in 2026 relative to the available talent pool. Most companies have more data science aspirants than their data infrastructure can support — they need data engineers first. Data engineers also have more predictable deliverables (pipelines either work or they do not) which correlates with more structured career progression. Data science offers more creative latitude and potentially higher upside at senior levels. For engineers who prefer building systems over statistics and modelling, data engineering is the better fit." },
+      { question: "What is the difference between a data engineer and a backend engineer?", answer: "Backend engineers build systems that serve user-facing requests in real time (APIs, databases, caching). Data engineers build systems that process large volumes of data in batch or near-real-time for analytics purposes. The technical overlap: both write Python and SQL; both design database schemas; both think about reliability and performance. The difference: data engineers specialise in columnar storage (Parquet, ORC), distributed compute (Spark, Flink), workflow orchestration (Airflow, Prefect), and data modelling for analytics (star schema, data vault). Backend engineers specialise in transactional databases (ACID guarantees, indexing, connection pooling), low-latency APIs, and caching." },
+      { question: "Which companies in India hire the most data engineers?", answer: "By volume: Infosys, TCS, Wipro, and Accenture India (large consulting practices with data engineering delivery teams — hundreds of DEs each, but service delivery work). By engineering quality: Flipkart, PhonePe, Swiggy, Razorpay, Google India, Amazon India, and analytics companies like Fractal Analytics, Mu Sigma, and Tiger Analytics. For FAANG India data engineering roles (Google, Amazon, Microsoft): expect a more rigorous interview process with coding, distributed systems design, and SQL rounds equivalent to SWE interviews." },
+      { question: "Do I need a master's degree to become a data engineer in India?", answer: "No. A master's degree is helpful for data science research roles but not required for data engineering. Most Indian data engineers have a B.Tech in Computer Science or a related field. What matters: Python proficiency, SQL mastery, hands-on experience with at least one orchestration tool (Airflow) and one data warehouse (Snowflake or BigQuery), and a portfolio of completed data pipeline projects. Cloud certifications (Google Professional Data Engineer, AWS Data Analytics) substitute for academic credentials at most hiring companies." },
+    ],
+    relatedSlugs: ["ai-ml-jobs-india-2026", "remote-jobs-india-software-engineer-2026", "devops-sre-interview-questions-india-2026"],
+    cta: "Breaking into data engineering? Use HireStepX to practise data engineering conceptual questions and behavioural interviews with AI voice coaching. Get instant feedback on your technical answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "devops-sre-interview-questions-india-2026",
+    title: "DevOps and SRE Interview Questions India 2026: Complete Engineer Guide",
+    metaDescription: "Complete DevOps and SRE interview guide for India 2026. Kubernetes, Docker, CI/CD, Terraform, AWS, monitoring, incident response, SLOs, and DevOps engineer salary at Indian product companies.",
+    company: "Role Guides",
+    category: "Role Guides",
+    readTime: "11 min read",
+    heroImage: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200&q=80",
+    heroAlt: "Infrastructure and monitoring dashboard representing DevOps and SRE engineering",
+    datePublished: "2026-10-15",
+    intro: "DevOps and SRE roles have become among the most in-demand in Indian tech as companies at every scale realise that deployment speed and system reliability are competitive advantages. This guide covers what the two roles mean in practice, the technical topics tested in Indian DevOps/SRE interviews, Kubernetes depth expectations, SRE concepts for senior interviews, and salary benchmarks at Indian product companies.",
+    sections: [
+      {
+        heading: "DevOps vs SRE: What Is the Difference in India?",
+        content: "DevOps Engineer: focuses on automating and accelerating software delivery. Core responsibilities: CI/CD pipeline design (GitHub Actions, Jenkins, ArgoCD for GitOps), infrastructure as code (Terraform for provisioning, Ansible for configuration management), container orchestration (Kubernetes cluster management, helm chart development), developer platform tooling (internal developer platforms, build system optimisation, environment management), and cloud cost optimisation. SRE (Site Reliability Engineer): applies software engineering principles to operations problems. Core responsibilities: defining SLOs and error budgets, building observability systems (Prometheus, Grafana, distributed tracing), leading incident response (on-call rotation, incident commander role, postmortems), toil elimination through automation (replacing repetitive ops tasks with code), and capacity planning. At companies under 100 engineers in India, the roles merge. At Swiggy, Flipkart, and Razorpay, SRE is a distinct function with strong software engineering requirements and significant on-call responsibility.",
+      },
+      {
+        heading: "Kubernetes and Infrastructure Topics in DevOps/SRE Interviews",
+        content: "Kubernetes depth tested in India: pod troubleshooting (diagnose CrashLoopBackOff: check logs with kubectl logs, describe the pod for Events section, check resource limits and liveness probe configuration), deployment strategies (rolling update: maxSurge and maxUnavailable; blue-green: parallel deployment with service cutover; canary: weighted traffic split with ingress controller), resource management (requests vs limits, impact of CPU throttling vs memory OOM kill), HPA and VPA (when to use each, metric server vs custom metrics), networking (kube-proxy modes: iptables vs IPVS; CNI plugins: Calico vs Flannel vs Cilium; NetworkPolicy for pod-to-pod access control; ingress controllers: nginx vs Traefik vs Ambassador). Terraform depth: resource dependency graph, state management (remote state with S3 backend and DynamoDB lock for state locking), modules (input variables, output values, module composition), and import of existing infrastructure.",
+      },
+      {
+        heading: "SRE Concepts Tested at Senior Level in India",
+        content: "Senior SRE interviews go beyond tools to reliability engineering principles: SLOs and error budgets (define an SLO for the Swiggy checkout API: 99.9% success rate over 30 days, p99 latency under 800ms. Error budget: 0.1% of 30 days = 43 minutes of allowable downtime. SLO breach triggers a reliability sprint: new feature work pauses until the budget is restored). Capacity planning (how do you project infrastructure for Diwali sale traffic 3 months ahead? Load test to find saturation points at current traffic, extrapolate growth trend, add 50% headroom buffer for unexpected spikes, plan for 10x traffic peaks at specific hours). Incident management lifecycle (detection via alerting threshold trigger, triage using runbooks, mitigation: rollback or circuit breaker activation, communication: status page update every 15 minutes, postmortem: 5-whys root cause, action items with owners and due dates). Chaos engineering (fault injection testing: terminate random pods, introduce artificial latency on network calls, simulate availability zone failure — validate recovery procedures under controlled conditions).",
+      },
+      {
+        heading: "DevOps/SRE Salaries in India 2026",
+        content: "DevOps and SRE salary benchmarks: Junior (0-2 years): Rs 10-22 LPA at product companies. Mid-level (2-5 years): Rs 22-55 LPA. Senior (5-8 years): Rs 50-95 LPA. Staff / Principal SRE (8+ years): Rs 85-160 LPA. Top employers and salary ranges (mid-level): Google SRE India (Hyderabad and Bengaluru): Rs 80-200 LPA total comp — the highest SRE compensation in India. Flipkart SRE: Rs 35-80 LPA. Swiggy Infrastructure: Rs 30-70 LPA. Razorpay Reliability: Rs 30-70 LPA. Amazon India (operational excellence and AWS reliability teams): Rs 30-75 LPA. Microsoft India (Azure reliability engineering): Rs 25-65 LPA. DevOps engineers at cloud-native startups earn Rs 15-45 LPA mid-level but get broader on-call exposure and ownership earlier.",
+      },
+    ],
+    faqs: [
+      { question: "What programming language should I know as a DevOps/SRE engineer in India?", answer: "Go is the primary language for cloud-native tooling (Kubernetes operators, custom controllers, Terraform providers are all written in Go). Python is essential for scripting, Ansible playbooks, and automation. Shell scripting (Bash) is a baseline expectation for all DevOps roles. Java or TypeScript knowledge is helpful if your company's primary stack is Java or Node.js (allows you to contribute to application code when needed). Focus on Go if targeting SRE roles at companies using Kubernetes-native infrastructure." },
+      { question: "What cloud certifications help for DevOps/SRE roles in India?", answer: "Most valued certifications in India: CKA (Certified Kubernetes Administrator) — the most valued single DevOps certification for Kubernetes-heavy roles. AWS Solutions Architect Professional — widely respected for cloud infrastructure roles. Google Cloud Professional DevOps Engineer — valued for GCP environments and SRE-adjacent roles. Terraform Associate — entry-level but demonstrates IaC knowledge. HashiCorp certifications are respected by companies that use the HashiCorp stack (Terraform, Vault, Consul). Avoid collecting many certifications without hands-on experience — one CKA with a real Kubernetes cluster on your GitHub profile outweighs five paper certifications." },
+      { question: "Is DevOps engineering a good career choice in India?", answer: "Yes. The demand for DevOps and SRE engineers in India has grown faster than supply since 2020. Every product company above 20 engineers needs at least one DevOps engineer; companies above 100 engineers need dedicated SRE teams. The skill set is genuinely valuable: cloud cost savings, deployment frequency improvements, and reliability improvements are measurable business outcomes. Career progression: DevOps Engineer to Senior DevOps to Platform Engineering Manager or Principal SRE. Compensation at principal level is comparable to Staff SWE." },
+      { question: "How do I transition from a traditional IT ops background to DevOps in India?", answer: "Traditional IT ops to DevOps transition: (1) Learn Linux deeply (file system, process management, networking, cron, systemd — this is your foundation). (2) Learn one cloud platform (AWS is most common in India — EC2, VPC, IAM, S3, RDS, and the managed services your company would use). (3) Get hands-on with containers: build Docker images, run Docker Compose locally, then deploy to a local Kubernetes cluster (minikube or kind). (4) Learn Terraform: provision an AWS environment from scratch with Terraform. (5) Build a CI/CD pipeline using GitHub Actions. (6) Get the CKA certification as validation. This 6-12 month path transitions IT ops professionals to entry-level DevOps roles consistently." },
+    ],
+    relatedSlugs: ["data-engineering-jobs-india-2026", "vmware-india-interview-questions-2026", "devops-sre-interview-questions-india-2026"],
+    cta: "Preparing for DevOps or SRE roles in India? Use HireStepX to practise Kubernetes, infrastructure system design, and SRE conceptual questions with AI voice coaching. Get instant scored feedback.",
+    relatedLinks: [],
+  },
+  {
+    slug: "android-developer-interview-questions-india-2026",
+    title: "Android Developer Interview Questions India 2026: Kotlin, Jetpack Compose and Architecture Guide",
+    metaDescription: "Complete Android developer interview guide for India 2026. Kotlin, Jetpack Compose, MVVM, Room, Retrofit, Android architecture, and Android developer salary at Indian product companies.",
+    company: "Role Guides",
+    category: "Role Guides",
+    readTime: "10 min read",
+    heroImage: "https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=1200&q=80",
+    heroAlt: "Android smartphone development representing Kotlin and Jetpack Compose mobile engineering",
+    datePublished: "2026-10-16",
+    intro: "Android development is one of the most impactful mobile engineering disciplines in India, where 95%+ of smartphone users are on Android. From PhonePe (500 million users) to Swiggy (35 million+ active users) to CRED (known for its premium Android engineering culture), Indian product companies are building some of the world's most-downloaded Android apps. This guide covers the Kotlin depth, Jetpack Compose knowledge, Android architecture patterns, and system design questions tested at Indian product companies in 2026.",
+    sections: [
+      {
+        heading: "Kotlin Depth Tested in Android Developer Interviews",
+        content: "Kotlin fundamentals that Indian Android interviews probe: coroutines (launch vs async: launch for fire-and-forget, async for concurrent work with Deferred result; suspend functions and how they pause without blocking threads; CoroutineScope and structured concurrency: why all coroutines should have a parent scope; Dispatchers.IO for network and disk, Dispatchers.Main for UI, Dispatchers.Default for CPU-intensive work; exception handling: CoroutineExceptionHandler and supervisorScope). Flow (StateFlow for state that should always have a current value; SharedFlow for events that should not be replayed; cold flows vs hot flows; essential operators: map, filter, combine for merging multiple flows, flatMapLatest to cancel old collection when a new value arrives). Kotlin-specific Android patterns: sealed classes for UI state (Loading, Success, Error hierarchy is the standard pattern), extension functions to add behaviour to Android framework classes, companion objects for factory methods, and inline functions for higher-order lambda performance.",
+      },
+      {
+        heading: "Android Architecture and Jetpack in Interviews",
+        content: "MVVM with Jetpack: ViewModel (survives configuration changes like rotation, holds UI state, should not hold Android context directly), StateFlow/SharedFlow for emitting state from ViewModel to UI, Repository pattern (abstracts data sources: network via Retrofit, local database via Room, in-memory cache), UseCase layer (optional: extracts business logic from Repository, improves testability). Clean Architecture at scale: Presentation (ViewModel), Domain (UseCase, Repository interface), Data (Repository implementation, data sources). Dependency injection with Hilt: @HiltAndroidApp, @AndroidEntryPoint, @HiltViewModel, module definitions with @Provides and @Binds, testing with Hilt. Room database: entity annotations, DAO with suspend queries and Flow return types, TypeConverters, database migration scripts. Navigation Component: NavGraph definition, navigating with actions, passing arguments safely with NavArgs, deep link support. WorkManager: constraints (network required, charging, battery not low), expedited work requests for foreground-visible background tasks.",
+      },
+      {
+        heading: "Jetpack Compose in Android Interviews",
+        content: "Jetpack Compose (2021+) knowledge expected at Indian product companies in 2026: composable functions (how recomposition works: only the composables whose inputs changed recompose; remember and rememberSaveable for state survival through recomposition and configuration changes; derivedStateOf for computed state that should not trigger unnecessary recomposition). Side effects: LaunchedEffect (coroutine tied to a composable's lifecycle), DisposableEffect (cleanup when composable leaves composition), SideEffect (synchronise external state). State management: state hoisting pattern (move state to the caller, composables become stateless and more testable), viewModel() composable to obtain a ViewModel in Compose. LazyColumn and LazyRow for scrolling lists (key parameter for stable identity). Material 3 theming: MaterialTheme, typography, color scheme, dynamic color on Android 12+. Animation: animateFloatAsState, AnimatedVisibility, Crossfade, custom animations with Animatable.",
+      },
+      {
+        heading: "Android Developer Salaries in India 2026",
+        content: "Android developer salary benchmarks: Junior (0-2 years): Rs 8-20 LPA at product companies. Mid-level (2-5 years): Rs 20-55 LPA. Senior Android developer (5-8 years): Rs 50-95 LPA. Lead Android / Principal (8+ years): Rs 85-150 LPA. Top Android hiring companies and compensation (mid-level): PhonePe: Rs 35-80 LPA (one of India's highest-traffic Android apps). Swiggy: Rs 30-70 LPA. CRED: Rs 35-80 LPA (premium engineering culture, high interview bar). Zepto: Rs 25-65 LPA. Dream11: Rs 25-65 LPA. Meesho: Rs 20-55 LPA. Android developer salaries are 10-15% below equivalent backend engineers at most companies due to higher supply of Android engineers relative to demand. Cross-platform experience (Flutter or React Native in addition to native Android) adds 15-20% premium.",
+      },
+    ],
+    faqs: [
+      { question: "Should I learn Jetpack Compose or stick with XML layouts for Android jobs in India?", answer: "Learn both, prioritise Compose. Most companies are using Compose for new screens in 2026 while maintaining XML legacy code. Android interviews in India test XML knowledge (RecyclerView, ViewHolder, Adapter patterns, ConstraintLayout) for legacy awareness and Compose for new development direction. If you only have time to learn one deeply: Compose, because companies will increasingly migrate to it and XML knowledge can be picked up on the job faster than Compose fundamentals." },
+      { question: "What is the interview process for Android developers at Indian product companies?", answer: "Typical Android developer interview: (1) online coding assessment (DSA in Kotlin or Java, 60-90 minutes), (2) technical phone screen (Android fundamentals: Activity/Fragment lifecycle, ViewModel, Kotlin coroutines, 45 minutes), (3) virtual on-site loop: 1-2 coding rounds (DSA and Android-specific coding: build a RecyclerView adapter, implement a debounce mechanism with coroutines), 1 architecture round (MVVM, dependency injection, system design for a mobile feature), and 1 behavioural round. CRED and PhonePe have notably higher interview bars than most Indian companies for Android: expect deep Compose and Kotlin coroutines questions." },
+      { question: "What Android projects should I build to get hired in India?", answer: "Three project types that impress Android interviewers: (1) A complete app using Jetpack Compose, MVVM, Hilt, and Room (a notes app, a news reader, a task manager — the domain matters less than the architecture). Deploy it to the Play Store (even internally). (2) An app with real-time data: a cricket score tracker using WebSockets, a stock price app using SSE, or a chat application. Shows Kotlin Flow and real-time Android patterns. (3) An open-source contribution: find a Kotlin/Android library on GitHub (Coil, Retrofit, Accompanist) and fix a reported bug. Shows professional-grade code quality and comfort with large codebases." },
+      { question: "Is Flutter worth learning for Android developers in India?", answer: "Yes, as a secondary skill. Flutter (Dart) allows building iOS and Android apps from a single codebase. Indian companies using Flutter heavily: Meesho, PhonePe (some features), Ola (EV app), Juspay (payments SDK), and many startups. The Flutter premium: engineers who know native Android and Flutter can own the entire mobile layer at small companies without needing iOS engineers. The Flutter tradeoff: the Dart ecosystem is smaller, debugging native-specific issues requires native knowledge anyway, and very high-performance UI (like PhonePe's payment animations) still benefits from native Android. Native Android expertise should come first; Flutter is the valuable addition." },
+    ],
+    relatedSlugs: ["ios-developer-interview-questions-india-2026", "full-stack-developer-interview-questions-india-2026", "top-gaming-companies-india-2026"],
+    cta: "Preparing for Android developer roles in India? Use HireStepX to practise Kotlin, Jetpack Compose, and architecture questions with AI voice coaching. Get instant feedback on your technical answers.",
+    relatedLinks: [],
+  },
+  {
+    slug: "how-to-negotiate-job-offer-india-software-engineer-2026",
+    title: "How to Negotiate a Job Offer in India 2026: Software Engineer Salary Guide",
+    metaDescription: "How to negotiate a job offer as a software engineer in India 2026. What to say, when to negotiate, how to counter-offer, components of total comp, and how to evaluate competing offers.",
+    company: "Interview Skills",
+    category: "Interview Skills",
+    readTime: "9 min read",
+    heroImage: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=1200&q=80",
+    heroAlt: "Salary negotiation representing job offer discussion between engineer and employer",
+    datePublished: "2026-10-17",
+    intro: "Salary negotiation is the highest-return-per-hour activity available to a software engineer in India. A 30-minute conversation can yield Rs 3-10 LPA more — permanently, since future raises compound from a higher base. Yet fewer than 30% of Indian engineers negotiate their job offers. The cultural discomfort is real, but so is the cost of not negotiating. This guide covers exactly what to say, when to say it, and how to handle every common negotiation scenario.",
+    sections: [
+      {
+        heading: "Why Most Indian Engineers Do Not Negotiate (and Why They Should)",
+        content: "Three beliefs stop Indian engineers from negotiating: 'It is rude to negotiate.' Reality: hiring managers expect negotiation. Offers are made with room to move. In 10 years of hiring experience, most Indian engineering managers report that fewer than 1 in 5 candidates negotiates, and the ones who do are not penalised — they are respected for understanding their market value. 'They might rescind the offer.' Reality: companies almost never rescind offers because a candidate negotiated politely. A rescission would be a massive breach of professional conduct in a tight-knit industry. 'I should be grateful for the offer.' Reality: gratitude and negotiation are not mutually exclusive. You can genuinely want the role and still negotiate its terms. The alternative — accepting every offer as given — means you consistently earn less than colleagues who do negotiate. At Rs 25 LPA vs Rs 30 LPA over 10 years with standard 10% raises, that initial Rs 5 LPA difference compounds to Rs 30 LPA in year 10.",
+      },
+      {
+        heading: "What to Say: The Counter-Offer Script",
+        content: "The most important 60 seconds in your job negotiation. Before responding to an offer: take 24-48 hours to review (it is professional and expected, not a sign of disinterest). Then: 'Thank you for the offer — I am genuinely excited about joining [company] and working on [specific project or team]. I wanted to discuss the compensation before I confirm. Based on my research on the market rate for [role] at companies of [company's size and stage], and given my experience in [specific relevant skill or domain], I was expecting the base salary to be closer to [target number]. Is there flexibility to move the base to [target]?' Three things make this script work: (1) specific enthusiasm (not generic), (2) market justification (not personal need), and (3) a specific number (not a range — ranges anchor to their low end). For RSUs separately: 'The base salary works for me. I did want to check — is there any flexibility on the RSU grant?'",
+      },
+      {
+        heading: "Total Compensation Components You Can Negotiate",
+        content: "Beyond base salary, a job offer at an Indian product company typically has: joining bonus (sign-on bonus — negotiate if you are leaving unvested RSUs or ESOPs at your current company: 'I have Rs X of unvested equity that I would forfeit by joining before March. Would the company be willing to include a joining bonus to offset this?'), RSU grant (the number of units at grant — negotiate before you join, not after; the vesting schedule is typically fixed at 4 years with 1-year cliff), performance bonus percentage (check whether it is guaranteed, at-target, or fully discretionary — if fully discretionary, it should not factor into your compensation expectations), grade and level (if you are at the border between SWE-2 and Senior SWE, negotiating the higher level matters enormously for comp trajectory — ask directly: 'Is there flexibility on the level offered given my experience with X?'), and start date (useful for maximising notice period to capture a bonus at your current employer).",
+      },
+      {
+        heading: "Using a Competing Offer Effectively",
+        content: "A competing offer is the most powerful negotiation tool available. Rules of use: (1) Only leverage a competing offer that is real and that you are genuinely willing to accept — bluffing is discoverable and destroys trust permanently. (2) Frame it as a choice, not an ultimatum: 'I am in a fortunate position of having another offer at Rs X LPA. I genuinely prefer [this company] because [specific reason]. Is there a way to get closer to that number?' versus the wrong version: 'Match this or I will go elsewhere.' The first invites collaboration; the second creates a confrontation. (3) Timing: use the competing offer before you have verbally committed, not after you have already said yes. (4) If they match: great. If they cannot match: they may offer non-monetary compensation (earlier performance review cycle for potential promotion, higher title, more equity). If they decline entirely: you have learned something true about how the company values you, and you can make an informed decision.",
+      },
+    ],
+    faqs: [
+      { question: "Is it acceptable to negotiate salary in India tech companies?", answer: "Yes. At product companies (Razorpay, Swiggy, Flipkart, Groww), negotiation is standard practice and completely acceptable. At service companies (TCS, Infosys, Wipro), negotiation on base is less common for freshers (band salaries are somewhat fixed) but more common for lateral hires at senior levels. At startups, negotiation is especially important because initial offers are often below market to preserve cash — founders expect negotiation." },
+      { question: "How much should I ask for when counter-offering?", answer: "Target 15-25% above the initial offer for a strong counter. If the initial offer is Rs 25 LPA, counter at Rs 28-30 LPA. The final agreed number is typically somewhere between the two. If your market research suggests the role should pay Rs 35 LPA and they offered Rs 25 LPA, you have a larger gap to bridge — use a competing offer or multiple data points (Glassdoor, LinkedIn, conversations with people in the role) to justify the larger ask. Do not ask for more than 30% above the offer without very strong justification — it risks signalling that you are negotiating in bad faith." },
+      { question: "When should I bring up salary expectations during the interview process?", answer: "If asked early in the process (recruiter screen): give a range that is slightly above your actual minimum (so there is room to negotiate later). Say: 'Based on my research, I am targeting roles in the Rs X-Y LPA range. I am open to discussion depending on the total compensation structure.' Do not commit to a specific number early. The strongest negotiation position is after you have a written offer: you have full information and they have already decided they want you." },
+      { question: "What if a company says the offer is non-negotiable?", answer: "Two options: (1) Try a different component. If base is fixed, ask about RSUs, joining bonus, or level. Most companies that say the offer is firm on base are open to adjusting one of these. (2) Believe them and make a decision. Some companies (especially those with strict band structures or in financial difficulty) genuinely cannot move. If you have a competing offer, this is the moment to make your decision with full information. A company that cannot pay you market rate in 2026 is telling you something about how it values engineers — factor that into your long-term career calculation." },
+    ],
+    relatedSlugs: ["software-engineer-salary-india-2026", "salary-negotiation-tips-india-2026", "top-fintech-companies-india-2026"],
+    cta: "Landed an offer and want to practise your negotiation conversation? Use HireStepX to simulate a salary negotiation scenario with AI voice coaching. Practise what to say before the real call.",
+    relatedLinks: [],
+  },
+  {
+    slug: "tell-me-about-yourself-answer-india-software-engineer-2026",
+    title: "Tell Me About Yourself: Best Answers for Software Engineers in India 2026",
+    metaDescription: "How to answer 'Tell me about yourself' in Indian tech interviews in 2026. Best answer frameworks, example answers for freshers and experienced engineers, what to include and avoid.",
+    company: "Interview Skills",
+    category: "Interview Skills",
+    readTime: "8 min read",
+    heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&q=80",
+    heroAlt: "Software engineer presenting himself in a job interview setting",
+    datePublished: "2026-10-18",
+    intro: "Tell me about yourself is the first question in virtually every Indian tech interview, and the most mishandled one. Most candidates read their resume chronologically, wasting the only opportunity to shape the interviewer's first impression with a compelling narrative. This guide explains why the question matters, the best answer frameworks for freshers and experienced engineers, full example answers, and the five mistakes that immediately reduce your credibility.",
+    sections: [
+      {
+        heading: "Why Interviewers Ask This and What They Are Looking For",
+        content: "Tell me about yourself is a calibration question. Interviewers use it to: (1) get a mental model of your trajectory (are you progressing with a clear direction, or is your career a series of unconnected jobs?), (2) understand what you value (what you choose to mention reveals your priorities — engineers who lead with technical depth signal differently from engineers who lead with team impact), (3) set up the rest of the interview (your answer tells them which parts of your experience deserve deeper probing), and (4) assess communication clarity (can you synthesise a complex background into a coherent 90-second narrative?). The question is deceptively open: 'tell me about yourself' invites you to highlight the aspects most relevant to this role. Most candidates treat it as a prompt to recite their resume in chronological order. The candidates who get offers treat it as a prompt to tell a forward-looking story about why they are the right person for this specific role.",
+      },
+      {
+        heading: "The Best Framework for Experienced Engineers: Present-Past-Future",
+        content: "Present (20 seconds): what you do now and what you specialise in. 'I am currently a senior backend engineer at Swiggy, where I lead the order management microservice team, working primarily in Go and Kafka.' This grounds the listener immediately. Past (40 seconds): 2-3 sentences tracing how you got here, emphasising the choices and learnings rather than every title. 'I started at TCS as a Java developer, but after two years I moved to a product company, MakeMyTrip, where I got my first experience owning a feature end to end. That experience convinced me I wanted to work at the product company level, which led me to Swiggy.' Future (30 seconds): connect past and present to why you are here today, specifically. 'I am now looking to move into [distributed systems / ML platform / payments infrastructure], which is exactly what this role focuses on. I have been following [company]'s engineering blog and I was impressed by [specific technical decision or engineering post].' Total: 90 seconds. End here and let the interviewer direct the conversation.",
+      },
+      {
+        heading: "Example Answer for an Experienced Engineer (3-5 Years)",
+        content: "Full example: 'I am currently a backend engineer at Razorpay, where I work on the payments routing team. My primary focus is our intelligent bank routing layer, which decides in real time which payment processor to route each UPI transaction through to maximise success rates. We handle around 2 million transactions per hour at peak, so reliability and latency are critical. Before Razorpay, I spent two years at a fintech startup where I worked across the full stack — React frontend and Node.js backend. That experience gave me a broad foundation, but I realised I was most excited about backend infrastructure and reliability problems, which is why I joined Razorpay specifically to work on the payments layer. I am now looking for a role where I can deepen my work on high-throughput distributed systems, and this role on your infrastructure team is exactly that. I was specifically interested in your recent post about your switch from synchronous to event-driven architecture for order processing — that is the type of architectural challenge I want to work on.' This answer: opens with current role and impact, traces a clear professional arc, ends with a specific reason for this company.",
+      },
+      {
+        heading: "Example Answer for a Fresher at Campus Placements",
+        content: "Fresher framework: Education + Project + Skills + Goal. Full example: 'I recently completed my B.Tech in Computer Science from NIT Trichy. During my degree, I focused on distributed systems and web development, taking electives in database internals and cloud computing. My most significant project was building a real-time collaborative text editor as my final year project, using React on the frontend and a Node.js backend with WebSocket connections and an operational transformation algorithm to handle concurrent edits from multiple users. The project is deployed on AWS and gets around 200 active users from my college. Outside coursework, I have been competitive programming on Codeforces for two years and ranked in the top 15% of participants in Codeforces Round 900. I am specifically interested in backend engineering roles at product companies because I want to work on systems that serve millions of users, and [company] is my top choice because of [specific product or engineering achievement you genuinely admire].' This answer: is specific about the project, demonstrates initiative, and ends with a company-specific reason.",
+      },
+    ],
+    faqs: [
+      { question: "How long should my 'tell me about yourself' answer be?", answer: "90 seconds to 2 minutes for experienced engineers (3+ years). 60-90 seconds for freshers. Under 60 seconds is too brief and suggests you have not prepared. Over 3 minutes creates impatience in the interviewer. Practice with a timer. Most people who have not timed themselves discover they run over 3 minutes on the first attempt — the discipline of editing your narrative to 90 seconds is the work." },
+      { question: "Should I mention personal interests or family in my 'tell me about yourself' answer?", answer: "Do not mention personal interests, family, or non-professional information unless explicitly asked. A different version of this question ('tell me something about yourself outside of work') invites personal information. 'Tell me about yourself' in an Indian tech interview context means professional background. Mentioning hobbies takes up time that should be spent on professional narrative and can introduce irrelevant information (a controversial hobby, a family situation that implies availability constraints) that you cannot control. Only exception: if a personal interest directly demonstrates a professional skill (e.g., 'I maintain a personal blog with 5,000 readers on distributed systems topics')." },
+      { question: "How do I answer 'tell me about yourself' if I have a non-linear career?", answer: "Non-linear careers (career changes, gaps, multiple industries) require explicit stitching. The narrative trick: find the thread that connects your past choices and name it explicitly. 'I started in mechanical engineering, but I became fascinated by the control systems software layer during my internship. That led me to teach myself Python and build a data analysis tool for our department, which convinced me to pivot to software. I did a 6-month intensive programme and have been working as a software engineer for the past 3 years.' The narrative acknowledges the non-linearity but frames each transition as a deliberate choice driven by a clear interest." },
+      { question: "What language should I use for 'tell me about yourself' in Indian tech interviews?", answer: "English, unless the interviewer has opened the conversation in Hindi or another language. Indian product company interviews (Razorpay, Swiggy, Flipkart, Groww) are conducted in English. Service company interviews (TCS, Infosys, Wipro) may be partly in English or partly in Hindi depending on the role level and interviewer. When in doubt, start in English. Your fluency in professional English is itself being assessed in this question." },
+    ],
+    relatedSlugs: ["how-to-answer-why-leaving-current-job", "how-to-negotiate-job-offer-india-software-engineer-2026", "group-discussion-tips-india-campus-placements"],
+    cta: "Practise your 'tell me about yourself' answer with AI voice coaching on HireStepX. Get instant feedback on your narrative clarity, confidence, and what to cut or add. First 2 sessions free.",
     relatedLinks: [],
   },
 ];
