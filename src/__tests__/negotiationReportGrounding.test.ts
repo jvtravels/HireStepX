@@ -185,6 +185,38 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     expect(r.band).toBe("leanHire");
   });
 
+  /* S20-B5 (2026-07-22): a no_agreement session where the candidate never
+   * named a number (candidateAsk === null) was rendering "71/100 Hire" while
+   * the kernel execution score was 5/100 and ₹0 was gained. The closing-skill
+   * cap (45) brought down Closing Technique but left the headline overallScore
+   * at 71. Cap the overall score at NOT_CLOSED_CEILING + 10 (= 55) so the
+   * verdict can't read "Hire" when no number was ever on the table. */
+  it("S20-B5: caps overall score to ≤55 when no_agreement and candidate named no number", () => {
+    const r = groundNegotiationReport(
+      inflatedSkills(), 71, "hire",
+      outcome({ outcome: "no_agreement", candidateAsk: null, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    expect(r.overallScore).toBeLessThanOrEqual(55);
+    expect(r.band).not.toBe("hire");
+    expect(r.band).not.toBe("strongHire");
+    // Closing Technique also capped (the existing no_agreement cap).
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
+  });
+
+  it("S20-B5: does NOT apply headline cap when candidateAsk is present (named a number but didn't close)", () => {
+    // candidateAsk !== null → they anchored; only the closing-skills cap applies.
+    const r = groundNegotiationReport(
+      inflatedSkills(), 62, "leanHire",
+      outcome({ outcome: "no_agreement", candidateAsk: 55, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    // Headline score preserved — the existing closing-skill-only path is correct here.
+    expect(r.overallScore).toBe(62);
+    expect(r.band).toBe("leanHire");
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
+  });
+
   it("is a no-op for a non-negotiation (undefined outcome)", () => {
     const skills = inflatedSkills();
     const r = groundNegotiationReport(skills, 79, "hire", undefined, FLIPKART_BANDS);

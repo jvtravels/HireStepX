@@ -709,6 +709,25 @@ export function groundNegotiationReport(
         ? { ...s, score: Math.min(s.score, NOT_CLOSED_CEILING) }
         : s,
     );
+    /* S20-B5: when no number was ever named (candidateAsk === null), the
+     * negotiation stalled in pure discovery — the candidate never anchored.
+     * The closing-skill cap (45) is not enough: the overall score can still
+     * read "71/100 Hire" while the kernel says 5/100 and ₹0 gained. Cap the
+     * headline score too so the verdict can't outrun the skills it summarises.
+     * candidateAsk !== null → they named a number but couldn't close; the
+     * existing closing-skills-only cap is appropriate there. */
+    if (outcome.candidateAsk === null) {
+      const cap = NOT_CLOSED_CEILING + 10; // 55 → leanHire at most
+      const groundedScore = Math.min(overallScore, cap);
+      const b = calibrationBands ?? { strongHire: 85, hire: 70, leanHire: 55, noHire: 40 };
+      const groundedBand: SessionReportBand =
+        groundedScore >= b.strongHire ? "strongHire"
+        : groundedScore >= b.hire ? "hire"
+        : groundedScore >= b.leanHire ? "leanHire"
+        : groundedScore >= b.noHire ? "noHire"
+        : "strongNoHire";
+      return { skills: groundedSkills, overallScore: groundedScore, band: groundedBand };
+    }
     return { skills: groundedSkills, overallScore, band };
   }
   if (outcome.outcome === "walked_away") {
