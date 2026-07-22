@@ -201,8 +201,8 @@ const CURRENT_CUES: CueTable = {
     /\bmil(?:t[aei]|\s+rah[aei])\s+h(?:ai|ain|oo?n|u|un|e|y)\b/i,
     /\bkama(?:t[aei]|\s+rah[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
     /\ble(?:t[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
-    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
-    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
+    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crores?)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
+    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crores?)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
     /* AUDIT-2 (2026-06-08): the "X LPA total." compact disclosure cue
      * lives in the LAST_AI_ASKED_*-style fall-through layer in pickRole
      * (see SENTENCE_FINAL_TOTAL_RE below), NOT here in CURRENT_CUES.
@@ -491,7 +491,11 @@ interface SalarySpan {
  * and MNC candidates ("4.8 million" = 48 LPA). Mirrors the same synonym added to
  * _fact-parser UNIT_TOKEN so both subsystems agree. Bare single-letter `m` is
  * deliberately excluded (collides with stray tokens); only million/mn accepted. */
-const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crore|cash)";
+/* S35-B1/B2 (2026-07-23) — "crores" (plural) was missing; the alternation had
+ * `cr|crore` but not `crores?`. `cr` doesn't match at a word boundary inside
+ * "crores" (next char is 'o'), and `crore` also fails the trailing \b (next
+ * char is 's'). Changed `crore` → `crores?` to cover both singular and plural. */
+const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crores?|cash)";
 
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
@@ -543,7 +547,7 @@ function parseDigits(s: string): number {
 
 function unitMultiplier(unit: string): number {
   const u = unit.toLowerCase();
-  if (u === "cr" || u === "crore") return 100;
+  if (u === "cr" || u === "crore" || u === "crores") return 100;
   /* OA-B12: ₹N million = 10N LPA. */
   if (u === "mn" || u.startsWith("million")) return 10;
   return 1;
@@ -582,7 +586,7 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
     /* Reject if matched text is actually a non-salary unit token. */
     const left = Math.max(0, m.index - 10);
     const windowText = text.slice(left, innerEnd + 10);
-    if (NON_SALARY_UNIT_RE.test(windowText) && !/(?:lpa|lakhs?|lacs?|\bl\b|cr|crore)/i.test(m[0])) {
+    if (NON_SALARY_UNIT_RE.test(windowText) && !/(?:lpa|lakhs?|lacs?|\bl\b|cr|crores?)/i.test(m[0])) {
       continue;
     }
     const digits = parseDigits(m[2]);
@@ -654,7 +658,7 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
    * between the number and the unit — an intervening digit (another number)
    * breaks the match, so "36" is no longer swallowed by "3 lakh", while a
    * genuine "36 lakh" / "36 LPA" still abuts and is correctly deferred. */
-  const SALARY_UNIT_NEARBY = /^[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
+  const SALARY_UNIT_NEARBY = /^[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crores?|\bl\b)/i;
   /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
    * gates beyond the target-cue gate. Root cause of the discovery
    * stalemate (audit finding #2): a candidate answering the recruiter's
@@ -785,7 +789,7 @@ function scoreRolesForSpan(
    * window ("18 LPA and I'd like 32 LPA"), cues before it belong to
    * that number, not this span. Truncate the window to start AFTER
    * the last such disclosure or clause boundary. */
-  const PRIOR_DISCLOSURE = /[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)\b/gi;
+  const PRIOR_DISCLOSURE = /[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crores?|\bl\b)\b/gi;
   let lastEnd = -1;
   for (const m of leftWindow.matchAll(PRIOR_DISCLOSURE)) {
     if (m.index != null) lastEnd = Math.max(lastEnd, m.index + m[0].length);

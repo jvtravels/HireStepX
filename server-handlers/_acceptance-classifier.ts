@@ -488,7 +488,15 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * offer-on-table phase gate and the NEGATION/HEDGE/CONDITIONAL vetoes all
    * still apply ("I won't close at that" stays vetoed). */
   /\blet.?s\s+close\s+at\s+(?:that|this|it)\b/i,
-  /\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b/i,
+  /\bi.?m\s+happy\s+with\s+(?:that|this|it|the\s+offer)\b/i,
+  /* S42-B1 (2026-07-23) — anaphoric "I'm good with that/it/this". The SOFT_
+   * ALIGNMENT_PATTERNS arm covers "I'm good with the/this/your offer" (explicit
+   * offer noun); these anaphoric pronoun forms ("I'm good with that", "I'm good
+   * with it") were missing and fell through as NO-CLOSE. Offer-on-table phase
+   * gate still applies — "I'm good with this (meeting time)" can't false-close
+   * before a salary offer exists. Parallel with the existing "I'm happy with
+   * that" arm directly above. */
+  /\bi.?m\s+good\s+with\s+(?:that|this|it|the\s+offer)\b/i,
   /\bfine\s+with\s+me\b/i,
   /* Session B (2026-05-14) — bare commitment tokens. Each must be the
    * whole utterance or terminated cleanly — "deal" as a single word,
