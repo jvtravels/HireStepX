@@ -101,7 +101,7 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
      * enough is acceptable per the kernel-first design. */
     turn = botTurn(state);
     expect(turn.canonical.toLowerCase()).toMatch(
-      /\b(noted|got it|understood|appreciate|right[,\s—]+on|thanks for that|fair enough)\b/,
+      /\b(noted|got it|understood|appreciate|right[,\s.—]+on|thanks for that|fair enough)\b/,
     );
     state = turn.state;
 

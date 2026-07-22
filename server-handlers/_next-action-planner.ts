@@ -1772,6 +1772,13 @@ function nextComponentProbe(
 ): { component: "base" | "variable" | "esop"; topic: DiscoveryTopic } | null {
   /* FL4 root precondition — currentCtc must be in hand. */
   if (state.candidateCurrentCtc == null) return null;
+  /* S2-B5 (2026-07-22) — early-exit when the split is already fully answered.
+   * The checklist's fixedVariableSplitAnswered flag is set when BOTH base and
+   * variable have been disclosed (absolute or percentage). When this is true,
+   * re-probing either component is a loop — the candidate already answered the
+   * split question; the parser just didn't persist both numbers into bd. Skip
+   * base and variable probes; ESOP is still eligible since it's independent. */
+  const splitAlreadyAnswered = state.discoveryChecklist?.fixedVariableSplitAnswered === true;
   const bd = state.candidateComponentBreakdown;
   const asked = new Set(readAskedTopics(state).map((t) => t.topic));
   /* PDF#31 BUG A (2026-05-18) — esop component is "populated" when the
@@ -1788,8 +1795,8 @@ function nextComponentProbe(
    * the next parse will overwrite to a non-inferred value or null). */
   const variablePopulated = bd?.variable != null && bd?.variableInferred !== true;
   const order: { component: "base" | "variable" | "esop"; topic: DiscoveryTopic; populated: boolean }[] = [
-    { component: "base", topic: "currentCtcBase", populated: bd?.base != null },
-    { component: "variable", topic: "currentCtcVariable", populated: variablePopulated },
+    { component: "base", topic: "currentCtcBase", populated: splitAlreadyAnswered || bd?.base != null },
+    { component: "variable", topic: "currentCtcVariable", populated: splitAlreadyAnswered || variablePopulated },
     { component: "esop", topic: "currentCtcEsop", populated: bd?.equity != null || esopNegated },
   ];
   for (const o of order) {

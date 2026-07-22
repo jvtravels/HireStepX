@@ -393,7 +393,75 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "OR ask a question. Verbatim repetition is a critique-failure mode. " +
   "When the TURN BRIEF contains an [ALREADY-STATED FACTS: ...] block, " +
   "treat those tokens as off-limits for restatement — find a different " +
-  "angle or surface a new lever instead.\n\n" +
+  "angle or surface a new lever instead. " +
+  "When the TURN BRIEF contains a [YOUR PRIOR RECRUITER TURN OPENED WITH: ...] block, " +
+  "do NOT begin your response with the same sentence or phrase, and do NOT repeat " +
+  "the same content semantically — find a different opening and a different angle.\n\n" +
+  /* S4-B17, S19-B4, S20-B3 (2026-07-22) — non-answer hallucination.
+   * Root: LLM treats vague affirmatives as substantive discovery data.
+   * Candidates say "okay" / "fine" / "sure" / "alright" to specific
+   * fact-gathering questions (CTC, notice period, target range) and
+   * the recruiter invents a fact from it — e.g. "got it, that's above
+   * our initial band" when no number was ever stated. */
+  "NON-ANSWER HANDLING — If the candidate's reply to a specific " +
+  "fact-gathering question (CTC, target range, notice period, competing " +
+  "offers) is a vague placeholder like 'okay', 'fine', 'sure', 'alright', " +
+  "'sounds good', 'that's fine', or any single-word/non-numeric response " +
+  "that does not actually supply the requested fact, do NOT treat it as " +
+  "providing that fact. Do NOT hallucinate a number or conclusion from it. " +
+  "Re-probe with a shorter, more direct version of the same question.\n\n" +
+  /* S23-B2, S23-B3, S33-B1 (2026-07-22) — delay / family / distress handling.
+   * Root: LLM fabricates premises or asks invasive personal questions
+   * instead of acknowledging the candidate's stated need. */
+  "DELAY / FAMILY / DISTRESS HANDLING — When the candidate says they need " +
+  "more time to decide ('let me think', 'I need to consider', 'I'll get back " +
+  "to you', 'I need to discuss with my family / spouse / partner'), respond " +
+  "with warmth and a clear timeline: acknowledge the request, suggest a " +
+  "specific follow-up ('take the weekend — shall we reconnect Monday?'), " +
+  "and do NOT: (a) probe personal/location details the candidate didn't " +
+  "raise ('is your spouse also looking for a role in the same city?'); " +
+  "(b) fabricate a premise from their non-answer ('you shared a range — " +
+  "where in that range do you see yourself landing?'). " +
+  "When the candidate expresses stress, anxiety, or emotional fatigue " +
+  "('I am quite stressed', 'I am feeling anxious', 'this process has been " +
+  "exhausting'), acknowledge the emotion first before proceeding: " +
+  "'I understand this process can be stressful — let's make sure we get " +
+  "you to clarity quickly.' Do NOT respond with a generic offer-phase " +
+  "question ('how are you feeling about the opportunity?') when the " +
+  "candidate just expressed emotional distress — that is tone-deaf.\n\n" +
+  /* S1-B6, S2-B6, S3-B14 (2026-07-22) — instruction bleed & internal language.
+   * Root: internal kernel/instruction phrases leak verbatim into recruiter prose. */
+  "LANGUAGE HYGIENE — Never use these phrases (they are internal system " +
+  "language that a real recruiter would never say): 'revert' (say 'get " +
+  "back to me' / 'let me know' / 'reconnect'); 'Locking the close at'; " +
+  "'as per our band for this grade' (unless you have already stated the " +
+  "actual band number this session); 'let me not loop on that' (do not " +
+  "acknowledge looping — just progress naturally); 'broadly covered the " +
+  "relevant points'. Speak only as a real Indian HR professional would — " +
+  "natural business English, no meta-commentary about the conversation.\n\n" +
+  /* S13-B27 (2026-07-22) — negation inversion.
+   * Root: "NOT focused on base" parsed as "interested in base". */
+  "NEGATION GROUNDING — When the candidate explicitly negates a preference " +
+  "('I am NOT focused on base', 'I don't care about the fixed component', " +
+  "'base is not my priority'), do NOT suggest or probe that component " +
+  "in subsequent turns. If the TURN BRIEF contains a [CANDIDATE NEGATED " +
+  "PREFERENCE: ...] block, treat the named component as off-limits for " +
+  "probing or offering.\n\n" +
+  /* S32-B1 (2026-07-22) — written offer request ignored. */
+  "WRITTEN OFFER REQUEST — If the candidate asks to receive the offer in " +
+  "writing ('can you send the offer in writing', 'please send the offer " +
+  "letter', 'I'd like to see it in writing'), acknowledge this explicitly: " +
+  "'Absolutely — once we align on the final number I'll have our HR ops " +
+  "team send a formal offer letter within 24–48 hours.' Do NOT ignore the " +
+  "written-offer request and pivot to a different question.\n\n" +
+  /* S13-B29 (2026-07-22) — references unshared number.
+   * Root: LLM cites "as I shared" or "the number I mentioned" when no
+   * specific number has been stated this session. */
+  "NUMBER GROUNDING — Never reference a specific salary number as having " +
+  "been 'shared', 'mentioned', or 'disclosed' unless that exact number " +
+  "appears in the RECENT DIALOGUE block or was set by the kernel in a " +
+  "prior TURN BRIEF. If no concrete number has been stated, do not imply " +
+  "one exists.\n\n" +
   "OUTPUT FORMAT: return a single JSON object with EXACTLY these " +
   "keys (no markdown fences, no prose around the JSON):\n" +
   "  text              — string, the candidate-facing sentence(s), 1–3 sentences\n" +
@@ -2479,6 +2547,68 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
    * verbatim turn after turn. */
   if (state.recruiterFactsAlreadySaid && state.recruiterFactsAlreadySaid.length > 0) {
     parts.push(`[ALREADY-STATED FACTS (do NOT repeat verbatim): ${state.recruiterFactsAlreadySaid.join(",")}]`);
+  }
+  /* S4-B17, S19-B4, S20-B3 (2026-07-22) — prior-turn anti-echo.
+   * Surface the first ~120 chars of the immediately prior AI turn so the
+   * LLM knows what it said last and cannot open with the same phrase or
+   * repeat the same content ("Just to reconfirm, [verbatim ESOP pitch]"). */
+  const priorAiEntry = state.conversationLog
+    ? [...state.conversationLog].reverse().find((e) => e.speaker === "ai")
+    : undefined;
+  if (priorAiEntry?.text) {
+    const priorOpener = priorAiEntry.text.slice(0, 120).replace(/\n/g, " ");
+    parts.push(
+      `[YOUR PRIOR RECRUITER TURN OPENED WITH: "${priorOpener}…" — do NOT echo this phrase or repeat the same content; open differently and add new information]`,
+    );
+  }
+  /* S19-B2 (2026-07-22) — own-offer vs competing-offer disambiguation.
+   * When the recruiter has made an offer AND a competing offer is on record,
+   * surface both explicitly so the LLM never conflates our number with theirs. */
+  if ((state.highestOfferMade ?? 0) > 0 && state.competingOffer != null) {
+    const competingCo = state.competingOfferDetail?.company ?? "outside company";
+    parts.push(
+      `[OFFER DISAMBIGUATION: OUR offer (${state.company ?? "this company"}) = ₹${state.highestOfferMade}L | CANDIDATE competing offer from ${competingCo} = ₹${state.competingOffer}L — these are DIFFERENT companies; never attribute OUR number to a competitor or vice versa]`,
+    );
+  }
+  /* S22-B2, S13-B27 (2026-07-22) — last candidate utterance, used by
+   * CTC-correction grounding and negated-preference detection below. */
+  const lastCandText = state.conversationLog
+    ? [...state.conversationLog].reverse().find((e) => e.speaker === "candidate")?.text ?? ""
+    : "";
+  /* S31-B2 (2026-07-22) — no-offer-yet gate.
+   * When no offer has been made (highestOfferMade == 0) and the kernel
+   * lever is a discovery probe (not open-with-offer / anchor), the LLM
+   * must NOT generate offer-phase language ("we've put together an offer",
+   * "let me walk you through the numbers"). That creates a contradiction:
+   * the next kernel turn fires a discovery probe, visibly reverting the
+   * session back to discovery mode and confusing the candidate. */
+  if ((state.highestOfferMade ?? 0) === 0 &&
+      state.phase !== "offer-presented" &&
+      state.phase !== "probe-expectations") {
+    parts.push(
+      "[NO OFFER YET: do not use offer-phase language ('we've put together an offer', 'let me walk you through the numbers') — discovery is still ongoing; stay in discovery mode]",
+    );
+  }
+  /* S22-B2 (2026-07-22) — CTC correction grounding.
+   * When the candidate has provided an explicit CTC value (candidateCurrentCtc != null),
+   * and the last candidate turn contains correction language
+   * ("correct CTC", "I misspoke", "please use", "the correct"), surface a
+   * [CTC GROUNDED] directive so the LLM accepts it without interrogating. */
+  const ctcCorrectionPattern = /\b(correct(?:ed)?\s+ctc|i\s+misspoke|please\s+use|the\s+correct|verified\s+(current\s+)?salary|that\s+is\s+my\s+(current\s+)?ctc)\b/i;
+  if (state.candidateCurrentCtc != null && ctcCorrectionPattern.test(lastCandText)) {
+    parts.push(
+      `[CTC GROUNDED: candidate explicitly corrected — the verified CTC is ₹${state.candidateCurrentCtc}L; accept this without challenge; do NOT ask "which one should I take to the panel?"]`,
+    );
+  }
+  /* S13-B27 (2026-07-22) — negated-preference surface.
+   * When candidate has explicitly negated a compensation component
+   * ("NOT focused on base", "don't care about fixed"), surface it so
+   * the LLM never inverts the negation and probes that component. */
+  if (/\b(not|don['']t|do not|isn['']t|no[t]?)\b.{0,30}\b(base|fixed|variable|esop|equity|bonus|joining)\b/i.test(lastCandText) ||
+      /\b(base|fixed|variable|esop|equity|bonus|joining)\b.{0,30}\b(not|don['']t|do not|isn['']t|no[t]?)\b.{0,25}\b(my|a)?\s*priority\b/i.test(lastCandText)) {
+    parts.push(
+      "[CANDIDATE NEGATED PREFERENCE: candidate explicitly said they are NOT focused on that compensation component — do not probe or suggest it; route to a different lever]",
+    );
   }
   /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
    * the candidate has framed their target as in-hand, surface the CTC
