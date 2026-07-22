@@ -245,3 +245,48 @@ describe("groundNoCounterSkillScores — re-exported from save-session (single s
     expect(groundNoCounterSkillScores(named, 30)).toBe(named);
   });
 });
+
+/* S18-B2 (2026-07-22): a near-empty / bailout session can produce LLM-imputed
+ * skill_scores (e.g. Communication 85 from a 3-word response) that contaminate
+ * the cross-session Skill Progress panel which reads skill_scores directly,
+ * bypassing render-time grounding. The write seam gates on transcript length:
+ * < 4 sanitized entries (at most 1 real exchange) → skill_scores nulled before
+ * DB persist. These tests pin the sanitizeTranscript boundary that determines
+ * the bailout gate so the 4-entry cutoff can't silently drift. */
+describe("S18-B2 bailout gate — sanitizeTranscript length boundary", () => {
+  it("S18-B2: a 3-entry transcript (intro + 1 exchange) is below the bailout threshold", () => {
+    const raw = [
+      { speaker: "ai", text: "Welcome. I'd like to discuss the offer." },
+      { speaker: "user", text: "Yes." },
+      { speaker: "ai", text: "We're offering ₹35 LPA." },
+    ];
+    const out = sanitizeTranscript(raw);
+    // write seam: out.length < 4 → isBailoutSession = true → skill_scores = null
+    expect(out.length).toBeLessThan(4);
+  });
+
+  it("S18-B2: a 4-entry transcript (intro + 2 turns) is NOT a bailout", () => {
+    const raw = [
+      { speaker: "ai", text: "We're offering ₹35 LPA." },
+      { speaker: "user", text: "I was expecting closer to 45 LPA." },
+      { speaker: "ai", text: "Let me see what I can do." },
+      { speaker: "user", text: "I'd appreciate that." },
+    ];
+    const out = sanitizeTranscript(raw);
+    // write seam: out.length >= 4 → isBailoutSession = false → skill_scores persisted normally
+    expect(out.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("S18-B2: TTS markers stripped before bailout check — they don't inflate the count", () => {
+    // 4 raw entries but 2 are TTS markers → effective length = 2 → bailout
+    const raw = [
+      { speaker: "ai", text: "[I'm listening.]" },
+      { speaker: "user", text: "Yes." },
+      { speaker: "ai", text: "[Feel free to continue.]" },
+      { speaker: "ai", text: "We're offering ₹35 LPA." },
+    ];
+    const out = sanitizeTranscript(raw);
+    // 2 TTS markers stripped → 2 remaining → bailout
+    expect(out.length).toBeLessThan(4);
+  });
+});

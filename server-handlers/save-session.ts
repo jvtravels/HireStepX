@@ -471,10 +471,20 @@ export default async function handler(req: Request): Promise<Response> {
       : null;
   const candidateAskLpa =
     typeof negMetrics?.candidateAskLpa === "number" ? negMetrics.candidateAskLpa : null;
+  /* S18-B2: a near-empty / bailout session produces LLM-imputed skill_scores
+     that contradict the actual content (3-word response → "Communication 85").
+     The Skill Progress panel reads skill_scores directly, bypassing render-time
+     grounding, so inflated persisted scores contaminate every future trend.
+     Gate: the sanitized transcript is the authoritative measure of session
+     substance — fewer than 4 entries means at most 1 real exchange. */
+  const sanitizedTranscript = sanitizeTranscript(body.transcript);
+  const isBailoutSession = sanitizedTranscript.length < 4;
   /* Ground only for negotiation rows (negMetrics present). Non-negotiation
      sessions never carry a counter concept, so their skill_scores pass through
      untouched even if a key happens to match the anchor regex. */
-  const skillScores = negMetrics
+  const skillScores = isBailoutSession
+    ? null
+    : negMetrics
     ? groundNoCounterSkillScores(rawSkillScores, candidateAskLpa)
     : rawSkillScores;
 
@@ -488,7 +498,7 @@ export default async function handler(req: Request): Promise<Response> {
     duration: asNumber(body.duration),
     score: asNumber(body.score),
     questions: asNumber(body.questions),
-    transcript: sanitizeTranscript(body.transcript),
+    transcript: sanitizedTranscript,
     ai_feedback: asString(body.ai_feedback, 20000),
     skill_scores: skillScores,
     job_description: asString(body.job_description, 20000) || null,

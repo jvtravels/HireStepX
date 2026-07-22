@@ -1338,7 +1338,12 @@ export async function fetchRecentSessionScores(
     .from("sessions")
     .select("id, created_at, score")
     .eq("user_id", userId)
-    .gt("score", 0);
+    .gt("score", 0)
+    /* S18-B3: exclude sub-60s bailout sessions (duration stored in seconds).
+     * A 1-turn bailout that scores 12/100 produces a ↓59 sparkline delta
+     * indistinguishable from a real skill regression. Sessions shorter than
+     * 60 s never contain meaningful practice content. */
+    .gte("duration", 60);
   // Filter to the same focus type so the trend line is apples-to-apples.
   // campus-placement sessions are stored as type="behavioral" — the focus
   // column is what distinguishes them. Without this filter, a campus
