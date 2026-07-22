@@ -21,6 +21,7 @@ import {
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
 import { EMPTY_DISCOVERY_CHECKLIST } from "../../server-handlers/_discovery-stage";
+import { planNextAction } from "../../server-handlers/_next-action-planner";
 
 /* ─── Shared helpers ───────────────────────────────────────────────── */
 
@@ -473,5 +474,132 @@ describe("S22-B1 — band recalculates on material mid-session CTC correction", 
     const next = applyCandidateAnswer(s, "Actually my CTC is 42 LPA.");
     /* Band must NOT inflate post-offer (would violate monotone-highestOfferMade). */
     expect(next.band.maxStretch).toBeLessThanOrEqual(35 + 0.5);
+  });
+});
+
+/* S25-B2 (2026-07-22) — anchor phase skipped when Sprint B.1 walk-away fires
+ * with highestOfferMade === 0 for a target in the 1.2×–1.5× band ceiling range.
+ *
+ * Bug: the gap-gate at line ~3703 guards the >1.5× case (offer-first before
+ * walk). The 1.2×–1.5× range was handled only by recommendWalkAway condition
+ * (1), which fired a live-walk-away directly — with NO offer ever made. The
+ * candidate never learned the recruiter's best number.
+ *
+ * Fix: inside Sprint B.1 (line ~3759), before emitting the walk-away, check
+ * highestOfferMade === 0. If true, anchor at the ceiling first (same offer-first
+ * pattern as the gap-gate). Walk fires on the NEXT turn after the candidate
+ * reacts to the offer. */
+describe("S25-B2 — offer-first anchor before Sprint B.1 walk-away (1.2×–1.5× range)", () => {
+  const WALK_BAND: NegotiationBand = {
+    initialOffer: 26,
+    maxStretch: 32, // target=40 → 40/32 = 1.25× (> 1.2, < 1.5)
+    walkAway: 20,
+    hasEquity: false,
+  };
+
+  it("emits anchor-with-offer (not walk-away) when walk fires with no prior offer in 1.2×–1.5× range", () => {
+    const base = initState({
+      sessionId: "s25b2-walk-no-offer",
+      role: "Software Engineer",
+      company: "flipkart",
+      band: WALK_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      /* Phase must NOT be "opening" (Sprint B.1 is gated on phase !== "opening"). */
+      phase: "probe-expectations",
+      turnIndex: 12,           // >> minTurnsBeforeClose (default 8)
+      minTurnsBeforeClose: 8,
+      candidateCurrentCtc: 28,
+      candidateTarget: 40,     // 40/32 = 1.25× ceiling → condition (1) in recommendWalkAway
+      highestOfferMade: 0,     // NO offer made yet — the bug scenario
+      /* Prior honest-defer stamp: the early planDiscoverySufficientAnchor gate
+       * returned null (ceiling < CTC in that earlier state), stamped the topic,
+       * and left highestOfferMade === 0. Without this stamp, planDiscoverySufficient-
+       * Anchor would fire first and correctly anchor — the S25-B2 path only triggers
+       * once that gate is blocked by the prior stamp. */
+      askedTopics: [
+        { topic: "band-anchor-with-rationale" as const, atTurn: 5 },
+      ],
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAnswered: true,
+        competingOffersAnswered: true,
+        valueProofAnswered: true,
+        targetAsked: true,
+        targetAnswered: true,
+      },
+      /* conversationLog left empty → lastCandidateText="" → candidateIsEngaging=false
+       * → suppressDeadlockWalk=false → recommendWalkAway condition (1) fires. */
+    };
+    const action = planNextAction(s);
+    /* Must NOT be a walk-away with no offer on the table. */
+    expect(action.kind).not.toBe("live-walk-away");
+    /* Must be an anchor-with-offer so the candidate sees the ceiling. */
+    expect(action.kind).toBe("anchor-with-offer");
+    /* The offer must be at the band ceiling (Sprint B.1 fix anchors at maxStretch). */
+    if (action.kind === "anchor-with-offer") {
+      expect(action.initialOffer).toBe(WALK_BAND.maxStretch);
+    }
+  });
+
+  it("DOES emit walk-away when the offer has already been made (offer-first guard already satisfied)", () => {
+    const base = initState({
+      sessionId: "s25b2-walk-with-offer",
+      role: "Software Engineer",
+      company: "flipkart",
+      band: WALK_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      turnIndex: 12,
+      minTurnsBeforeClose: 8,
+      candidateCurrentCtc: 28,
+      candidateTarget: 40,     // still 1.25× ceiling (> 1.2, < 1.5 so gap-gate doesn't trigger)
+      highestOfferMade: 32,    // ceiling offer WAS made → offer-first guard satisfied, walk allowed
+      /* Prior stamp so we're in the same post-honest-defer state as test 1. */
+      askedTopics: [
+        { topic: "band-anchor-with-rationale" as const, atTurn: 5 },
+      ],
+    };
+    const action = planNextAction(s);
+    /* Once highestOfferMade > 0, the walk-away should fire normally. */
+    expect(action.kind).toBe("live-walk-away");
+  });
+
+  it("does NOT emit walk-away when turnIndex < minTurnsBeforeClose (walk still being suppressed)", () => {
+    const base = initState({
+      sessionId: "s25b2-not-yet",
+      role: "Software Engineer",
+      company: "flipkart",
+      band: WALK_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "probe-expectations",
+      turnIndex: 4,            // below minTurns=8 → walk not yet emitted
+      minTurnsBeforeClose: 8,
+      candidateCurrentCtc: 28,
+      candidateTarget: 40,
+      highestOfferMade: 0,
+      /* Prior honest-defer stamp so planDiscoverySufficientAnchor is blocked —
+       * puts us on the same path as test 1 but with turn < minTurns. */
+      askedTopics: [
+        { topic: "band-anchor-with-rationale" as const, atTurn: 2 },
+      ],
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        targetAsked: true,
+        targetAnswered: true,
+      },
+    };
+    const action = planNextAction(s);
+    /* Walk is still suppressed; planner should NOT emit a walk-away. */
+    expect(action.kind).not.toBe("live-walk-away");
   });
 });

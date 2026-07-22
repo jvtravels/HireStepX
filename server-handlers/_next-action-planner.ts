@@ -3757,6 +3757,39 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         declineAllowed &&
         /\b(walk away|walking away|not interested|withdraw|decline|won.?t work|isn.?t going to work|move on|no thanks|pass on this|not the right fit|nahi\s+(?:chahiye|karna|banega))\b/i.test(lastCandidateText);
       if (state.turnIndex >= minTurns || explicitDecline) {
+        /* S25-B2 (2026-07-22) — offer-first guard in Sprint B.1.
+         *
+         * The gap-gate above (line ~3703) only fires when target > 1.5×
+         * maxStretch. For targets in the 1.2×–1.5× range, condition (1)
+         * of recommendWalkAway fires at turn ≥ minTurns but there was no
+         * prior offer-first anchor — walking away with highestOfferMade
+         * === 0 trains the candidate nothing ("what was their best
+         * number?"). Mirror the gap-gate offer-first pattern: anchor at
+         * the ceiling NOW so the candidate sees the best offer on the
+         * table; the walk fires on the NEXT turn after they react.
+         * Only fires once (highestOfferMade === 0 guard); subsequent
+         * turns with highestOfferMade > 0 fall through to the normal
+         * walk return below. */
+        if (state.highestOfferMade === 0) {
+          const ceilingOffer = state.band.maxStretch;
+          return {
+            kind: "anchor-with-offer",
+            initialOffer: ceilingOffer,
+            bandIncomplete: false,
+            satisfiesTopic: "band-anchor-with-rationale",
+            _move: {
+              lever: "probe",
+              newTotalLpa: ceilingOffer,
+              rationale:
+                `S25-B2 offer-first anchor: walk signal (${wa.reason}) ` +
+                `at turn ${state.turnIndex} ≥ minTurns ${minTurns}; ` +
+                `anchoring at ceiling (₹${ceilingOffer}L) before walk-away ` +
+                `so candidate sees the best offer on the table.`,
+              askedTopic: "band-anchor-with-rationale",
+              actionKind: "anchor-with-offer",
+            },
+          } as PlannedAction;
+        }
         return {
           kind: "live-walk-away",
           mode: "walk",
