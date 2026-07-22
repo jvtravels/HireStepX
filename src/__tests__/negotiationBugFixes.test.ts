@@ -23,6 +23,7 @@ import { EMPTY_CANDIDATE_PROFILE } from "../../server-handlers/_candidate-profil
 import { EMPTY_DISCOVERY_CHECKLIST } from "../../server-handlers/_discovery-stage";
 import { planNextAction } from "../../server-handlers/_next-action-planner";
 import { hasConcreteTell } from "../../server-handlers/_competing-offer-detail";
+import { classifyNumberRoles } from "../../server-handlers/_number-role-classifier";
 
 /* ─── Shared helpers ───────────────────────────────────────────────── */
 
@@ -748,5 +749,55 @@ describe("S2-B8 — 'X LPA and Y LPA' (CTC + counter) is not a range", () => {
     // Range-to-point may fire; what matters is target captures the upper bound
     const target = s.candidateTarget ?? s.candidateTargetFixed;
     expect(target).not.toBeNull();
+  });
+});
+
+describe("S4-B16 — 'currently looking for' binds to target, not current", () => {
+  /* When the candidate says "currently I am looking for 40 LPA", the adverb
+   * "currently" (CURRENT_CUES.left[0]) and the target verb "looking for" both
+   * fire for the same span.  Previously the current>target tiebreak caused 40
+   * to overwrite candidateCurrentCtc instead of setting candidateTarget.
+   *
+   * Fix: when the generic adverb is the ONLY current cue and a target cue also
+   * fires, the adverb is demoted so target wins. */
+
+  it("'currently I am looking for 40 LPA' → target=40, currentCtc=null", () => {
+    const r = classifyNumberRoles("currently I am looking for 40 LPA");
+    expect(r.target).toBe(40);
+    expect(r.currentCtc).toBeNull();
+  });
+
+  it("'I'm currently targeting 45 LPA' → target=45, currentCtc=null", () => {
+    const r = classifyNumberRoles("I'm currently targeting 45 LPA");
+    expect(r.target).toBe(45);
+    expect(r.currentCtc).toBeNull();
+  });
+
+  it("'currently expecting around 38 LPA' → target=38, currentCtc=null", () => {
+    const r = classifyNumberRoles("currently expecting around 38 LPA");
+    expect(r.target).toBe(38);
+    expect(r.currentCtc).toBeNull();
+  });
+
+  it("'currently at 32 LPA' (no target verb) → currentCtc=32 (adverb still works when uncontested)", () => {
+    /* The adverb alone, with no target cue, correctly signals current CTC.
+     * Demotion only fires when a target verb is also present. */
+    const r = classifyNumberRoles("currently at 32 LPA");
+    expect(r.currentCtc).toBe(32);
+    expect(r.target).toBeNull();
+  });
+
+  it("kernel: 'currently looking for 40' after 32 CTC disclosed → target=40, ctc stays 32", () => {
+    /* Integration: disclose CTC on one turn, then give target on the next as
+     * "currently looking for 40".  candidateCurrentCtc must NOT be clobbered. */
+    const b: NegotiationBand = { initialOffer: 30, maxStretch: 42, walkAway: 24, hasEquity: false };
+    let s = initState({ sessionId: "s4-b16", role: "engineer", company: "PhonePe", band: b });
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "ctc" }, "What is your current CTC?");
+    s = applyCandidateAnswer(s, "My current CTC is 32 LPA");
+    expect(s.candidateCurrentCtc).toBe(32);
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "target" }, "And what are you looking for?");
+    s = applyCandidateAnswer(s, "currently I am looking for 40 LPA");
+    expect(s.candidateCurrentCtc).toBe(32); // must NOT be clobbered by 40
+    expect(s.candidateTarget).toBe(40);
   });
 });
