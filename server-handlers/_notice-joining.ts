@@ -125,6 +125,14 @@ const BUYOUT_PATTERNS = [
 
 const EARLY_JOIN_PATTERNS = [
   /\b(?:join\s+(?:earlier|sooner|early|immediately|right\s+away)|early\s+join(?:ing)?|join\s+in\s+\d+\s+days?|reduce\s+(?:my\s+)?notice|short(?:en)?\s+(?:my\s+)?notice|release\s+(?:me\s+)?early)\b/i,
+  /* S37-B1 (2026-07-23) — "can negotiate (the notice period) to N days / months"
+   * is a flexibility signal identical to "reduce notice" but wasn't matched.
+   * Two patterns cover: (a) "negotiate notice/joining" (negotiate + notice noun),
+   * and (b) "notice … negotiate" / "can negotiate to N days" (notice mentioned
+   * earlier in the sentence, candidate offers a shorter period via "negotiate to"). */
+  /\bnegotiate\s+(?:(?:my|the)\s+)?(?:notice(?:\s+period)?|joining)\b/i,
+  /\bnotice\b.{0,60}\bcan\s+negotiate\b/i,
+  /\bcan\s+negotiate\s+(?:it\s+)?(?:down\s+)?to\s+\d+\s*(?:days?|months?)\b/i,
 ];
 
 /** Extract joining-bonus amount (LPA). Matches:
