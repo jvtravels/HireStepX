@@ -167,6 +167,13 @@ export interface NegotiationMetrics {
    *  report can display "₹X CTC + ₹Y joining bonus" and the
    *  OfferEconomicsPanel can compute clawback-honest net value. */
   lastJoiningBonusOffered: number | null;
+  /** S6-B3 — grounded pushback events derived from hold-firm moves in the
+   *  kernel's move history. Each entry represents one turn where the recruiter
+   *  held their position after the candidate had already anchored. Drives the
+   *  "You handled their pushback" stage in derivePhases. Empty when the
+   *  recruiter never pulled a hold-firm lever, or when the candidate never
+   *  stated an ask before the hold-firm. */
+  pushbacks?: ReadonlyArray<{ pushback: string; outcome: "held" | "deflected" | "conceded"; detail: string }>;
   /** OA-B58 — the candidate's current CTC the kernel parsed from their
    *  utterances (LPA). Null when the candidate never disclosed it during
    *  the session (common when practising without a real package in mind).
@@ -285,7 +292,12 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     marketMode: finalState.marketMode ?? "neutral",
     recruiterCritique: critiqueRecruiterStrategy({ finalState, moves }),
     pivotalTurn: analyzePivotalTurn({ finalState, moves }),
-    initialOfferLpa: band.initialOffer,
+    /* S2-B10: store the actual first offer the recruiter stated, not the band
+       floor. When the recruiter opens at the ceiling the report previously
+       showed ₹35.8 as "INITIAL OFFER" even though that was the final value.
+       recruiterFirstOfferLpa falls back to band.initialOffer when the
+       trajectory is empty, so the pure-accept path is unchanged. */
+    initialOfferLpa: recruiterFirstOfferLpa,
     finalOfferLpa: recruiterTopOfferLpa,
     candidateAskLpa,
     offerTrajectoryLpa,
@@ -296,6 +308,27 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
         : null,
     ...(finalState.rationale?.kind ? { rationaleKind: finalState.rationale.kind } : {}),
     candidateCurrentCtcLpa: finalState.candidateCurrentCtc ?? null,
+    /* S6-B3 — grounded pushback events from the kernel's move log.
+       A hold-firm turn where the candidate had already anchored
+       (candidateTargetAtTurn !== null) is definitionally a pushback
+       the candidate faced and continued through. Classified "held"
+       unconditionally: the kernel's own record shows the candidate
+       was still in the session after the hold-firm (they didn't
+       immediately accept), so they held their position at that moment.
+       Voss-tactic deflection upgrading isn't possible per-turn without
+       candidate-turn data; the "deflected" variant is reserved for
+       a future per-turn classifier. */
+    ...(candidateAskLpa !== null && moves.some(m => m.lever === "hold-firm" && m.candidateTargetAtTurn !== null)
+      ? {
+          pushbacks: moves
+            .filter(m => m.lever === "hold-firm" && m.candidateTargetAtTurn !== null)
+            .map(m => ({
+              pushback: "hold-firm",
+              outcome: "held" as const,
+              detail: `Recruiter held at turn ${m.turnIndex + 1}`,
+            })),
+        }
+      : {}),
   };
 }
 

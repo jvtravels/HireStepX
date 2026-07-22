@@ -913,3 +913,137 @@ describe("S12-B26 — 'You countered at' shows original anchor, not conceded val
     expect(m.candidateAskLpa).toBe(60);
   });
 });
+
+/* ── S2-B10, S6-B3 regression tests (2026-07-22) ───────────────────────────
+ *
+ * S2-B10: initialOfferLpa must store the FIRST offer the recruiter actually
+ *   made (trajectory[0]), not band.initialOffer (which is the band FLOOR and
+ *   may equal the ceiling when no target was captured and the recruiter opened
+ *   at ceiling). This prevents "INITIAL OFFER ₹35.8" when the recruiter
+ *   actually opened at ₹27.8 and later jumped to ceiling.
+ *
+ * S6-B3: computeNegotiationMetrics must populate pushbacks[] from hold-firm
+ *   moves when the candidate had already anchored. Drives derivePhases stage-3
+ *   ("You handled their pushback") which previously never fired because the
+ *   pushbacks classifier was never built.
+ */
+/* Minimal candidateStance so critiqueRecruiterStrategy doesn't crash on
+ * partial-state test fixtures. Values are the same as the kernel's own
+ * EMPTY_STANCE constant defined in _negotiate-turn-helpers.ts. */
+const EMPTY_STANCE_FOR_TEST = {
+  flexibilityPosture: null,
+  marketReferenceVague: false,
+  salaryOnlyFactor: false,
+  badmouthsCurrent: false,
+  confidentialOvershare: false,
+  soundsDesperate: false,
+  treatsEquityAsCash: false,
+  avoidsAnchor: false,
+  personalExpenseJustification: false,
+  offerShoppingDemand: false,
+  dismissesVariableRisk: false,
+  overpromisesJoining: false,
+  hasAny: false,
+};
+
+describe("S2-B10 — initialOfferLpa stores actual first offer, not band floor", () => {
+  const band: NegotiationBand = {
+    initialOffer: 27,
+    maxStretch: 36,
+    walkAwayThreshold: 40,
+    hardBandCap: false,
+    marketMode: "neutral",
+  };
+  const minState: Partial<NegotiationState> = {
+    band,
+    vossTacticsUsed: [],
+    infoAsked: [],
+    infoAskedInitiated: [],
+    walkAwayReturned: false,
+    hardBandCap: false,
+    marketMode: "neutral",
+    conversationLog: [],
+    candidateStance: EMPTY_STANCE_FOR_TEST,
+    candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
+  };
+
+  it("S2-B10: recruiter opens ABOVE band floor — initialOfferLpa = trajectory[0]", () => {
+    const finalState = { ...minState, phase: "stalemate" as const };
+    const moves: KernelTurnSummary[] = [
+      { lever: "open-with-offer", newTotalLpa: 35.8, turnIndex: 0, candidateTargetAtTurn: null },
+      { lever: "hold-firm", newTotalLpa: 35.8, turnIndex: 1, candidateTargetAtTurn: 45 },
+    ];
+    const m = computeNegotiationMetrics({ finalState: finalState as NegotiationState, moves });
+    expect(m.initialOfferLpa).toBe(35.8);
+    expect(m.initialOfferLpa).not.toBe(band.initialOffer);
+  });
+
+  it("S2-B10: empty trajectory — initialOfferLpa falls back to band.initialOffer", () => {
+    const finalState = { ...minState, phase: "accepted" as const };
+    const m = computeNegotiationMetrics({ finalState: finalState as NegotiationState, moves: [] });
+    expect(m.initialOfferLpa).toBe(band.initialOffer);
+  });
+});
+
+describe("S6-B3 — pushbacks[] populated from hold-firm moves after anchor", () => {
+  const band: NegotiationBand = {
+    initialOffer: 27,
+    maxStretch: 36,
+    walkAwayThreshold: 40,
+    hardBandCap: false,
+    marketMode: "neutral",
+  };
+  const baseState: Partial<NegotiationState> = {
+    phase: "stalemate",
+    band,
+    vossTacticsUsed: [],
+    infoAsked: [],
+    infoAskedInitiated: [],
+    walkAwayReturned: false,
+    hardBandCap: false,
+    marketMode: "neutral",
+    conversationLog: [],
+    candidateStance: EMPTY_STANCE_FOR_TEST,
+    candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
+    /* firstAnchoredTarget so candidateAskLpa !== null, which gates pushbacks[] */
+    firstAnchoredTarget: 42,
+  };
+
+  it("S6-B3: hold-firm after anchor → pushbacks entry per qualifying move", () => {
+    const moves: KernelTurnSummary[] = [
+      { lever: "open-with-offer", newTotalLpa: 30, turnIndex: 0, candidateTargetAtTurn: null },
+      { lever: "hold-firm", newTotalLpa: 30, turnIndex: 1, candidateTargetAtTurn: 42 },
+      { lever: "hold-firm", newTotalLpa: 30, turnIndex: 2, candidateTargetAtTurn: 42 },
+    ];
+    const m = computeNegotiationMetrics({ finalState: baseState as NegotiationState, moves });
+    expect(m.pushbacks).toBeDefined();
+    expect(m.pushbacks!.length).toBe(2);
+    expect(m.pushbacks![0].outcome).toBe("held");
+  });
+
+  it("S6-B3: hold-firm before anchor (candidateTargetAtTurn null) → not counted", () => {
+    const moves: KernelTurnSummary[] = [
+      { lever: "open-with-offer", newTotalLpa: 30, turnIndex: 0, candidateTargetAtTurn: null },
+      { lever: "hold-firm", newTotalLpa: 30, turnIndex: 1, candidateTargetAtTurn: null },
+    ];
+    const m = computeNegotiationMetrics({ finalState: baseState as NegotiationState, moves });
+    expect(m.pushbacks).toBeUndefined();
+  });
+
+  it("S6-B3: no hold-firm moves → no pushbacks field emitted", () => {
+    const moves: KernelTurnSummary[] = [
+      { lever: "open-with-offer", newTotalLpa: 30, turnIndex: 0, candidateTargetAtTurn: null },
+      { lever: "counter-base", newTotalLpa: 33, turnIndex: 1, candidateTargetAtTurn: 40 },
+    ];
+    const m = computeNegotiationMetrics({ finalState: baseState as NegotiationState, moves });
+    expect(m.pushbacks).toBeUndefined();
+  });
+
+  it("S6-B3: no anchor (candidateAskLpa null) → no pushbacks even with hold-firm", () => {
+    const moves: KernelTurnSummary[] = [
+      { lever: "hold-firm", newTotalLpa: 30, turnIndex: 0, candidateTargetAtTurn: null },
+    ];
+    const m = computeNegotiationMetrics({ finalState: baseState as NegotiationState, moves });
+    expect(m.pushbacks).toBeUndefined();
+  });
+});

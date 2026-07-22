@@ -109,7 +109,7 @@ export function NegotiationFullReport({
         <StartHereHint outcome={outcome} daysUntilInterview={daysUntilInterview} />
       </div>
 
-      <TLDRHero outcome={outcome} role={role} company={company} />
+      <TLDRHero outcome={outcome} role={role} company={company} priorSessionCount={priorSessionCount} />
 
       {/* PART 1 — DIAGNOSIS · indigo (analytical / cool tone) */}
       <SectionBand

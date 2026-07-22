@@ -138,6 +138,12 @@ export interface DashboardSession {
        Null = never disclosed during the session; band fell back to role defaults.
        Optional so rows persisted before this field shipped deserialize cleanly. */
     candidateCurrentCtcLpa?: number | null;
+    /* S6-B3 (2026-07-22) — grounded pushback events derived from the kernel's
+       hold-firm moves. Each entry represents one recruiter hold-firm after the
+       candidate anchored; drives the "You handled their pushback" stage ladder
+       step in derivePhases. Optional so old rows without this field work correctly
+       (stage simply won't fire, matching pre-fix behaviour). */
+    pushbacks?: ReadonlyArray<{ pushback: string; outcome: "held" | "deflected" | "conceded"; detail: string }>;
   };
 }
 

@@ -1,8 +1,8 @@
 import { derivePhases, type NegotiationOutcome } from "../derivations";
 
 export function TLDRHero({
-  outcome, role, company,
-}: { outcome: NegotiationOutcome; role: string; company: string }) {
+  outcome, role, company, priorSessionCount,
+}: { outcome: NegotiationOutcome; role: string; company: string; priorSessionCount?: number }) {
   const offers = outcome.offers ?? [];
   const opening = offers[0]?.total ?? null;
   const closing = outcome.finalTotal ?? (offers[offers.length - 1]?.total ?? null);
@@ -85,11 +85,16 @@ export function TLDRHero({
   type StatTone = "good" | "bad" | "warn" | "neutral";
   const stats: Array<{ label: string; value: string; hint?: string; tone: StatTone }> = [];
 
+  /* S1-B9: only show "Session 1 · first negotiation" when this is genuinely
+     the user's first session (priorSessionCount === 0). A sparse/short run
+     from a user with 84+ sessions is NOT a first-session — it's a bailout.
+     Guard on priorSessionCount; treat undefined as unknown (show the label). */
   const isSparseFirstSession =
     delta === 0 &&
     outcome.candidateAsk === null &&
     phaseCount <= 1 &&
-    typeof outcome.gapClosurePct !== "number";
+    typeof outcome.gapClosurePct !== "number" &&
+    (priorSessionCount == null || priorSessionCount === 0);
 
   if (isSparseFirstSession) {
     stats.push({

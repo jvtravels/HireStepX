@@ -154,6 +154,29 @@ export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> 
        UnaskedLevers / lowball / power-dynamics panels. */
     ...(voss ? { vossTacticsUsed: voss } : {}),
     ...(info ? { infoAsked: info } : {}),
+    /* S13-B9 — candidate-INITIATED info subset; persist alongside the full
+       infoAsked so the adapter's stage-2 guard (no false credit for recruiter-
+       elicited disclosures) survives DB save/reload. Fall back is in the adapter
+       itself (undefined km.infoAskedInitiated → use infoAsked), so dropping it
+       here was silent but incorrect for new sessions. */
+    ...(strArray(o.infoAskedInitiated) ? { infoAskedInitiated: strArray(o.infoAskedInitiated) } : {}),
+    /* S6-B3 — grounded pushback events from the kernel's hold-firm moves.
+       Preserve the array so the report's "You handled their pushback" stage
+       fires correctly after a DB round-trip. */
+    ...(Array.isArray(o.pushbacks)
+      ? {
+          pushbacks: (o.pushbacks as unknown[])
+            .filter((p): p is Record<string, unknown> => p !== null && typeof p === "object")
+            .slice(0, 30)
+            .map(p => ({
+              pushback: typeof p.pushback === "string" ? p.pushback.slice(0, 100) : "hold-firm",
+              outcome: (["held", "deflected", "conceded"] as const).includes(p.outcome as "held" | "deflected" | "conceded")
+                ? (p.outcome as "held" | "deflected" | "conceded")
+                : "held" as const,
+              detail: typeof p.detail === "string" ? p.detail.slice(0, 200) : "",
+            })),
+        }
+      : {}),
     ...(typeof o.walkAwayReturned === "boolean" ? { walkAwayReturned: o.walkAwayReturned } : {}),
     ...(typeof o.hardBandCap === "boolean" ? { hardBandCap: o.hardBandCap } : {}),
     ...(["soft", "neutral", "hot"].includes(o.marketMode as string) ? { marketMode: o.marketMode } : {}),

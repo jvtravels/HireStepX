@@ -873,6 +873,13 @@ function adoptKernelOutcome(
     /* S3-B2 — surface Phase-11 hike-justification rationale so
        derivePhases stage-2 ("You justified your number") fires. */
     ...(typeof km.rationaleKind === "string" ? { rationaleKind: km.rationaleKind } : {}),
+    /* S6-B3 — grounded pushback events from kernel hold-firm moves; drives
+       derivePhases stage-3 ("You handled their pushback"). Previously always
+       undefined because the classifier was never built — now computed at
+       write time from the move history and propagated here. */
+    ...(Array.isArray(km.pushbacks) && km.pushbacks.length > 0
+      ? { pushbacks: km.pushbacks as Array<{ pushback: string; outcome: "held" | "deflected" | "conceded"; detail: string }> }
+      : {}),
   };
 }
 
