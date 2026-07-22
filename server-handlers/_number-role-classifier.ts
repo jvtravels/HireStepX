@@ -390,11 +390,15 @@ const COMPETING_CUES: CueTable = {
     /\banother\s+offer(?:\s+(?:of|at))?\b/i,
     /\banother\s+opportunity(?:\s+(?:of|at))?\b/i,
     /\bother\s+offers?\b/i,
-    /\boffer\s+(?:of|at)\b/i,
-    /\bin[-\s]?hand(?:\s+offer)?(?:\s+(?:of|at))?\b/i,
+    /* S36-B2 (2026-07-23) — "offer for X" was missing; "of/at" were covered
+     * but "for" (very common in Indian English: "an offer for 58L") was not.
+     * Added "for" to the preposition alternation so "I have an offer for 58L
+     * from Google" binds the 58L as competing, not as a stray target. */
+    /\boffer\s+(?:of|at|for)\b/i,
+    /\bin[-\s]?hand(?:\s+offer)?(?:\s+(?:of|at|for))?\b/i,
     /\balready\s+have\b/i,
     /\breceived\s+(?:an?\s+)?offer\b/i,
-    /\bgot\s+an?\s+offer(?:\s+(?:of|at))?\b/i,
+    /\bgot\s+an?\s+offer(?:\s+(?:of|at|for))?\b/i,
     /\bmultiple\s+offers?\b/i,
     /* Rival-company-named competing offer (live-staging 2026-06-19, #92).
      * Candidates routinely cite a competitor by name with the company
@@ -406,7 +410,7 @@ const COMPETING_CUES: CueTable = {
      * amount; the negative lookahead keeps it from matching OUR offer
      * ("the offer from you at 35"). Plus a bare "have an/another offer"
      * presence cue for phrasings with no "from". */
-    /\boffer\s+from\s+(?!you\b|us\b|your\b|me\b|the\s+company\b|here\b)\w+(?:\s+\w+){0,3}\s+(?:of|at)\b/i,
+    /\boffer\s+from\s+(?!you\b|us\b|your\b|me\b|the\s+company\b|here\b)\w+(?:\s+\w+){0,3}\s+(?:of|at|for)\b/i,
     /\b(?:have|hold)\s+(?:an?|another|other)\s+offers?\b/i,
   ],
   right: [],
