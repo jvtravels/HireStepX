@@ -1327,6 +1327,13 @@ export interface NegotiationState {
    * highestOfferMade, preserving the close-floor invariant. Sticky once set. */
   freshGradDisclosed: boolean;
 
+  /* S39 (2026-07-23) — candidate mentioned WFH/remote/hybrid flexibility
+   * before any salary facts were established. Sticky once set. Surfaced in
+   * compactTurnBrief so the LLM acknowledges it and doesn't jump to a
+   * salary number on the same turn. Also appears in the discovery-complete
+   * summary so it's not silently dropped (S39-B3). */
+  wfhFlexibilityMentioned?: boolean;
+
   /* Bug 7 (2026-05-14) — anti-repetition of recruiter benefits. Tracks
    * the set of RecruiterFactToken values that the bot has already
    * surfaced in this session. Fed back into compactTurnBrief so the
@@ -3039,6 +3046,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateApplicableYoe: input.candidateApplicableYoe ?? null,
     candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
     freshGradDisclosed: false,
+    wfhFlexibilityMentioned: false,
     recruiterFactsAlreadySaid: [],
     answeredQuestionLedger: {},
     pendingPromises: [],
@@ -6076,6 +6084,9 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
            * the first valid mention so a later misparse can't overwrite
            * a correctly captured current employer. */
           next.candidateCurrentCompany = entry.parsedString;
+        } else if (entry.kind === "wfh-flexibility") {
+          /* S39 (2026-07-23) — monotone-up: once set, stays true. */
+          next.wfhFlexibilityMentioned = true;
         }
         /* PR-2 (PDF #28) — dual-write disclosure-tracker captures to
          * the ledger. Records even when the slot was already set by the
@@ -8637,6 +8648,7 @@ export function deserializeState(json: string): NegotiationState {
     candidateApplicableYoe: (s.candidateApplicableYoe as number | null | undefined) ?? null,
     candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
     freshGradDisclosed: (s.freshGradDisclosed as boolean | undefined) ?? false,
+    wfhFlexibilityMentioned: (s.wfhFlexibilityMentioned as boolean | undefined) ?? false,
     recruiterFactsAlreadySaid: (s.recruiterFactsAlreadySaid as string[] | undefined) ?? [],
     /* Audit follow-up (2026-05-21) — answeredQuestionLedger back-compat
      * default. In-flight sessions serialized before this field shipped

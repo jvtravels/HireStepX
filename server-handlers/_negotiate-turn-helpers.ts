@@ -23,6 +23,7 @@ import type {
 import {
   canDiscloseSpecificNumber,
   isTerminalPhase,
+  isOfferOnTable,
 } from "./_negotiation-kernel";
 import { resolveVestingSchedule } from "../data/company-vesting-overlay";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
@@ -466,6 +467,18 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "— those belong in a competency interview, not a salary discussion. " +
   "If the candidate volunteers role context, acknowledge briefly and " +
   "immediately steer back to the salary fact you still need.\n\n" +
+  /* S39 (2026-07-23) — non-monetary opener during discovery.
+   * Root: LLM quotes a salary number in the same turn it should only
+   * acknowledge WFH/remote/hybrid demand and pivot to comp discovery.
+   * When the turn brief contains [CANDIDATE NON-MONETARY ASK: ...], the
+   * LLM MUST NOT volunteer any salary number; it must acknowledge then ask. */
+  "NON-MONETARY OPENER — If the turn brief contains [CANDIDATE NON-MONETARY ASK], " +
+  "do NOT mention any salary figure or comp number in your response. " +
+  "Structure your reply as: (1) one clause acknowledging the flexibility ask " +
+  "('Noted — hybrid/WFH arrangements are part of the offer; we'll finalise " +
+  "those once we align on comp.'), then (2) the discovery question from " +
+  "[NEXT REQUIRED ACTION]. Do NOT say 'we can offer ₹X' or quote any LPA " +
+  "figure when the non-monetary brief is present and no offer has been made yet.\n\n" +
   /* S13-B27 (2026-07-22) — negation inversion.
    * Root: "NOT focused on base" parsed as "interested in base". */
   "NEGATION GROUNDING — When the candidate explicitly negates a preference " +
@@ -2065,6 +2078,20 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     const list = state.pendingCandidateAcks.slice(0, 4).map((e) => e.label).join("; ");
     parts.push(
       `[CANDIDATE DISCLOSED — ACKNOWLEDGE THIS TURN: ${list}]`,
+    );
+  }
+  /* S39 (2026-07-23) — non-monetary WFH/remote/hybrid opener advisory.
+   * When the candidate has mentioned WFH/remote/hybrid flexibility and
+   * no offer is on table yet (pre-anchor discovery), the LLM must NOT
+   * quote a salary number — it should acknowledge the WFH ask briefly
+   * and pivot to the discovery question. Cleared implicitly once the
+   * pendingCandidateAcks prune fires (wfh-flexibility acknowledged). */
+  if (
+    state.wfhFlexibilityMentioned === true &&
+    !isOfferOnTable(state)
+  ) {
+    parts.push(
+      `[CANDIDATE NON-MONETARY ASK: mentioned WFH/remote/hybrid work flexibility — (1) acknowledge briefly in one clause, e.g. 'Noted — hybrid/WFH arrangements are part of the offer; we can finalise those once we align on comp.' (2) then immediately ask the discovery question. Do NOT state any salary number this turn.]`,
     );
   }
   /* PDF #17 architectural fix follow-up (2026-05-15) — discovery-stage

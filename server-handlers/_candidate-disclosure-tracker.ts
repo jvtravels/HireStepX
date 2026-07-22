@@ -32,7 +32,12 @@ export type CandidateDisclosureKind =
   /* PDF #28 (2026-06-07) — captures candidate's CURRENT employer name
    * so deflection prose can distinguish target-company references
    * from current-company references. */
-  | "current-company";
+  | "current-company"
+  /* S39 (2026-07-23) — candidate opens with a non-monetary WFH/remote/
+   * hybrid flexibility demand before any salary facts are established.
+   * Tracked so the bot acknowledges it before pivoting to comp discovery,
+   * and surfaces it in the discovery-complete brief. */
+  | "wfh-flexibility";
 
 export interface CandidateDisclosureEntry {
   kind: CandidateDisclosureKind;
@@ -99,6 +104,11 @@ const ACK_JOINING_RE = /\bjoining\s+(?:date|day|by)|\bstart\s+date\b|\bonboard\s
  * says "your current side / employer / role" in a non-deflective way. */
 const ACK_CURRENT_COMPANY_RE = /\byour\s+current\s+(?:side|employer|company|role|comp|comp\.)\b|\bover\s+(?:at|with)\s+your\s+side\b/i;
 
+/* S39 (2026-07-23) — WFH / remote / hybrid flexibility demand from candidate. */
+const WFH_FLEXIBILITY_RE =
+  /\b(?:wfh|work[-\s]?from[-\s]?home|remote\s+work(?:\s+flexibility)?|hybrid\s+(?:work|option|arrangement|model|role)|remote[-\s]?first|location\s+flexibility|flexible\s+work(?:ing)?|work\s+(?:from\s+home|location)\s+(?:flexibility|option|preference|arrangements?)|work\s+(?:remotely|from\s+home)|want\s+(?:to\s+)?(?:work\s+)?(?:remote(?:ly)?|from\s+home)|prefer\s+(?:remote|wfh|hybrid)|open\s+to\s+(?:remote|hybrid|wfh)|looking\s+for\s+(?:remote|hybrid|wfh|flexibility))\b/i;
+const ACK_WFH_RE = /\b(?:wfh|work[-\s]?from[-\s]?home|remote|hybrid|location\s+flexibility|flexible\s+work|home\s+setup|work\s+arrangement)\b/i;
+
 const CANDIDATE_DISCLOSURES: DisclosureRule[] = [
   {
     kind: "notice-period",
@@ -159,6 +169,15 @@ const CANDIDATE_DISCLOSURES: DisclosureRule[] = [
       return { label: `current employer ${name}`, parsedString: name };
     },
     acknowledge: (b) => ACK_CURRENT_COMPANY_RE.test(b),
+  },
+  /* S39 (2026-07-23) — non-monetary WFH/remote/hybrid demand. */
+  {
+    kind: "wfh-flexibility",
+    detect: (u) =>
+      WFH_FLEXIBILITY_RE.test(u)
+        ? { label: "WFH/remote/hybrid flexibility" }
+        : null,
+    acknowledge: (b) => ACK_WFH_RE.test(b),
   },
 ];
 
