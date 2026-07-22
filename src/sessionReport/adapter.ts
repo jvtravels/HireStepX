@@ -516,10 +516,15 @@ export function sessionReportToInterviewResult(
      * off-domain noise — the reader is here to learn why the number didn't move,
      * not about their conflict style. Keep only negotiation-relevant blind spots
      * on a negotiation report; behavioral reports pass through untouched. */
+    /* S18-B4: a near-empty / bailout session (scoreConfidence < 0.5) cannot
+     * meaningfully evaluate blind spots — the evaluator saw 1–2 turns and
+     * surfaces hallucinated items ("Anchor strength", "Confidence under pressure")
+     * for content that was never demonstrated. Suppress blind spots entirely on
+     * low-confidence sessions so the section doesn't mislead with fabricated gaps. */
     blindSpots: (isNegotiation
       ? report.blindSpots.filter((b) => isNegotiationCompetency(b.competency))
       : report.blindSpots
-    ).map((b) => ({
+    ).filter(() => report.scoreConfidence >= 0.5).map((b) => ({
       title: b.competency,
       body: b.note,
     })),
@@ -1512,9 +1517,13 @@ function buildNegotiationPerQuestion(
     // S13-B11: strip leading pause tics ("Uh, " / "Umm, ") from the heading.
     // The tic is realistic in audio but reads as a typo in a report heading.
     const heading = pendingRecruiter.replace(/^(?:Uh,\s*|Umm?,\s*)+/i, "").trim();
+    /* S18-B1: if no AI turn was seen before this user turn (heading is empty),
+     * the exchange is incomplete — the AI was still generating when End was
+     * clicked. Skip it so the Per-Question count shows only real exchanges. */
+    if (!heading) { pendingRecruiter = ""; continue; }
     items.push({
       index: items.length + 1,
-      text: heading || `Exchange ${items.length + 1}`,
+      text: heading,
       // S6-B4 — no per-turn score EXISTS for a negotiation exchange: the
       // evaluator scored the whole call, not each turn. Rendering the aggregate
       // as "0/100" (heuristic path) or even as the call score on every row is a

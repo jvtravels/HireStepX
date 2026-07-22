@@ -642,6 +642,83 @@ describe("buildNegotiationMetrics — S21-B4 disclosure leak elicitation gate", 
   });
 });
 
+/* S18-B1 (2026-07-22) — "Per-Question Review (2 answered)" when candidate
+ * submitted only 1 real response. An incomplete AI turn (still generating when
+ * End was clicked) left `pendingRecruiter === ""` for the second user turn,
+ * creating an "Exchange 2" placeholder that inflated the count.
+ * Fix: skip user turns with no preceding AI question (empty heading). */
+describe("buildNegotiationPerQuestion — S18-B1 incomplete-turn count", () => {
+  it("S18-B1: skips user turn with no preceding AI question (placeholder exchange)", () => {
+    // base has 1 perQuestion item; transcript has 3 user turns — 2 with a real
+    // AI question and 1 with NO preceding AI turn (the AI was still generating
+    // when End was clicked). Old behaviour: 3 items, shows "3 answered".
+    // Fixed behaviour: 2 items (> 1 base → replaces), "2 answered", no "Exchange N".
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        negotiationMetrics: {
+          outcome: "stalemate", anchorTurn: null, leverDiversity: 0, lpaGained: 0,
+          lpaPerTurn: 0, bandTraversal: 0, overBandViolation: false, totalTurns: 3,
+          score: 12, initialOfferLpa: null, finalOfferLpa: null, candidateAskLpa: null,
+          offerTrajectoryLpa: [],
+        },
+        transcript: [
+          { speaker: "ai",   text: "What are your salary expectations?" },
+          { speaker: "user", text: "I'm looking for around 48 LPA." },
+          { speaker: "ai",   text: "That seems high — our band is 35 LPA." },
+          { speaker: "user", text: "I understand, let me think about it." },
+          // Third user turn with NO preceding AI turn (AI still generating when End clicked)
+          { speaker: "user", text: "I'll stop here actually." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    // Should show 2 real exchanges (the ones with AI questions), not 3.
+    expect(out.questions.length).toBe(2);
+    // "Exchange N" placeholder must not appear — all headings should be real AI text.
+    expect(out.questions.every(q => !q.text.startsWith("Exchange "))).toBe(true);
+    expect(out.questions[0]?.text).toBe("What are your salary expectations?");
+    expect(out.questions[1]?.text).toBe("That seems high — our band is 35 LPA.");
+  });
+});
+
+/* S18-B4 (2026-07-22) — Coach Notes surfaced 4 blind spots ("Anchor strength",
+ * "Confidence under pressure", etc.) for a 1-turn bailout session. The evaluator
+ * generated these from barely any content (scoreConfidence = 0.2). Suppress blind
+ * spots entirely when scoreConfidence < 0.5 — near-empty sessions cannot
+ * meaningfully evaluate competencies. */
+describe("sessionReportToInterviewResult — S18-B4 blind spots suppressed on low-confidence session", () => {
+  it("S18-B4: blindSpots is empty when scoreConfidence < 0.5", () => {
+    const ctx = {
+      report: negReport({
+        scoreConfidence: 0.2,
+        blindSpots: [
+          { competency: "Closing Technique", note: "Never closed.", category: "negotiation" as const },
+          { competency: "Anchor strength", note: "No anchor named.", category: "negotiation" as const },
+        ],
+      }),
+      session: negSession(),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.blindSpots).toHaveLength(0);
+  });
+
+  it("S18-B4: blindSpots pass through when scoreConfidence >= 0.5", () => {
+    const ctx = {
+      report: negReport({
+        scoreConfidence: 0.75,
+        blindSpots: [
+          { competency: "Closing Technique", note: "Never closed.", category: "negotiation" as const },
+        ],
+      }),
+      session: negSession(),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    // negotiation-relevant blind spot should pass through
+    expect(out.blindSpots.length).toBeGreaterThan(0);
+  });
+});
+
 /* S1-B7 (2026-07-22) — "Concession rate: 10%" on a zero-counter session where the
  * candidate accepted the first offer. Root cause: the concessionRe included
  * acceptance-close phrases ("i accept", "i'll take", "happy with") that fire on
