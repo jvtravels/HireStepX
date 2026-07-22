@@ -6187,7 +6187,13 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
        * persisted target in so the single checklist reconcile is authoritative
        * and every downstream gate that reads targetAnswered stays coherent. */
       target: parsed.target ?? next.candidateTarget ?? next.candidateTargetFixed ?? null,
-      currentCtc: parsed.currentCtc,
+      /* N-3 (2026-07-23) — same N-2 reconcile for currentCtc. `parsed.currentCtc`
+       * is null whenever the classifier didn't extract a CTC from THIS utterance,
+       * but the CTC captured on a prior turn lives on next.candidateCurrentCtc.
+       * Without the fallback, syncChecklistFromParsedFacts keeps currentCtcAnswered=false
+       * on every follow-up turn — the recruiter re-asks CTC even though it was already
+       * captured, observed as 7 consecutive sessions with the re-ask bug. */
+      currentCtc: parsed.currentCtc ?? next.candidateCurrentCtc ?? null,
       competing: parsed.competing,
       signalsCompetingExistsWithoutNumber: parsed.signalsCompetingExistsWithoutNumber,
       competingOfferDetailHasAny: parsed.competingOfferDetail.hasAny,

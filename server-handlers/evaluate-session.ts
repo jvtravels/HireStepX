@@ -1322,19 +1322,29 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
                  The LLM's starPresence can drift from the live coach's
                  detection on the SAME text, eroding trust ("coach said
                  Result was missing, report says it was present"). Pinning
-                 both surfaces to one detector keeps the story coherent. */
-              const det = detectStarPresence(pq.answerText || "");
-              const starPresence = {
-                S: det.situation,
-                T: det.task,
-                A: det.action,
-                R: det.result,
-                /* STAR+L: Learning. Pin to the deterministic detector so the
-                   live coach + report agree on whether a takeaway was
-                   articulated. Particularly load-bearing on failure /
-                   mistake questions — see _star-detection.ts. */
-                L: Boolean(det.learning),
-              };
+                 both surfaces to one detector keeps the story coherent.
+                 S44-B14 (2026-07-23) — skip STAR entirely for salary-negotiation
+                 sessions. Negotiation answers (counter-offers, interest
+                 statements, comp expectations) have no S/T/A/R structure;
+                 running the detector produces random boolean noise and the
+                 per-question STAR strip shows misleading "missing" labels
+                 on well-formed negotiation replies. */
+              const starPresence = meta?.type === "salary-negotiation"
+                ? { S: false, T: false, A: false, R: false, L: false }
+                : (() => {
+                  const det = detectStarPresence(pq.answerText || "");
+                  return {
+                    S: det.situation,
+                    T: det.task,
+                    A: det.action,
+                    R: det.result,
+                    /* STAR+L: Learning. Pin to the deterministic detector so the
+                       live coach + report agree on whether a takeaway was
+                       articulated. Particularly load-bearing on failure /
+                       mistake questions — see _star-detection.ts. */
+                    L: Boolean(det.learning),
+                  };
+                })();
               /* Same logic for cultural-register markers: pin the report
                  to the deterministic detector so the candidate sees the
                  same non-penalty signals the live coach treated as such.

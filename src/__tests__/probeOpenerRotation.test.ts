@@ -130,9 +130,9 @@ describe("LN1 — renderCanonicalProse applies opener rotation on probe kinds", 
       ask: "",
     } as NextAction;
     const line = renderCanonicalProse(action, s);
-    /* FL2 bridge fires — line starts with one of "Got it." / "Right." /
+    /* FL2 bridge fires — line starts with one of "Got it." / "Noted." /
      * "Okay.", NOT the LN1 rotation opener. */
-    expect(/^(?:Got it\.|Right\.|Okay\.)/.test(line)).toBe(true);
+    expect(/^(?:Got it\.|Noted\.|Okay\.)/.test(line)).toBe(true);
     expect(line.startsWith("Quick one —")).toBe(false);
     expect(line.startsWith("So,")).toBe(false);
   });

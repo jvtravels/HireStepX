@@ -241,7 +241,7 @@ export function NegotiationFullReport({
             const lines: string[] = [
               `Salary negotiation: ${role} at ${company}`,
               `Outcome: ${
-                outcome.outcome === "accepted" ? `Accepted at ₹${finalTotal} LPA` :
+                outcome.outcome === "accepted" ? `Accepted at ₹${typeof finalTotal === "number" ? parseFloat(finalTotal.toFixed(1)) : finalTotal} LPA` :
                 outcome.outcome === "walked_away" ? "Walked away" :
                 "No agreement"
               }`,

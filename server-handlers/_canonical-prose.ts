@@ -361,7 +361,11 @@ export function pickProbeOpener(
  * NOTE: deliberately kept distinct from DISCOVERY_PROBE_OPENERS — the
  * opener rotation is decorative (variety), this set is functional
  * (turn-bridge under uncertainty). */
-export const NEUTRAL_TURN_BRIDGE_ACKS = ["Got it.", "Right.", "Okay."] as const;
+/* S44-B6 (2026-07-23) — "Right." as a standalone bridge ack sounds cold/dismissive
+ * and the LLM restyler occasionally garbles it into "Right. So, let's start…" or
+ * leaves it as a clipped single-word opener. Replaced with "Noted." which carries
+ * the same acknowledgement function but reads more natural for Indian HR cadence. */
+export const NEUTRAL_TURN_BRIDGE_ACKS = ["Got it.", "Noted.", "Okay."] as const;
 
 export function pickNeutralBridgeAck(turnIndex: number): string {
   const n = NEUTRAL_TURN_BRIDGE_ACKS.length;

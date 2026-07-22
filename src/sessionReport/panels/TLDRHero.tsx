@@ -3,12 +3,18 @@ import { derivePhases, type NegotiationOutcome } from "../derivations";
 export function TLDRHero({
   outcome, role, company, priorSessionCount,
 }: { outcome: NegotiationOutcome; role: string; company: string; priorSessionCount?: number }) {
+  /* S44-B10 (2026-07-23) — round all offer figures to 1dp at source so
+   * every downstream string interpolation is clean. Float arithmetic on
+   * LPA values (e.g. 42.1 - 39.5 = 2.5999999999999979) rendered raw
+   * produces "₹2.5999999999999979L" in the verdict and stat cards. */
+  const r1 = (n: number | null | undefined): number | null =>
+    n == null ? null : Math.round(n * 10) / 10;
   const offers = outcome.offers ?? [];
-  const opening = offers[0]?.total ?? null;
-  const closing = outcome.finalTotal ?? (offers[offers.length - 1]?.total ?? null);
-  const delta = (opening !== null && closing !== null) ? closing - opening : null;
+  const opening = r1(offers[0]?.total);
+  const closing = r1(outcome.finalTotal ?? offers[offers.length - 1]?.total);
+  const delta = (opening !== null && closing !== null) ? r1(closing - opening) : null;
   const askGap = (outcome.candidateAsk !== null && opening !== null && closing !== null && outcome.candidateAsk > opening)
-    ? Math.round(((closing - opening) / (outcome.candidateAsk - opening)) * 100)
+    ? Math.round(((closing - opening) / (outcome.candidateAsk! - opening)) * 100)
     : null;
 
   /* S23-B4: derive full phase list so we can check WHICH stage was reached
@@ -32,14 +38,15 @@ export function TLDRHero({
    * "1 of 5 stages — you named a counter", and "Numbers stated 100%". Key it
    * on candidateAsk alone; branches that compare to the opening already guard
    * `opening !== null` (verdict) or `delta !== null` (stats) themselves. */
+  const candidateAsk = r1(outcome.candidateAsk);
   const counterNamed = outcome.candidateAsk !== null;
 
   let verdict: string;
   if (outcome.outcome === "accepted" && delta !== null && delta > 0) {
-    verdict = `You moved the offer from ₹${opening} LPA up to ₹${closing} LPA, ₹${delta * 4}L extra over four years before tax.${askGap !== null ? ` You closed ${askGap}% of the gap to your stated ask.` : ""}`;
+    verdict = `You moved the offer from ₹${opening} LPA up to ₹${closing} LPA, ₹${r1(delta * 4)}L extra over four years before tax.${askGap !== null ? ` You closed ${askGap}% of the gap to your stated ask.` : ""}`;
   } else if (outcome.outcome === "accepted" && delta === 0) {
     verdict = counterNamed
-      ? `You countered at ₹${outcome.candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
+      ? `You countered at ₹${candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
       : `You accepted at ₹${closing} LPA, the same as their first offer. No counter, no movement. Comparable candidates typically push 15 to 35% above the opening number.`;
   } else if (outcome.outcome === "accepted") {
     /* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM):
@@ -53,7 +60,7 @@ export function TLDRHero({
      * ONLY when the deal did not close. State the accept plainly and DON'T
      * fabricate a delta we can't compute. */
     verdict = counterNamed
-      ? `You accepted the ${role} offer at ${company} — you'd countered at ₹${outcome.candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
+      ? `You accepted the ${role} offer at ${company} — you'd countered at ₹${candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
       : `You accepted the ${role} offer at ${company}. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`;
   } else if (outcome.outcome === "walked_away") {
     /* `closing` can be null when the candidate walked before any offer
@@ -78,8 +85,8 @@ export function TLDRHero({
     verdict = !counterNamed
       ? `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. Part 2 has the email draft to restart the conversation.`
       : offers.length > 0
-        ? `No deal closed. You countered at ₹${outcome.candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
-        : `No deal closed. You named ₹${outcome.candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. Part 2 has the email draft to restart the conversation.`;
+        ? `No deal closed. You countered at ₹${candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
+        : `No deal closed. You named ₹${candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. Part 2 has the email draft to restart the conversation.`;
   }
 
   type StatTone = "good" | "bad" | "warn" | "neutral";
@@ -107,14 +114,14 @@ export function TLDRHero({
     if (delta > 0) {
       stats.push({
         label: "What you won",
-        value: `+₹${delta * 4}L`,
+        value: `+₹${r1(delta * 4)}L`,
         hint: "extra rupees over 4 years, before tax",
         tone: "good",
       });
     } else if (delta < 0) {
       stats.push({
         label: "What it cost you",
-        value: `−₹${Math.abs(delta * 4)}L`,
+        value: `−₹${r1(Math.abs(delta * 4))}L`,
         hint: "rupees lost over 4 years, before tax",
         tone: "bad",
       });
@@ -131,7 +138,7 @@ export function TLDRHero({
         label: "What you walked from",
         value: opening !== null ? `₹${opening} LPA` : "—",
         hint: counterNamed
-          ? `you countered at ₹${outcome.candidateAsk} but the offer never moved, and you walked`
+          ? `you countered at ₹${candidateAsk} but the offer never moved, and you walked`
           : "you walked from their opening without naming a counter",
         tone: "bad",
       });
@@ -140,7 +147,7 @@ export function TLDRHero({
         label: "Money you left on the table",
         value: "—",
         hint: counterNamed
-          ? `you countered at ₹${outcome.candidateAsk} but accepted their opening; the recruiter didn't move`
+          ? `you countered at ₹${candidateAsk} but accepted their opening; the recruiter didn't move`
           : "you accepted at the first number; no counter named",
         tone: "bad",
       });
@@ -159,7 +166,7 @@ export function TLDRHero({
         label: "Money you left on the table",
         value: "—",
         hint: counterNamed
-          ? `you countered at ₹${outcome.candidateAsk} but the offer never moved and no deal closed`
+          ? `you countered at ₹${candidateAsk} but the offer never moved and no deal closed`
           : "the offer never moved and no deal closed; no counter named",
         tone: "bad",
       });
@@ -221,7 +228,7 @@ export function TLDRHero({
     tone: dealClosed ? "good" : walkedAway ? "warn" : phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {
-    const askedFor = outcome.candidateAsk;
+    const askedFor = r1(outcome.candidateAsk);
     if (askedFor !== null && askedFor > opening) {
       const askPct = Math.round(((askedFor - opening) / opening) * 100);
       /* S4S5-B5: hint "above their first offer" read as "the deal landed 97%
