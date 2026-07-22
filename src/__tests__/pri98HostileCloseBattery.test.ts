@@ -199,3 +199,37 @@ describe("Round-22 — guards: genuine Hinglish closes still accept", () => {
     expect(acc(t)).toBe(true);
   });
 });
+
+/* S21-B1 (2026-07-22) — term-accept veto: "12 months pro-rata is fine with me"
+ * auto-closed the session at ₹29.8L. The candidate was reacting to the clawback
+ * STRUCTURE proposed for a joining bonus, not the total package — but
+ * /fine\s+with\s+me/ in COMMITMENT_IDIOM_PATTERNS fired unconditionally. Fixed
+ * by adding TERM_ACCEPT_FINE_WITH_ME_VETO to FALSE_CLOSE_VETO_PATTERNS, which
+ * fires when a compensation-structure noun (pro-rata / clawback / vesting / cliff
+ * / probation / bond clause / notice period) precedes "fine with me" in the same
+ * clause — indicating a term reaction rather than an offer acceptance. */
+describe("S21-B1 — term-accept veto: 'pro-rata is fine with me' ≠ offer close", () => {
+  it.each([
+    "12 months pro-rata is fine with me",
+    "The pro-rata vesting is fine with me",
+    "Clawback on the joining bonus is fine with me",
+    "The clawback clause is fine with me, but I need 32 base",
+    "Vesting schedule is fine with me",
+    "The cliff period is fine with me",
+    "One year cliff is fine with me",
+    "Probation period is fine with me",
+    "The bond clause is fine with me",
+    "6 months notice period is fine with me",
+  ])("REJECTS (term agreement, not offer close): %s", (t) => {
+    expect(neither(t)).toBe(true);
+  });
+
+  it.each([
+    "The offer is fine with me",
+    "That number is fine with me",
+    "Fine with me, let's move forward",
+    "Sounds fine with me",
+  ])("ACCEPTS (no comp-term antecedent): %s", (t) => {
+    expect(acc(t)).toBe(true);
+  });
+});

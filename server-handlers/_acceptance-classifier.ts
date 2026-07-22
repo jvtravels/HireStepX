@@ -1605,6 +1605,19 @@ const WORD_DEMAND_THEN_CLOSE_PATTERN =
 const VERB_MAGNITUDE_THEN_CLOSE_PATTERN =
   /\b(?:bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack)\b[^.!?]{0,25}?\b(?:\d+(?:\.\d+)?|a|an|one|half\s+a|(?:a\s+)?couple(?:\s+of)?|(?:a\s+)?few|several)\s*(?:%|(?:percent|per\s?cent|lpa|lakhs?|lac|l|k)\b)[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
+/** S21-B1 (2026-07-22) — term-accept veto. "12 months pro-rata is fine with me"
+ *  (candidate agreeing to a clawback STRUCTURE) matched /fine\s+with\s+me/ in
+ *  COMMITMENT_IDIOM_PATTERNS and auto-closed the session at ₹29.8L. When the
+ *  subject of "is fine with me" is a compensation-term noun — pro-rata, clawback,
+ *  vesting, cliff, probation, bond clause, notice period — the candidate is
+ *  reacting to a TERM, not accepting the total offer. Match the comp-term up to
+ *  80 chars before "fine with me" within the same clause (no .!? crossing) so a
+ *  two-clause utterance "offer is great; pro-rata fine with me" is still caught,
+ *  but "offer is fine with me" (no comp-term antecedent) is untouched.
+ *  Shared single-source between both gates via FALSE_CLOSE_VETO_PATTERNS. */
+const TERM_ACCEPT_FINE_WITH_ME_VETO =
+  /\b(?:\d+\s+months?\s+)?(?:pro[-\s]?rata|clawback|claw[-\s]?back|vesting(?:\s+(?:schedule|cliff|period))?|cliff\s+(?:period|vesting|date)?|probation(?:ary)?(?:\s+period)?|bond\s+(?:clause|period|terms?)?|notice\s+period)\b[^.!?]{0,80}\bfine\s+with\s+me\b/i;
+
 /** All PRI-59/61/63/69 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   DEMAND_FOR_MORE_PATTERN,
@@ -1633,6 +1646,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   MONEY_REJECTION_PATTERN,
   COUNTER_NOT_NUMBER_PATTERN,
   SETTLE_NEGATION_PATTERN,
+  TERM_ACCEPT_FINE_WITH_ME_VETO,
   DO_IT_REDIRECT_PATTERN,
   DEFERRED_SETTLE_NOUN_PATTERN,
   NEGOTIATION_REDIRECT_PATTERN,
