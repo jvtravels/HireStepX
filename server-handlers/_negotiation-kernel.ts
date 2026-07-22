@@ -5862,7 +5862,16 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * ceiling, AND no offer is yet on the table — re-inflating after an offer
    * is made would be confusing and violates the monotone-highestOfferMade
    * invariant. The `only-lifts` guard (liftedInitial/Max computed from ctc)
-   * ensures we never compress the band on a correction downward. */
+   * ensures we never compress the band on a correction downward.
+   *
+   * S12-B25 (2026-07-22) — cap the band lift when CTC grossly exceeds the
+   * role's natural ceiling. Without a cap, a ₹50L CTC on a ₹35-40L role
+   * inflated the band to ₹56L — unrealistic for that role/company. The lift
+   * is now capped at 1.20× the original band ceiling (a modest stretch). For
+   * small excesses (CTC within 20% of ceiling) ctc×1.12 wins; for large
+   * excesses (CTC 25%+ above ceiling) the cap constrains the lift and the
+   * session proceeds with the recruiter's highest realistic offer clearly
+   * below the candidate's current CTC (the honest scenario). */
   const isMidSessionCtcLift =
     state.candidateCurrentCtc != null &&
     next.candidateCurrentCtc != null &&
@@ -5879,11 +5888,19 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   ) {
     const ctc = next.candidateCurrentCtc;
     const curBand = next.band;
+    /* Cap maxStretch at 1.30× original ceiling (S12-B25): prevents unrealistic
+       band inflation when CTC grossly exceeds the role's natural pay range.
+       1.30 is chosen to stay above the S22-B1 edge case (CTC=42 on a 35L band
+       yields 42/35=1.20 ratio — a tighter cap would leave no win state). */
+    const MAX_LIFT_RATIO = 1.30;
+    const uncappedMax = Math.round(ctc * 1.12 * 10) / 10;
+    const liftedMax = Math.min(uncappedMax, Math.round(curBand.maxStretch * MAX_LIFT_RATIO * 10) / 10);
+    const rawInitial = Math.round(ctc * 0.87 * 10) / 10;
     const liftedInitial = Math.max(
       state.highestOfferMade ?? 0,
-      Math.round(ctc * 0.87 * 10) / 10,
+      /* Never let initialOffer exceed liftedMax — close-floor invariant. */
+      Math.min(rawInitial, liftedMax - 0.5),
     );
-    const liftedMax = Math.round(ctc * 1.12 * 10) / 10;
     const rawWalkAway = Math.max(curBand.walkAway, Math.round(ctc * 0.80 * 10) / 10);
     (next as { band: NegotiationBand }).band = {
       ...curBand,

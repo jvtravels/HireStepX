@@ -249,4 +249,37 @@ describe("buildDeterministicNegotiationReport (#PRI-51)", () => {
     const transcript = STRONG.map((t) => ({ role: t.role, text: t.text }));
     expect(validateReportShape(reportLike, transcript as never)).toBe(true);
   });
+
+  /* S6-B7 — walk-away-floor fix must NOT fire when the candidate already stated
+     an explicit floor using phrasing the original pattern set missed. The bug:
+     candidate said "I won't sign for anything less than ₹200 LPA" but the report
+     still coached them to "State a walk-away floor" — a direct contradiction. */
+  it("S6-B7: does NOT emit walk-away-floor fix when candidate stated floor via 'won't sign for anything less than'", () => {
+    const floorStated: NegReportTurn[] = [
+      t("interviewer", "We can offer 35 LPA for this role."),
+      t("candidate", "I appreciate the offer but I won't sign for anything less than 200 LPA."),
+      t("interviewer", "That's above our band, we can't match that."),
+      t("candidate", "Then I'm afraid we can't proceed. I won't settle for less."),
+    ];
+    const r = buildDeterministicNegotiationReport(floorStated);
+    expect(r.fixes.map((f) => f.text)).not.toContain(WALKAWAY_FIX);
+  });
+
+  it("S6-B7: does NOT emit walk-away-floor fix on 'won't go below' phrasing", () => {
+    const floor2: NegReportTurn[] = [
+      t("interviewer", "We're offering 40 LPA."),
+      t("candidate", "I won't go below 48. That's my minimum."),
+    ];
+    const r = buildDeterministicNegotiationReport(floor2);
+    expect(r.fixes.map((f) => f.text)).not.toContain(WALKAWAY_FIX);
+  });
+
+  it("S6-B7: does NOT emit walk-away-floor fix on 'bottom line' / 'minimum is' phrasing", () => {
+    const floor3: NegReportTurn[] = [
+      t("interviewer", "The offer is 45 LPA."),
+      t("candidate", "My bottom line is 50. Anything less than that is a non-starter."),
+    ];
+    const r = buildDeterministicNegotiationReport(floor3);
+    expect(r.fixes.map((f) => f.text)).not.toContain(WALKAWAY_FIX);
+  });
 });

@@ -137,6 +137,10 @@ export function buildDeterministicNegotiationReport(
     "i get that",
     "respect",
   );
+  /* S6-B7 — extend walk-away pattern set to cover "I won't sign for anything
+     less than X" and similar phrasings that the original list missed. The fix
+     also catches "won't go below", "not going below", "minimum is", "bottom
+     line", "anything less" — all transcript-grounded signals a floor was set. */
   const walkAwaySignals = has(
     lc,
     "walk away",
@@ -146,7 +150,18 @@ export function buildDeterministicNegotiationReport(
     "deadline",
     "can't go below",
     "cannot go below",
+    "won't go below",
+    "will not go below",
+    "not going below",
+    "won't sign for anything less",
+    "won't accept less",
+    "not sign for less",
+    "won't settle for less",
+    "anything less than",
     "my minimum",
+    "minimum is",
+    "my floor",
+    "bottom line",
     "deal-breaker",
     "deal breaker",
     "floor",
