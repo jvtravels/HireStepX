@@ -1104,3 +1104,158 @@ describe("S12-B25 — CTC-aware band lift is capped at 1.20× the original ceili
     expect(next.band.maxStretch).toBe(40); // unchanged
   });
 });
+
+/* S1-B4 (2026-07-22) — AUDIT-3 Fix A uses clampAnchorAboveDisclosed (wrong) in the
+ * discovery-complete anchor bridge, which can pin the OPENING at the band ceiling when
+ * the candidate's hike floor (CTC × 1.25) exceeds the ceiling but CTC itself is still
+ * within the band.  Fix: swap to clampOpeningAnchor which backs off ~20% of band
+ * spread below ceiling, preserving concession headroom.
+ *
+ * Example (S1 session): CTC=30L, band floor=28L, ceiling=35.8L.
+ *   hikeFloor = 30 × 1.25 = 37.5  (> 35.8 ceiling)
+ *   clampAnchorAboveDisclosed → min(35.8, max(28, 37.5)) = min(35.8, 37.5) = 35.8  ← ceiling!
+ *   clampOpeningAnchor: headroom = (35.8-28)*0.2 = 1.56 → capped = 35.8-1.56 = 34.24
+ *                       candidate = max(28, 37.5) = 37.5 > 34.24 → backs off to 34.24  ✓
+ *
+ * S2-B9 corollary: when the opening is at the ceiling, the very first counter-offer
+ * from the candidate leaves no room to step upward, so the recruiter's only legal move
+ * is hold-firm — which reads as "jump to ceiling + refuse to budge" (the S2-B9 bug). */
+describe("S1-B4 — AUDIT-3 Fix A opening anchor must NOT pin at ceiling (concession headroom)", () => {
+  /* Band mirrors the live S1 session: floor=28, ceiling=35.8 */
+  const S1_BAND: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 35.8,
+    walkAway: 22,
+    hasEquity: false,
+  };
+
+  it("planNextAction: opening offer is backed off from ceiling when CTC hike floor overshoots band", () => {
+    /* State: candidate has disclosed CTC=30 and target=40 (above band ceiling).
+     * Phase is still "opening" with no offer made — this triggers the AUDIT-3 Fix A
+     * discovery-complete anchor path in planNextAction. */
+    const base = initState({
+      sessionId: "s1-b4",
+      role: "Software Engineer",
+      company: "Flipkart",
+      band: S1_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "opening",
+      turnIndex: 3,
+      candidateCurrentCtc: 30,  // CTC=30, hike floor=37.5, overshoots ceiling=35.8
+      candidateTarget: 40,       // above band → clampOpeningAnchor backs off from ceiling
+      candidateTargetFixed: null,
+      highestOfferMade: 0,
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        targetAnswered: true,   // both disclosed → AUDIT-3 Fix A fires
+        targetAsked: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAnswered: true,
+        competingOffersAnswered: true,
+        valueProofAnswered: true,
+      },
+    };
+    const action = planNextAction(s);
+    /* Must produce an anchor action (not a walk-away / probe / defer). */
+    expect(action.kind).toBe("anchor-with-offer");
+    /* The opening offer MUST be backed off from the ceiling — strictly below maxStretch.
+     * With the fix: headroom = (35.8-28)*0.2 = 1.56 → capped = 34.24 → offer = 34.24.
+     * With the bug (clampAnchorAboveDisclosed): offer would be 35.8 (the ceiling). */
+    if (action.kind === "anchor-with-offer") {
+      expect(action.initialOffer).toBeLessThan(S1_BAND.maxStretch);
+      /* Must be at least the band floor */
+      expect(action.initialOffer).toBeGreaterThanOrEqual(S1_BAND.initialOffer);
+    }
+  });
+
+  it("pickAiMove: newTotalLpa for opening move is backed off from ceiling (headroom intact)", () => {
+    const base = initState({
+      sessionId: "s1-b4-kernel",
+      role: "Software Engineer",
+      company: "Flipkart",
+      band: S1_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "opening",
+      turnIndex: 3,
+      candidateCurrentCtc: 30,
+      candidateTarget: 40,
+      highestOfferMade: 0,
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        targetAnswered: true,
+        targetAsked: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAnswered: true,
+        competingOffersAnswered: true,
+        valueProofAnswered: true,
+      },
+    };
+    const move = pickAiMove(s);
+    /* Must produce a concrete offer — the discovery-complete path doesn't defer here
+     * because CTC=30 < ceiling=35.8 (the honest-defer only fires when CTC itself > ceiling). */
+    expect(move.newTotalLpa).not.toBeNull();
+    if (move.newTotalLpa != null) {
+      /* Opening offer strictly below ceiling → concession room preserved (S1-B4 fix). */
+      expect(move.newTotalLpa).toBeLessThan(S1_BAND.maxStretch);
+      expect(move.newTotalLpa).toBeGreaterThanOrEqual(S1_BAND.initialOffer);
+    }
+  });
+
+  it("within-band CTC (no hike overshoot) still anchors below ceiling — clampOpeningAnchor is always correct here", () => {
+    /* CTC=30L on a wide 20–40L band: hike floor = 30×1.25=37.5 < ceiling=40.
+     * Both clamps are below ceiling here — the happy path where no overshoot occurs.
+     * Verify the fix doesn't regress this path: offer must be concrete and backed
+     * off from the ceiling. (Note: S1_BAND has floor=28 which is ABOVE CTC=25, so
+     * the planner would emit a null range-anchor there — that's correct but doesn't
+     * test the AUDIT-3 path. Use a wider band with CTC above the floor.) */
+    const WIDE_BAND: NegotiationBand = {
+      initialOffer: 20,
+      maxStretch: 40,
+      walkAway: 15,
+      hasEquity: false,
+    };
+    const base = initState({
+      sessionId: "s1-b4-happy",
+      role: "Software Engineer",
+      company: "Flipkart",
+      band: WIDE_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "opening",
+      turnIndex: 3,
+      candidateCurrentCtc: 30, // above floor=20, hike floor=37.5 < ceiling=40 → no overshoot
+      candidateTarget: 36,
+      highestOfferMade: 0,
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        targetAnswered: true,
+        targetAsked: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAnswered: true,
+        competingOffersAnswered: true,
+        valueProofAnswered: true,
+      },
+    };
+    const move = pickAiMove(s);
+    /* Must produce a concrete offer (hike floor 37.5 < ceiling 40 → no honest-defer) */
+    expect(move.newTotalLpa).not.toBeNull();
+    if (move.newTotalLpa != null) {
+      /* Opening offer must be backed off from ceiling — headroom = (40-20)*0.2 = 4;
+       * capped = 36 — base (37.5 rounded=38) > capped(36) → backs off to 36.
+       * In either case, offer < ceiling=40. */
+      expect(move.newTotalLpa).toBeLessThan(WIDE_BAND.maxStretch);
+      expect(move.newTotalLpa).toBeGreaterThanOrEqual(WIDE_BAND.initialOffer);
+    }
+  });
+});

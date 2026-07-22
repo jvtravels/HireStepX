@@ -4723,7 +4723,17 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     ) {
       const lo = state.band.initialOffer;
       const hi = state.band.maxStretch;
-      const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+      /* S1-B4 (2026-07-22) — use clampOpeningAnchor (not clampAnchorAboveDisclosed)
+       * so the OPENING anchor leaves headroom below the band ceiling for
+       * subsequent concessions. clampAnchorAboveDisclosed can return hi (ceiling)
+       * when the candidate's hike floor (CTC × 1.25) overshoots the ceiling
+       * while the CTC itself is still within the band — e.g. CTC=30L on a 28–35.8L
+       * band: candidate = max(28, 38) = 38, clamped to 35.8. The opening then pins
+       * at the ceiling, leaving no room to negotiate upward (S2-B9 corollary: any
+       * subsequent counter produces a hold-firm rather than an incremental step).
+       * clampOpeningAnchor backs the opener off by ~20% of band spread; the
+       * null/honest-defer behaviour is unchanged (both delegates propagate null). */
+      const anchored = clampOpeningAnchor(lo, hi, state);
       /* AUDIT-W02 BUG-001 — null = band ceiling below disclosed; defer. */
       if (anchored === null) {
         return {
@@ -4750,7 +4760,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           newTotalLpa: anchored,
           rationale:
             `AUDIT-3 discovery-sufficient anchor: candidate volunteered current ₹${state.candidateCurrentCtc}L + target ₹${state.candidateTarget ?? state.candidateTargetFixed}L${state.candidateTarget == null ? " (fixed)" : ""}; ` +
-            `discovery sufficient; no offer on the table — anchor point-offer at ₹${anchored}L (band floor=${lo}).`,
+            `discovery sufficient; no offer on the table — anchor point-offer at ₹${anchored}L (band floor=${lo}, ceiling=${hi}, clampOpeningAnchor applied).`,
           askedTopic: "band-anchor-with-rationale",
           actionKind: "anchor-with-offer",
         },
