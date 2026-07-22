@@ -232,3 +232,66 @@ describe("Fix E — no premature close when CTC + target first disclosed togethe
     expect(s.phase).not.toBe("opening");
   });
 });
+
+/* S2-B7 (2026-07-22) — open-with-offer fallback must not output a pay-cut.
+ *
+ * When AP3-F3 is blocked by hasOutstandingInfoAsk (candidate asked about
+ * the package before disclosing CTC) AND the target probe cap fires (≥4
+ * probes with no response), the code falls through to the open-with-offer
+ * return. Before the fix that path used band.initialOffer directly (via
+ * clampAnchorAgainstCandidateAsk which only clamps against the candidate
+ * ask, not against CTC). In the live S2 session: band.initialOffer=27.8,
+ * CTC=32 → a ₹4.2L pay cut on the first number stated. */
+describe("S2-B7 — open-with-offer fallback never outputs a pay-cut", () => {
+  const BAND: NegotiationBand = {
+    initialOffer: 27.8,
+    maxStretch: 38,
+    walkAway: 22,
+    hasEquity: false,
+  };
+
+  it("clamps open-with-offer above disclosed CTC when probe cap + infoAsked blocks AP3-F3", () => {
+    const base = initState({
+      sessionId: "s2b7",
+      role: "Software Engineer",
+      company: "flipkart",
+      band: BAND,
+    });
+    /* Simulate: hasOutstandingInfoAsk=true (package-breakdown in infoAsked),
+     * target probed 4 times with no response, CTC disclosed at 32. */
+    const s: NegotiationState = {
+      ...base,
+      phase: "probe-expectations",
+      turnIndex: 6,
+      candidateCurrentCtc: 32,
+      candidateTarget: null,
+      candidateTargetFixed: null,
+      highestOfferMade: 0,
+      infoAsked: ["package-breakdown"],
+      askedTopics: [
+        { topic: "targetAsked" as const, atTurn: 2 },
+        { topic: "targetAsked" as const, atTurn: 3 },
+        { topic: "targetAsked" as const, atTurn: 4 },
+        { topic: "targetAsked" as const, atTurn: 5 },
+      ],
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAnswered: true,
+        competingOffersAnswered: true,
+        valueProofAnswered: true,
+        targetAsked: true,
+        targetAnswered: false,
+      },
+    };
+    const move = pickAiMove(s);
+    /* Must produce a concrete offer (open-with-offer after probe cap) */
+    expect(move.newTotalLpa).not.toBeNull();
+    /* That offer must NOT be a pay cut below the disclosed CTC */
+    if (move.newTotalLpa != null) {
+      expect(move.newTotalLpa).toBeGreaterThanOrEqual(32);
+    }
+  });
+});

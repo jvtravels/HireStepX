@@ -4724,11 +4724,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       };
     }
 
-    const clampedOpener = clampAnchorAgainstCandidateAsk(
+    const rawOpener = clampAnchorAgainstCandidateAsk(
       state.band.initialOffer,
       state.candidateTarget,
       state.band.walkAway,
     );
+    /* S2-B7 (2026-07-22) — clamp open-with-offer against disclosed CTC.
+     * When AP3-F3 is gated out (hasOutstandingInfoAsk) and the probe cap
+     * fires, code falls here with candidateCurrentCtc non-null but the opener
+     * still holding the raw band floor (27.8 in the live S2 case — a pay cut
+     * below the disclosed CTC of 32). Apply clampOpeningAnchor so the first
+     * number on the table is never below the candidate's existing pay. If the
+     * band ceiling itself is below the CTC+hike floor (clampOpeningAnchor →
+     * null), fall back to band.maxStretch so the candidate at least sees an
+     * honest ceiling even if it's below their expectation. */
+    const clampedOpener = clampOpeningAnchor(rawOpener, state.band.maxStretch, state)
+      ?? state.band.maxStretch;
     /* Session #25 root-fix (2026-05-16) — opener-marks-currentCtc.
      * The turn-0 open-with-offer branch is rendered by canonical-prose as
      * "walk me through your current compensation structure first" — i.e.
@@ -4745,9 +4756,11 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       _move: {
         lever: "open-with-offer",
         newTotalLpa: clampedOpener,
-        rationale: clampedOpener < state.band.initialOffer
+        rationale: clampedOpener < rawOpener
           ? `Open with anchor ₹${clampedOpener} LPA (clamped from band initial ₹${state.band.initialOffer} against candidate ask ₹${state.candidateTarget}).`
-          : `Open with band initial ₹${state.band.initialOffer} LPA.`,
+          : clampedOpener > rawOpener
+            ? `Open with anchor ₹${clampedOpener} LPA (S2-B7 CTC clamp: raised from ₹${rawOpener} to clear disclosed CTC ₹${state.candidateCurrentCtc ?? "?"}).`
+            : `Open with band initial ₹${state.band.initialOffer} LPA.`,
         askedTopic: state.turnIndex === 0 ? "currentCtcAnswered" : undefined,
       },
     };
