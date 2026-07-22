@@ -6420,11 +6420,25 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * simultaneously walking away — that's a conflicting signal; the CTC+target
    * disclosure is load-bearing for discovery, the walk-away is noise). */
   if (parsed.signalsWalkAway && !isFreshDualDiscovery) {
-    /* Fix 3 (PDF #17 follow-up, 2026-05-15) — explicit walk-away always
-     * passes; this is the candidate declining outright. */
-    next.phase = "walked-away";
-    next.walkedAwayAtTurn = state.turnIndex;
-    return finalize(next);
+    /* S43-B6 (2026-07-23) — grace for a RELUCTANT emotional decline before any
+     * offer has been made. "I'm going to have to pass" (with "have to" framing)
+     * is emotionally hedged — real HR responds with a retention offer, not an
+     * immediate farewell. Decisive walk-aways ("I'm out", "not interested", "no
+     * deal") terminate immediately as before. Gate: (a) no offer has been made yet,
+     * (b) session is still early (<5 candidate turns), and (c) the phrase carries
+     * reluctance ("have to" modal). On the next walk-away (if any), highestOfferMade
+     * or turnIndex will have advanced, so the grace doesn't re-fire. */
+    const isReluctantDecline = /\bhave\s+to\b/i.test(answer);
+    const isPreOfferGrace =
+      isReluctantDecline &&
+      (next.highestOfferMade ?? 0) === 0 &&
+      state.turnIndex < 5;
+    if (!isPreOfferGrace) {
+      next.phase = "walked-away";
+      next.walkedAwayAtTurn = state.turnIndex;
+      return finalize(next);
+    }
+    /* Grace: fall through without terminal-close so the planner can anchor. */
   }
 
   /* Non-terminal: re-derive phase from updated state. */

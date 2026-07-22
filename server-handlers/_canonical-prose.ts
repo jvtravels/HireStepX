@@ -1237,8 +1237,11 @@ const PROSE_ARMS: ProseArmRegistry = {
    * (acceptable to ship standalone for v1 — lastUserFrustrated is
    * cleared in applyAiMove so the next turn resumes the normal
    * cascade). */
+  /* S40-B2/S41-B2/S42-B3 (2026-07-23) — removed "let me not loop on that"
+   * (meta-commentary a real recruiter would never say). Kept the apology
+   * token so the NEXT_ACTION_CONTRACT /apolog/ pin is satisfied. */
   "acknowledge-and-recover": () =>
-    "You're right, my apologies — let me not loop on that. Moving on.",
+    "You're right, my apologies — let's move forward.",
 
   /* Memory feature (2026-05-29) — contradiction-callout. Polite-but-firm
    * reconciliation. Two variants rotated by turnIndex parity so

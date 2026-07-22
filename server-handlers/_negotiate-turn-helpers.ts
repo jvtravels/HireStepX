@@ -193,8 +193,11 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Note that you've run out of turns. Suggest they take time and revert. Brief, neutral.",
   "terminal-restate":
     "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. If the prior turn did not yet collect onboarding documents (Aadhaar / PAN / recent payslips), gently re-prompt for them. One or two short sentences only.",
+  /* S40-B2/S41-B2/S42-B3 (2026-07-23) — removed the explicit example phrase
+   * 'let me not loop on that'; LANGUAGE HYGIENE block below bans it but this
+   * instruction was louder and overrode the ban. Now the example is gone. */
   "acknowledge-and-recover":
-    "The candidate has signalled they're repeating themselves ('I already told you', 'we covered this', 'you keep asking'). Acknowledge the loop in ONE short clause ('you're right, my apologies — let me not loop on that') and then advance to the next non-redundant topic. Do NOT re-ask anything the candidate has already answered. Do NOT introduce a new number. The recover line is a meta-turn — it exists to reset rapport, not to negotiate.",
+    "The candidate has signalled they're repeating themselves ('I already told you', 'we covered this', 'you keep asking'). Acknowledge briefly and naturally ('you're right, my apologies') and immediately advance to the next non-redundant topic. Do NOT re-ask anything the candidate has already answered. Do NOT introduce a new number. Do NOT use the phrase 'let me not loop on that' or any other meta-commentary about the conversation — just progress naturally.",
   "ctc-inflation-anchor":
     "The candidate has anchored well above the initial offer. Match the headline number on TOTAL PACKAGE by stacking fixed + variable + ESOP paper-value + joining bonus + benefits — quote each component with the rupee figure from the action payload. The numbers are accurate; the framing weaponises CTC-vs-in-hand confusion to teach the candidate to ask for the guaranteed in-hand breakdown. Do NOT volunteer the in-hand split; if the candidate asks, the next turn ships the truthful breakdown.",
 };

@@ -904,16 +904,27 @@ function pickRole(
   }
   /* AUDIT-2 (2026-06-08): symmetric — bot asked target → bare = target. */
   const aiAskedTarget = !!ctx.lastAiText && LAST_AI_ASKED_TARGET.test(ctx.lastAiText);
+  /* S41-B8 (2026-07-23) — ESOP effective-comp sub-total misclassified as target.
+   * When the bot has asked for the candidate's target and they explain "my effective
+   * comp is 29-30L due to ESOP depreciation", the Gricean / phase default picks up
+   * 30 as the target (no explicit target-verb, but aiAskedTarget=true or probe-
+   * expectations). A genuine target ask in an Indian salary negotiation is almost
+   * never below the candidate's own current CTC — that would be a pay cut. Guard:
+   * if the span's value is materially below the established currentCtc (< 95%), don't
+   * bind via the bare-number defaults. Explicit target-verb cues ("I'm targeting 30")
+   * still win via the cue-scoring path (max > 0) above and are unaffected. */
+  const belowEstablishedCtc =
+    ctx.currentCtc != null && span.value < ctx.currentCtc * 0.95;
   if (aiAskedTarget) {
     const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text)) ||
       COMPETING_CUES.right.some((r) => r.test(text));
     const currentAnywhere = CURRENT_CUES.left.some((r) => r.test(text));
-    if (!competingAnywhere && !currentAnywhere) return "target";
+    if (!competingAnywhere && !currentAnywhere && !belowEstablishedCtc) return "target";
   }
   if (ctx.phase === "probe-expectations") {
     const currentAnywhere = CURRENT_CUES.left.some((r) => r.test(text));
     const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text));
-    if (!currentAnywhere && !competingAnywhere) return "target";
+    if (!currentAnywhere && !competingAnywhere && !belowEstablishedCtc) return "target";
   }
   /* AUDIT-2 (2026-06-08): "X LPA total." compact-disclosure fall-through.
    * Runs ONLY when nothing else scored. Tests the right window post-LPA
