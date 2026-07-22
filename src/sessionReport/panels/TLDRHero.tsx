@@ -11,7 +11,11 @@ export function TLDRHero({
     ? Math.round(((closing - opening) / (outcome.candidateAsk - opening)) * 100)
     : null;
 
-  const phaseCount = derivePhases(outcome).filter(p => p.reached).length;
+  /* S23-B4: derive full phase list so we can check WHICH stage was reached
+   * when phaseCount === 1 (stage 4 / levers-only vs stage 1 / counter). */
+  const phases = derivePhases(outcome);
+  const phaseCount = phases.filter(p => p.reached).length;
+  const stage1Reached = phases[0]?.reached === true;
   const TOTAL_PHASES = 5;
 
   /* A counter was named iff the candidate stated an ask — the SAME single
@@ -200,7 +204,10 @@ export function TLDRHero({
             : "you walked away. Part 2 has the next-round play"
           : phaseCount >= 4 ? "one short of the close" :
             phaseCount >= 2 ? "made it past the counter" :
-            phaseCount === 1 ? "you named a counter. Part 2 below shows the next move" :
+            /* S23-B4: phaseCount===1 could be stage 1 (counter named) OR stage 4
+             * (levers explored without a counter). Check which stage fired. */
+            phaseCount === 1 && stage1Reached ? "you named a counter. Part 2 below shows the next move" :
+            phaseCount === 1 ? "you explored the conversation but didn't name a counter. Part 2 has the next move" :
             /* S17-B3 (2026-07-18 audit) — "past the first offer" presumes an
              * offer landed; with offers === [] none did, so name it honestly. */
             offers.length > 0
@@ -223,6 +230,16 @@ export function TLDRHero({
           ? `your counter-ask above their opening offer`
           : `your counter-ask above their opening — the offer didn't move`,
         tone: askPct >= 25 ? "good" : askPct >= 10 ? "warn" : "bad",
+      });
+    } else if (askedFor !== null) {
+      /* S22-B3: candidate DID name a number but it was at or below the
+       * opening — correct to show 0% push, but "you didn't name a
+       * counter-number" is wrong (they named one; it just didn't move up). */
+      stats.push({
+        label: "How much you pushed back",
+        value: "0%",
+        hint: `you named ₹${askedFor} LPA but didn't push above their opening`,
+        tone: "bad",
       });
     } else {
       stats.push({

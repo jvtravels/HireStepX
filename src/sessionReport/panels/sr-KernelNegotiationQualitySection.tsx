@@ -137,7 +137,10 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
   const traversalPct = m.bandTraversal == null ? null : Math.round(m.bandTraversal * 100);
   const ctc = m.candidateCurrentCtcLpa ?? null;
   const finalOffer = m.finalOfferLpa ?? null;
-  const hikePct = ctc != null && ctc > 0 && finalOffer != null && finalOffer > 0
+  /* S19-B5: finalOfferLpa is the recruiter's top offer (regardless of outcome).
+   * On a walk-away or no-agreement it is NOT a hike the candidate received —
+   * it is the offer they rejected or left on the table. Gate to accepted only. */
+  const hikePct = ctc != null && ctc > 0 && finalOffer != null && finalOffer > 0 && m.outcome === "accepted"
     ? Math.round((finalOffer / ctc - 1) * 100)
     : null;
   const tiles: Array<{ label: string; value: string; sub?: string }> = [
