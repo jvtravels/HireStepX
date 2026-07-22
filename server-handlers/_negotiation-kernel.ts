@@ -5128,7 +5128,29 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       }
     }
   }
-  if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;
+  /* S21-B3: guard against the classifier mis-binding the counter-ask as
+   * currentCtc. Pattern: CTC established (28), target established (36),
+   * candidate re-mentions 36, "currently looking for 36" → parsed.currentCtc=36
+   * overwrites the real 28 → hike tile reads −17% from ₹36 on an accepted deal.
+   * The classifier's own disambiguation already drops target==currentCtc WITHIN
+   * one utterance; here we apply the symmetric protection ACROSS turns: if an
+   * already-established CTC (state slot is set) would be overwritten with the
+   * value that IS the established target, it's almost certainly the counter-ask
+   * being mis-classified — skip the overwrite. Safe guards:
+   *   - only fires when CTC was already established (hasEstablishedCTC), so a
+   *     first-turn disclosure that happens to equal an already-stated target is
+   *     allowed through;
+   *   - uses the pre-update target (next or state) to catch both the same-turn
+   *     and cross-turn shapes;
+   *   - tolerance ±0.05 LPA to absorb rounding artefacts. */
+  if (parsed.currentCtc != null) {
+    const establishedTarget = next.candidateTarget ?? state.candidateTarget;
+    const hasEstablishedCTC = state.candidateCurrentCtc != null;
+    const ctcEqualsTarget = establishedTarget != null && Math.abs(parsed.currentCtc - establishedTarget) < 0.05;
+    if (!(hasEstablishedCTC && ctcEqualsTarget)) {
+      next.candidateCurrentCtc = parsed.currentCtc;
+    }
+  }
   if (parsed.competing != null) next.competingOffer = parsed.competing;
   if (parsed.targetAsRange) next.candidateAskedAsRange = true;
 

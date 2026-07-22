@@ -752,6 +752,54 @@ describe("S2-B8 — 'X LPA and Y LPA' (CTC + counter) is not a range", () => {
   });
 });
 
+/* S21-B3 (2026-07-22): candidateCurrentCtc clobbered by counter-ask.
+ *
+ * Pattern: CTC established (28), target established (36), later utterance
+ * re-mentions 36 and the classifier mis-binds it as currentCtc → kernel
+ * overwrites 28 → report reads "Hike from current: -17% from ₹36 LPA".
+ *
+ * Fix: if the parsed currentCtc equals the already-established target AND
+ * a prior CTC is set, skip the overwrite (it's the counter-ask, not the CTC).
+ */
+describe("S21-B3 — counter-ask does not overwrite established CTC", () => {
+  const BAND21: NegotiationBand = { initialOffer: 27, maxStretch: 35, walkAway: 22, hasEquity: false };
+
+  it("CTC stays 28 when a later utterance re-mentions the counter-ask 36", () => {
+    let s = initState({ sessionId: "s21-b3", role: "SDE2", company: "Meesho", band: BAND21 });
+    // Turn 1: candidate discloses CTC
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "ctc" }, "What's your current CTC?");
+    s = applyCandidateAnswer(s, "My current CTC is 28 LPA");
+    expect(s.candidateCurrentCtc).toBe(28);
+    // Turn 2: candidate states counter-ask
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "target" }, "What are you targeting?");
+    s = applyCandidateAnswer(s, "I'm looking for 36 LPA");
+    expect(s.candidateCurrentCtc).toBe(28);
+    expect(s.candidateTarget).toBe(36);
+    // Turn 3: candidate re-mentions 36 in a way that could mis-bind as current
+    // (e.g., "as I said, 36 LPA is my current ask")
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "target" }, "Can you clarify your ask?");
+    s = applyCandidateAnswer(s, "My current ask is 36 LPA");
+    // CTC must remain 28 — NOT be overwritten with 36
+    expect(s.candidateCurrentCtc).toBe(28);
+    expect(s.candidateTarget).toBe(36);
+  });
+
+  it("legitimate CTC correction (different value from target) is still allowed", () => {
+    let s = initState({ sessionId: "s21-b3-correction", role: "SDE2", company: "Meesho", band: BAND21 });
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "ctc" }, "What's your current CTC?");
+    s = applyCandidateAnswer(s, "My current CTC is 28 LPA");
+    expect(s.candidateCurrentCtc).toBe(28);
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "target" }, "What are you targeting?");
+    s = applyCandidateAnswer(s, "I'm looking for 36 LPA");
+    // Later turn: CTC correction to 30 (distinct from target 36)
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "ctc" }, "What's your current CTC actually?");
+    s = applyCandidateAnswer(s, "Actually my total CTC is 30 LPA");
+    // 30 ≠ 36 (target), so correction is allowed through
+    expect(s.candidateCurrentCtc).toBe(30);
+    expect(s.candidateTarget).toBe(36);
+  });
+});
+
 describe("S4-B16 — 'currently looking for' binds to target, not current", () => {
   /* When the candidate says "currently I am looking for 40 LPA", the adverb
    * "currently" (CURRENT_CUES.left[0]) and the target verb "looking for" both
