@@ -5821,20 +5821,36 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     };
   }
   /* S4-B1 (2026-07-18) — CTC-aware upward band lift.
-   * When the candidate first discloses a current CTC that exceeds the
-   * resolved band's ceiling there is NO win state: the best the recruiter
-   * can ever offer is below what the candidate already earns. This happens
-   * because salary data lags at the tail of experience ranges — a "senior"
-   * band calibrated to 4-6yr earners under-calls an 8yr candidate's real
-   * market (Flipkart Senior PD at ₹45L with band max ₹42L is the trigger).
-   * On the FIRST CTC disclosure, lift the band so there is always a win
-   * state to negotiate toward:
+   * When the candidate discloses a current CTC that exceeds the resolved
+   * band's ceiling there is NO win state: the best the recruiter can ever
+   * offer is below what the candidate already earns. This happens because
+   * salary data lags at the tail of experience ranges — a "senior" band
+   * calibrated to 4-6yr earners under-calls an 8yr candidate's real market.
    *   initialOffer = ctc × 0.87  (realistic 13%-below-CTC lowball)
    *   maxStretch   = ctc × 1.12  (12% above CTC — a real win exists)
    * Guards: first disclosure only; only lifts, never compresses; never
-   * below highestOfferMade (close-floor invariant). */
+   * below highestOfferMade (close-floor invariant).
+   *
+   * S22-B1 (2026-07-22) — also fire on material MID-SESSION CTC correction.
+   * If the candidate initially discloses 28L (within band), the AI anchors;
+   * then on a later turn they correct to 38L (above band.maxStretch). The
+   * prior guard `state.candidateCurrentCtc == null` only covered first
+   * disclosure, leaving the band un-lifted on the correction. Extend to also
+   * fire when CTC changed materially upward (>10%) to a value above the
+   * ceiling, AND no offer is yet on the table — re-inflating after an offer
+   * is made would be confusing and violates the monotone-highestOfferMade
+   * invariant. The `only-lifts` guard (liftedInitial/Max computed from ctc)
+   * ensures we never compress the band on a correction downward. */
+  const isMidSessionCtcLift =
+    state.candidateCurrentCtc != null &&
+    next.candidateCurrentCtc != null &&
+    next.candidateCurrentCtc !== state.candidateCurrentCtc &&
+    /* Material upward correction only (>10%) */
+    next.candidateCurrentCtc > state.candidateCurrentCtc * 1.10 &&
+    /* No offer on the table yet — re-inflating post-offer would be disruptive */
+    (next.highestOfferMade ?? 0) === 0;
   if (
-    state.candidateCurrentCtc == null &&
+    (state.candidateCurrentCtc == null || isMidSessionCtcLift) &&
     next.candidateCurrentCtc != null &&
     next.candidateCurrentCtc > 0 &&
     next.candidateCurrentCtc > next.band.maxStretch

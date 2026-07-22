@@ -391,3 +391,87 @@ describe("S21-B2 — simultaneous salary+joining-bonus counter doesn't drop sala
     expect(move).toBeTruthy();
   });
 });
+
+/* S22-B1 (2026-07-22) — band NOT recalculated after mid-session CTC correction.
+ *
+ * Bug: candidate initially discloses CTC=28L (within band), AI anchors at 32L.
+ * Then candidate corrects: "Actually my CTC is 42L, I made a mistake." The
+ * band.maxStretch stays at the original 35L — below the candidate's real CTC,
+ * so every recruiter offer is a pay cut.
+ *
+ * Fix: the band-inflation block in applyCandidateAnswer now also fires on a
+ * material upward mid-session CTC correction (>10%) when no offer is yet on
+ * the table. */
+describe("S22-B1 — band recalculates on material mid-session CTC correction", () => {
+  const BAND_BELOW_CORRECTION: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 35,
+    walkAway: 22,
+    hasEquity: false,
+  };
+
+  it("re-inflates band when CTC corrected upward above band ceiling before any offer", () => {
+    const base = initState({
+      sessionId: "s22b1",
+      role: "Senior Software Engineer",
+      company: "flipkart",
+      band: BAND_BELOW_CORRECTION,
+    });
+    /* State: candidate initially disclosed 28L (within band), no offer made yet. */
+    const s: NegotiationState = {
+      ...base,
+      phase: "probe-expectations",
+      turnIndex: 4,
+      candidateCurrentCtc: 28, // prior CTC disclosure
+      highestOfferMade: 0,
+    };
+    /* Candidate corrects: "Actually my CTC is 42L." (28→42 is 50% up, above 35 ceiling) */
+    const next = applyCandidateAnswer(s, "Actually my current CTC is 42 LPA, I made a mistake earlier.");
+    /* CTC should be updated */
+    expect(next.candidateCurrentCtc).toBeCloseTo(42, 0);
+    /* Band.maxStretch MUST be inflated above the new CTC — a win state must exist. */
+    expect(next.band.maxStretch).toBeGreaterThan(42);
+    /* Specifically, maxStretch should be ~ctc × 1.12 */
+    expect(next.band.maxStretch).toBeGreaterThanOrEqual(42 * 1.10);
+  });
+
+  it("does NOT re-inflate when CTC correction is minor (<10% change)", () => {
+    const base = initState({
+      sessionId: "s22b1-minor",
+      role: "Senior Software Engineer",
+      company: "flipkart",
+      band: BAND_BELOW_CORRECTION,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "probe-expectations",
+      turnIndex: 4,
+      candidateCurrentCtc: 33, // prior CTC — within band
+      highestOfferMade: 0,
+    };
+    /* Minor correction: 33→34.5 (4.5% — within tolerance) */
+    const next = applyCandidateAnswer(s, "My CTC is 34.5 LPA.");
+    /* Band should NOT inflate — 34.5 is still within the band ceiling of 35 */
+    expect(next.band.maxStretch).toBeLessThanOrEqual(35 + 0.5);
+  });
+
+  it("does NOT re-inflate when an offer is already on the table", () => {
+    const base = initState({
+      sessionId: "s22b1-postoffer",
+      role: "Senior Software Engineer",
+      company: "flipkart",
+      band: BAND_BELOW_CORRECTION,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      turnIndex: 6,
+      candidateCurrentCtc: 28,
+      highestOfferMade: 32, // offer already made
+    };
+    /* CTC corrected upward — but offer is on the table, band must not re-inflate. */
+    const next = applyCandidateAnswer(s, "Actually my CTC is 42 LPA.");
+    /* Band must NOT inflate post-offer (would violate monotone-highestOfferMade). */
+    expect(next.band.maxStretch).toBeLessThanOrEqual(35 + 0.5);
+  });
+});
