@@ -42,7 +42,7 @@ const kernel = (over: Partial<KernelMetrics>): KernelMetrics => ({
   // and the report's stage ladder (derivePhases) now reads stages 2/3/4
   // from these rather than from the recruiter's offer count (REPORT-6).
   vossTacticsUsed: ["mirror", "calibrated-question"],
-  infoAsked: ["band-range"],
+  infoAsked: ["clawback-period"], // expert lever intent (S19-B6: generic intents don't qualify)
   ...over,
 });
 
@@ -77,7 +77,7 @@ describe("report adopts the kernel's authoritative negotiation outcome", () => {
     expect(phases[0].reached).toBe(true); // candidateAsk present
     expect(phases[1].reached).toBe(true); // tactics/info → justified
     expect(phases[2].reached).toBe(true); // tactics → handled pushback
-    expect(phases[3].reached).toBe(true); // leverDiversity → levers
+    expect(phases[3].reached).toBe(true); // infoAsked expert lever intent → levers
     expect(phases[4].reached).toBe(true); // accepted
     expect(phases[4].note).toBe("Accepted");
     expect(phases.filter((p) => p.reached)).toHaveLength(TOTAL_PHASES);

@@ -111,9 +111,19 @@ export function derivePhases(outcome: NegotiationOutcome) {
   const reachedPushback = reachedCounter && (tactics.length > 0 || heldPushback);
   // Explored levers — S16-B5: `leverDiversity` counts the RECRUITER's move
   // levers (always ≥1 once any turn occurs), so it must NOT credit the
-  // candidate. The candidate "explores levers" only by asking about a non-cash
-  // component (infoAsked) — a candidate action.
-  const reachedLevers = info.length > 0;
+  // candidate. The candidate "explores levers" only by asking a SPECIFIC
+  // expert-level question (clawback period, vesting schedule, strike price,
+  // etc.). S19-B6: generic routing intents (benefits-overview, package-
+  // breakdown, compensation-breakdown) are kernel-routing hints that fire on
+  // any mention of equity/benefits in interrogative shape — they do not
+  // indicate the candidate probed a specific comp lever. Only the 9 intents
+  // that appear in INFO_LABELS count; all others are excluded.
+  const EXPERT_LEVER_INTENTS = new Set([
+    "clawback-period", "variable-history", "vest-schedule", "strike-price",
+    "in-hand-monthly", "exercise-window", "acceleration",
+    "fixed-vs-variable", "perks-non-cash",
+  ]);
+  const reachedLevers = info.some((i) => EXPERT_LEVER_INTENTS.has(i));
   const reachedClose =
     outcome.outcome === "accepted" || outcome.outcome === "walked_away";
   return [

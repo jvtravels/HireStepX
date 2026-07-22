@@ -48,10 +48,15 @@ describe("report-surface audit regression lock", () => {
     const s4 = stage(outcome({ candidateAsk: 45, leverDiversity: 3, infoAsked: [] }), 4);
     expect(s4.reached).toBe(false);
     expect(s4.note).toBeUndefined();
-    // Candidate who asked about a non-cash component DOES reach it.
-    const reached = stage(outcome({ candidateAsk: 45, leverDiversity: 3, infoAsked: ["equity"] }), 4);
+    // Candidate who asked a specific expert lever question DOES reach it.
+    // S19-B6: generic intents (equity, compensation-breakdown, benefits-overview)
+    // do not qualify — only the 9 EXPERT_LEVER_INTENTS (vest-schedule, clawback, etc.).
+    const reached = stage(outcome({ candidateAsk: 45, leverDiversity: 3, infoAsked: ["vest-schedule"] }), 4);
     expect(reached.reached).toBe(true);
     expect(reached.note).toBe("Asked about non-cash components");
+    // Generic-only infoAsked does NOT qualify for the lever stage.
+    const generic = stage(outcome({ candidateAsk: 45, leverDiversity: 3, infoAsked: ["compensation-breakdown", "benefits-overview"] }), 4);
+    expect(generic.reached).toBe(false);
   });
 
   it("S16-B4: 'handled their pushback' requires a named counter, not a lone tactic", () => {

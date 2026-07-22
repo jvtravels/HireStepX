@@ -182,7 +182,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
 
 /* ─── Post-Interview Deal Summary (shown after salary negotiation) ─── */
 
-export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote, candidateAskLpa, joiningBonusLpa }: {
+export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote, candidateAskLpa, joiningBonusLpa, kernelOutcome }: {
   transcript: { speaker: string; text: string; time: string }[];
   negotiationBand?: { initialOffer: number; maxStretch: number; walkAway: number } | null;
   onReplay?: (style: string) => void;
@@ -200,6 +200,11 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
    *  the "Final Package" tile appends "+ ₹Y joining bonus" so the live deal
    *  summary matches the actual deal rather than showing only annual CTC. */
   joiningBonusLpa?: number | null;
+  /** S4-B18 — kernel-authoritative session outcome. When provided, the
+   *  "Final Package" tile is gated to "accepted" sessions only; otherwise
+   *  it shows "No deal" to avoid surfacing a transcript-extracted number
+   *  (which may be the candidate's echoed ask) as a concluded package. */
+  kernelOutcome?: string | null;
 }) {
   // Extract key numbers from the conversation
   const aiTexts = transcript.filter(t => t.speaker === "ai").map(t => t.text);
@@ -263,20 +268,19 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
       }
       if (extractedInitialOffer > 0) break;
     }
-    // Fallback: if no offer-context found, take the first clean AI number
-    if (extractedInitialOffer === 0) {
-      for (const aiText of aiTexts) {
-        const cleaned = cleanAiText(aiText);
-        const nums = cleaned.match(salaryRe) || [];
-        if (nums.length > 0) {
-          extractedInitialOffer = parseNum(nums[0] ?? "");
-          break;
-        }
-      }
-    }
+    // S3-B12: do NOT fall back to "first clean AI number" when no offer-context
+    // match was found. That fallback picked up discovery / band-reference
+    // numbers (e.g. "our band is ₹36 LPA") as phantom initial offers. Per
+    // PRI-52 the only valid fallbacks are: offer-context match → band floor.
+    // When extractedInitialOffer stays 0, `offerWasStated` below is false and
+    // the fallback card is shown instead of phantom tiles.
   }
-  // The first offer ACTUALLY made wins; the band floor is only a last resort.
-  const initialOffer = extractedInitialOffer > 0
+  // Track whether the AI actually stated an offer (vs. just the band floor).
+  // When false, the data tiles (Initial Offer / Final Package) are suppressed.
+  const offerWasStated = extractedInitialOffer > 0;
+  // The first offer ACTUALLY made wins; the band floor is only a last resort
+  // for internal calculations (improvement %, take-home) — never for display.
+  const initialOffer = offerWasStated
     ? extractedInitialOffer
     : (negotiationBand?.initialOffer ?? 0);
 
@@ -332,8 +336,10 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   const grade = effectiveImprovement >= 15 ? "A" : effectiveImprovement >= 10 ? "B+" : effectiveImprovement >= 5 ? "B" : effectiveImprovement > 0 ? "C+" : "C";
   const gradeColor = grade.startsWith("A") ? e.success : grade.startsWith("B") ? e.copper : e.error;
 
-  // If no salary numbers could be extracted, show a simplified card with benefits + replay
-  if (initialOffer === 0) {
+  // S3-B12: show the simplified card whenever the AI never stated an offer number,
+  // even if the band floor is non-zero. Surfacing the floor as "Initial Offer"
+  // fabricates a number the recruiter never spoke aloud.
+  if (!offerWasStated) {
     return (
       <div style={{
         width: "100%", borderRadius: 16,
@@ -388,13 +394,23 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
         {[
           { label: "Initial Offer", value: `₹${initialOffer} LPA`, color: e.inkSoft },
           ...(candidateAsk > 0 ? [{ label: "Your Ask", value: `₹${candidateAsk} LPA`, color: e.coal }] : []),
-          {
-            label: "Final Package",
-            value: joiningBonusLpa && joiningBonusLpa > 0
-              ? `₹${finalOffer} LPA + ₹${joiningBonusLpa}L joining`
-              : `₹${finalOffer} LPA`,
-            color: e.copper,
-          },
+          /* S4-B18: gate "Final Package" to accepted sessions. On walk-away /
+           * stalemate / early-exit the backward scan can pick up the candidate's
+           * echoed ask from recruiter text — showing that as "Final Package"
+           * fabricates a deal that never closed. When kernelOutcome is null
+           * (legacy session with no kernel data), we still show the tile because
+           * we cannot confirm no-deal and most sessions with offer-context numbers
+           * did result in a close. */
+          ...(kernelOutcome && kernelOutcome !== "accepted"
+            ? [{ label: "No deal", value: "Session ended without agreement", color: e.inkSoft }]
+            : [{
+                label: "Final Package",
+                value: joiningBonusLpa && joiningBonusLpa > 0
+                  ? `₹${finalOffer} LPA + ₹${joiningBonusLpa}L joining`
+                  : `₹${finalOffer} LPA`,
+                color: e.copper,
+              }]
+          ),
         ].map(item => (
           <div key={item.label} style={{ flex: 1, minWidth: 80, padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
             <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</p>

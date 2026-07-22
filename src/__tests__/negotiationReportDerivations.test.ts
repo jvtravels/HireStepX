@@ -166,8 +166,10 @@ describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
   });
 
   it("infoAsked reaches phases 2 (justified) + 4 (levers)", () => {
+    // S19-B6: stage 4 only reaches on expert-level lever intents (clawback-period,
+    // vest-schedule, strike-price, etc.) — not on generic routing intents.
     const phases = derivePhases(
-      makeOutcome({ candidateAsk: 30, infoAsked: ["band-range"] }),
+      makeOutcome({ candidateAsk: 30, infoAsked: ["vest-schedule"] }),
     );
     expect(phases[1].reached).toBe(true);
     expect(phases[3].reached).toBe(true);
