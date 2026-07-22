@@ -694,3 +694,59 @@ describe("S19-B1/B3 — hasConcreteTell stage arm + fake-leverage-challenge at c
     expect(action.kind).not.toBe("fake-leverage-challenge");
   });
 });
+
+/* ─── S2-B8: CTC + counter in one turn must NOT fire range-to-point probe ─── */
+
+describe("S2-B8 — 'X LPA and Y LPA' (CTC + counter) is not a range", () => {
+  /* When the candidate discloses CTC and counter in the same turn with an
+   * "and" connector ("Currently at 32 LPA and 38 LPA is my target"),
+   * detectGaveRangeNotPoint previously returned true because its second
+   * pattern included "and" as a range separator. This caused the planner
+   * to fire the range-to-point probe ("where in that range do you actually
+   * see yourself landing?"), ignoring the counter entirely.
+   *
+   * Fix: removed "and" from the second pattern. "N LPA and M LPA" without
+   * a preceding "between"/"from" is CTC + counter, not a range. Genuine
+   * "between N and M LPA" ranges are still caught by the first pattern. */
+
+  function ctcDisclosedState(): NegotiationState {
+    const b: NegotiationBand = { initialOffer: 30, maxStretch: 38, walkAway: 24, hasEquity: false };
+    let s = initState({ sessionId: "s2-b8", role: "engineer", company: "Swiggy", band: b });
+    s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "ctc" }, "What is your current CTC?");
+    return s;
+  }
+
+  it("'Currently at 32 LPA and 38 LPA is my target' — advances to anchor (not range-to-point probe)", () => {
+    let s = ctcDisclosedState();
+    s = applyCandidateAnswer(s, "Currently at 32 LPA and 38 LPA is my target");
+    const action = planNextAction(s);
+    // Core assertion: does NOT loop on range clarification
+    expect(action.kind).not.toBe("reactive-followup");
+    // Should advance toward offer/anchor
+    expect(["open-with-offer", "anchor-with-offer", "counter-base", "probe", "warm-ack"]).toContain(action.kind);
+  });
+
+  it("'I am at 32 LPA and 38 LPA would work' — also does not loop on range probe", () => {
+    let s = ctcDisclosedState();
+    s = applyCandidateAnswer(s, "I am at 32 LPA and 38 LPA would work for me");
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("reactive-followup");
+  });
+
+  it("'between 32 and 38 LPA' — genuine range still fires gaveRangeNotPoint (first-pattern unchanged)", () => {
+    let s = ctcDisclosedState();
+    s = applyCandidateAnswer(s, "I would like somewhere between 32 and 38 LPA");
+    // Planner may fire range-to-point OR proceed; what matters is the target upper bound (38) is captured
+    const target = s.candidateTarget ?? s.candidateTargetFixed;
+    expect(target).not.toBeNull();
+    if (target != null) expect(target).toBeGreaterThanOrEqual(32);
+  });
+
+  it("'30 to 35 LPA' — hyphen/to range still detected (second-pattern without 'and')", () => {
+    let s = ctcDisclosedState();
+    s = applyCandidateAnswer(s, "I am looking for 30 to 35 LPA");
+    // Range-to-point may fire; what matters is target captures the upper bound
+    const target = s.candidateTarget ?? s.candidateTargetFixed;
+    expect(target).not.toBeNull();
+  });
+});

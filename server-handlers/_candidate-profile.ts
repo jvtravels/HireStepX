@@ -3407,10 +3407,19 @@ function detectMentionedMoonlighting(t: string): boolean {
     /\b(?:what(?:'s|\s+is)\s+(?:your|the)\s+(?:moonlighting|dual\s+employment|second\s+job)\s+policy)\b/i.test(t);
 }
 
-/* `gaveRangeNotPoint` — candidate gave a range instead of point number. */
+/* `gaveRangeNotPoint` — candidate gave a range instead of point number.
+ * S2-B8 (2026-07-22) — the second pattern originally included "and" as a
+ * range connector, falsely matching "32 LPA and 38 LPA" in a turn where
+ * the candidate disclosed CTC (32) and a salary counter (38) as two separate
+ * facts ("Currently at 32 LPA and 38 LPA is my target"). That set
+ * gaveRangeNotPoint=true and fired the range-to-point probe ("where in that
+ * range do you actually see yourself landing?"), ignoring the counter.
+ * Fix: remove "and" from the second pattern — "X LPA and Y LPA" without a
+ * preceding "between"/"from" is ambiguous (CTC + counter is the common case).
+ * The first pattern still covers "between N and M" / "from N to M" correctly. */
 function detectGaveRangeNotPoint(t: string): boolean {
   return /\b(?:somewhere\s+(?:between|in\s+the\s+range\s+of)|(?:between|from)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\s+(?:and|to|–|-)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\b)\b/i.test(t) ||
-    /\b(?:(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)\s+(?:to|–|-|and)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs))\b/i.test(t);
+    /\b(?:(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)\s+(?:to|–|-)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs))\b/i.test(t);
 }
 
 /* `deflectedOnRange` — candidate deflected when asked for a number.
