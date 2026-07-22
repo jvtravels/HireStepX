@@ -15,13 +15,14 @@ import {
   applyCandidateAnswer,
   applyAiMove,
   pickAiMove,
-  EMPTY_CANDIDATE_PROFILE,
   EMPTY_TURN_DELTA,
   type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
+import { EMPTY_CANDIDATE_PROFILE } from "../../server-handlers/_candidate-profile";
 import { EMPTY_DISCOVERY_CHECKLIST } from "../../server-handlers/_discovery-stage";
 import { planNextAction } from "../../server-handlers/_next-action-planner";
+import { hasConcreteTell } from "../../server-handlers/_competing-offer-detail";
 
 /* ─── Shared helpers ───────────────────────────────────────────────── */
 
@@ -601,5 +602,95 @@ describe("S25-B2 — offer-first anchor before Sprint B.1 walk-away (1.2×–1.5
     const action = planNextAction(s);
     /* Walk is still suppressed; planner should NOT emit a walk-away. */
     expect(action.kind).not.toBe("live-walk-away");
+  });
+});
+
+/* ─── S19-B1/B3 — hasConcreteTell + fake-leverage-challenge at counterRound≥1 ── */
+
+/* S19-B1 (2026-07-22): Named competing offer disclosed at counterRound≥1 was
+ * completely ignored. Root cause: hasConcreteTell required status!=null (verbal/
+ * email/letter/signed), but "I have an offer from Zomato at 38" only extracts
+ * stage="offered" (no status word) → hasConcreteTell returned false →
+ * fake-leverage-challenge never armed → defensive ladder (comparative-anchoring
+ * hold-firm) fired instead → competing offer silently dropped.
+ *
+ * S19-B3 (2026-07-22): Same root cause for offers disclosed in discovery phase
+ * that carry into counter-offer: hasConcreteTell false → no challenge at round≥1.
+ *
+ * Fix: hasConcreteTell accepts stage="offered"/"accepted" as a concrete tell;
+ * stage="interviewing" is excluded (process, not yet an offer). */
+
+const CO_BAND: NegotiationBand = {
+  initialOffer: 35,
+  maxStretch: 42,
+  walkAway: 30,
+  hasEquity: false,
+};
+
+function anchoredAt35ForCoTest(): NegotiationState {
+  let s = initState({ sessionId: "s19-b1", role: "product", company: "Razorpay", band: CO_BAND });
+  s = { ...s, minTurnsBeforeClose: 0 };
+  s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "ctc" }, "What is your current CTC?");
+  s = applyCandidateAnswer(s, "My current CTC is 30 LPA");
+  s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "target" }, "What are you targeting?");
+  s = applyCandidateAnswer(s, "I am targeting 41 LPA");
+  s = applyAiMove(s, { lever: "open-with-offer", newTotalLpa: 35, rationale: "anchor" }, "For this grade we can do 35 LPA.");
+  s = applyCandidateAnswer(s, "That is too low, I need more");
+  s = applyAiMove(s, { lever: "counter-base", newTotalLpa: 36, rationale: "round 0 counter" }, "We can stretch to 36.");
+  // counterRound = 1 now
+  s = applyCandidateAnswer(s, "Still not enough");
+  s = applyAiMove(s, { lever: "probe", newTotalLpa: null, rationale: "x" }, "Help me understand what number works for you.");
+  return s;
+}
+
+describe("S19-B1/B3 — hasConcreteTell stage arm + fake-leverage-challenge at counterRound≥1", () => {
+  it("hasConcreteTell: company+amount+stage='offered' is a concrete tell (status not required)", () => {
+    expect(hasConcreteTell({
+      company: "zomato", amount: 38, stage: "offered", status: null,
+      letterShareOffered: false, onHold: false, proofRequestedAtTurn: null,
+      proofProvided: false, hasAny: true,
+    })).toBe(true);
+  });
+
+  it("hasConcreteTell: company+amount+stage='accepted' is a concrete tell", () => {
+    expect(hasConcreteTell({
+      company: "zomato", amount: 38, stage: "accepted", status: null,
+      letterShareOffered: false, onHold: false, proofRequestedAtTurn: null,
+      proofProvided: false, hasAny: true,
+    })).toBe(true);
+  });
+
+  it("hasConcreteTell: stage='interviewing' with company+amount is NOT concrete (process, not offer)", () => {
+    expect(hasConcreteTell({
+      company: "zomato", amount: 38, stage: "interviewing", status: null,
+      letterShareOffered: false, onHold: false, proofRequestedAtTurn: null,
+      proofProvided: false, hasAny: true,
+    })).toBe(false);
+  });
+
+  it("hasConcreteTell: vague (no company) with stage='offered' is NOT concrete", () => {
+    expect(hasConcreteTell({
+      company: null, amount: 38, stage: "offered", status: null,
+      letterShareOffered: false, onHold: false, proofRequestedAtTurn: null,
+      proofProvided: false, hasAny: true,
+    })).toBe(false);
+  });
+
+  it("S19-B1: fake-leverage-challenge fires (not comparative-anchoring) when named offer first arrives at counterRound=1", () => {
+    let s = anchoredAt35ForCoTest();
+    // counterRound = 1 — candidate now reveals Zomato offer for the first time
+    s = applyCandidateAnswer(s, "I have an offer from Zomato at 38, can you match it?");
+    const action = planNextAction(s);
+    expect(action.kind).toBe("fake-leverage-challenge");
+    expect(action.kind).not.toBe("comparative-anchoring");
+  });
+
+  it("S19-B3: vague competing offer at counterRound=1 still routes to reactive-followup (competing-credibility probe)", () => {
+    let s = anchoredAt35ForCoTest();
+    // counterRound = 1 — unnamed offer (vague) → competing-credibility fires, not fake-leverage-challenge
+    s = applyCandidateAnswer(s, "I have another offer at 39, can you match it?");
+    const action = planNextAction(s);
+    expect(action.kind).toBe("reactive-followup");
+    expect(action.kind).not.toBe("fake-leverage-challenge");
   });
 });

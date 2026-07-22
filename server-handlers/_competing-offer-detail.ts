@@ -127,6 +127,7 @@ function maskCurrentCtcClauses(text: string): string {
 function extractCompetingAmount(
   text: string,
   hasCompetingContext: boolean,
+  hasNamedCompany: boolean,
 ): number | null {
   /* Require ANY competing-offer contextual signal in the same utterance:
    *   - a recognised company name OR a status/stage pattern (caller
@@ -145,6 +146,24 @@ function extractCompetingAmount(
   if (lpa && lpa[1]) {
     const n = parseFloat(lpa[1]);
     if (Number.isFinite(n)) return n;
+  }
+  /* S19-B1 (2026-07-22) — bare number fallback for "at N" / "for N" pattern.
+   * "I have an offer from Zomato at 38, can you match it?" sets company="zomato"
+   * and stage="offered" but the amount "38" has no LPA/lakh suffix, so
+   * AMOUNT_LPA_RE returns null. Guard: requires hasNamedCompany (not just any
+   * hasCompetingContext) because status="letter" alone (from "offer letter" in an
+   * acceptance utterance like "move ahead with the offer letter") also sets
+   * hasCompetingContext=true and would falsely extract "24.5" from the fitment
+   * figure in the same sentence. A status-only signal without a named company is
+   * too ambiguous — "our offer letter" vs "their offer letter" — to safely read
+   * a bare number as the competing amount.
+   * Negative lookahead excludes AM/PM clock-time matches ("interview at 10am"). */
+  if (hasNamedCompany) {
+    const bare = /\b(?:at|for|of)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\b(?!\s*(?:am|pm|a\.m\.|p\.m\.))/i.exec(scan);
+    if (bare && bare[1]) {
+      const n = parseFloat(bare[1]);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
   }
   return null;
 }
@@ -280,10 +299,24 @@ const PROOF_SHARE_PATTERNS: RegExp[] = [
  * reading the wrong source (per-utterance extraction). This now reads
  * the ACCUMULATED CompetingOfferDetail (the merged state object) so a
  * dribbled disclosure satisfies the predicate without forcing the
- * candidate to re-state everything in a single sentence. */
+ * candidate to re-state everything in a single sentence.
+ *
+ * S19-B1/B3 (2026-07-22) — stage "offered"/"accepted" is accepted as an
+ * alternative to status. "I have an offer from Zomato at 38" extracts
+ * stage="offered" but status=null (no verbal/email/letter word). Without
+ * this arm, hasConcreteTell always returned false for the most common
+ * disclosure pattern — at counterRound>=1 the defensive ladder (comparative-
+ * anchoring) fired instead of fake-leverage-challenge, ignoring the
+ * competing offer entirely. "interviewing" is explicitly excluded because
+ * the candidate is still in process and has no offer yet. */
 export function hasConcreteTell(detail: CompetingOfferDetail | null | undefined): boolean {
   if (!detail) return false;
-  return detail.company != null && detail.status != null && detail.amount != null;
+  const hasConcreteStage = detail.stage === "offered" || detail.stage === "accepted";
+  return (
+    detail.company != null &&
+    detail.amount != null &&
+    (detail.status != null || hasConcreteStage)
+  );
 }
 
 /* finding #110 (2026-06-20) — canonicalize a free-text company name to a
@@ -373,7 +406,7 @@ export function extractCompetingOfferDetail(
    * Otherwise the candidate's own target / current CTC / market quote
    * would be mis-attributed as the competing-offer amount. */
   const hasCompetingContext = company != null || status != null || stage != null;
-  const amount = extractCompetingAmount(text, hasCompetingContext);
+  const amount = extractCompetingAmount(text, hasCompetingContext, company != null);
 
   /* fake-leverage-challenge — proofProvided at PARSE time only fires on
    * an explicit proof-share pattern (offer letter / redacted PDF /
