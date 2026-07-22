@@ -339,7 +339,16 @@ export function useInterviewEngine() {
     (async () => {
       try {
         const { apiFetch } = await import("./apiClient");
-        const startResult = await apiFetch<{ ok: boolean; recorded?: boolean; concurrent?: boolean }>("/api/record-session-start", { sessionId, type: interviewType });
+        const startResult = await apiFetch<{ ok: boolean; allowed?: boolean; recorded?: boolean; concurrent?: boolean; reason?: string }>("/api/record-session-start", { sessionId, type: interviewType });
+        // S9-B24 — credit gate: server blocked this session start (over free limit,
+        // no purchased credits). Mirror the generate-questions 403 path so the user
+        // lands on the upgrade modal instead of a broken interview.
+        if (!startResult.ok && startResult.status === 403) {
+          const reason = startResult.data?.reason || "";
+          toast(reason || "Session limit reached — redirecting to dashboard.", "info");
+          router.replace("/dashboard?upgrade=1");
+          return;
+        }
         // OA-B50: server detected an in-flight session on another device — warn so the
         // user knows they may consume a second credit.
         if (startResult.data?.concurrent) {

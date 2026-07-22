@@ -315,14 +315,14 @@ export default async function handler(req: Request): Promise<Response> {
       } catch { /* malformed cache entry — fall through to live path */ }
     }
 
-    // Session limit enforcement — runs only on a cache MISS (a genuinely new
-    // LLM call). Cache hits return above without reaching this; the user already
-    // spent a credit when these questions were first generated within this TTL
-    // window, so re-serving them must not spend a second credit.
-    // Uses quota.tier resolved by withAuthAndRateLimit to skip the extra profile
-    // fetch that was causing an N+1 on every session start.
+    // S9-B24 — credit enforcement moved to record-session-start (which is
+    // idempotent on sessionId). Previously, a consumeCredit:true call here
+    // silently deducted a purchased credit on every cache-miss page load, even
+    // when the user navigated away without answering a single question. Now this
+    // path only checks that questions can be generated (structural / quota
+    // guard); the actual credit deduction happens at record-session-start time.
     if (auth.userId) {
-      const limit = await checkSessionLimit(auth.userId, { tier: quota?.tier });
+      const limit = await checkSessionLimit(auth.userId, { consumeCredit: false, tier: quota?.tier });
       if (!limit.allowed) {
         return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
       }

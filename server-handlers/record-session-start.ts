@@ -19,7 +19,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, slog, checkSessionLimit } from "./_shared";
 import { detectConcurrentSession } from "./_record-session-start-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -102,10 +102,32 @@ export default async function handler(req: Request): Promise<Response> {
     const existingStarts: string[] = Array.isArray(row.started_session_ids) ? row.started_session_ids : [];
 
     /* Idempotency: if this sessionId was already recorded, return ok
-       without re-appending. Handles React StrictMode double-mount and
-       any retry on the client side. */
+       without re-appending or re-checking credits. Handles React StrictMode
+       double-mount and any client retry — credit was already spent on the
+       first call that inserted this session into started_session_ids. */
     if (existingStarts.includes(sessionId)) {
-      return new Response(JSON.stringify({ ok: true, recorded: false, reason: "already counted" }), { status: 200, headers });
+      return new Response(JSON.stringify({ ok: true, allowed: true, recorded: false, reason: "already counted" }), { status: 200, headers });
+    }
+
+    // S9-B24 — session credit enforcement gate. Credit deduction moved here
+    // from generate-questions (which fired on page mount, burning a credit
+    // before the user answered anything). Placement here is correct because:
+    // (a) idempotency on sessionId ensures at most one deduction per session,
+    // (b) this fires at the same semantic moment as the practice_timestamps
+    //     bump ("user entered the interview"), not at question pre-fetch time,
+    // (c) the 403 response redirects the user to the upgrade modal before the
+    //     interview UI becomes interactive — no transcript is created.
+    if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+      const limit = await checkSessionLimit(auth.userId, { consumeCredit: true });
+      if (!limit.allowed) {
+        slog.warn("record-session-start credit gate blocked", {
+          code: "record_session_start_credit_gate_blocked",
+          userId: auth.userId,
+          sessionId,
+          reason: limit.reason,
+        });
+        return new Response(JSON.stringify({ ok: false, allowed: false, reason: limit.reason }), { status: 403, headers });
+      }
     }
 
     // OA-B50: detect concurrent sessions across devices. BroadcastChannel
@@ -190,7 +212,7 @@ export default async function handler(req: Request): Promise<Response> {
           userId: auth.userId,
           sessionId,
         });
-        return new Response(JSON.stringify({ ok: retry.ok, recorded: retry.ok, schemaMigrationPending: true }), { status: 200, headers });
+        return new Response(JSON.stringify({ ok: retry.ok, allowed: true, recorded: retry.ok, schemaMigrationPending: true }), { status: 200, headers });
       }
       slog.error("record-session-start patch failed", {
         code: "record_session_start_patch_failed",
@@ -202,7 +224,7 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: false, recorded: false }), { status: 500, headers });
     }
 
-    return new Response(JSON.stringify({ ok: true, recorded: true, concurrent }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: true, allowed: true, recorded: true, concurrent }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("record-session-start threw", {
