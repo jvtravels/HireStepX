@@ -204,7 +204,16 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   const offerTrajectoryLpa = moves
     .map((m) => m.newTotalLpa)
     .filter((n): n is number => n != null);
-  const candidateAskLpa = effectiveTargetCtcLpaLocal(finalState);
+  /* S12-B26: candidateAskLpa must reflect the candidate's ORIGINAL counter-ask
+   * (the anchor), not the final conceded candidateTarget. When the candidate
+   * first countered at 60 then accepted the recruiter's 56 ("let's close at 56"),
+   * candidateTarget ends at 56 but firstAnchoredTarget stays 60. The report tile
+   * "You countered at X" and gap-closure % should use the anchor, not the
+   * concession. firstAnchoredTarget is set with first-wins semantics in the
+   * kernel and never mutated after it is written — it is always the original ask.
+   * Fallback to effectiveTargetCtcLpaLocal for sessions where the kernel
+   * pre-dates the firstAnchoredTarget field (null → legacy row). */
+  const candidateAskLpa = finalState.firstAnchoredTarget ?? effectiveTargetCtcLpaLocal(finalState);
 
   /* The recruiter's realized top offer — the SINGLE source of truth for every
      concession-derived metric below (final offer, LPA gained, band traversal).

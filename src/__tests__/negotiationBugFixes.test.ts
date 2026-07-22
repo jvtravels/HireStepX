@@ -24,6 +24,10 @@ import { EMPTY_DISCOVERY_CHECKLIST } from "../../server-handlers/_discovery-stag
 import { planNextAction } from "../../server-handlers/_next-action-planner";
 import { hasConcreteTell } from "../../server-handlers/_competing-offer-detail";
 import { classifyNumberRoles } from "../../server-handlers/_number-role-classifier";
+import {
+  computeNegotiationMetrics,
+  type KernelTurnSummary,
+} from "../../server-handlers/_negotiation-metrics";
 
 /* ─── Shared helpers ───────────────────────────────────────────────── */
 
@@ -847,5 +851,65 @@ describe("S4-B16 — 'currently looking for' binds to target, not current", () =
     s = applyCandidateAnswer(s, "currently I am looking for 40 LPA");
     expect(s.candidateCurrentCtc).toBe(32); // must NOT be clobbered by 40
     expect(s.candidateTarget).toBe(40);
+  });
+});
+
+describe("S12-B26 — 'You countered at' shows original anchor, not conceded value", () => {
+  /* Scenario: candidate counters at ₹60 LPA (firstAnchoredTarget = 60),
+   * then later concedes — "let's close at 56" fires TARGET_CUES.left
+   * ('close at') → candidateTarget overwrites to 56. The metrics layer
+   * must report the ORIGINAL anchor (60), not the final conceded value (56).
+   *
+   * Fix in _negotiation-metrics.ts: candidateAskLpa uses firstAnchoredTarget
+   * instead of effectiveTargetCtcLpaLocal(finalState). */
+
+  const BAND12: NegotiationBand = {
+    initialOffer: 47,
+    maxStretch: 56,
+    walkAway: 40,
+    hasEquity: false,
+  };
+
+  it("kernel: firstAnchoredTarget stays at original 60 after concession to 56", () => {
+    let s = initState({ sessionId: "s12-b26-kernel", role: "EM", company: "Flipkart", band: BAND12 });
+    // AI opens at 47
+    s = applyAiMove(s, { lever: "open-with-offer", newTotalLpa: 47, rationale: "opening" }, "We can offer ₹47 LPA.");
+    // Candidate counters at 60
+    s = applyCandidateAnswer(s, "I'm looking for 60 LPA");
+    expect(s.candidateTarget).toBe(60);
+    expect(s.firstAnchoredTarget).toBe(60);
+    // AI concedes to 56
+    s = applyAiMove(s, { lever: "counter-base", newTotalLpa: 56, rationale: "concession" }, "Best I can do is 56 LPA.");
+    // Candidate accepts at 56: "let's close at 56"
+    s = applyCandidateAnswer(s, "Alright, let's close at 56 LPA, that works.");
+    // "let's close at 56" fires TARGET_CUES.left → candidateTarget updates to 56.
+    // But firstAnchoredTarget must STAY at 60 (first-wins, never mutated).
+    // This is the exact S12-B26 scenario: the report tile must use 60, not 56.
+    expect(s.firstAnchoredTarget).toBe(60);
+    // candidateTarget IS updated to 56 — that is expected kernel behaviour; the
+    // bug is that the METRICS layer was reading this instead of firstAnchoredTarget.
+    expect(s.candidateTarget).toBe(56);
+  });
+
+  it("metrics: candidateAskLpa = firstAnchoredTarget (60) not conceded candidateTarget", () => {
+    /* Build a finalState directly: firstAnchoredTarget=60, candidateTarget=56.
+     * This simulates the post-concession state. computeNegotiationMetrics must
+     * return candidateAskLpa=60 (the original anchor), not 56. */
+    const finalState: NegotiationState = {
+      ...initState({ sessionId: "s12-b26-metrics", role: "EM", company: "Flipkart", band: BAND12 }),
+      phase: "accepted",
+      candidateTarget: 56,         // conceded final
+      firstAnchoredTarget: 60,     // original counter — must drive candidateAskLpa
+      candidateCurrentCtc: 50,
+      highestOfferMade: 56,
+      acceptedAtTurn: 2,
+    };
+    const moves: KernelTurnSummary[] = [
+      { lever: "open-with-offer", newTotalLpa: 47, turnIndex: 0, candidateTargetAtTurn: null },
+      { lever: "counter-base", newTotalLpa: 56, turnIndex: 1, candidateTargetAtTurn: 60 },
+    ];
+    const m = computeNegotiationMetrics({ finalState, moves });
+    // Must report the ORIGINAL anchor, not the conceded value
+    expect(m.candidateAskLpa).toBe(60);
   });
 });
