@@ -1247,7 +1247,15 @@ function buildNegotiationMetrics(
   // with X" type concessions. Low concession = strong negotiator.
   const concessionRe = /\b(i.?d\s+be\s+open|i\s+can\s+lower|fine\s+with|how\s+about|let.?s\s+meet\s+at|i.?ll\s+take|happy\s+with|i\s+accept)\b/gi;
   const concessions = (allText.match(concessionRe) || []).length;
-  const concessionRate = Math.min(100, concessions * 10);
+  // S20-B4 — symmetric to REPORT-3d (numbersStated). Phrases like "fine with"
+  // / "how about" fire when no cash counter was named (equity-only counter);
+  // "Concession rate: 20%" beside "NO COUNTER NAMED" is contradictory. You
+  // cannot concede on a number you never stated: floor to 0 when the kernel
+  // found no counter (same authority as the Numbers-stated ceiling). Raw
+  // phrase-counting is a divergent second detector — cap it at the kernel truth.
+  const concessionRate = kernelAnchored
+    ? Math.min(100, concessions * 10)
+    : 0;
 
   // Disclosure leaks — count times candidate volunteered current CTC or
   // hard target without a deflect. Detection heuristic: "my current ctc",

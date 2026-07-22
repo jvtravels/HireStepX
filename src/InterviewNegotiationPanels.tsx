@@ -476,7 +476,11 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
             {/* Band capture: how much of the available range did they get? */}
             {(() => {
               const bandRange = negotiationBand.maxStretch - negotiationBand.initialOffer;
-              const captured = bandRange > 0 ? Math.round(((finalOffer - negotiationBand.initialOffer) / bandRange) * 100) : 0;
+              /* S4-B19: cap to [0,100] — if finalOffer extracted from AI text
+               * exceeds the band ceiling (e.g. due to a misclassified number),
+               * the raw percentage can exceed 100% ("153%"). Math.max(0,…) on
+               * display only prevented negatives but not overflow. */
+              const captured = bandRange > 0 ? Math.min(100, Math.round(((finalOffer - negotiationBand.initialOffer) / bandRange) * 100)) : 0;
               const captureColor = captured >= 70 ? e.success : captured >= 40 ? e.copper : e.error;
               return (
                 <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
