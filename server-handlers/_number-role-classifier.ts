@@ -1092,6 +1092,43 @@ function isComponentBonusScopedSpan(text: string, span: SalarySpan): boolean {
   return COMPONENT_BONUS_RIGHT_ANCHORED.test(rightWindow);
 }
 
+/* S4-B15 / S5-B20 (2026-07-22): variable-pay component guard.
+ *
+ * A number tagged by a variable-pay or performance-bonus qualifier in its
+ * immediate right context — "₹6L variable", "6 lakh variable pay", "6L
+ * variable component", "6 LPA performance bonus", "₹4L annual bonus" — is
+ * a CTC sub-component, NOT the candidate's standalone target ask. Before this
+ * guard, "I am looking for ₹32L fixed + ₹6L variable" bound target=6 (the
+ * variable component read as a ₹6L total target — less than the offer floor —
+ * prompting the recruiter to say "₹6L? You're undershooting your level").
+ *
+ * The fix: if the number's immediate right context (≤ 30 chars) starts with
+ * an optional unit then a variable/bonus qualifier, suppress the span — it
+ * binds to no role and the kernel reads the total from the explicit fixed+var
+ * context via extractComponentBreakdown. Left-adjacent form also caught
+ * ("variable pay of ₹6L"). Tight window prevents a trailing "variable"
+ * two clauses away from bleeding in.
+ *
+ * NOT suppressed: "I want variable to be higher" (no number; no span emitted
+ * by Pass 2 here), "₹40L variable-pay band" (the unit "band" is not a
+ * component qualifier). */
+const VARIABLE_COMPONENT_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\.?\s*(?:variable(?:\s+(?:pay|component|salary|ctc|part|portion))?|performance\s+bonus|annual\s+bonus|target(?:ed)?\s+bonus|var(?:iable)?\s+(?:pay|component|portion))\b/i;
+/* Fix B (2026-07-22): expanded left-anchored pattern to cover "comes to",
+ * "amounts to", "totals", "is around", "works out to" linking verbs that
+ * naturally appear between the variable-pay noun and the amount —
+ * e.g. "the variable component comes to 8" left-context: "the variable
+ * component comes to " which the old pattern missed because "comes to"
+ * wasn't in the linking-verb list. Also added "incentive" as a synonym. */
+const VARIABLE_COMPONENT_LEFT_ANCHORED =
+  /\b(?:variable(?:\s+(?:pay|component|salary|ctc|part|portion))?|performance\s+(?:bonus|incentive)|annual\s+bonus|incentive(?:\s+(?:pay|component|bonus))?|target(?:ed)?\s+bonus|var(?:iable)?\s+(?:pay|component|portion))\s+(?:of\s+|is\s+|at\s+|around\s+|roughly\s+|about\s+|worth\s+|comes?\s+to\s+|amounts?\s+to\s+|totals?\s+(?:to\s+)?|works?\s+out\s+to\s+)?$/i;
+function isVariableComponentScopedSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 30));
+  if (VARIABLE_COMPONENT_RIGHT_ANCHORED.test(rightWindow)) return true;
+  const leftWindow = text.slice(Math.max(0, span.start - 30), span.start);
+  return VARIABLE_COMPONENT_LEFT_ANCHORED.test(leftWindow);
+}
+
 /* Non-CTC perk-component guard (OA-B63, 2026-07-18 audit). A number scoped to
  * a recurring/perk allowance — WFH / home-office / setup / internet / remote /
  * wellness / L&D / learning / meal / travel allowance, stipend, or budget — is
@@ -1284,6 +1321,12 @@ export function classifyNumberRoles(
      * to NO role regardless of any cue leaking into its window — it's a perk
      * ask, not the candidate's CTC. */
     if (isPerkComponentScopedSpan(text, span)) continue;
+    /* S4-B15 / S5-B20: a number immediately tagged as a variable-pay /
+     * performance-bonus component — "₹6L variable", "6 lakh variable pay",
+     * "variable pay of ₹6L" — is a CTC sub-component, not the candidate's
+     * total target ask. Suppress it here so it binds to NO role; the kernel
+     * reads the total from extractComponentBreakdown instead. */
+    if (isVariableComponentScopedSpan(text, span)) continue;
     const scores = scoreRolesForSpan(text, span);
     /* Equity-scope guard (L1 / PRI-50): an equity/RSU/ESOP/stock-framed
      * number with NO explicit current/target/competing cue is an equity

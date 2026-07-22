@@ -6154,12 +6154,35 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     next.postVerbalRenegotiationCount = state.postVerbalRenegotiationCount + 1;
   }
 
+  /* Fix E (2026-07-22) — discovery-to-anchor transition guard.
+   *
+   * When the candidate first discloses BOTH their current CTC and their
+   * target in a single discovery turn (state had no prior CTC or target,
+   * and this utterance sets both), the acceptance classifier MUST NOT
+   * trigger a close or walk-away on the same turn. The AUDIT-3 bridge
+   * in the planner will route to `anchor-with-offer` to put a number on
+   * the table; closing before any offer has been made (or even seen by
+   * the candidate) is always wrong. Guard: if this turn produced the
+   * first-ever CTC and first-ever target disclosure simultaneously, skip
+   * all close/walk-away handling and fall through to derivePhase normally
+   * so the planner can anchor on the NEXT bot turn. */
+  const isFreshDualDiscovery =
+    /* prior state had neither CTC nor target */
+    state.candidateCurrentCtc == null &&
+    state.candidateTarget == null &&
+    state.candidateTargetFixed == null &&
+    /* this turn filled in both */
+    next.candidateCurrentCtc != null &&
+    (next.candidateTarget != null || next.candidateTargetFixed != null) &&
+    /* no offer has been made yet — transition to anchor, not close */
+    (next.highestOfferMade ?? 0) === 0;
+
   /* Bug 2 (2026-05-14) — escalation path: explicit acceptance forms
    * like "please send the offer letter" / "let's move forward with this
    * number" don't trip the legacy `classifyAcceptance` performative
    * bank (they're commitment language, not "I accept" verb). Promote
    * them to terminal `accepted` here so the closing path fires. */
-  if (!parsed.signalsAcceptance) {
+  if (!parsed.signalsAcceptance && !isFreshDualDiscovery) {
     const strictBoost = detectExplicitAcceptance(answer);
     if (strictBoost.accepted && state.highestOfferMade > 0 && !isTerminalPhase(next.phase)) {
       /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard.
@@ -6174,7 +6197,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   }
 
   /* Terminal transitions. */
-  if (parsed.signalsAcceptance) {
+  if (parsed.signalsAcceptance && !isFreshDualDiscovery) {
     /* Conditional accept ("yes if X") set verbalAcceptanceTurn instead
        of locking terminal. parseCandidateAnswer's acceptPat already
        rejects most conditionals; this is belt-and-suspenders for the
@@ -6318,7 +6341,11 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     attachPostAcceptanceMessage(next);
     return finalize(next);
   }
-  if (parsed.signalsWalkAway) {
+  /* Fix E guard: also block walk-away on the first dual-disclosure turn
+   * (candidate stating CTC + target for the first time cannot be
+   * simultaneously walking away — that's a conflicting signal; the CTC+target
+   * disclosure is load-bearing for discovery, the walk-away is noise). */
+  if (parsed.signalsWalkAway && !isFreshDualDiscovery) {
     /* Fix 3 (PDF #17 follow-up, 2026-05-15) — explicit walk-away always
      * passes; this is the candidate declining outright. */
     next.phase = "walked-away";

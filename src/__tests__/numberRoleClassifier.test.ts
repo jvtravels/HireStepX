@@ -511,6 +511,18 @@ const ROWS: Row[] = [
   { label: "OA-B3 guard: '20% variable' is a component, not a target",      text: "my comp is 20% variable",                  ctx: { currentCtc: 30 }, expect: { target: null } },
   { label: "OA-B3 guard: '10% bump on the joining bonus' scoped to JB",     text: "give me a 10% bump on the joining bonus",  ctx: { currentCtc: 30 }, expect: { target: null } },
   { label: "OA-B3 guard: absolute target still wins over percent phrasing", text: "I make 30, targeting 45 which is a 50% hike", ctx: { currentCtc: 30 }, expect: { target: 45 } },
+
+  /* S4-B15 / S5-B20 — variable-pay component guard. A number tagged "variable" or
+   * "variable pay" in its immediate right context is a CTC sub-component, NOT the
+   * candidate's target ask. Before the fix, "looking for ₹6L variable" bound
+   * target=6, causing the recruiter to say "₹6L? You're undershooting your level." */
+  { label: "S4-B15: ₹6L variable is NOT a target", text: "I am looking for ₹32L fixed + ₹6L variable", expect: { target: 32 } },
+  { label: "S4-B15: 6L variable in probe context is NOT a target", text: "₹6L variable pay", ctx: { phase: "probe-expectations", lastAiText: "What salary are you expecting?" }, expect: { target: null } },
+  { label: "S4-B15: variable pay left-context suppresses span", text: "my variable pay of ₹6L", ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "S5-B20: variable component right-context suppresses span", text: "6 lakh variable component", ctx: { phase: "probe-expectations", lastAiText: "What is your expected CTC?" }, expect: { target: null } },
+  { label: "S4-B15: performance bonus right-context suppresses span", text: "I want ₹38L with ₹4L performance bonus", expect: { target: 38 } },
+  /* Guard: normal targets must still bind */
+  { label: "S4-B15 guard: plain 42L target still binds", text: "I am expecting 42 LPA", ctx: { phase: "probe-expectations" }, expect: { target: 42 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {

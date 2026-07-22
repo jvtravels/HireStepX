@@ -58,3 +58,41 @@ describe("_fact-parser — OA-B14 unary-negation guard", () => {
     expect(f[0].value).toBe(40);
   });
 });
+
+/* S29-B1 — Indian comma-format numbers with non-money-cue verb forms
+ * (targeting, expecting, wanting). Before the fix, VAGUE_DECADE_MONEY_CUE_RE
+ * did not include "targeting"/"expecting" so "I am targeting around 28,00,000"
+ * returned [] — the gate guard in substituteAbsoluteRupees rejected the text
+ * and the comma-grouped amount was silently dropped. */
+describe("_fact-parser — S29-B1 Indian comma-format with target/expect verbs", () => {
+  it("'I am currently at 18,50,000' parses to 18.5 LPA (baseline — cue 'currently')", () => {
+    const f = parseSalaryFacts("I am currently at 18,50,000 per annum");
+    expect(f).toHaveLength(1);
+    expect(f[0].value).toBeCloseTo(18.5, 1);
+    expect(f[0].confidence).toBe("high");
+  });
+
+  it("'I am targeting around 28,00,000' parses to 28 LPA (cue 'targeting')", () => {
+    const f = parseSalaryFacts("I am targeting around 28,00,000");
+    expect(f).toHaveLength(1);
+    expect(f[0].value).toBeCloseTo(28, 1);
+  });
+
+  it("'I am expecting 42,00,000' parses to 42 LPA (cue 'expecting')", () => {
+    const f = parseSalaryFacts("I am expecting 42,00,000");
+    expect(f).toHaveLength(1);
+    expect(f[0].value).toBeCloseTo(42, 1);
+  });
+
+  it("'looking for 35,00,000 CTC' parses to 35 LPA (cue 'looking for')", () => {
+    const f = parseSalaryFacts("looking for 35,00,000 CTC");
+    expect(f).toHaveLength(1);
+    expect(f[0].value).toBeCloseTo(35, 1);
+  });
+
+  it("non-salary sentence with comma-grouped number is left alone", () => {
+    /* "he has 1,20,000 followers" has no salary cue — must NOT bind */
+    const f = parseSalaryFacts("he has 1,20,000 followers");
+    expect(f).toHaveLength(0);
+  });
+});

@@ -233,8 +233,12 @@ export function substituteMonthlyInHand(s: string): string {
  * regex bank / span discovery runs, so both parseSalaryFacts and the
  * number-role-classifier bind it. Gated on a money-context cue in the same text
  * so the age idiom ("she's in her mid 30s") is never mis-read as salary. */
+/* Fix A (S29-B1, 2026-07-22): added target/expect/aim/looking-for/want/hoping
+ * so "I am targeting around 28,00,000" (and similar) gates through to
+ * substituteAbsoluteRupees.  The vague-decade idiom guard (age: "mid 30s")
+ * is still safe because none of the new words are decades. */
 const VAGUE_DECADE_MONEY_CUE_RE =
-  /\b(ctc|salary|salaries|lpa|lakhs?|lacs?|package|comp|compensation|pay|paid|paying|earn(?:ing|s)?|mak(?:e|ing)|draw(?:ing|s)?|base|fixed|in[-\s]?hand|take[-\s]?home|per\s?annum|p\.?a\.?|current(?:ly)?|currently\s+at)\b/i;
+  /\b(ctc|salary|salaries|lpa|lakhs?|lacs?|package|comp|compensation|pay|paid|paying|earn(?:ing|s)?|mak(?:e|ing)|draw(?:ing|s)?|base|fixed|in[-\s]?hand|take[-\s]?home|per\s?annum|p\.?a\.?|current(?:ly)?|currently\s+at|target(?:ing)?|expect(?:ing|ation)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing)?|hoping(?:\s+for)?)\b/i;
 /* Modifier → offset within the decade. Compound "X-to-Y" averages the two.
  * low/early → bottom third, mid → middle, high/late/upper → top. */
 const VAGUE_MOD_OFFSET: Record<string, number> = {
@@ -399,13 +403,24 @@ const GROUPED_ABSOLUTE_RUPEE_RE =
   /(?<![$€£¥\d])(₹\s*)?(\d{1,3}(?:,\d{2,3})+)(?!\s*(?:lpa|lp[a-z]|lakhs?|lacs?|crores?|cr|millions?|mn|l)\b)/gi;
 
 export function substituteAbsoluteRupees(s: string): string {
+  /* Fix A (S29-B1, 2026-07-22): gate is now expanded (see VAGUE_DECADE_MONEY_CUE_RE)
+   * to include target/expect verbs, so "I am targeting around 28,00,000" passes.
+   *
+   * ₹-prefixed comma-grouped amounts (e.g. ₹22,00,000) are intentionally left
+   * for PASS 3 of parseSalaryFacts (RUPEE_NUM_RE + resolveBareRupee), which
+   * preserves the original rawDigits string.  Substituting them here would
+   * rewrite "₹22,00,000" → "₹22 LPA" and lose rawDigits="2200000", breaking
+   * the existing pinned tests.  The ₹ symbol is its own sufficient cue; PASS 3
+   * already handles the absolute-rupee case correctly. */
   if (!s || !VAGUE_DECADE_MONEY_CUE_RE.test(s)) return s;
   return s.replace(GROUPED_ABSOLUTE_RUPEE_RE, (whole, rupeePfx: string | undefined, digits: string) => {
+    /* ₹-prefixed: leave untouched, handled by PASS 3 / resolveBareRupee. */
+    if (rupeePfx) return whole;
     const raw = Number(digits.replace(/,/g, ""));
     if (!Number.isFinite(raw) || raw < RUPEES_PER_LAKH) return whole;
     const lpa = raw / RUPEES_PER_LAKH;
     if (lpa > MAX_PLAUSIBLE_LPA) return whole;
-    return `${rupeePfx ? "₹" : ""}${Math.round(lpa * 10) / 10} LPA`;
+    return `${Math.round(lpa * 10) / 10} LPA`;
   });
 }
 

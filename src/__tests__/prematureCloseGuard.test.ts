@@ -9,8 +9,11 @@ import {
   canCloseSession,
   detectExplicitDecline,
   detectConsecutiveDeadEnd,
+  initState,
+  type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
+import { planNextAction } from "../../server-handlers/_next-action-planner";
 
 function fakeState(overrides: Partial<NegotiationState> = {}): NegotiationState {
   return {
@@ -140,5 +143,121 @@ describe("detectConsecutiveDeadEnd", () => {
       ],
     });
     expect(detectConsecutiveDeadEnd(s)).toBe(false);
+  });
+});
+
+/* S3-B11/B13 (2026-07-22) — offer-first guard before gap-gate walk-away.
+ *
+ * When the candidate's target (e.g. ₹85L) exceeds 1.5× the band ceiling
+ * (~₹43L), the gap-gate walk-away previously fired WITHOUT ever making an offer.
+ * The candidate never saw what the company could actually pay. Fix: when
+ * highestOfferMade === 0, the planner must first anchor the ceiling offer,
+ * THEN walk away on the next turn after the candidate has reacted. */
+describe("S3-B11/B13 — offer-first guard before gap-gate walk-away", () => {
+  const BAND: NegotiationBand = {
+    initialOffer: 35,
+    maxStretch: 43,
+    walkAway: 28,
+    hasEquity: false,
+  };
+
+  it("planner anchors ceiling offer rather than walking away when highestOfferMade===0 and target >1.5×ceiling", () => {
+    const base = initState({
+      sessionId: "s3b11",
+      role: "Engineering Manager",
+      company: "amazon",
+      band: BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      turnIndex: 3,
+      candidateCurrentCtc: 38,
+      candidateTarget: 85, // far above 43 * 1.5 = 64.5 — gap gate should fire
+      highestOfferMade: 0,
+      minTurnsBeforeClose: 0, // remove turn-gate so gap gate can fire
+      phase: "probe-expectations",
+      discoveryChecklist: {
+        currentCtcAsked: true, currentCtcAnswered: true,
+        fixedVariableSplitAsked: false, fixedVariableSplitAnswered: false,
+        noticePeriodAsked: false, noticePeriodAnswered: false,
+        competingOffersAsked: false, competingOffersAnswered: false,
+        valueProofAsked: false, valueProofAnswered: false,
+        targetAsked: true, targetAnswered: true,
+        variableComfortTested: false,
+        commitmentValidationAsked: false,
+        currentCtcFixedVariableSplitDisclosed: false,
+        expectedCtcFixedVariableSplitDisclosed: false,
+      },
+      askedTopics: [
+        { topic: "currentCtcAnswered", atTurn: 1 },
+        { topic: "targetAnswered", atTurn: 2 },
+      ],
+    };
+    const action = planNextAction(s);
+    /* Must NOT be a walk-away or stalemate close with no offer on table. */
+    const isClosedWithNoOffer =
+      (action.kind === "live-walk-away" || action.kind === "close") &&
+      s.highestOfferMade === 0;
+    expect(isClosedWithNoOffer).toBe(false);
+    /* Should be an anchor-with-offer so the candidate sees the ceiling. */
+    expect(action.kind).toBe("anchor-with-offer");
+  });
+});
+
+/* S25-B1 (2026-07-22) — false-close guard when candidate discloses CTC + target
+ * simultaneously in the same discovery turn.
+ *
+ * Before the fix: "I'm currently at 28L and targeting 42L" at exchange 2
+ * caused the planner to route to a close path without ever making an offer. */
+describe("S25-B1 — no close when CTC+target disclosed simultaneously with no offer", () => {
+  const BAND: NegotiationBand = {
+    initialOffer: 32,
+    maxStretch: 40,
+    walkAway: 26,
+    hasEquity: false,
+  };
+
+  it("planner does NOT close when both facts arrive simultaneously at turn 2 and no offer yet", () => {
+    const base = initState({
+      sessionId: "s25b1",
+      role: "Senior Software Engineer",
+      company: "flipkart",
+      band: BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      turnIndex: 2,
+      candidateCurrentCtc: 28,
+      candidateTarget: 42,
+      highestOfferMade: 0,
+      phase: "probe-expectations",
+      discoveryChecklist: {
+        currentCtcAsked: true, currentCtcAnswered: true,
+        fixedVariableSplitAsked: false, fixedVariableSplitAnswered: false,
+        noticePeriodAsked: false, noticePeriodAnswered: false,
+        competingOffersAsked: false, competingOffersAnswered: false,
+        valueProofAsked: false, valueProofAnswered: false,
+        targetAsked: true, targetAnswered: true,
+        variableComfortTested: false,
+        commitmentValidationAsked: false,
+        currentCtcFixedVariableSplitDisclosed: false,
+        expectedCtcFixedVariableSplitDisclosed: false,
+      },
+      askedTopics: [
+        { topic: "currentCtcAnswered", atTurn: 1 },
+        { topic: "targetAnswered", atTurn: 2 },
+      ],
+    };
+    const action = planNextAction(s);
+    /* Must NOT produce any close or walk-away — no offer has been made yet. */
+    const forbidden = action.kind === "close" || action.kind === "live-walk-away";
+    expect(forbidden).toBe(false);
+    /* Expected: either an anchor-with-offer (point offer) or band-anchor-with-rationale
+     * (range disclosure) — both are valid non-close behaviors. The key invariant is
+     * that the session must NOT close with ₹0 on the table; the exact anchor style
+     * (point vs range) depends on whether CTC < band floor. */
+    expect(
+      action.kind === "anchor-with-offer" || action.kind === "band-anchor-with-rationale",
+    ).toBe(true);
   });
 });

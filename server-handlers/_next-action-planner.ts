@@ -1095,7 +1095,54 @@ function planStonewallAnchor(state: NegotiationState): PlannedAction | null {
 }
 
 export function planNextAction(state: NegotiationState): NextAction {
-  return planNextActionInternal(state);
+  const action = planNextActionInternal(state);
+  /* S25-B1 (2026-07-22) — false-close guard on simultaneous CTC+target disclosure.
+   *
+   * When the candidate states BOTH their current CTC AND their target in
+   * the same discovery turn (e.g. "I'm currently at 28L and targeting 42L"
+   * at exchange 2), discovery completes in one shot. Some downstream paths
+   * — the honest-defer arm (band ceiling below CTC), the gap-gate, or the
+   * acceptance-classifier reacting to the target number — can short-circuit
+   * to a close/walk-away action BEFORE the recruiter has made a single
+   * offer. The candidate then hears "we'll be in touch" without ever finding
+   * out what the company actually pays.
+   *
+   * Guard: if the inner planner returns a close or live-walk-away AND no
+   * offer is on the table yet (highestOfferMade === 0) AND we are in an
+   * early turn (≤ 4), veto the close and redirect to the discovery-
+   * sufficient anchor helper (which will make a ceiling offer). After the
+   * offer lands, the walk-away / no-deal path can fire legitimately on the
+   * next turn. */
+  if (
+    state.highestOfferMade === 0 &&
+    state.turnIndex <= 4 &&
+    state.candidateCurrentCtc != null &&
+    (state.candidateTarget != null || state.candidateTargetFixed != null) &&
+    (action.kind === "close" || action.kind === "live-walk-away")
+  ) {
+    const lo = state.band?.initialOffer;
+    const hi = state.band?.maxStretch;
+    if (typeof lo === "number" && typeof hi === "number" && lo > 0) {
+      const anchored = clampAnchorAboveDisclosed(lo, hi, state) ?? hi;
+      return {
+        kind: "anchor-with-offer",
+        initialOffer: anchored,
+        bandIncomplete: false,
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "probe",
+          newTotalLpa: anchored,
+          rationale:
+            `S25-B1 false-close guard: planner returned ${action.kind} at turn ${state.turnIndex} ` +
+            `with highestOfferMade=0 and both currentCtc+target known — vetoing close and ` +
+            `anchoring ceiling ₹${anchored}L first so candidate sees an actual offer.`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "anchor-with-offer",
+        },
+      } as PlannedAction;
+    }
+  }
+  return action;
 }
 
 /** #93 (2026-06-19, live-staging) — the close number to honor when a
@@ -3643,6 +3690,15 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * in-hand ask isn't measured against the TOTAL ceiling in the wrong frame.
    * Kept to stated TOTAL targets only (a fixed-component ask doesn't trigger a
    * terminal gap walk-away). */
+  /* S3-B11/B13 (2026-07-22) — offer-first guard. Before walking away, the
+   * recruiter MUST make at least one offer so the candidate knows what is
+   * actually on the table. If highestOfferMade === 0, anchor the ceiling offer
+   * first; the walk-away fires on the NEXT turn after the candidate reacts.
+   * Only emitting a walk-away without any prior offer produces a session that
+   * feels abrupt and trains the candidate nothing ("how much does HireStepX
+   * pay? I never found out"). The anchor is a point-offer at band.maxStretch
+   * (the best the recruiter can do) — an honest disclosure that the candidate
+   * can accept or walk away from themselves. */
   const gapGateTarget = statedTotalTargetCtcLpa(state);
   if (
     !isTerminalPhase(state.phase) &&
@@ -3650,6 +3706,26 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     gapGateTarget != null &&
     gapGateTarget > state.band.maxStretch * 1.5
   ) {
+    if (state.highestOfferMade === 0) {
+      /* No offer yet — make one at the ceiling before walking away. */
+      const ceilingOffer = state.band.maxStretch;
+      return {
+        kind: "anchor-with-offer",
+        initialOffer: ceilingOffer,
+        bandIncomplete: false,
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "probe",
+          newTotalLpa: ceilingOffer,
+          rationale:
+            `S3-B11/B13 offer-first anchor: candidate target ₹${gapGateTarget}L exceeds ` +
+            `band ceiling ₹${state.band.maxStretch}L by >50% — anchoring at ceiling before walk-away ` +
+            `so candidate sees what is actually on the table.`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "anchor-with-offer",
+        },
+      } as PlannedAction;
+    }
     return {
       kind: "live-walk-away",
       mode: "walk",
@@ -4429,22 +4505,57 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             /* No advance target available → fall through to the
              * range-ask path so the bot still doesn't grind. */
           }
-          const finalAsk = uncertaintyEscape.rangeAsk ?? ordered.prompt;
-          return {
-            kind: "discovery-probe",
-            item: orderedItem,
-            ask: finalAsk,
-            satisfiesTopic: orderedItem,
-            _move: {
-              lever: "probe",
-              newTotalLpa: null,
-              rationale:
-                `Discovery incomplete (next: ${orderedItem}) — ask: ${finalAsk}${skippedHint}`,
-              /* F7 — carry the item key so applyAiMove can push it
-               * onto askedTopics for the repetition guard. */
-              askedTopic: orderedItem,
-            },
-          };
+          /* S13-B30 (2026-07-22) — probe cap (tier1Missing / opening path).
+           * Mirror of the cap at the probe-expectations block below: when the
+           * target question lands here AND ≥4 probes have already been sent
+           * with no response, skip the probe and fall through to the anchor
+           * path rather than looping indefinitely. This branch fires when
+           * phase==="probe-expectations" + tier1Missing + highestOfferMade===0. */
+          const isTargetProbeTier1 =
+            orderedItem === "targetAnswered" || ordered.item === "targetAsked";
+          if (isTargetProbeTier1) {
+            const MAX_DISCOVERY_PROBES = 4;
+            const targetProbeCountTier1 = readAskedTopics(state).filter(
+              (t) => t.topic === "targetAsked" || t.topic === "targetAnswered",
+            ).length;
+            if (targetProbeCountTier1 >= MAX_DISCOVERY_PROBES) {
+              /* Fall through — do NOT return probe here. The code after this
+               * `if (ordered != null)` block (and after the outer
+               * `!isDiscoverySufficientToAnchor` block) reaches the hard-gate
+               * anchor paths at lines 4533+, which will anchor the band. */
+              /* break-out of the if block by not returning */
+            } else {
+              const finalAsk = uncertaintyEscape.rangeAsk ?? ordered.prompt;
+              return {
+                kind: "discovery-probe",
+                item: orderedItem,
+                ask: finalAsk,
+                satisfiesTopic: orderedItem,
+                _move: {
+                  lever: "probe",
+                  newTotalLpa: null,
+                  rationale:
+                    `Discovery incomplete (next: ${orderedItem}) — ask: ${finalAsk}${skippedHint}`,
+                  askedTopic: orderedItem,
+                },
+              };
+            }
+          } else {
+            const finalAsk = uncertaintyEscape.rangeAsk ?? ordered.prompt;
+            return {
+              kind: "discovery-probe",
+              item: orderedItem,
+              ask: finalAsk,
+              satisfiesTopic: orderedItem,
+              _move: {
+                lever: "probe",
+                newTotalLpa: null,
+                rationale:
+                  `Discovery incomplete (next: ${orderedItem}) — ask: ${finalAsk}${skippedHint}`,
+                askedTopic: orderedItem,
+              },
+            };
+          }
         }
         /* PDF#46 (2026-05-25) — legacy fallback path removed. It used a
          * different priority order than DISCOVERY_SEQUENCE (target was
@@ -4462,11 +4573,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * checklist) are exempt because they bypass discovery entirely. The
      * opener-as-discovery branch (turnIndex === 0) is also exempt
      * because canonical-prose renders it as a currentCtc probe, not an
-     * anchor. */
+     * anchor.
+     *
+     * S13-B30 (2026-07-22) — probe cap. When the candidate declines to name
+     * a target 3+ times (targetAnswered appears ≥3 times in askedTopics),
+     * do NOT emit another probe — advance to anchor using the band floor/ceiling
+     * as the basis. Infinite target-probe loops are a worse experience than
+     * anchoring without the candidate's stated number. */
+    /* Count how many times the target probe has already been sent this session. */
+    const targetProbeCount = readAskedTopics(state).filter(
+      (t) => t.topic === "targetAnswered" || t.topic === "targetAsked",
+    ).length;
     if (
       state.turnIndex > 0 &&
       state.discoveryChecklist != null &&
-      state.discoveryChecklist.targetAnswered !== true
+      state.discoveryChecklist.targetAnswered !== true &&
+      targetProbeCount < 3
     ) {
       return {
         kind: "discovery-probe",
@@ -4501,11 +4623,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * never called by the planner. Wire it as a belt-and-braces gate
      * after the checklist gate. When it returns false AND we have no
      * checklist to defer to, emit the same target-probe that the
-     * checklist branch above would emit. */
+     * checklist branch above would emit.
+     *
+     * S13-B30 (2026-07-22) — same probe cap applies: skip once ≥3 probes sent. */
     if (
       state.turnIndex >= 2 &&
       state.discoveryChecklist == null &&
-      !canDiscloseSpecificNumber(state)
+      !canDiscloseSpecificNumber(state) &&
+      targetProbeCount < 3
     ) {
       /* Turn-index gate: turn 1 (the very first AI turn) is the
        * legitimate opener — rendered by canonical-prose as a currentCtc
@@ -4882,6 +5007,37 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           (state.highestOfferMade === 0 ||
             (next != null && !ORTHOGONAL_POST_ANCHOR_ITEMS.has(next.item)));
         if (next != null && allowProbeWithOfferOnTable) {
+          /* Fix C (2026-07-22) — MAX_DISCOVERY_PROBES cap on target-ask probes.
+           * When the candidate has refused to name a target 4+ times
+           * (targetAsked or targetAnswered appears ≥4 times in askedTopics),
+           * do NOT emit another target probe here either — advance to band-anchor
+           * so the session never loops indefinitely waiting for a number the
+           * candidate won't supply. This guard applies to the discovery-probe
+           * path (here) AND the probe-expectations fallthrough (below) so the
+           * cap fires regardless of which branch the planner entered. */
+          const MAX_DISCOVERY_PROBES = 4;
+          const isTargetProbe = next.item === "targetAsked";
+          if (isTargetProbe) {
+            const targetProbeCount = readAskedTopics(state).filter(
+              (t) => t.topic === "targetAsked" || t.topic === "targetAnswered",
+            ).length;
+            if (targetProbeCount >= MAX_DISCOVERY_PROBES) {
+              return {
+                kind: "band-anchor-with-rationale",
+                satisfiesTopic: "band-anchor-with-rationale",
+                _move: {
+                  lever: "benefits-summary",
+                  newTotalLpa: null,
+                  rationale:
+                    `Fix C — discovery probe cap hit (${targetProbeCount} target probes with no response); ` +
+                    `advancing to band anchor (₹${state.band.initialOffer}L–₹${state.band.maxStretch}L) ` +
+                    `rather than looping on target-ask indefinitely.`,
+                  actionKind: "band-anchor-with-rationale",
+                  askedTopic: "band-anchor-with-rationale",
+                },
+              };
+            }
+          }
           return {
             kind: "discovery-probe",
             item: next.item,
@@ -5001,6 +5157,33 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           rationale:
             `Offer ₹${state.highestOfferMade}L already on the table and candidate has not named a target after stonewalling;` +
             ` hold the standing number and invite a decision instead of re-probing expectations (would beg for a figure over our own offer).`,
+        },
+      };
+    }
+    /* Fix C (2026-07-22) — MAX_DISCOVERY_PROBES cap on target-ask probes.
+     * When the candidate has refused to name a target 4+ times (targetAsked
+     * or targetAnswered appears ≥4 times in askedTopics), do NOT emit another
+     * probe — advance to anchor using the band so the session never loops
+     * indefinitely waiting for a number the candidate won't supply. Real
+     * recruiters give up asking after 3-4 attempts and anchor the band
+     * unilaterally. */
+    const MAX_DISCOVERY_PROBES = 4;
+    const probeExpProbeCount = readAskedTopics(state).filter(
+      (t) => t.topic === "targetAsked" || t.topic === "targetAnswered",
+    ).length;
+    if (probeExpProbeCount >= MAX_DISCOVERY_PROBES) {
+      return {
+        kind: "band-anchor-with-rationale",
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "benefits-summary",
+          newTotalLpa: null,
+          rationale:
+            `Fix C — discovery probe cap hit (${probeExpProbeCount} target probes with no response); ` +
+            `advancing to band anchor (₹${state.band.initialOffer}L–₹${state.band.maxStretch}L) ` +
+            `rather than looping on target-ask indefinitely.`,
+          actionKind: "band-anchor-with-rationale",
+          askedTopic: "band-anchor-with-rationale",
         },
       };
     }

@@ -88,6 +88,55 @@ describe("PDF#27 Fix 3 — repetition cap propagates to fallback", () => {
     expect(action.kind).not.toBe("discovery-probe-loop");
   });
 
+  /* S13-B30 (2026-07-22) — target-probe cap. When the candidate declines to
+   * name a target salary 3+ times (targetAnswered appears ≥3 times in
+   * askedTopics and remains false), the planner must NOT emit yet another
+   * target-probe — it should advance to anchor with the band instead.
+   * Before the fix the anchor gate ("never anchor before target is known")
+   * re-probed infinitely when the candidate kept declining. */
+  it("S13-B30: planner advances past target-probe after 3 refusals", () => {
+    const s = seed({
+      phase: "opening",
+      candidateCurrentCtc: 22,
+      turnIndex: 6,
+      askedTopics: [
+        { topic: "currentCtcAnswered", atTurn: 1 },
+        { topic: "targetAnswered", atTurn: 2 },
+        { topic: "targetAnswered", atTurn: 3 },
+        { topic: "targetAnswered", atTurn: 4 },
+      ],
+      discoveryChecklist: {
+        currentCtcAsked: true,
+        currentCtcAnswered: true,
+        fixedVariableSplitAsked: false,
+        fixedVariableSplitAnswered: false,
+        noticePeriodAsked: false,
+        noticePeriodAnswered: false,
+        competingOffersAsked: false,
+        competingOffersAnswered: false,
+        valueProofAsked: false,
+        valueProofAnswered: false,
+        targetAsked: true,
+        targetAnswered: false, // Still false — candidate declined 3 times
+        variableComfortTested: false,
+        commitmentValidationAsked: false,
+        currentCtcFixedVariableSplitDisclosed: false,
+        expectedCtcFixedVariableSplitDisclosed: false,
+      },
+    });
+    const action = planNextAction(s);
+    /* Must NOT re-probe for target again — must advance or anchor. */
+    if (action.kind === "discovery-probe") {
+      expect(action.item).not.toBe("targetAnswered");
+      expect(action.item).not.toBe("targetAsked");
+    }
+    /* Should anchor, deflect, or probe something else — anything but target re-probe. */
+    const forbiddenTarget =
+      action.kind === "discovery-probe" &&
+      (action.item === "targetAnswered" || action.item === "targetAsked");
+    expect(forbiddenTarget).toBe(false);
+  });
+
   it("repetition-complaint stamps state → next planner call skips last-asked topic", () => {
     const s = seed({
       phase: "opening",
