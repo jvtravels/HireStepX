@@ -35,7 +35,7 @@ export function computeMicroFeedback(
   const wordCount = answerText.trim().split(/\s+/).length;
 
   if (interviewType === "salary-negotiation") {
-    return salaryNegFeedback(answerText, wordCount, negotiationPhase);
+    return salaryNegFeedback(answerText, wordCount, negotiationPhase, recentFeedbacks);
   }
   if (interviewType === "government-psu") {
     return govPsuFeedback(answerText, wordCount);
@@ -64,7 +64,12 @@ export function computeMicroFeedback(
 }
 
 /* ─── Salary Negotiation (phase-aware) ─── */
-function salaryNegFeedback(text: string, wordCount: number, phase?: string): MicroFeedbackResult {
+function salaryNegFeedback(text: string, wordCount: number, phase?: string, recentFeedbacks?: string[]): MicroFeedbackResult {
+  /* S44-B5 (2026-07-23) — deduplicate tips: if the same string was shown in
+   * the last 3 turns, suppress it. Without this, the "closing" phase tip fires
+   * on every closing-phase answer when no mentionsBenefits+number condition is
+   * met, producing 6+ consecutive identical chips. */
+  const recentSet = new Set((recentFeedbacks || []).filter((s): s is string => typeof s === "string"));
   const mentionsNumber = /₹|lakh|lpa|lakhs|\d+\s*l(?:pa|akh)/i.test(text);
   const mentionsBenefits = /benefit|esop|equity|bonus|flexible|remote|insurance|learning|budget/i.test(text);
   const mentionsEquityVague = /esop|equity|stock|option|vest/i.test(text) && !/₹|\d+\s*(?:lakh|lpa|%)/i.test(text);
@@ -188,6 +193,9 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
   if (!acceptsImmediately && !rejectsOutright) score += 10;
   if (rejectsOutright) score -= 10;
   if (wordCount < 15) score -= 15;
+  /* Suppress repeated tips — return null if the exact string was shown in the
+   * last 3 turns (recentSet). Score is still returned for adaptive difficulty. */
+  if (feedback && recentSet.has(feedback)) feedback = null;
   return { feedback, score: clamp(score) };
 }
 

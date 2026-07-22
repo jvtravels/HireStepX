@@ -709,6 +709,43 @@ export default async function handler(req: Request): Promise<Response> {
        inventing comp structure or crediting unused tactics. Empty for non-neg. */
     const negotiationOfferFactsBlock =
       meta?.type === "salary-negotiation" ? buildNegotiationOfferFactsBlock(transcript) : "";
+    /* S44-B11/B15/B16 (2026-07-23) — negotiation-specific scoring rules injected
+     * after the offer-facts block so they read after the grounding data.
+     *
+     * Root cause: the generic evaluator applied behavioral rubric conventions to
+     * negotiation answers, producing three class of failures:
+     *   B11 — "disclosure leaks: 3, Needs Work" flagged CTC disclosure as negative;
+     *         in Indian salary negotiation, CTC disclosure to HR is standard and
+     *         expected — it is NOT a leak.
+     *   B15 — Strong first-turn answer (CTC + ask + Google Singapore benchmark) got
+     *         "Weak" because it had no STAR structure; negotiation answers don't.
+     *   B16 — Top Improvement said "state a competing option / walk-away floor" even
+     *         when the candidate already did — coaching didn't read what was said. */
+    const negotiationScoringRulesBlock =
+      meta?.type === "salary-negotiation"
+        ? `
+
+SALARY NEGOTIATION SCORING RULES (MANDATORY — overrides generic behavioral rubric):
+
+CTC DISCLOSURE:
+- In Indian salary negotiations, disclosing your current CTC to HR is STANDARD PRACTICE — it is legally required in some sectors and culturally expected everywhere. NEVER penalise CTC disclosure as a "leak", "vulnerability", "disclosure risk", or weakness in scores, flags, or explanations. A candidate who states their CTC clearly and pairs it with a target ask is demonstrating STRUCTURAL FLUENCY, not naivety.
+- "Disclosure leaks" / "information leaks" flags MUST be set to [] (empty) for salary-negotiation sessions. Do NOT emit bgvGaps, storyReuseFindings, or "disclosure" flags of any kind.
+
+SCORING BAR — PER TURN:
+- Evaluate each turn on what a STRONG NEGOTIATOR SAYS, not STAR structure. The axes are: Anchor strength, Counter-offer judgement, Trade-off awareness, Structural fluency, Tactical composure, Walk-away discipline.
+- A first-turn answer that states current CTC + target ask + a competing offer or market benchmark is a HIGH-ANCHOR STRONG OPEN — score "Anchor strength" 75-90. This is the single best opening move in a salary negotiation.
+- A turn that cites a COMPETING OFFER (domestic or international) as leverage is HIGH leverage use — score "Trade-off awareness" 75-90 for that turn.
+- A turn where the candidate HOLDS their position under recruiter pushback without conceding is TACTICAL COMPOSURE — score 70-90 for that turn.
+- Score "Weak" (score ≤ 45) ONLY when the candidate explicitly accepted below their ask with no counter, made an unprompted large concession, or gave up leverage they had.
+
+TOP IMPROVEMENT COACHING RULE:
+- Before writing any "Top Improvement" coaching item, read the FULL TRANSCRIPT in the context above. If the transcript shows the candidate ALREADY DID the thing you are about to suggest (e.g., they already stated a competing offer, they already named a walk-away floor, they already stated a target ask), do NOT suggest it as a top improvement. Coach on what they did NOT do or what they did poorly.
+- Forbidden top improvements if evidence is in the transcript: "state a competing option", "name a walk-away floor", "state your ask explicitly", "name a target number" — check each against the transcript before writing.
+
+CROSS-SESSION INSIGHTS — CONSISTENCY RULE:
+- Skill scores should be STABLE across sessions unless there is clear transcript evidence of improvement or regression. A session where the candidate used the same tactics as last time should score within ±15 of the prior session on each axis. Only score outside ±15 when the transcript shows a clearly different approach.
+- Do NOT write crossSessionInsights items that fabricate history if no prior sessions were provided.`
+        : "";
     /* Campus-placement calibration block — injected only for campus focus so
        the evaluator uses fresher-appropriate rubrics and exemplars. Placed here
        (dynamic section) so it doesn't break the prefix cache on other focus types. */
@@ -867,7 +904,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}${negotiationOfferFactsBlock}${campusCalibrationBlock}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}${negotiationOfferFactsBlock}${negotiationScoringRulesBlock}${campusCalibrationBlock}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}

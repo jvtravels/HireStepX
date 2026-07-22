@@ -6691,7 +6691,12 @@ function pickStructuralLever(state: NegotiationState): PlannedAction | null {
     },
     { kind: "lever-retention-bonus", gated: false },
     { kind: "lever-relocation", gated: false },
-    { kind: "lever-perf-bonus-cadence", gated: false },
+    /* S44-B9 (2026-07-23) — gate perf-bonus cadence lever on the band actually
+     * having a variable component. If variableMax is 0/absent the band is all-
+     * fixed, so saying "performance bonus paid at March appraisal cycle" and
+     * then later "no variable component on this grade" (offer-breakdown) are
+     * internally contradictory. Only offer the lever when variableMax > 0. */
+    { kind: "lever-perf-bonus-cadence", gated: !(typeof state.band.variableMax === "number" && state.band.variableMax > 0) },
     { kind: "lever-work-mode", gated: false },
     { kind: "lever-growth-path", gated: false },
   ];
