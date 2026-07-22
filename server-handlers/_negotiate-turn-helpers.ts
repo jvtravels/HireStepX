@@ -2465,6 +2465,15 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     parts.push(`redflags=[${seriousFlags.join(",")}]`);
   }
   if (state.leversUsed.length > 0) parts.push(`leversUsed=[${state.leversUsed.join(",")}]`);
+  /* S20-B2 (2026-07-22) — ESOP grant amount directive. When the equity-grant
+   * lever has fired and the state has a concrete grant amount, surface it so
+   * the LLM can cite an actual ₹ figure rather than only describing structure. */
+  if (state.leversUsed.includes("equity-grant") && (state as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa != null) {
+    const grantAmt = (state as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa as number;
+    parts.push(
+      `[ESOP GRANT ON TABLE: ₹${grantAmt}L total value over 4 years (1-year cliff, then quarterly vesting) — use this figure if the candidate asks about grant size, unit count, or ₹ value]`,
+    );
+  }
   /* Bug 7 (2026-05-14) — anti-repetition. Surface the recruiter-fact
    * tokens the bot has ALREADY stated so the LLM doesn't restate them
    * verbatim turn after turn. */

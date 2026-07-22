@@ -986,6 +986,16 @@ export interface NegotiationState {
    *  Sticky (never reset to null after being set). */
   lastJoiningBonusOffered: number | null;
 
+  /** S20-B2 (2026-07-22) — ESOP grant amount the recruiter has put on the
+   *  table for this session (total 4-year vesting value, LPA-equivalent).
+   *  Null until an equity-grant lever fires; frozen once set (sticky).
+   *  Derived from band.maxStretch at lever-fire time so the LLM has a
+   *  concrete number to cite when the candidate asks "how many units /
+   *  what ₹ value?" — without this the recruiter could only describe
+   *  structure (vest, cliff, strike) but never state a size. Optional for
+   *  back-compat with sessions serialized before this field. */
+  equityGrantAmountLpa?: number | null;
+
   /* Rolling conversation log — capped at the last CONVERSATION_LOG_CAP
    * entries (= 4, i.e. last 2 exchanges). Phase 5 of the rebuild: the
    * compact brief carried derived facts only (target, current, highest
@@ -2861,6 +2871,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     leversUsed: [],
     lastAiText: "",
     lastJoiningBonusOffered: null,
+    /* S20-B2 (2026-07-22) — equity grant amount. Initialized to null;
+     * set in applyAiMove when the equity-grant lever fires. */
+    equityGrantAmountLpa: null,
     conversationLog: [],
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
@@ -6567,7 +6580,22 @@ function forcedPhaseFor(
      * lever repeated verbatim every turn until the global turn budget dumped to
      * stalemate (the reported deflect-loop sink). offer-presented routes the
      * planner through its anchor gates so a real number lands next turn. */
-    if (state.phase === "range-disclosure") return "offer-presented";
+    if (state.phase === "range-disclosure") {
+      /* S1-B1 (2026-07-22) — target-asked guard. The 4 CTC component probes
+       * (total → base → variable → ESOP) can exhaust the opening budget before
+       * the target question fires even once. Block the forced escape to
+       * offer-presented until target has been asked at least once. Once it has
+       * been asked (even if unanswered), normal budget enforcement resumes and
+       * the session can advance to anchor. Without this gate the recruiter
+       * would present an offer without ever asking "what's your target CTC?" */
+      const targetEverAsked =
+        state.discoveryChecklist?.targetAnswered === true ||
+        (state.askedTopics ?? []).some(
+          (t) => t.topic === "targetAsked" || t.topic === "targetAnswered",
+        );
+      if (!targetEverAsked) return null;
+      return "offer-presented";
+    }
     return "range-disclosure";
   }
   if (group === "anchoring") return "counter-offer";
@@ -6977,6 +7005,36 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
    * so we advance unconditionally on the stage match. */
   if (state.discoveryStage === "probe-mismatch") {
     next.discoveryStage = "discovery";
+  }
+  /* S20-B1 (2026-07-22) — discoveryStage advancement. The discoveryStage
+   * field was initialized to "discovery" and only ever reset from
+   * "probe-mismatch" → "discovery"; it never advanced to "anchor",
+   * "negotiation", etc. The compactTurnBrief always surfaced
+   * [CURRENT STAGE: discovery] to the LLM even mid-counter-offer, causing
+   * the LLM to generate discovery-mode prose (re-acknowledging CTC as if
+   * just disclosed, asking discovery questions in the wrong phase).
+   *
+   * Advance the stage monotonically in lockstep with the kernel phase so
+   * the LLM always has an accurate [CURRENT STAGE:] directive. Monotone-up:
+   * "discovery" < "anchor" < "negotiation" < "commitment-test" < "closing"
+   * < "terminal". Never regress (except the intentional probe-mismatch →
+   * discovery reset above, which only fires before the first CTC probe). */
+  if (
+    next.discoveryStage === "discovery" &&
+    (ANCHORING_PHASES.has(next.phase) ||
+      COUNTER_PHASES.has(next.phase) ||
+      isTerminalPhase(next.phase))
+  ) {
+    next.discoveryStage = "anchor";
+  }
+  if (
+    next.discoveryStage === "anchor" &&
+    (COUNTER_PHASES.has(next.phase) || isTerminalPhase(next.phase))
+  ) {
+    next.discoveryStage = "negotiation";
+  }
+  if (next.discoveryStage === "negotiation" && isTerminalPhase(next.phase)) {
+    next.discoveryStage = "terminal";
   }
   /* Audit follow-up (2026-05-21) — answeredQuestionLedger write.
    *
@@ -7534,6 +7592,17 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     (move.lever === "joining-bonus" || move.lever === "close-acceptance")
   ) {
     next.lastJoiningBonusOffered = move.joiningBonusAmount;
+  }
+  /* S20-B2 (2026-07-22) — equity grant amount. When the equity-grant lever
+   * fires and no grant amount has been stamped yet, derive a concrete 4-year
+   * total grant (LPA-equivalent) from the band ceiling. Formula: 50% of
+   * maxStretch as 4-year total = ~12.5% annual equity — typical for Indian
+   * unicorns/GCCs offering ESOP/RSU sweeteners. Sticky (frozen on first
+   * set). The LLM can cite this number when the candidate asks "how many
+   * units / what ₹ value?" — previously the recruiter could only describe
+   * structure (vest, cliff, strike) with no concrete amount. */
+  if (move.lever === "equity-grant" && (next.equityGrantAmountLpa ?? null) == null) {
+    next.equityGrantAmountLpa = Math.round(state.band.maxStretch * 0.5);
   }
   /* AUDIT-W02 BUG-4 (2026-06-08) — when a hold-firm move ships final-
    * language ("final offer", "best and final", "final number/position"),
@@ -8537,6 +8606,8 @@ export function deserializeState(json: string): NegotiationState {
     },
     candidateStance: backfillCandidateStance(s.candidateStance),
     lastJoiningBonusOffered: (s.lastJoiningBonusOffered as number | null | undefined) ?? null,
+    /* S20-B2 (2026-07-22) — equity grant amount. Optional for back-compat. */
+    equityGrantAmountLpa: (s.equityGrantAmountLpa as number | null | undefined) ?? null,
     salesOTE: (s.salesOTE as SalesOTEResult | undefined) ?? { ...EMPTY_SALES_OTE },
     contractRate: (s.contractRate as ContractRateResult | undefined) ?? { ...EMPTY_CONTRACT_RATE },
     retentionCounter: (s.retentionCounter as RetentionCounterResult | undefined) ?? { ...EMPTY_RETENTION_COUNTER },

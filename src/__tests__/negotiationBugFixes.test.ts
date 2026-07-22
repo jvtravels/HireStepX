@@ -1105,6 +1105,274 @@ describe("S12-B25 — CTC-aware band lift is capped at 1.20× the original ceili
   });
 });
 
+/* S1-B1 (2026-07-22) — forcedPhaseFor blocks advance to offer-presented when target
+ * salary has never been asked.
+ *
+ * Root cause: the 4 CTC component probes (base/variable/ESOP reactive follow-ups) exhaust
+ * the 5-turn opening budget before the ordered discovery sequence reaches targetAnswered.
+ * When forcedPhaseFor("range-disclosure") fires afterward, it was immediately returning
+ * "offer-presented" — meaning an offer could be presented without the recruiter ever
+ * having asked "what's your expected CTC?".
+ *
+ * Fix: forcedPhaseFor checks askedTopics for a "targetAsked" or "targetAnswered" entry.
+ * When neither is found, it returns null (blocks the forced advance). */
+describe("S1-B1 — forcedPhaseFor blocked when target salary never asked", () => {
+  const EQUITY_BAND: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 40,
+    walkAway: 20,
+    hasEquity: true,
+  };
+
+  it("pickAiMove does NOT advance to offer-presented when target never asked (askedTopics empty)", () => {
+    /* State: range-disclosure phase, discovery checklist has currentCtc answered but
+     * target never asked. This simulates the post-component-probe state where
+     * forcedPhaseFor would fire. The phase is forced because turnIndex exceeds budget. */
+    const base = initState({
+      sessionId: "s1-b1-no-target-ask",
+      role: "Software Engineer",
+      company: "Flipkart",
+      band: EQUITY_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "range-disclosure",
+      turnIndex: 12, // well past the 5-turn opening budget
+      candidateCurrentCtc: 32,
+      candidateTarget: null, // target was never asked or answered
+      highestOfferMade: 0,
+      askedTopics: [], // no targetAsked entry
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        targetAsked: false,
+        targetAnswered: false,
+      },
+    };
+    const move = pickAiMove(s);
+    /* The kernel should NOT emit a close-acceptance or open-with-offer in
+     * offer-presented phase when target was never asked. It must stay in discovery
+     * mode — probing for the target or at minimum not advancing to anchor. */
+    expect(move.lever).not.toBe("close-acceptance");
+    /* The move should be a probe (still asking for target) rather than a numeric offer. */
+    expect(move.newTotalLpa).toBeNull();
+  });
+
+  it("pickAiMove CAN advance once target has been asked (askedTopics has targetAsked)", () => {
+    const base = initState({
+      sessionId: "s1-b1-target-asked",
+      role: "Software Engineer",
+      company: "Flipkart",
+      band: EQUITY_BAND,
+    });
+    const s: NegotiationState = {
+      ...base,
+      phase: "range-disclosure",
+      turnIndex: 12,
+      candidateCurrentCtc: 32,
+      candidateTarget: 45,
+      highestOfferMade: 0,
+      askedTopics: [{ topic: "targetAsked", atTurn: 3 }],
+      discoveryChecklist: {
+        ...EMPTY_DISCOVERY_CHECKLIST,
+        currentCtcAnswered: true,
+        targetAsked: true,
+        targetAnswered: true,
+        noticePeriodAnswered: true,
+        competingOffersAnswered: true,
+        valueProofAnswered: true,
+      },
+    };
+    const move = pickAiMove(s);
+    /* With target asked, the kernel is free to advance. The move should be numeric
+     * (anchor or counter). */
+    expect(move.newTotalLpa).not.toBeNull();
+  });
+});
+
+/* S20-B1 (2026-07-22) — discoveryStage advances monotonically in lockstep with kernel phase.
+ *
+ * Root cause: discoveryStage was initialized to "discovery" and NEVER advanced past it.
+ * The only existing transition was probe-mismatch → discovery. compactTurnBrief therefore
+ * always surfaced [CURRENT STAGE: discovery] to the LLM even during counter-offer turns,
+ * causing the LLM to generate discovery-mode prose (re-acknowledging CTC, asking discovery
+ * questions mid-negotiation).
+ *
+ * Fix: applyAiMove now advances discoveryStage monotonically:
+ *   discovery → anchor  (when phase enters ANCHORING_PHASES or COUNTER_PHASES or terminal)
+ *   anchor    → negotiation (when phase enters COUNTER_PHASES or terminal)
+ *   negotiation → terminal  (when phase is terminal) */
+describe("S20-B1 — discoveryStage advances with kernel phase", () => {
+  const D_BAND: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 38,
+    walkAway: 22,
+    hasEquity: false,
+  };
+
+  it("discoveryStage advances to anchor when phase becomes offer-presented", () => {
+    const base = initState({
+      sessionId: "s20-b1-anchor",
+      role: "Product Manager",
+      company: "Swiggy",
+      band: D_BAND,
+    });
+    const preState: NegotiationState = {
+      ...base,
+      phase: "opening",
+      discoveryStage: "discovery",
+      candidateCurrentCtc: 28,
+      candidateTarget: 38,
+    };
+    const move = pickAiMove(preState);
+    const next = applyAiMove(preState, move, "We can offer ₹30 LPA as a starting point.");
+    /* Once the move fires and the phase advances to offer-presented, discoveryStage
+     * must also advance to at least "anchor". */
+    if (next.phase === "offer-presented" || next.phase === "probe-expectations") {
+      expect(next.discoveryStage).toBe("anchor");
+    }
+  });
+
+  it("discoveryStage advances to negotiation when phase becomes counter-offer", () => {
+    const base = initState({
+      sessionId: "s20-b1-negotiation",
+      role: "Product Manager",
+      company: "Swiggy",
+      band: D_BAND,
+    });
+    const preState: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      discoveryStage: "anchor", // should advance to "negotiation"
+      candidateCurrentCtc: 28,
+      candidateTarget: 38,
+      highestOfferMade: 30,
+    };
+    const move = pickAiMove(preState);
+    const next = applyAiMove(preState, move, "We can go up to ₹32 LPA.");
+    /* In counter-offer territory, discoveryStage must be at least "negotiation". */
+    expect(next.discoveryStage).toBe("negotiation");
+  });
+
+  it("discoveryStage does NOT regress (monotone-up invariant)", () => {
+    /* applyAiMove must never set discoveryStage to a lower stage. */
+    const base = initState({
+      sessionId: "s20-b1-monotone",
+      role: "Product Manager",
+      company: "Swiggy",
+      band: D_BAND,
+    });
+    const preState: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      discoveryStage: "negotiation", // already at negotiation
+      candidateCurrentCtc: 28,
+      candidateTarget: 38,
+      highestOfferMade: 32,
+    };
+    const move = pickAiMove(preState);
+    const next = applyAiMove(preState, move, "Best we can do is ₹34 LPA.");
+    /* Must not regress to discovery or anchor */
+    expect(next.discoveryStage).not.toBe("discovery");
+    expect(next.discoveryStage).not.toBe("anchor");
+  });
+});
+
+/* S20-B2 (2026-07-22) — equityGrantAmountLpa is stamped when equity-grant lever fires.
+ *
+ * Root cause: NegotiationState had no field for a concrete ESOP grant amount. When the
+ * equity-grant lever fired, the LLM could only describe vesting structure (cliff, years,
+ * strike) but could never cite a ₹ total — candidates asking "how much equity?" would
+ * get vague structural descriptions instead of a concrete number.
+ *
+ * Fix: equityGrantAmountLpa is initialized to null; set to Math.round(band.maxStretch × 0.5)
+ * on first equity-grant lever fire (4-year total at ~12.5% annual). Sticky: frozen once set.
+ * compactTurnBrief surfaces it as [ESOP GRANT ON TABLE: ₹Xk ...] directive. */
+describe("S20-B2 — equityGrantAmountLpa stamped on equity-grant lever fire", () => {
+  const EQUITY_BAND2: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 40,
+    walkAway: 20,
+    hasEquity: true,
+  };
+
+  it("equityGrantAmountLpa is set to Math.round(maxStretch × 0.5) on first equity-grant lever", () => {
+    const base = initState({
+      sessionId: "s20-b2-grant",
+      role: "Software Engineer",
+      company: "Meesho",
+      band: EQUITY_BAND2,
+    });
+    const preState: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      candidateCurrentCtc: 30,
+      candidateTarget: 48,
+      highestOfferMade: 35,
+      leversUsed: ["open-with-offer", "counter-base"],
+    };
+    /* Manually construct an equity-grant move to test applyAiMove stamping */
+    const equityMove = {
+      ...EMPTY_TURN_DELTA,
+      lever: "equity-grant" as const,
+      newTotalLpa: null,
+      rationale: "equity-grant lever test",
+    };
+    const next = applyAiMove(preState, equityMove, "We can add an ESOP grant to sweeten the package.");
+    const expected = Math.round(EQUITY_BAND2.maxStretch * 0.5);
+    expect((next as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa).toBe(expected);
+  });
+
+  it("equityGrantAmountLpa is frozen (not overwritten) on second equity-grant lever fire", () => {
+    const base = initState({
+      sessionId: "s20-b2-sticky",
+      role: "Software Engineer",
+      company: "Meesho",
+      band: EQUITY_BAND2,
+    });
+    const preState: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      candidateCurrentCtc: 30,
+      candidateTarget: 48,
+      highestOfferMade: 35,
+      leversUsed: ["open-with-offer", "counter-base", "equity-grant"],
+      // Already stamped from a prior turn
+    };
+    (preState as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa = 15;
+    const equityMove = {
+      ...EMPTY_TURN_DELTA,
+      lever: "equity-grant" as const,
+      newTotalLpa: null,
+      rationale: "second equity-grant — should NOT overwrite",
+    };
+    const next = applyAiMove(preState, equityMove, "We still have that ESOP grant on the table.");
+    /* Must stay at 15, not be overwritten with Math.round(40 × 0.5) = 20 */
+    expect((next as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa).toBe(15);
+  });
+
+  it("equityGrantAmountLpa stays null when non-equity lever fires", () => {
+    const base = initState({
+      sessionId: "s20-b2-no-grant",
+      role: "Software Engineer",
+      company: "Meesho",
+      band: EQUITY_BAND2,
+    });
+    const preState: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      candidateCurrentCtc: 30,
+      candidateTarget: 45,
+      highestOfferMade: 32,
+    };
+    const move = pickAiMove(preState);
+    const next = applyAiMove(preState, move, "We can offer ₹35 LPA.");
+    if (next.leversUsed[next.leversUsed.length - 1] !== "equity-grant") {
+      expect((next as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa ?? null).toBeNull();
+    }
+  });
+});
+
 /* S1-B4 (2026-07-22) — AUDIT-3 Fix A uses clampAnchorAboveDisclosed (wrong) in the
  * discovery-complete anchor bridge, which can pin the OPENING at the band ceiling when
  * the candidate's hike floor (CTC × 1.25) exceeds the ceiling but CTC itself is still
