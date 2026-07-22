@@ -270,3 +270,57 @@ describe("N1 anchor tile reconciles to the report's single-source ask", () => {
     expect(anchorAtLabel(reconciled!.anchorTurn, reconciled!.candidateAskLpa)).toBe("Never anchored");
   });
 });
+
+/* S8-B23 (2026-07-22) — abandoned session (discovery only, exchange 3, no offer made)
+ * generated report with fabricated walk-away verdict "You walked away from a ₹50.4 LPA
+ * offer". Root cause: the heuristic transcript scan matched a stopping phrase and
+ * classified "walked_away"; the kernel's authoritative "stalemate" outcome was not
+ * overriding the heuristic's walk-away classification.
+ * Fix: any kernel outcome that is NOT "accepted" / "walked-away" (i.e. "stalemate" /
+ * "in-progress") forces "no_agreement" even when the transcript heuristic fired. */
+describe("buildNegotiationOutcome — S8-B23 stalemate kernel overrides heuristic walk-away", () => {
+  const stalemateMetics = {
+    outcome: "stalemate" as const,
+    anchorTurn: null, leverDiversity: 0, lpaGained: 0, lpaPerTurn: 0,
+    bandTraversal: 0, overBandViolation: false, totalTurns: 3, score: 12,
+    // No trajectory — abandonment in discovery, no offer was made.
+  } as unknown as NonNullable<DashboardSession["negotiationMetrics"]>;
+
+  it("S8-B23: stalemate kernel → no_agreement even when transcript has walk-away phrase", () => {
+    // The candidate's stopping phrase ("I'll stop here") matches the walk-away heuristic.
+    const report = {
+      perQuestion: [
+        { question: "What are you looking for?", answerText: "I'll stop here." },
+        { question: "Any questions?", answerText: "No thanks, I decline to continue." },
+      ],
+    } as unknown as import("../dashboardData").SessionReport;
+    const outcome = buildNegotiationOutcome(report, stalemateMetics);
+    expect(outcome).not.toBeUndefined();
+    // Must be no_agreement — NOT walked_away (heuristic misclassification).
+    expect(outcome!.outcome).toBe("no_agreement");
+    // No offers were made — verdict should reflect discovery-only termination.
+    expect(outcome!.offers).toHaveLength(0);
+  });
+
+  it("S8-B23: in-progress kernel also forces no_agreement", () => {
+    const inProgressMetrics = { ...stalemateMetics, outcome: "in-progress" as const };
+    const report = {
+      perQuestion: [
+        { question: "Tell me about yourself.", answerText: "I'm walking away, not worth it." },
+      ],
+    } as unknown as import("../dashboardData").SessionReport;
+    const outcome = buildNegotiationOutcome(report, inProgressMetrics);
+    expect(outcome!.outcome).toBe("no_agreement");
+  });
+
+  it("S8-B23: walked-away kernel still produces walked_away (legitimate walk-away preserved)", () => {
+    const walkedMetrics = { ...stalemateMetics, outcome: "walked-away" as const };
+    const report = {
+      perQuestion: [
+        { question: "₹48 LPA is our offer.", answerText: "I'll pass — too low for me." },
+      ],
+    } as unknown as import("../dashboardData").SessionReport;
+    const outcome = buildNegotiationOutcome(report, walkedMetrics);
+    expect(outcome!.outcome).toBe("walked_away");
+  });
+});

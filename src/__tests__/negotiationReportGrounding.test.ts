@@ -641,3 +641,73 @@ describe("buildNegotiationMetrics — S21-B4 disclosure leak elicitation gate", 
     expect(leaks!.value).toBe(1); // only the middle unprompted turn
   });
 });
+
+/* S1-B7 (2026-07-22) — "Concession rate: 10%" on a zero-counter session where the
+ * candidate accepted the first offer. Root cause: the concessionRe included
+ * acceptance-close phrases ("i accept", "i'll take", "happy with") that fire on
+ * the closing utterance, not on mid-negotiation concessions. Fix: remove those
+ * closure phrases from the pattern. */
+describe("buildNegotiationMetrics — S1-B7 concession rate on zero-counter session", () => {
+  it("S1-B7: concession rate is 0 when candidate accepted first offer (no counter phrases)", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        negotiationMetrics: {
+          outcome: "accepted", anchorTurn: null, leverDiversity: 0, lpaGained: 0,
+          lpaPerTurn: 0, bandTraversal: 0, overBandViolation: false, totalTurns: 3,
+          score: 40, initialOfferLpa: 35.8, finalOfferLpa: 35.8, candidateAskLpa: null,
+          offerTrajectoryLpa: [35.8],
+        },
+        transcript: [
+          { speaker: "ai",   text: "We can offer you ₹35.8 LPA." },
+          { speaker: "user", text: "I accept the offer." },
+          { speaker: "ai",   text: "Great! Let me send you the details." },
+          { speaker: "user", text: "I'm happy with that. Let's proceed." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const rate = out.metrics.find((m) => m.label === "Concession rate");
+    expect(rate).toBeDefined();
+    // "I accept" / "I'm happy with" are closure phrases — must NOT count as concessions.
+    expect(rate!.value).toBe(0);
+  });
+});
+
+/* S1-B8 (2026-07-22) — skill scores stayed at 95/92 on a zero-counter immediate-
+ * accept session because groundNegotiationReport had an early return when
+ * gapClosurePct === null (can't compute gap when candidateAsk is null). Fix: treat
+ * accepted + candidateAsk === null as 0% gap closure — apply the gap<10 ceiling. */
+describe("groundNegotiationReport — S1-B8 zero-counter immediate-accept grounding", () => {
+  it("S1-B8: caps outcome-gated skills to ≤45 when accepted with no counter named", () => {
+    const r = groundNegotiationReport(
+      inflatedSkills(), 79, "hire",
+      // accepted, gapClosurePct null (no counter) — previously early-returned unchanged
+      outcome({ outcome: "accepted", candidateAsk: null, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    // All outcome-gated axes must hit the gap<10 ceiling (45).
+    expect(byName(r.skills, "Leverage Use")).toBeLessThanOrEqual(45);
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
+    expect(byName(r.skills, "Anchoring")).toBeLessThanOrEqual(45);
+    // Overall score capped at ceiling+15 = 60.
+    expect(r.overallScore).toBeLessThanOrEqual(60);
+    expect(r.band).not.toBe("hire");
+    expect(r.band).not.toBe("strongHire");
+    // Demeanour untouched.
+    expect(byName(r.skills, "Composure")).toBe(90);
+  });
+
+  it("S1-B8: does NOT touch accepted sessions with a non-null candidateAsk (gap known)", () => {
+    // candidateAsk = 55 but gapClosurePct = null (shouldn't happen in practice;
+    // guard that we only apply the 0-gap synthetic when candidateAsk IS null).
+    const r = groundNegotiationReport(
+      inflatedSkills(), 79, "hire",
+      outcome({ outcome: "accepted", candidateAsk: 55, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    // Unknown gap with a non-null ask → trust scorer, no cap.
+    expect(byName(r.skills, "Leverage Use")).toBe(95);
+    expect(r.overallScore).toBe(79);
+  });
+});

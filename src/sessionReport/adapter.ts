@@ -742,8 +742,13 @@ export function groundNegotiationReport(
     return anyChanged ? { skills: groundedSkills, overallScore, band } : unchanged;
   }
   if (outcome.outcome !== "accepted") return unchanged; // no_agreement handled above
-  const gap = outcome.gapClosurePct;
-  if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
+  /* S1-B8: when the candidate accepted with NO counter named (candidateAsk === null),
+   * gapClosurePct is null (can't divide by zero gap) but the economic reality is
+   * 0% closure — they took the opening. Apply the gap<10 ceiling (45) rather than
+   * returning unchanged and letting skills sit at 95/92. */
+  const rawGap = outcome.gapClosurePct;
+  const gap = rawGap ?? (outcome.candidateAsk === null ? 0 : null);
+  if (gap == null) return unchanged; // gap unknown with a non-null ask → trust scorer
 
   let ceiling: number | null = null;
   if (gap < 10) ceiling = 45;       // accepted, closed ~nothing → clear cave
@@ -949,6 +954,11 @@ export function buildNegotiationOutcome(
    * surfaces read one outcome. Stalemate / in-progress stay "no_agreement". */
   if (kernelMetrics?.outcome === "accepted") outcome = "accepted";
   else if (kernelMetrics?.outcome === "walked-away") outcome = "walked_away";
+  /* S8-B23: an abandoned / discovery-only session has kernel outcome "stalemate" or
+   * "in-progress". The transcript heuristic above can misclassify it as "walked_away"
+   * if the candidate used a stopping phrase ("I'll stop here"). Kernel stalemate is
+   * authoritative — override any heuristic walk-away with no_agreement. */
+  else if (kernelMetrics?.outcome) outcome = "no_agreement";
 
   // Candidate's highest stated target (their ask). The cue set mirrors the
   // kernel's TARGET_CUE_PRESENCE (_number-role-classifier) so a counter the
@@ -1264,7 +1274,11 @@ function buildNegotiationMetrics(
 
   // Concession rate — count "I'd be open to / I can lower / how about / fine
   // with X" type concessions. Low concession = strong negotiator.
-  const concessionRe = /\b(i.?d\s+be\s+open|i\s+can\s+lower|fine\s+with|how\s+about|let.?s\s+meet\s+at|i.?ll\s+take|happy\s+with|i\s+accept)\b/gi;
+  /* S1-B7: "i accept" / "i'll take" / "happy with" are acceptance/close phrases —
+   * they fire on the final close utterance, not on a mid-negotiation concession,
+   * producing "Concession rate: 10%" on a zero-counter immediate-accept session.
+   * Only keep genuinely mid-negotiation concession cues. */
+  const concessionRe = /\b(i.?d\s+be\s+open|i\s+can\s+lower|fine\s+with|how\s+about|let.?s\s+meet\s+at)\b/gi;
   const concessions = (allText.match(concessionRe) || []).length;
   // S20-B4 — symmetric to REPORT-3d (numbersStated). Phrases like "fine with"
   // / "how about" fire when no cash counter was named (equity-only counter);
