@@ -7545,6 +7545,14 @@ function planArchetypeReactive(
 function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null {
   const profile = state.candidateProfile;
   if (!profile) return null;
+  /* S21-B2 (2026-07-22) — when the candidate stated a NEW salary counter THIS
+   * turn (disclosedExpectedCtc) AND also asked for a joining bonus in the same
+   * utterance, the joining-bonus probe must NOT fire this turn — it would
+   * silently drop the salary counter by returning before the counter-response
+   * path in planNextActionInternal ever runs. Defer the joining-bonus probe to
+   * the next turn after the salary has been acknowledged. The flag is cleared
+   * once the delta resets (applyCandidateAnswer on the next turn). */
+  const freshSalaryCounter = state.lastTurnDelta?.disclosedExpectedCtc === true;
   /* Polish 2 (2026-05-16) — eligibility now flows through canRefire so
    * refireable topics (tax-implication, range-to-point) can revisit
    * subject to per-topic max + turn-gap policy. Non-refireable topics
@@ -7573,7 +7581,8 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         rationale: "Candidate signalled preference for higher base — probe motivation (in-hand-now vs base-anchor) to size the fixed:variable split.",
       },
       {
-        flag: profile.wantsJoiningBonus,
+        /* S21-B2: suppress when a concurrent salary counter arrived this turn. */
+        flag: profile.wantsJoiningBonus && !freshSalaryCounter,
         topic: "wants-joining-bonus",
         /* PDF#46 (2026-05-25) — never volunteer "buyout" first. Probe
          * the bridge purpose without naming buyout; candidate can name
