@@ -579,3 +579,65 @@ describe("buildNegotiationPerQuestion — S13-B11 pause-tic heading strip", () =
     expect(out.questions[1]?.text).toBe("Can you walk me through your current CTC?");
   });
 });
+
+/* S21-B4 (2026-07-22) — "Disclosure leaks" penalised intentional strategic CTC
+ * disclosures. Root cause: buildNegotiationMetrics scanned all candidate text
+ * globally with a CTC-leak regex. Fix: per-turn scan — a match is a leak ONLY if
+ * the preceding AI turn did NOT ask for the candidate's CTC. */
+describe("buildNegotiationMetrics — S21-B4 disclosure leak elicitation gate", () => {
+  it("S21-B4: recruiter-elicited CTC answer is NOT counted as a leak", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What's your current CTC?" },
+          { speaker: "user", text: "My current CTC is 32 LPA." },
+          { speaker: "ai",   text: "And what's your target?" },
+          { speaker: "user", text: "I'm looking for 48 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
+    expect(leaks).toBeDefined();
+    expect(leaks!.value).toBe(0); // recruiter asked → not a leak
+  });
+
+  it("S21-B4: volunteered CTC without recruiter asking IS counted as a leak", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "Tell me about your background." },
+          { speaker: "user", text: "I'm currently earning 32 LPA and looking for a move." },
+          { speaker: "ai",   text: "Interesting. What are your expectations?" },
+          { speaker: "user", text: "I want 48 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
+    expect(leaks).toBeDefined();
+    expect(leaks!.value).toBeGreaterThan(0);
+  });
+
+  it("S21-B4: multiple turns — only the unprompted disclosures count", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What's your current salary?" }, // asks
+          { speaker: "user", text: "My current CTC is 32 LPA." },   // elicited → NOT a leak
+          { speaker: "ai",   text: "Got it. Tell me about a key project." },
+          { speaker: "user", text: "I make 32 LPA and want to grow." }, // volunteered → leak
+          { speaker: "ai",   text: "What's your current package?" },   // asks again
+          { speaker: "user", text: "I earn 32 LPA as mentioned." },    // elicited → NOT a leak
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
+    expect(leaks).toBeDefined();
+    expect(leaks!.value).toBe(1); // only the middle unprompted turn
+  });
+});

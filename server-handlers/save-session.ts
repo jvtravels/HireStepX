@@ -208,6 +208,13 @@ function asNumber(v: unknown): number {
  *  (c) Caps text at 3000 chars per entry so a single turn can't balloon the row,
  *      and time at 16 chars (it's a "mm:ss" display stamp).
  *  Returns an empty array when the input is not an array. */
+/* S1-B5: silence-nudge / rambling-interject / soft-tracking interjections are
+ * added to the live transcript as "[I'm listening.]", "[Hmm, go on.]", etc.
+ * (see _listening-interjections.ts). They are TTS timing markers, not recruiter
+ * speech — strip any AI entry whose text is entirely bracket-wrapped so they
+ * never appear in the saved replay. */
+const TTS_MARKER_RE = /^\[.+\]$/;
+
 export function sanitizeTranscript(raw: unknown): Array<{ speaker: string; text: string; time?: string }> {
   if (!Array.isArray(raw)) return [];
   const VALID_SPEAKERS = new Set(["ai", "user"]);
@@ -219,7 +226,12 @@ export function sanitizeTranscript(raw: unknown): Array<{ speaker: string; text:
         typeof entry === "object" &&
         typeof (entry as Record<string, unknown>).speaker === "string" &&
         VALID_SPEAKERS.has((entry as Record<string, unknown>).speaker as string) &&
-        typeof (entry as Record<string, unknown>).text === "string",
+        typeof (entry as Record<string, unknown>).text === "string" &&
+        /* Strip TTS interjection markers from AI turns. */
+        !(
+          (entry as Record<string, unknown>).speaker === "ai" &&
+          TTS_MARKER_RE.test(((entry as Record<string, unknown>).text as string).trim())
+        ),
     )
     .map(entry => {
       const time = (entry as Record<string, unknown>).time;

@@ -82,6 +82,43 @@ describe("sanitizeTranscript — canonical speaker shape (PRI-61)", () => {
     expect(sanitizeTranscript("nope")).toEqual([]);
     expect(sanitizeTranscript({})).toEqual([]);
   });
+
+  /* S1-B5 (2026-07-22): TTS interjection markers ("[I'm listening.]",
+   * "[Feel free to continue.]", etc.) were saved as recruiter turns in the
+   * transcript and appeared verbatim in the session replay. These are purely
+   * timing signals emitted by _listening-interjections.ts — strip them at
+   * the sanitize boundary so they never reach the database or the replay. */
+  it("S1-B5: strips TTS interjection markers from AI turns", () => {
+    const raw = [
+      { speaker: "ai", text: "What's your current CTC?", time: "00:00" },
+      { speaker: "user", text: "24 LPA", time: "00:12" },
+      { speaker: "ai", text: "[I'm listening.]", time: "00:40" },
+      { speaker: "user", text: "I mean my fixed is 20, variable 4.", time: "00:50" },
+      { speaker: "ai", text: "[Feel free to continue.]", time: "01:15" },
+      { speaker: "ai", text: "[Hmm, go on.]", time: "01:45" },
+      { speaker: "ai", text: "Thanks — that's helpful.", time: "02:00" },
+    ];
+    const out = sanitizeTranscript(raw);
+    // Real turns preserved, bracketed AI markers stripped.
+    expect(out).toHaveLength(4);
+    expect(out.every(e => !e.text.startsWith("[") || !e.text.endsWith("]"))).toBe(true);
+    expect(out.find(e => e.text === "Thanks — that's helpful.")).toBeDefined();
+  });
+
+  it("S1-B5: bracketed text in a USER turn is NOT stripped (skip/placeholder answers)", () => {
+    const raw = [
+      { speaker: "user", text: "[SKIPPED — reason: timeout]" },
+      { speaker: "user", text: "[Answer recorded — 3s]" },
+    ];
+    const out = sanitizeTranscript(raw);
+    expect(out).toHaveLength(2);
+  });
+
+  it("S1-B5: panel persona prefix '[Hiring Manager] Question text' is NOT stripped", () => {
+    const raw = [{ speaker: "ai", text: "[Hiring Manager] Tell me about a time..." }];
+    // Persona prefix has real text after the bracket — NOT entirely bracketed.
+    expect(sanitizeTranscript(raw)).toHaveLength(1);
+  });
 });
 
 describe("toRoleTranscript — evaluate-session boundary map (PRI-61)", () => {
