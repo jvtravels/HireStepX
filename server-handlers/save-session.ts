@@ -25,7 +25,7 @@ import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
 import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
-import { groundNoCounterSkillScores } from "../src/sessionReport/progressTracking";
+import { groundNoCounterSkillScores, groundGapClosureSkillScores } from "../src/sessionReport/progressTracking";
 import { computeStreakReward } from "./_streak-reward";
 import { grantSessionCredits } from "./_session-credits";
 import { computePracticeTimestamps } from "./_save-session-helpers";
@@ -202,7 +202,7 @@ export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> 
  * `groundNoCounterSkillScores` (also applied at the cross-session read seam),
  * imported above and re-exported here so save-session's existing unit tests
  * keep their import path. */
-export { groundNoCounterSkillScores };
+export { groundNoCounterSkillScores, groundGapClosureSkillScores };
 
 function asString(v: unknown, max = 500): string {
   if (typeof v !== "string") return "";
@@ -505,11 +505,26 @@ export default async function handler(req: Request): Promise<Response> {
   /* Ground only for negotiation rows (negMetrics present). Non-negotiation
      sessions never carry a counter concept, so their skill_scores pass through
      untouched even if a key happens to match the anchor regex. */
-  const skillScores = isBailoutSession
+  const skillScoresAfterNoCounter = isBailoutSession
     ? null
     : negMetrics
     ? groundNoCounterSkillScores(rawSkillScores, candidateAskLpa)
     : rawSkillScores;
+  /* S44-B13 (2026-07-23) — apply the same gap-closure ceiling the report
+     adapter uses at render time, so the persisted skill_scores row matches
+     what the Skills Breakdown panel shows. Without this, the Skill Progress
+     panel reads raw LLM scores (e.g., Anchor strength 95) while the same
+     report's Skills Breakdown shows the adapter-capped value (e.g., 45 for
+     a <10% gap-closure accept), creating a direct on-page contradiction. */
+  const skillScores = negMetrics
+    ? groundGapClosureSkillScores(
+        skillScoresAfterNoCounter,
+        typeof negMetrics.outcome === "string" ? negMetrics.outcome : null,
+        candidateAskLpa,
+        typeof negMetrics.initialOfferLpa === "number" ? negMetrics.initialOfferLpa : null,
+        typeof negMetrics.finalOfferLpa === "number" ? negMetrics.finalOfferLpa : null,
+      )
+    : skillScoresAfterNoCounter;
 
   const sessionRow = {
     id: asString(body.id, 64),

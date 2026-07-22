@@ -313,3 +313,67 @@ export function groundNoCounterSkillScores<T extends Record<string, unknown>>(
   }
   return out as T;
 }
+
+/* S44-B13 (2026-07-23) — gap-closure cap at the write seam.
+ *
+ * The adapter's groundNegotiationReport caps outcome-dependent skill axes
+ * (leverage, anchor, closing, concession, etc.) at render time based on
+ * how much of the ask-vs-offer gap the candidate closed. This is the right
+ * economic truth: a candidate who accepted ₹45L on a ₹55L ask after a ₹43L
+ * opening did NOT demonstrate strong leverage skill. But the cap only lives
+ * in the adapter — the raw LLM value (95/100) was written to the DB and
+ * shown as-is in the Skill Progress panel ("Across Sessions"), creating a
+ * direct contradiction with the Skills Breakdown on the SAME report page.
+ *
+ * Fix: apply the SAME ceiling at write time so the persisted skill_scores
+ * already reflect economic reality. The ceiling schedule mirrors the adapter:
+ *   gap < 10% → ceiling 45  (accepted, closed almost nothing)
+ *   gap < 30% → ceiling 60  (token movement)
+ *   gap < 55% → ceiling 75  (closed under half)
+ *   gap ≥ 55% → uncapped    (genuinely closed the gap)
+ *
+ * Only outcome-dependent axes are capped — the same /leverage|clos|anchor|
+ * concession|package|deal|counter|trade|structural|walk/ regex used in the
+ * adapter. Demeanour axes (composure, professional tone) pass through. */
+const NEG_OUTCOME_SKILL_KEY_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk/i;
+
+export function groundGapClosureSkillScores<T extends Record<string, unknown>>(
+  skillScores: T | null | undefined,
+  outcome: string | null,
+  candidateAskLpa: number | null,
+  initialOfferLpa: number | null | undefined,
+  finalOfferLpa: number | null | undefined,
+): T | null | undefined {
+  if (!skillScores || outcome !== "accepted") return skillScores;
+  if (
+    typeof initialOfferLpa !== "number" ||
+    typeof finalOfferLpa !== "number" ||
+    typeof candidateAskLpa !== "number" ||
+    candidateAskLpa <= initialOfferLpa
+  ) return skillScores;
+  const gapClosurePct = Math.max(0, Math.min(100,
+    Math.round(((finalOfferLpa - initialOfferLpa) / (candidateAskLpa - initialOfferLpa)) * 100)
+  ));
+  let ceiling: number | null = null;
+  if (gapClosurePct < 10) ceiling = 45;
+  else if (gapClosurePct < 30) ceiling = 60;
+  else if (gapClosurePct < 55) ceiling = 75;
+  if (ceiling === null) return skillScores;
+  const cap = ceiling;
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(skillScores)) {
+    if (NEG_OUTCOME_SKILL_KEY_RE.test(key)) {
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        out[key] = Math.min(raw, cap);
+        continue;
+      }
+      if (raw && typeof raw === "object" && typeof (raw as { score?: unknown }).score === "number") {
+        const r = raw as { score: number };
+        out[key] = { ...r, score: Math.min(r.score, cap) };
+        continue;
+      }
+    }
+    out[key] = raw;
+  }
+  return out as T;
+}

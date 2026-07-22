@@ -12,6 +12,7 @@ import {
   computeTrend,
   computeTrendsForSkills,
   createInMemoryProgressStore,
+  groundGapClosureSkillScores,
   groundNoCounterSkillScores,
   humanizeSkillKey,
   sessionRowsToProgressPoints,
@@ -407,5 +408,70 @@ describe("capHistoryToSession — scope trend to the viewed session", () => {
     const withTie = [...history, pt("Composure", 80, 1, "s-mid")];
     const scoped = capHistoryToSession(withTie, "s-mid");
     expect(scoped.some((p) => p.skill === "Composure")).toBe(true);
+  });
+});
+
+/* ── groundGapClosureSkillScores (S44-B13) ─────────────────────────────────
+   Write-seam gap-closure cap — persisted skill_scores must match the adapter's
+   render-time caps so the Skill Progress panel and Skills Breakdown show the
+   same value for the same session. */
+describe("groundGapClosureSkillScores", () => {
+  const scores = {
+    "Anchor strength": 95,
+    "Leverage Use": 92,
+    "Closing Technique": 88,
+    "Concession Strategy": 90,
+    "Tactical composure": 85,  // demeanour axis — should NOT be capped
+  };
+
+  it("caps outcome-dependent axes at 45 when gap closed <10%", () => {
+    // candidate asked 55L, recruiter opened 43L, closed at 43.6L → 5% gap closed
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 43.6);
+    expect(out!["Anchor strength"]).toBe(45);
+    expect(out!["Leverage Use"]).toBe(45);
+    expect(out!["Closing Technique"]).toBe(45);
+    expect(out!["Concession Strategy"]).toBe(45);
+    expect(out!["Tactical composure"]).toBe(85); // demeanour — untouched
+  });
+
+  it("caps at 60 when gap closed 10–29%", () => {
+    // candidate 55L, opened 43L, closed at 46L → (46-43)/(55-43)=25%
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 46);
+    expect(out!["Anchor strength"]).toBe(60);
+    expect(out!["Tactical composure"]).toBe(85);
+  });
+
+  it("caps at 75 when gap closed 30–54%", () => {
+    // candidate 55L, opened 43L, closed at 48.6L → (48.6-43)/(55-43)≈46.7%
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 48.6);
+    expect(out!["Anchor strength"]).toBe(75);
+  });
+
+  it("does NOT cap when gap closed ≥55%", () => {
+    // candidate 55L, opened 43L, closed at 50L → (50-43)/(55-43)≈58%
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 50);
+    expect(out!["Anchor strength"]).toBe(95);
+    expect(out!["Leverage Use"]).toBe(92);
+  });
+
+  it("passes through on non-accepted outcome", () => {
+    const out = groundGapClosureSkillScores(scores, "walked-away", 55, 43, 50);
+    expect(out).toBe(scores); // identity — no copy
+  });
+
+  it("passes through when candidateAskLpa equals initialOfferLpa (no gap)", () => {
+    const out = groundGapClosureSkillScores(scores, "accepted", 43, 43, 45);
+    expect(out).toBe(scores);
+  });
+
+  it("returns null input unchanged", () => {
+    expect(groundGapClosureSkillScores(null, "accepted", 55, 43, 44)).toBeNull();
+  });
+
+  it("preserves legacy { score } wrapper shape on capped axes", () => {
+    const wrapped = { "Anchor strength": { score: 95, weight: 2 } };
+    // 43.6L close on 43→55 spread → 5% gap → ceiling 45
+    const out = groundGapClosureSkillScores(wrapped, "accepted", 55, 43, 43.6);
+    expect((out!["Anchor strength"] as { score: number }).score).toBe(45);
   });
 });
