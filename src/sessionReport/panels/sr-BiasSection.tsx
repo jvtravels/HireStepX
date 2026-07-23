@@ -11,7 +11,6 @@ export function BiasSection({ findings }: { findings: BiasFinding[] }) {
     <SrSectionShell
       anchorId="ir-section-bias"
       headingId="ir-bias-heading"
-      num="06"
       label="Perception optimizer"
       title="Language patterns to watch"
       subtitle="Research-backed patterns that tend to lower hiring perception. Not a judgment — a perception optimizer."

@@ -571,7 +571,10 @@ export function SrSectionShell({
 }: {
   anchorId?: string;
   headingId?: string;
-  num: string;
+  /* S34-B8 (2026-07-23) — num is optional so supplemental sections that
+   * are not in the jump-nav (e.g. BiasSection) can omit it without
+   * claiming a nav slot number. When absent the eyebrow row is hidden. */
+  num?: string;
   label: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -606,7 +609,7 @@ export function SrSectionShell({
   );
   return (
     <ReportCardShell id={anchorId} ariaLabelledBy={headingId}>
-      <SectionEyebrow num={num} label={label} />
+      {num != null && <SectionEyebrow num={num} label={label} />}
       {aside ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>{titleBlock}</div>
