@@ -179,6 +179,90 @@ describe("planNextAction — priority ordering", () => {
   });
 });
 
+describe("S45-B1/B3 — plural 'lakhs' unit detection in candidateHasNewNumber", () => {
+  /* Root cause: the offer-breakdown gate's candidateHasNewNumber regex
+   * used `lakh\b` which failed on plural "lakhs" (word boundary fires
+   * between 'h' and 's'). Fix: `lakhs?` in the unit alternation.
+   *
+   * When the candidate says "52 lakhs" and there is an open counter-offer
+   * to pursue, the planner MUST return counter-offer, not offer-breakdown.
+   * Before the fix, candidateHasNewNumber was false for plural form, so the
+   * offer-breakdown branch fired and the offer never moved. */
+  const BAND_S45: NegotiationBand = {
+    initialOffer: 45.1,
+    maxStretch: 60.2,
+    walkAway: 35,
+    hasEquity: true,
+  };
+  const base = (overrides: Partial<NegotiationState> = {}): NegotiationState => ({
+    ...initState({ sessionId: "s45", role: "swe", company: "Razorpay", band: BAND_S45 }),
+    phase: "counter-offer" as const,
+    highestOfferMade: 45.1,
+    candidateTarget: 52,
+    lastCandidateCounterLpa: 52,
+    candidateCurrentCtc: 28,
+    turnIndex: 5,
+    ...overrides,
+  });
+
+  it('"52 lakhs in total cash" → counter-offer, not offer-breakdown', () => {
+    const s = base({
+      conversationLog: [
+        { speaker: "ai", text: "The fitment we can offer is ₹45.1 LPA." },
+        {
+          speaker: "candidate",
+          text: "I was looking at something closer to 52 lakhs in total cash — base and bonus. Can we work toward that number?",
+        },
+      ],
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("counter-offer");
+  });
+
+  it('"48 lakhs" counter → counter-offer, not offer-breakdown', () => {
+    const s = base({
+      candidateTarget: 48,
+      lastCandidateCounterLpa: 48,
+      conversationLog: [
+        { speaker: "ai", text: "The fitment we can offer is ₹45.1 LPA." },
+        {
+          speaker: "candidate",
+          text: "Would you be able to go to 48 lakhs? That's a number I could sign on quickly.",
+        },
+      ],
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("counter-offer");
+  });
+
+  it("offer-breakdown does NOT repeat when lastAiText contains 'fully fixed'", () => {
+    /* alreadyDisclosed must detect "fully fixed" so a second candidate
+     * counter after a structural clarification routes to counter-offer. */
+    const s = base({
+      lastAiText: "The ₹45.1L is fully fixed cash, guaranteed and contractual, with no variable component on this grade.",
+      conversationLog: [
+        { speaker: "ai", text: "The fitment we can offer is ₹45.1 LPA." },
+        {
+          speaker: "candidate",
+          text: "I was looking at something closer to 52 lakhs. Can we work toward that number?",
+        },
+        {
+          speaker: "ai",
+          text: "The ₹45.1L is fully fixed cash, guaranteed and contractual, with no variable component on this grade.",
+        },
+        {
+          speaker: "candidate",
+          text: "I understand — but can you go to 48 lakhs? That's my ask.",
+        },
+      ],
+    });
+    const action = planNextAction(s);
+    /* alreadyDisclosed=true blocks re-fire; candidateHasNewNumber=true
+     * (48 lakhs now matched) routes to counter-offer. */
+    expect(action.kind).toBe("counter-offer");
+  });
+});
+
 describe("actionToLever — bit-identical round-trip vs pickAiMove", () => {
   /* For each fixture: pickAiMove(state) produces the AiMove that
    * applyAiMove will apply. The planner-then-lever path MUST produce

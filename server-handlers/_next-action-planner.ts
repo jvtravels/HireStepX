@@ -2891,9 +2891,17 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * a NEW target number which the counter-base planner branch
      * handles. */
     const lastAiText = (state.lastAiText ?? "").toLowerCase();
+    /* S45-B1 (2026-07-23) — widen alreadyDisclosed to catch the
+     * "fully fixed cash, guaranteed and contractual" and "no variable
+     * component" prose variants that the prior two-phrase check missed,
+     * preventing the same offer-breakdown from firing twice in a row. */
     const alreadyDisclosed =
       lastAiText.includes("guaranteed cash is") ||
-      lastAiText.includes("let me break it down honestly");
+      lastAiText.includes("let me break it down honestly") ||
+      lastAiText.includes("fully fixed") ||
+      lastAiText.includes("no variable component") ||
+      lastAiText.includes("all fixed cash") ||
+      lastAiText.includes("guaranteed and contractual");
     /* A8 adversarial-sim (2026-06-19) — a base/component breakdown ask
      * ("what can you do on the base?", "and the base specifically?") often
      * lands in probe-expectations / offer-presented once a concrete offer
@@ -2915,8 +2923,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * NOT the recruiter's current offer — that's a counter, not a
      * breakdown ask. Restating the offer's own number (e.g. "share the
      * breakdown of 41 LPA offer") is fine. */
+    /* S45-B1/B3 (2026-07-23) — "lakhs" (plural) wasn't in the unit
+     * alternation, so "52 lakhs" didn't match and candidateHasNewNumber
+     * stayed false. Planner routed to offer-breakdown instead of
+     * counter-base, the offer never moved, and the breakdown repeated
+     * verbatim. Adding `s?` makes `lakh` and `lakhs` both match. */
     const numberMatches = Array.from(
-      lastCandidate.matchAll(/\b(\d+(?:\.\d+)?)\s*(?:l|lpa|lakh|lacs?|cr)\b/gi),
+      lastCandidate.matchAll(/\b(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lacs?|cr)\b/gi),
     ).map((m) => Number(m[1]));
     const candidateHasNewNumber = numberMatches.some(
       (n) => Number.isFinite(n) && Math.abs(n - offerLpa) > 0.5,
