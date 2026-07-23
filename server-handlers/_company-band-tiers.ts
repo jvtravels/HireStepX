@@ -215,6 +215,11 @@ export function classifyCompanyTier(companyName: string | null | undefined): Com
   if (any(n, BIG_TECH)) return "big-tech";
   if (any(n, GCC)) return "gcc";
   if (any(n, UNICORN)) return "unicorn";
+  /* S46-B2 (2026-07-23): Quick-commerce players (Zepto, Blinkit, Dunzo, Instamart)
+   * were in QCOM for sector classification but missing from UNICORN, so they fell
+   * through to "sme" and received a ₹9-19L band — far below market. All major
+   * quick-commerce operators are unicorn-scale; treat them as such for comp bands. */
+  if (any(n, QCOM)) return "unicorn";
   if (any(n, IT_SERVICES)) return "it-services";
   if (any(n, CONSULTING)) return "consulting";
   if (any(n, BFSI)) return "bfsi";

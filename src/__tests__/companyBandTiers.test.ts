@@ -39,6 +39,16 @@ describe("Bug 1: classifyCompanyTier (band-tier)", () => {
     expect(classifyCompanyTier("Razorpay")).toBe("unicorn");
     expect(classifyCompanyTier("PhonePe")).toBe("unicorn");
   });
+
+  // S46-B2: Quick-commerce players were in QCOM (sector) but not UNICORN (comp-tier),
+  // so they fell through to "sme" and received a ₹9-19L band — far below market.
+  it("classifies quick-commerce players as unicorn (S46-B2)", () => {
+    expect(classifyCompanyTier("Zepto")).toBe("unicorn");
+    expect(classifyCompanyTier("zepto")).toBe("unicorn");
+    expect(classifyCompanyTier("Blinkit")).toBe("unicorn");
+    expect(classifyCompanyTier("Dunzo Daily")).toBe("unicorn");
+    expect(classifyCompanyTier("Instamart")).toBe("unicorn");
+  });
   it("classifies product-india", () => {
     expect(classifyCompanyTier("Zoho")).toBe("product-india");
     expect(classifyCompanyTier("Freshworks")).toBe("product-india");
