@@ -571,7 +571,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     getUserSessions(user.id).then(sessions => {
       const mapped = sessions.map(s => ({
         id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
-        focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
+        /* S54-B7 (2026-07-24) — mirror the report_json.overallScore preference from the
+         * initial-load mapping (line 461) so a refresh doesn't revert to the raw
+         * quick-eval score and re-introduce the +5pt sessions-list vs report gap. */
+        focus: s.focus, duration: s.duration, score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score, questions: s.questions,
         ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
         coaching: s.report_json?.coaching ?? undefined,
         focusMetrics: s.report_json?.focusMetrics ?? undefined,

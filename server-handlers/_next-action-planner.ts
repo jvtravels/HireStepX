@@ -1169,7 +1169,16 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
    * that hands the candidate the bare standing offer. clampToCloseFloor only
    * ever raises, so returning a figure above the offer is always safe. */
   const agreed = acceptanceUtteranceFigure(state);
-  if (agreed != null && agreed > offer && agreed <= state.band.maxStretch) {
+  /* S54-B6/B9 (2026-07-24) — add the same gap-window constraint to the
+   * acceptance-utterance figure that the counter-figure branch below uses.
+   * Without this, a candidate saying "₹27L would be nice" during acceptance
+   * causes nearOfferCloseNumber to return ₹27L even though the standing offer
+   * is ₹21.8L — that figure was never formally put on the table by the
+   * recruiter. The gap window (max ₹2L, 6% of offer) limits honoring to
+   * figures that are realistically a same-range settle, not aspirational wishes
+   * that should instead open another counter round. */
+  const _closeGap = Math.max(2, offer * 0.06);
+  if (agreed != null && agreed > offer && agreed <= state.band.maxStretch && agreed - offer <= _closeGap) {
     return agreed;
   }
   /* #105 (2026-06-20, live-staging) — scope-aware close number. A
@@ -1635,7 +1644,13 @@ function isAskedTopicAnswered(
     }
     if (
       (topic === "targetAnswered" || topic === "targetAsked") &&
-      state.candidateTarget != null
+      /* S59-B6 (2026-07-24) — also check candidateTargetFixed. When the
+       * candidate states a fixed-scoped target ("₹55L fixed"), the kernel
+       * writes candidateTargetFixed and leaves candidateTarget null. Without
+       * this arm, isAskedTopicAnswered returns false → target probe re-fires
+       * despite the target already being known. Mirror line 913 which already
+       * checks both fields. */
+      (state.candidateTarget != null || state.candidateTargetFixed != null)
     ) {
       return true;
     }
@@ -5723,8 +5738,21 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     /* Class-A (2026-06-15) — effectiveTargetCtcLpa folds in-hand→CTC and
      * fixed-only→implied-total so the aspiration isn't computed in the wrong
      * frame (the in-hand under-quote / fixed-only fall-to-ceiling bugs). The
-     * Math.min(target, ceiling) below still clamps to band. */
-    const target = effectiveTargetCtcLpa(state) ?? state.band.maxStretch;
+     * Math.min(target, ceiling) below still clamps to band.
+     *
+     * S54-B3/B4 (2026-07-24) — when the offer already exceeds the candidate's
+     * intake target (over-offer scenario — e.g. offer ₹21.8L vs stated target
+     * ₹18L), effectiveTargetCtcLpa returns ₹18L which is ≤ floor ₹21.8L →
+     * aspiration ≤ floor → no-headroom guard fires → lever-explore, even though
+     * the candidate then counter-offers at ₹23L. Fold totalScopedCounter as the
+     * effective aspiration when it exceeds the intake target: the candidate's
+     * explicit counter is their real ask, and the engine must respond to it. */
+    const _eftTarget = effectiveTargetCtcLpa(state);
+    const _counter = totalScopedCounter(state);
+    const target =
+      (_counter != null && (_eftTarget == null || _counter > _eftTarget)
+        ? _counter
+        : _eftTarget) ?? state.band.maxStretch;
     /* Step 5 (2026-05-16, ResumeFactPack track) — when the candidate has
      * not disclosed their currentCtc, fall back to the resume-implied
      * prior CTC as a floor signal. The counter math anchors against
@@ -7741,7 +7769,13 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         rationale: "Candidate referenced spouse/family — surface dual-career and location constraints early so they don't ambush the close.",
       },
       {
-        flag: profile.askedAboutReporting,
+        /* S59-B2/B5 (2026-07-24) — suppress reporting-structure followup when a
+         * fresh salary counter arrived this turn. askedAboutReporting is sticky once
+         * set (OR-merged in _candidate-profile.ts), so without this guard it fires
+         * over a salary counter in any subsequent turn — the candidate's comp ask is
+         * silently dropped and replaced with org-chart content. Mirror the
+         * wantsJoiningBonus !freshSalaryCounter pattern at line 7702. */
+        flag: profile.askedAboutReporting && !freshSalaryCounter,
         topic: "reporting-structure",
         ask: "For this role, you'd report to the EM or Director on the platform side, and their manager is the VP. Would you like me to set up a short chat with the hiring manager?",
         rationale: "Candidate asked about reporting — answer with reporting line and offer manager intro to de-risk the close.",

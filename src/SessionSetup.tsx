@@ -1396,6 +1396,21 @@ export default function SessionSetup() {
     return "soft";
   }, [isNegotiationFocus, targetCompany]);
 
+  /* S54-B10 (2026-07-24) — disclose when the entered company doesn't match any
+   * named-company pattern in inferCompanyMode and falls to the IT_SERVICES
+   * default. Mirrors the regex guards in _market-mode.ts so the two stay in
+   * sync; IT_SERVICES is the only untuned bucket. */
+  const isUntunedCompany = useMemo<boolean>(() => {
+    if (!isNegotiationFocus || !targetCompany.trim()) return false;
+    const c = targetCompany.trim();
+    if (/(gcc|global\s+capability|captive|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b)/i.test(c)) return false;
+    if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return false;
+    if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return false;
+    if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return false;
+    if (/(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i.test(c)) return false;
+    return true;
+  }, [isNegotiationFocus, targetCompany]);
+
   const formComplete =
     !!targetRole.trim() &&
     interviewFocus.length > 0 &&
@@ -1845,6 +1860,15 @@ export default function SessionSetup() {
                                 ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Competitive market simulation</strong> — recruiter has more flex to stretch. Push confidently on your ask.</>
                                 : <><strong style={{ color: T.coal, fontWeight: 600 }}>Neutral market simulation</strong> — standard recruiter concession behaviour.</>
                             }
+                          </span>
+                        </div>
+                      )}
+                      {/* S54-B10: untuned-company disclosure */}
+                      {isUntunedCompany && !companyMissing && !hardRoleCompanyMismatch && (
+                        <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, lineHeight: 1.4, display: "flex", alignItems: "flex-start", gap: 5, color: T.inkSoft }}>
+                          <span style={{ flexShrink: 0, marginTop: 1 }}>ⓘ</span>
+                          <span>
+                            <strong style={{ color: T.coal, fontWeight: 600 }}>Generic company simulation</strong> — {targetCompany.trim()} isn&apos;t in our recruiter database yet. The session will use default IT-services negotiation behaviour rather than company-specific data.
                           </span>
                         </div>
                       )}

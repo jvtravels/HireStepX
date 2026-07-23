@@ -5156,13 +5156,24 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
        * (stated before any offer) must NOT populate this slot — they shouldn't
        * appear as "YOUR ASK" in the report when the candidate never explicitly
        * countered against the offer. First-wins (monotone null→set). */
+      /* S54-B8 (2026-07-24) — when parseCandidateAnswer returns parsed.target=null
+       * but parsed.currentCtc is ABOVE the standing offer, the number was almost
+       * certainly a counter mis-classified as CTC (e.g. due to a prior CTC re-ask
+       * in state.lastAiText confusing the parser). A genuine CTC disclosure cannot
+       * logically exceed the recruiter's live offer; anything above the offer is
+       * unambiguously a counter-ask, so treat it as such when parsed.target is null. */
+      const _counterSignal =
+        parsed.target ??
+        (parsed.currentCtc != null && parsed.currentCtc > (state.highestOfferMade ?? 0)
+          ? parsed.currentCtc
+          : null);
       if (next.firstCounterVsOffer == null && (state.highestOfferMade ?? 0) > 0) {
-        next.firstCounterVsOffer = parsed.target;
+        next.firstCounterVsOffer = _counterSignal;
       }
       /* S43-B8 — last-wins complement: always overwrite so the report shows
        * the FINAL explicit counter vs the offer, not just the first one. */
       if ((state.highestOfferMade ?? 0) > 0) {
-        next.lastCounterVsOffer = parsed.target;
+        next.lastCounterVsOffer = _counterSignal;
       }
       /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation, scoped to
        * the TOTAL target it describes. If this utterance frames the number

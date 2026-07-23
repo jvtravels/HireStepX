@@ -1896,13 +1896,21 @@ const PROSE_ARMS: ProseArmRegistry = {
    * planner; the prose arm dispatches on `helpers.sectorPersona`
    * directly to keep the same per-sector record-lookup pattern the
    * other arms use. */
-  "proactive-sweetener": (_action, _state, helpers) => {
+  "proactive-sweetener": (_action, state, helpers) => {
     const persona = helpers.sectorPersona;
     return helpers.selectBySectorPersona(persona, {
-      "it-services":
-        "Look, I know the 90-day notice is a real concern — we can " +
-        "structure a notice buyout component to help bridge that. " +
-        "Would that move things along?",
+      /* S54-B5 (2026-07-24) — the previous it-services arm hardcoded "90-day
+       * notice is a real concern" regardless of whether the candidate had ever
+       * mentioned a notice period. This fabricated a constraint that could be
+       * factually wrong (candidate may have 30-day notice or none). Gate on
+       * state.noticePeriodDays: if notice period is known, address it; otherwise
+       * use a base-structure sweetener that doesn't invent facts. */
+      "it-services": state.noticeJoining.noticePeriodDays != null
+        ? "Look, I know the notice period is a real concern — we can " +
+          "structure a notice buyout component to help bridge that. " +
+          "Would that move things along?"
+        : "On the structure — I can look at front-loading more into the base " +
+          "component rather than performance-linked variable. Would that help?",
       "gcc":
         "We have relocation budget that hasn't been factored in yet — " +
         "covering shifting + first-month accommodation. Does that " +
