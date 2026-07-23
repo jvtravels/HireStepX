@@ -1378,6 +1378,21 @@ export default function SessionSetup() {
   }, [isNegotiationFocus, targetRole, targetCompany]);
   const hardRoleCompanyMismatch = roleCompanyFit?.fit === "hard_mismatch";
 
+  /* S40-B8 (2026-07-23) — derive market mode client-side using the same
+   * inferCompanyMode → marketMode mapping that negotiate-turn.ts uses at
+   * session init, so we can disclose the simulation context before the
+   * session starts. Mirrors: GCC/MNC → neutral, BFSI/IT_SERVICES → soft,
+   * STARTUP → hot. */
+  const simulatedMarketMode = useMemo<"soft" | "neutral" | "hot" | null>(() => {
+    if (!isNegotiationFocus || !targetCompany.trim()) return null;
+    const c = targetCompany;
+    if (/(gcc|global\s+capability|captive|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b)/i.test(c)) return "neutral";
+    if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return "soft";
+    if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return "hot";
+    if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return "neutral";
+    return "soft";
+  }, [isNegotiationFocus, targetCompany]);
+
   const formComplete =
     !!targetRole.trim() &&
     interviewFocus.length > 0 &&
@@ -1814,6 +1829,20 @@ export default function SessionSetup() {
                       {roleCompanyFit?.fit === "soft_mismatch" && !companyMissing && (
                         <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, color: T.inkSoft, lineHeight: 1.4 }}>
                           ⓘ {roleCompanyFit.reason}
+                        </div>
+                      )}
+                      {/* S40-B8: market-mode disclosure before session starts */}
+                      {simulatedMarketMode && !companyMissing && !hardRoleCompanyMismatch && (
+                        <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, lineHeight: 1.4, display: "flex", alignItems: "flex-start", gap: 5, color: T.inkSoft }}>
+                          <span style={{ flexShrink: 0, marginTop: 1 }}>ⓘ</span>
+                          <span>
+                            {simulatedMarketMode === "soft"
+                              ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Soft market simulation</strong> — recruiter will concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.</>
+                              : simulatedMarketMode === "hot"
+                                ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Competitive market simulation</strong> — recruiter has more flex to stretch. Push confidently on your ask.</>
+                                : <><strong style={{ color: T.coal, fontWeight: 600 }}>Neutral market simulation</strong> — standard recruiter concession behaviour.</>
+                            }
+                          </span>
                         </div>
                       )}
                     </div>
