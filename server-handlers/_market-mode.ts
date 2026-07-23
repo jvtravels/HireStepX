@@ -99,13 +99,22 @@ export function inferMarketMode(input: InferMarketModeInput): MarketMode {
 /** Company-type market segment. Distinct from MarketMode ("soft"/"neutral"/"hot")
  *  which is the concession-curve bias; CompanyMode is the structural context
  *  that gates hike caps, equity norms, and bonus structure defaults. */
-export type CompanyMode = "IT_SERVICES" | "STARTUP" | "GCC" | "BFSI" | "MNC" | "PRODUCT_INDIA";
+export type CompanyMode = "IT_SERVICES" | "STARTUP" | "GCC" | "BFSI" | "MNC" | "PRODUCT_INDIA" | "CONSULTING";
 
 const BFSI_RE =
   /(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance\s+corp)/i;
 
+/* S53-B3/S52-WL-B2 (2026-07-24): expanded to match _hr-round-overlays.ts GCC list.
+ * Original only covered financial-sector MNC captives; missing Walmart, Adobe, Cisco
+ * etc. caused consulting/GCC companies to fall to IT_SERVICES → "soft" market. */
 const GCC_RE =
-  /(gcc|global\s+capability|captive|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman(\s+sachs)?|morgan\s+stanley|deutsche(\s+bank)?|hsbc(\s+tech)?|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b)/i;
+  /(gcc|global\s+capability|captive|walmart|target\s+corp|lowe'?s|tesco|american\s+express|\bamex\b|optum|unitedhealth|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman(\s+sachs)?|morgan\s+stanley|deutsche(\s+bank)?|hsbc(\s+tech)?|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b|nvidia|\bintel\b|qualcomm|adobe|cisco|vmware|\bdell\b|\bhp\b|\bhpe\b|shell\b|mastercard|\bvisa\b|paypal|expedia|booking\.com|uber\b|linkedin)/i;
+
+/* S53-B3 (2026-07-24): consulting firms get "neutral" market mode, not "soft".
+ * Strategy + Big-4 + MBB: structured comp bands, independent of IT-services
+ * pricing compression. Mirrors CONSULTING regex in _hr-round-overlays.ts. */
+const CONSULTING_RE =
+  /(mckinsey|bcg|boston\s+consulting|\bbain\b|deloitte|\bey\b|ernst\s+(?:&|and)\s+young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver\s+wyman|\bzs\b|zs\s+associates|roland\s+berger|alvarez|grant\s+thornton|accenture)/i;
 
 const STARTUP_RE_COMPANY =
   /(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|open\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i;
@@ -131,7 +140,7 @@ export function inferCompanyMode(role: string, company: string): CompanyMode {
   const c = company ?? "";
 
   /* GCC first — more specific than MNC when the company matches both
-   * (e.g. JPMC India, Wells Fargo, Deutsche Bank). */
+   * (e.g. JPMC India, Wells Fargo, Walmart Labs, Deutsche Bank). */
   if (GCC_RE.test(c) || GCC_RE.test(r)) return "GCC";
 
   /* BFSI — domestic Indian banking / insurance / NBFC. */
@@ -140,8 +149,11 @@ export function inferCompanyMode(role: string, company: string): CompanyMode {
   /* STARTUP — known Indian unicorns / startups, OR role mentions funding stage. */
   if (STARTUP_RE_COMPANY.test(c) || STARTUP_RE_ROLE.test(r)) return "STARTUP";
 
-  /* MNC — global big-tech / consulting / IT that isn't IT-services tier. */
+  /* MNC — global big-tech that isn't GCC. */
   if (MNC_RE.test(c)) return "MNC";
+
+  /* CONSULTING — strategy/Big-4/MBB; neutral market, not soft (S53-B3/2026-07-24). */
+  if (CONSULTING_RE.test(c)) return "CONSULTING";
 
   /* PRODUCT_INDIA — Indian-headquartered product companies. Healthy salary
    * budgets + global product positioning; neutral, not soft. Must sit before

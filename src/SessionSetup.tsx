@@ -1386,13 +1386,18 @@ export default function SessionSetup() {
   const simulatedMarketMode = useMemo<"soft" | "neutral" | "hot" | null>(() => {
     if (!isNegotiationFocus || !targetCompany.trim()) return null;
     const c = targetCompany;
-    if (/(gcc|global\s+capability|captive|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b)/i.test(c)) return "neutral";
+    /* GCC — expanded (S53-B3/S52-WL-B2, 2026-07-24): mirrors _market-mode.ts GCC_RE.
+     * Walmart Labs, Adobe, Cisco etc. were missing, causing them to hit the "soft" default. */
+    if (/(gcc|global\s+capability|captive|walmart|target\s+corp|lowe'?s|tesco|american\s+express|\bamex\b|optum|unitedhealth|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b|nvidia|\bintel\b|qualcomm|adobe|cisco|vmware|\bdell\b|\bhp\b|\bhpe\b|shell\b|mastercard|\bvisa\b|paypal|expedia|uber\b|linkedin)/i.test(c)) return "neutral";
     if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return "soft";
     if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return "hot";
     if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return "neutral";
     /* B5 (2026-07-23) — Indian product companies: neutral, not soft.
      * Must precede the IT_SERVICES fallback (return "soft" below). */
     if (/(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary(\s+tech(?:nologies)?)?|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i.test(c)) return "neutral";
+    /* CONSULTING (S53-B3, 2026-07-24): MBB + Big-4 + strategy houses = neutral,
+     * not soft. Structured comp bands independent of IT-services pricing compression. */
+    if (/(mckinsey|bcg|boston\s+consulting|\bbain\b|deloitte|\bey\b|ernst\s+(?:&|and)\s+young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver\s+wyman|\bzs\b|zs\s+associates|roland\s+berger|alvarez|grant\s+thornton|accenture)/i.test(c)) return "neutral";
     return "soft";
   }, [isNegotiationFocus, targetCompany]);
 
@@ -1403,11 +1408,12 @@ export default function SessionSetup() {
   const isUntunedCompany = useMemo<boolean>(() => {
     if (!isNegotiationFocus || !targetCompany.trim()) return false;
     const c = targetCompany.trim();
-    if (/(gcc|global\s+capability|captive|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b)/i.test(c)) return false;
+    if (/(gcc|global\s+capability|captive|walmart|target\s+corp|lowe'?s|tesco|american\s+express|\bamex\b|optum|unitedhealth|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b|nvidia|\bintel\b|qualcomm|adobe|cisco|vmware|\bdell\b|\bhp\b|\bhpe\b|shell\b|mastercard|\bvisa\b|paypal|expedia|uber\b|linkedin)/i.test(c)) return false;
     if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return false;
     if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return false;
     if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return false;
     if (/(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i.test(c)) return false;
+    if (/(mckinsey|bcg|boston\s+consulting|\bbain\b|deloitte|\bey\b|ernst\s+(?:&|and)\s+young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver\s+wyman|\bzs\b|zs\s+associates|roland\s+berger|alvarez|grant\s+thornton|accenture)/i.test(c)) return false;
     return true;
   }, [isNegotiationFocus, targetCompany]);
 

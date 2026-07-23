@@ -457,7 +457,9 @@ export default async function handler(
        *   BFSI → soft (conservative hike norms, variable-heavy)
        *   STARTUP → hot (equity-upside framing, aggressive hike expectations)
        *   MNC → neutral (competitive but band-governed)
+       *   CONSULTING → neutral (structured bands, not affected by IT-services compression)
        *   IT_SERVICES → soft (service-pricing compression 2025-26)
+       *   PRODUCT_INDIA → neutral (healthy salary budgets, independent of IT services)
        */
       const companyMode = inferCompanyMode(role, company);
       const inferredMarketMode = (
