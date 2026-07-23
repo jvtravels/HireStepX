@@ -929,6 +929,14 @@ export default function SessionSetup() {
     || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
     || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0)
   );
+  // True when this session will consume a purchased credit (plan quota exhausted
+  // but credits are available). Shown as an informational note near the CTA so
+  // the user knows a credit will be spent before they click Start.
+  const usingCredit = creditBalance !== null && creditBalance > 0 && (
+    (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT)
+    || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
+    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT)
+  );
   const { toast } = useToast();
 
   /* Warn-flag bounce-back toast: useInterviewEngine sends users back
@@ -2156,6 +2164,15 @@ export default function SessionSetup() {
                 </button>
               );
             })()}
+
+            {usingCredit && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.inkSoft} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                1 session credit will be used · {creditBalance} remaining
+              </div>
+            )}
 
             <div aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft, minHeight: 18 }}>
               {micStatus === "granted" && cameraStatus === "granted" && "Mic and camera ready — you're all set."}

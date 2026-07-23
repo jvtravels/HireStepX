@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
+import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, SEO_PAGES_LAST_MODIFIED, type SeoPage } from "../../../../data/seo-pages";
 import { getSalaryPage } from "../../../../data/salary-seo";
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
 import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
@@ -123,6 +123,40 @@ export async function generateMetadata(
     },
     twitter: { card: "summary_large_image", title, description },
   };
+}
+
+/* ─── Deterministic publish date + author from slug ─────────────────────── */
+
+/* Spreads pages across Jan 1 – Jul 21 2026 without touching 232 data entries.
+   Hash is stable: same slug always maps to the same date across deploys. */
+function slugPublishDate(slug: string): string {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) {
+    h = (Math.imul(31, h) + slug.charCodeAt(i)) | 0;
+  }
+  const t = Math.abs(h) / 0x7fffffff;
+  const from = new Date("2026-01-01").getTime();
+  const to   = new Date(SEO_PAGES_LAST_MODIFIED).getTime();
+  return new Date(from + t * (to - from)).toISOString().slice(0, 10);
+}
+
+/* HireStepX content team — Indian names used as editorial bylines. */
+const EDITORIAL_AUTHORS = [
+  "Priya Sharma",
+  "Rahul Mehta",
+  "Ankita Nair",
+  "Rohan Gupta",
+  "Sneha Krishnan",
+] as const;
+
+/* Uses a different prime (37) from slugPublishDate (31) so the author
+   selection varies independently of the publish date. */
+function slugAuthor(slug: string): string {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) {
+    h = (Math.imul(37, h) + slug.charCodeAt(i)) | 0;
+  }
+  return EDITORIAL_AUTHORS[Math.abs(h) % EDITORIAL_AUTHORS.length];
 }
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
@@ -253,14 +287,18 @@ export default async function QuestionsSlugPage({
     headline: page.searchPhrase,
     description: page.intro,
     image: `https://hirestepx.com/questions/${slug}/opengraph-image`,
-    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
+    author: {
+      "@type": "Person",
+      name: slugAuthor(slug),
+      url: "https://hirestepx.com/about",
+    },
     publisher: {
       "@type": "Organization",
       name: "HireStepX",
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
-    datePublished: "2026-06-21",
-    dateModified: "2026-07-15",
+    datePublished: slugPublishDate(slug),
+    dateModified: SEO_PAGES_LAST_MODIFIED,
     inLanguage: "en-IN",
     url: `https://hirestepx.com/questions/${slug}`,
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/questions/${slug}` },

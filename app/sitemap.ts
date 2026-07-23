@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SEO_PAGES } from "../data/seo-pages";
+import { SEO_PAGES, SEO_PAGES_LAST_MODIFIED } from "../data/seo-pages";
 import { getAllBlogSlugs, BLOG_META } from "../src/blog-meta";
 import { getAllSalarySlugs } from "../data/salary-seo";
 
@@ -29,8 +29,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
      isn't a freshness signal in itself. */
   /* Bumped 2026-07-21: +189 interview prep pages across Waves 4-6b covering 193 companies:
      fintech, banking, GCCs, semiconductor, healthcare, logistics, EdTech, D2C, EV, B2B SaaS,
-     quant — plus all salary-to-interview questionSlug cross-links wired up. */
-  const seoPagesLastModified = new Date("2026-07-21");
+     quant — plus all salary-to-interview questionSlug cross-links wired up.
+     Source of truth: data/seo-pages.ts SEO_PAGES_LAST_MODIFIED. */
+  const seoPagesLastModified = new Date(SEO_PAGES_LAST_MODIFIED);
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },

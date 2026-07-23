@@ -32,8 +32,8 @@
       "severity": "Critical",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: understands, expectation, variable, fixed",
-      "prose": "You shared a range — to plan the fitment cleanly, where in that range do you actually see yourself landing? Helps me take a more specific number to leadership.",
-      "actionKind": "reactive-followup",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
       "keywords": [
         "understands",
         "expectation",
@@ -1739,7 +1739,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: handles, units",
-      "prose": "To be fair, quick check — that puts variable at around ₹22 LPA on the ₹24 LPA total, right? Or is the base the full number?",
+      "prose": "In this profitability-first era, on the equity side — does your current package include any ESOPs or RSUs?",
       "actionKind": "component-probe",
       "keywords": [
         "handles",
