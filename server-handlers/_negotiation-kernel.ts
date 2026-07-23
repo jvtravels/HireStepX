@@ -925,6 +925,16 @@ export interface NegotiationState {
    *  after. Lets the red-flag layer detect upward drift ("Earlier
    *  you mentioned ₹18L; now you're at ₹24L"). */
   firstAnchoredTarget: number | null;
+  /* S42-B8 / S43-B7 (2026-07-23) — candidate's FIRST counter stated
+   * AFTER an offer is already on the table (highestOfferMade > 0).
+   * Distinct from firstAnchoredTarget, which captures any first target
+   * mention including discovery-phase disclosures. A candidate who states
+   * "I want ₹55L" in opening discovery and later accepts the ₹48L offer
+   * without pushing back should show candidateAsk=null in the report —
+   * they never countered vs the offer. firstCounterVsOffer is null for
+   * that session. First-wins, monotone-null-to-set (never clears).
+   * Metrics layer uses this over firstAnchoredTarget when offers exist. */
+  firstCounterVsOffer?: number | null;
   candidateCurrentCtc: number | null;    // current package (NOT target)
   /* PDF #28 (2026-06-07) — candidate's CURRENT employer name.
    *
@@ -3047,6 +3057,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
     freshGradDisclosed: false,
     wfhFlexibilityMentioned: false,
+    firstCounterVsOffer: null,
     recruiterFactsAlreadySaid: [],
     answeredQuestionLedger: {},
     pendingPromises: [],
@@ -5130,6 +5141,14 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       }
       next.candidateTarget = parsed.target;
       if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
+      /* S42-B8 / S43-B7 — counter stated vs a live offer. Only set when the
+       * recruiter has already put a number on the table. Discovery-phase targets
+       * (stated before any offer) must NOT populate this slot — they shouldn't
+       * appear as "YOUR ASK" in the report when the candidate never explicitly
+       * countered against the offer. First-wins (monotone null→set). */
+      if (next.firstCounterVsOffer == null && (state.highestOfferMade ?? 0) > 0) {
+        next.firstCounterVsOffer = parsed.target;
+      }
       /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation, scoped to
        * the TOTAL target it describes. If this utterance frames the number
        * as in-hand / take-home, flag it and back-compute a CTC-equivalent
@@ -8560,6 +8579,14 @@ export function deserializeState(json: string): NegotiationState {
       typeof s.firstAnchoredTarget === "number"
         ? s.firstAnchoredTarget
         : (s.candidateTarget as number | null) ?? null,
+    /* S42-B8 / S43-B7 back-compat: legacy sessions that pre-date this field
+     * (undefined in persisted JSON) default to undefined (not null) so the
+     * metrics layer can distinguish "new row with no counter" (null) from
+     * "legacy row pre-field" (undefined) and apply legacy fallback there. */
+    firstCounterVsOffer:
+      "firstCounterVsOffer" in s
+        ? (s.firstCounterVsOffer as number | null)
+        : undefined,
     finalOfferAssertedCount: s.finalOfferAssertedCount ?? 0,
     vossTacticsUsed: (s.vossTacticsUsed as VossTactic[] | undefined) ?? [],
     infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],

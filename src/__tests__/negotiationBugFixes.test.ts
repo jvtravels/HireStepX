@@ -902,6 +902,7 @@ describe("S12-B26 — 'You countered at' shows original anchor, not conceded val
       phase: "accepted",
       candidateTarget: 56,         // conceded final
       firstAnchoredTarget: 60,     // original counter — must drive candidateAskLpa
+      firstCounterVsOffer: 60,     // S42-B8 field: candidate DID counter vs the offer at 60
       candidateCurrentCtc: 50,
       highestOfferMade: 56,
       acceptedAtTurn: 2,

@@ -219,8 +219,43 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
    * concession. firstAnchoredTarget is set with first-wins semantics in the
    * kernel and never mutated after it is written — it is always the original ask.
    * Fallback to effectiveTargetCtcLpaLocal for sessions where the kernel
-   * pre-dates the firstAnchoredTarget field (null → legacy row). */
-  const candidateAskLpa = finalState.firstAnchoredTarget ?? effectiveTargetCtcLpaLocal(finalState);
+   * pre-dates the firstAnchoredTarget field (null → legacy row).
+   *
+   * S42-B8 / S43-B7 (2026-07-23): Discovery-target contamination guard.
+   * A candidate who states "I want ₹55L" in the opening discovery exchange and
+   * then later accepts (or walks from) the recruiter's ₹48L offer without ever
+   * explicitly countering should see candidateAsk=null in the report — they did
+   * not "counter at ₹55L", they disclosed a discovery target. The new
+   * `firstCounterVsOffer` kernel field (set ONLY when highestOfferMade>0 at the
+   * time the counter is stated) is authoritative for this discrimination.
+   *
+   * Three-tier resolution when offers were made:
+   *   1. firstCounterVsOffer if present on the row (new sessions post-fix)
+   *   2. Legacy heuristic: firstAnchoredTarget > min(trajectory) signals the
+   *      candidate pushed above the opening offer — likely a real counter, not
+   *      just a discovery target already met by the offer. Covers legacy rows
+   *      that pre-date firstCounterVsOffer.
+   *   3. null — discovery-only disclosure, show no "YOUR ASK" tile.
+   * When NO offer was ever made the candidate's stated target IS their ask (a
+   * proactive anchor), so we fall through to the original firstAnchoredTarget
+   * chain (unchanged behaviour for pre-offer-walk-away sessions). */
+  const hasOffers = offerTrajectoryLpa.length > 0;
+  let candidateAskLpa: number | null;
+  if (hasOffers) {
+    if (finalState.firstCounterVsOffer !== undefined) {
+      /* New row (post S42-B8 fix): trust the kernel's explicit gate. */
+      candidateAskLpa = finalState.firstCounterVsOffer ?? null;
+    } else {
+      /* Legacy row: use firstAnchoredTarget only when it exceeds the opening
+       * offer, meaning the candidate genuinely pushed above what was offered. */
+      const openingOffer = offerTrajectoryLpa[0];
+      const fat = finalState.firstAnchoredTarget ?? effectiveTargetCtcLpaLocal(finalState);
+      candidateAskLpa = (fat != null && fat > openingOffer) ? fat : null;
+    }
+  } else {
+    /* No offer made — candidate's stated target is their proactive anchor. */
+    candidateAskLpa = finalState.firstAnchoredTarget ?? effectiveTargetCtcLpaLocal(finalState);
+  }
 
   /* The recruiter's realized top offer — the SINGLE source of truth for every
      concession-derived metric below (final offer, LPA gained, band traversal).
