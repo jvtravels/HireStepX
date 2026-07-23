@@ -229,13 +229,45 @@ const COMPANY_PATTERNS: { canonical: string; pattern: RegExp }[] = [
   { canonical: "myntra", pattern: /\b(?:myntra)\b/i },
   { canonical: "byju's", pattern: /\b(?:byju.?s?|byjus)\b/i },
   { canonical: "unacademy", pattern: /\b(?:unacademy)\b/i },
-  { canonical: "razorpay", pattern: /\b(?:razorpay)\b/i },
   { canonical: "atlassian", pattern: /\b(?:atlassian)\b/i },
   { canonical: "salesforce", pattern: /\b(?:salesforce|sfdc)\b/i },
   { canonical: "oracle", pattern: /\b(?:oracle)\b/i },
   { canonical: "sap", pattern: /\b(?:sap)\b/i },
   { canonical: "adobe", pattern: /\b(?:adobe)\b/i },
   { canonical: "intuit", pattern: /\b(?:intuit)\b/i },
+  /* S40-B3 (2026-07-23) — Indian startup brands missing from the list.
+   * Candidates routinely cite these as competing offers; without a match
+   * the company field stays null, hasConcreteTell() never fires, and the
+   * fake-leverage-challenge probe is never armed. */
+  { canonical: "meesho", pattern: /\b(?:meesho)\b/i },
+  { canonical: "nykaa", pattern: /\b(?:nykaa)\b/i },
+  { canonical: "zepto", pattern: /\b(?:zepto)\b/i },
+  { canonical: "blinkit", pattern: /\b(?:blinkit|grofers)\b/i },
+  { canonical: "groww", pattern: /\b(?:groww)\b/i },
+  { canonical: "oyo", pattern: /\b(?:oyo(?:\s+rooms?)?)\b/i },
+  { canonical: "dream11", pattern: /\b(?:dream\s*11|dream\s*xi)\b/i },
+  { canonical: "mpl", pattern: /\b(?:mpl|mobile\s+premier\s+league)\b/i },
+  { canonical: "slice", pattern: /\b(?:slice\s+(?:pay|card|fintech)?|slicepay)\b/i },
+  { canonical: "jar", pattern: /\b(?:jar\s+(?:app)?)\b/i },
+  { canonical: "juspay", pattern: /\b(?:juspay)\b/i },
+  { canonical: "dunzo", pattern: /\b(?:dunzo)\b/i },
+  { canonical: "urban-company", pattern: /\b(?:urban\s+company|urban\s+clap|urbanclap)\b/i },
+  { canonical: "vedantu", pattern: /\b(?:vedantu)\b/i },
+  { canonical: "physics-wallah", pattern: /\b(?:physics\s+wallah|pw(?:\s+(?:live|app))?)\b/i },
+  { canonical: "mfine", pattern: /\b(?:mfine)\b/i },
+  { canonical: "licious", pattern: /\b(?:licious)\b/i },
+  { canonical: "porter", pattern: /\b(?:porter(?:\s+(?:delivery|logistics))?)\b/i },
+  { canonical: "purplle", pattern: /\b(?:purplle)\b/i },
+  { canonical: "healthkart", pattern: /\b(?:healthkart|hk\s+vitals)\b/i },
+  { canonical: "sharechat", pattern: /\b(?:sharechat|moj)\b/i },
+  { canonical: "dailyhunt", pattern: /\b(?:dailyhunt|verse\s+innovation)\b/i },
+  { canonical: "logitech", pattern: /\b(?:logitech)\b/i },
+  { canonical: "nutanix", pattern: /\b(?:nutanix)\b/i },
+  { canonical: "rubrik", pattern: /\b(?:rubrik)\b/i },
+  { canonical: "palo-alto", pattern: /\b(?:palo\s*alto\s*networks|palo\s*alto)\b/i },
+  { canonical: "crowdstrike", pattern: /\b(?:crowdstrike)\b/i },
+  { canonical: "servicenow", pattern: /\b(?:servicenow)\b/i },
+  { canonical: "workday", pattern: /\b(?:workday)\b/i },
 ];
 
 const STATUS_PATTERNS: { kind: CompetingOfferStatus; pattern: RegExp }[] = [
@@ -346,6 +378,15 @@ const COMPANY_DISPLAY: Record<string, string> = {
   myntra: "Myntra", "byju's": "BYJU'S", unacademy: "Unacademy",
   atlassian: "Atlassian", salesforce: "Salesforce", oracle: "Oracle",
   sap: "SAP", adobe: "Adobe", intuit: "Intuit",
+  meesho: "Meesho", nykaa: "Nykaa", zepto: "Zepto", blinkit: "Blinkit",
+  groww: "Groww", oyo: "OYO", dream11: "Dream11", mpl: "MPL",
+  slice: "Slice", jar: "Jar", juspay: "Juspay", dunzo: "Dunzo",
+  "urban-company": "Urban Company", vedantu: "Vedantu",
+  "physics-wallah": "Physics Wallah", mfine: "mfine", licious: "Licious",
+  porter: "Porter", purplle: "Purplle", healthkart: "HealthKart",
+  sharechat: "ShareChat", dailyhunt: "Dailyhunt", logitech: "Logitech",
+  nutanix: "Nutanix", rubrik: "Rubrik", "palo-alto": "Palo Alto Networks",
+  crowdstrike: "CrowdStrike", servicenow: "ServiceNow", workday: "Workday",
 };
 
 export function displayCompany(name: string | null | undefined): string {
