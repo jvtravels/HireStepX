@@ -1700,9 +1700,11 @@ const PROSE_ARMS: ProseArmRegistry = {
           ? `${lead} you are currently at ₹${lpa} LPA — let me anchor the discussion off that for a moment.`
           : `To revisit a point you made earlier — your current package is ₹${lpa} LPA. Let me reference that as we continue.`;
       }
+      /* S38-B3 (2026-07-23) — "anchor off that" is a banned phrase in the
+       * restyle prompt; fix the canonical source to use the replacement. */
       return variant === 0
-        ? `You said you're at ₹${lpa} LPA right now — let's anchor off that for a sec.`
-        : `Hey, you're at ₹${lpa} LPA right now, yeah? Let me come back to that.`;
+        ? `You said you're at ₹${lpa} LPA right now — let me use that as a reference point.`
+        : `Hey, you're at ₹${lpa} LPA right now, na? Let me come back to that.`;
     }
     if (action.claim === "noticePeriod") {
       const n = action.value;
@@ -2493,6 +2495,11 @@ export function buildRestylePrompt(
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
     `- You MUST NOT add any facts (company policy, team size, perks, benefits) not in the canonical line.\n` +
     `- You MUST NOT change the meaning or the question being asked.\n` +
+    /* S38-B1 (2026-07-23) — restyle LLM converted "help me understand
+     * what's anchoring the expectation at that level" (salary probe) to
+     * "how do you gauge your current impact on the business?" (behavioral
+     * question). Adding an explicit topic-preservation guard for questions. */
+    `- PROBE TOPIC LOCK: when the canonical line asks a question about compensation, target expectations, hike justification, notice period, or competing offers — your restyle must ask that SAME question. Do NOT convert a salary-negotiation probe into a behavioral or role-scope question. "Why do you expect ₹X?" stays about the ₹X ask; "what scope justifies that jump?" stays about the salary gap — it does NOT become "how do you gauge impact?" or "walk me through your responsibilities".\n` +
     /* PDF#47 (2026-05-25) — banned next-cycle framing. The Flipkart
      * Sr-PD transcript shipped "How does the base split look for the
      * next cycle?" mid-discovery, conflating the current negotiation
