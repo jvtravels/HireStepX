@@ -167,6 +167,13 @@ export const BANNED_RECRUITER_IDIOM = [
   "level with you",
   "i've given you my best",
   "i have given you my best",
+  /* S38-B6 (2026-07-23) — restyle LLM produced meta-commentary narrating
+   * the session's own state when the kernel had regressed. No real recruiter
+   * says "starting from scratch" or "revisit that conversation" — these are
+   * self-referential structural comments, not recruiter speech. */
+  "starting from scratch",
+  "rather than starting from scratch",
+  "revisit that conversation",
 ] as const;
 
 /** PDF#48 B1 (2026-05-25) — paraphrase-family bans expressed as regex
