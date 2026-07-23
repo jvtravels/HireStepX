@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
+import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../data/salary-seo";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -559,6 +560,39 @@ export default async function InterviewPrepPage() {
                 </Link>
               ))}
             </div>
+          </section>
+
+          {/* ── Salary guides ────────────────────────────────────────── */}
+          <section style={{ marginTop: 56 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px" }}>
+              Know your worth before the interview
+            </h2>
+            <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
+              Salary guides for top Indian employers — sourced from AmbitionBox, Glassdoor, and DRHP filings. Know the range before you negotiate.
+            </p>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+              {SALARY_SEO_PAGES.slice(0, 18).map((s) => (
+                <li key={s.slug}>
+                  <Link href={`/salary/${s.slug}`} style={{
+                    display: "block", padding: "12px 16px",
+                    background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10,
+                    textDecoration: "none", color: t.coal,
+                  }}>
+                    <div style={{ fontFamily: fonts.mono, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper, marginBottom: 4 }}>
+                      Salary Guide
+                    </div>
+                    <div style={{ fontFamily: fonts.serif, fontSize: 14, lineHeight: 1.4, color: t.coal }}>
+                      {salaryCompanyLabel(s.slug)} India 2026
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p style={{ fontSize: 13, color: t.inkSoft, marginTop: 14 }}>
+              <Link href="/salary" style={{ color: t.copper, textDecoration: "underline" }}>
+                View all salary guides →
+              </Link>
+            </p>
           </section>
 
           {/* ── Bottom CTA ───────────────────────────────────────────── */}

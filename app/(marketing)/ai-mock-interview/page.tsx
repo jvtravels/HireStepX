@@ -564,6 +564,12 @@ export default async function AiMockInterviewPage() {
                 { label: "Salary Negotiation Tips India", href: "/blog/salary-negotiation-tips-india" },
                 { label: "Behavioral Interview Questions India", href: "/questions/behavioral-interview-questions-india" },
                 { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
+                { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
+                { label: "Infosys Salary Guide India 2026", href: "/salary/infosys" },
+                { label: "Google India Salary Guide 2026", href: "/salary/google" },
+                { label: "Amazon India Salary Guide 2026", href: "/salary/amazon" },
+                { label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" },
+                { label: "Wipro Salary Guide India 2026", href: "/salary/wipro" },
               ].map((link) => (
                 <Link
                   key={link.href}
