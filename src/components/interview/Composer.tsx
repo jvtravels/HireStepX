@@ -309,6 +309,7 @@ export function Composer({
   awaitingSpeechStart,
   isLastStep, isClosingStep, onViewResult,
   currentQuestionText,
+  candidateCurrentCtcKnown,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -351,6 +352,9 @@ export function Composer({
   /** The full text of the AI's current question — used to detect
    *  CTC-probes and surface a deflection coaching tip. */
   currentQuestionText: string;
+  /** S42-B2 / S43-B2 — suppress the "Current-CTC probe: Deflect"
+   *  tip once the candidate has already disclosed their CTC. */
+  candidateCurrentCtcKnown?: boolean;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -693,6 +697,9 @@ export function Composer({
       {interviewType === "salary-negotiation" && (() => {
         const tactic = detectNegotiationTactic(currentQuestionText);
         if (!tactic) return null;
+        /* S42-B2 / S43-B2 — once CTC is already disclosed, the
+         * "Current-CTC probe: Deflect" tip is actively wrong advice. */
+        if (tactic.id === "current_ctc_probe" && candidateCurrentCtcKnown) return null;
         return (
           <CanvasHintBubble>
             <div>

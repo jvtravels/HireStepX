@@ -235,6 +235,7 @@ function InterviewInner() {
     ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
     isSalaryNegotiation, negotiationBand, negotiationStyle, negotiationCandidateAskLpa, negotiationJoiningBonusLpa, negotiationKernelOutcome,
+    liveNegotiationState,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
     setShowTranscript, setShowEndModal,
@@ -633,6 +634,11 @@ function InterviewInner() {
             isLastStep={isLastStep}
             isClosingStep={isClosingStep}
             onViewResult={handleEnd}
+            candidateCurrentCtcKnown={
+              isSalaryNegotiation
+                ? liveNegotiationState?.facts.candidateCurrentCTC != null
+                : undefined
+            }
           />
         )}
 

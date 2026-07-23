@@ -4008,7 +4008,15 @@ export function useInterviewEngine() {
     const totalQs = questionSteps.length;
     const negotiationPhases = ["offer-reaction", "probe-expectations", "counter-offer", "benefits-discussion", "closing-pressure", "closing"];
     const ratio = totalQs > 1 ? (currentQuestionIdx - 1) / (totalQs - 1) : 0;
-    const phaseIdx = Math.min(Math.round(ratio * (negotiationPhases.length - 1)), negotiationPhases.length - 1);
+    /* S41-B4/B6 / S42-B5 / S43-B5 — "closing" phase must not be assigned
+     * until the final question; Math.round was reaching closing prematurely
+     * for short sessions (4–6 Qs), causing "Confirm all terms explicitly"
+     * to fire during counter-offer exchanges. Floor + cap ensures we only
+     * enter closing at the last step. */
+    const atLastQ = currentQuestionIdx >= totalQs;
+    const phaseIdx = atLastQ
+      ? negotiationPhases.length - 1
+      : Math.min(Math.floor(ratio * (negotiationPhases.length - 1)), negotiationPhases.length - 2);
     const phase = negotiationPhases[phaseIdx] || "offer-reaction";
     // Leverage score: 0-100 based on tactics used
     let leverage = 30; // baseline
