@@ -248,6 +248,32 @@ const ROWS: Row[] = [
     expect: { target: 40, targetAsRange: true },
   },
 
+  /* ── S46-B1: "between X and Y [unit]" range (2026-07-23) ──────────
+   * Candidate says "somewhere between 48 and 52 lakhs" — the "between
+   * … and" pattern was not in RANGE_RE, so target stayed null and the
+   * planner looped asking for target every turn. Fixed by BETWEEN_RANGE_RE
+   * Pass 0 in findSalarySpans. */
+  {
+    label: "S46-B1 between X and Y lakhs (plain)",
+    text: "I'm thinking somewhere between 48 and 52 lakhs for this role.",
+    expect: { target: 52, targetAsRange: true },
+  },
+  {
+    label: "S46-B1 between X and Y LPA",
+    text: "somewhere between 45 and 50 LPA",
+    expect: { target: 50, targetAsRange: true },
+  },
+  {
+    label: "S46-B1 between ₹X and ₹Y lakhs",
+    text: "I'm targeting between ₹48 and ₹55 lakhs",
+    expect: { target: 55, targetAsRange: true },
+  },
+  {
+    label: "S46-B1 between XL and YL",
+    text: "between 40L and 45L for this move",
+    expect: { target: 45, targetAsRange: true },
+  },
+
   /* ── Equity-scope guard (L1 / PRI-50, 2026-06-17) ──────────────────
    * An equity/RSU/ESOP/stock-framed number is an equity COMPONENT, not a
    * CTC/target/competing figure. It must NOT bind to currentCtc even when

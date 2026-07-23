@@ -500,6 +500,10 @@ interface SalarySpan {
  * "crores" (next char is 'o'), and `crore` also fails the trailing \b (next
  * char is 's'). Changed `crore` → `crores?` to cover both singular and plural. */
 const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crores?|cash)";
+/** Non-capturing version of SALARY_UNIT_GROUP for use in BETWEEN_RANGE_RE
+ *  where we need the unit after the first number to be optional and
+ *  non-capturing (so group indices stay consistent with RANGE_RE). */
+const SALARY_UNIT_GROUP_NC = "(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crores?|cash)";
 
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
@@ -516,6 +520,15 @@ const USD_NUM_RE =
  *  Used to mark the upper-bound number as `isRangeUpper`. */
 const RANGE_RE = new RegExp(
   `(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*(?:[-–—]|to)\\s*(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP}\\b`,
+  "gi",
+);
+
+/** Between-range pattern — matches `between 48 and 52 lakhs` /
+ *  `between ₹48 and ₹52L` / `between 48L and 52 lakhs`.
+ *  Group layout mirrors RANGE_RE (m[4] = upper digits, m[5] = unit)
+ *  so findSalarySpans Pass 0 can reuse the same extraction logic. */
+const BETWEEN_RANGE_RE = new RegExp(
+  `\\bbetween\\s+(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP_NC}?\\s+and\\s+(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP}\\b`,
   "gi",
 );
 
@@ -562,8 +575,24 @@ function unitMultiplier(unit: string): number {
  *  bound is dropped). USD spans are converted to LPA at the FX boundary. */
 function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[] {
   const spans: SalarySpan[] = [];
-  /* Pass 1 — ranges. Mark the upper bound, claim both numbers' offsets. */
   const claimedRanges = new Set<string>(); // "start-end" of digits we've claimed
+  /* Pass 0 — "between X and Y [unit]" ranges (S46-B1, 2026-07-23).
+   *  RANGE_RE only covers `X-Y` / `X to Y` separators; "between X and Y"
+   *  was silently missed, leaving target = null and causing the planner
+   *  to re-ask for target every turn. Same extraction logic as Pass 1. */
+  for (const m of text.matchAll(BETWEEN_RANGE_RE)) {
+    if (m.index == null) continue;
+    const upper = parseDigits(m[4]);
+    const unit = m[5];
+    if (!Number.isFinite(upper)) continue;
+    const value = upper * unitMultiplier(unit);
+    if (value < MIN_LPA || value > MAX_LPA) continue;
+    const start = m.index + m[0].search(/[\d₹]/);
+    const end = m.index + m[0].length;
+    spans.push({ value, start, end, isRangeUpper: true });
+    claimedRanges.add(`${m.index}-${end}`);
+  }
+  /* Pass 1 — ranges. Mark the upper bound, claim both numbers' offsets. */
   for (const m of text.matchAll(RANGE_RE)) {
     if (m.index == null) continue;
     const upper = parseDigits(m[4]);
