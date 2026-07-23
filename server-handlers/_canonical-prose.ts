@@ -1038,8 +1038,16 @@ const PROSE_ARMS: ProseArmRegistry = {
      * inline, where we fall through to the generic line (regression
      * guard in pdf48LeverExploreNumberAwareness.test.ts). */
     switch (action.leverKind) {
-      case "equity-grant":
-        return `${counterAck}On the equity side — I can add an ESOP grant at this level, vesting over four years, over and above the cash fitment. Let me put the annual-value figure together and share it before the offer letter.`;
+      case "equity-grant": {
+        /* S40-B6 (2026-07-23) — name a concrete ESOP grant figure rather than
+         * deferring with "let me put the annual-value figure together". The
+         * kernel stamps equityGrantAmountLpa = Math.round(maxStretch * 0.5) in
+         * applyAiMove, but that runs AFTER prose generation. Compute the same
+         * formula here so the recruiter quotes an actual ₹ total on first offer. */
+        const esopTotal = Math.round(state.band.maxStretch * 0.5);
+        const cashRef = state.highestOfferMade > 0 ? ` over and above the ₹${state.highestOfferMade}L cash fitment` : "";
+        return `${counterAck}On the equity side — I can add an ESOP grant worth ₹${esopTotal}L over four years (one-year cliff, then quarterly vesting)${cashRef}. That brings the effective package meaningfully higher.`;
+      }
       case "joining-bonus": {
         const amt = action.joiningBonusLpa;
         const amtPart =
