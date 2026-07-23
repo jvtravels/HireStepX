@@ -142,7 +142,12 @@ const CURRENT_CUES: CueTable = {
     /\bcurrent(?:ly)?\b/i,
     /\bmy\s+(?:current\s+)?(?:[a-z]+\s+){0,3}(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total)\b/i,
     /\bi\s+(?:make|earn|get|draw)\b/i,
-    /\bi.?m\s+at\b/i,
+    /* S48-B1/S49-B1/S50-B1 (2026-07-24): "I am at N" / "I am on N" — the legacy
+     * `\bi.?m\s+at\b` pattern uses `.?` (one optional char between 'i' and 'm'),
+     * which matches "I'm" but NOT "I am" (two chars 'a'+'m' after 'i'). Indian
+     * candidates commonly state "I am at ₹22L" or "I am on ₹18L" in their
+     * opening greeting. Extended to also match "I am at/on". */
+    /\bi(?:['']?m|\s+am)\s+(?:at|on)\b/i,
     /* AUDIT-2 follow-up (2026-06-08): role-token between "I'm" and "at"
      * — "I'm a SE3 at Myntra, 24 LPA". The bare `\bi.?m\s+at\b` cue
      * requires adjacency; the role token ("a SE3") breaks it. Surfaced
@@ -203,6 +208,14 @@ const CURRENT_CUES: CueTable = {
     /\ble(?:t[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crores?)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crores?)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
+    /* S48-B1/S49-B1/S50-B1 (2026-07-24): "N LPA currently" / "N lakhs right
+     * now" — when a candidate proactively discloses CTC in the opening turn
+     * ("52 LPA currently, targeting 85 LPA") without the AI having asked,
+     * `CURRENT_CUES.left` can't fire because "currently" sits in the RIGHT
+     * window (after the number+unit). SalarySpan.end already includes the
+     * unit token, so the right window starts AFTER the unit — match the
+     * temporal adverb at the start of the window, not the unit. */
+    /^\s*(?:currently|right\s+now|presently)\b/i,
     /* AUDIT-2 (2026-06-08): the "X LPA total." compact disclosure cue
      * lives in the LAST_AI_ASKED_*-style fall-through layer in pickRole
      * (see SENTENCE_FINAL_TOTAL_RE below), NOT here in CURRENT_CUES.
@@ -816,7 +829,7 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
 function scoreRolesForSpan(
   text: string,
   span: SalarySpan,
-): { scores: Record<NumberRole, number>; genericAdverbOnlyForCurrent: boolean; targetScoreLeft: number } {
+): { scores: Record<NumberRole, number>; genericAdverbOnlyForCurrent: boolean; genericAdverbFired: boolean; targetScoreLeft: number; currentScoreStrictLeft: number } {
   let leftWindow = text.slice(Math.max(0, span.start - LEFT_WINDOW), span.start);
   /* Clause clipping: when an earlier salary disclosure sits in the
    * window ("18 LPA and I'd like 32 LPA"), cues before it belong to
@@ -894,8 +907,9 @@ function scoreRolesForSpan(
    * must precede it. */
   const genericAdverbFired = CURRENT_CUES.left[0].test(leftWindow);
   let currentScoreStrict = 0;
+  let currentScoreStrictLeft = 0;
   for (let i = 1; i < CURRENT_CUES.left.length; i++) {
-    if (CURRENT_CUES.left[i].test(leftWindow)) currentScoreStrict++;
+    if (CURRENT_CUES.left[i].test(leftWindow)) { currentScoreStrict++; currentScoreStrictLeft++; }
   }
   for (const re of CURRENT_CUES.right) if (re.test(rightWindow)) currentScoreStrict++;
   const targetScoreLeft = TARGET_CUES.left.reduce((n, re) => n + (re.test(leftWindow) ? 1 : 0), 0);
@@ -903,7 +917,9 @@ function scoreRolesForSpan(
   return {
     scores: { current: currentWithRestatement, target: targetScore, competing: competingScore },
     genericAdverbOnlyForCurrent,
+    genericAdverbFired,
     targetScoreLeft,
+    currentScoreStrictLeft,
   };
 }
 
@@ -1408,17 +1424,31 @@ export function classifyNumberRoles(
      * total target ask. Suppress it here so it binds to NO role; the kernel
      * reads the total from extractComponentBreakdown instead. */
     if (isVariableComponentScopedSpan(text, span)) continue;
-    const { scores: rawScores, genericAdverbOnlyForCurrent, targetScoreLeft } = scoreRolesForSpan(text, span);
+    const { scores: rawScores, genericAdverbOnlyForCurrent, genericAdverbFired, targetScoreLeft, currentScoreStrictLeft } = scoreRolesForSpan(text, span);
     /* S4-B16: "currently I am looking for 40 LPA" — `currently` is the weak
      * temporal adverb (CURRENT_CUES.left[0]). When it is the ONLY current cue
      * and a target verb appears in the LEFT window (same clause), the
      * current>target tiebreak is wrong — zero out current so target wins.
      * Guard on targetScoreLeft (not total targetScore): TARGET_CUES.right can
      * bleed from a later clause into this number's right window. */
-    const scores: Record<NumberRole, number> =
+    let scores: Record<NumberRole, number> =
       genericAdverbOnlyForCurrent && targetScoreLeft > 0
         ? { ...rawScores, current: 0 }
         : rawScores;
+    /* S48-B1 follow-up (2026-07-24): right-context-only current cue should
+     * yield to a left-context target verb. The new "N LPA currently" right-cue
+     * fires on "I want 35 LPA currently" — but "want" in the LEFT window is
+     * an unambiguous target verb that must win. If no left-side current cue
+     * fired (currentScoreStrictLeft === 0, genericAdverbFired === false, so
+     * all current score came from the right window) and a target verb does
+     * appear in the left window, zero out current so target wins. This is the
+     * right-window analogue of the S4-B16 genericAdverb guard. */
+    if (
+      currentScoreStrictLeft === 0 && !genericAdverbFired &&
+      scores.current > 0 && targetScoreLeft > 0
+    ) {
+      scores = { ...scores, current: 0 };
+    }
     /* Equity-scope guard (L1 / PRI-50): an equity/RSU/ESOP/stock-framed
      * number with NO explicit current/target/competing cue is an equity
      * component, not a CTC — don't let it fall through pickRole's

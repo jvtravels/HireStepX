@@ -549,6 +549,24 @@ const ROWS: Row[] = [
   { label: "S4-B15: performance bonus right-context suppresses span", text: "I want ₹38L with ₹4L performance bonus", expect: { target: 38 } },
   /* Guard: normal targets must still bind */
   { label: "S4-B15 guard: plain 42L target still binds", text: "I am expecting 42 LPA", ctx: { phase: "probe-expectations" }, expect: { target: 42 } },
+
+  /* S48-B1/S49-B1/S50-B1/S51-B1/S53-B1/S55-B1 — opening-turn proactive CTC disclosure.
+   * Indian candidates often volunteer both CTC and target in their opening greeting
+   * before the recruiter asks. Two failure patterns were fixed:
+   * (1) "I am at/on N" — legacy regex \bi.?m\s+at\b didn't match "I am" (2 chars, not 1).
+   * (2) "N LPA currently" — the temporal adverb appears in the RIGHT window (after the
+   *     unit), so CURRENT_CUES.left can't fire; added a right-window pattern. */
+  { label: "S48-B1: 'I am at N' → current CTC", text: "I am at 52 lakhs right now and looking for 85 lakhs", expect: { currentCtc: 52, target: 85 } },
+  { label: "S49-B1: 'I am on N' → current CTC", text: "So I am on 18 lakhs currently and I would need at least 28 lakhs", expect: { currentCtc: 18, target: 28 } },
+  { label: "S50-B1: 'N LPA currently, targeting N' → ctc+target", text: "52 LPA currently, targeting 85 LPA", expect: { currentCtc: 52, target: 85 } },
+  { label: "S51-B1: 'I am N LPA currently, expecting N' → ctc+target", text: "I am 22 LPA currently and I am expecting 35 LPA", expect: { currentCtc: 22, target: 35 } },
+  { label: "S53-B1: 'I am at N right now' → current CTC", text: "I am at 30 LPA right now and targeting 45 LPA", expect: { currentCtc: 30, target: 45 } },
+  /* Guard: "I want N LPA currently" must NOT bind current (target verb wins) */
+  { label: "S48-B1 guard: 'I want N currently' → target only", text: "I want 35 LPA currently", expect: { currentCtc: null, target: 35 } },
+  /* Guard: "I am looking for N right now" must NOT bind current */
+  { label: "S48-B1 guard: 'looking for N right now' → target only", text: "I am looking for 85 LPA right now", expect: { currentCtc: null, target: 85 } },
+  /* Guard: "N LPA presently" when no target verb → current */
+  { label: "S55-B1: 'N LPA presently' → current CTC", text: "My package is 40 LPA presently", expect: { currentCtc: 40 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {
