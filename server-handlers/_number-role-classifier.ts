@@ -938,6 +938,20 @@ function pickRole(
     const targetAnywhere = TARGET_CUES.left.some((r) => r.test(text)) ||
       TARGET_CUES.right.some((r) => r.test(text));
     if (!competingAnywhere && !targetAnywhere) return "current";
+    /* S54-B1/S59-B1/S60-B2 (2026-07-23) — component-labeled CTC survives the
+     * targetAnywhere gate. When a candidate says "12 lakh fixed, looking at 18
+     * in new role", "looking at" sets targetAnywhere=true and suppresses the
+     * aiAskedCurrent default for the 12-span — CTC returns null and the bot
+     * re-asks. But "12 lakh fixed" right after the bot's CTC question is
+     * unambiguously the FIXED COMPONENT of the current package: a component
+     * label ("fixed"/"base"/"basic") immediately trailing the unit in response
+     * to a CTC question IS the current CTC, never a target. Re-enable the
+     * current bind when: (a) AI asked for CTC, (b) no competing cue, and
+     * (c) the span carries a right-adjacent component word. This is tight and
+     * conservative — it only fires when all three signals align. */
+    if (!competingAnywhere && detectCurrentComponentScope(text, span) === "component") {
+      return "current";
+    }
   }
   /* AUDIT-2 (2026-06-08): symmetric — bot asked target → bare = target. */
   const aiAskedTarget = !!ctx.lastAiText && LAST_AI_ASKED_TARGET.test(ctx.lastAiText);
