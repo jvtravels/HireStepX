@@ -1868,7 +1868,7 @@ export default function SessionSetup() {
                         <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, lineHeight: 1.4, display: "flex", alignItems: "flex-start", gap: 5, color: T.inkSoft }}>
                           <span style={{ flexShrink: 0, marginTop: 1 }}>ⓘ</span>
                           <span>
-                            <strong style={{ color: T.coal, fontWeight: 600 }}>Generic company simulation</strong> — {targetCompany.trim()} isn&apos;t in our recruiter database yet. The session will use default IT-services negotiation behaviour rather than company-specific data.
+                            <strong style={{ color: T.coal, fontWeight: 600 }}>Generic company simulation</strong>{" — "}{targetCompany.trim()}{" isn't in our recruiter database yet. The session will use default IT-services negotiation behaviour rather than company-specific data."}
                           </span>
                         </div>
                       )}

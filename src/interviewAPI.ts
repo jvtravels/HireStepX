@@ -467,7 +467,11 @@ export async function fetchLLMQuestions(params: {
       params,
     );
     if (res.status === 429) {
-      const retryAfter = (res.errorData as { retryAfter?: number } | null)?.retryAfter;
+      const errData = res.errorData as { retryAfter?: number; quotaExceeded?: boolean } | null;
+      if (errData?.quotaExceeded) {
+        throw new Error("AI quota reached for today. Using practice questions for this session.");
+      }
+      const retryAfter = errData?.retryAfter;
       throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
     }
     if (!res.ok) {
