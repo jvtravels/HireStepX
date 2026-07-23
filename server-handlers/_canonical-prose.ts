@@ -2500,6 +2500,21 @@ export function buildRestylePrompt(
      * "how do you gauge your current impact on the business?" (behavioral
      * question). Adding an explicit topic-preservation guard for questions. */
     `- PROBE TOPIC LOCK: when the canonical line asks a question about compensation, target expectations, hike justification, notice period, or competing offers — your restyle must ask that SAME question. Do NOT convert a salary-negotiation probe into a behavioral or role-scope question. "Why do you expect ₹X?" stays about the ₹X ask; "what scope justifies that jump?" stays about the salary gap — it does NOT become "how do you gauge impact?" or "walk me through your responsibilities".\n` +
+    /* S42-B6 (2026-07-23) — restyle LLM hallucinated "the other opportunity
+     * you mentioned" when the candidate had never disclosed a competing offer.
+     * Gate this instruction on the kernel state: only suppress when there is
+     * genuinely no competing offer in state; when hasAny is true the probe is
+     * legitimate and the instruction would be counterproductive. */
+    (state.competingOffer == null && !state.competingOfferDetail.hasAny
+      ? `- COMPETING-OFFER LOCK: the candidate has NOT mentioned any competing offer or other opportunity in this conversation. Do NOT introduce references like "the other opportunity you mentioned", "the competing offer", "another process", "other offer", or any phrase implying the candidate has disclosed a competing opportunity. If you feel the urge to mention one, suppress it entirely.\n`
+      : "") +
+    /* S34-B4 (2026-07-23) — restyle LLM converted the cash-ceiling ack
+     * ("that's above the cash band I can structure on this grade") into
+     * a terminal walk-away phrase ("I've stretched as far as I can").
+     * Cash-ceiling acks precede a NON-CASH lever pivot — they are NOT
+     * final offers; the recruiter is about to offer equity / joining
+     * bonus / WFH. Block the terminal conversion explicitly. */
+    `- CASH-CEILING PIVOT: when the canonical line says the candidate's number exceeds the cash band (e.g. "that's above the cash band I can structure on this grade"), this is NOT a terminal or final statement — the recruiter is about to offer a non-cash lever. Do NOT rephrase it as "I've stretched as far as I can", "that's my final offer", "we've done all we can", or any language implying the negotiation is over. Keep it as a factual observation.\n` +
     /* PDF#47 (2026-05-25) — banned next-cycle framing. The Flipkart
      * Sr-PD transcript shipped "How does the base split look for the
      * next cycle?" mid-discovery, conflating the current negotiation
