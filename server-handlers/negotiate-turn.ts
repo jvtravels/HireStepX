@@ -332,9 +332,13 @@ export default async function handler(
        * relied only on checkQuota, letting a free user start unlimited
        * negotiation sessions. The limit is enforced ONLY at init — a single
        * negotiation counts as one session, so subsequent "turn" actions in
-       * the same negotiation are never blocked. */
+       * the same negotiation are never blocked.
+       * consumeCredit: false because record-session-start is also called by
+       * the client for every session type including salary-negotiation, and
+       * that call consumes the credit. Consuming here too caused a double-spend
+       * (2 credits per negotiation session). */
       if (auth.userId) {
-        const limit = await checkSessionLimit(auth.userId);
+        const limit = await checkSessionLimit(auth.userId, { consumeCredit: false });
         if (!limit.allowed) {
           return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
         }
