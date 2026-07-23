@@ -6659,20 +6659,32 @@ export function clampOpeningAnchor(
   const base = clampAnchorAboveDisclosed(lo, hi, state);
   if (base === null) return null; // honest-defer path preserved verbatim
   if (!(hi > lo)) return base; // degenerate band — nothing to reserve
+  /* S40 (2026-07-23) — BATNA floor. When the candidate has disclosed a
+   * competing offer that exceeds the computed anchor, the opening anchor
+   * must meet or beat it; otherwise the recruiter opens below the candidate's
+   * known alternative and immediately looks weak. Capped at `hi` so the band
+   * ceiling is never violated. Only applied at the OPENING (this wrapper is
+   * never called for mid-negotiation counters). */
+  const competingFloor =
+    typeof state.competingOffer === "number" && state.competingOffer > lo
+      ? Math.min(hi, state.competingOffer)
+      : null;
+  const baseWithBatna = competingFloor != null && competingFloor > base ? competingFloor : base;
   /* Reserve ~20% of the band spread (min ₹1L) below the ceiling so the
    * candidate has somewhere to push the offer up to. */
   const headroom = Math.max(1, Math.round((hi - lo) * 0.2));
   const capped = hi - headroom;
-  if (base <= capped) return base; // already leaves room — unchanged
+  if (baseWithBatna <= capped) return baseWithBatna; // already leaves room — unchanged
   /* base is pinned near/at the ceiling. Back off to `capped`, but never below
-   * a minimal (5%) raise over the disclosed CTC, and never below the floor. */
+   * a minimal (5%) raise over the disclosed CTC, never below the floor, and
+   * never below the BATNA floor when one is present. */
   const disclosed = state.candidateCurrentCtc;
   const minRaiseOverCtc =
     typeof disclosed === "number" && disclosed > 0
       ? Math.min(hi, Math.round(disclosed * 1.05))
       : lo;
-  const floor = Math.max(lo, minRaiseOverCtc);
-  return Math.max(floor, Math.min(base, capped));
+  const floor = Math.max(lo, minRaiseOverCtc, competingFloor ?? 0);
+  return Math.max(floor, Math.min(baseWithBatna, capped));
 }
 
 function pickStructuralLever(state: NegotiationState): PlannedAction | null {

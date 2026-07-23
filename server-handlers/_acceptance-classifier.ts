@@ -216,6 +216,18 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   ),
 ];
 
+/* S42-B7 (2026-07-23) — RECEIVER-SIDE document-gate accept.
+ * "once I receive the offer letter / LOI / paperwork" is an unconditional
+ * accept pending DOCUMENTATION only — not a salary condition.
+ * Exported as a named constant so blockingConditionalReason can exempt it:
+ * CONDITIONAL_DEFERRAL_PATTERN fires on "as soon as I receive … I will sign"
+ * when "sign" falls within 25 chars of the temporal head, which would
+ * false-veto a genuine document-gate close. The exception below lifts that
+ * veto while leaving genuine salary-condition deferrals ("once you bump it")
+ * fully blocked. Scoped to offer-document nouns only. */
+const RECEIVE_PAPERWORK_ACCEPT_PATTERN =
+  /\b(?:once|as\s+soon\s+as|when|after)\s+i\s+(?:get|receive|have)\s+(?:the\s+)?(?:written\s+)?(?:offer\s+(?:letter|document)|letter\s+of\s+intent|loi|paperwork|paper\s*work|formal\s+offer|offer\s+docs?|contract)\b/i;
+
 /* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — unambiguous close-consent
  * idioms the bank missed, each producing a NO-CLOSE on an unambiguous
  * acceptance (bot kept countering / piling levers over an accepted offer).
@@ -287,6 +299,20 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
   /* PRI-74 (2026-07-10) — verb widened to send|ship: "ship the offer letter"
    * / "ship it over" is the same finalize-the-paperwork consent as "send". */
   /\b(?:send|ship)\s+(?:me\s+|it\s+|them\s+)?(?:(?:over|across)\s+)?(?:the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|docs?|contract)\b/i,
+  /* S42-B7 (2026-07-23) — RECEIVER-SIDE document-gate. The send-the-paperwork
+   * arms above (#3) own the SENDER perspective ("send me the offer letter").
+   * The symmetric RECEIVER perspective ("once I receive the offer letter / LOI")
+   * was missing — "receive" is not a settle verb in CONDITIONAL_DEFERRAL_PATTERN,
+   * so it did NOT get falsely vetoed, but it also lacked a positive accept arm.
+   * A candidate saying "I'll accept and sign once I receive the LOI" has consented
+   * to the offer subject only to the recruiter completing normal documentation —
+   * not a salary condition, an unconditional accept awaiting paperwork.
+   * Scoped to offer-document nouns; bare "once I receive" is NOT covered.
+   * NOTE: CONDITIONAL_DEFERRAL_PATTERN can match "as soon as I receive ... sign"
+   * when "sign" appears within 25 chars of the temporal head. blockingConditional-
+   * Reason exempts this pattern (RECEIVE_PAPERWORK_ACCEPT_PATTERN) to prevent it
+   * from being false-vetoed. */
+  RECEIVE_PAPERWORK_ACCEPT_PATTERN,
   /* 4. "confirmed" / "yes confirmed" / "confirming" — a bare confirmation
    *    token closing the deal. Anchored to a clause boundary AND required to
    *    END the clause so the info-probe "can you confirm the split" (confirm
@@ -1718,7 +1744,17 @@ function blockingConditionalReason(a: string): "hard-conditional" | "conditional
   ) {
     return "hard-conditional";
   }
-  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) return "conditional-deferral";
+  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) {
+    /* S42-B7 (2026-07-23) — document-gate exemption. CONDITIONAL_DEFERRAL
+     * fires on "as soon as I receive the LOI I will sign" because "sign"
+     * appears within 25 chars of the temporal head. But the deferral here
+     * is over PAPERWORK, not a salary adjustment — this is an unconditional
+     * accept pending documentation. Lift the veto for the specific class of
+     * "receive [offer-document-noun]" phrases. Genuine salary conditions
+     * ("once you bump it to 52") carry no paperwork noun and are unaffected. */
+    if (RECEIVE_PAPERWORK_ACCEPT_PATTERN.test(a)) return null;
+    return "conditional-deferral";
+  }
   return null;
 }
 
