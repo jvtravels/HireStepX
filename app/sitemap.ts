@@ -98,5 +98,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries];
+  /* /blog/company/[slug] — company-specific blog category pages. */
+  const GENERAL_COMPANIES = new Set([
+    "General", "Interview Skills", "Role Guides", "Industry Insights",
+    "Career Advice", "Career",
+  ]);
+  const blogCompanySlugs = [...new Set(
+    BLOG_META
+      .map((p) => p.company)
+      .filter((c) => !GENERAL_COMPANIES.has(c))
+      .map((c) => c.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")),
+  )];
+  const blogCompanyEntries: MetadataRoute.Sitemap = blogCompanySlugs.map((slug) => ({
+    url: `${baseUrl}/blog/company/${slug}`,
+    lastModified: seoPagesLastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.65,
+  }));
+
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCompanyEntries];
 }

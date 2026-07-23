@@ -204,6 +204,19 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       )}
       <BlogPage />
+      {meta && !GENERAL_COMPANIES.has(meta.company) && (
+        <div style={{ padding: "12px 24px", background: "#f0f4ff", borderTop: "1px solid #e4e7ec" }}>
+          <div style={{ maxWidth: 720, margin: "0 auto", fontSize: 13, color: "#4b5563" }}>
+            Filed under{" "}
+            <a
+              href={`/blog/company/${meta.company.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`}
+              style={{ color: "#6366f1", textDecoration: "underline" }}
+            >
+              {meta.company} interview guides
+            </a>
+          </div>
+        </div>
+      )}
       {related.length > 0 && (
         <section
           aria-label="Related articles"
