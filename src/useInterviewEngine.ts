@@ -1779,7 +1779,6 @@ export function useInterviewEngine() {
            * show a durable "audio unavailable" banner, then advances the
            * engine state via onSpeechEnd so the interview keeps moving. */
           const onAllTtsProvidersFailed = () => {
-            flagTtsError("Audio unavailable — please read questions on screen and type your answers.");
             setTtsFailed(true);
             onSpeechEnd();
           };
