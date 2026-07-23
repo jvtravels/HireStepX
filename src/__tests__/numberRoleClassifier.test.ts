@@ -550,6 +550,14 @@ const ROWS: Row[] = [
   /* Guard: normal targets must still bind */
   { label: "S4-B15 guard: plain 42L target still binds", text: "I am expecting 42 LPA", ctx: { phase: "probe-expectations" }, expect: { target: 42 } },
 
+  /* S47-B1 (2026-07-24): NON_SALARY_UNIT_ANCHORED must suppress <N>-<M>%
+   * range patterns. "reducing false positives by 30-40%" — the "-" broke
+   * the guard so "30" leaked through as a potential CTC span. Extended
+   * regex: ^\d[\d,.]*(?:-\d[\d,.]*)?...\s*% to absorb the range upper. */
+  { label: "S47-B1: '30-40%' range percent is NOT a salary span", text: "reducing false positives by 30-40%, my current CTC is 24 LPA", expect: { currentCtc: 24 } },
+  { label: "S47-B1: '25-30%' improvement — only real CTC binds", text: "I drove a 25-30% performance improvement and I'm currently at 18 LPA", expect: { currentCtc: 18 } },
+  { label: "S47-B1 guard: plain '30%' still suppressed", text: "reduced latency by 30% and my current CTC is 22 LPA", expect: { currentCtc: 22 } },
+
   /* S48-B1/S49-B1/S50-B1/S51-B1/S53-B1/S55-B1 — opening-turn proactive CTC disclosure.
    * Indian candidates often volunteer both CTC and target in their opening greeting
    * before the recruiter asks. Two failure patterns were fixed:

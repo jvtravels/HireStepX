@@ -29,7 +29,7 @@ export type CompanyTier =
 const IT_SERVICES = [
   "infosys", "tcs", "tata consultancy", "wipro", "cognizant", "hcl",
   "tech mahindra", "capgemini", "ltimindtree", "lti", "mphasis",
-  "accenture", "persistent", "mindtree", "hexaware", "coforge",
+  "persistent", "mindtree", "hexaware", "coforge",
   "dxc", "ibm india", "ibm", "genpact", "birlasoft",
   /* Wave-7 expansion. */
   "ltts", "l t technology", "kpit", "cyient", "sonata", "nseit",
@@ -85,8 +85,13 @@ const PRODUCT_INDIA = [
   "whatfix", "uniphore", "yellow.ai", "haptik",
 ];
 const CONSULTING = [
+  /* S50-B5 (2026-07-24): Accenture reclassified from it-services → consulting.
+   * Its global brand is consulting-first; India Senior Consultant / Manager /
+   * Strategy roles follow consulting pay (₹30–50L senior) not IT-services
+   * delivery rates (₹19–25L). "accenture strategy" kept for backward compat. */
+  "accenture", "accenture strategy",
   "mckinsey", "bcg", "bain", "deloitte", "ey", "ernst & young",
-  "kpmg", "pwc", "pricewaterhousecoopers", "accenture strategy",
+  "kpmg", "pwc", "pricewaterhousecoopers",
   /* Wave-7. */
   "kearney", "at kearney", "oliver wyman", "roland berger",
   "mercer", "willis towers watson", "korn ferry", "aon",

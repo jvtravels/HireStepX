@@ -39,18 +39,22 @@ export type HrSectorOverlay =
   | "none";
 export type HrSeniorityOverlay = "fresher" | "mid" | "senior" | "executive";
 
-const SERVICES_T1 = /tcs|tata consultancy|infosys|wipro|hcl|tech mahindra|cognizant|capgemini|accenture|ltimindtree|lti|mindtree|mphasis|hexaware|persistent/i;
+/* S50-B5 (2026-07-24): "accenture" removed from SERVICES_T1 and added to
+ * CONSULTING below. Accenture's global brand is consulting-first and its
+ * India Senior Consultant / Manager / Strategy tracks follow consulting
+ * pay norms. The delivery-headcount argument kept it in services-tier1, but
+ * that produces a ₹19–25L senior band instead of the correct ₹30–45L. */
+const SERVICES_T1 = /tcs|tata consultancy|infosys|wipro|hcl|tech mahindra|cognizant|capgemini|ltimindtree|lti|mindtree|mphasis|hexaware|persistent/i;
 const PRODUCT_UNICORN = /razorpay|phonepe|paytm|swiggy|zomato|meesho|cred|groww|zerodha|nykaa|udaan|dream11|policybazaar|byju'?s|unacademy|upgrad|postman|freshworks|chargebee|zoho|flipkart|myntra|ola/i;
 const BFSI = /hdfc|icici|sbi|state bank|kotak|axis bank|bajaj (?:finserv|finance|allianz)|yes bank|indusind|standard chartered|hsbc|citi|deutsche|jp ?morgan|goldman|morgan stanley|barclays|aditya birla capital|tata aia|lic|max life|reliance (?:nippon|general)/i;
 /* MNC captive / Global Capability Centres — parent-stock RSU literacy,
    global-standard BGV (criminal + education + prior-employment, sometimes
    sanctions screening), strict code-of-conduct on dual employment. */
 const GCC = /walmart|google|alphabet|amazon|\baws\b|microsoft|\bidc\b|\bgcc\b|target corp|wells fargo|american express|\bamex\b|optum|unitedhealth|nvidia|\bintel\b|qualcomm|adobe|salesforce|sap labs|oracle|cisco|vmware|\bibm\b|\bdell\b|\bhp\b|\bhpe\b|shell|lowe'?s|tesco|mastercard|\bvisa inc|paypal|expedia|booking|uber|linkedin|meta|\bapple\b/i;
-/* Strategy + Big-4 consulting — up-or-out narrative, client-conflict
-   scrutiny, travel/utilisation expectations, variable-heavy comp.
-   (Accenture stays services-tier1 by design — its India footprint is
-   delivery-shaped, not partner-track consulting.) */
-const CONSULTING = /mckinsey|bcg|boston consulting|\bbain\b|deloitte|\bey\b|ernst (?:&|and) young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver wyman|\bzs\b|zs associates|roland berger|alvarez (?:&|and) marsal|grant thornton|\bbcg\b/i;
+/* Strategy + Big-4 + Accenture consulting. Accenture moved here from
+   SERVICES_T1 (S50-B5, 2026-07-24): its India consulting tracks (Senior
+   Consultant, Manager, Strategy) follow consulting pay norms. */
+const CONSULTING = /accenture|mckinsey|bcg|boston consulting|\bbain\b|deloitte|\bey\b|ernst (?:&|and) young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver wyman|\bzs\b|zs associates|roland berger|alvarez (?:&|and) marsal|grant thornton|\bbcg\b/i;
 /* Government / PSU / Maharatna-Navratna — fixed pay-scale (CPC), police
    verification + category/character certificates, dual employment barred
    by conduct rules, joining tied to allotment not a negotiated date. */

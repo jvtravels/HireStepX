@@ -15,7 +15,11 @@ describe("Bug 1: classifyCompanyTier (band-tier)", () => {
     expect(classifyCompanyTier("Capgemini India")).toBe("it-services");
     expect(classifyCompanyTier("LTIMindtree")).toBe("it-services");
     expect(classifyCompanyTier("Mphasis")).toBe("it-services");
-    expect(classifyCompanyTier("Accenture")).toBe("it-services");
+    // Accenture reclassified to consulting (S50-B5, 2026-07-24)
+  });
+  it("classifies Accenture as consulting (S50-B5)", () => {
+    expect(classifyCompanyTier("Accenture")).toBe("consulting");
+    expect(classifyCompanyTier("Accenture Strategy")).toBe("consulting");
   });
   it("classifies big-tech", () => {
     expect(classifyCompanyTier("Google")).toBe("big-tech");

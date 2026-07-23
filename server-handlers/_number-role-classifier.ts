@@ -737,8 +737,13 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
      * real CTC (30) was wrongly discarded and discovery looped the CTC probe
      * forever. Build "<thisNumber><immediate tail>" and require the unit to
      * abut this number (anchored ^). */
+    /* S47-B1 (2026-07-24): extend to catch `<N>-<M>%` range patterns.
+     * Original `[\d,.]*` stops at `-`, so "30-40%" passed the guard and
+     * "30" leaked as a CTC span, triggering a spurious reconcile probe.
+     * Added `(?:-\d[\d,.]*)?` to optionally consume the hyphen-connected
+     * upper bound so the anchored unit (`%`) still matches. */
     const NON_SALARY_UNIT_ANCHORED =
-      /^\d[\d,.]*\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
+      /^\d[\d,.]*(?:-\d[\d,.]*)?(?:\s*(?:to\s+\d[\d,.]*\s*)?)?\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
     if (NON_SALARY_UNIT_ANCHORED.test(m[1] + text.slice(digitEnd, digitEnd + 10)))
       continue;
     /* Non-salary LEFT context (live-staging 2026-06-19, scenario C —
