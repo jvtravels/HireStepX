@@ -1382,7 +1382,7 @@ export default function SessionSetup() {
    * inferCompanyMode → marketMode mapping that negotiate-turn.ts uses at
    * session init, so we can disclose the simulation context before the
    * session starts. Mirrors: GCC/MNC → neutral, BFSI/IT_SERVICES → soft,
-   * STARTUP → hot. */
+   * STARTUP → hot, PRODUCT_INDIA → neutral (B5 2026-07-23). */
   const simulatedMarketMode = useMemo<"soft" | "neutral" | "hot" | null>(() => {
     if (!isNegotiationFocus || !targetCompany.trim()) return null;
     const c = targetCompany;
@@ -1390,6 +1390,9 @@ export default function SessionSetup() {
     if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return "soft";
     if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return "hot";
     if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return "neutral";
+    /* B5 (2026-07-23) — Indian product companies: neutral, not soft.
+     * Must precede the IT_SERVICES fallback (return "soft" below). */
+    if (/(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary(\s+tech(?:nologies)?)?|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i.test(c)) return "neutral";
     return "soft";
   }, [isNegotiationFocus, targetCompany]);
 

@@ -242,9 +242,11 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   const hasOffers = offerTrajectoryLpa.length > 0;
   let candidateAskLpa: number | null;
   if (hasOffers) {
-    if (finalState.firstCounterVsOffer !== undefined) {
-      /* New row (post S42-B8 fix): trust the kernel's explicit gate. */
-      candidateAskLpa = finalState.firstCounterVsOffer ?? null;
+    if (finalState.lastCounterVsOffer !== undefined || finalState.firstCounterVsOffer !== undefined) {
+      /* New row (post S43-B8 fix): lastCounterVsOffer is the final explicit
+       * counter vs the offer (last-wins); fall back to firstCounterVsOffer
+       * for rows written between S42-B8 and S43-B8 that lack the new field. */
+      candidateAskLpa = finalState.lastCounterVsOffer ?? finalState.firstCounterVsOffer ?? null;
     } else {
       /* Legacy row: use firstAnchoredTarget only when it exceeds the opening
        * offer, meaning the candidate genuinely pushed above what was offered. */

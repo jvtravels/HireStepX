@@ -842,7 +842,7 @@ export function useInterviewEngine() {
   const [evaluating, setEvaluating] = useState(false);
   const [evalElapsed, setEvalElapsed] = useState(0);
   const micStreamRef = useRef<MediaStream | null>(null);
-  const interviewerName = useMemo(() => getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`), [interviewType, interviewFocus, targetCompany, user?.id]);
+  const interviewerName = useMemo(() => getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`, user?.id, targetCompany), [interviewType, interviewFocus, targetCompany, user?.id]);
   const interviewerGender = useMemo(() => getInterviewerGender(interviewerName), [interviewerName]);
   // Pick a random female voice once per session (seeded by interviewerName so
   // the same interviewer always uses the same voice, but different interviewers
@@ -2909,6 +2909,11 @@ export function useInterviewEngine() {
                   totalYoe: totalYoeFromResume,
                   applicableYoe: yoeResult.applicableYoe,
                   primaryDomain: primaryDomainFromResume,
+                  /* B6 — forward the candidate's pre-stated target so the
+                     server can clamp the opening offer to leave at least
+                     12% negotiation headroom. targetSalary is set from the
+                     setup wizard's "what are you targeting?" field. */
+                  candidateTargetLpa: typeof targetSalary === "number" && targetSalary > 0 ? targetSalary : null,
                 });
                 if (!initRes) return null;
                 negotiationKernelStateRef.current = initRes.state;
@@ -3820,6 +3825,15 @@ export function useInterviewEngine() {
       ]);
       localOk = saveResult.localOk;
       cloudOk = saveResult.cloudOk;
+      // Signal DashboardContext to invalidate its session cache on next
+      // mount. DashboardProvider is not mounted during /interview (it lives
+      // in the (dashboard) layout group), so we use a localStorage flag
+      // that the data-fetch useEffect reads and consumes on remount.
+      // This is the B9 fix: sessions list updates automatically after
+      // session completion without requiring a hard reload.
+      if (cloudOk && user?.id) {
+        try { localStorage.setItem(`hirestepx_sessions_dirty_${user.id}`, "1"); } catch { /* non-critical */ }
+      }
     } catch (saveErr) {
       console.error("[interview] saveSessionResult threw:", saveErr);
       // Even when the in-line save throws, enqueue for background retry

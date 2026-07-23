@@ -935,6 +935,15 @@ export interface NegotiationState {
    * that session. First-wins, monotone-null-to-set (never clears).
    * Metrics layer uses this over firstAnchoredTarget when offers exist. */
   firstCounterVsOffer?: number | null;
+  /* S43-B8 — last-wins complement to firstCounterVsOffer. Records the MOST
+   * RECENT counter the candidate stated against a live offer (highestOfferMade>0).
+   * Unlike firstCounterVsOffer (which freezes on first write), this overwrites
+   * every time the candidate re-counters, so the report tile "YOUR ASK" shows
+   * the final explicit ask rather than an early discovery-target that happened
+   * to land after an offer appeared. Null when no counter vs offer has been
+   * stated. Never clears once set (cleared only alongside firstCounterVsOffer
+   * would defeat the purpose). */
+  lastCounterVsOffer?: number | null;
   candidateCurrentCtc: number | null;    // current package (NOT target)
   /* PDF #28 (2026-06-07) — candidate's CURRENT employer name.
    *
@@ -3058,6 +3067,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     freshGradDisclosed: false,
     wfhFlexibilityMentioned: false,
     firstCounterVsOffer: null,
+    lastCounterVsOffer: null,
     recruiterFactsAlreadySaid: [],
     answeredQuestionLedger: {},
     pendingPromises: [],
@@ -5148,6 +5158,11 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
        * countered against the offer. First-wins (monotone null→set). */
       if (next.firstCounterVsOffer == null && (state.highestOfferMade ?? 0) > 0) {
         next.firstCounterVsOffer = parsed.target;
+      }
+      /* S43-B8 — last-wins complement: always overwrite so the report shows
+       * the FINAL explicit counter vs the offer, not just the first one. */
+      if ((state.highestOfferMade ?? 0) > 0) {
+        next.lastCounterVsOffer = parsed.target;
       }
       /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation, scoped to
        * the TOTAL target it describes. If this utterance frames the number

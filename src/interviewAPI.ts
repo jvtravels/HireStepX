@@ -930,6 +930,11 @@ export async function negotiationKernelInit(params: {
   totalYoe?: number | null;
   applicableYoe?: number | null;
   primaryDomain?: string | null;
+  /** B6 — candidate's pre-stated target salary (LPA, total CTC) from the
+   *  setup wizard. Server uses this to clamp the opening offer so there
+   *  is always at least a 12% gap, creating meaningful negotiation tension.
+   *  Null / absent when the candidate has not stated a target. */
+  candidateTargetLpa?: number | null;
 }): Promise<NegotiationKernelResponse | null> {
   return postKernel({ action: "init", ...params });
 }

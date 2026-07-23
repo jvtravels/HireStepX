@@ -167,7 +167,15 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string, rece
     }
   } else if (phase === "closing") {
     if (mentionsBenefits && mentionsNumber) {
-      feedback = "Strong close — confirming both comp and benefits. Get everything in writing.";
+      /* B7 (2026-07-23) — split "Strong close" label by acceptance signal.
+       * Without this, a candidate making a final counter-offer (e.g. "I need
+       * ₹30 LPA including equity") gets the same "Strong close" chip as one
+       * who is accepting. Only fire "Strong close" when the utterance also
+       * contains an acceptance signal; otherwise coach them to press for
+       * written confirmation once agreement is reached. */
+      feedback = (signalsAccepted || acceptsImmediately)
+        ? "Strong close — confirming both comp and benefits. Get everything in writing."
+        : "Good final ask — press for written confirmation once they agree.";
     } else {
       feedback = "Tip: Confirm all terms explicitly — base, bonus, equity, start date, notice period.";
     }

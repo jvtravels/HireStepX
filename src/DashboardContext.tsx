@@ -50,6 +50,11 @@ interface SessionsContextValue {
    */
   topGaps: string[];
   refreshSessions: () => void;
+  /** Bump the session-fetch epoch so the data effect re-runs immediately.
+   *  Also writes a localStorage dirty flag so a remount (e.g. returning
+   *  from /interview) picks up the signal even without a live context call. */
+  invalidateSessions: () => void;
+  sessionVersion: number;
 }
 
 interface SubscriptionContextValue {
@@ -194,6 +199,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // initial dashboard paint isn't blocked by it; empty until the fetch
   // completes (degrades gracefully to skill-based CTA).
   const [topGaps, setTopGaps] = useState<string[]>([]);
+  // sessionVersion increments each time invalidateSessions() is called,
+  // forcing the data-fetch useEffect to re-run. Also consumed on mount
+  // when a dirty flag was written by useInterviewEngine after a cloud save.
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [syncError, setSyncError] = useState("");
   /* Per-section loading flags — split from a single `dataLoading`
      boolean so one slow Supabase call (events) cannot blank the rest
@@ -388,20 +397,37 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name, user?.targetRole, user?.interviewDate, user?.resumeFileName, user?.hasCompletedOnboarding]);
 
-  // Load data from Supabase on mount, with localStorage cache fallback
+  // Load data from Supabase on mount, with localStorage cache fallback.
+  // Also runs when sessionVersion increments (invalidateSessions() call
+  // or dirty-flag consumed from a cross-page write by useInterviewEngine).
   useEffect(() => {
     if (!user?.id) { setSessionsLoading(false); setEventsLoading(false); return; }
 
     const sessionsCacheKey = `hirestepx_cache_sessions_${user.id}`;
     const eventsCacheKey = `hirestepx_cache_events_${user.id}`;
 
+    // Consume the dirty flag written by useInterviewEngine after a cloud
+    // save. On a sessionVersion > 0 run the cache is intentionally skipped
+    // so stale data never flickers in over the fresh network result.
+    const dirtyKey = `hirestepx_sessions_dirty_${user.id}`;
+    let skipSessionsCache = false;
+    try {
+      if (localStorage.getItem(dirtyKey)) {
+        localStorage.removeItem(dirtyKey);
+        skipSessionsCache = true;
+      }
+    } catch { /* localStorage unavailable — proceed normally */ }
+
     let cancelled = false;
 
     // Show cached data immediately for instant LCP, then refresh from network.
     // Cache hits flip per-section flags independently so a card whose
     // cache is warm renders straight away while the other still streams.
+    // Skip the sessions cache when skipSessionsCache is set — a dirty flag
+    // written by useInterviewEngine means the cached list is stale and
+    // showing it would cause a visible flicker back to the old entry count.
     try {
-      const cachedSessions = localStorage.getItem(sessionsCacheKey);
+      const cachedSessions = skipSessionsCache ? null : localStorage.getItem(sessionsCacheKey);
       const cachedEvents = localStorage.getItem(eventsCacheKey);
       if (cachedSessions) {
         setSupabaseSessions(JSON.parse(cachedSessions));
@@ -518,16 +544,30 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }, 10000);
     return () => { cancelled = true; clearTimeout(timeout); };
     // syncError is read inside one of the inner .catch handlers as a "don't overwrite" guard. Adding it as a dep would refetch the whole dashboard whenever the error string toggles, which is exactly the loop we're trying to avoid.
+    // sessionVersion is intentionally included: invalidateSessions() bumps it to
+    // force a fresh fetch after a session save (B9 fix — no hard reload required).
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, sessionVersion]);
+
+  // Invalidate the sessions cache — bumps sessionVersion so the data-fetch
+  // useEffect re-runs immediately. Also writes a localStorage dirty flag so
+  // a DashboardProvider remount (e.g. returning from /interview via SPA nav)
+  // skips the stale cache and goes straight to a network fetch.
+  const invalidateSessions = useCallback(() => {
+    if (!user?.id) return;
+    try { localStorage.setItem(`hirestepx_sessions_dirty_${user.id}`, "1"); } catch { /* non-critical */ }
+    setSessionVersion(v => v + 1);
   }, [user?.id]);
 
-  // Refetch sessions from Supabase (debounced to prevent rapid-fire calls)
+  // Refetch sessions from Supabase (debounced to prevent rapid-fire calls
+  // on tab-switch. Debounce reduced from 5s → 1s: it now only guards against
+  // rapid visibilitychange retriggers, not the normal post-session navigation.)
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshSessions = useCallback(() => {
     if (!user?.id) return;
-    // Debounce: skip if a refresh was triggered within the last 5 seconds
+    // Debounce: skip if a refresh was triggered within the last 1 second
     if (refreshTimeoutRef.current) return;
-    refreshTimeoutRef.current = setTimeout(() => { refreshTimeoutRef.current = null; }, 5000);
+    refreshTimeoutRef.current = setTimeout(() => { refreshTimeoutRef.current = null; }, 1000);
     getUserSessions(user.id).then(sessions => {
       const mapped = sessions.map(s => ({
         id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
@@ -850,9 +890,9 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   const sessionsValue: SessionsContextValue = useMemo(() => ({
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
     weekActivity, currentStreak, readinessScore,
-    calendarEvents, topGaps, refreshSessions,
+    calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
     sessionsLoading, eventsLoading,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions, sessionsLoading, eventsLoading]);
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, isPro, atSessionLimit,

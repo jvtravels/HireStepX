@@ -75,23 +75,68 @@ export const DEFAULT_MALE_INTERVIEWER = "Rahul Verma";
 
 export const INTERVIEWER_NAMES = [
   DEFAULT_FEMALE_INTERVIEWER, DEFAULT_MALE_INTERVIEWER,
+  // Original pool
   "Arjun Mehta", "Priya Sharma", "Rohan Kapoor", "Ananya Patel", "Vikram Desai",
   "Kavya Nair", "Siddharth Joshi", "Neha Gupta", "Aditya Rao", "Deepika Iyer",
   "Karthik Nair", "Aisha Rahman", "Rajesh Iyer", "Meera Reddy", "Tanvi Kulkarni",
+  // Extended pool — gender-balanced, regionally diverse Indian recruiter names
+  "Suresh Babu", "Lakshmi Venkat", "Nikhil Bose", "Shreya Pillai", "Amit Saxena",
+  "Divya Krishnamurthy", "Gaurav Tiwari", "Pooja Bhatt", "Manish Choudhary", "Riya Singhania",
+  "Vivek Pandey", "Swati Dubey", "Harish Shetty", "Nandita Ghosh", "Kunal Malhotra",
+  "Aparna Rajan", "Sandeep Garg", "Ishita Chatterjee", "Rakesh Nambiar", "Sonal Joshi",
+  "Dhruv Mathur", "Kriti Aggarwal", "Prasad Kulkarni", "Vandana Hegde", "Ajay Thakur",
 ];
-export function getInterviewerName(seed: string): string {
+
+export function getInterviewerName(seed: string, userId?: string, company?: string): string {
   // Empty / missing seed → fall back to the canonical female default so
   // a fresh load (before session context is wired) still has a coherent
   // name and the Sarvam female voice plays.
   if (!seed) return DEFAULT_FEMALE_INTERVIEWER;
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  return INTERVIEWER_NAMES[Math.abs(hash) % INTERVIEWER_NAMES.length];
+  const absHash = Math.abs(hash);
+
+  // localStorage deduplication: ensure no two different companies get the same
+  // recruiter name for the same user in this browser session.
+  if (typeof localStorage !== "undefined" && userId && company) {
+    const usedKey = `hirestepx_recruiter_${userId}_used_names`;
+    let usedMap: Record<string, string> = {};
+    try {
+      usedMap = JSON.parse(localStorage.getItem(usedKey) ?? "{}") as Record<string, string>;
+    } catch {
+      usedMap = {};
+    }
+    // Names already assigned to OTHER companies (not this one) are excluded.
+    const excludedNames = new Set(
+      Object.entries(usedMap)
+        .filter(([compKey]) => compKey !== company)
+        .map(([, name]) => name)
+    );
+    const pool = INTERVIEWER_NAMES.filter((n) => !excludedNames.has(n));
+    // Fallback to full pool if all names are somehow exhausted.
+    const chosen =
+      pool.length > 0
+        ? pool[absHash % pool.length]
+        : INTERVIEWER_NAMES[absHash % INTERVIEWER_NAMES.length];
+    usedMap[company] = chosen;
+    try {
+      localStorage.setItem(usedKey, JSON.stringify(usedMap));
+    } catch {
+      // localStorage full or unavailable — silently ignore.
+    }
+    return chosen;
+  }
+
+  return INTERVIEWER_NAMES[absHash % INTERVIEWER_NAMES.length];
 }
 
 // Prita is added explicitly; first name lookup keeps gender routing
 // honest end-to-end (display name → gender → TTS voice).
-const FEMALE_FIRST_NAMES = new Set(["Prita", "Priya", "Ananya", "Kavya", "Neha", "Deepika", "Aisha", "Meera", "Tanvi"]);
+const FEMALE_FIRST_NAMES = new Set([
+  "Prita", "Priya", "Ananya", "Kavya", "Neha", "Deepika", "Aisha", "Meera", "Tanvi",
+  // Extended pool female first names
+  "Lakshmi", "Shreya", "Divya", "Pooja", "Riya", "Swati", "Nandita", "Aparna", "Ishita", "Sonal", "Kriti", "Vandana",
+]);
 /** Determine gender from interviewer name */
 export function getInterviewerGender(name: string): "male" | "female" {
   const firstName = name.split(" ")[0];

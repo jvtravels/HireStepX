@@ -374,7 +374,7 @@ export default async function handler(
          coherence. The original band is preserved in telemetry so
          curator review can fix the source data upstream. */
       const clampResult = clampBandToTierP50(resolvedBand, role, companyTier);
-      const serverBand = clampResult.clamped
+      let serverBand = clampResult.clamped
         ? { ...resolvedBand, ...clampResult.band }
         : resolvedBand;
 
@@ -396,6 +396,39 @@ export default async function handler(
           `tier=${clampResult.tier} family=${clampResult.family}: ` +
           `${clampResult.originalInitial}→${serverBand.initialOffer} LPA (P50=${clampResult.p50})`,
         );
+      }
+
+      /* B6 — Opening-offer headroom clamp (2026-07-23).
+       *
+       * When the candidate has pre-stated a target salary (from the
+       * setup wizard, forwarded as body.candidateTargetLpa), enforce a
+       * minimum 12% gap between the opening offer and their target.
+       * Without this guard the recruiter could open at or above the
+       * candidate's stated ask, killing negotiation tension and making
+       * the session feel scripted. The guard only fires when the
+       * candidate's target is known AND the computed initialOffer sits
+       * within 3% of it (≥0.97×); it clamps to 88% of the target
+       * (rounded to the nearest 0.5L) and leaves maxStretch / walkAway
+       * untouched so the kernel's concession math remains coherent. */
+      const candidateTargetLpa = body.candidateTargetLpa ?? null;
+      if (
+        candidateTargetLpa != null &&
+        serverBand.initialOffer >= candidateTargetLpa * 0.97
+      ) {
+        const clampedInitial = Math.round(candidateTargetLpa * 0.88 * 2) / 2;
+        void captureServerEvent("kernel_opening_offer_headroom_clamped", distinctId, {
+          role,
+          company: company.slice(0, 80),
+          original_initial: serverBand.initialOffer,
+          clamped_initial: clampedInitial,
+          candidate_target: candidateTargetLpa,
+        }, req);
+        console.warn(
+          `[negotiate-turn] B6 opening-offer headroom clamp: ` +
+          `initialOffer ${serverBand.initialOffer}→${clampedInitial} LPA ` +
+          `(candidateTarget=${candidateTargetLpa}, 88% floor)`,
+        );
+        serverBand = { ...serverBand, initialOffer: clampedInitial };
       }
 
       /* Phase 4 of the rebuild: log a sanity warning when the resolved

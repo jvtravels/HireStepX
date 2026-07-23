@@ -1185,12 +1185,22 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
    * close gates below decline rather than stealth-close). When the signal is
    * total-scoped the legacy chain is unchanged. */
   const totalCnum = totalScopedCounter(state);
+  /* B4 (2026-07-23) — removed `state.lastCandidateCounterLpa` from the
+   * fallback chain. That raw per-turn field is stale across turns: a candidate
+   * who made a cash ask two turns ago still has a non-null field even after
+   * pivoting to a non-cash ask or falling silent. Using it here as a close
+   * anchor produced false-closes at a number the candidate never restated.
+   * When totalScopedCounter is null AND there is no fixed close ask, there is
+   * no current-turn numeric close signal — the close must stand at the offer.
+   * candidateTarget (the longer-lived intake aspiration) is retained as the
+   * only fallback because it is explicitly captured on setup, not from any
+   * per-turn utterance that could go stale mid-session. */
   const cnum =
     totalCnum != null
       ? totalCnum
       : resolveFixedCloseAsk(state) != null
         ? fixedScopedCloseTotal(state) // implied total iff deliverable, else null
-        : state.lastCandidateCounterLpa ?? state.candidateTarget ?? null;
+        : state.candidateTarget ?? null;
   if (cnum == null) return offer;
   const gap = Math.max(2, offer * 0.06);
   if (cnum > offer && cnum <= state.band.maxStretch && cnum - offer <= gap) {
@@ -5686,10 +5696,18 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * the #122 offer-recap hold but on the counter-offer-phase side, where the
      * #119 stonewall predicate doesn't reach. The branch re-arms the instant
      * any real number lands (any of the three signals below goes non-null). */
+    /* B2 (2026-07-23) — removed `state.lastCandidateCounterLpa != null` as
+     * the third arm here. That raw per-turn field is not cleared between turns
+     * and goes stale: once a candidate states any cash number, the field
+     * persists indefinitely, causing `candidateNamedAspiration` to stay true
+     * even when they switch to a non-cash push or stay silent. The result was
+     * the counter-base cash engine firing toward a number the candidate never
+     * restated. effectiveTargetCtcLpa covers the sticky session ask; the
+     * totalScopedCounter covers the current-turn total counter — together they
+     * are sufficient and neither goes stale. */
     const candidateNamedAspiration =
       effectiveTargetCtcLpa(state) != null ||
-      totalScopedCounter(state) != null ||
-      state.lastCandidateCounterLpa != null;
+      totalScopedCounter(state) != null;
     if (!candidateNamedAspiration && (state.highestOfferMade ?? 0) > 0) {
       /* Route to lever-explore, NOT hold-firm: the counter-base engine's
        * phantom aspiration at maxStretch is what manufactures the headroom
@@ -5975,7 +5993,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     let candidateProposedBaseLpa: number | undefined;
     {
       const cb = state.candidateComponentBreakdown;
-      const counterTotal = state.lastCandidateCounterLpa;
+      /* B2 (2026-07-23) — replaced `state.lastCandidateCounterLpa` with
+       * `effectiveTargetCtcLpa(state)` as the breakdown coherence target.
+       * The raw per-turn field was cleared by applyAiMove each round, so when
+       * the candidate states a component breakdown WITHOUT repeating their total
+       * counter in the same utterance, the field is null and the coherence
+       * check silently skips — losing the proposed base. effectiveTargetCtcLpa
+       * is the sticky session-level ask (folding in-hand→CTC and fixed→total)
+       * and is the correct reference to check "does this breakdown match what
+       * the candidate has ever told us their target total is". */
+      const counterTotal = effectiveTargetCtcLpa(state);
       if (
         state.highestOfferMade > 0 &&
         cb != null &&
@@ -6769,10 +6796,20 @@ function wrapLeverExplore(
    * first. The numbered-push case is handled by canonical-prose's counterAck
    * (lastCandidateCounterLpa), so this only covers the numberless demand
    * ("put your best fixed on the table") that would otherwise get a silent
-   * perk pivot. */
+   * perk pivot.
+   *
+   * B2 (2026-07-23) — replaced `state.lastCandidateCounterLpa == null` with
+   * `totalScopedCounter(state) == null`. The raw field persists across turns
+   * (cleared by applyAiMove, but stale if that cycle was skipped or if a
+   * fixed-scoped counter was set and the candidate later switches to a
+   * numberless push without restating a number). totalScopedCounter is both
+   * scope-aware (null for fixed counters) and the canonical source for "did
+   * the candidate name a TOTAL this turn" — using it here keeps the
+   * cashPushNamesCeiling flag consistent with every other total-vs-fixed
+   * gate in the planner. */
   const cashPushNamesCeiling =
     state.highestOfferMade > 0 &&
-    state.lastCandidateCounterLpa == null &&
+    totalScopedCounter(state) == null &&
     isSalaryPush(latestCandidateText(state));
   /* PRI-60 — single source for the total-vs-fixed scope reconciliation figure.
    * Non-null only when the candidate's pinned fixed close-ask cannot be

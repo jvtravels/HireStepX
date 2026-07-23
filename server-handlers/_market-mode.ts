@@ -99,7 +99,7 @@ export function inferMarketMode(input: InferMarketModeInput): MarketMode {
 /** Company-type market segment. Distinct from MarketMode ("soft"/"neutral"/"hot")
  *  which is the concession-curve bias; CompanyMode is the structural context
  *  that gates hike caps, equity norms, and bonus structure defaults. */
-export type CompanyMode = "IT_SERVICES" | "STARTUP" | "GCC" | "BFSI" | "MNC";
+export type CompanyMode = "IT_SERVICES" | "STARTUP" | "GCC" | "BFSI" | "MNC" | "PRODUCT_INDIA";
 
 const BFSI_RE =
   /(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance\s+corp)/i;
@@ -115,6 +115,14 @@ const STARTUP_RE_ROLE =
 
 const MNC_RE =
   /(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i;
+
+/* B5 (2026-07-23) — Indian product companies that are NOT IT-services tier
+ * and NOT startups. They have healthy salary budgets, competitive hike norms,
+ * and global product portfolios — neutral market mode is the correct default,
+ * not the soft mode IT-services vendors get. Placed before the IT_SERVICES
+ * fallback so Freshworks / Zoho / Postman etc. resolve "neutral" correctly. */
+const PRODUCT_INDIA_RE =
+  /(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary(\s+tech(?:nologies)?)?|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i;
 
 /** Infer the company-type market segment from (role, company) strings.
  *  Pure. Call during session init if marketMode is not explicitly set. */
@@ -134,6 +142,11 @@ export function inferCompanyMode(role: string, company: string): CompanyMode {
 
   /* MNC — global big-tech / consulting / IT that isn't IT-services tier. */
   if (MNC_RE.test(c)) return "MNC";
+
+  /* PRODUCT_INDIA — Indian-headquartered product companies. Healthy salary
+   * budgets + global product positioning; neutral, not soft. Must sit before
+   * the IT_SERVICES default so e.g. Freshworks / Zoho aren't mis-classified. */
+  if (PRODUCT_INDIA_RE.test(c)) return "PRODUCT_INDIA";
 
   /* IT_SERVICES — default for Indian IT vendors and anything unclassified. */
   return "IT_SERVICES";
