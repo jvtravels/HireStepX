@@ -15,7 +15,7 @@ import { RoundFlow, SalaryLadder, TierCompare, FrameworkSteps, PrepTimeline, Com
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
    accents, shared Nav + Footer + mobile sticky CTA). */
-function BlogShell({ children }: { children: ReactNode }) {
+function BlogShell({ children, afterContent }: { children: ReactNode; afterContent?: ReactNode }) {
   return (
     <div
       style={{
@@ -87,6 +87,7 @@ function BlogShell({ children }: { children: ReactNode }) {
       <a href="#main" className="blog-skip">Skip to content</a>
       <NavV2 />
       <main id="main">{children}</main>
+      {afterContent}
       <FinalCTAFooterV2 />
       <MobileStickyCTA />
     </div>
@@ -29294,7 +29295,7 @@ function getAutoLinks(post: BlogPost): { label: string; href: string }[] {
 }
 
 /* ─── Single blog post ─── */
-function BlogPostPage({ post }: { post: BlogPost }) {
+function BlogPostPage({ post, afterContent }: { post: BlogPost; afterContent?: ReactNode }) {
   const related = getRelatedPosts(post.relatedSlugs);
 
   /* Derive video CTA copy from the post's company / category */
@@ -29337,7 +29338,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   const showToc = post.sections.length > 4;
 
   return (
-    <BlogShell>
+    <BlogShell afterContent={afterContent}>
       {/* Header: tight, centred, no wasted air */}
       <header className="blog-post-header" style={{ background: t.cream, paddingTop: 64, paddingBottom: 20 }}>
         <div className="blog-post-inner" style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px", textAlign: "center" }}>
@@ -29544,7 +29545,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
 }
 
 /* ─── Main export ─── */
-export default function BlogPage() {
+export default function BlogPage({ afterContent }: { afterContent?: ReactNode } = {}) {
   const { slug } = useParams() as { slug?: string };
 
   if (!slug) {
@@ -29576,7 +29577,7 @@ export default function BlogPage() {
     );
   }
 
-  return <BlogPostPage post={post} />;
+  return <BlogPostPage post={post} afterContent={afterContent} />;
 }
 
 /* Export slugs for sitemap generation */

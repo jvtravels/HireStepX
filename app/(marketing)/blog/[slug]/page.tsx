@@ -203,81 +203,37 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       {faqSchema && (
         <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       )}
-      <BlogPage />
-      {meta && !GENERAL_COMPANIES.has(meta.company) && (
-        <div style={{ padding: "12px 24px", background: "#f0f4ff", borderTop: "1px solid #e4e7ec" }}>
-          <div style={{ maxWidth: 720, margin: "0 auto", fontSize: 13, color: "#4b5563" }}>
-            Filed under{" "}
-            <a
-              href={`/blog/company/${meta.company.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`}
-              style={{ color: "#6366f1", textDecoration: "underline" }}
-            >
-              {meta.company} interview guides
-            </a>
-          </div>
-        </div>
-      )}
-      {related.length > 0 && (
-        <section
-          aria-label="Related articles"
-          style={{ borderTop: "1px solid #e8eaed", padding: "40px 24px 48px" }}
-        >
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
-              Read next
-            </p>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
-              Related articles
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {related.map((post) => (
-                <a
-                  key={post.slug}
-                  href={`/blog/${post.slug}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 18px",
-                    background: "#fff",
-                    border: "1px solid #e4e7ec",
-                    borderRadius: 10,
-                    textDecoration: "none",
-                    color: "#1a1d23",
-                    fontSize: 14,
-                    fontWeight: 500,
-                  }}
-                >
-                  <span>{post.title}</span>
-                  <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>Read →</span>
-                </a>
-              ))}
+      <BlogPage afterContent={<>
+        {meta && !GENERAL_COMPANIES.has(meta.company) && (
+          <div style={{ padding: "12px 24px", background: "#f0f4ff", borderTop: "1px solid #e4e7ec" }}>
+            <div style={{ maxWidth: 720, margin: "0 auto", fontSize: 13, color: "#4b5563" }}>
+              Filed under{" "}
+              <a
+                href={`/blog/company/${meta.company.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`}
+                style={{ color: "#6366f1", textDecoration: "underline" }}
+              >
+                {meta.company} interview guides
+              </a>
             </div>
           </div>
-        </section>
-      )}
-      {(relatedQuestions.length > 0 || salaryEntry) && (
-        <section
-          aria-label={`Practice resources for ${companyLabel}`}
-          style={{
-            borderTop: "1px solid #e8eaed",
-            background: "#f8f9fb",
-            padding: "40px 24px 48px",
-          }}
-        >
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
-              Practice for {companyLabel}
-            </p>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
-              {companyLabel} Interview Prep on HireStepX
-            </h2>
-            {relatedQuestions.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: salaryEntry ? 20 : 0 }}>
-                {relatedQuestions.map((q) => (
+        )}
+        {related.length > 0 && (
+          <section
+            aria-label="Related articles"
+            style={{ borderTop: "1px solid #e8eaed", padding: "40px 24px 48px" }}
+          >
+            <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
+                Read next
+              </p>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
+                Related articles
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {related.map((post) => (
                   <a
-                    key={q.slug}
-                    href={`/questions/${q.slug}`}
+                    key={post.slug}
+                    href={`/blog/${post.slug}`}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -292,36 +248,81 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                       fontWeight: 500,
                     }}
                   >
-                    <span>{q.searchPhrase}</span>
-                    <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>Practice →</span>
+                    <span>{post.title}</span>
+                    <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>Read →</span>
                   </a>
                 ))}
               </div>
-            )}
-            {salaryEntry && (
-              <a
-                href={`/salary/${salaryEntry.slug}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 18px",
-                  background: "#fff",
-                  border: "1px solid #e4e7ec",
-                  borderRadius: 10,
-                  textDecoration: "none",
-                  color: "#1a1d23",
-                  fontSize: 14,
-                  fontWeight: 500,
-                }}
-              >
-                <span>{companyLabel} Salary Guide — CTC breakdown for India 2026</span>
-                <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>View →</span>
-              </a>
-            )}
-          </div>
-        </section>
-      )}
+            </div>
+          </section>
+        )}
+        {(relatedQuestions.length > 0 || salaryEntry) && (
+          <section
+            aria-label={`Practice resources for ${companyLabel}`}
+            style={{
+              borderTop: "1px solid #e8eaed",
+              background: "#f8f9fb",
+              padding: "40px 24px 48px",
+            }}
+          >
+            <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
+                Practice for {companyLabel}
+              </p>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
+                {companyLabel} Interview Prep on HireStepX
+              </h2>
+              {relatedQuestions.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: salaryEntry ? 20 : 0 }}>
+                  {relatedQuestions.map((q) => (
+                    <a
+                      key={q.slug}
+                      href={`/questions/${q.slug}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "14px 18px",
+                        background: "#fff",
+                        border: "1px solid #e4e7ec",
+                        borderRadius: 10,
+                        textDecoration: "none",
+                        color: "#1a1d23",
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      <span>{q.searchPhrase}</span>
+                      <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>Practice →</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+              {salaryEntry && (
+                <a
+                  href={`/salary/${salaryEntry.slug}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 18px",
+                    background: "#fff",
+                    border: "1px solid #e4e7ec",
+                    borderRadius: 10,
+                    textDecoration: "none",
+                    color: "#1a1d23",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  <span>{companyLabel} Salary Guide — CTC breakdown for India 2026</span>
+                  <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>View →</span>
+                </a>
+              )}
+            </div>
+          </section>
+        )}
+      </>} />
     </>
   );
 }
