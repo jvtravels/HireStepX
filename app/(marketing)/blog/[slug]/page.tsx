@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
-import { getBlogMetaBySlug } from "@/blog-meta";
+import { getBlogMetaBySlug, BLOG_META } from "@/blog-meta";
 import { SEO_PAGES } from "../../../../data/seo-pages";
 import { SALARY_SEO_PAGES } from "../../../../data/salary-seo";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
@@ -19,6 +19,31 @@ import { COMPANY_LABEL } from "../../../../data/company-labels";
  * If the slug isn't in the registry yet (ISR newcomer), falls back to the
  * slug-derived title so the page never has empty metadata.
  */
+
+/* Company values that represent general topics, not a specific company. */
+const GENERAL_COMPANIES = new Set([
+  "General", "Interview Skills", "Role Guides", "Industry Insights",
+  "Career Advice", "Career",
+]);
+
+/* Pick up to 3 related posts for internal linking.
+   Priority: same company → same category → exclude current slug. */
+function relatedPosts(currentSlug: string, company: string, category: string) {
+  const isGeneral = GENERAL_COMPANIES.has(company);
+  const byCompany = isGeneral ? [] : BLOG_META.filter(
+    (p) => p.slug !== currentSlug && p.company === company
+  ).slice(0, 3);
+
+  const needed = 3 - byCompany.length;
+  const seenSlugs = new Set([currentSlug, ...byCompany.map((p) => p.slug)]);
+  const byCategory = needed > 0
+    ? BLOG_META.filter(
+        (p) => !seenSlugs.has(p.slug) && p.category === category
+      ).slice(0, needed)
+    : [];
+
+  return [...byCompany, ...byCategory];
+}
 
 /* Reverse-lookup COMPANY_LABEL to find the data key ("tcs", "flipkart", …)
    from the display name stored in BlogMeta.company ("TCS", "Flipkart", …). */
@@ -107,6 +132,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
 
+  /* Related blog posts — same company first, then same category.
+     Rendered server-side so Google crawls the cross-links without JS. */
+  const related = meta ? relatedPosts(slug, meta.company, meta.category) : [];
+
   /* Related interview prep links — derived from the post's company field.
      Rendered server-side so Google crawls the cross-links without JS. */
   const companyKey = meta?.company ? companyKeyFromLabel(meta.company) : null;
@@ -175,6 +204,45 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       )}
       <BlogPage />
+      {related.length > 0 && (
+        <section
+          aria-label="Related articles"
+          style={{ borderTop: "1px solid #e8eaed", padding: "40px 24px 48px" }}
+        >
+          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
+              Read next
+            </p>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
+              Related articles
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {related.map((post) => (
+                <a
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 18px",
+                    background: "#fff",
+                    border: "1px solid #e4e7ec",
+                    borderRadius: 10,
+                    textDecoration: "none",
+                    color: "#1a1d23",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  <span>{post.title}</span>
+                  <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>Read →</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       {(relatedQuestions.length > 0 || salaryEntry) && (
         <section
           aria-label={`Practice resources for ${companyLabel}`}

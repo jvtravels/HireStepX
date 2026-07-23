@@ -25,6 +25,36 @@ import { BLOG_META } from "@/blog-meta";
  * per entry. No figures are invented here.
  */
 
+/* ─── Salary page groupings for cross-linking ────────────────────────────── */
+
+const SALARY_GROUPS: Record<string, string[]> = {
+  "IT Services": ["tcs", "infosys", "wipro", "cognizant", "hcl", "capgemini", "ltimindtree", "accenture", "techmahindra", "mphasis", "persistent", "ibm", "ntt-data", "globallogic", "thoughtworks"],
+  "Indian Fintech": ["razorpay", "phonepe", "paytm", "cred", "groww", "zerodha", "upstox", "angel-one", "bharatpe", "cashfree", "policybazaar", "navi", "slice", "jupiter", "fi-money", "indmoney", "smallcase"],
+  "Indian Product & Unicorns": ["flipkart", "swiggy", "zomato", "meesho", "nykaa", "myntra", "dream11", "zepto", "blinkit", "oyo", "rapido", "lenskart", "mamaearth", "cars24", "shiprocket", "truecaller", "naukri", "scaler"],
+  "Global Tech (FAANG+)": ["google", "amazon", "microsoft", "meta", "apple", "netflix", "uber", "oracle", "adobe", "atlassian", "salesforce", "stripe", "linkedin", "databricks", "openai", "servicenow", "workday"],
+  "Finance & Quant": ["goldman", "jpmc", "morgan-stanley", "barclays", "citi", "hsbc", "deutsche-bank", "wells-fargo", "standard-chartered", "bny-mellon", "tower-research", "jane-street", "de-shaw", "optiver", "millennium", "citadel"],
+  "Indian Banking": ["hdfc-bank", "icici", "axis", "kotak", "sbi", "bajaj-finance", "star-health", "icici-lombard"],
+  "Consulting": ["deloitte", "mckinsey", "bcg", "bain", "ey", "kpmg", "pwc"],
+  "Semiconductor & Hardware": ["qualcomm", "intel-india", "arm-india", "texas-instruments", "nvidia", "cisco", "mediatek", "sap-labs", "siemens-india", "bosch-india"],
+};
+
+/* Reverse map: slug → group name */
+const SLUG_TO_GROUP: Record<string, string> = {};
+for (const [group, slugs] of Object.entries(SALARY_GROUPS)) {
+  for (const slug of slugs) {
+    SLUG_TO_GROUP[slug] = group;
+  }
+}
+
+function relatedSalaryPages(currentSlug: string): Array<{ slug: string; label: string }> {
+  const group = SLUG_TO_GROUP[currentSlug];
+  if (!group) return [];
+  return SALARY_GROUPS[group]
+    .filter((s) => s !== currentSlug)
+    .slice(0, 5)
+    .map((s) => ({ slug: s, label: salaryCompanyLabel(s) }));
+}
+
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
@@ -143,6 +173,9 @@ export default async function SalaryCompanySlugPage({
   /* Matching blog post — links back to the interview guide for this company. */
   const blogPost = BLOG_META.find((p) => p.company.toLowerCase() === company);
 
+  /* Related salary pages in the same company category. */
+  const relatedSalary = relatedSalaryPages(company);
+
   /* Company description: use verified KnownFacts description, or generic fallback */
   const description =
     knownFacts?.description
@@ -227,6 +260,45 @@ export default async function SalaryCompanySlugPage({
         bondPenaltyLpa={meta?.bondPenaltyLpa}
         calibrationDate={CALIBRATION_DATE}
       />
+      {relatedSalary.length > 0 && (
+        <section
+          aria-label={`Compare ${label} salary with similar companies`}
+          style={{ borderTop: "1px solid #e8eaed", background: "#f8f9fb", padding: "40px 24px 48px" }}
+        >
+          <div style={{ maxWidth: 960, margin: "0 auto" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
+              {SLUG_TO_GROUP[company]}
+            </p>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
+              Compare salary with similar companies
+            </h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {relatedSalary.map((peer) => (
+                <a
+                  key={peer.slug}
+                  href={`/salary/${peer.slug}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "10px 16px",
+                    background: "#fff",
+                    border: "1px solid #e4e7ec",
+                    borderRadius: 8,
+                    textDecoration: "none",
+                    color: "#1a1d23",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  {peer.label} salary
+                  <span style={{ color: "#6366f1", fontSize: 12 }}>→</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       <FooterDome />
       <MobileStickyCTA />
     </>
