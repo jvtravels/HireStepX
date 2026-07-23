@@ -319,9 +319,10 @@ export function computeNpvRows(outcome: NegotiationOutcome) {
   const delta = closing - opening;
   if (delta === 0) return [];
   const sign = delta >= 0 ? "+" : "−";
-  const abs = Math.abs(delta);
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+  const abs = r1(Math.abs(delta));
   const tone: "good" | "bad" = delta >= 0 ? "good" : "bad";
-  const fourYr = abs * NPV_MODEL.horizonYears;
+  const fourYr = r1(abs * NPV_MODEL.horizonYears);
   const afterTax = Math.round(fourYr * (1 - NPV_MODEL.incomeTaxRate) * 10) / 10;
   const npv = Math.round(afterTax * NPV_MODEL.inflationDiscountFactor * 10) / 10;
   const taxPct = Math.round(NPV_MODEL.incomeTaxRate * 100);

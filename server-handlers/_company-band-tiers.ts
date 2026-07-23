@@ -72,6 +72,9 @@ const UNICORN = [
   "snapdeal", "khatabook", "okcredit", "vedantu",
   "physicswallah", "leetcode india", "scaler", "interview kickstart",
   "zerodha", "coindcx", "coinswitch", "wazirx", "polygon",
+  /* Wave-8 — social/content/creator-economy unicorns. */
+  "sharechat", "moj", "koo", "josh", "dailyhunt", "verse", "lokal",
+  "inmobi", "glance", "roposo",
 ];
 const PRODUCT_INDIA = [
   "zoho", "freshworks", "postman", "hasura", "browserstack",

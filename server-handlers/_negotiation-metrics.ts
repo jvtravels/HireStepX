@@ -294,7 +294,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   const recruiterFirstOfferLpa = offerTrajectoryLpa.length > 0
     ? offerTrajectoryLpa[0]
     : band.initialOffer;
-  const lpaGained = Math.max(0, recruiterTopOfferLpa - recruiterFirstOfferLpa);
+  const lpaGained = Math.round(Math.max(0, recruiterTopOfferLpa - recruiterFirstOfferLpa) * 10) / 10;
   const cashTurns = moves.filter((m) => m.newTotalLpa != null).length;
   const lpaPerTurn = cashTurns > 0 ? Math.round((lpaGained / cashTurns) * 100) / 100 : 0;
 
