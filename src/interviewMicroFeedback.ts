@@ -35,7 +35,7 @@ export function computeMicroFeedback(
   const wordCount = answerText.trim().split(/\s+/).length;
 
   if (interviewType === "salary-negotiation") {
-    return salaryNegFeedback(answerText, wordCount, negotiationPhase, recentFeedbacks);
+    return salaryNegFeedback(answerText, wordCount, negotiationPhase, recentFeedbacks, currentQuestionText);
   }
   if (interviewType === "government-psu") {
     return govPsuFeedback(answerText, wordCount);
@@ -64,7 +64,7 @@ export function computeMicroFeedback(
 }
 
 /* ─── Salary Negotiation (phase-aware) ─── */
-function salaryNegFeedback(text: string, wordCount: number, phase?: string, recentFeedbacks?: string[]): MicroFeedbackResult {
+function salaryNegFeedback(text: string, wordCount: number, phase?: string, recentFeedbacks?: string[], recruiterText?: string): MicroFeedbackResult {
   /* S44-B5 (2026-07-23) — deduplicate tips: if the same string was shown in
    * the last 3 turns, suppress it. Without this, the "closing" phase tip fires
    * on every closing-phase answer when no mentionsBenefits+number condition is
@@ -88,8 +88,51 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string, rece
   // with an empathic coaching note.
   const showsFrustration = /\b(already (?:mentioned|said|told)|as i (?:said|mentioned|told)|told you|mentioned (?:multiple times|earlier|before)|for the (?:second|third|fourth|nth) time)\b/i.test(text);
 
+  /* S50-B8 — detect recruiter walk-away ("I've given you my best, if this
+   * doesn't work for you, I understand"). This is the highest-stakes moment:
+   * candidate needs guidance to stay firm, not capitulate. Fire before all
+   * other tips when we can read the recruiter's last turn. */
+  const recruiterWalkAway = !!recruiterText && /(?:given you (?:my|our) best|i.?ve stretched|as far as (?:i|we) can|if this doesn.?t work for you|not (?:able|going) to (?:go|move) (?:any )?(?:higher|further|above)|can.?t (?:go|offer) (?:more|higher|above|beyond)|this is (?:our|my) (?:final|best|last) offer|take it or leave it|that.?s (?:the best|all) (?:i|we) can do)/i.test(recruiterText);
+
+  /* S50-B3 — detect recruiter filler/soft-transition turn: recruiter wraps
+   * discovery with something like "let's move forward" or "let's proceed"
+   * without naming a number. Candidate needs to be coached to steer back
+   * to the offer, not just say "OK". */
+  const recruiterFillerTransition = !!recruiterText && !recruiterWalkAway
+    && /(?:let.?s (?:move|go) (?:forward|ahead|on)|let.?s proceed|moving (?:forward|on)|(?:shall|should) we (?:move|proceed|continue)|before (?:we|i) (?:move|go) (?:forward|ahead)|alright[,.]?\s*(?:so|then)?\s*(?:moving|let.?s)|ok(?:ay)?[,.]?\s*(?:so|then)?\s*(?:moving|let.?s))/i.test(recruiterText)
+    && !/₹|\blpa\b|\blakh/i.test(recruiterText);
+
   let feedback: string | null = null;
+
+  if (recruiterWalkAway) {
+    /* S50-B8: recruiter signals walk-away. Guide candidate to hold firm
+     * or ask for time — NOT to capitulate or immediately counter-lower. */
+    return {
+      feedback: "Walk-away tactic. Stay calm and hold your number. 'I appreciate the offer — can I have 24 hours to consider before deciding?' Or: 'I need ₹X to make this work. Is there anything you can do?'",
+      score: 65,
+    };
+  }
+
+  if (recruiterFillerTransition) {
+    /* S50-B3: recruiter is transitioning without naming a number.
+     * Guide the candidate to steer back to specifics rather than
+     * passively following the transition. */
+    return {
+      feedback: "Recruiter is moving forward without a number — steer it back: 'Before we proceed, can you share the specific offer so I can respond properly?'",
+      score: 60,
+    };
+  }
+
+  /* S50-B7 — gate the frustration tip: if the candidate has already
+   * named a counter number this turn, the "push for a number" coaching
+   * note is stale. Replace with a more relevant "now hold firm" tip. */
   if (showsFrustration) {
+    if (mentionsNumber) {
+      return {
+        feedback: "You've named your number — hold it. Silence or 'I need to hear a counter' is your strongest move now.",
+        score: 65,
+      };
+    }
     return {
       feedback: "You're being heard — repetition is a fair signal. If the AI keeps probing, push for a number: 'What's your counter?'",
       score: 60,
