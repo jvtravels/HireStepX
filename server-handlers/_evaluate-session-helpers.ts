@@ -849,6 +849,22 @@ export function normalizeCoaching(raw: unknown): Coaching | null {
     example: str(g.example, 160),
   };
   if (!strength.headline || !gap.headline) return null;
+  /* S63-B2 (2026-07-24): If the gap headline recycles the same skill the
+   * strength already credits, the LLM violated its own coaching rule ("do NOT
+   * suggest as top improvement if transcript shows candidate already did it").
+   * Shared key tokens between the two headlines are a reliable signal — e.g.
+   * strength "Anchored the number first" + gap "Anchor your number first" both
+   * contain "anchor". Return null so the card renders no coaching rather than
+   * showing a self-contradicting pair. Fall-through: if no contradiction the
+   * coaching pair is retained as-is. */
+  const domainTokens = [
+    "anchor", "state your ask", "name a number", "name your number",
+    "walk away", "competing offer", "competing option", "walk-away",
+  ];
+  const lStr = strength.headline.toLowerCase();
+  const lGap = gap.headline.toLowerCase();
+  const contradicts = domainTokens.some(t => lStr.includes(t) && lGap.includes(t));
+  if (contradicts) return null;
   return { strength, gap };
 }
 

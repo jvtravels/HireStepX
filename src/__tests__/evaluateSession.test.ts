@@ -1064,6 +1064,29 @@ describe("normalizeCoaching", () => {
     expect(r?.gap.meaning.length).toBeLessThanOrEqual(160);
     expect(r?.gap.example.length).toBeLessThanOrEqual(160);
   });
+
+  it("S63-B2: returns null when gap headline contradicts strength (e.g. strength credits anchoring, gap asks for it)", () => {
+    // Exact reproduction: Apple iOS SE session where LLM violated its own coaching rule
+    expect(normalizeCoaching({
+      strength: { headline: "Anchored the number first", meaning: "Strong opener" },
+      gap: { headline: "Anchor your number first", meaning: "Start with a number", example: "Say ₹X LPA" },
+    })).toBeNull();
+    // Other anchor variants that should also be caught
+    expect(normalizeCoaching({
+      strength: { headline: "Named your opening anchor", meaning: "Good opener" },
+      gap: { headline: "Lead with an anchor number", meaning: "Name your number", example: "" },
+    })).toBeNull();
+    // Non-contradicting pairs must still pass through
+    expect(normalizeCoaching({
+      strength: { headline: "Anchored the number first", meaning: "Strong opener" },
+      gap: { headline: "Handle pushback with silence", meaning: "Pause after counter", example: "Just wait" },
+    })).not.toBeNull();
+    // Competing-offer contradiction
+    expect(normalizeCoaching({
+      strength: { headline: "Cited a competing offer", meaning: "Used leverage well" },
+      gap: { headline: "Reference a competing offer", meaning: "Use market data", example: "" },
+    })).toBeNull();
+  });
 });
 
 describe("normalizeCrossSessionInsights", () => {

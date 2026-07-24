@@ -740,7 +740,7 @@ SCORING BAR — PER TURN:
 
 TOP IMPROVEMENT COACHING RULE:
 - Before writing any "Top Improvement" coaching item, read the FULL TRANSCRIPT in the context above. If the transcript shows the candidate ALREADY DID the thing you are about to suggest (e.g., they already stated a competing offer, they already named a walk-away floor, they already stated a target ask), do NOT suggest it as a top improvement. Coach on what they did NOT do or what they did poorly.
-- Forbidden top improvements if evidence is in the transcript: "state a competing option", "name a walk-away floor", "state your ask explicitly", "name a target number" — check each against the transcript before writing.
+- Forbidden top improvements if evidence is in the transcript: "state a competing option", "name a walk-away floor", "state your ask explicitly", "name a target number", "anchor your number first", "lead with an anchor", "anchor first", "name your opening number", "state an opening number" — check each against the transcript before writing. Anchoring includes: stating a CTC with a target ask, naming ₹X LPA, or any explicit salary figure as an opening move — if the candidate did any of these, anchoring variants are FORBIDDEN as a gap.
 
 CROSS-SESSION INSIGHTS — CONSISTENCY RULE:
 - Skill scores should be STABLE across sessions unless there is clear transcript evidence of improvement or regression. A session where the candidate used the same tactics as last time should score within ±15 of the prior session on each axis. Only score outside ±15 when the transcript shows a clearly different approach.
