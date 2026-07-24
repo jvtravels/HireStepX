@@ -7169,10 +7169,16 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   const askedIntent = state.lastTurnDelta?.candidateAskedQuestion?.intent;
   if (typeof askedIntent === "string" && askedIntent.length > 0 && aiText && aiText.trim().length > 0) {
     const priorLedger = state.answeredQuestionLedger ?? {};
+    /* S55-B5 (2026-07-24) — strip any leading "Just to reconfirm" prefix before
+     * writing to the ledger. The pipeline re-adds that prefix when reading back:
+     * `Just to reconfirm — ${priorAnswer.answerText}`. Storing the raw aiText
+     * (which may itself start with "Just to reconfirm —") caused a second
+     * reconfirm-read to double-wrap: "Just to reconfirm, Just to reconfirm, …". */
+    const cleanAiText = aiText.replace(/^Just to reconfirm\s*[,\-–—]\s*/i, "");
     /* AUDIT-W02 D4 (2026-06-08) — stamp phase at write-time. */
     const merged: Partial<Record<QuestionIntent, { answerText: string; turn: number; phase?: NegotiationPhase }>> = {
       ...priorLedger,
-      [askedIntent]: { answerText: aiText, turn: state.turnIndex, phase: state.phase },
+      [askedIntent]: { answerText: cleanAiText, turn: state.turnIndex, phase: state.phase },
     };
     /* DEBT #2 (2026-05-21) — bounded cardinality. The QuestionIntent
      * enum has ~20 buckets so in practice the ledger should never grow
