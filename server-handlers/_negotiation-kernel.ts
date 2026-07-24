@@ -6204,10 +6204,41 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   if (!next.candidateSignaledClose && detectTrialCloseAsked(state.lastAiText ?? null)) {
     const response = detectTrialCloseResponse(answer);
     if (response === "accept") {
-      next.candidateSignaledClose = true;
-      const priorFired = next.reactiveFollowupsFired ?? [];
-      if (!priorFired.includes("candidate-trial-close")) {
-        next.reactiveFollowupsFired = [...priorFired, "candidate-trial-close"];
+      /* S53-B5 (2026-07-24) — veto candidateSignaledClose when the candidate's
+       * utterance contains a numeric counter ABOVE the standing offer by more
+       * than the near-offer gap. "₹24L works for me" (after a trial-close ask
+       * at ₹18.1L) matches ACCEPT_PATTERNS via "works for me", but the candidate
+       * is explicitly counterproposing at ₹24L, not accepting ₹18.1L. Stamping
+       * candidateSignaledClose would route the planner to close-confirmation at
+       * ₹18.1L framed as "we're in the same range" — a fabricated false consensus.
+       * Guard: block the stamp whenever the candidate's fresh counter (parsed this
+       * turn from lastCandidateCounterLpa) sits above the offer by more than
+       * max(₹2L, 6%). Falls through to normal counter-offer path instead. */
+      const offeredSoFar = next.highestOfferMade ?? 0;
+      const freshCounter = next.lastCandidateCounterLpa;
+      /* Also check sticky candidateTarget: when a candidate re-asserts an
+       * existing target ("₹24 would work" with candidateTarget=24 already
+       * recorded), lastCandidateCounterLpa stays null (no fresh counter),
+       * but the candidateTarget is still the price they're holding out for.
+       * Either a fresh counter OR a known target well above the offer means
+       * the accept-pattern match ("works for me") is describing their price,
+       * not unconditionally accepting the recruiter's standing offer. */
+      const knownTarget = next.candidateTarget;
+      const nearGap = Math.max(2, offeredSoFar * 0.06);
+      const aboveGap = (lpa: number | null | undefined) =>
+        lpa != null && offeredSoFar > 0 && lpa > offeredSoFar && lpa - offeredSoFar > nearGap;
+      /* Only fall back to knownTarget when no fresh counter was named this
+       * turn — if the candidate said "18.5 LPA works for me" (naming a
+       * new concession number), that fresh counter is the signal to trust,
+       * not the stale high-water target from the opening discovery turn. */
+      const isActuallyACounter =
+        aboveGap(freshCounter) || (aboveGap(knownTarget) && freshCounter == null);
+      if (!isActuallyACounter) {
+        next.candidateSignaledClose = true;
+        const priorFired = next.reactiveFollowupsFired ?? [];
+        if (!priorFired.includes("candidate-trial-close")) {
+          next.reactiveFollowupsFired = [...priorFired, "candidate-trial-close"];
+        }
       }
     }
     /* Hedge / decline / null — record on reactiveFollowupsFired so the
@@ -6483,7 +6514,54 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
             state.firstOfferAtTurn != null && state.firstOfferAtTurn === state.turnIndex;
           const candidateCountered =
             state.lastCandidateCounterLpa != null || state.candidateTarget != null;
-          if (!stampedThisTurn || candidateCountered) {
+          /* S53-B5 (2026-07-24) — mirror the candidateSignaledClose veto here.
+           * When the candidate's known target (or a fresh counter named this
+           * turn) sits above the standing offer by more than the near-offer gap,
+           * the "works for me" idiom refers to THEIR PRICE, not the recruiter's
+           * offer. Stamping verbalAcceptanceTurn would route the planner to
+           * close-acceptance at the recruiter's offer — a fabricated consensus.
+           * "18.5 LPA works for me" after ₹18.1L offer has freshCounter=18.5
+           * within gap (0.4L < 2L) → stamp is preserved (candidate conceded). */
+          const vatOfferedSoFar = next.highestOfferMade ?? 0;
+          const vatFreshCounter = next.lastCandidateCounterLpa;
+          const vatKnownTarget = next.candidateTarget;
+          const vatNearGap = Math.max(2, vatOfferedSoFar * 0.06);
+          const vatAboveGap = (lpa: number | null | undefined): boolean =>
+            lpa != null &&
+            vatOfferedSoFar > 0 &&
+            lpa > vatOfferedSoFar &&
+            lpa - vatOfferedSoFar > vatNearGap;
+          /* Fresh-counter veto: only fires when the named number matches/exceeds
+           * the candidate's own prior target — i.e. they are asserting THEIR price,
+           * not conceding. "24 LPA works" with target=24 → asserts target (veto).
+           * "fine 22 done" with target=24 → concedes below target (no veto). */
+          const vatFreshIsAssertingTarget =
+            vatFreshCounter != null &&
+            vatAboveGap(vatFreshCounter) &&
+            (vatKnownTarget == null || vatFreshCounter >= vatKnownTarget - 0.05);
+          /* Known-target veto (no fresh number named this turn): only fires when
+           * the candidate did NOT use an explicit acceptance commitment word AND
+           * did NOT name an accept-frame number at/below the offer.
+           * "alright, accepted" → genuine accept (no veto).
+           * "Fine, I'll take 38" with offer=40 → accept-frame number 38 ≤ 40 (no veto).
+           * "works for me" with no number and target=24 far above offer →
+           * ambiguous idiom pointing to their price (veto). */
+          const VAT_EXPLICIT_ACCEPT_RE = /\b(?:accept(?:ed)?|deal|agree[sd]?|done)\b/i;
+          const VAT_ACCEPT_FRAME_RE =
+            /\b(?:take|go\s+with|close\s+(?:this\s+)?at|accept|happy\s+with)\s+(?:the\s+)?(\d+(?:\.\d+)?)/i;
+          const vatAcceptFrameMatch = VAT_ACCEPT_FRAME_RE.exec(answer);
+          const vatAcceptFrameNum = vatAcceptFrameMatch ? parseFloat(vatAcceptFrameMatch[1]) : null;
+          const vatIsAcceptAtOrBelowOffer =
+            vatAcceptFrameNum != null &&
+            vatOfferedSoFar > 0 &&
+            vatAcceptFrameNum <= vatOfferedSoFar + 1e-9;
+          const vatKnownTargetIsCounter =
+            vatFreshCounter == null &&
+            vatAboveGap(vatKnownTarget) &&
+            !VAT_EXPLICIT_ACCEPT_RE.test(answer) &&
+            !vatIsAcceptAtOrBelowOffer;
+          const vatIsCounter = vatFreshIsAssertingTarget || vatKnownTargetIsCounter;
+          if ((!stampedThisTurn || candidateCountered) && !vatIsCounter) {
             next.verbalAcceptanceTurn = state.turnIndex;
           }
         }
