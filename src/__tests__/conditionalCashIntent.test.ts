@@ -107,6 +107,27 @@ describe("parseCashIncreaseIntent — absolute 'to N' (verb-gated)", () => {
   });
 });
 
+describe("parseCashIncreaseIntent — directional-approach absolute (S50-B10)", () => {
+  it("'get closer to ₹28L' → absolute 28 (S50-B10 root case)", () => {
+    expect(parse("I'd genuinely like to make this work if we can get closer to ₹28L")).toEqual({
+      kind: "absolute",
+      lakhs: 28,
+    });
+  });
+  it("'move towards 30L' → absolute 30", () => {
+    expect(parse("I'll sign if you move towards 30L")).toEqual({ kind: "absolute", lakhs: 30 });
+  });
+  it("'come nearer to 27' → absolute 27 (no unit, treated as lakhs)", () => {
+    expect(parse("come nearer to 27 and we have a deal")).toEqual({ kind: "absolute", lakhs: 27 });
+  });
+  it("'get back to you' is NOT a directional-approach (no adjacent figure)", () => {
+    expect(parse("let me get back to you")).toBeNull();
+  });
+  it("'get closer to the market rate' is NOT a directional-approach (no digit figure)", () => {
+    expect(parse("can you get closer to the market rate")).toBeNull();
+  });
+});
+
 describe("parseCashIncreaseIntent — no numeric cash condition → null", () => {
   it("pure sweetener 'throw in a joining bonus' carries no base cash intent", () => {
     expect(parse("if you can throw in a joining bonus I'll sign")).toBeNull();

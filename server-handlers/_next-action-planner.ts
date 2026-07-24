@@ -1511,6 +1511,26 @@ export function parseCashIncreaseIntent(
     String.raw`\b(?:a|an|one)\s+(?:more\s+)?${lakhNoun}`,
   ).test(t);
   if (wantsMore && articleLakh) return { kind: "delta", lakhs: 1 };
+  /* S50-B10 (2026-07-24) — directional-approach absolute target. "Get closer
+   * to ₹28L", "move towards 30L", "come nearer to 28" — the candidate names
+   * a figure they want the offer to approach. This is an absolute target (the
+   * figure IS the destination), but it carries no increase verb, increase
+   * adverb, or delta/percent cue, so every branch above missed it and
+   * resolveConditionalCashTarget returned null → the near-offer gate closed at
+   * the standing offer with "we're in the same range" (19% gap). Add a
+   * dedicated directional-approach branch: not gated on wantsMore, gated on
+   * directional verb + approach preposition adjacent to the figure so non-comp
+   * uses ("get back to you", "come to the meeting") never fire. The caller's
+   * gap check (±₹2L or 6%) then correctly decides: within gap → converge;
+   * beyond gap → fall through to counter-offer. */
+  const approach =
+    /\b(?:get|move|come|bring|push|take|work)\s+(?:(?:it|us|things?|the\s+(?:number|package|total|ctc|offer|cash|fixed|comp))\s+)?(?:up\s+)?(?:closer\s+to|nearer\s+to|towards?|approaching?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l\b|k\b|cr|crores?|m\b|mn|million)?\b/i.exec(
+      t,
+    );
+  if (approach) {
+    const v = parseFloat(approach[1]);
+    if (Number.isFinite(v) && v > 0 && v <= 200) return { kind: "absolute", lakhs: v };
+  }
   return null;
 }
 

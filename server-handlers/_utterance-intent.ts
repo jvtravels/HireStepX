@@ -193,6 +193,21 @@ const DEMAND_CORES: DemandCore[] = [
     unitGroup: 2,
     re: /\b(?:hits?|reach(?:es)?|touch(?:es)?|lands?\s+(?:at|on)|sits?\s+at)\s+(?:the\s+(?:base|fixed|cash|number|figure|total|ctc|package)\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
+  /* Directional-approach demand: "get closer to ₹28L", "move towards 30L",
+   * "come nearer to ₹25L". The candidate names a figure they want the offer to
+   * approach — semantically a floor at that figure. Unmet when the target
+   * exceeds the standing offer. Gated on a directional verb + approach
+   * preposition immediately adjacent to a figure so non-comp uses ("get back to
+   * you", "move in", "come to the meeting at 28") do not match (no directional
+   * approach phrase wraps them). S50-B10 root: "get closer to ₹28L" against a
+   * ₹23.6L offer carried a 19% gap that the conditional-close gate missed
+   * because no existing core captured directional-approach phrasing. */
+  {
+    reason: "directional-approach",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:get|move|come|bring|push|take|work)\s+(?:(?:it|us|things?|the\s+(?:number|package|total|ctc|offer|cash|fixed|comp))\s+)?(?:up\s+)?(?:closer\s+to|nearer\s+to|towards?|approaching?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
   /* Floor expression + figure: "at least 45", "no less than 45", "north of
    * 45", "upwards of 45", "in excess of 45", "a minimum of 45", "starting at
    * 45", "no lower than 45". A stated floor is a demand that the package meet
