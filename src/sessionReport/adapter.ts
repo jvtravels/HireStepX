@@ -456,7 +456,7 @@ export function sessionReportToInterviewResult(
       : report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
     metrics: isNegotiation
-      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null, session.transcript)
+      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null, session.transcript, session.negotiationMetrics?.initialOfferLpa ?? null)
       : buildMetrics(report),
     skills: buildSkills(groundedSkills),
     weakestSkill: {
@@ -1211,6 +1211,7 @@ function buildNegotiationMetrics(
   report: SessionReport,
   kernelAsk: number | null,
   rawTranscript?: { speaker: string; text: string }[],
+  initialOfferLpa?: number | null,
 ): DeliveryMetric[] {
   // S6-B5: report.perQuestion is the LLM-collapsed single aggregate at this
   // call site (the per-turn expansion via buildNegotiationPerQuestion runs
@@ -1348,13 +1349,21 @@ function buildNegotiationMetrics(
       targetLabel: "Anchor a figure",
       band: numbersBand,
     },
-    {
-      label: "Concession rate",
-      value: concessionRate,
-      unit: "%",
-      targetLabel: "Target <15%",
-      band: concessionRate < 15 ? "good" : concessionRate < 30 ? "ok" : "needsWork",
-    },
+    /* S49-B4/S50-B15 (2026-07-24): only show concession rate when the recruiter
+     * actually made an offer (initialOfferLpa !== null). A broken/empty session
+     * with no offer on the table produced 0% "Good", falsely implying strong
+     * negotiation where none happened. Gate on initialOfferLpa, NOT kernelAsk —
+     * a candidate who accepted first offer had !kernelAnchored but offer WAS made
+     * and 0% concession is the honest, correct result to show. */
+    ...(typeof initialOfferLpa === "number"
+      ? [{
+          label: "Concession rate",
+          value: concessionRate,
+          unit: "%",
+          targetLabel: "Target <15%",
+          band: (concessionRate < 15 ? "good" : concessionRate < 30 ? "ok" : "needsWork") as "good" | "ok" | "needsWork",
+        }]
+      : []),
     {
       label: "Disclosure leaks",
       value: leaks,

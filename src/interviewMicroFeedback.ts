@@ -176,8 +176,15 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string, rece
       feedback = (signalsAccepted || acceptsImmediately)
         ? "Strong close — confirming both comp and benefits. Get everything in writing."
         : "Good final ask — press for written confirmation once they agree.";
-    } else {
+    } else if (signalsAccepted || acceptsImmediately) {
+      /* S50-B4/B9 (2026-07-24): only "Confirm all terms" when candidate
+       * is actually accepting — not on a counter-offer in the closing phase.
+       * When an offer hasn't been agreed yet, push them to name a final number. */
       feedback = "Tip: Confirm all terms explicitly — base, bonus, equity, start date, notice period.";
+    } else {
+      feedback = mentionsNumber
+        ? "Hold firm — if they can't move further, ask for a joining bonus or equity top-up instead."
+        : "Tip: Name your final number — 'I need ₹X to make this work' — and ask what they can do.";
     }
   }
   // Fallback (no phase info)

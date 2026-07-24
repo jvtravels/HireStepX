@@ -659,7 +659,7 @@ describe("buildNegotiationPerQuestion — S18-B1 incomplete-turn count", () => {
         negotiationMetrics: {
           outcome: "stalemate", anchorTurn: null, leverDiversity: 0, lpaGained: 0,
           lpaPerTurn: 0, bandTraversal: 0, overBandViolation: false, totalTurns: 3,
-          score: 12, initialOfferLpa: null, finalOfferLpa: null, candidateAskLpa: null,
+          score: 12, initialOfferLpa: undefined, finalOfferLpa: undefined, candidateAskLpa: null,
           offerTrajectoryLpa: [],
         },
         transcript: [
@@ -693,8 +693,8 @@ describe("sessionReportToInterviewResult — S18-B4 blind spots suppressed on lo
       report: negReport({
         scoreConfidence: 0.2,
         blindSpots: [
-          { competency: "Closing Technique", note: "Never closed.", category: "negotiation" as const },
-          { competency: "Anchor strength", note: "No anchor named.", category: "negotiation" as const },
+          { competency: "Closing Technique", note: "Never closed.", frequencyPct: null },
+          { competency: "Anchor strength", note: "No anchor named.", frequencyPct: null },
         ],
       }),
       session: negSession(),
@@ -708,14 +708,14 @@ describe("sessionReportToInterviewResult — S18-B4 blind spots suppressed on lo
       report: negReport({
         scoreConfidence: 0.75,
         blindSpots: [
-          { competency: "Closing Technique", note: "Never closed.", category: "negotiation" as const },
+          { competency: "Closing Technique", note: "Never closed.", frequencyPct: null },
         ],
       }),
       session: negSession(),
     } as AdapterContext;
     const out = sessionReportToInterviewResult(ctx);
     // negotiation-relevant blind spot should pass through
-    expect(out.blindSpots.length).toBeGreaterThan(0);
+    expect((out.blindSpots ?? []).length).toBeGreaterThan(0);
   });
 });
 

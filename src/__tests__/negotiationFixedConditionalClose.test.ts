@@ -321,12 +321,16 @@ describe("PRI-55 — fixed-scoped conditional accept concedes above floor", () =
       walkAway: 24,
       hasEquity: false,
     };
+    /* PRI-55 (2026-07-24): first turn must NOT disclose CTC=30. With CTC=30 ≥
+     * band floor=28 the pay-cut guard fires `anchor-with-offer` at 35 (above
+     * the candidate's 34 ask) which skips the counter-base path entirely. The
+     * test is meant to exercise inBandConditionalConverge → counter-base. */
     const { transcript, finalState } = runConversation({
       band: wideBand,
       role: "Engineering Manager",
       company: "Flipkart",
       turns: [
-        "30 fixed now, I want 34 fixed.",
+        "I want 34 fixed.",
         "What can you do?",
         "If you can do 34 fixed, I'll sign.",
         "Yes, 34 fixed works for me.",

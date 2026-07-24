@@ -5213,7 +5213,16 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     const establishedTarget = next.candidateTarget ?? state.candidateTarget;
     const hasEstablishedCTC = state.candidateCurrentCtc != null;
     const ctcEqualsTarget = establishedTarget != null && Math.abs(parsed.currentCtc - establishedTarget) < 0.05;
-    if (!(hasEstablishedCTC && ctcEqualsTarget)) {
+    /* S55-B8 (2026-07-24): once a CTC is already established AND an offer is
+     * on the table, any candidate number ABOVE the offer is a counter-ask, not
+     * a CTC re-disclosure. Guard: only blocks when hasEstablishedCTC is true —
+     * a first-time CTC disclosure that happens to exceed the standing offer
+     * (e.g. ₹45 CTC > ₹41 offer) must still update the slot. Without the
+     * hasEstablishedCTC guard the ctcAwareBandLift invariant breaks. */
+    const offerOnTable = (next.highestOfferMade ?? state.highestOfferMade ?? 0) > 0;
+    const isLikelyCounterAsk = hasEstablishedCTC && offerOnTable
+      && parsed.currentCtc > (next.highestOfferMade ?? state.highestOfferMade ?? 0);
+    if (!(hasEstablishedCTC && ctcEqualsTarget) && !isLikelyCounterAsk) {
       next.candidateCurrentCtc = parsed.currentCtc;
     }
   }

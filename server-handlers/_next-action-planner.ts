@@ -1168,18 +1168,24 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
    * close path on one source of truth and prevents the stealth under-close
    * that hands the candidate the bare standing offer. clampToCloseFloor only
    * ever raises, so returning a figure above the offer is always safe. */
+  /* S54-B6/B9 (2026-07-24) — the gap window protects against aspirational
+   * mentions leaking into close ("₹27L would be nice" on a ₹21.8L offer).
+   * BUT it must NOT clip an explicit commit-token settle figure ("fine 22 done",
+   * "done at 22"): those are unambiguously the agreed number regardless of the
+   * gap width, because the commit token proves intent, not just proximity to a
+   * target. Two-tier logic:
+   *   Tier-A: target-corroboration (figure ≈ sticky target) — apply gap window.
+   *   Tier-B: commit-token weld ("N done", "done at N") — in-band only; no gap.
+   * The gap window lives on tier-A only. #127/#129 (2026-07-24 regression fix). */
   const agreed = acceptanceUtteranceFigure(state);
-  /* S54-B6/B9 (2026-07-24) — add the same gap-window constraint to the
-   * acceptance-utterance figure that the counter-figure branch below uses.
-   * Without this, a candidate saying "₹27L would be nice" during acceptance
-   * causes nearOfferCloseNumber to return ₹27L even though the standing offer
-   * is ₹21.8L — that figure was never formally put on the table by the
-   * recruiter. The gap window (max ₹2L, 6% of offer) limits honoring to
-   * figures that are realistically a same-range settle, not aspirational wishes
-   * that should instead open another counter round. */
   const _closeGap = Math.max(2, offer * 0.06);
   if (agreed != null && agreed > offer && agreed <= state.band.maxStretch && agreed - offer <= _closeGap) {
     return agreed;
+  }
+  /* Tier-B fallback: commit-token settle figure, no gap constraint. */
+  const settled = acceptanceCommitFigure(state);
+  if (settled != null && settled > offer && settled <= state.band.maxStretch) {
+    return settled;
   }
   /* #105 (2026-06-20, live-staging) — scope-aware close number. A
    * FIXED-scoped close signal ("if 17 fixed works, I'll sign") is NOT a
@@ -1276,6 +1282,34 @@ function acceptanceUtteranceFigure(state: NegotiationState): number | null {
     /\b(?:done|deal|sold|settled?|finalized?)\s+(?:at|for|on)\s+(\d+(?:\.\d+)?)\b/i.exec(
       cleaned,
     );
+  if (settle) {
+    const v = parseFloat(settle[1]);
+    if (Number.isFinite(v)) return v;
+  }
+  return null;
+}
+
+/** #127 tier-B (2026-07-24) — the figure a candidate explicitly welds to a
+ *  commit token ("fine 22 done", "done at 22", "52 works") in their last
+ *  acceptance utterance, or null. Called by nearOfferCloseNumber when the
+ *  tier-A target-corroboration check fails the gap window, so a self-lowered
+ *  settle ("22 done" off a 24 ask) still closes at 22 not the standing offer.
+ *  The commit token is unambiguous intent — no proximity-to-target check needed. */
+function acceptanceCommitFigure(state: NegotiationState): number | null {
+  const log = state.conversationLog ?? [];
+  let text = "";
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e && e.speaker === "candidate") { text = e.text || ""; break; }
+  }
+  if (!text) return null;
+  const cleaned = text.replace(
+    /\b\d+(?:\.\d+)?\s*(?:days?|months?|weeks?|yrs?|years?|%|percent)\b/gi,
+    " ",
+  );
+  const settle =
+    /\b(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l)?\s*(?:done|deal|sold|works|final(?:ized)?)\b/i.exec(cleaned) ??
+    /\b(?:done|deal|sold|settled?|finalized?)\s+(?:at|for|on)\s+(\d+(?:\.\d+)?)\b/i.exec(cleaned);
   if (settle) {
     const v = parseFloat(settle[1]);
     if (Number.isFinite(v)) return v;
