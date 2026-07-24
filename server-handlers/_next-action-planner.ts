@@ -1796,17 +1796,32 @@ function buildSkipRecord(
    * planner call re-enters the ordered discovery cascade. If the same
    * topic that triggered the frustration is still un-answered, the
    * cascade re-asks it — which is exactly the loop the recovery was
-   * meant to break. Sentinel: if the LAST entry in leversUsed is
-   * `acknowledge-and-recover`, mark the most-recently-asked topic as
-   * skipped for this turn so the cascade advances to the NEXT item
-   * (or exits discovery if everything else is satisfied). */
+   * meant to break.
+   *
+   * S52-WL-B6 / S53-B2 (2026-07-24) — skipping only the LAST-ASKED topic
+   * was insufficient: the cascade advanced to the NEXT discovery topic
+   * (notice period, competing offers, etc.) instead of proceeding to
+   * offer-reveal. After an acknowledge-and-recover the recruiter has
+   * already apologised for looping — a real recruiter would pivot to
+   * the offer at that point, not interrogate a different item. Fix:
+   * skip ALL Tier-1/2 discovery topics so the cascade exits discovery
+   * and falls through to anchor/open-with-offer. */
   const lastLever = state.leversUsed[state.leversUsed.length - 1];
-  if (lastLever === "acknowledge-and-recover" && topics.length > 0) {
-    const lastAsked = topics[topics.length - 1].topic;
-    recentlyAsked[lastAsked] = true;
+  if (lastLever === "acknowledge-and-recover") {
+    const ALL_DISCOVERY_TOPICS: DiscoveryTopic[] = [
+      "currentCtcAsked", "currentCtcAnswered",
+      "fixedVariableSplitAsked", "fixedVariableSplitAnswered",
+      "noticePeriodAsked", "noticePeriodAnswered",
+      "competingOffersAsked", "competingOffersAnswered",
+      "valueProofAsked", "valueProofAnswered",
+      "targetAsked", "targetAnswered",
+    ];
+    for (const t of ALL_DISCOVERY_TOPICS) {
+      recentlyAsked[t] = true;
+    }
     if (process.env.NODE_ENV !== "production") {
       console.warn(
-        `[planner] post-recovery force-advance: skipping last-asked topic "${lastAsked}" on turn ${state.turnIndex}.`,
+        `[planner] post-recovery force-advance (S52-WL-B6): skipping ALL discovery topics on turn ${state.turnIndex} to pivot to offer-reveal.`,
       );
     }
   }
@@ -4716,11 +4731,18 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const targetProbeCount = readAskedTopics(state).filter(
       (t) => t.topic === "targetAnswered" || t.topic === "targetAsked",
     ).length;
+    /* S52-WL-B6 / S53-B2 — suppress this gate when acknowledge-and-recover
+     * just fired: the recruiter has already apologised for looping; re-asking
+     * the target here produces a different discovery probe instead of
+     * pivoting to offer-reveal, which is the exact bug being fixed. */
+    const postAcknowledgeAndRecover =
+      state.leversUsed[state.leversUsed.length - 1] === "acknowledge-and-recover";
     if (
       state.turnIndex > 0 &&
       state.discoveryChecklist != null &&
       state.discoveryChecklist.targetAnswered !== true &&
-      targetProbeCount < 3
+      targetProbeCount < 3 &&
+      !postAcknowledgeAndRecover
     ) {
       return {
         kind: "discovery-probe",
