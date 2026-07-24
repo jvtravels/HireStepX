@@ -63,7 +63,7 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^4.0.0",
     "tempo-sdk": "^0.0.4",
-    "typescript": "^5.9.0",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.58.1",
     "vite": "^7.0.0",
     "vite-tsconfig-paths": "^6.0.0",
