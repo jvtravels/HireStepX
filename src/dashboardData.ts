@@ -1222,6 +1222,11 @@ export interface SessionReport {
     bgvGaps: string[];
     companyNorms?: HrCompanyNorms | null;
   };
+  /** S65-B1 (2026-07-24): plain-language coaching pair persisted by
+   *  evaluate-session into report_json.coaching. Threaded here so the
+   *  full report's CoachNotesSection can render it. Optional — pre-mvp-8
+   *  rows have no coaching field; the section hides itself when absent. */
+  coaching?: SessionCoaching | null;
   model: string;
 }
 

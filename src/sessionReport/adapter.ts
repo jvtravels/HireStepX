@@ -543,6 +543,7 @@ export function sessionReportToInterviewResult(
     resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
+    coaching: report.coaching ?? undefined,
     negotiationOutcome,
     kernelMetrics: isNegotiation
       ? reconcileKernelMetricsForReport(session.negotiationMetrics, negotiationOutcome)

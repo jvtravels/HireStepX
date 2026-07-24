@@ -253,6 +253,13 @@ export interface InterviewResultData {
    *  Sourced from `aiProfile.improvements` (computed once at resume-upload).
    *  Undefined when no AI-parsed resume is available. */
   resumeImprovements?: string[];
+  /** S65-B1: plain-language coaching pair from evaluate-session (mvp-8+).
+   *  Renders in CoachNotesSection as a "What went well / For next time" card.
+   *  Undefined for pre-mvp-8 rows — section hides when all its content is absent. */
+  coaching?: {
+    strength: { headline: string; meaning: string };
+    gap: { headline: string; meaning: string; example: string };
+  };
   /** Focus-aware banner for the top of the report. See `FocusBannerData`.
    *  Undefined for behavioral sessions (BehavioralFullReport has its own
    *  hero) or when focus type isn't recognized. */

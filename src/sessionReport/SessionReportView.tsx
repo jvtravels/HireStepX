@@ -614,6 +614,7 @@ export default function SessionReportView({
             insights={behaviouralCrossSessionInsights}
             storyReuse={data.negotiationOutcome ? undefined : data.storyReuseFindings}
             blindSpots={data.blindSpots}
+            coaching={data.coaching}
           />
           {data.biasFindings && data.biasFindings.length > 0 && (
             <BiasSection findings={data.biasFindings} />
