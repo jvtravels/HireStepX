@@ -840,7 +840,10 @@ function scoreRolesForSpan(
    * window ("18 LPA and I'd like 32 LPA"), cues before it belong to
    * that number, not this span. Truncate the window to start AFTER
    * the last such disclosure or clause boundary. */
-  const PRIOR_DISCLOSURE = /[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crores?|\bl\b)\b/gi;
+  /* S50-B6 (2026-07-24): \bl\b requires a word boundary BEFORE "L", which
+   * fails when "L" abuts a digit ("55L" — "5"→"L" has no left boundary).
+   * Use l\b (boundary only after) so "55L", "90L" etc. are detected. */
+  const PRIOR_DISCLOSURE = /[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crores?|l\b)\b/gi;
   let lastEnd = -1;
   for (const m of leftWindow.matchAll(PRIOR_DISCLOSURE)) {
     if (m.index != null) lastEnd = Math.max(lastEnd, m.index + m[0].length);
