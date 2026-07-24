@@ -312,6 +312,16 @@ export function detectCandidateAskedQuestion(reply: string): {
     return { asked: false };
   }
 
+  /* S55-B7 (2026-07-24) — "can you move the base to ₹65L?" is a counter-offer
+   * request, not a factual question. Q_LEAD_RE fires on "can you …" prefixes,
+   * routing these to generateAnswerToCandidate which then explains comp
+   * structure instead of making a concession move. Suppress question detection
+   * for negotiation-demand phrasings so they fall through to the canonical
+   * counter-offer prose (generateRestyledCanonical). */
+  const COUNTER_ASK_RE =
+    /\bcan\s+you\s+(?:move|go|come\s+(?:up|to)|raise|increase|bump|push|stretch|do|make\s+it)\b/i;
+  if (COUNTER_ASK_RE.test(trimmed)) return { asked: false };
+
   const trailingQ = /\?\s*$/.test(trimmed);
   const leadingQ = Q_LEAD_RE.test(trimmed);
   if (!trailingQ && !leadingQ) return { asked: false };

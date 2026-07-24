@@ -3748,14 +3748,34 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     return false;
   })();
 
+  /* S55-B2 (2026-07-24) — when a fresh counter arrived this turn against a
+   * live offer (lastCandidateCounterLpa != null AND highestOfferMade > 0),
+   * reactive/wired followups must NOT pre-empt the counter-offer engine.
+   * A real recruiter ALWAYS responds to the number first; sidebars like
+   * tax-implication can wait until after the concession move.
+   * Guard: highestOfferMade > 0 prevents bypassing wired-profile followups in
+   * DISCOVERY phase when the candidate first names a target (which also sets
+   * lastCandidateCounterLpa). Only planWiredProfileFollowup is bypassed —
+   * planReactiveFollowup remains active so discovery-phase reactives like
+   * hike-justification (load-bearing, first-time target disclosure) are never
+   * silenced by a fresh counter. This differs from inBandConditionalConverge
+   * which bypasses both; here only the decorative wired-flag reactives are
+   * pre-empted so the counter-offer engine can own the turn. */
+  const hasFreshCounter =
+    state.lastCandidateCounterLpa != null && state.highestOfferMade > 0;
   if (!isTerminalPhase(state.phase) && !inBandConditionalConverge) {
     const reactive = planReactiveFollowup(state);
     if (reactive) return reactive;
     /* Fix 5 (2026-05-16) — state-based wired profile-flag rules. These
      * read candidateProfile booleans directly (not lastTurnDelta), so
-     * they fire even on simulated states without a per-turn delta. */
-    const wired = planWiredProfileFollowup(state);
-    if (wired) return wired;
+     * they fire even on simulated states without a per-turn delta.
+     * S55-B2 (2026-07-24) — bypass when fresh counter is present so the
+     * counter-offer engine responds first; wired probes (tax-implication
+     * etc.) can wait until the next AI turn. */
+    if (!hasFreshCounter) {
+      const wired = planWiredProfileFollowup(state);
+      if (wired) return wired;
+    }
   }
 
   /* Memory-callback feature (2026-05-29) — competing-offer warm
