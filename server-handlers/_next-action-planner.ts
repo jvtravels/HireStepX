@@ -3934,6 +3934,44 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           },
         };
       }
+      /* S48-B8 (2026-07-24) — BATNA-pressure concession attempt.
+       *
+       * When the walk signal is suppressed (early turn) AND the candidate's
+       * last utterance contains competing-offer / "other conversations" BATNA
+       * language, the correct recruiter move is a cash concession attempt, NOT
+       * hold-firm. Holding firm on BATNA pressure signals inflexibility and
+       * trains the candidate that having alternatives doesn't help. The
+       * distinction from a real walk-away:
+       *   • Real walk-away ("I'm out", "not interested") → hold-firm / probe
+       *   • BATNA pressure ("other conversations are moving forward", "I have
+       *     another offer") → concession attempt so the recruiter stays competitive
+       *
+       * We only fire this when there is concrete headroom: the current offer
+       * must be below maxStretch (otherwise there is genuinely nothing to give).
+       * The concession is a half-step counter: midpoint between current offer
+       * and maxStretch, rounded to nearest 0.5L. If that equals the standing
+       * offer (no headroom), fall back to hold-firm. */
+      const BATNA_PRESSURE_RE = /\b(?:other\s+conversations?|other\s+offers?|other\s+opportunities?|other\s+companies|another\s+offer|competing\s+offer|offer\s+in\s+hand|offer\s+on\s+the\s+table|in\s+process\s+with|interviewing\s+(?:with|at|elsewhere)|evaluating\s+other|in\s+talks\s+with|multiple\s+offers?|other\s+options?|let\s+(?:it|them|those)\s+(?:progress|move\s+forward|proceed))\b/i;
+      const candidateHasBatna = BATNA_PRESSURE_RE.test(lastCandidateText);
+      if (state.highestOfferMade > 0 && candidateHasBatna) {
+        const standingOffer = state.highestOfferMade;
+        const ceiling = state.band.maxStretch;
+        const headroom = ceiling - standingOffer;
+        if (headroom >= 0.5) {
+          const concessionAmount = Math.round((standingOffer + headroom * 0.5) * 2) / 2;
+          return {
+            kind: "counter-base",
+            _move: {
+              lever: "counter-base",
+              newTotalLpa: concessionAmount,
+              rationale:
+                `S48-B8 BATNA-pressure concession: candidate signalled competing offer/conversations at turn ${state.turnIndex}; ` +
+                `walk suppressed (< minTurns ${minTurns}) — trying a half-step concession from ₹${standingOffer}L ` +
+                `to ₹${concessionAmount}L (ceiling ₹${ceiling}L) to stay competitive.`,
+            },
+          } as PlannedAction;
+        }
+      }
       if (state.highestOfferMade > 0) {
         return {
           kind: "live-walk-away",
