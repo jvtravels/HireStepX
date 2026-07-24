@@ -125,7 +125,7 @@ describe("buildDeterministicNegotiationReport (#PRI-51)", () => {
   /* S12-B5 — the structural-levers WIN must require a candidate-INITIATED
      trade, not a bare lever mention or a discovery question. A false "you
      brought structural levers" is a hallucinated strength. */
-  const STRUCTURAL_WIN = "You brought structural levers (equity / variable / joining bonus) into the conversation.";
+  const STRUCTURAL_WIN = "You brought structural levers — equity, variable, and joining bonus — into the conversation.";
 
   it("does NOT emit the structural-levers win on a bare info question about a lever", () => {
     const infoOnly: NegReportTurn[] = [
@@ -166,7 +166,7 @@ describe("buildDeterministicNegotiationReport (#PRI-51)", () => {
   /* S13-B10 — the walk-away-floor FIX must be suppressed on a no-agreement /
      stalemate deadlock (the impasse is the problem, not a missing floor), but
      may still surface on a settled session where no floor was set. */
-  const WALKAWAY_FIX = "State a walk-away floor or a competing option to give your counter real leverage.";
+  const WALKAWAY_FIX = "State a walk-away floor — or a competing option, to give your counter real leverage.";
 
   it("does NOT emit the walk-away-floor fix on a no_agreement/stalemate deadlock", () => {
     const deadlocked: NegReportTurn[] = [

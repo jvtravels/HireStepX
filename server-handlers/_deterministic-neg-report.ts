@@ -218,12 +218,12 @@ export function buildDeterministicNegotiationReport(
   const wins: DeterministicNegReport["wins"] = [];
   const fixes: DeterministicNegReport["fixes"] = [];
   if (anchoredTarget) {
-    wins.push({ text: "You anchored with a specific target rather than waiting to be offered a number.", questionIdx: -1, quote: "" });
+    wins.push({ text: "You anchored with a specific target — rather than waiting to be offered a number.", questionIdx: -1, quote: "" });
   } else if (counterSignals > 0) {
-    wins.push({ text: "You pushed back on the first offer instead of accepting it outright.", questionIdx: -1, quote: "" });
+    wins.push({ text: "You pushed back on the opening offer — rather than accepting it outright.", questionIdx: -1, quote: "" });
   }
   if (leverTradeInitiated) {
-    wins.push({ text: "You brought structural levers (equity / variable / joining bonus) into the conversation.", questionIdx: -1, quote: "" });
+    wins.push({ text: "You brought structural levers — equity, variable, and joining bonus — into the conversation.", questionIdx: -1, quote: "" });
   }
   if (!anchoredTarget) {
     fixes.push({ text: "Open with a concrete target number early — anchoring first sets the negotiation range.", questionIdx: -1, quote: "" });
@@ -235,7 +235,7 @@ export function buildDeterministicNegotiationReport(
     // Suppress on a no-agreement/stalemate deadlock: the candidate's problem
     // there is the impasse, not a missing floor — floor-coaching would be false
     // advice. Only surfaces on settled/accepted sessions where no floor was set.
-    fixes.push({ text: "State a walk-away floor or a competing option to give your counter real leverage.", questionIdx: -1, quote: "" });
+    fixes.push({ text: "State a walk-away floor — or a competing option, to give your counter real leverage.", questionIdx: -1, quote: "" });
   }
 
   return {
