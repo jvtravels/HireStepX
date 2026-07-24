@@ -17,6 +17,31 @@ import {
   computeBadges, getDailyChallenge, getPracticeReminder,
 } from "./dashboardData";
 import { getCurriculumState, type CurriculumState } from "./curriculum";
+import type { SessionCoaching } from "./dashboardTypes";
+
+/* S70-B1: session cards that only ever received a deterministic fallback
+ * evaluation have coaching=null — the LLM never wrote the pair. The skill_scores
+ * fallback (topStrength/topWeakness) picks the highest/lowest key, which
+ * degenerates when all values are equal (e.g. all-95 placeholder): both pick
+ * the same key ("anchoring") and the card shows "Anchored the number first" as
+ * the strength AND "Anchor your number first" as the gap — a direct contradiction.
+ * Synthesize a coaching pair from wins[0]/fixes[0] instead; those are always
+ * populated by the deterministic fallback and carry the true outcome signal. */
+function cardCoachingFromWinsFixes(
+  wins: Array<{ text: string }> | null | undefined,
+  fixes: Array<{ text: string }> | null | undefined,
+): SessionCoaching | undefined {
+  const win = wins?.[0]?.text;
+  const fix = fixes?.[0]?.text;
+  if (!win || !fix) return undefined;
+  const headline = (s: string): string => {
+    const clip = s.split(/[:—]/)[0].trim().replace(/[.,]$/, "");
+    if (clip.length <= 55) return clip;
+    const cut = clip.slice(0, 55).lastIndexOf(" ");
+    return clip.slice(0, cut > 15 ? cut : 55).replace(/[.,]$/, "");
+  };
+  return { strength: { headline: headline(win), meaning: win }, gap: { headline: headline(fix), meaning: fix, example: "" } };
+}
 
 /* ─── Sub-context types ─── */
 
@@ -461,10 +486,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score,
           questions: s.questions,
           ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
-          /* Plain-language coaching pair, persisted inside report_json by
-             evaluate-session. Undefined for pre-mvp-8 rows → the card
-             falls back to the legacy strength/weakness one-liners. */
-          coaching: s.report_json?.coaching ?? undefined,
+          /* Plain-language coaching pair. Persisted in report_json.coaching by
+             evaluate-session; synthesized from wins/fixes when coaching=null
+             (S70-B1) so the card never falls back to the degenerate
+             skill_scores pair (contradictory when all values are equal). */
+          coaching: s.report_json?.coaching ??
+            cardCoachingFromWinsFixes(
+              (s.report_json as unknown as { wins?: Array<{text:string}>|null })?.wins,
+              (s.report_json as unknown as { fixes?: Array<{text:string}>|null })?.fixes,
+            ) ?? undefined,
           /* Per-focus signature strip (mvp-9+), persisted in
              report_json.focusMetrics. Empty/undefined for older rows → the
              card renders no instrument strip. */
@@ -576,7 +606,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
          * quick-eval score and re-introduce the +5pt sessions-list vs report gap. */
         focus: s.focus, duration: s.duration, score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score, questions: s.questions,
         ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
-        coaching: s.report_json?.coaching ?? undefined,
+        coaching: s.report_json?.coaching ??
+          cardCoachingFromWinsFixes(
+            (s.report_json as unknown as { wins?: Array<{text:string}>|null })?.wins,
+            (s.report_json as unknown as { fixes?: Array<{text:string}>|null })?.fixes,
+          ) ?? undefined,
         focusMetrics: s.report_json?.focusMetrics ?? undefined,
       }));
       setSupabaseSessions(mapped);
