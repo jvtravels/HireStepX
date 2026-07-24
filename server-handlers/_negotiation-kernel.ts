@@ -5225,6 +5225,31 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     if (!(hasEstablishedCTC && ctcEqualsTarget) && !isLikelyCounterAsk) {
       next.candidateCurrentCtc = parsed.currentCtc;
     }
+    /* S52-WL-B9 (2026-07-24) — rescue counter mis-classified as CTC.
+     * S55-B8 blocks the CTC-slot overwrite when isLikelyCounterAsk is true,
+     * but that only prevents corruption of candidateCurrentCtc. The counter
+     * signal is still silently dropped: lastCandidateCounterLpa / first/last
+     * CounterVsOffer stay null → totalScopedCounter returns null → the
+     * conditional close gate falls through to closeAt=offer (standing price)
+     * and fires a false close ("we're in the same range") even when the
+     * candidate explicitly countered. Root cause: when parseCandidateAnswer
+     * returns parsed.target=null (recruiter's CTC re-ask confused the parser),
+     * the parsed.target != null block (L5115) is entirely skipped, so no
+     * counter stamp fires. Rescue: when isLikelyCounterAsk — a number above
+     * the live offer classified as CTC — route it to counter slots so the
+     * planner sees the real ask and the report records the counter. */
+    if (isLikelyCounterAsk && parsed.target == null) {
+      const rescued = parsed.currentCtc;
+      const priorTarget = next.candidateTarget ?? state.candidateTarget;
+      if (priorTarget == null || Math.abs(priorTarget - rescued) > 0.05) {
+        next.lastCandidateCounterLpa = rescued;
+        next.lastCounterComponent = "total";
+      }
+      if (next.firstCounterVsOffer == null) {
+        next.firstCounterVsOffer = rescued;
+      }
+      next.lastCounterVsOffer = rescued;
+    }
   }
   if (parsed.competing != null) next.competingOffer = parsed.competing;
   if (parsed.targetAsRange) next.candidateAskedAsRange = true;

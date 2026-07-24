@@ -2033,11 +2033,24 @@ function escalatingCloseOut(
   state: NegotiationState,
 ): string {
   const offer = `₹${offerLpa}L`;
-  /* Widened to 6 lines (was 3) so a realistic ~8-10-turn negotiation
-   * doesn't exhaust the pool before the phase-cap drives a terminal. */
+  /* S48-B7 / S53-B4 (2026-07-24) — "I've stretched as far as I can" is
+   * factually wrong when the recruiter never moved the cash number. Gate on
+   * whether any concession was actually made (highestOfferMade > initialOffer).
+   * Zero-movement sessions get an honest pool that doesn't claim effort that
+   * never happened. Widened to 6 lines (was 3) so a realistic ~8-10-turn
+   * negotiation doesn't exhaust the pool before the phase-cap drives a terminal. */
+  const hasConceded = offerLpa > state.band.initialOffer;
   const POOL = [
     `I don't want to keep circling on this. The strongest fitment I can stand behind at this grade is ${offer} — take a day to sit with it and let me know how you'd like to proceed.`,
-    `I've stretched as far as the band allows on this one. If ${offer} works for you, I'll get the paperwork moving; if it doesn't, I completely understand and we can revisit if anything changes on our side.`,
+    /* Only emit "stretched" language when we've actually moved the number —
+     * otherwise it's a factual misrepresentation (S48-B7 / S53-B4). */
+    ...(hasConceded
+      ? [
+          `I've stretched as far as the band allows on this one. If ${offer} works for you, I'll get the paperwork moving; if it doesn't, I completely understand and we can revisit if anything changes on our side.`,
+        ]
+      : [
+          `To be transparent: ${offer} is the fitment the band supports for this grade and I haven't been in a position to move it. Have a think and let me know how you'd like to proceed.`,
+        ]),
     `Let's not go round in circles. ${offer} is the number I can commit to today — shall I go ahead and start rolling out the offer letter?`,
     `I'd rather be honest than keep you waiting: ${offer} is the ceiling I can sign off on for this role right now. Have a think overnight and tell me where you stand tomorrow.`,
     `We've gone back and forth a fair bit, and my number hasn't moved because it genuinely can't — ${offer} is it. Shall I get the formal offer drafted so you have it in writing to decide against?`,
