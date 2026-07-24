@@ -48,6 +48,30 @@ import {
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
 import { normalizeCoaching } from "../../server-handlers/_evaluate-session-helpers";
 
+/* S69-B1 (2026-07-25): sessions that only ever received a deterministic fallback
+ * evaluation have report_json.coaching = null because there was no LLM to write
+ * the pair. Synthesize a coaching pair from wins[0] and fixes[0] so Coach Notes
+ * renders even without an LLM-generated pair. Both arrays are always populated
+ * by the deterministic fallback. Headlines are extracted from the first clause
+ * (up to the first ":" or "—") to keep them card-length. The synthesized pair
+ * goes through normalizeCoaching so S63-B2 domain-token contradiction check
+ * still applies. */
+function synthesizeCoachingFromReport(wins: Array<{ text: string }>, fixes: Array<{ text: string }>) {
+  const win = wins?.[0]?.text;
+  const fix = fixes?.[0]?.text;
+  if (!win || !fix) return null;
+  const headline = (s: string): string => {
+    const clip = s.split(/[:—]/)[0].trim();
+    if (clip.length <= 55) return clip.replace(/[.,]$/, "");
+    const cut = clip.slice(0, 55).lastIndexOf(" ");
+    return clip.slice(0, cut > 15 ? cut : 55).replace(/[.,]$/, "");
+  };
+  return normalizeCoaching({
+    strength: { headline: headline(win), meaning: win },
+    gap:      { headline: headline(fix), meaning: fix, example: "" },
+  });
+}
+
 /* ─── Focus banner chrome constants ────────────────────────────────────
    Icon/label/tagline/accent per focus type. Keys match the focus-type
    strings from focus-signature-metrics.ts (and from session.type /
@@ -544,7 +568,7 @@ export function sessionReportToInterviewResult(
     resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
-    coaching: normalizeCoaching(report.coaching) ?? undefined,
+    coaching: normalizeCoaching(report.coaching) ?? synthesizeCoachingFromReport(report.wins ?? [], report.fixes ?? []) ?? undefined,
     negotiationOutcome,
     kernelMetrics: isNegotiation
       ? reconcileKernelMetricsForReport(session.negotiationMetrics, negotiationOutcome)
