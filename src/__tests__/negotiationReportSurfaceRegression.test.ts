@@ -92,10 +92,17 @@ describe("report-surface audit regression lock", () => {
         outcome({ candidateAsk: null, offers: [{ turn: 1, total: 50, question: "" }] }),
       ),
     ).toBe("No counter named — the recruiter's number stood.");
-    // Countered but nothing closed.
+    // S62-B2: opening anchor (no recruiter offer ever tabled) says "named your
+    // number", not "countered" — "counter" presumes an offer to respond to.
     expect(negotiationHeadlineVerdict(outcome({ candidateAsk: 55 }))).toBe(
-      "You countered, but the deal never closed.",
+      "You named your number, but no offer came back.",
     );
+    // Genuine counter (recruiter made an offer, candidate responded): "countered".
+    expect(
+      negotiationHeadlineVerdict(
+        outcome({ candidateAsk: 58, offers: [{ turn: 1, total: 50, question: "" }] }),
+      ),
+    ).toBe("You countered, but the deal never closed.");
   });
 
   it("accepted / walked-away headlines unchanged (no regression)", () => {

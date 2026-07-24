@@ -305,7 +305,12 @@ export function negotiationHeadlineVerdict(outcome: NegotiationOutcome): string 
   }
   // no_agreement — nothing closed. S17-B2: "the recruiter's number stood" is
   // false when no offer was ever on the table (offers === []); say so honestly.
-  if (counterNamed) return "You countered, but the deal never closed.";
+  // S62-B2 (2026-07-24): when no recruiter offer was tabled, candidateAsk is
+  // the candidate's opening anchor — calling it a "counter" is wrong; mirror
+  // the derivations hasPriorOffer logic (hasPriorOffer = offers.length > 0).
+  if (counterNamed) return offers.length > 0
+    ? "You countered, but the deal never closed."
+    : "You named your number, but no offer came back.";
   return offers.length > 0
     ? "No counter named — the recruiter's number stood."
     : "The conversation ended before any number was on the table.";

@@ -217,8 +217,11 @@ export function TLDRHero({
           : phaseCount >= 4 ? "one short of the close" :
             phaseCount >= 2 ? "made it past the counter" :
             /* S23-B4: phaseCount===1 could be stage 1 (counter named) OR stage 4
-             * (levers explored without a counter). Check which stage fired. */
-            phaseCount === 1 && stage1Reached ? "you named a counter. Part 2 below shows the next move" :
+             * (levers explored without a counter). Check which stage fired.
+             * S62-B1 (2026-07-24): mirror derivations.ts hasPriorOffer logic —
+             * when no recruiter offer was tabled the candidate's number is an
+             * opening anchor, not a counter; "you named a counter" was wrong. */
+            phaseCount === 1 && stage1Reached ? (offers.length > 0 ? "you named a counter. Part 2 below shows the next move" : "you named your opening number. Part 2 below shows the next move") :
             phaseCount === 1 ? "you explored the conversation but didn't name a counter. Part 2 has the next move" :
             /* S17-B3 (2026-07-18 audit) — "past the first offer" presumes an
              * offer landed; with offers === [] none did, so name it honestly. */
