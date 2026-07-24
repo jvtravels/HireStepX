@@ -367,9 +367,9 @@ interface SkillItem {
 }
 
 const LEVEL_COLOR: Record<string, string> = {
-  beginner: "#2C6E44",
-  intermediate: "#C98B2A",
-  advanced: "#B8551F",
+  beginner: t.levelBeginner,
+  intermediate: t.levelIntermediate,
+  advanced: t.levelAdvanced,
 };
 const IMP_LABEL: Record<string, string> = {
   high: "★★★",

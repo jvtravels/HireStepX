@@ -2418,7 +2418,7 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     scale: "~2,000 employees (digital team). Hyderabad HQ. Parent Apollo Hospitals listed NSE (APOLLOHOSP). Revenue ₹500 Cr+ from digital FY2024.",
     techHints: "Python + Go backend. React Native. AWS. Electronic Health Records (EHR) + ABDM (Ayushman Bharat Digital Mission). Telemedicine (WebRTC). Drug inventory management. ABHA (health ID) integration. Lab report digitization (OCR).",
     notes: "Apollo Hospitals RSU via parent (NSE: APOLLOHOSP). Interview: Python + health domain (EHR, ABDM, ABHA) + system design. Hyderabad-centric engineering. Strong healthcare domain compliance (NABH, CDSCO).",
-    themes: ["digital health platform (teleconsultation + pharmacy + diagnostics)", "ABDM and ABHA health ID integration", "EHR and health records management", "telemedicine WebRTC engineering", "online pharmacy supply chain", "healthcare data compliance (NABH)"],
+    themes: ["digital health (teleconsultation + pharmacy + diagnostics)", "ABDM and ABHA health ID integration", "EHR and health records management", "telemedicine WebRTC engineering", "online pharmacy supply chain", "healthcare data compliance (NABH)"],
     lastVerified: "2026-07-21",
   },
   "ecom-express": {

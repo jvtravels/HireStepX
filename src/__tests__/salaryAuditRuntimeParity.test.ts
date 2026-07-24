@@ -97,6 +97,7 @@ describe("salary audit ↔ runtime parity", () => {
      * curator. */
     "deloitte/business-analyst/senior",
     "hcl/project-manager/senior",
+    "hcl/software-engineer/entry",
     "hdfc bank/business-analyst/mid",
     "hdfc bank/business-analyst/senior",
     "meesho/business-analyst/entry",

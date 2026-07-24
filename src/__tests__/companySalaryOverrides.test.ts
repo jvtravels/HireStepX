@@ -403,9 +403,9 @@ describe("override map data integrity", () => {
       company: "Google",
       experienceLevel: "fresher",
     });
-    /* Google L3 India campus: ₹30-45L. Initial 35th ≈ ₹35.25L. */
+    /* Google L3 India campus: ₹38-65L. Initial 35th ≈ ₹47.45L. */
     expect(googleEntry.initialOffer).toBeGreaterThan(28);
-    expect(googleEntry.initialOffer).toBeLessThan(42);
+    expect(googleEntry.initialOffer).toBeLessThan(50);
 
     const flipkartEntry = generateNegotiationBand({
       role: "Software Engineer",

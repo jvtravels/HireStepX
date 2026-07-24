@@ -922,7 +922,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
            - Digital: top NQT/coding score, hackathon/internship/GitHub, CS+
            - Prime: top-of-batch (rare), DSA-strong, often deferred-offer cases */
       entry: {
-        totalMin: 4.5, totalMax: 16.0,
+        totalMin: 3.4, totalMax: 16.0,
         baseMin: 3.8, baseMax: 13.5,
         equityType: "none",
         joiningBonusOverride: [0, 1.5],
@@ -931,11 +931,11 @@ export const COMPANY_SALARY_OVERRIDES: Record<
         notes: "Three fresher tracks — Ninja ₹3.4-4L (most common), Digital ₹7-9L (top NQT scorers + coding test), Prime ₹11.5L (small elite cohort). PROBE the candidate's track before quoting; default-anchor at ₹5-6L only if track is unknown. No ESOP. ₹0.5L service bond (waived for Digital/Prime). 90-day notice.",
       },
       mid: {
-        totalMin: 5, totalMax: 15,
+        totalMin: 5, totalMax: 17,
         baseMin: 4.2, baseMax: 12,
         equityType: "none",
         joiningBonusOverride: [0, 2],
-        source: "AmbitionBox 2026 + Glassdoor TCS Systems Engineer / IT Analyst cohort",
+        source: "AmbitionBox 2026 + Glassdoor (data-verified) TCS Systems Engineer / IT Analyst cohort",
         lastVerified: "2026-05-09",
         notes: "3-5 YOE post-Ninja Systems Engineer / IT Analyst is ₹5-9L. Digital-track promoted ICs and lateral hires with niche skills (cloud, SAP, ServiceNow, GenAI) reach ₹10-15L. Onsite-deputation returnees often re-enter at ₹12-15L+.",
       },

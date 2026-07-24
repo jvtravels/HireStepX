@@ -90,6 +90,11 @@ export const tokens = {
 
   // Status tints
   successMist: "rgba(34, 197, 94, 0.14)",
+
+  // Blog-infographic level badge colors (beginner / intermediate / advanced)
+  levelBeginner:    "#2C6E44",
+  levelIntermediate: "#C98B2A",
+  levelAdvanced:    "#B8551F",
 } as const;
 
 /* Satoshi is the primary UI font, loaded from Fontshare CDN via a <link>
