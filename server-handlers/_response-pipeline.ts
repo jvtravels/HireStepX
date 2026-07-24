@@ -40,6 +40,7 @@ import {
 import { extractSalaryScalars } from "./_fact-parser";
 import {
   buildFactPack,
+  toLlmFactPack,
   detectFactGap,
   detectCandidateAskedQuestion,
 } from "./_fact-pack";
@@ -1167,10 +1168,13 @@ async function generateAnswerToCandidate(
     return shipDefer(defer, `fact-gap: ${gap.missing.join(",")}`);
   }
 
-  /* All required facts present — ask the LLM to answer from factPack. */
+  /* All required facts present — ask the LLM to answer from factPack.
+   * S55-B3/B4 (2026-07-24) — use toLlmFactPack so the LLM sees
+   * unambiguous field names and cannot confuse budgetBand.low
+   * (our opening offer) with the candidate's current CTC. */
   const { system, user } = buildAnswerCandidatePrompt(
     candidateQuestion,
-    JSON.stringify(factPack, null, 2),
+    JSON.stringify(toLlmFactPack(factPack), null, 2),
     canonicalFollowup,
     state,
   );

@@ -240,6 +240,39 @@ export function buildFactPack(
   return pack;
 }
 
+/** Transform a FactPack to an LLM-safe representation with unambiguous
+ *  field names before serialising to JSON. Prevents the LLM from
+ *  confusing `budgetBand.low` (our opening offer) with the candidate's
+ *  `candidateCurrentCtc` (S55-B3/B4 2026-07-24). Pure. */
+export function toLlmFactPack(pack: FactPack): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    ...pack,
+    /* Rename CTC field to be unambiguous: this is what the candidate
+     * earns at their PRESENT employer, completely distinct from our offer. */
+    ...(pack.candidateCurrentCtc != null
+      ? { candidateCurrentEmployerCtc_lpa: pack.candidateCurrentCtc, candidateCurrentCtc: undefined }
+      : {}),
+    /* Rename budgetBand so each sub-field is self-documenting.
+     * "low" (our opening offer) must never be mistaken for a CTC figure. */
+    ...(pack.budgetBand != null
+      ? {
+          ourOfferBand: {
+            ourOpeningOffer_lpa: pack.budgetBand.low,
+            ourMaximumFlexibility_lpa: pack.budgetBand.high,
+            ourWalkaway_lpa: pack.budgetBand.walk,
+          },
+          budgetBand: undefined,
+        }
+      : {}),
+  };
+  /* Remove undefined placeholders — JSON.stringify omits them anyway
+   * but be explicit so the returned object is clean. */
+  for (const k of Object.keys(out)) {
+    if (out[k] === undefined) delete out[k];
+  }
+  return out;
+}
+
 /* ─── candidate-question detection ──────────────────────────────────
  *
  * Conservative heuristic. Triggers on:

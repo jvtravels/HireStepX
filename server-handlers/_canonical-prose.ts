@@ -2588,7 +2588,8 @@ export function buildAnswerCandidatePrompt(
     `- NEVER mention internal vocabulary in your answer — banned words include: "fact pack", "factPack", "the system", "the prompt", "internal data", "according to my data", "I don't have data on", "missing from my context". Speak in plain recruiter idiom only. If a fact is missing, defer gracefully (e.g. "that's something the HM walks through later") without referring to your data source.\n` +
     `- If you cannot answer from the data, say "that's something the HM walks through later" — do NOT mention data sources, fact packs, internal notes, or any meta-reference to where information comes from.\n` +
     `- You MUST NOT reference future appraisal cycles ("next cycle", "next appraisal cycle", "next review cycle", "next year's appraisal"). This negotiation is about the joining offer, not future cycles.\n` +
-    `- Keep it conversational, max 2 sentences, max 25 words per sentence. Real recruiters speak in short clauses. If multiple concepts come up, name the top one and ask "which one do you want to dig into?" instead of bundling them.\n\n` +
+    `- Keep it conversational, max 2 sentences, max 25 words per sentence. Real recruiters speak in short clauses. If multiple concepts come up, name the top one and ask "which one do you want to dig into?" instead of bundling them.\n` +
+    `- FIELD LABELS (critical): "candidateCurrentEmployerCtc_lpa" = what the candidate earns at their PRESENT job — completely unrelated to any offer. "ourOfferBand" = OUR internal offer range (ourOpeningOffer_lpa = our starting number, ourMaximumFlexibility_lpa = our ceiling, ourWalkaway_lpa = our floor). NEVER describe any field inside "ourOfferBand" as the candidate's "current CTC" or "what you're currently making".\n\n` +
     `OUTPUT: just your answer, no preamble.`;
   const user =
     `CANDIDATE ASKED: "${candidateQuestion}"\n\n` +
