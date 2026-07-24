@@ -131,3 +131,77 @@ describe("#115 — people-manager band floor", () => {
     expect(prjm.maxStretch).toBeLessThan(50);
   });
 });
+
+/* S54-B2 (2026-07-24) — IT-services opening offer exceeds band ceiling
+ * when a "Senior" title inflates the tier multiplier.
+ *
+ * Root cause: getBandForRole applied roleModifier("Senior…")=1.15 ON TOP of
+ * yoeScale(8yr)=1.4, giving m=1.61 and inflating the it-services engineering
+ * ceil from 14L to 22.5L. The down-rebase gate (initialOffer > ceil * 1.2)
+ * set the threshold at 27L, letting a miscalibrated legacy lookup at ~21.8L
+ * slip through uncorrected. The negotiation then opened with an offer 33%
+ * above the candidate's stated target — zero headroom.
+ *
+ * Fix 1: getBandForRole suppresses roleModifier for it-services (YoE is the
+ * sole differentiator; title premiums don't apply at TCS/Infosys/Wipro).
+ * Fix 2: resolveServerBand uses a 1.0× overshoot threshold for it-services
+ * (any legacy opener above the tier ceil is miscalibrated, not natural variance).
+ *
+ * After fix: tierBand.ceil("Senior SWE", it-services, 8yr) = 14 * 1.4 = 19.6.
+ * A legacy opener at 21.8 now satisfies 21.8 > 19.6 * 1.0, triggering a
+ * rebase to tierBand.target = 15.4. Opening offer stays below the candidate's
+ * ₹18L target, restoring negotiation headroom. */
+describe("S54-B2 — IT-services over-resolution rebase (DOWN) for Senior-titled roles", () => {
+  it.each(IT_SERVICES_LATERALS)(
+    "%s 'Senior Software Engineer' (8 YoE) resolved band stays within tier-table ceiling",
+    (company) => {
+      const band = resolveServerBand("Senior Software Engineer", company, "senior", 8);
+      const tier = classifyCompanyTier(company);
+      const tierBand = getBandForRole(tier, "Senior Software Engineer", 8);
+
+      expect(band.initialOffer).toBeLessThanOrEqual(tierBand.ceil);
+      expect(band.maxStretch).toBeLessThanOrEqual(tierBand.ceil);
+    },
+  );
+
+  it("Infosys 'Senior Software Engineer' tier ceiling is YoE-only (≤20L, not title-inflated 22.5L)", () => {
+    /* With roleModifier suppressed for it-services, 'Senior SWE' and plain 'SWE'
+     * should produce the same tier band at the same YoE — title premiums don't
+     * compound. This pins the key invariant: capping at 22.5 was wrong. */
+    const tier = classifyCompanyTier("infosys");
+    const seniorBand = getBandForRole(tier, "Senior Software Engineer", 8);
+    const plainBand = getBandForRole(tier, "Software Engineer", 8);
+
+    expect(seniorBand.ceil).toBe(plainBand.ceil);
+    expect(seniorBand.target).toBe(plainBand.target);
+    /* The YoE-only ceiling for 8yr must be well below the pre-fix 22.5. */
+    expect(seniorBand.ceil).toBeLessThan(21);
+  });
+
+  it("Infosys 'Senior Software Engineer' resolved band equals the tier-table band (not 21.8L opener)", () => {
+    const band = resolveServerBand("Senior Software Engineer", "infosys", "senior", 8);
+    const tierBand = getBandForRole(classifyCompanyTier("infosys"), "Senior Software Engineer", 8);
+
+    /* Both rebases — over-resolution DOWN (21.8 > 19.6 * 1.0) and under-
+     * resolution UP (if the legacy lookup drops the YoE signal) — land here.
+     * Either way the resolved band must equal the canonical tier band. */
+    expect(band.initialOffer).toBe(tierBand.target);
+    expect(band.maxStretch).toBe(tierBand.ceil);
+  });
+
+  it("non-it-services Senior SWE retains the 1.15× title premium (Google/Flipkart unaffected)", () => {
+    /* The roleModifier suppression must be IT-services-only — product and big-tech
+     * tiers use the full compound multiplier. */
+    const itServices = getBandForRole(classifyCompanyTier("infosys"), "Senior Software Engineer", 8);
+    const product = getBandForRole(classifyCompanyTier("flipkart"), "Senior Software Engineer", 8);
+
+    /* Flipkart product-tier should be strictly higher than Infosys for the same
+     * role+YoE (market reality), AND the Senior premium should be visible. */
+    const flipkartPlain = getBandForRole(classifyCompanyTier("flipkart"), "Software Engineer", 8);
+    expect(product.ceil).toBeGreaterThan(flipkartPlain.ceil * 1.1);
+    /* IT-services: no title premium — Senior == plain. */
+    expect(itServices.ceil).toBe(
+      getBandForRole(classifyCompanyTier("infosys"), "Software Engineer", 8).ceil,
+    );
+  });
+});

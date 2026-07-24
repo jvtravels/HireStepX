@@ -437,7 +437,15 @@ export function getBandForRole(
    * mid anchor. Explicit YoE always passes through untouched. */
   const effYoe =
     yoe == null || !Number.isFinite(yoe) ? impliedYoeFromTitle(role) ?? yoe : yoe;
-  const m = yoeScale(effYoe) * roleModifier(role);
+  /* S54-B2 (2026-07-24) — IT-services companies (TCS/Infosys/Wipro/Cognizant/HCL)
+   * have compressed, YoE-driven pay bands. Title premiums (Senior=1.15×,
+   * Principal=1.3×) compound on top of yoeScale and inflate ceilings enough to
+   * let miscalibrated legacy lookups pass the overshoot-correction gate unchanged.
+   * For it-services, YoE is the sole axis; suppress the title multiplier. */
+  const m =
+    tier === "it-services"
+      ? yoeScale(effYoe)
+      : yoeScale(effYoe) * roleModifier(role);
   return {
     floor: Math.round(base.floor * m * 10) / 10,
     ceil: Math.round(base.ceil * m * 10) / 10,

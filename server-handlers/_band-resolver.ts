@@ -230,7 +230,14 @@ export function resolveServerBand(
     if (company && !isInternshipRole(role)) {
       const bandTier = classifyBandTier(company);
       const tierBand = getBandTierRoleBand(bandTier, role, applicableYoe ?? null);
-      if (band.initialOffer > tierBand.ceil * 1.2 || band.maxStretch > tierBand.ceil * 1.4) {
+      /* S54-B2 (2026-07-24) — tighter overshoot threshold for it-services:
+       * the tier ceiling is already YoE-only (roleModifier suppressed in
+       * getBandForRole), so any legacy lookup that exceeds the ceiling at
+       * all is miscalibrated; use a 1.0× multiplier rather than 1.2×.
+       * Other tiers retain the 1.2×/1.4× tolerance for natural variance. */
+      const overshootCeilMul = bandTier === "it-services" ? 1.0 : 1.2;
+      const overshootStretchMul = bandTier === "it-services" ? 1.1 : 1.4;
+      if (band.initialOffer > tierBand.ceil * overshootCeilMul || band.maxStretch > tierBand.ceil * overshootStretchMul) {
         band.initialOffer = tierBand.target;
         band.maxStretch = tierBand.ceil;
         band.walkAway = Math.max(1, Math.round(tierBand.floor * 0.95 * 10) / 10);
