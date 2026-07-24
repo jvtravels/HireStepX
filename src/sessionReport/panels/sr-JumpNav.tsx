@@ -7,13 +7,13 @@
 
 export { SectionEyebrow } from "./_primitives";
 
-export function JumpNav() {
+export function JumpNav({ showCoachNotes = true }: { showCoachNotes?: boolean }) {
   const items = [
     { num: "01", label: "Overview", href: "#ir-section-hero" },
     { num: "02", label: "Delivery", href: "#ir-section-metrics" },
     { num: "03", label: "Skills", href: "#ir-section-skills" },
     { num: "04", label: "Questions", href: "#ir-section-questions" },
-    { num: "05", label: "Coach Notes", href: "#ir-section-coach-notes" },
+    ...(showCoachNotes ? [{ num: "05", label: "Coach Notes", href: "#ir-section-coach-notes" }] : []),
     { num: "06", label: "Next Steps", href: "#ir-section-next" },
   ];
   return (

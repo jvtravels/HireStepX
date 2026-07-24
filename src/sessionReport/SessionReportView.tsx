@@ -546,7 +546,12 @@ export default function SessionReportView({
             gap: 16,
           }}
         >
-          <JumpNav />
+          <JumpNav showCoachNotes={
+            !!(data.coaching ||
+               (behaviouralCrossSessionInsights && behaviouralCrossSessionInsights.length > 0) ||
+               (!data.negotiationOutcome && data.storyReuseFindings && data.storyReuseFindings.length > 0) ||
+               (data.blindSpots && data.blindSpots.length > 0))
+          } />
           {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
           <HeroSection data={data} />
           <p
