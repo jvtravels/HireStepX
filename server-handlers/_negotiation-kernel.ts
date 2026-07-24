@@ -980,6 +980,11 @@ export interface NegotiationState {
      more than single-point asks. We reward this in the counter-offer
      split. */
   candidateAskedAsRange: boolean;
+  /** S48-B6 (2026-07-24) — true when the most recently stated total target
+   *  was a range upper-bound (not a specific point); cleared to false when
+   *  the candidate subsequently narrows to a point. Used by the planner's
+   *  range-to-point probe guard: suppress re-probing once a point is given. */
+  candidateTargetWasRange?: boolean;
 
   /* AI moves made */
   highestOfferMade: number;              // best number AI has put on table (LPA)
@@ -2889,6 +2894,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     competingOffer: null,
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     candidateAskedAsRange: false,
+    candidateTargetWasRange: undefined,
     userClaims: {},
     lastContradiction: null,
     candidateComp: { ...EMPTY_COMP },
@@ -5150,6 +5156,11 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
         next.lastCounterComponent = "total";
       }
       next.candidateTarget = parsed.target;
+      /* S48-B6 (2026-07-24) — track whether the most recent total-target
+       * was a range upper bound or a specific point. The range-to-point
+       * probe in the planner reads this to suppress re-probing once the
+       * candidate has already given a point. */
+      next.candidateTargetWasRange = parsed.targetAsRange;
       if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
       /* S42-B8 / S43-B7 — counter stated vs a live offer. Only set when the
        * recruiter has already put a number on the table. Discovery-phase targets
@@ -8222,6 +8233,7 @@ export function validateState(state: unknown): asserts state is NegotiationState
      state. */
   if (s.finalOfferAssertedCount !== undefined && !isFiniteNonNegInt(s.finalOfferAssertedCount)) throw new Error("state.finalOfferAssertedCount");
   if (s.candidateAskedAsRange !== undefined && typeof s.candidateAskedAsRange !== "boolean") throw new Error("state.candidateAskedAsRange");
+  if (s.candidateTargetWasRange !== undefined && typeof s.candidateTargetWasRange !== "boolean") throw new Error("state.candidateTargetWasRange");
   if (s.vossTacticsUsed !== undefined && !(Array.isArray(s.vossTacticsUsed) && s.vossTacticsUsed.every((v) => typeof v === "string"))) throw new Error("state.vossTacticsUsed");
   if (s.infoAsked !== undefined && !(Array.isArray(s.infoAsked) && s.infoAsked.every((v) => typeof v === "string"))) throw new Error("state.infoAsked");
   if (s.infoAskedInitiated !== undefined && !(Array.isArray(s.infoAskedInitiated) && s.infoAskedInitiated.every((v) => typeof v === "string"))) throw new Error("state.infoAskedInitiated");
@@ -8694,6 +8706,7 @@ export function deserializeState(json: string): NegotiationState {
   return {
     ...parsed,
     candidateAskedAsRange: s.candidateAskedAsRange ?? false,
+    candidateTargetWasRange: (s.candidateTargetWasRange as boolean | undefined) ?? undefined,
     /* Schema-stability backfill (2026-06-15) — the in-hand frame fields
      * became required (no longer optional). Default in-flight sessions
      * serialized before this change: not-in-hand, no CTC-equivalent. */

@@ -7966,7 +7966,10 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         rationale: "Candidate mentioned moonlighting — surface policy proactively (Indian context: post-2022 IT-services crackdown made this load-bearing).",
       },
       {
-        flag: profile.gaveRangeNotPoint,
+        /* S48-B6 (2026-07-24) — suppress probe once candidate has given an explicit
+         * point target (candidateTargetWasRange=false). Only re-probe while the current
+         * stated target still came from a range (or no target at all yet). */
+        flag: profile.gaveRangeNotPoint && state.candidateTargetWasRange !== false,
         topic: "range-to-point",
         ask: "You shared a range — to plan the fitment cleanly, where in that range do you actually see yourself landing? Helps me take a more specific number to leadership.",
         rationale: "Candidate gave a range instead of a target — pin down the actual point before the lever rotation locks in.",
