@@ -6848,7 +6848,25 @@ export function clampOpeningAnchor(
       ? Math.min(hi, Math.round(disclosed * 1.05))
       : lo;
   const floor = Math.max(lo, minRaiseOverCtc, competingFloor ?? 0);
-  return Math.max(floor, Math.min(baseWithBatna, capped));
+  const rawAnchor = Math.max(floor, Math.min(baseWithBatna, capped));
+  /* S51-B2 (2026-07-24) — when the candidate's target is known and the
+   * computed anchor meets or nearly meets it, the simulation has zero
+   * negotiation headroom (opener at target → nothing to counter for).
+   * Back off to ≤85% of target, floored at the band floor, so there is
+   * always a meaningful gap for the candidate to push into. The 3%
+   * tolerance avoids spurious triggering when the opener is just slightly
+   * below a round-number target (e.g. 27.2 vs 28 is fine). */
+  const knownTarget = state.candidateTarget;
+  if (
+    knownTarget != null &&
+    Number.isFinite(knownTarget) &&
+    knownTarget > 0 &&
+    rawAnchor >= knownTarget * 0.97
+  ) {
+    const backedOff = Math.round(knownTarget * 0.82 * 10) / 10;
+    return Math.max(lo, Math.min(backedOff, rawAnchor - 1));
+  }
+  return rawAnchor;
 }
 
 function pickStructuralLever(state: NegotiationState): PlannedAction | null {
