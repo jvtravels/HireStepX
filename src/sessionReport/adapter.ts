@@ -1303,38 +1303,16 @@ function buildNegotiationMetrics(
     ? Math.min(100, concessions * 10)
     : 0;
 
-  /* Disclosure leaks — count times candidate VOLUNTARILY disclosed current
-   * CTC without being asked. S21-B4: scanning the full allText string counted
-   * EVERY CTC mention (including recruiter-elicited answers) as a leak, so a
-   * candidate who answered the recruiter's direct "what's your current CTC?"
-   * received "Disclosure leaks: 6" for a strategically sound session.
-   * Fix: when the raw transcript is available, count only turns where the
-   * candidate mentioned CTC but the IMMEDIATELY PRECEDING AI turn did NOT ask
-   * for it. Without the transcript, fall back to the old aggregate scan. */
-  const leakRe = /\b(my\s+current\s+(ctc|salary|package)|i\s+(make|earn|.?m\s+at|currently\s+make)|currently\s+earning)\b/gi;
-  /* Regex covering recruiter solicitations of current CTC — any of these
-   * in the preceding AI turn means the candidate's answer is elicited, not a leak. */
-  const recruiterAskedCtcRe = /\b(what\s+(is|was|are|'s)\s+(your\s+)?(current|existing)\s+(ctc|salary|package|compensation|earning)|what\s+do\s+you\s+(make|earn|currently\s+earn)|how\s+much\s+(are\s+you|do\s+you)\s+(currently\s+)?(making|earning|taking|at)|current\s+(ctc|salary|package)\??|share\s+(your\s+)?(current|existing)\s+(ctc|salary|package)|tell\s+(me|us)\s+(about\s+)?(your\s+)?(current|present)\s+(ctc|salary|package|comp))\b/gi;
-  let leaks: number;
-  if (rawTranscript && rawTranscript.length > 0) {
-    leaks = 0;
-    for (let i = 0; i < rawTranscript.length; i++) {
-      const turn = rawTranscript[i];
-      if (turn.speaker !== "user") continue;
-      if (!leakRe.test(turn.text)) continue;
-      leakRe.lastIndex = 0; /* reset global regex state after test */
-      /* Find the most recent AI turn before this user turn. */
-      let prevAiText = "";
-      for (let j = i - 1; j >= 0; j--) {
-        if (rawTranscript[j].speaker === "ai") { prevAiText = rawTranscript[j].text; break; }
-      }
-      /* Only count as a leak when the recruiter did NOT ask for CTC. */
-      if (!recruiterAskedCtcRe.test(prevAiText)) leaks++;
-      recruiterAskedCtcRe.lastIndex = 0;
-    }
-  } else {
-    leaks = (allText.match(leakRe) || []).length;
-  }
+  /* S64-B1 (2026-07-24, live Accenture EM session): disclosing "my current
+   * CTC is ₹X" in a salary-negotiation session is STANDARD Indian practice —
+   * often legally required, always culturally expected. Counting it as a leak
+   * directly contradicts evaluate-session.ts:731 ("NEVER penalise CTC
+   * disclosure … a candidate who states their CTC clearly … is demonstrating
+   * STRUCTURAL FLUENCY, not naivety"). This function is only ever called for
+   * salary-negotiation sessions (gated at the call site on isNegotiation), so
+   * disclosure-leak detection is inapplicable here. Zero it out; the metric
+   * still renders so the tile exists on the card, but correctly shows 0. */
+  const leaks = 0;
 
   // Silence tolerance proxy — use median latency as the closest existing
   // signal. A candidate who pauses before responding to pushback often

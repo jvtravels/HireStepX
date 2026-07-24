@@ -603,7 +603,11 @@ describe("buildNegotiationMetrics — S21-B4 disclosure leak elicitation gate", 
     expect(leaks!.value).toBe(0); // recruiter asked → not a leak
   });
 
-  it("S21-B4: volunteered CTC without recruiter asking IS counted as a leak", () => {
+  it("S64-B1: volunteered CTC in a salary-negotiation session is NOT a leak (Indian standard practice)", () => {
+    // In Indian salary negotiations, opening with "my current CTC is X, I'm
+    // targeting Y" is structurally correct and explicitly praised in the LLM
+    // prompt. Counting it as a disclosure leak contradicts evaluate-session.ts:731
+    // ("NEVER penalise CTC disclosure"). buildNegotiationMetrics now zeroes leaks.
     const ctx = {
       report: negReport(),
       session: negSession({
@@ -618,27 +622,30 @@ describe("buildNegotiationMetrics — S21-B4 disclosure leak elicitation gate", 
     const out = sessionReportToInterviewResult(ctx);
     const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
     expect(leaks).toBeDefined();
-    expect(leaks!.value).toBeGreaterThan(0);
+    expect(leaks!.value).toBe(0); // S64-B1: CTC disclosure is standard — never a leak in negotiation
   });
 
-  it("S21-B4: multiple turns — only the unprompted disclosures count", () => {
+  it("S21-B4 / S64-B1: all CTC mentions in negotiation sessions produce 0 leaks", () => {
+    // Even with multiple CTC disclosures (some elicited, some volunteered),
+    // the negotiation context zeroes out the leak count entirely since CTC
+    // disclosure is standard Indian practice regardless of who asked.
     const ctx = {
       report: negReport(),
       session: negSession({
         transcript: [
           { speaker: "ai",   text: "What's your current salary?" }, // asks
-          { speaker: "user", text: "My current CTC is 32 LPA." },   // elicited → NOT a leak
+          { speaker: "user", text: "My current CTC is 32 LPA." },   // elicited
           { speaker: "ai",   text: "Got it. Tell me about a key project." },
-          { speaker: "user", text: "I make 32 LPA and want to grow." }, // volunteered → leak
+          { speaker: "user", text: "I make 32 LPA and want to grow." }, // volunteered
           { speaker: "ai",   text: "What's your current package?" },   // asks again
-          { speaker: "user", text: "I earn 32 LPA as mentioned." },    // elicited → NOT a leak
+          { speaker: "user", text: "I earn 32 LPA as mentioned." },    // elicited
         ],
       }),
     } as AdapterContext;
     const out = sessionReportToInterviewResult(ctx);
     const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
     expect(leaks).toBeDefined();
-    expect(leaks!.value).toBe(1); // only the middle unprompted turn
+    expect(leaks!.value).toBe(0); // S64-B1: all 0 in negotiation context
   });
 });
 
