@@ -46,6 +46,7 @@ import {
   type BehavioralFlag,
 } from "../../tempo/designs/canvases/interview-result-focus/_behavioral-coach";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
+import { normalizeCoaching } from "../../server-handlers/_evaluate-session-helpers";
 
 /* ─── Focus banner chrome constants ────────────────────────────────────
    Icon/label/tagline/accent per focus type. Keys match the focus-type
@@ -543,7 +544,7 @@ export function sessionReportToInterviewResult(
     resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
-    coaching: report.coaching ?? undefined,
+    coaching: normalizeCoaching(report.coaching) ?? undefined,
     negotiationOutcome,
     kernelMetrics: isNegotiation
       ? reconcileKernelMetricsForReport(session.negotiationMetrics, negotiationOutcome)
