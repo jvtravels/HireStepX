@@ -5280,7 +5280,7 @@ export const SEO_PAGES: SeoPage[] = [
     slug: "wakefit-software-engineer-interview-questions",
     searchPhrase: "Wakefit Software Engineer Interview Questions India 2026",
     company: "wakefit", roleFamily: "swe", focus: "technical",
-    intro: "Wakefit is a Bengaluru D2C sleep and furniture brand, so its engineering hires center on the e-commerce stack, order and logistics tooling, and internal manufacturing or inventory systems. The loop usually runs 3 to 4 rounds and is practical: a DSA and fundamentals screen, one or two technical rounds on your stack (often full-stack or backend), and a manager plus culture conversation. Interviewers care that you can reason about real retail problems such as SKU catalogs, delivery slots, returns, and offer or discount logic, and they value engineers who ship reliably in a lean team.",
+    intro: "Wakefit's SWE interview runs 3 to 4 rounds: DSA and fundamentals screen, one or two technical rounds on your stack, and a manager conversation on real retail engineering problems. The company is a Bengaluru D2C sleep and furniture brand, so interviewers focus on e-commerce systems: SKU catalogs, delivery slots, returns, and discount logic. They value engineers who ship reliably in a lean team rather than those optimised for competitive programming contest scores.",
     framework: { name: "Retail-first engineering", summary: "Understand the business rule, model the data cleanly, code a correct solution, then cover edge cases like stock, pricing, and failures." },
     metaKeywords: ["wakefit software engineer interview", "wakefit interview questions india", "wakefit swe interview 2026", "wakefit technical interview"],
     sitemapPriority: 0.75,
