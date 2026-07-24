@@ -979,6 +979,13 @@ export function applyContextRefOverlay(
   for (const phrase of ALL_CONTEXT_REF_PHRASES) {
     if (textLower.includes(phrase.toLowerCase())) return text;
   }
+  /* S50-B2 (2026-07-24) — don't overlay onto apologetic or filler transitions.
+   * Prepending "In this slower hiring cycle, my apologies, let me..." produces
+   * a semantically incoherent sentence that leaks the market-simulation context
+   * into the dialogue in the worst possible way. Gate on substantive content. */
+  const APOLOGY_OR_FILLER_RE =
+    /\b(?:sorry|apolog|my\s+apolog|let\s+me\s+(?:move|get|go)|just\s+a\s+moment|one\s+sec|hang\s+on|thanks\s+for|thank\s+you\s+for|noted,?\s+let|noted\s+on)\b/i;
+  if (APOLOGY_OR_FILLER_RE.test(textLower)) return text;
   const ref = pickSectorContextRef(persona, sessionId);
   if (!ref) return text;
   const ti =
