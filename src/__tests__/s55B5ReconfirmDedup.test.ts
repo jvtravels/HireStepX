@@ -8,7 +8,7 @@
  * Fix: strip any leading reconfirm prefix before storing in the ledger
  * so the stored answerText is always the clean answer body. */
 import { describe, it, expect } from "vitest";
-import { applyAiMove, initState, type NegotiationBand } from "../../server-handlers/_negotiation-kernel";
+import { applyAiMove, initState, type NegotiationBand, type NegotiationState } from "../../server-handlers/_negotiation-kernel";
 
 const BAND: NegotiationBand = {
   initialOffer: 28,
@@ -42,7 +42,7 @@ describe("S55-B5 — answeredQuestionLedger strips reconfirm prefix", () => {
         ...(s0.lastTurnDelta ?? {}),
         candidateAskedQuestion: { raw: "What is the joining bonus?", intent: "joining" as const },
       },
-    };
+    } as NegotiationState;
 
     const firstReconfirmText = "Just to reconfirm — The joining bonus is ₹2L, paid on day 30.";
     const s1 = applyAiMove(stateWithQuestion, PROBE_MOVE, firstReconfirmText);
@@ -68,7 +68,7 @@ describe("S55-B5 — answeredQuestionLedger strips reconfirm prefix", () => {
         ...(s0.lastTurnDelta ?? {}),
         candidateAskedQuestion: { raw: "What is equity like?", intent: "equity" as const },
       },
-    };
+    } as NegotiationState;
 
     const normalText = "We have RSUs vesting over 4 years with a 1-year cliff.";
     const s1 = applyAiMove(stateWithQuestion, PROBE_MOVE, normalText);
@@ -90,7 +90,7 @@ describe("S55-B5 — answeredQuestionLedger strips reconfirm prefix", () => {
         ...(s0.lastTurnDelta ?? {}),
         candidateAskedQuestion: { raw: "What about team size?", intent: "team" as const },
       },
-    };
+    } as NegotiationState;
 
     /* em-dash variant — same as the hyphen-based but with U+2014 */
     const emDashText = "Just to reconfirm — You'd be joining a 12-person backend team.";
@@ -114,7 +114,7 @@ describe("S55-B5 — answeredQuestionLedger strips reconfirm prefix", () => {
         ...(s0.lastTurnDelta ?? {}),
         candidateAskedQuestion: { raw: "How does WFH policy work?", intent: "wfh" as const },
       },
-    };
+    } as NegotiationState;
 
     const commaText = "Just to reconfirm, we offer 3 WFH days per week.";
     const s1 = applyAiMove(stateWithQuestion, PROBE_MOVE, commaText);

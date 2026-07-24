@@ -882,7 +882,14 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
 
   // Generate per-turn annotations
   const annotatedTurns = React.useMemo(() => {
-    return transcript.map((turn, idx) => {
+    /* S55-B6 (2026-07-24) — strip AI interjection markers (silence nudges,
+     * listener filler) before building the replay. These are `[bracketed]`
+     * turns emitted by _listening-interjections.ts; they should never appear
+     * in the visible replay (same rule as sanitizeTranscript in save-session.ts). */
+    const visible = transcript.filter(
+      t => !(t.speaker === "ai" && /^\[.+\]$/.test(t.text.trim()))
+    );
+    return visible.map((turn, idx) => {
       const annotations: { type: "positive" | "negative" | "neutral"; text: string }[] = [];
       const text = turn.text;
       if (turn.speaker === "user") {
@@ -902,7 +909,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
         if (/(?:remote|wfh|flexible|hybrid)/i.test(text)) {
           annotations.push({ type: "positive", text: "Negotiated flexibility — total package thinking." });
         }
-        if (/(?:i accept|sounds good|that works|it.?s a deal|fine with me)/i.test(text) && idx < transcript.length - 2) {
+        if (/(?:i accept|sounds good|that works|it.?s a deal|fine with me)/i.test(text) && idx < visible.length - 2) {
           annotations.push({ type: "negative", text: "Accepted early — may have left value on the table." });
         }
         if (/(?:current(?:ly)?\s+(?:earning|getting|making|drawing)|my ctc)/i.test(text)) {
