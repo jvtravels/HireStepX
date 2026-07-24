@@ -5219,20 +5219,31 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    *     allowed through;
    *   - uses the pre-update target (next or state) to catch both the same-turn
    *     and cross-turn shapes;
-   *   - tolerance ±0.05 LPA to absorb rounding artefacts. */
+   *   - tolerance ±0.05 LPA to absorb rounding artefacts.
+   * S71-B2 (2026-07-25): isLikelyCounterAsk is hoisted above the
+   * if-block so the compensation model (which runs unconditionally) can
+   * suppress the counter-ask from being fed as a "new CTC observation"
+   * to observationsFromParsed. Without this guard the comp model sees the
+   * ₹48L counter-ask as a ₹28L→₹48L drift on the total axis, fires a
+   * contradiction, and the planner emits "you said ₹28 earlier, now ₹48
+   * — which one?" to the candidate — incorrectly treating their counter
+   * as a conflicting CTC disclosure. */
+  const _ctcOfferOnTable = (next.highestOfferMade ?? state.highestOfferMade ?? 0) > 0;
+  const _ctcHasEstablished = state.candidateCurrentCtc != null;
+  const isLikelyCounterAsk = parsed.currentCtc != null
+    && _ctcHasEstablished && _ctcOfferOnTable
+    && parsed.currentCtc > (next.highestOfferMade ?? state.highestOfferMade ?? 0);
   if (parsed.currentCtc != null) {
     const establishedTarget = next.candidateTarget ?? state.candidateTarget;
-    const hasEstablishedCTC = state.candidateCurrentCtc != null;
+    const hasEstablishedCTC = _ctcHasEstablished;
     const ctcEqualsTarget = establishedTarget != null && Math.abs(parsed.currentCtc - establishedTarget) < 0.05;
     /* S55-B8 (2026-07-24): once a CTC is already established AND an offer is
      * on the table, any candidate number ABOVE the offer is a counter-ask, not
      * a CTC re-disclosure. Guard: only blocks when hasEstablishedCTC is true —
      * a first-time CTC disclosure that happens to exceed the standing offer
      * (e.g. ₹45 CTC > ₹41 offer) must still update the slot. Without the
-     * hasEstablishedCTC guard the ctcAwareBandLift invariant breaks. */
-    const offerOnTable = (next.highestOfferMade ?? state.highestOfferMade ?? 0) > 0;
-    const isLikelyCounterAsk = hasEstablishedCTC && offerOnTable
-      && parsed.currentCtc > (next.highestOfferMade ?? state.highestOfferMade ?? 0);
+     * hasEstablishedCTC guard the ctcAwareBandLift invariant breaks.
+     * (isLikelyCounterAsk is hoisted above — see S71-B2 note.) */
     if (!(hasEstablishedCTC && ctcEqualsTarget) && !isLikelyCounterAsk) {
       next.candidateCurrentCtc = parsed.currentCtc;
     }
@@ -5366,9 +5377,14 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * working. See _compensation-model.ts. */
   {
     const compBefore: CandidateComp = state.candidateComp ?? { ...EMPTY_COMP };
+    /* S71-B2: suppress counter-ask from comp model. When isLikelyCounterAsk
+     * is true the number is a counter, not a CTC re-disclosure; feeding it
+     * to observationsFromParsed as a total-axis observation would trigger a
+     * spurious contradiction signal (old=28, new=48) and the planner would
+     * ask "you said ₹28 earlier, now I'm hearing ₹48 — which one?" */
     const observations = observationsFromParsed(
       {
-        currentCtc: parsed.currentCtc,
+        currentCtc: isLikelyCounterAsk ? null : parsed.currentCtc,
         componentBase: parsed.componentBreakdown.base,
         componentVariable: parsed.componentBreakdown.variable,
         componentEquity: parsed.componentBreakdown.equity,

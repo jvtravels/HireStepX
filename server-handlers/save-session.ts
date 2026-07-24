@@ -184,9 +184,19 @@ export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> 
     ...(powerContext ? { powerContext } : {}),
     /* S4S5-B3 — persist the one-time joining bonus so the report's
        OfferEconomicsPanel and CounterOfferLetterPanel can surface it
-       after DB save/reload (previously lost because the sanitizer dropped it). */
+       after DB save/reload (previously lost because the sanitizer dropped it).
+       S71-B1 — also persist the candidate's stated ask and the clawback-
+       discussed flag so the adapter can show the candidate's ask (the number
+       they actually requested) rather than the planner's formula-computed
+       amount when the recruiter never verbally confirmed a specific figure. */
     ...(num(o.lastJoiningBonusOffered, 0, 500) != null
       ? { lastJoiningBonusOffered: num(o.lastJoiningBonusOffered, 0, 500) }
+      : {}),
+    ...(num((o.noticeJoining as Record<string, unknown>)?.joiningBonusAsk, 0, 500) != null
+      ? { joiningBonusAsk: num((o.noticeJoining as Record<string, unknown>)?.joiningBonusAsk, 0, 500) }
+      : {}),
+    ...((o.noticeJoining as Record<string, unknown>)?.joiningBonusClawbackDiscussed === true
+      ? { joiningBonusClawbackDiscussed: true }
       : {}),
   };
 }

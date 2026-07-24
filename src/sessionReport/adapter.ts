@@ -892,10 +892,24 @@ function adoptKernelOutcome(
     ...(infoAsked ? { infoAsked } : {}),
     ...(infoAskedInitiated ? { infoAskedInitiated } : {}),
     /* S4S5-B3 — surface joining bonus so report panels (email letter,
-       OfferEconomicsPanel) can display "₹X CTC + ₹Y joining bonus". */
-    ...(typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0
-      ? { joiningBonusLpa: km.lastJoiningBonusOffered }
-      : {}),
+       OfferEconomicsPanel) can display "₹X CTC + ₹Y joining bonus".
+       S71-B1 — use the recruiter's formula amount only when the clawback was
+       explicitly discussed (proxy for the recruiter verbally naming a specific
+       number during the session). When clawback was not discussed, fall back to
+       the candidate's stated ask (joiningBonusAsk) so the report shows what
+       the candidate requested rather than a formula-computed amount that was
+       never spoken in the conversation. */
+    ...((() => {
+      const confirmed = typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0;
+      const clawbackDiscussed = (km as Record<string, unknown>).joiningBonusClawbackDiscussed === true;
+      const candidateAskJb = typeof (km as Record<string, unknown>).joiningBonusAsk === "number"
+        ? ((km as Record<string, unknown>).joiningBonusAsk as number)
+        : null;
+      const jbLpa = clawbackDiscussed
+        ? (confirmed ? km.lastJoiningBonusOffered : null)
+        : (candidateAskJb != null && candidateAskJb > 0 ? candidateAskJb : null);
+      return jbLpa != null && jbLpa > 0 ? { joiningBonusLpa: jbLpa } : {};
+    })()),
     /* S3-B2 — surface Phase-11 hike-justification rationale so
        derivePhases stage-2 ("You justified your number") fires. */
     ...(typeof km.rationaleKind === "string" ? { rationaleKind: km.rationaleKind } : {}),
