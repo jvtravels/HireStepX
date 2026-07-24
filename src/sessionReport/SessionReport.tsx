@@ -580,7 +580,16 @@ export const SessionReport = memo(function SessionReport({
             ac.signal
           );
           if (!cancelled && res) {
-            setReport(res);
+            /* S67-B1 (2026-07-25): deterministic fallback returns coaching: null
+             * (no LLM to write the pair). When the stale cached report already
+             * had a valid coaching pair from the original LLM evaluation, preserve
+             * it rather than letting null overwrite it — the LLM-written pair is
+             * more valuable than nothing and silently disappearing it is confusing. */
+            const merged =
+              (res.coaching == null && cachedReport?.coaching != null)
+                ? { ...res, coaching: cachedReport.coaching }
+                : res;
+            setReport(merged);
             track("report_llm_completed", {
               sessionId: session.id,
               latencyMs: Date.now() - t0,
