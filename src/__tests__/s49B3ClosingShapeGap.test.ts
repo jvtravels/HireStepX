@@ -43,7 +43,7 @@ function stateAfterOneExchange(): ReturnType<typeof applyAiMove> {
 describe("S49-B3 — CLOSING_SHAPE_RE catches farewell shapes without 'next steps'", () => {
   it("A. 'Thanks for talking it through with me today.' flags premature-close", () => {
     const state = stateAfterOneExchange();
-    const action = planNextAction(state);
+    planNextAction(state);
     const result = validateResponseContract({
       text: "Thanks for talking it through with me today.",
       move: { lever: "probe", newTotalLpa: null, rationale: "probe" },

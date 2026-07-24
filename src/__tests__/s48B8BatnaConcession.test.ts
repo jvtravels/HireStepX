@@ -95,9 +95,9 @@ describe("S48-B8 — BATNA pressure triggers cash concession attempt, not hold-f
     const s = stateWithOffer(BAND_WITH_HEADROOM, "I need to let the other conversations progress.");
     const action = planNextAction(s);
     // Must attempt concession (counter-base), not hold firm
-    expect(action?._move?.lever).toBe("counter-base");
+    expect((action as any)?._move?.lever).toBe("counter-base");
     // Concession must be above standing offer and at or below ceiling
-    const offer = action?._move?.newTotalLpa ?? 0;
+    const offer = (action as any)?._move?.newTotalLpa ?? 0;
     expect(offer).toBeGreaterThan(s.highestOfferMade);
     expect(offer).toBeLessThanOrEqual(BAND_WITH_HEADROOM.maxStretch);
   });
@@ -105,15 +105,15 @@ describe("S48-B8 — BATNA pressure triggers cash concession attempt, not hold-f
   it("B. 'I have another offer on the table' → counter-base concession", () => {
     const s = stateWithOffer(BAND_WITH_HEADROOM, "I have another offer on the table that I need to respond to.");
     const action = planNextAction(s);
-    expect(action?._move?.lever).toBe("counter-base");
-    const offer = action?._move?.newTotalLpa ?? 0;
+    expect((action as any)?._move?.lever).toBe("counter-base");
+    const offer = (action as any)?._move?.newTotalLpa ?? 0;
     expect(offer).toBeGreaterThan(s.highestOfferMade);
   });
 
   it("C. 'Other opportunities are moving forward' → counter-base concession", () => {
     const s = stateWithOffer(BAND_WITH_HEADROOM, "Other opportunities are moving forward and I need to decide.");
     const action = planNextAction(s);
-    expect(action?._move?.lever).toBe("counter-base");
+    expect((action as any)?._move?.lever).toBe("counter-base");
   });
 
   it("D. At ceiling with no headroom, BATNA → hold-firm (nothing to give)", () => {
@@ -121,7 +121,7 @@ describe("S48-B8 — BATNA pressure triggers cash concession attempt, not hold-f
     const action = planNextAction(s);
     // Standing offer = maxStretch, no headroom — must hold firm
     // (The planner may also choose close-walkaway or another terminal if eligible)
-    expect(action?._move?.lever).not.toBe("counter-base");
+    expect((action as any)?._move?.lever).not.toBe("counter-base");
   });
 
   it("E. Genuine disengagement ('I'm not interested anymore') → hold-firm not concession", () => {
@@ -130,6 +130,6 @@ describe("S48-B8 — BATNA pressure triggers cash concession attempt, not hold-f
     const s = stateWithOffer(BAND_WITH_HEADROOM, "I'm not interested in this role anymore.");
     const action = planNextAction(s);
     // This is genuine disengagement, NOT BATNA — should NOT concede
-    expect(action?._move?.lever).not.toBe("counter-base");
+    expect((action as any)?._move?.lever).not.toBe("counter-base");
   });
 });

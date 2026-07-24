@@ -59,7 +59,7 @@ describe("S51-B2 — clampOpeningAnchor backs off when opener meets/exceeds cand
     const s = discoveryComplete({ ctc: 18, target: 28 });
     const action = planNextAction(s);
     expect(action).not.toBeNull();
-    const offerLpa = action?.initialOffer ?? action?._move?.newTotalLpa ?? null;
+    const offerLpa = (action as any)?.initialOffer ?? (action as any)?._move?.newTotalLpa ?? null;
     // Opener must be meaningfully below the target
     if (offerLpa != null) {
       expect(offerLpa).toBeLessThan(28 * 0.97); // not within 3% of target
@@ -71,7 +71,7 @@ describe("S51-B2 — clampOpeningAnchor backs off when opener meets/exceeds cand
     const bandAtTarget: NegotiationBand = { initialOffer: 32, maxStretch: 32, walkAway: 24, hasEquity: false };
     const s = discoveryComplete({ band: bandAtTarget, ctc: 22, target: 32 });
     const action = planNextAction(s);
-    const offerLpa = action?.initialOffer ?? action?._move?.newTotalLpa ?? null;
+    const offerLpa = (action as any)?.initialOffer ?? (action as any)?._move?.newTotalLpa ?? null;
     if (offerLpa != null) {
       expect(offerLpa).toBeLessThan(32);
       expect(offerLpa).toBeGreaterThanOrEqual(bandAtTarget.walkAway);
@@ -83,7 +83,7 @@ describe("S51-B2 — clampOpeningAnchor backs off when opener meets/exceeds cand
     const normalBand: NegotiationBand = { initialOffer: 40, maxStretch: 55, walkAway: 32, hasEquity: true };
     const s = discoveryComplete({ band: normalBand, ctc: 35, target: 70 });
     const action = planNextAction(s);
-    const offerLpa = action?.initialOffer ?? action?._move?.newTotalLpa ?? null;
+    const offerLpa = (action as any)?.initialOffer ?? (action as any)?._move?.newTotalLpa ?? null;
     // Opener should NOT be pushed down to 82% of 70 = 57.4 — it should stay in
     // the normal 40-50 range (well below 70, so the 97% guard never fires).
     if (offerLpa != null) {

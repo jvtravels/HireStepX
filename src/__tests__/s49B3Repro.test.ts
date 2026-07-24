@@ -24,7 +24,7 @@ describe("S49-B3 — HDFC Bank Senior Data Analyst premature termination repro",
     s = applyCandidateAnswer(s, "My current CTC is ₹18L and I'm targeting around ₹28L.");
     console.log("After turn 1 - phase:", s.phase, "turnIndex:", s.turnIndex, "candidateCtc:", s.candidateCurrentCtc, "candidateTarget:", s.candidateTarget);
 
-    const action1 = planNextAction(s);
+    const action1 = planNextAction(s) as any;
     console.log("Planned action 1:", action1?.kind, action1?._move?.lever, action1?._move?.rationale?.substring(0, 100));
     expect(action1?._move?.lever).not.toBe("close-stalemate");
     expect(action1?._move?.lever).not.toBe("close-walkaway");
@@ -37,7 +37,7 @@ describe("S49-B3 — HDFC Bank Senior Data Analyst premature termination repro",
     s = applyCandidateAnswer(s, "I'm looking for ₹28L in total compensation.");
     console.log("After turn 2 - phase:", s.phase, "candidateTarget:", s.candidateTarget);
 
-    const action2 = planNextAction(s);
+    const action2 = planNextAction(s) as any;
     console.log("Planned action 2:", action2?.kind, action2?._move?.lever, action2?._move?.rationale?.substring(0, 100));
 
     // Session should NOT terminate after 2 turns without an offer

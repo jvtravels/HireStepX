@@ -3960,7 +3960,9 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         if (headroom >= 0.5) {
           const concessionAmount = Math.round((standingOffer + headroom * 0.5) * 2) / 2;
           return {
-            kind: "counter-base",
+            kind: "counter-offer",
+            counterTotalLpa: concessionAmount,
+            satisfiesTopic: "counter-base",
             _move: {
               lever: "counter-base",
               newTotalLpa: concessionAmount,

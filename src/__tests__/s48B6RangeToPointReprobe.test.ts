@@ -66,7 +66,7 @@ function afterRangeAndPointResponse(): ReturnType<typeof applyCandidateAnswer> {
 describe("S48-B6 — range-to-point probe suppressed after candidate states a point", () => {
   it("A. After range disclosure, range-to-point probe fires (normal path)", () => {
     const s = afterRangeStatement();
-    const action = planNextAction(s);
+    planNextAction(s);
     // The probe should be eligible to fire (flag = true)
     // It won't necessarily be the CHOSEN action (competing probes may take priority)
     // but candidateTargetWasRange should be true
