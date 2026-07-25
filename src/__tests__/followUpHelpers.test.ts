@@ -63,6 +63,30 @@ describe("detectCandidateIntent", () => {
       expect(r.rejected).toBe(true);
     });
 
+    it("S83-B1: 'As agreed, I expect the joining date to change' must NOT be accepted", () => {
+      expect(detectCandidateIntent("As agreed, I expect the joining date to change.").accepted).toBe(false);
+    });
+    it("S83-B1: 'We agreed that the base would be 40L' — past reference, NOT acceptance", () => {
+      expect(detectCandidateIntent("We agreed that the base would be 40L.").accepted).toBe(false);
+    });
+    it("S83-B1 regression: bare 'Agreed!' IS acceptance (via shortAffirmativeStart)", () => {
+      expect(detectCandidateIntent("Agreed!").accepted).toBe(true);
+    });
+    it("S83-B2: 'I agree the variable is tricky, but I need more fixed' must NOT be accepted", () => {
+      expect(detectCandidateIntent("I agree the variable component is tricky, but I need more fixed.").accepted).toBe(false);
+    });
+    it("S83-B2: 'I agree with your reasoning but need 45L' must NOT be accepted", () => {
+      expect(detectCandidateIntent("I agree with your reasoning, but I still need 45L.").accepted).toBe(false);
+    });
+    it("S83-B2 regression: 'I agree to the offer' IS acceptance", () => {
+      expect(detectCandidateIntent("I agree to the offer.").accepted).toBe(true);
+    });
+    it("S83-B3: 'sounds good in theory, but the numbers don't work for me' must NOT be accepted", () => {
+      expect(detectCandidateIntent("Sounds good in theory, but the numbers don't work for me.").accepted).toBe(false);
+    });
+    it("S83-B3 regression: 'sounds good' IS acceptance", () => {
+      expect(detectCandidateIntent("Sounds good to me.").accepted).toBe(true);
+    });
     it("'that works for me' is acceptance", () => {
       expect(detectCandidateIntent("that works for me").accepted).toBe(true);
     });

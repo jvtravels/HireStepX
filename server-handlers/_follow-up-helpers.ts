@@ -26,7 +26,14 @@ export interface CandidateIntent {
   mentionedCompeting: boolean;
 }
 
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead)\b/i;
+/* S83-B1 (2026-07-26) — `agreed` fired on past-tense references: "As agreed, I
+ * expect..." / "We agreed that the base would be 40L" — these are references to
+ * prior agreements, not new acceptances. Removed `agreed` (kept in
+ * shortAffirmativeStart only, so "Agreed!" still fires as a short-answer accept).
+ * S83-B2 (2026-07-26) — `i agree` fired on "I agree [the variable is tricky], but
+ * I need more fixed" — agreeing with a point, NOT accepting the offer. Added
+ * negative lookahead to suppress "I agree [the/that/this/it/your/with X]". */
+const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|let.?s go ahead)\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"
@@ -36,7 +43,11 @@ const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that 
    with the team I have." */
 /* S77-B3 (2026-07-25) — same component-noun lookahead applied here; bare
  * "not interested in the variable/equity/bonus" must not set rejected:true */
-const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|need(?:s)?\s+at\s+least|expecting\s+(?:at\s+least\s+)?\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b))/i;
+/* S83-B3 (2026-07-26) — `don't work` added alongside `won't work` so "the numbers
+ * don't work for me" triggers hedgeIsRejection when it appears in the post-hedge
+ * segment of "sounds good in theory, but the numbers don't work for me" — previously
+ * only `won.?t work` was listed and "don't work" fell through to accepted=true. */
+const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|don.?t work|need(?:s)?\s+at\s+least|expecting\s+(?:at\s+least\s+)?\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b))/i;
 const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
 const deflectWords = /\b(you first|your offer|what.*you.*offer|tell me.*first|don.?t want to share|prefer not|rather not|you tell me)\b/i;
 const thinkWords = /\b(need time|think about|sleep on|let me think|consider|talk to.*(?:family|partner|wife|husband)|get back to you|not ready)\b/i;
