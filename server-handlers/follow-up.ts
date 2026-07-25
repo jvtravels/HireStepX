@@ -894,7 +894,9 @@ Your response MUST directly address what they said above. Start by acknowledging
          not as another override branch here. See _negotiation-state.ts
          for the reducer. */
       // S83-B2 guard: i agree — suppress agreeing-with-a-point forms
-      const acceptInHistoryRe2 = /\b(i accept|i agree(?!\s+(?:the|that|this|it|your|with)\b)|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+      // S88-B3 (2026-07-26) — added missing phrases: count me in, consider it done,
+      // acceptable, on board, fine with me, i'll accept, happy to proceed.
+      const acceptInHistoryRe2 = /\b(i accept|i.?ll accept|i agree(?!\s+(?:the|that|this|it|your|with)\b)|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer|count\s+me\s+in|consider\s+it\s+done|(?:that|this).?s?\s+(?:is\s+)?acceptable|(?:i.?m|i\s+am)\s+on\s+board|fine\s+with\s+me|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed)\b/i;
       const acceptedEverInHistory = conversationHistory ? acceptInHistoryRe2.test(conversationHistory) : false;
       const convState: ConvState = deriveConvState({
         acceptedThisTurn: candidateAccepted,
@@ -1709,7 +1711,8 @@ Repeat-text in followUpText is FORBIDDEN.`;
         const { deriveConvState, phaseForState } = await import("./_negotiation-state");
         const intentLocal = detectCandidateIntent(typeof answer === "string" ? answer : "");
         // S83-B2 guard: i agree — suppress agreeing-with-a-point forms
-        const acceptInHistoryReLocal = /\b(i accept|i agree(?!\s+(?:the|that|this|it|your|with)\b)|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+        // S88-B3 (2026-07-26) — same sync as acceptInHistoryRe2 above.
+        const acceptInHistoryReLocal = /\b(i accept|i.?ll accept|i agree(?!\s+(?:the|that|this|it|your|with)\b)|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer|count\s+me\s+in|consider\s+it\s+done|(?:that|this).?s?\s+(?:is\s+)?acceptable|(?:i.?m|i\s+am)\s+on\s+board|fine\s+with\s+me|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed)\b/i;
         const acceptedEverInHistoryLocal = conversationHistory ? acceptInHistoryReLocal.test(conversationHistory) : false;
         const convStateLocal = deriveConvState({
           acceptedThisTurn: intentLocal.accepted,

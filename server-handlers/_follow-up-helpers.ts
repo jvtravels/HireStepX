@@ -83,7 +83,10 @@ const competingWords = /\b(other offer|competing|another company|counter.?offer|
  * no deal -> no deal(?!\s+on\s+the\s+table); withdraw exclusion + complaint/concern/etc;
  * isn.?t -> is(?:n.?t|\s+not); departure frame adds bare `am` for "I am moving on" */
 const walkAwayWords = /\b(walk away|walking away|i.?m out(?!\s+of\b)|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing))))|i.?ll pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|no deal(?!\s+on\s+the\s+table)|withdraw(?!\s+(?:my|your|the|this)\s+(?:counter|demand|ask|offer|request|proposal|requirement|expectation|complaint|concern|feedback|objection|comment|remark|statement|amendment)\b)|decline the offer|i decline(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|pull out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth(?!\s+(?:fight|argu|bicker|quarrel|quibbl|debat|nit.?pick|hassle))|won.?t work|is(?:n.?t|\s+not)\s+going\s+to\s+work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|have\s+to|need\s+to|am\s+going\s+to|am))\s+(?:just\s+|then\s+|probably\s+|simply\s+|now\s+|rather\s+)?move\s+on|take the other|thanks but no|not for me|have to pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b)))\b/i;
-const shortAffirmativeStart = /^(yes|yeah|okay|ok|sure|deal|agreed|accept|sounds good|that works|fine)\b/i;
+/* S88-B1 (2026-07-26) — Added Hindi affirmatives (haan, hanji, ji haan, theek hai,
+ * bilkul, etc.) — Indian users commonly answer bare Hindi "yes" during negotiations;
+ * all previously returned accepted=false. */
+const shortAffirmativeStart = /^(yes|yeah|okay|ok|sure|deal|agreed|accept|sounds good|that works|fine|haan|hanji|ji\s+haan|ha\s+ji|han\s+ji|theek\s+hai|thik\s+hai|bilkul)\b/i;
 
 /** Classify the candidate's answer in a salary negotiation. */
 export function detectCandidateIntent(answer: string): CandidateIntent {
@@ -96,15 +99,27 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     && shortAffirmativeStart.test(trimmed)
     && !hedgeWords.test(trimmed);
 
-  const acceptIdx = trimmed.search(acceptWords);
+  /* S88-B2 (2026-07-26) — "Sure, if you can bump to 38L" / "Deal, though I want equity
+   * too" returned accepted=false, conditionalAccept=false. The old code had no path for
+   * short-affirmative + hedge because: (a) isShortAffirmative excluded hedges, and
+   * (b) short tokens (sure/deal/ok/fine) are not in acceptWords. Added a separate
+   * isShortAffirmativeConditional path computed before acceptIdx so hedgeIsRejection
+   * (derived from postHedgeText) guards it properly. */
   const hedgeIdx = trimmed.search(hedgeWords);
+  const hasAnyHedge = hedgeIdx >= 0;
+  const postHedgeText = hasAnyHedge ? trimmed.slice(hedgeIdx) : "";
+  const hedgeIsRejection = rejectWords.test(postHedgeText);
+  const isShortAffirmativeConditional = trimmed.split(/\s+/).length < 12
+    && shortAffirmativeStart.test(trimmed)
+    && hasAnyHedge
+    && !hedgeIsRejection;
+
+  const acceptIdx = trimmed.search(acceptWords);
   const hasAccept = acceptIdx >= 0;
   const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx;
-  const postHedgeText = hasHedgeAfterAccept ? trimmed.slice(hedgeIdx) : "";
-  const hedgeIsRejection = rejectWords.test(postHedgeText);
 
-  const accepted = (hasAccept || isShortAffirmative) && !hedgeIsRejection;
-  const conditionalAccept = accepted && hasHedgeAfterAccept && !hedgeIsRejection;
+  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeConditional) && !hedgeIsRejection;
+  const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
   const rejected = rejectWords.test(trimmed) && !accepted;
   const deflected = deflectWords.test(trimmed);
   const walkAway = walkAwayWords.test(trimmed) && !acceptWords.test(trimmed);

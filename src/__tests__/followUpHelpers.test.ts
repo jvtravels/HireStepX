@@ -173,6 +173,54 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  // S88-B1 (2026-07-26) — Hindi affirmatives missing from shortAffirmativeStart
+  describe("S88-B1 Hindi affirmatives", () => {
+    it("S88-B1: 'Haan.' IS accepted (bare Hindi yes)", () => {
+      expect(detectCandidateIntent("Haan.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Ji haan.' IS accepted", () => {
+      expect(detectCandidateIntent("Ji haan.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Hanji.' IS accepted", () => {
+      expect(detectCandidateIntent("Hanji.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Theek hai.' IS accepted", () => {
+      expect(detectCandidateIntent("Theek hai.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Bilkul.' IS accepted", () => {
+      expect(detectCandidateIntent("Bilkul.").accepted).toBe(true);
+    });
+  });
+
+  // S88-B2 (2026-07-26) — short affirmative + hedge had no conditionalAccept path
+  describe("S88-B2 short affirmative + hedge = conditionalAccept", () => {
+    it("S88-B2: 'Sure, if you can bump it to 38L' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, if you can bump it to 38L.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S88-B2: 'Deal, though I want equity included' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Deal, though I want equity included.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S88-B2: 'Ok, provided the joining bonus stays' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Ok, provided the joining bonus stays.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S88-B2 regression: 'Fine, but I need at least 40L' is NOT accepted (hedge+reject)", () => {
+      const r = detectCandidateIntent("Fine, but I need at least 40L.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("S88-B2 regression: 'Ok, but that is still too low' is NOT accepted", () => {
+      const r = detectCandidateIntent("Ok, but that is still too low.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
   describe("rejection", () => {
     it("'too low' is a rejection", () => {
       const r = detectCandidateIntent("that's too low for my experience level");
