@@ -64,7 +64,11 @@ const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not 
 const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if)\b/i;
 const deflectWords = /\b(you first|your offer|what.*you.*offer|tell me.*first|don.?t want to share|prefer not|rather not|you tell me)\b/i;
 const thinkWords = /\b(need time|think about|sleep on|let me think|consider|talk to.*(?:family|partner|wife|husband)|get back to you|not ready)\b/i;
-const competingWords = /\b(other offer|competing|another company|counter.?offer|multiple offers|also talking|interviewing at|got an offer)\b/i;
+/* S91-B1 (2026-07-26) — "another offer" not matched (word boundary before "other" in
+ * "another" doesn't exist); "other companies" not matched (had "another company" but not
+ * plural). Added: another offer, another opportunity, other companies/options,
+ * interviewing with (had "at"), also interviewing/exploring, have an offer. */
+const competingWords = /\b(other offer|another offer|another opportunity|competing|another company|other companies|other options|other opportunities|counter.?offer|multiple offers|also talking|also interviewing|also exploring|interviewing at|interviewing with|got an offer|have an offer|received an offer)\b/i;
 /* S78-B1 (2026-07-25) — bare `move on` fired on "Let's move on to equity"
  * (topic-redirect). First-person departure frame required, mirroring WALKAWAY_PATTERN. */
 /* S78-B2 (2026-07-25) — `i.?m out` fired on "I'm out of ideas/options/moves"

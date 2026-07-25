@@ -232,6 +232,27 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  // S91-B1 (2026-07-26) — competingWords missing "another offer", "other companies" etc.
+  describe("S91-B1 competingWords gaps", () => {
+    it("S91-B1: 'I have another offer at 45L from Amazon' IS mentionedCompeting", () => {
+      expect(detectCandidateIntent("I have another offer at 45L from Amazon.").mentionedCompeting).toBe(true);
+    });
+    it("S91-B1: 'I am interviewing with a few other companies' IS mentionedCompeting", () => {
+      expect(detectCandidateIntent("I am interviewing with a few other companies.").mentionedCompeting).toBe(true);
+    });
+    it("S91-B1: 'I received an offer from Google yesterday' IS mentionedCompeting", () => {
+      expect(detectCandidateIntent("I received an offer from Google yesterday.").mentionedCompeting).toBe(true);
+    });
+    it("S91-B1: accepted + competing together fires both flags", () => {
+      const r = detectCandidateIntent("Sounds good, and I have another offer so I need to decide by Friday.");
+      expect(r.accepted).toBe(true);
+      expect(r.mentionedCompeting).toBe(true);
+    });
+    it("S91-B1 regression: 'also talking to another company' still fires", () => {
+      expect(detectCandidateIntent("I am also talking to another company.").mentionedCompeting).toBe(true);
+    });
+  });
+
   describe("rejection", () => {
     it("'too low' is a rejection", () => {
       const r = detectCandidateIntent("that's too low for my experience level");
