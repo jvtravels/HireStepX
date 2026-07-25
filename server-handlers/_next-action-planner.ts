@@ -3389,17 +3389,33 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
          * standing offer as before (clampToCloseFloor only raises, never
          * lowers, so a stray low counter can't drag the close down). */
         const closeAt = nearOfferCloseNumber(state);
+        /* S73-B1 (2026-07-25) — premature session close before candidate
+         * confirms. Previously fired close-acceptance here (lever =
+         * "close-acceptance"), which caused applyAiMove to immediately stamp
+         * phase = "accepted" and return conversationDone:true. The UI then
+         * set waitForUser:false on the closing step, so when the candidate
+         * pressed Continue (expecting to say "yes, I accept"), the session
+         * ended without them getting a turn. A real recruiter meeting the
+         * candidate's conditional ask says "₹70L — confirmed?" and WAITS for
+         * the candidate to say yes. We mirror that: fire counter-base at the
+         * candidate's ask number, the recruiter says "We can do ₹X — does
+         * that work?", and the candidate gets one more turn to explicitly
+         * accept. Only their confirmation (detected by classifyAcceptance in
+         * applyCandidateAnswer) stamps verbalAcceptanceTurn → the proper
+         * close sequence (close-recap-formal → post-acceptance-docs →
+         * terminal close-acceptance) fires from there. */
         return {
-          kind: "close",
-          mode: "accept",
+          kind: "counter-offer",
+          counterTotalLpa: clampToCloseFloor(state, closeAt),
+          satisfiesTopic: "close-confirmation",
           _move: {
-            lever: "close-acceptance",
+            lever: "counter-base",
             newTotalLpa: clampToCloseFloor(state, closeAt),
             joiningBonusAmount: jb != null ? jb : undefined,
-            rationale: `Candidate signaled close readiness (trial-close detected on prior turn); close at ₹${closeAt}L (offer ₹${state.highestOfferMade}L).`,
+            rationale: `S73-B1: Candidate signaled close readiness; recruiter meets ask at ₹${closeAt}L and waits for candidate confirmation before closing.`,
             askedTopic: "close-confirmation",
           },
-        };
+        } as PlannedAction;
       }
     }
   }

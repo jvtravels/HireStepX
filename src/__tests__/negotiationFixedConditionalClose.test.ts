@@ -289,7 +289,12 @@ describe("#105 — trial-close gate declines an undeliverable fixed ask", () => 
     expect(action.kind).not.toBe("close");
   });
 
-  it("closes at the implied total when the signaled-close fixed ask is deliverable", () => {
+  it("S73-B1: bumps to implied total (counter-offer) and waits for candidate confirmation when fixed ask is deliverable", () => {
+    /* Pre-S73-B1 this returned kind="close" (close-acceptance), which immediately
+     * stamped phase=accepted and blocked the candidate's next turn. The fix changes
+     * the candidateSignaledClose branch to emit counter-base at the implied total
+     * so the recruiter says "₹34L — confirmed?" and the candidate gets one turn to
+     * explicitly accept before the proper close sequence fires. */
     const s: ExtState = {
       ...anchoredAt33(),
       candidateSignaledClose: true,
@@ -298,7 +303,8 @@ describe("#105 — trial-close gate declines an undeliverable fixed ask", () => 
       lastCounterComponent: "fixed",
     };
     const action = planNextAction(s);
-    expect(action.kind).toBe("close");
+    expect(action.kind).toBe("counter-offer");
+    expect(actionToLever(action, s).lever).toBe("counter-base");
     expect(actionToLever(action, s).newTotalLpa).toBe(34);
   });
 });
