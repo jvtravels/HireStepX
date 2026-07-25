@@ -63,7 +63,12 @@ const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not 
  * are correctly marked conditionalAccept=true instead of full accepted=true. */
 const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if)\b/i;
 const deflectWords = /\b(you first|your offer|what.*you.*offer|tell me.*first|don.?t want to share|prefer not|rather not|you tell me)\b/i;
-const thinkWords = /\b(need time|think about|sleep on|let me think|consider|talk to.*(?:family|partner|wife|husband)|get back to you|not ready)\b/i;
+/* S92-B1 (2026-07-26) — thinkWords gaps: "check with spouse" ("check with" not "talk to";
+ * "spouse" not in list); "think this through" (not the same as "think about"); "have time
+ * to think" / "need time to decide" — bare "time to think/decide" not covered. Added:
+ * check/consult/speak/discuss with family-synonym; time to think/decide; think through.
+ * NOTE: "talk to" arm retains `.*` (flexible preposition); new forms use explicit "with". */
+const thinkWords = /\b(need time|think about|think this through|think it through|time to think|time to decide|sleep on|let me think|consider|talk to.*(?:spouse|family|partner|wife|husband|parents?|folks?)|(?:check|consult|speak|discuss)\s+with\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?)|get back to you|not ready)\b/i;
 /* S91-B1 (2026-07-26) — "another offer" not matched (word boundary before "other" in
  * "another" doesn't exist); "other companies" not matched (had "another company" but not
  * plural). Added: another offer, another opportunity, other companies/options,

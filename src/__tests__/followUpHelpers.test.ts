@@ -253,6 +253,31 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  // S92-B1 (2026-07-26) — thinkWords gaps: "check/consult/speak with spouse", "think this through", "time to think"
+  describe("S92-B1 thinkWords gaps", () => {
+    it("S92-B1: 'I need to check with my spouse' IS needsTime", () => {
+      expect(detectCandidateIntent("I need to check with my spouse.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'Let me consult with my wife about this' IS needsTime", () => {
+      expect(detectCandidateIntent("Let me consult with my wife about this.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'I need to speak with my husband first' IS needsTime", () => {
+      expect(detectCandidateIntent("I need to speak with my husband first.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'I need to think this through' IS needsTime", () => {
+      expect(detectCandidateIntent("I need to think this through.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'Can I have some time to think' IS needsTime", () => {
+      expect(detectCandidateIntent("Can I have some time to think?").needsTime).toBe(true);
+    });
+    it("S92-B1 regression: 'talk to my family' still fires needsTime", () => {
+      expect(detectCandidateIntent("I need to talk to my family.").needsTime).toBe(true);
+    });
+    it("S92-B1 regression: 'consider' + number is NOT needsTime (counter)", () => {
+      expect(detectCandidateIntent("I can consider 38L.").needsTime).toBe(false);
+    });
+  });
+
   describe("rejection", () => {
     it("'too low' is a rejection", () => {
       const r = detectCandidateIntent("that's too low for my experience level");
