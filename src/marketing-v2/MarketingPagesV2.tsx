@@ -1701,8 +1701,9 @@ export function PrivacyV2() {
         <li><strong>Razorpay</strong> — payment processing and subscription billing (India)</li>
         <li><strong>PostHog</strong> — product analytics (US); only loaded after explicit cookie consent</li>
         <li><strong>Upstash</strong> — Redis-based rate limiting and caching (US)</li>
+        <li><strong>Google AdSense</strong> — advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
       </ul>
-      <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash.</p>
+      <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash. Google AdSense is only active on public content pages and is never loaded inside authenticated product surfaces (dashboard, interview sessions, reports).</p>
 
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
@@ -1710,7 +1711,7 @@ export function PrivacyV2() {
       <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />.</p>
 
       <h2>Cookies</h2>
-      <p>Strictly-necessary cookies only by default (session token, CSRF). Analytics cookies (PostHog) load only after explicit consent via the banner on first visit. No third-party advertising or tracking cookies, ever.</p>
+      <p>Strictly-necessary cookies by default (session token, CSRF). Analytics cookies (PostHog) load only after explicit consent via the banner on first visit. On public content pages (blog, interview questions, salary guides), Google AdSense may set advertising cookies to serve relevant ads; these are not present on any authenticated page. You can opt out of personalised ads at any time via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a> or by enabling "Do Not Track" in your browser.</p>
 
       <h2>Children</h2>
       <p>HireStepX is not directed at users under 16. If you believe a minor has created an account, email us and we'll remove it.</p>
