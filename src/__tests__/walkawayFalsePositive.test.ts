@@ -174,3 +174,61 @@ describe("isWalkAway — not-interested in job/offer noun = walk-away (S77-B1 re
     expect(isWalkAway("I'm not interested in continuing this negotiation.")).toBe(true);
   });
 });
+
+describe("isWalkAway — S85 batch (2026-07-26)", () => {
+  // B1: `is not going to work` false negative + `I am moving on` departure frame miss
+  it("S85-B1: 'This is not going to work, I am moving on' IS a walk", () => {
+    expect(isWalkAway("This is not going to work, I am moving on.")).toBe(true);
+  });
+  it("S85-B1: 'is not going to work' without contraction IS a walk", () => {
+    expect(isWalkAway("The current number is not going to work for me.")).toBe(true);
+  });
+  it("S85-B1: 'I am moving on to other opportunities' IS a walk", () => {
+    expect(isWalkAway("I am moving on to other opportunities.")).toBe(true);
+  });
+  it("S85-B1 regression: 'I'll move on' still fires", () => {
+    expect(isWalkAway("I'll move on if this doesn't improve.")).toBe(true);
+  });
+
+  // B2: `withdraw my complaint/concern` — non-exit withdrawal
+  it("S85-B2: 'I withdraw my complaint about the timeline' — NOT a walk", () => {
+    expect(isWalkAway("I withdraw my complaint about the timeline.")).toBe(false);
+  });
+  it("S85-B2: 'I withdraw my concern about the equity structure' — NOT a walk", () => {
+    expect(isWalkAway("I withdraw my concern about the equity structure.")).toBe(false);
+  });
+  it("S85-B2 regression: 'I withdraw from this process' IS a walk", () => {
+    expect(isWalkAway("I withdraw from this process.")).toBe(true);
+  });
+  it("S85-B2 regression: 'I withdraw my application' IS a walk", () => {
+    expect(isWalkAway("I withdraw my application.")).toBe(true);
+  });
+
+  // B3: `I decline to share/answer` — info-privacy refusal, NOT walk-away
+  it("S85-B3: 'I decline to share my current CTC' — NOT a walk", () => {
+    expect(isWalkAway("I decline to share my current CTC.")).toBe(false);
+  });
+  it("S85-B3: 'I decline to answer that' — NOT a walk", () => {
+    expect(isWalkAway("I decline to answer that question.")).toBe(false);
+  });
+  it("S85-B3: 'I decline to reveal my current salary' — NOT a walk", () => {
+    expect(isWalkAway("I decline to reveal my current salary.")).toBe(false);
+  });
+  it("S85-B3 regression: 'I decline the offer' IS a walk", () => {
+    expect(isWalkAway("I decline the offer.")).toBe(true);
+  });
+  it("S85-B3 regression: 'I respectfully decline' IS a walk", () => {
+    expect(isWalkAway("I respectfully decline.")).toBe(true);
+  });
+
+  // B4: `no deal on the table` — frustration expression, not exit
+  it("S85-B4: 'there is no deal on the table that works for me' — NOT a walk", () => {
+    expect(isWalkAway("There is no deal on the table that works for me.")).toBe(false);
+  });
+  it("S85-B4 regression: 'no deal, I will look elsewhere' IS a walk", () => {
+    expect(isWalkAway("No deal, I will look elsewhere.")).toBe(true);
+  });
+  it("S85-B4 regression: 'no deal-breakers on my end' is NOT a walk", () => {
+    expect(isWalkAway("I have no deal-breakers on my end.")).toBe(false);
+  });
+});
