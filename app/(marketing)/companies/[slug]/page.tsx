@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
 import { BLOG_META } from "@/blog-meta";
@@ -320,6 +321,12 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
+      />
       <style>{editorialCSS}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
