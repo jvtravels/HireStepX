@@ -40,8 +40,10 @@ export interface CandidateIntent {
  * S93-B1 (2026-07-26) — "I am in" / "I'm in" returned accepted=false (only trial-close
  *   detector had `i'm in`; acceptWords was missing it).
  * S93-B2 (2026-07-26) — "let us go ahead" returned accepted=false; `let.?s` doesn't match
- *   "let us" because `.?` can't span " u" before "s". Changed let arm to `let(?:'?s|\s+us)`. */
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z]))\b/i;
+ *   "let us" because `.?` can't span " u" before "s". Changed let arm to `let(?:'?s|\s+us)`.
+ * S94-B2 (2026-07-26) — deal-closing idioms missing: "done deal", "we have a deal",
+ *   "you've got yourself a deal", "let's close/seal/finalize", "I'm game". All added. */
+const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z])|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|let(?:'?s|\s+us)\s+(?:close|seal|finalize)|i.?m\s+game)\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"
@@ -140,7 +142,12 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
   const rejected = rejectWords.test(trimmed) && !accepted;
   const deflected = deflectWords.test(trimmed);
-  const walkAway = walkAwayWords.test(trimmed) && !acceptWords.test(trimmed);
+  /* S94-B1 (2026-07-26) — "Sounds good, but actually I am walking away if you cannot
+   * match it." returned walkAway=false because the accept signal ("sounds good") in the
+   * pre-hedge clause suppressed the walk signal. Fix: also fire when walkAwayWords appears
+   * in the post-hedge segment, regardless of any pre-hedge accept. */
+  const walkAway = (walkAwayWords.test(trimmed) && !acceptWords.test(trimmed))
+    || (hasAnyHedge && walkAwayWords.test(postHedgeText));
 
   const candidateNum = extractCandidateSalaryNumber(trimmed);
   // "consider" co-occurring with a number is a counter, not a time request

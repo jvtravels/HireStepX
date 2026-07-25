@@ -300,6 +300,51 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  describe("S94-B1 walk-away in post-hedge not surfaced when accept precedes hedge", () => {
+    it("'Sounds good, but actually I am walking away if you cannot match it' IS a walk", () => {
+      expect(detectCandidateIntent("Sounds good, but actually I am walking away if you cannot match it.").walkAway).toBe(true);
+    });
+    it("'Sounds good, but actually I am walking away' is also accepted (conditional)", () => {
+      expect(detectCandidateIntent("Sounds good, but actually I am walking away if you cannot match it.").accepted).toBe(true);
+    });
+    it("'I accept, but if this does not improve I am walking away' IS a walk", () => {
+      expect(detectCandidateIntent("I accept, but if this does not improve I am walking away.").walkAway).toBe(true);
+    });
+    it("S94-B1 regression: 'Sounds good, but I need to think about it' is NOT a walk", () => {
+      expect(detectCandidateIntent("Sounds good, but I need to think about it.").walkAway).toBe(false);
+    });
+    it("S94-B1 regression: 'I accept, but can we review equity?' is NOT a walk", () => {
+      expect(detectCandidateIntent("I accept, but can we review equity?").walkAway).toBe(false);
+    });
+  });
+
+  describe("S94-B2 deal-closing idioms missing from acceptWords", () => {
+    it("'Done deal' IS accepted", () => {
+      expect(detectCandidateIntent("Done deal.").accepted).toBe(true);
+    });
+    it("'We have a deal' IS accepted", () => {
+      expect(detectCandidateIntent("We have a deal.").accepted).toBe(true);
+    });
+    it("'You got a deal' IS accepted", () => {
+      expect(detectCandidateIntent("You got a deal.").accepted).toBe(true);
+    });
+    it("'You've got yourself a deal' IS accepted", () => {
+      expect(detectCandidateIntent("You've got yourself a deal.").accepted).toBe(true);
+    });
+    it("'Let us close the deal' IS accepted", () => {
+      expect(detectCandidateIntent("Let us close the deal.").accepted).toBe(true);
+    });
+    it("'Let's finalize this deal' IS accepted", () => {
+      expect(detectCandidateIntent("Let's finalize this deal.").accepted).toBe(true);
+    });
+    it("'Let's seal the deal' IS accepted", () => {
+      expect(detectCandidateIntent("Let's seal the deal.").accepted).toBe(true);
+    });
+    it("'I'm game' IS accepted", () => {
+      expect(detectCandidateIntent("I'm game.").accepted).toBe(true);
+    });
+  });
+
   describe("rejection", () => {
     it("'too low' is a rejection", () => {
       const r = detectCandidateIntent("that's too low for my experience level");
