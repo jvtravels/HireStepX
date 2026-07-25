@@ -37,6 +37,21 @@ describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 reg
   });
 });
 
+describe("isWalkAway — 'pull out' idiom/possessive-object false positives (S79-B2)", () => {
+  it("'pull out all the stops' idiom — NOT a walk-away (S79-B2)", () => {
+    expect(isWalkAway("I'll pull out all the stops for this offer.")).toBe(false);
+  });
+  it("'pull out my competing offer letter' — retrieval, NOT a walk (S79-B2)", () => {
+    expect(isWalkAway("Let me pull out my competing offer letter.")).toBe(false);
+  });
+  it("'pull out of the negotiation' — IS a walk-away (S79-B2 regression)", () => {
+    expect(isWalkAway("I'll pull out of the negotiation.")).toBe(true);
+  });
+  it("bare 'I'm going to pull out' — IS a walk-away (S79-B2 regression)", () => {
+    expect(isWalkAway("I'm going to pull out.")).toBe(true);
+  });
+});
+
 describe("isWalkAway — 'done here for now' temporal qualifier (S79-B1)", () => {
   it("'I'm done here for now, let me review' — asking for time, NOT a walk", () => {
     expect(isWalkAway("I'm done here for now, let me review and get back to you.")).toBe(false);
