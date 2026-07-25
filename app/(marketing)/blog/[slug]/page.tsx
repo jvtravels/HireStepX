@@ -63,20 +63,8 @@ function slugToTitle(slug: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const EDITORIAL_AUTHORS = [
-  "Priya Sharma",
-  "Rahul Mehta",
-  "Ankita Nair",
-  "Rohan Gupta",
-  "Sneha Krishnan",
-] as const;
-
-function slugAuthor(slug: string): string {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) {
-    h = (Math.imul(37, h) + slug.charCodeAt(i)) | 0;
-  }
-  return EDITORIAL_AUTHORS[Math.abs(h) % EDITORIAL_AUTHORS.length];
+function slugAuthor(_slug: string): string {
+  return "HireStepX Editorial Team";
 }
 
 export async function generateMetadata({
@@ -159,7 +147,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     image: meta.heroImage,
     datePublished: meta.datePublished,
     dateModified: meta.datePublished,
-    author: { "@type": "Person", name: slugAuthor(slug), url: "https://hirestepx.com/about" },
+    author: { "@type": "Organization", name: slugAuthor(slug), url: "https://hirestepx.com/about" },
     publisher: {
       "@type": "Organization",
       name: "HireStepX",

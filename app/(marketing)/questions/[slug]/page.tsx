@@ -141,23 +141,8 @@ function slugPublishDate(slug: string): string {
   return new Date(from + t * (to - from)).toISOString().slice(0, 10);
 }
 
-/* HireStepX content team — Indian names used as editorial bylines. */
-const EDITORIAL_AUTHORS = [
-  "Priya Sharma",
-  "Rahul Mehta",
-  "Ankita Nair",
-  "Rohan Gupta",
-  "Sneha Krishnan",
-] as const;
-
-/* Uses a different prime (37) from slugPublishDate (31) so the author
-   selection varies independently of the publish date. */
-function slugAuthor(slug: string): string {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) {
-    h = (Math.imul(37, h) + slug.charCodeAt(i)) | 0;
-  }
-  return EDITORIAL_AUTHORS[Math.abs(h) % EDITORIAL_AUTHORS.length];
+function slugAuthor(_slug: string): string {
+  return "HireStepX Editorial Team";
 }
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
@@ -289,7 +274,7 @@ export default async function QuestionsSlugPage({
     description: page.intro,
     image: `https://hirestepx.com/questions/${slug}/opengraph-image`,
     author: {
-      "@type": "Person",
+      "@type": "Organization",
       name: slugAuthor(slug),
       url: "https://hirestepx.com/about",
     },
