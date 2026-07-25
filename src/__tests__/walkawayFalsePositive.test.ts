@@ -17,6 +17,12 @@ describe("isWalkAway — false positive candidates", () => {
   it("'not interested in the current structure' — wants restructure, NOT a walk", () => {
     expect(isWalkAway("I'm not interested in the current structure, I prefer all-fixed")).toBe(false);
   });
+  it("'not interested in equity' — prefers all-cash, NOT a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in equity, I prefer all cash")).toBe(false);
+  });
+  it("'not interested in the bonus component' — component preference, NOT a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in the bonus component, just raise the base")).toBe(false);
+  });
 });
 
 describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 regression)", () => {
@@ -28,5 +34,23 @@ describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 reg
   });
   it("'won't work for me at all' — IS a walk", () => {
     expect(isWalkAway("This offer won't work for me at all.")).toBe(true);
+  });
+});
+
+describe("isWalkAway — not-interested in job/offer noun = walk-away (S77-B1 regression)", () => {
+  it("'not interested in this role anymore' — IS a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in this role anymore.")).toBe(true);
+  });
+  it("'not interested in the offer' — IS a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in the offer at all.")).toBe(true);
+  });
+  it("'not interested in any deal below 40L' — IS a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in any deal below 40L.")).toBe(true);
+  });
+  it("'not interested in the position' — IS a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in the position anymore.")).toBe(true);
+  });
+  it("'not interested in continuing this negotiation' — IS a walk (S77-B1)", () => {
+    expect(isWalkAway("I'm not interested in continuing this negotiation.")).toBe(true);
   });
 });

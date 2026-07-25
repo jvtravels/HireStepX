@@ -57,7 +57,7 @@
  *   - "I'm done negotiating / I'm done here / I'm done with this"
  *   - Bare "I walk" / "I am walking" (without "away")
  *   - `withdraw` -> `withdraw(?:ing)?` so "withdrawing" also fires */
-export const WALKAWAY_PATTERN = /\b(walk away|walking away|i\s+(?:am\s+)?(?:going\s+to\s+)?walk(?!\s+(?:you|me|through|us)\b)(?:ing)?(?:\s+away)?(?:\s+out)?|i.?m\s+done\s+(?:negotiating(?!\s+(?:about|over|with|on)\s+)|here|with\s+this|talking|discussing|waiting)|i\s+refuse\s+to\s+(?:play|negotiate|continue|proceed)|i.?m out|not interested(?!\s+in\s+(?:a|the|an?|this|that|your)\s+)|no chance|not a chance|i.?ll pass(?![^.!?]{0,15}?\balong\b)|no deal\b(?!\s*[-\s]?breakers?)|withdraw(?:ing)?|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)|won.?t work|isn.?t going to work|have to pass|that won.?t work|(?:i(?:'|’)?(?:ll|m|d)|i\s+(?:will|have\s+to|need\s+to|want\s+to|am\s+going\s+to|would\s+rather|think\s+i(?:'|’)?ll|guess\s+i(?:'|’)?ll))\s+(?:just\s+|then\s+|probably\s+|simply\s+|really\s+|now\s+|going\s+to\s+|gonna\s+|rather\s+|likely\s+|instead\s+)?(?:move|moving)\s+on|pull out|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta|jaa?ung[ai]|lung[ai])|nahin\s+(?:chahiye|karna|chalega)|join\s+nahi(?:n)?\s+kar(?:unga|ungi|enge|na)?|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+export const WALKAWAY_PATTERN = /\b(walk away|walking away|i\s+(?:am\s+)?(?:going\s+to\s+)?walk(?!\s+(?:you|me|through|us)\b)(?:ing)?(?:\s+away)?(?:\s+out)?|i.?m\s+done\s+(?:negotiating(?!\s+(?:about|over|with|on)\s+)|here|with\s+this|talking|discussing|waiting)|i\s+refuse\s+to\s+(?:play|negotiate|continue|proceed)|i.?m out|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no chance|not a chance|i.?ll pass(?![^.!?]{0,15}?\balong\b)|no deal\b(?!\s*[-\s]?breakers?)|withdraw(?:ing)?|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)|won.?t work|isn.?t going to work|have to pass|that won.?t work|(?:i(?:'|’)?(?:ll|m|d)|i\s+(?:will|have\s+to|need\s+to|want\s+to|am\s+going\s+to|would\s+rather|think\s+i(?:'|’)?ll|guess\s+i(?:'|’)?ll))\s+(?:just\s+|then\s+|probably\s+|simply\s+|really\s+|now\s+|going\s+to\s+|gonna\s+|rather\s+|likely\s+|instead\s+)?(?:move|moving)\s+on|pull out|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta|jaa?ung[ai]|lung[ai])|nahin\s+(?:chahiye|karna|chalega)|join\s+nahi(?:n)?\s+kar(?:unga|ungi|enge|na)?|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
 
 /* Negation guard (PRI-64, 2026-07-06, live staging) — WALKAWAY_PATTERN is a
  * bare alternation with no awareness of negation, so a candidate REASSURING the
@@ -91,8 +91,15 @@ const DEPARTURE_NEGATOR =
 /* S76-B1 (2026-07-25) — three false-positive arms fired on legitimate counter-offer
  * phrases, catastrophically terminating a live negotiation:
  *   • "not interested" fired on "not interested in the variable component" (candidate
- *     stating a component preference, NOT walking away). Fixed with negative lookahead
- *     in the pattern: `not interested(?!\s+in\s+(?:a|the|an?|this|that|your)\s+)`.
+ *     stating a component preference, NOT walking away). Initial fix with negative
+ *     lookahead: `not interested(?!\s+in\s+(?:a|the|an?|this|that|your)\s+)`.
+ *     S77-B1 (2026-07-25) — the initial lookahead was too broad: it also suppressed
+ *     "not interested in this role/offer/deal" (genuine walk-aways) because "this/the"
+ *     appear in both component phrases AND job/offer phrases. Fix: tighten the lookahead
+ *     to only fire when the noun following the article is a compensation COMPONENT word
+ *     (variable, fixed, equity, bonus, structure…) — job nouns (role, offer, deal,
+ *     position, company, opportunity) are NOT in the suppression set, so
+ *     "not interested in this role" and "not interested in the offer" now fire correctly.
  *   • "done negotiating" fired on "done negotiating about the variable, let's focus on
  *     fixed" (topic shift within the negotiation, NOT an exit). Fixed with negative
  *     lookahead: `negotiating(?!\s+(?:about|over|with|on)\s+)`.
