@@ -37,6 +37,21 @@ describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 reg
   });
 });
 
+describe("isWalkAway — i'm-out-of-X false positives (S78-B2)", () => {
+  it("'I'm out of ideas for a compromise' — still negotiating, NOT a walk", () => {
+    expect(isWalkAway("I'm out of ideas for a compromise.")).toBe(false);
+  });
+  it("'I'm out of counter-proposals' — still trying, NOT a walk", () => {
+    expect(isWalkAway("I'm out of counter-proposals at this point.")).toBe(false);
+  });
+  it("bare 'I'm out' — IS a walk-away (S78-B2 regression)", () => {
+    expect(isWalkAway("I'm out.")).toBe(true);
+  });
+  it("'I'm out — this won't work' — IS a walk-away (S78-B2 regression)", () => {
+    expect(isWalkAway("I'm out — this won't work.")).toBe(true);
+  });
+});
+
 describe("isWalkAway — not-interested in job/offer noun = walk-away (S77-B1 regression)", () => {
   it("'not interested in this role anymore' — IS a walk (S77-B1)", () => {
     expect(isWalkAway("I'm not interested in this role anymore.")).toBe(true);
