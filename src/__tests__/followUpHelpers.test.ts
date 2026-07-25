@@ -318,6 +318,51 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  describe("S95-B1 bare 'works for me' missing (requires 'that' prefix currently)", () => {
+    it("'Works for me, thank you' IS accepted", () => {
+      expect(detectCandidateIntent("Works for me, thank you.").accepted).toBe(true);
+    });
+    it("'That works for me' still fires", () => {
+      expect(detectCandidateIntent("That works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S95-B2 'happy to accept' missing from acceptWords", () => {
+    it("'Happy to accept that' IS accepted", () => {
+      expect(detectCandidateIntent("Happy to accept that.").accepted).toBe(true);
+    });
+    it("'I am happy to accept' IS accepted", () => {
+      expect(detectCandidateIntent("I am happy to accept the offer.").accepted).toBe(true);
+    });
+  });
+
+  describe("S95-B3 'not going to accept' / 'won't accept' missing from rejectWords", () => {
+    it("'I am not going to accept this' IS rejected", () => {
+      expect(detectCandidateIntent("I am not going to accept this.").rejected).toBe(true);
+    });
+    it("\"I won't accept that\" IS rejected", () => {
+      expect(detectCandidateIntent("I won't accept that offer.").rejected).toBe(true);
+    });
+    it("'I refuse to accept at this number' IS rejected", () => {
+      expect(detectCandidateIntent("I refuse to accept at this number.").rejected).toBe(true);
+    });
+  });
+
+  describe("S95-B4 thinkWords missing time-period phrases", () => {
+    it("'Can I have a day or two to think?' IS needsTime", () => {
+      expect(detectCandidateIntent("Can I have a day or two to think?").needsTime).toBe(true);
+    });
+    it("'I need the weekend to decide' IS needsTime", () => {
+      expect(detectCandidateIntent("I need the weekend to decide.").needsTime).toBe(true);
+    });
+    it("'Give me a night to think it over' IS needsTime", () => {
+      expect(detectCandidateIntent("Give me a night to think it over.").needsTime).toBe(true);
+    });
+    it("S95-B4 regression: 'I need time to think' still fires", () => {
+      expect(detectCandidateIntent("I need time to think about this.").needsTime).toBe(true);
+    });
+  });
+
   describe("S94-B2 deal-closing idioms missing from acceptWords", () => {
     it("'Done deal' IS accepted", () => {
       expect(detectCandidateIntent("Done deal.").accepted).toBe(true);

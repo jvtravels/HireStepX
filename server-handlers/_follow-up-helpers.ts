@@ -42,8 +42,12 @@ export interface CandidateIntent {
  * S93-B2 (2026-07-26) — "let us go ahead" returned accepted=false; `let.?s` doesn't match
  *   "let us" because `.?` can't span " u" before "s". Changed let arm to `let(?:'?s|\s+us)`.
  * S94-B2 (2026-07-26) — deal-closing idioms missing: "done deal", "we have a deal",
- *   "you've got yourself a deal", "let's close/seal/finalize", "I'm game". All added. */
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z])|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|let(?:'?s|\s+us)\s+(?:close|seal|finalize)|i.?m\s+game)\b/i;
+ *   "you've got yourself a deal", "let's close/seal/finalize", "I'm game". All added.
+ * S95-B1 (2026-07-26) — "works for me" (without "that" prefix) returned accepted=false.
+ *   Added bare `works for me` alongside the existing `that works for me`.
+ * S95-B2 (2026-07-26) — "happy to accept that" returned accepted=false. Added
+ *   `happy\s+to\s+accept` (covers "happy to accept", "I'm happy to accept that"). */
+const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|works for me|happy\s+to\s+accept|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z])|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|let(?:'?s|\s+us)\s+(?:close|seal|finalize)|i.?m\s+game)\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"
@@ -63,18 +67,23 @@ const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that 
  * S86-B1 (2026-07-26) — `expecting\s+at\s+least` didn't match "I expect at least 45L"
  *   (no -ing suffix). Broadened to `expect(?:ing)?\s+at\s+least`.
  * S86-B2 (2026-07-26) — "That does not work for me" not classified as rejection.
- *   Added `does\s+not\s+work` alongside existing `don.?t work`. */
-const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|don.?t work|does\s+not\s+work|need(?:s)?\s+at\s+least|expect(?:ing)?\s+at\s+least\s*\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b)|need\s+(?:more|higher|additional|extra|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash))/i;
+ *   Added `does\s+not\s+work` alongside existing `don.?t work`.
+ * S95-B3 (2026-07-26) — "I am not going to accept this" returned NONE (not rej).
+ *   Added `not\s+going\s+to\s+accept`, `won.?t\s+accept`, `refuse\s+to\s+accept`. */
+const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|won.?t\s+accept|not\s+going\s+to\s+accept|refuse\s+to\s+accept|don.?t work|does\s+not\s+work|need(?:s)?\s+at\s+least|expect(?:ing)?\s+at\s+least\s*\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b)|need\s+(?:more|higher|additional|extra|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash))/i;
 /* S84 (2026-07-26) — `if` added to hedgeWords so "I'll take it if X" / "Count me in if X"
  * are correctly marked conditionalAccept=true instead of full accepted=true. */
 const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if)\b/i;
 const deflectWords = /\b(you first|your offer|what.*you.*offer|tell me.*first|don.?t want to share|prefer not|rather not|you tell me)\b/i;
-/* S92-B1 (2026-07-26) — thinkWords gaps: "check with spouse" ("check with" not "talk to";
+/* S95-B4 (2026-07-26) — thinkWords missing time-period phrases: "a day or two to think",
+ * "I need the weekend to decide", "a night to think" all returned needsTime=false.
+ * Added `a\s+(?:day|week|night)(?:\s+or\s+two)?\s+to\s+(?:think|decide|consider|review)`.
+ * S92-B1 (2026-07-26) — thinkWords gaps: "check with spouse" ("check with" not "talk to";
  * "spouse" not in list); "think this through" (not the same as "think about"); "have time
  * to think" / "need time to decide" — bare "time to think/decide" not covered. Added:
  * check/consult/speak/discuss with family-synonym; time to think/decide; think through.
  * NOTE: "talk to" arm retains `.*` (flexible preposition); new forms use explicit "with". */
-const thinkWords = /\b(need time|think about|think this through|think it through|time to think|time to decide|sleep on|let me think|consider|talk to.*(?:spouse|family|partner|wife|husband|parents?|folks?)|(?:check|consult|speak|discuss)\s+with\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?)|get back to you|not ready)\b/i;
+const thinkWords = /\b(need time|think about|think this through|think it through|time to think|time to decide|sleep on|let me think|consider|a\s+(?:day|week|night)(?:\s+or\s+two)?\s+to\s+(?:think|decide|consider|review)|(?:the\s+)?weekend\s+to\s+(?:think|decide|consider|review)|talk to.*(?:spouse|family|partner|wife|husband|parents?|folks?)|(?:check|consult|speak|discuss)\s+with\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?)|get back to you|not ready)\b/i;
 /* S91-B1 (2026-07-26) — "another offer" not matched (word boundary before "other" in
  * "another" doesn't exist); "other companies" not matched (had "another company" but not
  * plural). Added: another offer, another opportunity, other companies/options,
