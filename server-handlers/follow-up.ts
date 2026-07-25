@@ -2360,8 +2360,8 @@ Repeat-text in followUpText is FORBIDDEN.`;
       const counterOfferPat = /how about|what if I offer|counter.*with|we could do|let me offer/i;
       // Re-detect intent here since the original detection is block-scoped
       const acceptRe = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead)\b/i;
-      // S77-B3 (2026-07-25) — component-noun lookahead mirrors _follow-up-helpers.ts fix
-      const walkRe = /\b(walk away|walking away|i.?m out|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i.?ll pass|no deal|withdraw|decline the offer|i decline|pull out|not worth|won.?t work|move on|have to pass)\b/i;
+      // S77-B3/S78-B1 — component-noun lookahead + first-person frame for move on
+      const walkRe = /\b(walk away|walking away|i.?m out|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i.?ll pass|no deal|withdraw|decline the offer|i decline|pull out|not worth|won.?t work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|have\s+to|need\s+to|am\s+going\s+to))\s+(?:just\s+|then\s+|probably\s+|simply\s+|now\s+|rather\s+)?move\s+on|have to pass)\b/i;
       const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
       const didAccept = acceptRe.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe)));
       const didWalkAway = walkRe.test(answer) && !acceptRe.test(answer);

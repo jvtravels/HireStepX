@@ -147,6 +147,18 @@ describe("detectCandidateIntent", () => {
     it("S77-B3: 'not interested in this role' IS a walk-away (job noun)", () => {
       expect(detectCandidateIntent("I'm not interested in this role anymore.").walkAway).toBe(true);
     });
+    it("S78-B1: 'Let's move on to the equity discussion' must NOT set walkAway (topic redirect)", () => {
+      expect(detectCandidateIntent("Let's move on to the equity discussion.").walkAway).toBe(false);
+    });
+    it("S78-B1: 'Can we move on to sign-on bonus?' must NOT set walkAway (topic redirect)", () => {
+      expect(detectCandidateIntent("Can we move on to sign-on bonus?").walkAway).toBe(false);
+    });
+    it("S78-B1: 'I'll move on if you can't improve' IS a walk-away (first-person departure)", () => {
+      expect(detectCandidateIntent("I'll move on if you can't improve the offer.").walkAway).toBe(true);
+    });
+    it("S78-B1: 'I'd rather move on from this' IS a walk-away (first-person departure)", () => {
+      expect(detectCandidateIntent("I'd rather move on from this.").walkAway).toBe(true);
+    });
   });
 
   describe("deflection", () => {
