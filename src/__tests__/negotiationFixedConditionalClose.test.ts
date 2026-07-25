@@ -357,3 +357,56 @@ describe("PRI-55 — fixed-scoped conditional accept concedes above floor", () =
     expect(finalState.highestOfferMade).toBeLessThanOrEqual(42);
   });
 });
+
+/* S73-B1 end-to-end close sequence (2026-07-25) — candidateSignaledClose
+ * fires counter-base (NOT close-acceptance), candidate confirms, proper
+ * close-recap-formal sequence follows. */
+describe("S73-B1 end-to-end: trial-close → counter-base → candidate confirms → close sequence", () => {
+  it("close-confirmation pushed to reactiveFollowupsFired after counter-base, gate does not re-fire", () => {
+    /* Simulate: bot asked trial-close → candidate replied "yes" → candidateSignaledClose=true.
+     * After the S73-B1 fix the planner fires counter-base (not close-acceptance).
+     * applyAiMove pushes askedTopic "close-confirmation" to reactiveFollowupsFired.
+     * On the next planNextAction call the gate must be blocked (closeFiredAlready=true). */
+    let s = anchoredAt33() as NegotiationState & { candidateSignaledClose?: boolean };
+    /* Inject candidateSignaledClose (normally set by applyCandidateAnswer when
+     * bot prior turn had a trial-close ask). */
+    s = { ...s, candidateSignaledClose: true } as typeof s;
+
+    /* Step 1: planner should emit counter-base, not close-acceptance. */
+    const action1 = planNextAction(s);
+    expect(action1.kind).toBe("counter-offer");
+    const move1 = actionToLever(action1, s);
+    expect(move1.lever).toBe("counter-base");
+
+    /* Step 2: bot applies the counter-base move. askedTopic "close-confirmation"
+     * must be pushed to reactiveFollowupsFired. closeFired must remain false. */
+    s = applyAiMove(s, move1, `We can do ₹${move1.newTotalLpa}L — does that work for you?`);
+    expect(s.reactiveFollowupsFired).toContain("close-confirmation");
+    expect((s as typeof s & { closeFired?: boolean }).closeFired).toBeFalsy();
+
+    /* Step 3: candidate explicitly accepts. verbalAcceptanceTurn must be stamped. */
+    s = applyCandidateAnswer(s, "Yes, ₹34L works perfectly. I accept.");
+    expect(s.verbalAcceptanceTurn).not.toBeNull();
+    expect(s.phase).toBe("accepted");
+
+    /* Step 4: planner must return close-recap-formal, not re-fire counter-base. */
+    const action2 = planNextAction(s);
+    expect(action2.kind).toBe("close-recap-formal");
+  });
+
+  it("candidateSignaledClose gate does not loop: second planNextAction after counter-base returns close-recap-formal", () => {
+    /* Full sequence: anchoredAt33 → inject candidateSignaledClose → counter-base
+     * fires → candidate accepts → close-recap-formal. Verifies no infinite loop. */
+    let s = anchoredAt33() as NegotiationState & { candidateSignaledClose?: boolean };
+    s = { ...s, candidateSignaledClose: true } as typeof s;
+
+    const move = actionToLever(planNextAction(s), s);
+    expect(move.lever).toBe("counter-base");
+    s = applyAiMove(s, move, `We can do ₹${move.newTotalLpa}L — confirmed?`);
+    s = applyCandidateAnswer(s, "Yes, confirmed. I will sign today.");
+    expect(s.phase).toBe("accepted");
+
+    const recap = planNextAction(s);
+    expect(recap.kind).toBe("close-recap-formal");
+  });
+});
