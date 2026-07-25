@@ -107,6 +107,15 @@ describe("detectExplicitDecline", () => {
   it("handles null gracefully", () => {
     expect(detectExplicitDecline(null)).toBe(false);
   });
+  it("S77-B2: 'not interested in the variable component' must NOT trigger early exit", () => {
+    expect(detectExplicitDecline("I'm not interested in the variable component")).toBe(false);
+  });
+  it("S77-B2: 'not interested in equity' must NOT trigger early exit", () => {
+    expect(detectExplicitDecline("I'm not interested in equity, prefer all-fixed")).toBe(false);
+  });
+  it("S77-B2: 'not interested in this role' IS a decline (should trigger early exit)", () => {
+    expect(detectExplicitDecline("I'm not interested in this role anymore.")).toBe(true);
+  });
 });
 
 describe("detectConsecutiveDeadEnd", () => {

@@ -3330,7 +3330,9 @@ export { ROUND_PERSONA_SEQUENCE };
 const EXPLICIT_DECLINE_PATTERNS: RegExp[] = [
   /\b(?:i'?m\s+passing|i\s+am\s+passing|i\s+will\s+pass|i'?ll\s+pass)\b/i,
   /\b(?:i\s+(?:will\s+)?decline|i'?ll\s+decline|i\s+have\s+to\s+decline|i\s+must\s+decline)\b/i,
-  /\b(?:not\s+interested|no(?:'?t|t)\s+interested|i'?m\s+not\s+interested)\b/i,
+  /* S77-B2 (2026-07-25) — same component-noun lookahead as isWalkAway; bare
+   * "not interested in the variable/equity/structure" must not trigger early exit */
+  /\b(?:not\s+interested|no(?:'?t|t)\s+interested|i'?m\s+not\s+interested)(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)\b/i,
   /\b(?:withdraw(?:ing)?\s+(?:my\s+)?(?:candidacy|application)|stepping\s+out\s+of\s+(?:this\s+)?process)\b/i,
   /\b(?:i'?ll\s+(?:go|move)\s+with\s+(?:the\s+)?other(?:s)?|going\s+with\s+another\s+offer)\b/i,
 ];
