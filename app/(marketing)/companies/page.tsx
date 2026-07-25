@@ -183,9 +183,22 @@ export default async function CompaniesIndexPage() {
     })),
   };
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: "Which companies hire the most freshers in India?", acceptedAnswer: { "@type": "Answer", text: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds — less on competitive coding than product companies like Flipkart or Razorpay." } },
+      { "@type": "Question", name: "How different is a FAANG interview from a Service IT interview?", acceptedAnswer: { "@type": "Answer", text: "Service IT interviews (TCS, Infosys) are primarily aptitude tests, verbal ability, and one or two HR rounds. FAANG interviews (Google, Amazon, Microsoft) require 3–5 rounds of competitive DSA, system design, and behavioral interviews. Most candidates need 3–6 months of dedicated preparation for FAANG." } },
+      { "@type": "Question", name: "What is the typical interview process at Indian product companies like Razorpay or Zerodha?", acceptedAnswer: { "@type": "Answer", text: "Indian product companies typically have 4–6 rounds: an online coding assessment, 1–2 DSA rounds, a system design round, an engineering manager round, and an HR round. Behavioral questions follow the STAR method. Preparation time is 6–12 weeks." } },
+      { "@type": "Question", name: "How do consulting interviews (McKinsey, BCG, Deloitte) differ from tech interviews?", acceptedAnswer: { "@type": "Answer", text: "Consulting interviews have two main components: fit questions (leadership, teamwork) and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech — verbal fluency and structured reasoning matter most." } },
+      { "@type": "Question", name: "Can I use HireStepX to practice for multiple companies?", acceptedAnswer: { "@type": "Answer", text: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style — TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time." } },
+    ],
+  };
+
   return (
     <>
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
       <style>{editorialCSS + `
@@ -325,6 +338,51 @@ export default async function CompaniesIndexPage() {
             </section>
           );
         })}
+
+        {/* ── FAQ section ───────────────────────────────────────────── */}
+        <section style={{ paddingTop: 80, paddingBottom: 80, borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
+          <div className="ed-container">
+            <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 16px" }}>
+              FAQ
+            </p>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3vw, 36px)", fontWeight: 400, color: t.coal, margin: "0 0 48px", lineHeight: 1.15, letterSpacing: "-0.02em", maxWidth: "32ch" }}>
+              Common questions about company interview prep
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
+              {[
+                {
+                  q: "Which companies hire the most freshers in India?",
+                  a: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds — less on competitive coding than product companies like Flipkart or Razorpay.",
+                },
+                {
+                  q: "How different is a FAANG interview from a Service IT interview?",
+                  a: "Service IT interviews (TCS, Infosys) are primarily aptitude tests, verbal ability, and one or two HR rounds. FAANG interviews (Google, Amazon, Microsoft) require 3–5 rounds of competitive DSA, system design, and behavioral interviews. Most candidates need 3–6 months of dedicated preparation for FAANG.",
+                },
+                {
+                  q: "What is the typical interview process at Indian product companies like Razorpay or Zerodha?",
+                  a: "Indian product companies typically have 4–6 rounds: an online coding assessment, 1–2 DSA rounds, a system design round, an engineering manager round, and an HR round. Behavioral questions follow the STAR method. Preparation time is 6–12 weeks.",
+                },
+                {
+                  q: "How do consulting interviews (McKinsey, BCG, Deloitte) differ from tech interviews?",
+                  a: "Consulting interviews have two main components: fit questions (leadership, teamwork, 'tell me about yourself') and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech — verbal fluency and structured reasoning matter most.",
+                },
+                {
+                  q: "Can I use HireStepX to practice for multiple companies?",
+                  a: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style — TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time.",
+                },
+              ].map(({ q, a }, i) => (
+                <div key={i} style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 20 }}>
+                  <h3 style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 700, color: t.coal, margin: "0 0 10px", lineHeight: 1.4 }}>
+                    {q}
+                  </h3>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>
+                    {a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* ── Closing band ──────────────────────────────────────────── */}
         <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering." videoSrc="/cta.mp4">

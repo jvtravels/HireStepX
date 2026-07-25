@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { HowItWorksV2 } from "@/marketing-v2/MarketingPagesV2";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 /* HowTo schema: Google may render this as a stepped rich result for the
  * query "how to practice interview with AI". Steps mirror the on-page flow
@@ -53,6 +54,27 @@ const HOWTO_SCHEMA = {
   ],
 };
 
+/* Article schema — editorial signal for Top Stories / news eligibility.
+   Was missing from this page; every other pillar page has one. */
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "How AI Mock Interviews Work — 5-Step Practice Guide",
+  description: "How HireStepX works: upload resume, pick target company and interview type, practice a voice interview with AI, get a scored STAR report, and repeat with spaced repetition.",
+  author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
+  publisher: {
+    "@type": "Organization",
+    name: "HireStepX",
+    logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
+  },
+  datePublished: "2026-01-01",
+  dateModified: "2026-07-26",
+  inLanguage: "en-IN",
+  url: "https://hirestepx.com/how-it-works",
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://hirestepx.com/how-it-works" },
+  keywords: "AI mock interview, how AI interview works, interview practice India, STAR method scoring",
+};
+
 export default async function Page() {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
@@ -60,6 +82,13 @@ export default async function Page() {
     <>
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "How it works", path: "/how-it-works" }]))} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(HOWTO_SCHEMA)} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ARTICLE_SCHEMA) }} />
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
+      />
       <HowItWorksV2 />
     </>
   );
