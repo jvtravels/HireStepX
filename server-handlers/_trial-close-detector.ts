@@ -72,7 +72,8 @@ const DECLINE_PATTERNS: RegExp[] = [
   /\b(?:no|nope)[,.]?\s+i\s+(?:can'?t|cannot|won'?t)\s+(?:accept|do\s+this)\b/i,
   /\bi(?:'?m|\s+am)?\s+(?:going\s+to\s+)?(?:pass|decline|not\s+interested)\b/i,
   /\b(?:i'?ll|i\s+will)\s+(?:pass|decline)\b/i,
-  /\bnot\s+interested\b/i,
+  /* S77-B3 (2026-07-25) — component-noun lookahead; component-pref phrases must not return "decline" */
+  /\bnot\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)\b/i,
   /\bi'?m\s+passing\b/i,
   /* STT fragility audit (2026-05-22) — bare negative tokens. Same
    * shape as ACCEPT_PATTERNS bare-affirmatives. */

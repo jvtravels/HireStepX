@@ -133,6 +133,20 @@ describe("detectCandidateIntent", () => {
       expect(r.accepted).toBe(true);
       expect(r.walkAway).toBe(false);
     });
+
+    it("S77-B3: 'not interested in the variable component' must NOT set walkAway (component preference)", () => {
+      const r = detectCandidateIntent("I'm not interested in the variable component, I prefer all-fixed");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("S77-B3: 'not interested in equity' must NOT set walkAway", () => {
+      const r = detectCandidateIntent("I'm not interested in equity, just raise the base");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("S77-B3: 'not interested in this role' IS a walk-away (job noun)", () => {
+      expect(detectCandidateIntent("I'm not interested in this role anymore.").walkAway).toBe(true);
+    });
   });
 
   describe("deflection", () => {
