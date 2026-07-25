@@ -151,6 +151,28 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  // S86 (2026-07-26)
+  describe("S86 false negatives in rejection detection", () => {
+    it("S86-B1: 'I expect at least 45L' IS rejection (expect without -ing)", () => {
+      expect(detectCandidateIntent("I expect at least 45L.").rejected).toBe(true);
+    });
+    it("S86-B1 regression: 'I am expecting at least 46 LPA' IS rejection", () => {
+      expect(detectCandidateIntent("I am expecting at least 46 LPA.").rejected).toBe(true);
+    });
+    it("S86-B1: 'I expect a fair number' is NOT a rejection (no at-least + digit)", () => {
+      expect(detectCandidateIntent("I expect a fair number.").rejected).toBe(false);
+    });
+    it("S86-B2: 'That does not work for me' IS rejection", () => {
+      expect(detectCandidateIntent("That does not work for me.").rejected).toBe(true);
+    });
+    it("S86-B2: 'That does not work at all' IS rejection", () => {
+      expect(detectCandidateIntent("That does not work at all.").rejected).toBe(true);
+    });
+    it("S86-B2: 'I need more time' is NOT rejection (non-comp need)", () => {
+      expect(detectCandidateIntent("I need more time to review.").rejected).toBe(false);
+    });
+  });
+
   describe("rejection", () => {
     it("'too low' is a rejection", () => {
       const r = detectCandidateIntent("that's too low for my experience level");

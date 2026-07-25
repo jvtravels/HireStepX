@@ -53,8 +53,12 @@ const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that 
  * only `won.?t work` was listed and "don't work" fell through to accepted=true. */
 /* S84 (2026-07-26) — `need more/higher [comp-noun]` added to catch post-hedge rejections
  * like "I'm on board but need more fixed" / "happy to proceed but need higher comp".
- * Restricted to salary-component nouns to avoid false positives on "need more time/info". */
-const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|don.?t work|need(?:s)?\s+at\s+least|expecting\s+(?:at\s+least\s+)?\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b)|need\s+(?:more|higher|additional|extra|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash))/i;
+ * Restricted to salary-component nouns to avoid false positives on "need more time/info".
+ * S86-B1 (2026-07-26) — `expecting\s+at\s+least` didn't match "I expect at least 45L"
+ *   (no -ing suffix). Broadened to `expect(?:ing)?\s+at\s+least`.
+ * S86-B2 (2026-07-26) — "That does not work for me" not classified as rejection.
+ *   Added `does\s+not\s+work` alongside existing `don.?t work`. */
+const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|don.?t work|does\s+not\s+work|need(?:s)?\s+at\s+least|expect(?:ing)?\s+at\s+least\s*\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b)|need\s+(?:more|higher|additional|extra|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash))/i;
 /* S84 (2026-07-26) — `if` added to hedgeWords so "I'll take it if X" / "Count me in if X"
  * are correctly marked conditionalAccept=true instead of full accepted=true. */
 const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if)\b/i;
