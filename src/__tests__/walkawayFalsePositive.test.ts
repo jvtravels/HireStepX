@@ -37,6 +37,21 @@ describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 reg
   });
 });
 
+describe("isWalkAway — 'done here for now' temporal qualifier (S79-B1)", () => {
+  it("'I'm done here for now, let me review' — asking for time, NOT a walk", () => {
+    expect(isWalkAway("I'm done here for now, let me review and get back to you.")).toBe(false);
+  });
+  it("'I'm done here for now, I'll think it over' — NOT a walk", () => {
+    expect(isWalkAway("Alright, I'm done here for now, I'll think it over.")).toBe(false);
+  });
+  it("bare 'I'm done here' IS a walk-away (S79-B1 regression)", () => {
+    expect(isWalkAway("I'm done here.")).toBe(true);
+  });
+  it("'I'm done here — take my name off the list' IS a walk-away", () => {
+    expect(isWalkAway("I'm done here — take my name off the list.")).toBe(true);
+  });
+});
+
 describe("isWalkAway — i'm-out-of-X false positives (S78-B2)", () => {
   it("'I'm out of ideas for a compromise' — still negotiating, NOT a walk", () => {
     expect(isWalkAway("I'm out of ideas for a compromise.")).toBe(false);
