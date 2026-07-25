@@ -104,15 +104,20 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * short-affirmative + hedge because: (a) isShortAffirmative excluded hedges, and
    * (b) short tokens (sure/deal/ok/fine) are not in acceptWords. Added a separate
    * isShortAffirmativeConditional path computed before acceptIdx so hedgeIsRejection
-   * (derived from postHedgeText) guards it properly. */
+   * (derived from postHedgeText) guards it properly.
+   * S89-B1 (2026-07-26) — word limit raised 12→18 to cover longer conditional accepts
+   * ("Ok, if you can confirm by EOD and include joining bonus in writing" is 14 words).
+   * thinkWords guard added to prevent "Ok, I need to think about this if possible" from
+   * firing as a conditional accept. */
   const hedgeIdx = trimmed.search(hedgeWords);
   const hasAnyHedge = hedgeIdx >= 0;
   const postHedgeText = hasAnyHedge ? trimmed.slice(hedgeIdx) : "";
   const hedgeIsRejection = rejectWords.test(postHedgeText);
-  const isShortAffirmativeConditional = trimmed.split(/\s+/).length < 12
+  const isShortAffirmativeConditional = trimmed.split(/\s+/).length < 18
     && shortAffirmativeStart.test(trimmed)
     && hasAnyHedge
-    && !hedgeIsRejection;
+    && !hedgeIsRejection
+    && !thinkWords.test(trimmed);
 
   const acceptIdx = trimmed.search(acceptWords);
   const hasAccept = acceptIdx >= 0;

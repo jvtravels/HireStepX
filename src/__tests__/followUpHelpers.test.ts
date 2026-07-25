@@ -219,6 +219,17 @@ describe("detectCandidateIntent", () => {
       expect(r.accepted).toBe(false);
       expect(r.rejected).toBe(true);
     });
+    // S89-B1 (2026-07-26) — word limit raised 12→18 to cover longer conditionals
+    it("S89-B1: 14-word conditional 'Ok, if you can confirm by EOD and include joining bonus' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Ok, if you can confirm by EOD and also include joining bonus in writing.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S89-B1 thinkWords guard: 'Ok, I need to think about this if possible' is NOT accepted", () => {
+      const r = detectCandidateIntent("Ok, I need to think about this a bit more carefully if possible.");
+      expect(r.accepted).toBe(false);
+      expect(r.needsTime).toBe(true);
+    });
   });
 
   describe("rejection", () => {
