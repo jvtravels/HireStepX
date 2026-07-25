@@ -231,4 +231,35 @@ describe("isWalkAway — S85 batch (2026-07-26)", () => {
   it("S85-B4 regression: 'no deal-breakers on my end' is NOT a walk", () => {
     expect(isWalkAway("I have no deal-breakers on my end.")).toBe(false);
   });
+
+  // S90-B1 (2026-07-26) — `not worth` was in walkAwayWords/_follow-up-helpers but NOT WALKAWAY_PATTERN
+  it("S90-B1: 'not worth my time' IS a walk (was missing from WALKAWAY_PATTERN)", () => {
+    expect(isWalkAway("This is not worth my time.")).toBe(true);
+  });
+  it("S90-B1: 'not worth it' IS a walk", () => {
+    expect(isWalkAway("This is not worth it.")).toBe(true);
+  });
+  it("S90-B1 guard: 'not worth fighting over 2L, can we split it?' is NOT a walk", () => {
+    expect(isWalkAway("Not worth fighting over 2L, can we split it?")).toBe(false);
+  });
+  it("S90-B1 guard: 'not worth debating further, let me reconsider' is NOT a walk", () => {
+    expect(isWalkAway("Not worth debating further, let me reconsider.")).toBe(false);
+  });
+
+  // S90-B2 (2026-07-26) — "just going to move on" missed departure frame (adverb + going_to combo)
+  it("S90-B2: 'I am just going to move on from this' IS a walk", () => {
+    expect(isWalkAway("I am just going to move on from this.")).toBe(true);
+  });
+  it("S90-B2: 'I am probably going to move on' IS a walk", () => {
+    expect(isWalkAway("I am probably going to move on.")).toBe(true);
+  });
+  it("S90-B2: 'I'm just going to move on' IS a walk", () => {
+    expect(isWalkAway("I'm just going to move on.")).toBe(true);
+  });
+  it("S90-B2 regression: 'I am going to move on' still fires", () => {
+    expect(isWalkAway("I am going to move on.")).toBe(true);
+  });
+  it("S90-B2 regression: 'We can move on to the next topic' is NOT a walk", () => {
+    expect(isWalkAway("We can move on to the next topic.")).toBe(false);
+  });
 });
