@@ -550,6 +550,27 @@ const BETWEEN_RANGE_RE = new RegExp(
 const NON_SALARY_UNIT_RE =
   /(\d[\d,.]*)\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
 
+/** Business-impact context — a monetary figure that BOTH (a) follows an
+ *  impact verb in the same sentence AND (b) is trailed by a business-object
+ *  phrase is a business metric, NOT personal compensation.
+ *
+ *  "saved the company 2 crore per year in cloud costs" → ₹200L must NOT
+ *  become a salary span (S74-B1, 2026-07-25).
+ *
+ *  TWO-PART TEST applied in findSalarySpans Pass 2:
+ *    left: IMPACT_AMOUNT_LEFT_RE matches the 100-char left window
+ *          (stops at sentence boundaries via [^.!?\n]{0,80})
+ *    right: IMPACT_AMOUNT_RIGHT_RE matches the 60-char right window
+ *           (requires a specific business noun, not just "annually")
+ *  Both must be true to exclude.  This prevents impact verbs that appear
+ *  earlier in the same sentence (e.g. "I drove 25% improvement and I'm
+ *  currently at 18 LPA") from falsely blocking the subsequent CTC figure. */
+const IMPACT_AMOUNT_LEFT_RE =
+  /\b(?:saved?|saving|generated?|generating|reduced?|reducing|cut(?:ting)?|drove?|driving|grew|grown|growing|scaled?|scaling|increased?|increasing|delivered?|delivering|created?|creating|built|earned?|earned|achieved?|achieving|owned?)\b[^.!?\n]{0,80}$/i;
+
+const IMPACT_AMOUNT_RIGHT_RE =
+  /^[^.!?\n]{0,60}(?:per\s+(?:year|annum)\s+in\b|in\s+(?:cloud|infrastructure|infra|revenue|saving|cost|costs|opex|capex|efficiency|deliver|deal|contract|budget)|for\s+(?:the\s+)?(?:company|org(?:anization)?|business|team|client|project|firm))/i;
+
 /* Per-month periodicity (2026-06-15, unbiased-review HIGH). The classifier
  * normalizes every salary span to LPA (lakhs per ANNUM). A figure quoted PER
  * MONTH ("2.4 lakh per month") must be annualized (× 12) or it under-counts
@@ -635,6 +656,14 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
     if (NON_SALARY_UNIT_RE.test(windowText) && !/(?:lpa|lakhs?|lacs?|\bl\b|cr|crores?)/i.test(m[0])) {
       continue;
     }
+    /* S74-B1 (2026-07-25) — reject numbers that (a) follow a business-impact
+     * verb AND (b) are trailed by a specific business-object phrase.
+     * Requiring BOTH prevents impact verbs earlier in the sentence (e.g.
+     * "drove 25% improvement and I'm currently at 18 LPA") from blocking
+     * the subsequent compensation figure whose right context is empty. */
+    const wideLeftCtx = text.slice(Math.max(0, m.index - 100), m.index);
+    const rightCtx = text.slice(innerEnd, innerEnd + 60);
+    if (IMPACT_AMOUNT_LEFT_RE.test(wideLeftCtx) && IMPACT_AMOUNT_RIGHT_RE.test(rightCtx)) continue;
     const digits = parseDigits(m[2]);
     if (!Number.isFinite(digits)) continue;
     const value = digits * unitMultiplier(m[3]);

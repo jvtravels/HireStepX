@@ -575,6 +575,19 @@ const ROWS: Row[] = [
   { label: "S48-B1 guard: 'looking for N right now' → target only", text: "I am looking for 85 LPA right now", expect: { currentCtc: null, target: 85 } },
   /* Guard: "N LPA presently" when no target verb → current */
   { label: "S55-B1: 'N LPA presently' → current CTC", text: "My package is 40 LPA presently", expect: { currentCtc: 40 } },
+
+  /* S74-B1 (2026-07-25): business-impact amounts must NOT become salary spans.
+   * "saved the company 2 crore per year in cloud costs" → "2 crore" = ₹200L was
+   * being extracted as a competing offer, causing a fabricated contradiction.
+   * Fix: requires BOTH (a) impact verb in left window AND (b) business-object
+   * phrase in right window — so compensation disclosures after the impact clause
+   * are NOT suppressed. */
+  { label: "S74-B1: 'saved 2 crore per year in cloud costs' is NOT a salary span", text: "I saved the company 2 crore per year in cloud costs", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1: 'generated 50 lakh in revenue for the team' is NOT a salary span", text: "I generated 50 lakh in revenue for the team", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1: 'cut 40 lakh in infra costs for the company' is NOT a salary span", text: "I cut 40 lakh in infra costs for the company", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1 guard: CTC in same sentence still binds when right ctx is empty", text: "I saved the company 2 crore per year and I'm currently at 55 LPA", expect: { currentCtc: 55, competing: null } },
+  { label: "S74-B1 guard: normal target after period (separate sentence) still binds", text: "I saved the company 2 crore. I am expecting 70 LPA.", expect: { target: 70 } },
+  { label: "S74-B1 guard: plain CTC disclosure with no impact verb still binds", text: "my current CTC is 55 LPA", expect: { currentCtc: 55 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {
