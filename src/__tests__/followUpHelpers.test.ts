@@ -72,6 +72,24 @@ describe("detectCandidateIntent", () => {
     it("S83-B1 regression: bare 'Agreed!' IS acceptance (via shortAffirmativeStart)", () => {
       expect(detectCandidateIntent("Agreed!").accepted).toBe(true);
     });
+    it("S83-B1 correction: 'Agreed, but I need equity' IS acceptance (conditional)", () => {
+      // bare "Agreed" at start — lookbehind passes, so acceptWords fires → accepted=true
+      // hedge fires too but rejectWords should not, so accepted=true is kept
+      const r = detectCandidateIntent("Agreed, but I need some equity component.");
+      expect(r.accepted).toBe(true);
+    });
+    it("S83-B1 correction: 'Agreed, let us proceed' IS acceptance (unconditional)", () => {
+      expect(detectCandidateIntent("Agreed, let us proceed.").accepted).toBe(true);
+    });
+    it("S83-B1: 'They agreed to raise the offer' — subject is third party, NOT acceptance", () => {
+      expect(detectCandidateIntent("They agreed to raise the offer.").accepted).toBe(false);
+    });
+    it("S83-B1: 'You agreed the number was fair' — second-person past, NOT acceptance", () => {
+      expect(detectCandidateIntent("You agreed the number was fair earlier.").accepted).toBe(false);
+    });
+    it("S83-B1: 'We had agreed on 40L' — past perfect, NOT acceptance", () => {
+      expect(detectCandidateIntent("We had agreed on 40L in the last round.").accepted).toBe(false);
+    });
     it("S83-B2: 'I agree the variable is tricky, but I need more fixed' must NOT be accepted", () => {
       expect(detectCandidateIntent("I agree the variable component is tricky, but I need more fixed.").accepted).toBe(false);
     });

@@ -28,12 +28,13 @@ export interface CandidateIntent {
 
 /* S83-B1 (2026-07-26) — `agreed` fired on past-tense references: "As agreed, I
  * expect..." / "We agreed that the base would be 40L" — these are references to
- * prior agreements, not new acceptances. Removed `agreed` (kept in
- * shortAffirmativeStart only, so "Agreed!" still fires as a short-answer accept).
+ * prior agreements, not new acceptances. Replaced bare `agreed` with a
+ * lookbehind-guarded form that suppresses "as/we/i/they/you/had/have agreed"
+ * while preserving bare-affirmative forms ("Agreed!", "Agreed, but I'd like...").
  * S83-B2 (2026-07-26) — `i agree` fired on "I agree [the variable is tricky], but
  * I need more fixed" — agreeing with a point, NOT accepting the offer. Added
  * negative lookahead to suppress "I agree [the/that/this/it/your/with X]". */
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|let.?s go ahead)\b/i;
+const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let.?s go ahead)\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"
