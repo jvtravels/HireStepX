@@ -159,6 +159,24 @@ describe("detectCandidateIntent", () => {
     it("S78-B1: 'I'd rather move on from this' IS a walk-away (first-person departure)", () => {
       expect(detectCandidateIntent("I'd rather move on from this.").walkAway).toBe(true);
     });
+    it("S81-B1: 'not worth fighting over 2L — can we split it?' must NOT set walkAway (counter-propose)", () => {
+      expect(detectCandidateIntent("It's not worth fighting over 2L — can we split it?").walkAway).toBe(false);
+    });
+    it("S81-B1: 'not worth arguing about' must NOT set walkAway (compromise invite)", () => {
+      expect(detectCandidateIntent("Not worth arguing about — let's just split the difference.").walkAway).toBe(false);
+    });
+    it("S81-B1: 'this offer is just not worth it' IS a walk-away (S81-B1 regression)", () => {
+      expect(detectCandidateIntent("This offer is just not worth it.").walkAway).toBe(true);
+    });
+    it("S81-B2: 'I decline to answer that question' must NOT set walkAway (info privacy)", () => {
+      expect(detectCandidateIntent("I decline to answer that question.").walkAway).toBe(false);
+    });
+    it("S81-B2: 'I decline to reveal my current CTC' must NOT set walkAway", () => {
+      expect(detectCandidateIntent("I decline to reveal my current CTC.").walkAway).toBe(false);
+    });
+    it("S81-B2: 'I decline this offer' IS a walk-away (S81-B2 regression)", () => {
+      expect(detectCandidateIntent("I decline this offer.").walkAway).toBe(true);
+    });
   });
 
   describe("deflection", () => {

@@ -70,8 +70,12 @@ const ACCEPT_PATTERNS: RegExp[] = [
 
 const DECLINE_PATTERNS: RegExp[] = [
   /\b(?:no|nope)[,.]?\s+i\s+(?:can'?t|cannot|won'?t)\s+(?:accept|do\s+this)\b/i,
-  /\bi(?:'?m|\s+am)?\s+(?:going\s+to\s+)?(?:pass|decline|not\s+interested)\b/i,
-  /\b(?:i'?ll|i\s+will)\s+(?:pass|decline)\b/i,
+  /* S82-B1 (2026-07-26) — "I'm going to pass along..." / "I'll pass along..." are hand-offs,
+   * not declines. Add along/to-recipient guard. Same fix as S80-B1 in walk-away detectors.
+   * S82-B2 (2026-07-26) — "I'm going to decline to answer" / "I'll decline to reveal..."
+   * are info-privacy refusals, not trial-close declines. Add info-verb guard. */
+  /\bi(?:'?m|\s+am)?\s+(?:going\s+to\s+)?(?:pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|decline(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|not\s+interested)\b/i,
+  /\b(?:i'?ll|i\s+will)\s+(?:pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|decline(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b))\b/i,
   /* S77-B3 (2026-07-25) — component-noun lookahead; component-pref phrases must not return "decline" */
   /\bnot\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)\b/i,
   /\bi'?m\s+passing\b/i,

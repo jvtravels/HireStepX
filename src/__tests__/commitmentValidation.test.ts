@@ -65,4 +65,23 @@ describe("detectTrialCloseResponse", () => {
     expect(detectTrialCloseResponse("")).toBeNull();
     expect(detectTrialCloseResponse(null)).toBeNull();
   });
+
+  it("S82-B1: 'I'll pass along your offer to my wife' must NOT return decline (hand-off)", () => {
+    expect(detectTrialCloseResponse("I'll pass along your offer to my wife for a quick discussion.")).not.toBe("decline");
+  });
+  it("S82-B1: 'I'm going to pass along some constraints' must NOT return decline (sharing info)", () => {
+    expect(detectTrialCloseResponse("I'm going to pass along some constraints first.")).not.toBe("decline");
+  });
+  it("S82-B2: 'I'm going to decline to answer that' must NOT return decline (info privacy)", () => {
+    expect(detectTrialCloseResponse("I'm going to decline to answer that.")).not.toBe("decline");
+  });
+  it("S82-B2: 'I'll decline to reveal my CTC' must NOT return decline (info privacy)", () => {
+    expect(detectTrialCloseResponse("I'll decline to reveal my current CTC.")).not.toBe("decline");
+  });
+  it("S82-B1 regression: bare 'I'll pass' IS decline", () => {
+    expect(detectTrialCloseResponse("I'll pass.")).toBe("decline");
+  });
+  it("S82-B2 regression: 'I decline this offer' IS decline", () => {
+    expect(detectTrialCloseResponse("I decline this offer.")).toBe("decline");
+  });
 });
