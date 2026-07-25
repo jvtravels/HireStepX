@@ -893,7 +893,8 @@ Your response MUST directly address what they said above. Start by acknowledging
          cases land as new cases in deriveConvState / phaseForState,
          not as another override branch here. See _negotiation-state.ts
          for the reducer. */
-      const acceptInHistoryRe2 = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+      // S83-B2 guard: i agree — suppress agreeing-with-a-point forms
+      const acceptInHistoryRe2 = /\b(i accept|i agree(?!\s+(?:the|that|this|it|your|with)\b)|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
       const acceptedEverInHistory = conversationHistory ? acceptInHistoryRe2.test(conversationHistory) : false;
       const convState: ConvState = deriveConvState({
         acceptedThisTurn: candidateAccepted,
@@ -1707,7 +1708,8 @@ Repeat-text in followUpText is FORBIDDEN.`;
         const { detectCandidateIntent } = await import("./_follow-up-helpers");
         const { deriveConvState, phaseForState } = await import("./_negotiation-state");
         const intentLocal = detectCandidateIntent(typeof answer === "string" ? answer : "");
-        const acceptInHistoryReLocal = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+        // S83-B2 guard: i agree — suppress agreeing-with-a-point forms
+        const acceptInHistoryReLocal = /\b(i accept|i agree(?!\s+(?:the|that|this|it|your|with)\b)|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
         const acceptedEverInHistoryLocal = conversationHistory ? acceptInHistoryReLocal.test(conversationHistory) : false;
         const convStateLocal = deriveConvState({
           acceptedThisTurn: intentLocal.accepted,
