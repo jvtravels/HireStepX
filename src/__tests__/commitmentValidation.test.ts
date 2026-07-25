@@ -84,4 +84,33 @@ describe("detectTrialCloseResponse", () => {
   it("S82-B2 regression: 'I decline this offer' IS decline", () => {
     expect(detectTrialCloseResponse("I decline this offer.")).toBe("decline");
   });
+
+  // S87 (2026-07-26) — missing accept/decline patterns in trial-close detector
+  it("S87: 'Sounds good' IS accept (was returning null — required 'let's proceed')", () => {
+    expect(detectTrialCloseResponse("Sounds good.")).toBe("accept");
+  });
+  it("S87: 'I will take it' IS accept (was returning null — required contraction I'll)", () => {
+    expect(detectTrialCloseResponse("I will take it.")).toBe("accept");
+  });
+  it("S87: 'Count me in' IS accept", () => {
+    expect(detectTrialCloseResponse("Count me in.")).toBe("accept");
+  });
+  it("S87: 'Agreed!' IS accept (added to bare affirmatives)", () => {
+    expect(detectTrialCloseResponse("Agreed!")).toBe("accept");
+  });
+  it("S87: 'Consider it done' IS accept", () => {
+    expect(detectTrialCloseResponse("Consider it done.")).toBe("accept");
+  });
+  it("S87: 'That is acceptable' IS accept", () => {
+    expect(detectTrialCloseResponse("That is acceptable.")).toBe("accept");
+  });
+  it("S87: 'No deal' IS decline", () => {
+    expect(detectTrialCloseResponse("No deal.")).toBe("decline");
+  });
+  it("S87: 'No deal-breakers' is NOT decline (breakers guard)", () => {
+    expect(detectTrialCloseResponse("I have no deal-breakers on equity.")).not.toBe("decline");
+  });
+  it("S87 regression: 'Sounds good, let me think' is hedge (hedge beats accept)", () => {
+    expect(detectTrialCloseResponse("Sounds good, let me think about it.")).toBe("hedge");
+  });
 });

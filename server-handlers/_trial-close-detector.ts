@@ -45,7 +45,7 @@ const ACCEPT_PATTERNS: RegExp[] = [
   /\b(?:please\s+)?send\s+(?:me\s+)?the\s+offer\s+letter\b/i,
   /\b(?:i'?m|i\s+am)\s+(?:in|on\s+board|good\s+with\s+(?:this|that))\b/i,
   /\bdone\s+deal\b/i,
-  /\bsounds\s+good[,.]?\s+(?:let'?s\s+)?(?:proceed|close|move\s+forward)\b/i,
+  /\bsounds\s+good\b/i,
   /* Audit fix (2026-05-22) — common positive-response phrasings the
    * patterns above missed: "yes, that works (for me)", "works for
    * me", "that works", "happy with that", "fine with that", "i'll
@@ -54,7 +54,11 @@ const ACCEPT_PATTERNS: RegExp[] = [
   /\bworks\s+for\s+me\b/i,
   /\b(?:i'?m|i\s+am)\s+(?:happy|fine|good|ok(?:ay)?)\s+with\s+(?:this|that|it)\b/i,
   /\bhappy\s+with\s+(?:this|that|the\s+offer)\b/i,
-  /\bi'?ll\s+take\s+(?:it|the\s+offer)\b/i,
+  /\bi(?:'?ll|\s+will)\s+take\s+(?:it|the\s+offer)\b/i,
+  /* S87 (2026-07-26) — count me in, consider it done, that's acceptable */
+  /\bcount\s+me\s+in\b/i,
+  /\bconsider\s+it\s+done\b/i,
+  /\b(?:that|this)\s+(?:is\s+)?acceptable(?:\s+to\s+me)?\b/i,
   /\b(?:i\s+)?accept\s+(?:the\s+)?offer\b/i,
   /\bgreat,?\s+(?:let'?s\s+)?(?:proceed|move\s+forward|close|do\s+it)\b/i,
   /* STT fragility audit (2026-05-22) — bare affirmative tokens. The
@@ -65,7 +69,7 @@ const ACCEPT_PATTERNS: RegExp[] = [
    * never transitioned, and the recruiter re-asked the same trial
    * close next turn. All English + Hindi affirmatives that are
    * idiomatically equivalent to "yes" anchor here. */
-  /^\s*(?:yes|yeah|yep|yup|ya|yah|yes\s+please|sure|absolutely|definitely|certainly|of\s+course|for\s+sure|haan|hanji|ji|ji\s+haan|ha\s+ji|han\s+ji|theek\s+hai|thik\s+hai|bilkul|haan\s+ji)\s*[.!]?\s*$/i,
+  /^\s*(?:yes|yeah|yep|yup|ya|yah|yes\s+please|sure|absolutely|definitely|certainly|of\s+course|for\s+sure|agreed|deal|haan|hanji|ji|ji\s+haan|ha\s+ji|han\s+ji|theek\s+hai|thik\s+hai|bilkul|haan\s+ji)\s*[.!]?\s*$/i,
 ];
 
 const DECLINE_PATTERNS: RegExp[] = [
@@ -79,6 +83,7 @@ const DECLINE_PATTERNS: RegExp[] = [
   /* S77-B3 (2026-07-25) — component-noun lookahead; component-pref phrases must not return "decline" */
   /\bnot\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)\b/i,
   /\bi'?m\s+passing\b/i,
+  /\bno\s+deal\b(?!\s*[-\s]?breakers?)/i,
   /* STT fragility audit (2026-05-22) — bare negative tokens. Same
    * shape as ACCEPT_PATTERNS bare-affirmatives. */
   /^\s*(?:no|nope|nah|naah|no\s+thanks|no\s+thank\s+you|nahi|nahin|nahi\s+chahiye|bilkul\s+nahi)\s*[.!]?\s*$/i,
