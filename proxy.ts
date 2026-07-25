@@ -139,9 +139,12 @@ const MARKETING_PREFIXES = ["/blog/", "/page/", "/profile/"];
 
 const APP_PREFIXES = [
   "/dashboard", "/sessions", "/calendar", "/analytics", "/resume", "/settings",
-  "/session/", "/interview", "/onboarding", "/signup", "/login", "/reset-password",
+  "/session/", "/interview/", "/onboarding", "/signup", "/login", "/reset-password",
   "/auth/callback",
 ];
+// /interview (exact) is an app route; /interview-prep is a marketing page.
+// We keep /interview/ as a prefix so /interview-prep is never caught.
+const APP_EXACT_PATHS = new Set(["/interview"]);
 
 /**
  * Pre-launch "Coming Soon" gate (restored 2026-06-16).
@@ -171,7 +174,7 @@ function isMarketingPath(pathname: string): boolean {
 }
 
 function isAppPath(pathname: string): boolean {
-  return APP_PREFIXES.some(p => pathname.startsWith(p));
+  return APP_EXACT_PATHS.has(pathname) || APP_PREFIXES.some(p => pathname.startsWith(p));
 }
 
 export async function proxy(request: NextRequest) {

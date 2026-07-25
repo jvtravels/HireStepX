@@ -1676,7 +1676,7 @@ function LegalPage({
 
 export function PrivacyV2() {
   return (
-    <LegalPage title="Privacy" accent="explained simply." updated="30 May 2026">
+    <LegalPage title="Privacy" accent="explained simply." updated="26 July 2026">
       <h2>What we collect</h2>
       <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions — if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
 
