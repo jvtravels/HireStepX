@@ -2360,8 +2360,8 @@ Repeat-text in followUpText is FORBIDDEN.`;
       const counterOfferPat = /how about|what if I offer|counter.*with|we could do|let me offer/i;
       // Re-detect intent here since the original detection is block-scoped
       const acceptRe = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead)\b/i;
-      // S77-B3/S78-B1/S78-B2 — component-noun + first-person move-on + i'm-out-of guard
-      const walkRe = /\b(walk away|walking away|i.?m out(?!\s+of\b)|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i.?ll pass|no deal|withdraw(?!\s+(?:my|your|the|this)\s+(?:counter|demand|ask|offer|request|proposal|requirement|expectation)\b)|decline the offer|i decline|pull out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth|won.?t work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|have\s+to|need\s+to|am\s+going\s+to))\s+(?:just\s+|then\s+|probably\s+|simply\s+|now\s+|rather\s+)?move\s+on|have to pass)\b/i;
+      // S77-B3/S78-B1/S78-B2/S80-B1/S80-B3 — component-noun + first-person move-on + i'm-out-of + pass-handoff + no-chance-anchor guards
+      const walkRe = /\b(walk away|walking away|i.?m out(?!\s+of\b)|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing))))|i.?ll pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|no deal|withdraw(?!\s+(?:my|your|the|this)\s+(?:counter|demand|ask|offer|request|proposal|requirement|expectation)\b)|decline the offer|i decline|pull out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth|won.?t work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|have\s+to|need\s+to|am\s+going\s+to))\s+(?:just\s+|then\s+|probably\s+|simply\s+|now\s+|rather\s+)?move\s+on|have to pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b)))\b/i;
       const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
       const didAccept = acceptRe.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe)));
       const didWalkAway = walkRe.test(answer) && !acceptRe.test(answer);
@@ -2448,7 +2448,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
         // Pattern A: named offer phrase ("our current best offer …
         // is ₹X LPA"). Replace X with the real ceiling.
         if (ceilingForRewrite != null) {
-          const phantomA = /((?:our|the|my|company[''’]?s)\s+(?:current|latest|revised|updated|standing|new|best)\s+(?:best\s+)?offer\b[^.!?]{0,160}?₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore))/gi;
+          const phantomA = /((?:our|the|my|company[''']?s)\s+(?:current|latest|revised|updated|standing|new|best)\s+(?:best\s+)?offer\b[^.!?]{0,160}?₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore))/gi;
           rewritten = rewritten.replace(phantomA, (full, pre, num, post) => {
             const isCr = /cr|crore/i.test(post);
             const v = parseFloat(num) * (isCr ? 100 : 1);
@@ -2480,7 +2480,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
         // sentence containing the closing phrase. This preserves any
         // legitimate substance earlier in the reply.
         if (!negotiationFacts?.acceptedImmediately) {
-          const closingMarker = /(?:(?:let me\s+)?put\s+together\s+(?:the\s+)?final\s+numbers|(?:I[''’]?ll|we[''’]?ll|going\s+to)\s+(?:work\s+with|loop\s+in|connect\s+with|sync\s+with)\s+HR|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details))/i;
+          const closingMarker = /(?:(?:let me\s+)?put\s+together\s+(?:the\s+)?final\s+numbers|(?:I[''']?ll|we[''']?ll|going\s+to)\s+(?:work\s+with|loop\s+in|connect\s+with|sync\s+with)\s+HR|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details))/i;
           const cm = rewritten.match(closingMarker);
           if (cm && typeof cm.index === "number") {
             // Find the start of the sentence containing the closing phrase.

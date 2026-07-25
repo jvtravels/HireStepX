@@ -97,6 +97,66 @@ describe("isWalkAway — i'm-out-of-X false positives (S78-B2)", () => {
   });
 });
 
+describe("isWalkAway — i'll-pass hand-off to recipient = NOT walk-away (S80-B1)", () => {
+  it("'I'll pass your proposal to my partner' — sharing offer, NOT declining (S80-B1)", () => {
+    expect(isWalkAway("I'll pass your proposal to my partner.")).toBe(false);
+  });
+  it("'I'll pass this offer to my wife for discussion' — sharing, NOT walk (S80-B1)", () => {
+    expect(isWalkAway("I'll pass this offer to my wife for a quick discussion.")).toBe(false);
+  });
+  it("'I'll pass along your offer to my family' — hand-off, NOT walk (S80-B1)", () => {
+    expect(isWalkAway("I'll pass along your offer to my family.")).toBe(false);
+  });
+  it("bare 'I'll pass' IS a walk-away (S80-B1 regression)", () => {
+    expect(isWalkAway("I'll pass.")).toBe(true);
+  });
+  it("'I'll pass on this offer' IS a walk-away (S80-B1 regression)", () => {
+    expect(isWalkAway("I'll pass on this offer.")).toBe(true);
+  });
+});
+
+describe("isWalkAway — have-to-pass hand-off to recipient = NOT walk-away (S80-B2)", () => {
+  it("'I have to pass along some constraints to you' — sharing info, NOT walk (S80-B2)", () => {
+    expect(isWalkAway("I have to pass along some constraints to you.")).toBe(false);
+  });
+  it("'I have to pass this information to my manager' — hand-off, NOT walk (S80-B2)", () => {
+    expect(isWalkAway("I have to pass this information to my manager.")).toBe(false);
+  });
+  it("'I have to pass on this' IS a walk-away (S80-B2 regression)", () => {
+    expect(isWalkAway("I have to pass on this.")).toBe(true);
+  });
+  it("'I have to pass, it's not enough' IS a walk-away (S80-B2 regression)", () => {
+    expect(isWalkAway("I have to pass, it's not enough.")).toBe(true);
+  });
+});
+
+describe("isWalkAway — no-chance hardball anchor = NOT walk-away (S80-B3)", () => {
+  it("'No chance I'm settling for less than 45L' — anchor, NOT walk (S80-B3)", () => {
+    expect(isWalkAway("No chance I'm settling for less than 45L.")).toBe(false);
+  });
+  it("'No chance I'm going below 40L base' — floor statement, NOT walk (S80-B3)", () => {
+    expect(isWalkAway("No chance I'm going below 40L base.")).toBe(false);
+  });
+  it("'No chance I'll accept less than what I asked' — anchor, NOT walk (S80-B3)", () => {
+    expect(isWalkAway("No chance I'll accept less than what I asked.")).toBe(false);
+  });
+  it("'No chance I'd drop below 42L' — floor statement, NOT walk (S80-B3)", () => {
+    expect(isWalkAway("No chance I'd drop below 42L.")).toBe(false);
+  });
+  it("'Not a chance I'm settling for less than 50L' — anchor, NOT walk (S80-B3)", () => {
+    expect(isWalkAway("Not a chance I'm settling for less than 50L.")).toBe(false);
+  });
+  it("'Not a chance I'm going below 38L' — floor, NOT walk (S80-B3)", () => {
+    expect(isWalkAway("Not a chance I'm going below 38L.")).toBe(false);
+  });
+  it("'No chance we can reach a deal' IS a walk-away (S80-B3 regression)", () => {
+    expect(isWalkAway("No chance we can reach a deal.")).toBe(true);
+  });
+  it("'Not a chance I'm accepting this offer' IS a walk-away (S80-B3 regression)", () => {
+    expect(isWalkAway("Not a chance I'm accepting this offer.")).toBe(true);
+  });
+});
+
 describe("isWalkAway — not-interested in job/offer noun = walk-away (S77-B1 regression)", () => {
   it("'not interested in this role anymore' — IS a walk (S77-B1)", () => {
     expect(isWalkAway("I'm not interested in this role anymore.")).toBe(true);
