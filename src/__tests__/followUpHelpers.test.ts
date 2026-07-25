@@ -363,6 +363,51 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  describe("S96-B1 and S96-B2 accept gaps: fully on board / fine by me", () => {
+    it("'I am fully on board' IS accepted", () => {
+      expect(detectCandidateIntent("I am fully on board.").accepted).toBe(true);
+    });
+    it("'That is fine by me' IS accepted", () => {
+      expect(detectCandidateIntent("That is fine by me.").accepted).toBe(true);
+    });
+    it("S96-B1 regression: 'I am on board' still fires", () => {
+      expect(detectCandidateIntent("I am on board.").accepted).toBe(true);
+    });
+  });
+
+  describe("S96-B3 rejectWords: 'would not accept'", () => {
+    it("\"I wouldn't accept anything below 40 lakhs\" IS rejected", () => {
+      expect(detectCandidateIntent("I wouldn't accept anything below 40 lakhs.").rejected).toBe(true);
+    });
+    it("\"I would not accept that\" IS rejected", () => {
+      expect(detectCandidateIntent("I would not accept that offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S96-B4/B5 thinkWords: give me until / couple of days", () => {
+    it("'Can you give me until tomorrow?' IS needsTime", () => {
+      expect(detectCandidateIntent("Can you give me until tomorrow?").needsTime).toBe(true);
+    });
+    it("'I would like a couple of days before deciding' IS needsTime", () => {
+      expect(detectCandidateIntent("I would like a couple of days before deciding.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S96-B6/B7/B8 walkAway: explore other / no longer interested / part ways", () => {
+    it("'I am going to explore other opportunities' IS walkAway", () => {
+      expect(detectCandidateIntent("I am going to explore other opportunities.").walkAway).toBe(true);
+    });
+    it("'I am no longer interested in pursuing this' IS walkAway", () => {
+      expect(detectCandidateIntent("I am no longer interested in pursuing this.").walkAway).toBe(true);
+    });
+    it("S96-B7 guard: 'no longer interested in the variable component' is NOT walkAway", () => {
+      expect(detectCandidateIntent("I am no longer interested in the variable component.").walkAway).toBe(false);
+    });
+    it("'I think it is best we part ways here' IS walkAway", () => {
+      expect(detectCandidateIntent("I think it is best we part ways here.").walkAway).toBe(true);
+    });
+  });
+
   describe("S94-B2 deal-closing idioms missing from acceptWords", () => {
     it("'Done deal' IS accepted", () => {
       expect(detectCandidateIntent("Done deal.").accepted).toBe(true);

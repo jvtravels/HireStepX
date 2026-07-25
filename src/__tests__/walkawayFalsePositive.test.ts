@@ -262,4 +262,28 @@ describe("isWalkAway — S85 batch (2026-07-26)", () => {
   it("S90-B2 regression: 'We can move on to the next topic' is NOT a walk", () => {
     expect(isWalkAway("We can move on to the next topic.")).toBe(false);
   });
+
+  // S96-B6 (2026-07-26) — "explore/pursue other opportunities" in departure frame
+  it("S96-B6: 'I am going to explore other opportunities' IS a walk", () => {
+    expect(isWalkAway("I am going to explore other opportunities.")).toBe(true);
+  });
+  it("S96-B6: 'I will pursue other options' IS a walk", () => {
+    expect(isWalkAway("I will pursue other options.")).toBe(true);
+  });
+
+  // S96-B7 (2026-07-26) — "no longer interested" walk-away
+  it("S96-B7: 'I am no longer interested in pursuing this' IS a walk", () => {
+    expect(isWalkAway("I am no longer interested in pursuing this.")).toBe(true);
+  });
+  it("S96-B7 guard: 'no longer interested in the variable component' is NOT a walk", () => {
+    expect(isWalkAway("I am no longer interested in the variable component.")).toBe(false);
+  });
+
+  // S96-B8 (2026-07-26) — "part ways" walk-away
+  it("S96-B8: 'I think it is best we part ways here' IS a walk", () => {
+    expect(isWalkAway("I think it is best we part ways here.")).toBe(true);
+  });
+  it("S96-B8: 'Let us part ways' IS a walk", () => {
+    expect(isWalkAway("Let us part ways.")).toBe(true);
+  });
 });
