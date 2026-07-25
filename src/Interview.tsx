@@ -217,6 +217,7 @@ function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEn
 function InterviewInner() {
   useEffect(() => { addInterviewPreconnects(); }, []);
   useMobileAudioResilience();
+  const [llmSlow, setLlmSlow] = useState(false);
   const { user } = useAuth();
   const myInitials = userInitials(user?.name, user?.email) || "You";
   const engine = useInterviewEngine();
@@ -315,6 +316,12 @@ function InterviewInner() {
     const timeout = setTimeout(() => setShowSaveToast(false), 2500);
     return () => clearTimeout(timeout);
   }, [phase, currentStep]);
+
+  useEffect(() => {
+    if (!llmLoading || currentStep > 1) { setLlmSlow(false); return; }
+    const t = setTimeout(() => setLlmSlow(true), 5000);
+    return () => clearTimeout(t);
+  }, [llmLoading, currentStep]);
 
   return (
     <InterviewProvider value={engine}>
@@ -758,7 +765,9 @@ function InterviewInner() {
         {llmLoading && currentStep <= 1 && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 10, height: 10, border: `1.5px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions…</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
+              {llmSlow ? "Taking a bit longer — almost there…" : "Personalizing questions…"}
+            </span>
           </div>
         )}
       </main>
