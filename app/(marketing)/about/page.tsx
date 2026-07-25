@@ -59,10 +59,6 @@ const ORG_SCHEMA = {
     addressRegion: "Karnataka",
     addressCountry: "IN",
   },
-  founder: {
-    "@type": "Person",
-    name: "Jay Vyas",
-  },
   areaServed: {
     "@type": "Country",
     name: "India",

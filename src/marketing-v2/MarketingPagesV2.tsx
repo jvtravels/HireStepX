@@ -1059,7 +1059,7 @@ export function AboutV2() {
               maxWidth: "60ch",
             }}
           >
-            Founded by <strong style={{ color: t.copper100 }}>Jay Vyas</strong>, Bengaluru. We've sat through enough Indian-tech interview cycles — services, GCC, product — to know where the prep most candidates do actually breaks. The product reflects that frustration, not a placement-cell pitch deck.
+            We've sat through enough Indian-tech interview cycles — services, GCC, product — to know where the prep most candidates do actually breaks. The product reflects that frustration, not a placement-cell pitch deck.
           </p>
         </div>
       </section>
