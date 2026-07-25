@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, SEO_PAGES_LAST_MODIFIED, type SeoPage } from "../../../../data/seo-pages";
 import { getSalaryPage } from "../../../../data/salary-seo";
@@ -366,6 +367,12 @@ export default async function QuestionsSlugPage({
         )}
       />
 
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
+      />
       <NavV2 />
       {/* Page body */}
       <QuestionSetPage

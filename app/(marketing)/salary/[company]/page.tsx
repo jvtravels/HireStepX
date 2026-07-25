@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import {
   getSalaryPage,
@@ -299,6 +300,12 @@ export default async function SalaryCompanySlugPage({
           </div>
         </section>
       )}
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
+      />
       <FooterDome />
       <MobileStickyCTA />
     </>

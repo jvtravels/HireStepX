@@ -290,6 +290,7 @@ export default async function RootLayout({
         */}
         {/* Satoshi is self-hosted via next/font/local (public/fonts/satoshi-*.woff2).
             The CDN preconnects and stylesheet link are no longer needed. */}
+        <meta name="google-adsense-account" content="ca-pub-7810403590527236" />
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
         {/* dns-prefetch (not preconnect) for LLM/TTS/STT origins — only
             /interview needs a live TCP connection. Prefetch cuts the first-lookup
