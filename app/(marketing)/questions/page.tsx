@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { QuestionsIndexPage } from "@/marketing-v2/QuestionPages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
@@ -172,6 +173,12 @@ export default async function QuestionsIndexRoute({
           sitemapPriority: p.sitemapPriority,
         }))}
         activeFilter={focus}
+      />
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
       />
       <FooterDome />
       <MobileStickyCTA />

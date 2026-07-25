@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { BLOG_META } from "@/blog-meta";
@@ -65,6 +66,12 @@ export default async function Page() {
         type="application/ld+json"
         nonce={nonce || undefined}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_ITEM_LIST_SCHEMA) }}
+      />
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
       />
       <BlogPage />
     </>

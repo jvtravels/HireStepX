@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../data/salary-seo";
 import { COMPANY_SALARY_OVERRIDES } from "../../../data/company-salary-overrides";
 import { SalaryHubPage, type SalaryHubEntry } from "@/marketing-v2/SalaryPage";
@@ -136,6 +137,12 @@ export default async function SalaryIndexPage() {
         nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(itemListSchema)}
+      />
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
       />
       <NavV2 />
       <SalaryHubPage entries={entries} />
