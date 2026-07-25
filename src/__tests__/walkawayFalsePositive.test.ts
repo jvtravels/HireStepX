@@ -37,6 +37,21 @@ describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 reg
   });
 });
 
+describe("isWalkAway — withdraw my counter/demand = concession, NOT walk-away (S79-B3)", () => {
+  it("'withdraw my 40L counter' — retracting a demand, NOT a walk (S79-B3)", () => {
+    expect(isWalkAway("I would like to withdraw my counter.")).toBe(false);
+  });
+  it("'withdraw my demand for joining bonus' — concession, NOT a walk (S79-B3)", () => {
+    expect(isWalkAway("I want to withdraw my demand for a joining bonus.")).toBe(false);
+  });
+  it("'I withdraw from the negotiation' — IS a walk-away (S79-B3 regression)", () => {
+    expect(isWalkAway("I withdraw from the negotiation.")).toBe(true);
+  });
+  it("'I am withdrawing my application' — IS a walk-away (S79-B3 regression)", () => {
+    expect(isWalkAway("I am withdrawing my application.")).toBe(true);
+  });
+});
+
 describe("isWalkAway — 'pull out' idiom/possessive-object false positives (S79-B2)", () => {
   it("'pull out all the stops' idiom — NOT a walk-away (S79-B2)", () => {
     expect(isWalkAway("I'll pull out all the stops for this offer.")).toBe(false);
