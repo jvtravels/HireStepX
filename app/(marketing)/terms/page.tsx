@@ -4,7 +4,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const metadata: Metadata = {
   title: "Terms of Service | HireStepX",
-  description: "The terms that govern your use of HireStepX.",
+  description: "HireStepX Terms of Service. Usage rules, payment terms, refund eligibility, account suspension, and your rights as a user in India.",
   alternates: { canonical: "/terms" },
 };
 

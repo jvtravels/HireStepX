@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
@@ -193,6 +194,12 @@ export default async function CompaniesIndexPage() {
           .co-group-label { width: 100% !important; }
         }
       `}</style>
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
+      />
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 

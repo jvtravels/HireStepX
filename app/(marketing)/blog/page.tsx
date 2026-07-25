@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { BLOG_META } from "@/blog-meta";
 
 export const metadata: Metadata = {
-  title: "Interview Preparation Blog India 2026 — TCS, Google, Flipkart & More | HireStepX",
+  title: "Interview Prep Blog India 2026 — TCS, Google & More | HireStepX",
   description:
     "Company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.",
   keywords: [
