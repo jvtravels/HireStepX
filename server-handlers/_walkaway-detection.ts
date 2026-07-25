@@ -100,9 +100,21 @@ const DEPARTURE_NEGATOR =
  *     constraint implying "at these terms" not permanent exit) and "won't work for me,
  *     can you do better?" (explicit counter-ask). These require reading what follows the
  *     match, so a pure lookahead inside the alternation is unwieldy — handled via the
- *     WONT_WORK_NON_EXIT post-match guard in isWalkAway() below. */
+ *     WONT_WORK_NON_EXIT post-match guard in isWalkAway() below.
+ *
+ * WONT_WORK_NON_EXIT window discipline (S76-B2, 2026-07-25): the two arms carry
+ * DIFFERENT look-ahead windows. Temporal qualifiers ("right now", "at the moment")
+ * must appear within {0,15} chars of the "won't work [for me]" match — they modify
+ * the phrase directly ("won't work for me right now"). Counter-asks ("can you do
+ * better?") can be separated by a few words up to {0,40}. A single {0,50} window
+ * collapsed both cases and caused a FALSE NEGATIVE: "won't work for me, I'm going to
+ * explore other opportunities right now" was suppressed because "right now" at the
+ * END of the clause (44 chars later) sat within the 50-char window — even though the
+ * "right now" was modifying "explore", not the rejection phrase. The asymmetric
+ * windows fix this: 44 > 15 (temporal fails) + no counter-ask keyword (counter-ask
+ * fails) → WONT_WORK_NON_EXIT returns false → isWalkAway correctly returns true. */
 const WONT_WORK_NON_EXIT =
-  /\b(?:won.?t work|isn.?t going to work|that won.?t work)\b(?:\s+for\s+\w+)?\b[^.!?]{0,50}?\b(?:right\s+now|at\s+(?:the\s+)?moment|currently|for\s+now|at\s+this\s+(?:point|stage|time)|can\s+you|could\s+you|is\s+there\s+any|any\s+(?:room|way|chance|flexibility))\b/i;
+  /\b(?:won.?t work|isn.?t going to work|that won.?t work)\b(?:\s+for\s+\w+)?(?:\b[^.!?]{0,15}?\b(?:right\s+now|at\s+(?:the\s+)?moment|currently|for\s+now|at\s+this\s+(?:point|stage|time))|\b[^.!?]{0,40}?\b(?:can\s+you|could\s+you|is\s+there\s+any|any\s+(?:room|way|chance|flexibility)))\b/i;
 
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {

@@ -18,3 +18,15 @@ describe("isWalkAway — false positive candidates", () => {
     expect(isWalkAway("I'm not interested in the current structure, I prefer all-fixed")).toBe(false);
   });
 });
+
+describe("isWalkAway — true walk-aways that must NOT be suppressed (S76-B2 regression)", () => {
+  it("'won't work for me, I'm going to explore other opportunities right now' — IS a walk", () => {
+    expect(isWalkAway("The offer won't work for me, I'm going to explore other opportunities right now")).toBe(true);
+  });
+  it("bare 'that won't work' with no qualifier — IS a walk", () => {
+    expect(isWalkAway("That won't work.")).toBe(true);
+  });
+  it("'won't work for me at all' — IS a walk", () => {
+    expect(isWalkAway("This offer won't work for me at all.")).toBe(true);
+  });
+});
