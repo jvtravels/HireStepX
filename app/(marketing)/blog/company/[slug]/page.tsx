@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
 import { BLOG_META } from "@/blog-meta";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -73,6 +74,13 @@ export async function generateMetadata({
       type: "website",
       siteName: "HireStepX",
       locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: `${displayName} Interview Guides — HireStepX` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${displayName} Interview Guides — HireStepX Blog`,
+      description: `All ${displayName} interview preparation articles on HireStepX — tips, question breakdowns, and strategy for India 2026.`,
+      images: ["https://hirestepx.com/opengraph-image"],
     },
   };
 }
@@ -126,6 +134,12 @@ export default async function BlogCompanyPage({
     <>
       <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={ldJson(breadcrumbSchema)} />
       <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+        crossOrigin="anonymous"
+        strategy="lazyOnload"
+      />
       <NavV2 />
       <main style={{ background: "#fdfcf7", minHeight: "60vh" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 80px" }}>
