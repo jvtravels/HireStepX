@@ -672,6 +672,67 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
           ))}
         </div>
 
+        {/* Visible FAQ — mirrors the FAQPage JSON-LD schema so Google
+            sees substantive Q&A content on the page, not just 232 links. */}
+        <style>{`.ed-faq-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 20px 48px; } @media (max-width: 720px) { .ed-faq-row { grid-template-columns: 1fr !important; } }`}</style>
+        <section aria-label="Frequently asked questions" style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, paddingTop: 72, paddingBottom: 80 }}>
+          <div className="ed-container">
+            <p style={{ ...edEyebrow, margin: "0 0 20px" }}>Common questions</p>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.2vw, 40px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 56px" }}>
+              How to prepare for your next{" "}
+              <em style={{ fontStyle: "italic", color: t.copper }}>Indian tech interview.</em>
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {[
+                {
+                  q: "How do I prepare for a campus placement interview in India?",
+                  a: "Three layers: (1) Online test — aptitude speed, basic coding (arrays, linked lists, sorting), and verbal reasoning. (2) Technical interview — CS fundamentals (OOP, OS, DBMS, networking), one or two DSA problems, and a project you can defend. (3) HR round — clear answers on relocation and shifts, a specific answer to 'why this company', and a 60-second 'why should we hire you' with one measurable proof point. Practice speaking your answers aloud, not just writing them.",
+                },
+                {
+                  q: "Which companies hire the most freshers in India in 2026?",
+                  a: "The largest fresher hirers are TCS (NQT/Ninja/Digital), Infosys (SE/SP/PP tracks), Wipro (Elite/Turbo), Cognizant (GenC/GenC Pro), Accenture (ASE), HCL (GET), Capgemini (Analyst), and LTIMindtree. Collectively they hire tens of thousands annually. For higher packages (6.5 to 25 LPA), the next tier includes Zoho, Freshworks, Razorpay, PhonePe, Flipkart, Amazon SDE-1, and FAANG for IIT/NIT candidates.",
+                },
+                {
+                  q: "How do I answer 'tell me about yourself' in a fresher interview?",
+                  a: "Run in reverse-chronological order with a forward close: (1) Who you are now — major, graduation year, primary skill. (2) Your strongest proof point — one project, internship, or competition result with a measurable outcome. (3) Connection to the role — one sentence on why this company specifically. (4) Forward close — what you want to contribute or learn in year one. Target 60 to 90 seconds spoken. Never open with 'I was born in...' — begin with who you are today.",
+                },
+                {
+                  q: "What DSA topics should freshers prepare for Indian campus placements?",
+                  a: "For TCS, Infosys, Wipro, Cognizant, and Accenture: arrays, linked lists, stacks, queues, basic trees (BST, traversals), and simple sorting. Basic DP (fibonacci, coin change) is tested at Wipro Turbo and Infosys SP/PP. For product companies (Razorpay, Flipkart, PhonePe): graphs (BFS/DFS, shortest path), advanced DP, and binary search on answer. For FAANG: medium-hard LeetCode level — graph traversal, DP with memoisation, sliding window, and two-pointer patterns.",
+                },
+                {
+                  q: "How is AI voice interview practice different from practicing with friends?",
+                  a: "Three differences: (1) Speaking versus thinking — knowing an answer and saying it under pressure are different skills. AI voice interviews force you to articulate aloud, which is what live interviews test. (2) Consistent scoring — a friend can't reliably grade your STAR framework across 30 sessions. AI can. (3) Always available — the 72 hours before an interview is when practice matters most, and a partner isn't always free. HireStepX offers 2 free AI practice sessions with no credit card required.",
+                },
+                {
+                  q: "What is the STAR method and how do I use it in behavioral interviews?",
+                  a: "STAR stands for Situation, Task, Action, Result. Situation: set the scene in one sentence (team, project, timeline). Task: state your specific responsibility. Action: describe the 2 to 3 concrete steps you personally took — this is the most important part and where most answers collapse. Result: give a measurable outcome (time saved, bugs fixed, score improved, money earned). Interviewers score answers on whether the Action paragraph is specific and personal, not generic. Practice each STAR story until you can tell it in under 2 minutes.",
+                },
+              ].map(({ q, a }, i) => (
+                <div
+                  key={q}
+                  style={{
+                    borderTop: `1px solid ${t.line}`,
+                    paddingTop: 28,
+                    paddingBottom: 28,
+                  }}
+                  className="ed-faq-row"
+                >
+                  <h3 style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: t.coal, margin: 0 }}>
+                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper, fontSize: 18, marginRight: 10, opacity: 0.6 }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    {q}
+                  </h3>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.7, color: t.inkSoft, margin: 0 }}>
+                    {a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Closing CTA — full-bleed coal band */}
         <DarkBand eyebrow="Stop just reading" title="Start" accent="answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>

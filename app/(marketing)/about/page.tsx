@@ -50,8 +50,18 @@ const ORG_SCHEMA = {
   foundingDate: "2024",
   foundingLocation: {
     "@type": "Place",
-    name: "India",
+    name: "Bengaluru, India",
     addressCountry: "IN",
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Bengaluru",
+    addressRegion: "Karnataka",
+    addressCountry: "IN",
+  },
+  founder: {
+    "@type": "Person",
+    name: "Jay Vyas",
   },
   areaServed: {
     "@type": "Country",
