@@ -36,8 +36,12 @@ export interface CandidateIntent {
  * negative lookahead to suppress "I agree [the/that/this/it/your/with X]".
  * S84 (2026-07-26) — common acceptance phrases missing from acceptWords: i'll take it,
  * that's acceptable, count me in, consider it done, i'm happy to proceed, i'm on board.
- * All added. */
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let.?s go ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board)\b/i;
+ * All added.
+ * S93-B1 (2026-07-26) — "I am in" / "I'm in" returned accepted=false (only trial-close
+ *   detector had `i'm in`; acceptWords was missing it).
+ * S93-B2 (2026-07-26) — "let us go ahead" returned accepted=false; `let.?s` doesn't match
+ *   "let us" because `.?` can't span " u" before "s". Changed let arm to `let(?:'?s|\s+us)`. */
+const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z]))\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"

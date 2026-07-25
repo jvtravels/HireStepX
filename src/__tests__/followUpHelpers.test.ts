@@ -278,6 +278,28 @@ describe("detectCandidateIntent", () => {
     });
   });
 
+  // S93-B1/B2 (2026-07-26) — "I am in" not in acceptWords; "let us go ahead" not matched
+  describe("S93-B1 and S93-B2 acceptance gaps", () => {
+    it("S93-B1: 'I am in' IS accepted", () => {
+      expect(detectCandidateIntent("I am in.").accepted).toBe(true);
+    });
+    it("S93-B1: \"I'm in\" IS accepted", () => {
+      expect(detectCandidateIntent("I'm in.").accepted).toBe(true);
+    });
+    it("S93-B1 guard: 'I am in a difficult position' is NOT accepted (false positive guard)", () => {
+      expect(detectCandidateIntent("I am in a difficult position.").accepted).toBe(false);
+    });
+    it("S93-B1 guard: 'I am in the middle of reviewing' is NOT accepted", () => {
+      expect(detectCandidateIntent("I am in the middle of reviewing.").accepted).toBe(false);
+    });
+    it("S93-B2: 'Let us go ahead with this' IS accepted", () => {
+      expect(detectCandidateIntent("Let us go ahead with this.").accepted).toBe(true);
+    });
+    it("S93-B2 regression: 'Let's go ahead' still fires", () => {
+      expect(detectCandidateIntent("Let's go ahead.").accepted).toBe(true);
+    });
+  });
+
   describe("rejection", () => {
     it("'too low' is a rejection", () => {
       const r = detectCandidateIntent("that's too low for my experience level");
