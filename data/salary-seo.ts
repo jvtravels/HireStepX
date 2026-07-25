@@ -549,9 +549,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "nykaa",
-    searchPhrase: "Nykaa Software Engineer Salary India 2026",
+    searchPhrase: "Nykaa Software Engineer Salary India 2026: CTC Guide",
     metaDescription:
-      "Nykaa salary India 2026: SWE entry ₹10–22 LPA, mid ₹20–42 LPA, senior ₹38–70 LPA. NSE-listed RSU (FSN E-Commerce). Beauty ecommerce + fintech CTC guide.",
+      "Nykaa SWE salary 2026: freshers start at ₹10–22 LPA, senior engineers earn ₹38–70 LPA. NSE-listed RSU (FSN E-Commerce). Real CTC numbers for beauty ecommerce + fintech roles.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -1936,9 +1936,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "moglix",
-    searchPhrase: "Moglix Software Engineer Salary India 2026",
+    searchPhrase: "Moglix Software Engineer Salary India 2026: CTC Guide",
     metaDescription:
-      "Moglix salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Noida B2B industrial marketplace: manufacturing procurement, supply chain, and SaaS.",
+      "Moglix SWE salary 2026: entry ₹14–22 LPA, senior ₹38–60 LPA, with ESOP at a $2.6B B2B unicorn. Full CTC breakdown for Noida-based supply chain and SaaS engineering roles.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "moglix-software-engineer-interview-questions",
     hubNote: "B2B industrial marketplace: $2.6B valuation; ESOP; manufacturing supply chain tech",
@@ -2278,9 +2278,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam",
-    searchPhrase: "Sarvam AI Software Engineer Salary India 2026",
+    searchPhrase: "Sarvam AI Salary India 2026: All Roles CTC Breakdown",
     metaDescription:
-      "Sarvam AI salary India 2026: SWE entry ₹18–30 LPA, mid ₹30–55 LPA, senior ₹55–95 LPA. ESOP. Bengaluru AI lab building India's own LLMs, TTS, and STT in 10 Indian languages; Series A backed.",
+      "Sarvam AI pays SWEs ₹18–95 LPA based on level, with ESOP at India's top AI lab. Full CTC breakdown for SDE-1, SDE-2, senior, and staff roles. Bengaluru, Series A, 2026.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "sarvam-swe-interview-questions",
     hubNote: "India-native LLM lab Bengaluru; Series A; ESOP; 10 Indian languages AI",
