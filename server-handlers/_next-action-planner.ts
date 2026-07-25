@@ -5235,6 +5235,23 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           "valueProofAsked",
           "fixedVariableSplitAsked",
         ]);
+        /* S75-B1 (2026-07-25) — once the recruiter has put an offer on the
+         * table in the offer-presented phase, asking for the candidate's
+         * current CTC (currentCtcAnswered) is ALSO orthogonal. The conversation
+         * has moved from intake-discovery into offer-reaction territory:
+         * returning "Before we go further, can you share your current CTC?"
+         * when the candidate comments on structure/title-vs-comp/variable
+         * preference is jarring and ignores the candidate's actual concern.
+         * The rationale for keeping currentCtc non-orthogonal ("their answer
+         * reshapes the counter directly") applies in counter-offer phase, not
+         * offer-presented, where the initial offer is already down and the
+         * recruiter should respond to the pushback — not re-probe for intake.
+         * Narrowly scoped: offer-presented + highestOfferMade > 0 only. */
+        const ctcOrthogonalInOfferPresented =
+          state.phase === "offer-presented" && (state.highestOfferMade ?? 0) > 0;
+        const effectiveOrthogonalItems: ReadonlySet<string> = ctcOrthogonalInOfferPresented
+          ? new Set([...ORTHOGONAL_POST_ANCHOR_ITEMS, "currentCtcAnswered"])
+          : ORTHOGONAL_POST_ANCHOR_ITEMS;
         /* #119 (2026-06-21, live staging) — post-anchor stonewall guard.
          * Repro (Flipkart EM, content-free candidate): the bot anchored
          * ₹32L, then REGRESSED to a cold "share your current CTC — fixed,
@@ -5258,7 +5275,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         const allowProbeWithOfferOnTable =
           !stonewalledPostAnchor &&
           (state.highestOfferMade === 0 ||
-            (next != null && !ORTHOGONAL_POST_ANCHOR_ITEMS.has(next.item)));
+            (next != null && !effectiveOrthogonalItems.has(next.item)));
         if (next != null && allowProbeWithOfferOnTable) {
           /* Fix C (2026-07-22) — MAX_DISCOVERY_PROBES cap on target-ask probes.
            * When the candidate has refused to name a target 4+ times
