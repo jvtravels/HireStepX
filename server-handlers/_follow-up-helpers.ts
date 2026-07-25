@@ -33,8 +33,11 @@ export interface CandidateIntent {
  * while preserving bare-affirmative forms ("Agreed!", "Agreed, but I'd like...").
  * S83-B2 (2026-07-26) — `i agree` fired on "I agree [the variable is tricky], but
  * I need more fixed" — agreeing with a point, NOT accepting the offer. Added
- * negative lookahead to suppress "I agree [the/that/this/it/your/with X]". */
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let.?s go ahead)\b/i;
+ * negative lookahead to suppress "I agree [the/that/this/it/your/with X]".
+ * S84 (2026-07-26) — common acceptance phrases missing from acceptWords: i'll take it,
+ * that's acceptable, count me in, consider it done, i'm happy to proceed, i'm on board.
+ * All added. */
+const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree(?!\s+(?:the|that|this|it|your|with)\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let.?s go ahead|i(?:.ll|.d|\s+will|\s+would)\s+take\s+it|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+on\s+board)\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"
@@ -48,8 +51,13 @@ const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that 
  * don't work for me" triggers hedgeIsRejection when it appears in the post-hedge
  * segment of "sounds good in theory, but the numbers don't work for me" — previously
  * only `won.?t work` was listed and "don't work" fell through to accepted=true. */
-const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|don.?t work|need(?:s)?\s+at\s+least|expecting\s+(?:at\s+least\s+)?\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b))/i;
-const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
+/* S84 (2026-07-26) — `need more/higher [comp-noun]` added to catch post-hedge rejections
+ * like "I'm on board but need more fixed" / "happy to proceed but need higher comp".
+ * Restricted to salary-component nouns to avoid false positives on "need more time/info". */
+const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|don.?t work|need(?:s)?\s+at\s+least|expecting\s+(?:at\s+least\s+)?\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b)|need\s+(?:more|higher|additional|extra|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash))/i;
+/* S84 (2026-07-26) — `if` added to hedgeWords so "I'll take it if X" / "Count me in if X"
+ * are correctly marked conditionalAccept=true instead of full accepted=true. */
+const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if)\b/i;
 const deflectWords = /\b(you first|your offer|what.*you.*offer|tell me.*first|don.?t want to share|prefer not|rather not|you tell me)\b/i;
 const thinkWords = /\b(need time|think about|sleep on|let me think|consider|talk to.*(?:family|partner|wife|husband)|get back to you|not ready)\b/i;
 const competingWords = /\b(other offer|competing|another company|counter.?offer|multiple offers|also talking|interviewing at|got an offer)\b/i;

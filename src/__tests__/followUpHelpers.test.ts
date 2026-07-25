@@ -108,6 +108,47 @@ describe("detectCandidateIntent", () => {
     it("'that works for me' is acceptance", () => {
       expect(detectCandidateIntent("that works for me").accepted).toBe(true);
     });
+
+    // S84 (2026-07-26) — common acceptance phrases were missing from acceptWords
+    it("S84: \"I'll take it\" IS acceptance", () => {
+      expect(detectCandidateIntent("I'll take it.").accepted).toBe(true);
+    });
+    it("S84: 'I will take it' IS acceptance", () => {
+      expect(detectCandidateIntent("I will take it.").accepted).toBe(true);
+    });
+    it("S84: \"That's acceptable to me\" IS acceptance", () => {
+      expect(detectCandidateIntent("That's acceptable to me.").accepted).toBe(true);
+    });
+    it("S84: 'That is acceptable' IS acceptance", () => {
+      expect(detectCandidateIntent("That is acceptable.").accepted).toBe(true);
+    });
+    it("S84: 'Count me in' IS acceptance", () => {
+      expect(detectCandidateIntent("Count me in.").accepted).toBe(true);
+    });
+    it("S84: 'Consider it done' IS acceptance", () => {
+      expect(detectCandidateIntent("Consider it done.").accepted).toBe(true);
+    });
+    it("S84: \"I'm happy to proceed\" IS acceptance", () => {
+      expect(detectCandidateIntent("I'm happy to proceed with that offer.").accepted).toBe(true);
+    });
+    it("S84: \"I'm on board with that\" IS acceptance", () => {
+      expect(detectCandidateIntent("I'm on board with that.").accepted).toBe(true);
+    });
+    it("S84 guard: \"I'm on board but need more fixed\" is NOT full accept (hedge+rejection)", () => {
+      // acceptWords fires (on board), hedge fires (but), rejectWords fires (need more fixed) → hedgeIsRejection=true
+      expect(detectCandidateIntent("I'm on board but need more fixed.").accepted).toBe(false);
+    });
+    it("S84 guard: \"I'm on board but need more money\" is NOT full accept", () => {
+      expect(detectCandidateIntent("I'm on board but need more money.").accepted).toBe(false);
+    });
+    it("S84 guard: \"I'm happy to proceed but need higher comp\" is NOT full accept", () => {
+      expect(detectCandidateIntent("I'm happy to proceed but need higher comp.").accepted).toBe(false);
+    });
+    it("S84 hedge: \"I'll take it if you can confirm by EOD\" is conditionalAccept", () => {
+      const r = detectCandidateIntent("I'll take it if you can confirm by EOD.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
   });
 
   describe("rejection", () => {
