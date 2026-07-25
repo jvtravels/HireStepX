@@ -568,8 +568,14 @@ const NON_SALARY_UNIT_RE =
 const IMPACT_AMOUNT_LEFT_RE =
   /\b(?:saved?|saving|generated?|generating|reduced?|reducing|cut(?:ting)?|drove?|driving|grew|grown|growing|scaled?|scaling|increased?|increasing|delivered?|delivering|created?|creating|built|earned?|earned|achieved?|achieving|owned?)\b[^.!?\n]{0,80}$/i;
 
+/* "for the [entity]" was too ambiguous — "I earned 28 LPA for the company"
+ * falsely matched it (S74-B1 false-positive, 2026-07-25). Restrict to
+ * specific cost/revenue domain nouns that unambiguously denote a business
+ * metric rather than a personal compensation figure.  "in revenue for the
+ * team" still matches via the "in revenue" alternative even without the
+ * "for the [entity]" branch. */
 const IMPACT_AMOUNT_RIGHT_RE =
-  /^[^.!?\n]{0,60}(?:per\s+(?:year|annum)\s+in\b|in\s+(?:cloud|infrastructure|infra|revenue|saving|cost|costs|opex|capex|efficiency|deliver|deal|contract|budget)|for\s+(?:the\s+)?(?:company|org(?:anization)?|business|team|client|project|firm))/i;
+  /^[^.!?\n]{0,60}(?:per\s+(?:year|annum)\s+in\b|in\s+(?:cloud|infrastructure|infra|revenue|saving|cost|costs|opex|capex|efficiency|deliver|deal|contract|budget))/i;
 
 /* Per-month periodicity (2026-06-15, unbiased-review HIGH). The classifier
  * normalizes every salary span to LPA (lakhs per ANNUM). A figure quoted PER

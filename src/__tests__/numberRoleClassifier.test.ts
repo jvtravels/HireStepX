@@ -584,8 +584,9 @@ const ROWS: Row[] = [
    * are NOT suppressed. */
   { label: "S74-B1: 'saved 2 crore per year in cloud costs' is NOT a salary span", text: "I saved the company 2 crore per year in cloud costs", expect: { currentCtc: null, competing: null, target: null } },
   { label: "S74-B1: 'generated 50 lakh in revenue for the team' is NOT a salary span", text: "I generated 50 lakh in revenue for the team", expect: { currentCtc: null, competing: null, target: null } },
-  { label: "S74-B1: 'cut 40 lakh in infra costs for the company' is NOT a salary span", text: "I cut 40 lakh in infra costs for the company", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1: 'cut 40 lakh in infra costs' is NOT a salary span", text: "I cut 40 lakh in infra costs last quarter", expect: { currentCtc: null, competing: null, target: null } },
   { label: "S74-B1 guard: CTC in same sentence still binds when right ctx is empty", text: "I saved the company 2 crore per year and I'm currently at 55 LPA", expect: { currentCtc: 55, competing: null } },
+  { label: "S74-B1 guard: 'currently earning 55 LPA for the company' — compensation NOT blocked by right-ctx 'for the company'", text: "I am currently earning 55 LPA for the company", expect: { currentCtc: 55 } },
   { label: "S74-B1 guard: normal target after period (separate sentence) still binds", text: "I saved the company 2 crore. I am expecting 70 LPA.", expect: { target: 70 } },
   { label: "S74-B1 guard: plain CTC disclosure with no impact verb still binds", text: "my current CTC is 55 LPA", expect: { currentCtc: 55 } },
 ];
