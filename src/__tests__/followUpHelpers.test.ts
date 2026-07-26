@@ -2126,4 +2126,47 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I want to consult my spouse before deciding.").needsTime).toBe(true);
     });
   });
+
+  /* ── S106-safe-A — 'I agree on the variable but not on base' should not be accepted ── */
+  describe("S106-safe-A — partial agreement should not fire accepted", () => {
+    it("'I agree on the variable portion but not on the fixed base.' → not accepted", () => {
+      expect(detectCandidateIntent("I agree on the variable portion but not on the fixed base.").accepted).toBe(false);
+    });
+    it("'I agree with your rationale but the number is still low.' → not accepted", () => {
+      expect(detectCandidateIntent("I agree with your rationale but the number is still low.").accepted).toBe(false);
+    });
+  });
+
+  /* ── S106-B2b — 'chosen to go with another company' walkAway ── */
+  describe("S106-B2b — \"chosen to go with another company\" walkAway", () => {
+    it("'I\\'ve chosen to go with another company.' → walkAway", () => {
+      expect(detectCandidateIntent("I've chosen to go with another company.").walkAway).toBe(true);
+    });
+    it("'I\\'ve decided to go with a different offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I've decided to go with a different offer.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S106-B3a — 'need some more time to evaluate' needsTime ── */
+  describe("S106-B3a — \"need some more time to evaluate\" needsTime", () => {
+    it("'I need some more time to evaluate this.' → needsTime", () => {
+      expect(detectCandidateIntent("I need some more time to evaluate this.").needsTime).toBe(true);
+    });
+    it("'I need more time to think.' → needsTime", () => {
+      expect(detectCandidateIntent("I need more time to think.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S106-B4 — Hindi/Hinglish walk-away arms ── */
+  describe("S106-B4 — Hindi/Hinglish walk-away", () => {
+    it("'join nahi karunga' → walkAway", () => {
+      expect(detectCandidateIntent("join nahi karunga").walkAway).toBe(true);
+    });
+    it("'mujhe nahi chahiye yeh offer' → walkAway", () => {
+      expect(detectCandidateIntent("mujhe nahi chahiye yeh offer").walkAway).toBe(true);
+    });
+    it("'nahi chahiye' → walkAway", () => {
+      expect(detectCandidateIntent("nahi chahiye").walkAway).toBe(true);
+    });
+  });
 });
