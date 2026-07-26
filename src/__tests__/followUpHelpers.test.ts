@@ -2279,4 +2279,44 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("Let me review the contract terms.").needsTime).toBe(true);
     });
   });
+
+  /* ── S110-B2b — 'below market rate' rejected ── */
+  describe("S110-B2b — \"below market rate\" rejected", () => {
+    it("'The CTC is below market rate.' → rejected", () => {
+      expect(detectCandidateIntent("The CTC is below market rate.").rejected).toBe(true);
+    });
+    it("'This is below industry standard.' → rejected", () => {
+      expect(detectCandidateIntent("This is below industry standard.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S110-B3a — 'taking another opportunity' walkAway (extended noun group) ── */
+  describe("S110-B3a — \"taking another opportunity\" walkAway", () => {
+    it("'I\\'ll be taking another opportunity.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll be taking another opportunity.").walkAway).toBe(true);
+    });
+    it("'I\\'m taking another position.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm taking another position.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S110-B3b — 'made my decision to move on' walkAway ── */
+  describe("S110-B3b — \"made my decision to move on\" walkAway", () => {
+    it("'I\\'ve made my decision to move on.' → walkAway", () => {
+      expect(detectCandidateIntent("I've made my decision to move on.").walkAway).toBe(true);
+    });
+    it("'I\\'ve made a decision to pursue other options.' → walkAway", () => {
+      expect(detectCandidateIntent("I've made a decision to pursue other options.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S110-B4a — 'consult my CA' needsTime (without with) ── */
+  describe("S110-B4a — \"consult my CA\" needsTime", () => {
+    it("'I\\'d like to consult my CA before deciding.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like to consult my CA before deciding.").needsTime).toBe(true);
+    });
+    it("'I want to consult my accountant first.' → needsTime", () => {
+      expect(detectCandidateIntent("I want to consult my accountant first.").needsTime).toBe(true);
+    });
+  });
 });
