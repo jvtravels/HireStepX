@@ -1610,4 +1610,104 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.walkAway).toBe(true);
     });
   });
+
+  /* ── S99-B1 — 'sounds acceptable' / 'prepared/glad to accept' accepted ── */
+  describe("S99-B1 — 'sounds acceptable' / 'prepared/glad to accept' accepted", () => {
+    it("'That sounds acceptable.' → accepted", () => {
+      const r = detectCandidateIntent("That sounds acceptable.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am prepared to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I am prepared to accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am glad to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I am glad to accept.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S99-B2 — 'happy to proceed' standalone accepted ── */
+  describe("S99-B2 — 'happy to proceed' standalone accepted", () => {
+    it("'Happy to proceed with this offer.' → accepted", () => {
+      const r = detectCandidateIntent("Happy to proceed with this offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S99-B3 — 'not sufficient' / 'unacceptable' / 'not satisfied' rejected ── */
+  describe("S99-B3 — 'not sufficient' / 'unacceptable' / 'not satisfied' rejected", () => {
+    it("'The compensation is not sufficient.' → rejected", () => {
+      const r = detectCandidateIntent("The compensation is not sufficient.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I find this unacceptable.' → rejected", () => {
+      const r = detectCandidateIntent("I find this unacceptable.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I am not satisfied with this offer.' → rejected", () => {
+      const r = detectCandidateIntent("I am not satisfied with this offer.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S99-B4 — 'does not align with expectations' rejected ── */
+  describe("S99-B4 — 'does not align with expectations' rejected", () => {
+    it("'This salary does not align with my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This salary does not align with my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S99-B5 — 'N hours to decide' needsTime ── */
+  describe("S99-B5 — 'N hours to decide' needsTime", () => {
+    it("'I need 48 hours to decide.' → needsTime", () => {
+      const r = detectCandidateIntent("I need 48 hours to decide.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'Give me 24 hours to think.' → needsTime", () => {
+      const r = detectCandidateIntent("Give me 24 hours to think.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S99-B6 — 'chosen to pursue other opportunities' walkAway ── */
+  describe("S99-B6 — 'chosen to pursue other opportunities' walkAway", () => {
+    it("'I have chosen to pursue other opportunities.' → walkAway", () => {
+      const r = detectCandidateIntent("I have chosen to pursue other opportunities.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B7 — 'no longer pursuing this role' walkAway ── */
+  describe("S99-B7 — 'no longer pursuing this role' walkAway", () => {
+    it("'I am no longer pursuing this role.' → walkAway", () => {
+      const r = detectCandidateIntent("I am no longer pursuing this role.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B8 — 'i will pass on this' walkAway ── */
+  describe("S99-B8 — 'i will pass on this' walkAway", () => {
+    it("'I think I will pass on this.' → walkAway", () => {
+      const r = detectCandidateIntent("I think I will pass on this.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I will pass on this opportunity.' → walkAway", () => {
+      const r = detectCandidateIntent("I will pass on this opportunity.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B9 — 'i agree to review' NOT accepted (false-accept guard) ── */
+  describe("S99-B9 — 'i agree to review' NOT accepted (info-verb guard)", () => {
+    it("'I agree to review the offer letter.' → NOT accepted", () => {
+      const r = detectCandidateIntent("I agree to review the offer letter.");
+      expect(r.accepted).toBe(false);
+    });
+    it("'I agree to the offer.' → still accepted (noun after to)", () => {
+      const r = detectCandidateIntent("I agree to the offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
 });
