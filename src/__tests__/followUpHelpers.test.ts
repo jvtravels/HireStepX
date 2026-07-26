@@ -2680,4 +2680,105 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I'll look elsewhere.").walkAway).toBe(true);
     });
   });
+
+  /* ── S116-B1 — FP: "not willing to proceed" must not be accepted ── */
+  describe("S116-B1 — \"not willing to proceed\" accepted=false (FP fix)", () => {
+    it("'I\\'m not willing to proceed at this number.' → accepted=false", () => {
+      expect(detectCandidateIntent("I'm not willing to proceed at this number.").accepted).toBe(false);
+    });
+    it("'I am not willing to move forward with this offer.' → accepted=false", () => {
+      expect(detectCandidateIntent("I am not willing to move forward with this offer.").accepted).toBe(false);
+    });
+    it("'I\\'m willing to proceed.' → accepted=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I'm willing to proceed.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S116-B4 — accept: "go ahead with" ── */
+  describe("S116-B4 — \"go ahead with\" accepted", () => {
+    it("'I\\'ll go ahead with this offer.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'll go ahead with this offer.").accepted).toBe(true);
+    });
+    it("'I\\'d go ahead with it.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'd go ahead with it.").accepted).toBe(true);
+    });
+    it("'I will go ahead.' → accepted=true", () => {
+      expect(detectCandidateIntent("I will go ahead.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S116-B6 — accept: "good with this" ── */
+  describe("S116-B6 — \"good with this\" accepted", () => {
+    it("'I\\'m good with this.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm good with this.").accepted).toBe(true);
+    });
+    it("'I am totally good with that.' → accepted=true", () => {
+      expect(detectCandidateIntent("I am totally good with that.").accepted).toBe(true);
+    });
+    it("'I\\'m pretty good with the terms.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm pretty good with the terms.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S116-B7 — FP: "don't want more variable" must not be rejected ── */
+  describe("S116-B7 — \"don't want more variable\" rejected=false (FP fix)", () => {
+    it("'I don\\'t want more variable equity.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't want more variable equity.").rejected).toBe(false);
+    });
+    it("'I don\\'t need more fixed.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't need more fixed.").rejected).toBe(false);
+    });
+    it("'I want more fixed salary.' → rejected=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I want more fixed salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S116-B10 — reject: "had been expecting more" ── */
+  describe("S116-B10 — \"had been expecting more\" rejected", () => {
+    it("'I had been expecting more.' → rejected=true", () => {
+      expect(detectCandidateIntent("I had been expecting more.").rejected).toBe(true);
+    });
+    it("'I had been expecting much more than this.' → rejected=true", () => {
+      expect(detectCandidateIntent("I had been expecting much more than this.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S116-B12 — walkAway: "pulling out" gerund form ── */
+  describe("S116-B12 — \"pulling out\" walkAway", () => {
+    it("'I\\'ll be pulling out of this process.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'll be pulling out of this process.").walkAway).toBe(true);
+    });
+    it("'I am pulling out.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I am pulling out.").walkAway).toBe(true);
+    });
+    it("'I need to pull out of this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I need to pull out of this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S116-B13 — walkAway: "decided not to move forward" ── */
+  describe("S116-B13 — \"decided not to move forward\" walkAway", () => {
+    it("'I\\'ve decided not to move forward with this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I've decided not to move forward with this.").walkAway).toBe(true);
+    });
+    it("'I have decided not to proceed.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I have decided not to proceed.").walkAway).toBe(true);
+    });
+    it("'I decided not to continue.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I decided not to continue.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S116-B14 — needsTime: "a few more days" ── */
+  describe("S116-B14 — \"a few more days\" needsTime", () => {
+    it("'I\\'d like a few more days to decide.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I'd like a few more days to decide.").needsTime).toBe(true);
+    });
+    it("'Give me a few more days.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Give me a few more days.").needsTime).toBe(true);
+    });
+    it("'I need a few days.' → needsTime=true (original preserved)", () => {
+      expect(detectCandidateIntent("I need a few days.").needsTime).toBe(true);
+    });
+  });
 });
