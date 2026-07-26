@@ -1842,4 +1842,128 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.walkAway).toBe(true);
     });
   });
+
+  /* ── S101-B1 — 'i'd love to accept' accepted ── */
+  describe("S101-B1 — \"i'd love to accept\" accepted", () => {
+    it("'I\\'d love to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I'd love to accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would love to accept this offer.' → accepted", () => {
+      const r = detectCandidateIntent("I would love to accept this offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S101-B2 — 'i wholeheartedly accept' accepted ── */
+  describe("S101-B2 — \"i wholeheartedly accept\" accepted", () => {
+    it("'I wholeheartedly accept.' → accepted", () => {
+      const r = detectCandidateIntent("I wholeheartedly accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I enthusiastically accept the offer.' → accepted", () => {
+      const r = detectCandidateIntent("I enthusiastically accept the offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S101-B3 — 'that's a deal' accepted ── */
+  describe("S101-B3 — \"that's a deal\" accepted", () => {
+    it("'That\\'s a deal.' → accepted", () => {
+      const r = detectCandidateIntent("That's a deal.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'That\\'s a deal then.' → accepted", () => {
+      const r = detectCandidateIntent("That's a deal then.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'This is a deal.' → accepted", () => {
+      const r = detectCandidateIntent("This is a deal.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S101-B4 — 'way below market rate' rejected ── */
+  describe("S101-B4 — \"way below\" rejected", () => {
+    it("'This is way below market rate.' → rejected", () => {
+      const r = detectCandidateIntent("This is way below market rate.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The offer is way below my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("The offer is way below my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S101-B5 — 'need significantly more' rejected ── */
+  describe("S101-B5 — \"need significantly more\" rejected", () => {
+    it("'I need significantly more than that.' → rejected", () => {
+      const r = detectCandidateIntent("I need significantly more than that.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I need considerably more to make this work.' → rejected", () => {
+      const r = detectCandidateIntent("I need considerably more to make this work.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S101-B6 — 'not up to expectations' rejected ── */
+  describe("S101-B6 — \"not up to expectations\" rejected", () => {
+    it("'The offer is not up to my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("The offer is not up to my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'This is not up to expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This is not up to expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S101-B7 — 'stepping back from this' walkAway ── */
+  describe("S101-B7 — \"stepping back from this\" walkAway", () => {
+    it("'I\\'m stepping back from this negotiation.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm stepping back from this negotiation.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I am stepping back from the process.' → walkAway", () => {
+      const r = detectCandidateIntent("I am stepping back from the process.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B8 — 'prefer to explore other avenues' walkAway ── */
+  describe("S101-B8 — \"prefer to explore other avenues\" walkAway", () => {
+    it("'I prefer to explore other avenues.' → walkAway", () => {
+      const r = detectCandidateIntent("I prefer to explore other avenues.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I prefer to consider other alternatives.' → walkAway", () => {
+      const r = detectCandidateIntent("I prefer to consider other alternatives.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B9 — 'opting out of this process' walkAway ── */
+  describe("S101-B9 — \"opting out\" walkAway", () => {
+    it("'I am opting out of this process.' → walkAway", () => {
+      const r = detectCandidateIntent("I am opting out of this process.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I\\'m opting out of the negotiation.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm opting out of the negotiation.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B10 — 'a bit low' / 'slightly low' rejected ── */
+  describe("S101-B10 — \"a bit low\" rejected", () => {
+    it("'The offer is a bit low.' → rejected", () => {
+      const r = detectCandidateIntent("The offer is a bit low.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The salary is slightly low for this role.' → rejected", () => {
+      const r = detectCandidateIntent("The salary is slightly low for this role.");
+      expect(r.rejected).toBe(true);
+    });
+  });
 });
