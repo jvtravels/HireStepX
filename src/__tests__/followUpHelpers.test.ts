@@ -3006,4 +3006,187 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I want to process this offer.").needsTime).toBe(true);
     });
   });
+
+  // ── S119 wave-25 adversarial hardening ──────────────────────────────────────
+
+  describe("S119-B1 — 'I accept nothing less' must NOT be accepted", () => {
+    it("'I accept nothing less than 30 LPA.' → accepted=false", () => {
+      const r = detectCandidateIntent("I accept nothing less than 30 LPA.");
+      expect(r.accepted).toBe(false);
+    });
+    it("'I accept no less than 25 LPA.' → rejected=true, accepted=false", () => {
+      const r = detectCandidateIntent("I accept no less than 25 LPA.");
+      expect(r.accepted).toBe(false);
+    });
+  });
+
+  describe("S119-B2 — 'I accept that' (pronoun) must NOT fire accept", () => {
+    it("'I accept that the base is too low.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept that the base is too low.").accepted).toBe(false);
+    });
+    it("'I accept whatever lower number you want.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept whatever lower number you want.").accepted).toBe(false);
+    });
+  });
+
+  describe("S119-B3 — 'I'm going to have to pass on this one' → walkAway", () => {
+    it("'I'm going to have to pass on this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm going to have to pass on this.").walkAway).toBe(true);
+    });
+    it("'I will have to pass on this opportunity.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I will have to pass on this opportunity.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S119-B4 — 'pass on dessert/food' must NOT be walkAway", () => {
+    it("'I'll pass on dessert, let's talk numbers.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'll pass on dessert, let's talk numbers.").walkAway).toBe(false);
+    });
+    it("'I'll pass on the food, but about the offer...' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'll pass on the food, but about the offer...").walkAway).toBe(false);
+    });
+  });
+
+  describe("S119-B5/B6/B7 — walkAwayNegationRe suppresses false positives", () => {
+    it("'I don't want to walk away from this.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I don't want to walk away from this.").walkAway).toBe(false);
+    });
+    it("'I'm not going to walk away.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'm not going to walk away.").walkAway).toBe(false);
+    });
+    it("'I won't decline this offer.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I won't decline this offer.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S119-B8 — 'won't work' with amount context stays walkAway", () => {
+    it("'This won't work for me.' → walkAway=true", () => {
+      expect(detectCandidateIntent("This won't work for me.").walkAway).toBe(true);
+    });
+    it("'Won't work for anything less than 30.' → walkAway=false (conditional)", () => {
+      expect(detectCandidateIntent("Won't work for anything less than 30.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S119-B9 — 'let's do this/it' accept", () => {
+    it("'Let's do this.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let's do this.").accepted).toBe(true);
+    });
+    it("'Let us do it.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let us do it.").accepted).toBe(true);
+    });
+  });
+
+  describe("S119-B10/B12 — 'absolutely/perfect that works' shortAffirmative accept", () => {
+    it("'Absolutely, that works for me.' → accepted=true", () => {
+      expect(detectCandidateIntent("Absolutely, that works for me.").accepted).toBe(true);
+    });
+    it("'Perfect, that works.' → accepted=true", () => {
+      expect(detectCandidateIntent("Perfect, that works.").accepted).toBe(true);
+    });
+    it("'Absolutely.' alone → needsTime/rejected/walkAway all false", () => {
+      const r = detectCandidateIntent("Absolutely.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+  });
+
+  describe("S119-B11 — 'I'd happily take the offer' accept", () => {
+    it("'I'd happily take the offer.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'd happily take the offer.").accepted).toBe(true);
+    });
+    it("'I will gladly take it.' → accepted=true", () => {
+      expect(detectCandidateIntent("I will gladly take it.").accepted).toBe(true);
+    });
+  });
+
+  describe("S119-B13 — 'loop in family' needsTime", () => {
+    it("'I need to loop in my spouse first.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need to loop in my spouse first.").needsTime).toBe(true);
+    });
+    it("'Let me loop in my advisor.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me loop in my advisor.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S119-B14 — 'not satisfied' with object", () => {
+    it("'I'm not satisfied with this.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'm not satisfied with this.").rejected).toBe(true);
+    });
+    it("'Not satisfied with the offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("Not satisfied with the offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B15 — 'expected better' reject", () => {
+    it("'I expected much better than this.' → rejected=true", () => {
+      expect(detectCandidateIntent("I expected much better than this.").rejected).toBe(true);
+    });
+    it("'Expected better communication.' → rejected=false (excluded)", () => {
+      expect(detectCandidateIntent("Expected better communication.").rejected).toBe(false);
+    });
+  });
+
+  describe("S119-B16 — 'component needs to be higher'", () => {
+    it("'The variable component needs to be higher.' → rejected=true", () => {
+      expect(detectCandidateIntent("The variable component needs to be higher.").rejected).toBe(true);
+    });
+    it("'Equity needs to be higher.' → rejected=true", () => {
+      expect(detectCandidateIntent("Equity needs to be higher.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B18 — degree adverbs with 'lower than'", () => {
+    it("'This is much lower than my expectations.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is much lower than my expectations.").rejected).toBe(true);
+    });
+    it("'Significantly lower than what I asked for.' → rejected=true", () => {
+      expect(detectCandidateIntent("Significantly lower than what I asked for.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B19 — 'was expecting more'", () => {
+    it("'I was expecting a bit more.' → rejected=true", () => {
+      expect(detectCandidateIntent("I was expecting a bit more.").rejected).toBe(true);
+    });
+    it("'Have been expecting more.' → rejected=true", () => {
+      expect(detectCandidateIntent("Have been expecting more.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B21 — 'cannot come to an agreement' walkAway", () => {
+    it("'I cannot come to an agreement on this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I cannot come to an agreement on this.").walkAway).toBe(true);
+    });
+    it("'We can't reach terms here.' → walkAway=true", () => {
+      expect(detectCandidateIntent("We can't reach terms here.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S119-B22 — 'I'll need to pass' walkAway", () => {
+    it("'I'll need to pass on this one.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'll need to pass on this one.").walkAway).toBe(true);
+    });
+    it("'I'd need to pass on this position.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'd need to pass on this position.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S119-B23/B24 — thinkNegationRe extensions", () => {
+    it("'I'm not going to think about it.' → needsTime=false", () => {
+      expect(detectCandidateIntent("I'm not going to think about it.").needsTime).toBe(false);
+    });
+    it("'Won't think about it, I'm in.' → needsTime=false", () => {
+      expect(detectCandidateIntent("Won't think about it, I'm in.").needsTime).toBe(false);
+    });
+  });
+
+  describe("S119-B25 — 'before deciding' needsTime", () => {
+    it("'I need a day before deciding.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need a day before deciding.").needsTime).toBe(true);
+    });
+    it("'Before committing, I want to review.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Before committing, I want to review.").needsTime).toBe(true);
+    });
+  });
 });
