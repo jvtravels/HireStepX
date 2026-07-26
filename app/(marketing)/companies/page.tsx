@@ -237,7 +237,10 @@ export default async function CompaniesIndexPage() {
         {/* ── Category nav strip ────────────────────────────────────── */}
         {/* overflowX on the outer div (not the nav) so the constrained block
             width triggers horizontal scroll when 5 tabs exceed the viewport. */}
-        <div style={{ borderBottom: `1px solid ${t.line}`, background: t.creamSoft, overflowX: "auto" as const }}>
+        <div style={{ position: "relative", borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
+          {/* Right fade signals horizontal scroll on narrower viewports */}
+          <div aria-hidden style={{ position: "absolute", right: 0, top: 0, bottom: 1, width: 48, background: `linear-gradient(to right, transparent, ${t.creamSoft})`, pointerEvents: "none", zIndex: 1 }} />
+          <div style={{ overflowX: "auto" as const }}>
           <div className="ed-container">
             <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0 }}>
               {GROUPS.map((group, gi) => {
@@ -261,6 +264,7 @@ export default async function CompaniesIndexPage() {
                 );
               })}
             </nav>
+          </div>
           </div>
         </div>
 

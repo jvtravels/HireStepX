@@ -213,7 +213,7 @@ function MDXProse({ children }: { children: ReactNode }) {
         .mv2p-prose > * + * { margin-top: 1.1em; }
         .mv2p-prose h2 { font-family: ${fonts.serif}; font-size: 28px; font-weight: 400; letter-spacing: -0.015em; color: ${t.coal}; margin-top: 2em; margin-bottom: 0.4em; line-height: 1.2; }
         .mv2p-prose h3 { font-family: ${fonts.sans}; font-size: 16px; font-weight: 700; color: ${t.coal}; margin-top: 1.6em; margin-bottom: 0.4em; letter-spacing: -0.005em; }
-        .mv2p-prose p, .mv2p-prose li { color: ${t.indigoGray}; max-width: 70ch; }
+        .mv2p-prose p, .mv2p-prose li { color: ${t.inkSoft}; max-width: 70ch; }
         .mv2p-prose ul, .mv2p-prose ol { padding-left: 1.2em; }
         .mv2p-prose li + li { margin-top: 0.5em; }
         .mv2p-prose strong { color: ${t.coal}; font-weight: 600; }
@@ -1013,10 +1013,10 @@ export function AboutV2() {
       <section
         className="mv2p-section"
         style={{
-          background: t.coal,
+          background: "#221A10",
           color: t.cream,
-          paddingTop: 96,
-          paddingBottom: 96,
+          paddingTop: 80,
+          paddingBottom: 80,
         }}
       >
         <div className="mv2-container" style={containerNarrow}>
@@ -1336,7 +1336,7 @@ export function ContactV2() {
                         ? `Got it${ref ? ` (ref: ${ref})` : ""}. We'll reply within 1 business day.`
                         : status === "error"
                         ? "Couldn't send — email hello@hirestepx.com instead."
-                        : "We reply within 1 business day (IST)."}
+                        : null}
                     </p>
                   </div>
                 </form>
@@ -1662,7 +1662,7 @@ function LegalPage({
         lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email hello@hirestepx.com.`}
         narrow
       />
-      <section className="mv2p-section" aria-label="Document body" style={sectionBase}>
+      <section className="mv2p-section" aria-label="Document body" style={{ ...sectionBase, paddingTop: 40 }}>
         <div className="mv2-container" style={containerNarrow}>
           <MDXProse>{children}</MDXProse>
         </div>

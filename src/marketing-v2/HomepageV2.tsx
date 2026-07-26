@@ -328,8 +328,10 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
+    ["How it works", "/how-it-works"],
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
+    ["About", "/about"],
     ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so

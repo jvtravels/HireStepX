@@ -237,7 +237,7 @@ export default async function AiMockInterviewPage() {
           style={{ maxWidth: 760, margin: "0 auto", padding: "80px 24px 56px", textAlign: "center" }}
         >
           <p style={{ ...s, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.copper, marginBottom: 20 }}>
-            Free · Voice-based · No card needed
+            Free · Voice-based · India 2026
           </p>
           <h1
             id="ami-hero"
