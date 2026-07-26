@@ -46,6 +46,15 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // www → non-www 301. Vercel serves both by default; without this redirect
+      // Google indexes www.hirestepx.com pages separately from hirestepx.com,
+      // splitting PageRank across duplicate URLs even when canonical tags are correct.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.hirestepx.com" }],
+        destination: "https://hirestepx.com/:path*",
+        permanent: true,
+      },
       // Old URL with wrong year that users bookmarked or linked; 2 GA4 hits/day.
       {
         source: "/blog/tcs-interview-questions-freshers-2025",
