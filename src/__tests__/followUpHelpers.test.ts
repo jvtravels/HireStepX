@@ -2199,4 +2199,34 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I need to step back from this.").walkAway).toBe(true);
     });
   });
+
+  /* ── S108-B2c — 'much lower than my target' rejected ── */
+  describe("S108-B2c — \"much lower than target\" rejected", () => {
+    it("'This is much lower than my target.' → rejected", () => {
+      expect(detectCandidateIntent("This is much lower than my target.").rejected).toBe(true);
+    });
+    it("'This is significantly lower than my expectations.' → rejected", () => {
+      expect(detectCandidateIntent("This is significantly lower than my expectations.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S108-B4b — 'discuss this with my spouse' needsTime ── */
+  describe("S108-B4b — \"discuss this with\" needsTime (pronoun before with)", () => {
+    it("'I need to discuss this with my spouse.' → needsTime", () => {
+      expect(detectCandidateIntent("I need to discuss this with my spouse.").needsTime).toBe(true);
+    });
+    it("'Let me discuss it with my family.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me discuss it with my family.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S108-safe-B — 'withdrawing my previous comment' should NOT be walkAway ── */
+  describe("S108-safe-B — withdraw suppression handles adjective before noun", () => {
+    it("'I\\'m withdrawing my previous comment about equity.' → NOT walkAway", () => {
+      expect(detectCandidateIntent("I'm withdrawing my previous comment about equity.").walkAway).toBe(false);
+    });
+    it("'I\\'m withdrawing my earlier feedback.' → NOT walkAway", () => {
+      expect(detectCandidateIntent("I'm withdrawing my earlier feedback.").walkAway).toBe(false);
+    });
+  });
 });
