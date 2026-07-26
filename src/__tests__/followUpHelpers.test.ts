@@ -2582,4 +2582,102 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I'd like to have more time to decide.").needsTime).toBe(true);
     });
   });
+
+  /* ── S115-B2 — accept: willing to move forward ── */
+  describe("S115-B2 — \"willing to move forward\" accepted", () => {
+    it("'I\\'m willing to move forward.' → accepted", () => {
+      expect(detectCandidateIntent("I'm willing to move forward.").accepted).toBe(true);
+    });
+    it("'I\\'m willing to proceed.' → accepted", () => {
+      expect(detectCandidateIntent("I'm willing to proceed.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S115-B3 — accept: let's do it ── */
+  describe("S115-B3 — \"let's do it\" accepted", () => {
+    it("'Let\\'s do it.' → accepted", () => {
+      expect(detectCandidateIntent("Let's do it.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S115-B8 — reject: like/want more fixed pay ── */
+  describe("S115-B8 — \"like more fixed pay\" rejected", () => {
+    it("'I\\'d like more fixed pay.' → rejected", () => {
+      expect(detectCandidateIntent("I'd like more fixed pay.").rejected).toBe(true);
+    });
+    it("'I want a higher base salary.' → rejected", () => {
+      expect(detectCandidateIntent("I want a higher base salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B10 — reject: CTC to be at least ── */
+  describe("S115-B10 — \"CTC to be at least\" rejected", () => {
+    it("'I need my CTC to be at least 30.' → rejected", () => {
+      expect(detectCandidateIntent("I need my CTC to be at least 30.").rejected).toBe(true);
+    });
+    it("'The salary to be at least 25 LPA.' → rejected", () => {
+      expect(detectCandidateIntent("The salary to be at least 25 LPA.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B12 — reject: hoping for at least ── */
+  describe("S115-B12 — \"hoping for at least\" rejected", () => {
+    it("'I was hoping for at least 28 LPA.' → rejected", () => {
+      expect(detectCandidateIntent("I was hoping for at least 28 LPA.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B14 — reject: much lower than current package ── */
+  describe("S115-B14 — \"much lower than current package\" rejected", () => {
+    it("'This is much lower than my current package.' → rejected", () => {
+      expect(detectCandidateIntent("This is much lower than my current package.").rejected).toBe(true);
+    });
+    it("'This is significantly lower than my current salary.' → rejected", () => {
+      expect(detectCandidateIntent("This is significantly lower than my current salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B18 — walkAway: no longer wish to proceed ── */
+  describe("S115-B18 — \"no longer wish to proceed\" walkAway", () => {
+    it("'I no longer wish to proceed.' → walkAway", () => {
+      expect(detectCandidateIntent("I no longer wish to proceed.").walkAway).toBe(true);
+    });
+    it("'I no longer want to continue this negotiation.' → walkAway", () => {
+      expect(detectCandidateIntent("I no longer want to continue this negotiation.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S115-B23 — needsTime: ponder ── */
+  describe("S115-B23 — \"ponder\" needsTime", () => {
+    it("'Let me ponder this.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me ponder this.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B24 — needsTime: give me N hours ── */
+  describe("S115-B24 — \"give me 48 hours\" needsTime", () => {
+    it("'Give me 48 hours.' → needsTime", () => {
+      expect(detectCandidateIntent("Give me 48 hours.").needsTime).toBe(true);
+    });
+    it("'Give me a day.' → needsTime", () => {
+      expect(detectCandidateIntent("Give me a day.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B25 — needsTime: discuss internally ── */
+  describe("S115-B25 — \"discuss internally\" needsTime", () => {
+    it("'I need to discuss this internally.' → needsTime", () => {
+      expect(detectCandidateIntent("I need to discuss this internally.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B26 — safe: 'could look elsewhere' not walkAway (FP fix) ── */
+  describe("S115-B26 — \"could look elsewhere\" safe (no walkAway)", () => {
+    it("'We could look elsewhere if needed.' → walkAway=false", () => {
+      expect(detectCandidateIntent("We could look elsewhere if needed.").walkAway).toBe(false);
+    });
+    it("'I\\'ll look elsewhere.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'll look elsewhere.").walkAway).toBe(true);
+    });
+  });
 });
