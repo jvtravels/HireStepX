@@ -2038,4 +2038,72 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.walkAway).toBe(true);
     });
   });
+
+  /* ── S103-B1 — 'That's acceptable' accepted ── */
+  describe("S103-B1 — \"That's acceptable\" accepted", () => {
+    it("'That\\'s acceptable.' → accepted", () => {
+      expect(detectCandidateIntent("That's acceptable.").accepted).toBe(true);
+    });
+    it("'The offer is acceptable to me.' → accepted", () => {
+      expect(detectCandidateIntent("The offer is acceptable to me.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S103-B2 — 'willing/prepared/glad to accept' accepted ── */
+  describe("S103-B2 — willing/prepared/glad to accept", () => {
+    it("'I\\'m willing to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'm willing to accept.").accepted).toBe(true);
+    });
+    it("'I\\'m prepared to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'm prepared to accept.").accepted).toBe(true);
+    });
+    it("'I\\'m glad to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'm glad to accept.").accepted).toBe(true);
+    });
+    it("'I\\'d love to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'd love to accept.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S103-B3 — 'not competitive / not satisfied / doesn't align' rejected ── */
+  describe("S103-B3 — not competitive / not satisfied / doesn't align rejected", () => {
+    it("'That\\'s not competitive.' → rejected", () => {
+      expect(detectCandidateIntent("That's not competitive.").rejected).toBe(true);
+    });
+    it("'The offer isn\\'t competitive.' → rejected", () => {
+      expect(detectCandidateIntent("The offer isn't competitive.").rejected).toBe(true);
+    });
+    it("'I\\'m not satisfied with this.' → rejected", () => {
+      expect(detectCandidateIntent("I'm not satisfied with this.").rejected).toBe(true);
+    });
+    it("'This doesn\\'t align with my expectations.' → rejected", () => {
+      expect(detectCandidateIntent("This doesn't align with my expectations.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S103-B4 — 'decided to pursue other' / 'removing myself from consideration' walkAway ── */
+  describe("S103-B4 — decided to pursue other / removing from consideration walkAway", () => {
+    it("'I\\'ve decided to pursue other opportunities.' → walkAway", () => {
+      expect(detectCandidateIntent("I've decided to pursue other opportunities.").walkAway).toBe(true);
+    });
+    it("'I\\'ll be moving on from this process.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll be moving on from this process.").walkAway).toBe(true);
+    });
+    it("'Thanks but no thanks.' → walkAway", () => {
+      expect(detectCandidateIntent("Thanks but no thanks.").walkAway).toBe(true);
+    });
+    it("'I am removing myself from consideration.' → walkAway", () => {
+      expect(detectCandidateIntent("I am removing myself from consideration.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S103-B5 — 'have until Friday' / 'like some time to review' needsTime ── */
+  describe("S103-B5 — have until / like some time to review needsTime", () => {
+    it("'Could I have until Friday to decide?' → needsTime", () => {
+      expect(detectCandidateIntent("Could I have until Friday to decide?").needsTime).toBe(true);
+    });
+    it("'I\\'d like some time to review the terms.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like some time to review the terms.").needsTime).toBe(true);
+    });
+  });
 });
