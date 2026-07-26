@@ -2343,4 +2343,14 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I can't justify accepting this.").rejected).toBe(true);
     });
   });
+
+  /* ── S112-B2a — 'way off from my expectations' rejected ── */
+  describe("S112-B2a — \"way off from expectations\" rejected", () => {
+    it("'This is way off from my expectations.' → rejected", () => {
+      expect(detectCandidateIntent("This is way off from my expectations.").rejected).toBe(true);
+    });
+    it("'The offer is way off from my target.' → rejected", () => {
+      expect(detectCandidateIntent("The offer is way off from my target.").rejected).toBe(true);
+    });
+  });
 });
