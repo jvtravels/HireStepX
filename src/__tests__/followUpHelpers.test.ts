@@ -1710,4 +1710,136 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.accepted).toBe(true);
     });
   });
+
+  /* ── S100-B1 — 'i'll take the offer/package' accepted (noun after take) ── */
+  describe("S100-B1 — 'take the offer/package' accepted", () => {
+    it("'I'll take the offer.' → accepted", () => {
+      const r = detectCandidateIntent("I'll take the offer.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I'll take the package.' → accepted", () => {
+      const r = detectCandidateIntent("I'll take the package.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I will take the position.' → accepted", () => {
+      const r = detectCandidateIntent("I will take the position.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would take the deal.' → accepted", () => {
+      const r = detectCandidateIntent("I would take the deal.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B2 — 'i'm totally on board' accepted (adverb injection) ── */
+  describe("S100-B2 — 'totally/completely on board' accepted", () => {
+    it("'I'm totally on board.' → accepted", () => {
+      const r = detectCandidateIntent("I'm totally on board.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am completely on board.' → accepted", () => {
+      const r = detectCandidateIntent("I am completely on board.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I'm definitely on board.' → accepted", () => {
+      const r = detectCandidateIntent("I'm definitely on board.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B3 — 'i'll happily accept' accepted (adverb before accept) ── */
+  describe("S100-B3 — 'happily/gladly accept' accepted", () => {
+    it("'I'll happily accept.' → accepted", () => {
+      const r = detectCandidateIntent("I'll happily accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I will gladly accept.' → accepted", () => {
+      const r = detectCandidateIntent("I will gladly accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would willingly accept.' → accepted", () => {
+      const r = detectCandidateIntent("I would willingly accept.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B4 — 'i'm very happy to proceed' accepted (adverb before happy) ── */
+  describe("S100-B4 — 'very/quite happy to proceed' accepted", () => {
+    it("'I'm very happy to proceed.' → accepted", () => {
+      const r = detectCandidateIntent("I'm very happy to proceed.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am quite happy to proceed.' → accepted", () => {
+      const r = detectCandidateIntent("I am quite happy to proceed.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I'm really happy to proceed.' → accepted", () => {
+      const r = detectCandidateIntent("I'm really happy to proceed.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B5 — 'doesn't work' rejected (contraction form) ── */
+  describe("S100-B5 — \"doesn't work\" rejected", () => {
+    it("'The package doesn\\'t work for me.' → rejected", () => {
+      const r = detectCandidateIntent("The package doesn't work for me.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'This offer doesn\\'t work.' → rejected", () => {
+      const r = detectCandidateIntent("This offer doesn't work.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S100-B6 — "isn't competitive/sufficient" rejected (contraction) ── */
+  describe("S100-B6 — \"isn't competitive/sufficient\" rejected", () => {
+    it("'The offer isn\\'t competitive.' → rejected", () => {
+      const r = detectCandidateIntent("The offer isn't competitive.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'This package isn\\'t sufficient.' → rejected", () => {
+      const r = detectCandidateIntent("This package isn't sufficient.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The salary isn\\'t acceptable.' → rejected", () => {
+      const r = detectCandidateIntent("The salary isn't acceptable.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S100-B7 — 'i'm going to pass' walkAway ── */
+  describe("S100-B7 — \"i'm going to pass\" walkAway", () => {
+    it("'I\\'m going to pass on this offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm going to pass on this offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I\\'m going to pass.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm going to pass.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S100-B8 — 'i'll be moving on' walkAway (gerund form) ── */
+  describe("S100-B8 — \"be moving on\" walkAway", () => {
+    it("'I\\'ll be moving on.' → walkAway", () => {
+      const r = detectCandidateIntent("I'll be moving on.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I will be moving on from this.' → walkAway", () => {
+      const r = detectCandidateIntent("I will be moving on from this.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S100-B9 — 'chosen to accept another offer' walkAway ── */
+  describe("S100-B9 — \"chosen/decided to accept another offer\" walkAway", () => {
+    it("'I\\'ve chosen to accept another offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I've chosen to accept another offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I have decided to accept another position.' → walkAway", () => {
+      const r = detectCandidateIntent("I have decided to accept another position.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
 });
