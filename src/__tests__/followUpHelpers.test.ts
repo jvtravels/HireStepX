@@ -2353,4 +2353,146 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("The offer is way off from my target.").rejected).toBe(true);
     });
   });
+
+  /* ── S113-B1 — 'sounds great to me' accepted ── */
+  describe("S113-B1 — \"sounds great\" accepted", () => {
+    it("'Sounds great to me.' → accepted", () => {
+      expect(detectCandidateIntent("Sounds great to me.").accepted).toBe(true);
+    });
+    it("'Sounds great!' → accepted", () => {
+      expect(detectCandidateIntent("Sounds great!").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B2 — 'fair enough' accepted ── */
+  describe("S113-B2 — \"fair enough\" accepted", () => {
+    it("'That\\'s fair enough.' → accepted", () => {
+      expect(detectCandidateIntent("That's fair enough.").accepted).toBe(true);
+    });
+    it("'Fair enough for me.' → accepted", () => {
+      expect(detectCandidateIntent("Fair enough for me.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B3 — 'let's make this happen' accepted ── */
+  describe("S113-B3 — \"let's make this happen\" accepted", () => {
+    it("'Let\\'s make this happen.' → accepted", () => {
+      expect(detectCandidateIntent("Let's make this happen.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B4 — 'I can live with that' accepted ── */
+  describe("S113-B4 — \"I can live with that\" accepted", () => {
+    it("'I can live with that.' → accepted", () => {
+      expect(detectCandidateIntent("I can live with that.").accepted).toBe(true);
+    });
+    it("'I can live with this.' → accepted", () => {
+      expect(detectCandidateIntent("I can live with this.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B5 — 'not in the ballpark' rejected ── */
+  describe("S113-B5 — \"not in the ballpark\" rejected", () => {
+    it("'That\\'s not in the ballpark.' → rejected", () => {
+      expect(detectCandidateIntent("That's not in the ballpark.").rejected).toBe(true);
+    });
+    it("'This offer is not in the ballpark for me.' → rejected", () => {
+      expect(detectCandidateIntent("This offer is not in the ballpark for me.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B6 — 'I am worth more than that' rejected ── */
+  describe("S113-B6 — \"I'm worth more than\" rejected", () => {
+    it("'I\\'m worth more than that.' → rejected", () => {
+      expect(detectCandidateIntent("I'm worth more than that.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B8 — 'doesn't reflect my market value' rejected ── */
+  describe("S113-B8 — \"doesn't reflect my market value\" rejected", () => {
+    it("'This doesn\\'t reflect my market value.' → rejected", () => {
+      expect(detectCandidateIntent("This doesn't reflect my market value.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B9 — 'expected a higher number' rejected ── */
+  describe("S113-B9 — \"expected a higher number\" rejected", () => {
+    it("'I expected a higher number.' → rejected", () => {
+      expect(detectCandidateIntent("I expected a higher number.").rejected).toBe(true);
+    });
+    it("'I expected a higher salary offer.' → rejected", () => {
+      expect(detectCandidateIntent("I expected a higher salary offer.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B10 — 'significant pay cut' rejected ── */
+  describe("S113-B10 — \"pay cut\" rejected", () => {
+    it("'This is a significant pay cut for me.' → rejected", () => {
+      expect(detectCandidateIntent("This is a significant pay cut for me.").rejected).toBe(true);
+    });
+    it("'This represents a pay cut.' → rejected", () => {
+      expect(detectCandidateIntent("This represents a pay cut.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B11 — 'leaving money on the table' rejected ── */
+  describe("S113-B11 — \"leaving money on the table\" rejected", () => {
+    it("'I\\'d be leaving money on the table.' → rejected", () => {
+      expect(detectCandidateIntent("I'd be leaving money on the table.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B13 — 'reached an impasse' walkAway ── */
+  describe("S113-B13 — \"impasse\" walkAway", () => {
+    it("'I think we\\'ve reached an impasse.' → walkAway", () => {
+      expect(detectCandidateIntent("I think we've reached an impasse.").walkAway).toBe(true);
+    });
+    it("'We are at an impasse.' → walkAway", () => {
+      expect(detectCandidateIntent("We are at an impasse.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B14 — 'don't think this is going to work out' walkAway ── */
+  describe("S113-B14 — \"don't think this is going to work out\" walkAway", () => {
+    it("'I don\\'t think this is going to work out.' → walkAway", () => {
+      expect(detectCandidateIntent("I don't think this is going to work out.").walkAway).toBe(true);
+    });
+    it("'I do not think this is going to work.' → walkAway", () => {
+      expect(detectCandidateIntent("I do not think this is going to work.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B15 — 'call it quits' walkAway ── */
+  describe("S113-B15 — \"call it quits\" walkAway", () => {
+    it("'Let\\'s call it quits.' → walkAway", () => {
+      expect(detectCandidateIntent("Let's call it quits.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B16 — 'bow out' walkAway ── */
+  describe("S113-B16 — \"bow out\" walkAway", () => {
+    it("'I need to bow out of this process.' → walkAway", () => {
+      expect(detectCandidateIntent("I need to bow out of this process.").walkAway).toBe(true);
+    });
+    it("'I\\'m bowing out.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm bowing out.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B17 — 'run this by my family' needsTime ── */
+  describe("S113-B17 — \"run this by my family\" needsTime", () => {
+    it("'I want to run this by my family.' → needsTime", () => {
+      expect(detectCandidateIntent("I want to run this by my family.").needsTime).toBe(true);
+    });
+    it("'Let me run it by my wife.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me run it by my wife.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S113-B19 — 'let me think out loud' NOT needsTime ── */
+  describe("S113-B19 — \"let me think out loud\" safe (no needsTime)", () => {
+    it("'Let me think out loud.' → needsTime=false", () => {
+      expect(detectCandidateIntent("Let me think out loud.").needsTime).toBe(false);
+    });
+  });
 });
