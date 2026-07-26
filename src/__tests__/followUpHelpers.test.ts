@@ -1279,3 +1279,143 @@ describe("sanitizeBehaviouralRegister", () => {
     expect(/\b(dive|delve|circle back|touch base|reach out|leverage|unpack)\b/i.test(out)).toBe(false);
   });
 });
+
+/* ── S97 (2026-07-26) — Wave 3 adversarial battery ── */
+describe("S97-B1 — 'okay with this/that/it' accepted", () => {
+  it("'I am okay with the revised terms.' → accepted", () => {
+    // "okay with this/that/it" arm fires; "okay with the" stripped to avoid false positives
+    const r = detectCandidateIntent("I am okay with it.");
+    expect(r.accepted).toBe(true);
+    expect(r.rejected).toBe(false);
+  });
+  it("'I am okay with this.' → accepted", () => {
+    const r = detectCandidateIntent("I am okay with this.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'I am okay with that.' → accepted", () => {
+    const r = detectCandidateIntent("I am okay with that.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'I am not okay with this number.' → rejected (not accepted)", () => {
+    const r = detectCandidateIntent("I am not okay with this number.");
+    expect(r.accepted).toBe(false);
+    expect(r.rejected).toBe(true);
+  });
+  it("guard: 'That is okay with the team but I need more fixed.' → NOT accepted", () => {
+    // 'okay with the team' should not fire as acceptance
+    const r = detectCandidateIntent("That is okay with the team but I need more fixed.");
+    expect(r.accepted).toBe(false);
+  });
+});
+
+describe("S97-B2 — 'happy to take/go with the offer' accepted", () => {
+  it("'Perfect, I am happy to take the offer.' → accepted", () => {
+    const r = detectCandidateIntent("Perfect, I am happy to take the offer.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'Happy to go with this.' → accepted", () => {
+    const r = detectCandidateIntent("Happy to go with this.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'I am happy to go with the package.' → accepted", () => {
+    const r = detectCandidateIntent("I am happy to go with the package.");
+    expect(r.accepted).toBe(true);
+  });
+});
+
+describe("S97-B3 — 'withdrawing' gerund fires walk-away", () => {
+  it("'I am withdrawing my application.' → walkAway", () => {
+    const r = detectCandidateIntent("I am withdrawing my application.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("guard: 'I am withdrawing my counter offer.' → NOT walkAway (counter exclusion)", () => {
+    const r = detectCandidateIntent("I am withdrawing my counter offer.");
+    expect(r.walkAway).toBe(false);
+  });
+  it("bare 'withdraw' still fires: 'I withdraw from this process.' → walkAway", () => {
+    const r = detectCandidateIntent("I withdraw from this process.");
+    expect(r.walkAway).toBe(true);
+  });
+});
+
+describe("S97-B4 — 'insufficient' rejected", () => {
+  it("'I find this offer insufficient.' → rejected", () => {
+    const r = detectCandidateIntent("I find this offer insufficient.");
+    expect(r.rejected).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("'The package is insufficient.' → rejected", () => {
+    const r = detectCandidateIntent("The package is insufficient.");
+    expect(r.rejected).toBe(true);
+  });
+});
+
+describe("S97-B5 — 'does not meet expectations' rejected", () => {
+  it("'This does not meet my expectations.' → rejected", () => {
+    const r = detectCandidateIntent("This does not meet my expectations.");
+    expect(r.rejected).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("contraction form → rejected", () => {
+    const r = detectCandidateIntent("This doesn't meet my expectations.");
+    expect(r.rejected).toBe(true);
+  });
+});
+
+describe("S97-B6 — 'take some time to reflect' needsTime", () => {
+  it("'Let me take some time to reflect.' → needsTime", () => {
+    const r = detectCandidateIntent("Let me take some time to reflect.");
+    expect(r.needsTime).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("'I need to take more time to decide.' → needsTime", () => {
+    const r = detectCandidateIntent("I need to take more time to decide.");
+    expect(r.needsTime).toBe(true);
+  });
+});
+
+describe("S97-B7 — 'review with lawyer' needsTime", () => {
+  it("'I need to review this with my lawyer before deciding.' → needsTime", () => {
+    const r = detectCandidateIntent("I need to review this with my lawyer before deciding.");
+    expect(r.needsTime).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("'Let me consult with my advisor on this.' → needsTime", () => {
+    const r = detectCandidateIntent("Let me consult with my advisor on this.");
+    expect(r.needsTime).toBe(true);
+  });
+});
+
+describe("S97-B8 — post-hedge 'not at this number' prevents false accept", () => {
+  it("'Works for me in theory but not at this number.' → NOT accepted", () => {
+    const r = detectCandidateIntent("Works for me in theory but not at this number.");
+    expect(r.accepted).toBe(false);
+  });
+  it("'Sounds good but not at this salary.' → NOT accepted", () => {
+    const r = detectCandidateIntent("Sounds good but not at this salary.");
+    expect(r.accepted).toBe(false);
+  });
+  it("guard: 'Sounds good, I accept.' (no post-hedge rejection) → accepted", () => {
+    const r = detectCandidateIntent("Sounds good, I accept.");
+    expect(r.accepted).toBe(true);
+  });
+});
+
+describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => {
+  it("'I am removing myself from this process.' → walkAway", () => {
+    const r = detectCandidateIntent("I am removing myself from this process.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("'Please take me off your list.' → walkAway", () => {
+    const r = detectCandidateIntent("Please take me off your list.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("'I will take another offer.' → walkAway", () => {
+    const r = detectCandidateIntent("I will take another offer.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("'I am going to take the other offer.' → walkAway", () => {
+    const r = detectCandidateIntent("I am going to take the other offer.");
+    expect(r.walkAway).toBe(true);
+  });
+});
