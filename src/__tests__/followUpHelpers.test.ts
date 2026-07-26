@@ -2898,4 +2898,112 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I'd like to weigh my options.").needsTime).toBe(true);
     });
   });
+
+  /* ── S118 — wave 24 adversarial hardening (15 bugs) ── */
+  /* B9 FP: bare "i accept" guard; B11 FN: shake hands; B1/B2/B10/B3 FP: isShortAffirmativeConditional */
+  /* B4 FP: disappointed restricted; B5 FP: a-bit-low lookahead; B6 FP: not-happy restricted */
+  /* B7 FP: step away restricted; B8 FP: process this restricted; B13 FN: ca in check/speak */
+  /* B12 FN: exit the; B14 FN: moving on; B15 FN: have the weekend */
+
+  describe("S118-B9 — 'i accept nothing below' must NOT fire accepted=true", () => {
+    it("'I accept nothing below 30 LPA.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept nothing below 30 LPA.").accepted).toBe(false);
+    });
+    it("'I accept no less than 40 lakhs.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept no less than 40 lakhs.").accepted).toBe(false);
+    });
+    it("'I accept anything less than 35 LPA.' → accepted=false (anything less guard)", () => {
+      expect(detectCandidateIntent("I accept anything less than 35 LPA.").accepted).toBe(false);
+    });
+    it("'I accept the offer.' → accepted=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+    });
+  });
+
+  describe("S118-B11 — 'let's shake hands on it' accepted", () => {
+    it("'Let\\'s shake hands on it.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let's shake hands on it.").accepted).toBe(true);
+    });
+    it("'Let\\'s shake on it.' → accepted=true (existing preserved)", () => {
+      expect(detectCandidateIntent("Let's shake on it.").accepted).toBe(true);
+    });
+  });
+
+  describe("S118-B1/B2/B10 — inverted-order rejection phrases not accepted as conditional", () => {
+    it("'Sure, but I need more than this.' → accepted=false", () => {
+      expect(detectCandidateIntent("Sure, but I need more than this.").accepted).toBe(false);
+    });
+    it("'Okay, but the equity needs to be higher.' → accepted=false", () => {
+      expect(detectCandidateIntent("Okay, but the equity needs to be higher.").accepted).toBe(false);
+    });
+    it("'That works, but the salary needs to be increased.' → accepted=false", () => {
+      expect(detectCandidateIntent("That works, but the salary needs to be increased.").accepted).toBe(false);
+    });
+    it("'Sure, but that doesn\\'t work in practice.' → accepted=false", () => {
+      expect(detectCandidateIntent("Sure, but that doesn't work in practice.").accepted).toBe(false);
+    });
+  });
+
+  describe("S118-B5 — 'a bit low-key' must NOT fire rejected=true", () => {
+    it("'The vibe is a bit low-key for me.' → rejected=false", () => {
+      expect(detectCandidateIntent("The vibe is a bit low-key for me.").rejected).toBe(false);
+    });
+    it("'The offer feels a bit low.' → rejected=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("The offer feels a bit low.").rejected).toBe(true);
+    });
+  });
+
+  describe("S118-B7 — 'stepping away from the microphone' must NOT fire walkAway", () => {
+    it("'I\\'m stepping away from the microphone.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'm stepping away from the microphone.").walkAway).toBe(false);
+    });
+    it("'I\\'m stepping away from this negotiation.' → walkAway=true (preserved)", () => {
+      expect(detectCandidateIntent("I'm stepping away from this negotiation.").walkAway).toBe(true);
+    });
+    it("'I\\'m stepping away from this.' → walkAway=true (bare this preserved)", () => {
+      expect(detectCandidateIntent("I'm stepping away from this.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S118-B12 — 'exiting the negotiation' walkAway", () => {
+    it("'I\\'m exiting the negotiation.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm exiting the negotiation.").walkAway).toBe(true);
+    });
+    it("'Exiting this discussion.' → walkAway=true (preserved)", () => {
+      expect(detectCandidateIntent("Exiting this discussion.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S118-B14 — 'I am moving on / I\\'m moving on' walkAway", () => {
+    it("'I am moving on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I am moving on.").walkAway).toBe(true);
+    });
+    it("'I\\'m moving on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm moving on.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S118-B13 — 'check with my CA' needsTime", () => {
+    it("'I need to check with my CA.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need to check with my CA.").needsTime).toBe(true);
+    });
+    it("'Let me speak with my CA first.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me speak with my CA first.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S118-B15 — 'can I have the weekend' needsTime", () => {
+    it("'Can I have the weekend to think?' → needsTime=true", () => {
+      expect(detectCandidateIntent("Can I have the weekend to think?").needsTime).toBe(true);
+    });
+    it("'Could I get the weekend to decide?' → needsTime=true", () => {
+      expect(detectCandidateIntent("Could I get the weekend to decide?").needsTime).toBe(true);
+    });
+  });
+
+  describe("S118-B8 — 'want to process this' restricted to offer context", () => {
+    it("'I want to process this offer.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I want to process this offer.").needsTime).toBe(true);
+    });
+  });
 });
