@@ -301,8 +301,8 @@ const container: CSSProperties = {
 
 const sectionBase: CSSProperties = {
   position: "relative",
-  paddingTop: 120,
-  paddingBottom: 120,
+  paddingTop: 80,
+  paddingBottom: 80,
 };
 
 
@@ -4010,7 +4010,7 @@ export function PersonalizedReportsV2() {
     <section
       aria-labelledby="hd-reports"
       className="mv2-rpt-section"
-      style={{ background: t.cream, overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
+      style={{ background: t.cream, overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 80, paddingBottom: 64 }}
     >
       <style>{rpt_STYLES}</style>
 

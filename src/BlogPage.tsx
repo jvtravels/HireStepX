@@ -22841,13 +22841,20 @@ function CompactCard({ post }: { post: BlogPost }) {
     <article className="blog-card" style={{ display: "flex", flexDirection: "column" }}>
       {/* Image: frameless, portrait ratio, badges float on top */}
       <div className="img-frame" style={{ position: "relative", aspectRatio: "4 / 3", background: t.creamSoft, flexShrink: 0, overflow: "hidden", borderRadius: 12, border: `2px solid ${t.lineStrong}` }}>
-        {!imgFailed && (
+        {!imgFailed ? (
           <Image
             src={post.heroImage} alt={post.heroAlt}
             fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
             onError={() => setImgFailed(true)}
             style={{ objectFit: "cover" }}
           />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: t.creamSoft }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.inkFaintWeak} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+            </svg>
+            <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaintWeak, letterSpacing: "0.05em", textTransform: "uppercase" }}>{post.category}</span>
+          </div>
         )}
         {/* Category + date pills overlaid on image */}
         <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6 }}>
@@ -30059,7 +30066,7 @@ function BlogPostPage({ post, afterContent }: { post: BlogPost; afterContent?: R
 
       {/* Hero image: flush under header, rounded */}
       <div className="blog-post-hero" style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 40px" }}>
-        <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative" }}>
+        <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative", background: t.creamSoft }}>
           <Image
             src={post.heroImage}
             alt={post.heroAlt}
