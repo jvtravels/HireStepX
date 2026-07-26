@@ -1418,4 +1418,196 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
     const r = detectCandidateIntent("I am going to take the other offer.");
     expect(r.walkAway).toBe(true);
   });
+
+  /* ── S98-B1 — 'i will accept' accepted ── */
+  describe("S98-B1 — 'i will accept' accepted", () => {
+    it("'I will accept the position.' → accepted", () => {
+      const r = detectCandidateIntent("I will accept the position.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Yes, I accept the position.' → accepted", () => {
+      const r = detectCandidateIntent("Yes, I accept the position.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B2 — 'willing to accept' accepted ── */
+  describe("S98-B2 — 'willing to accept' accepted", () => {
+    it("'I am willing to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I am willing to accept.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B3 — 'X is acceptable' accepted ── */
+  describe("S98-B3 — 'X is acceptable' accepted", () => {
+    it("'That arrangement is acceptable.' → accepted", () => {
+      const r = detectCandidateIntent("That arrangement is acceptable.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'The offer is acceptable to me.' → accepted", () => {
+      const r = detectCandidateIntent("The offer is acceptable to me.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B4 — 'let us proceed / happy to move forward' accepted ── */
+  describe("S98-B4 — 'let us proceed / happy to move forward' accepted", () => {
+    it("'Let us proceed.' → accepted", () => {
+      const r = detectCandidateIntent("Let us proceed.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Let us move forward.' → accepted", () => {
+      const r = detectCandidateIntent("Let us move forward.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Happy to move forward with this.' → accepted", () => {
+      const r = detectCandidateIntent("Happy to move forward with this.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Happy to move forward.' → accepted", () => {
+      const r = detectCandidateIntent("Happy to move forward.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B5 — 'cannot accept' / 'can not accept' rejected ── */
+  describe("S98-B5 — 'cannot accept' and 'can not accept' rejected", () => {
+    it("'I cannot accept this offer as is.' → rejected", () => {
+      const r = detectCandidateIntent("I cannot accept this offer as is.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I can not accept this.' → rejected", () => {
+      const r = detectCandidateIntent("I can not accept this.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S98-B6 — 'below expectations' rejected ── */
+  describe("S98-B6 — 'below expectations' rejected", () => {
+    it("'This is below my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This is below my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The package is below expectations.' → rejected", () => {
+      const r = detectCandidateIntent("The package is below expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S98-B7 — 'not competitive' rejected ── */
+  describe("S98-B7 — 'not competitive' rejected", () => {
+    it("'The salary is not competitive.' → rejected", () => {
+      const r = detectCandidateIntent("The salary is not competitive.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S98-B8 — 'as long as' / 'so long as' → conditionalAccept ── */
+  describe("S98-B8 — 'as long as' / 'so long as' conditional accept", () => {
+    it("'Yes, as long as the start date is flexible.' → conditionalAccept", () => {
+      const r = detectCandidateIntent("Yes, as long as the start date is flexible.");
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("'Sure, so long as relocation is covered.' → conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, so long as relocation is covered.");
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  /* ── S98-B9 — 'few days' needsTime ── */
+  describe("S98-B9 — 'few days' needsTime", () => {
+    it("'I need a few days.' → needsTime", () => {
+      const r = detectCandidateIntent("I need a few days.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'Give me a few days to decide.' → needsTime", () => {
+      const r = detectCandidateIntent("Give me a few days to decide.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S98-B10 — 'mull it/this/that over' needsTime ── */
+  describe("S98-B10 — 'mull it/this/that over' needsTime", () => {
+    it("'Let me mull it over.' → needsTime", () => {
+      const r = detectCandidateIntent("Let me mull it over.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'I need to mull this over.' → needsTime", () => {
+      const r = detectCandidateIntent("I need to mull this over.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'I need to mull that over.' → needsTime", () => {
+      const r = detectCandidateIntent("I need to mull that over.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S98-B11 — 'until end of week/month' needsTime ── */
+  describe("S98-B11 — 'until end of week/month' needsTime", () => {
+    it("'Can I have until end of week?' → needsTime", () => {
+      const r = detectCandidateIntent("Can I have until end of week?");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'I need until end of the month.' → needsTime", () => {
+      const r = detectCandidateIntent("I need until end of the month.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S98-B12 — decline with adverb/modal → walkAway ── */
+  describe("S98-B12 — decline with adverb/modal walkAway", () => {
+    it("'I respectfully decline.' → walkAway", () => {
+      const r = detectCandidateIntent("I respectfully decline.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I must decline this offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I must decline this offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I have to decline.' → walkAway", () => {
+      const r = detectCandidateIntent("I have to decline.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I am afraid I will have to decline to share my current CTC.' → NOT walkAway (info-verb guard)", () => {
+      const r = detectCandidateIntent("I am afraid I will have to decline to share my current CTC.");
+      expect(r.walkAway).toBe(false);
+    });
+  });
+
+  /* ── S98-B13 — 'choosing to move on' → walkAway ── */
+  describe("S98-B13 — 'choosing to move on' walkAway", () => {
+    it("'I am choosing to move on.' → walkAway", () => {
+      const r = detectCandidateIntent("I am choosing to move on.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S98-B14 — 'be pursuing other opportunities' → walkAway ── */
+  describe("S98-B14 — 'be pursuing other opportunities' walkAway", () => {
+    it("'I will be pursuing other opportunities.' → walkAway", () => {
+      const r = detectCandidateIntent("I will be pursuing other opportunities.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S98-B15 — 'accepted another offer / position elsewhere' → walkAway ── */
+  describe("S98-B15 — 'accepted another offer / position elsewhere' walkAway", () => {
+    it("'I have accepted a position elsewhere.' → walkAway", () => {
+      const r = detectCandidateIntent("I have accepted a position elsewhere.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I have accepted another offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I have accepted another offer.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S98-B16 — 'decided to go with another company' → walkAway ── */
+  describe("S98-B16 — 'decided to go with another company' walkAway", () => {
+    it("'I have decided to go with another company.' → walkAway", () => {
+      const r = detectCandidateIntent("I have decided to go with another company.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
 });
