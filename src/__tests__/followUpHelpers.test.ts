@@ -2319,4 +2319,28 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I want to consult my accountant first.").needsTime).toBe(true);
     });
   });
+
+  /* ── S111-B2a — 'inadequate' rejected ── */
+  describe("S111-B2a — \"inadequate\" rejected", () => {
+    it("'I find the compensation inadequate.' → rejected", () => {
+      expect(detectCandidateIntent("I find the compensation inadequate.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S111-B2b — 'not what I was hoping for' rejected ── */
+  describe("S111-B2b — \"not what I was hoping for\" rejected", () => {
+    it("'It\\'s not what I was hoping for.' → rejected", () => {
+      expect(detectCandidateIntent("It's not what I was hoping for.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S111-B2c — 'cannot justify leaving' rejected ── */
+  describe("S111-B2c — \"cannot justify leaving\" rejected", () => {
+    it("'I cannot justify leaving my current role for this number.' → rejected", () => {
+      expect(detectCandidateIntent("I cannot justify leaving my current role for this number.").rejected).toBe(true);
+    });
+    it("'I can\\'t justify accepting this.' → rejected", () => {
+      expect(detectCandidateIntent("I can't justify accepting this.").rejected).toBe(true);
+    });
+  });
 });
