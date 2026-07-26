@@ -511,6 +511,9 @@ export default async function handler(req: Request): Promise<Response> {
      Gate: the sanitized transcript is the authoritative measure of session
      substance — fewer than 4 entries means at most 1 real exchange. */
   const sanitizedTranscript = sanitizeTranscript(body.transcript);
+  if (sanitizedTranscript.length === 0) {
+    return new Response(JSON.stringify({ error: "Empty transcript — no session to save" }), { status: 400, headers });
+  }
   const isBailoutSession = sanitizedTranscript.length < 4;
   /* Ground only for negotiation rows (negMetrics present). Non-negotiation
      sessions never carry a counter concept, so their skill_scores pass through

@@ -608,7 +608,11 @@ export async function getSubscriptionTier(userId: string): Promise<"free" | "sta
 export function validateOrigin(req: Request): boolean {
   const origin = req.headers.get("origin") || "";
   if (!origin) {
-    // GET requests from same-origin may not include Origin header — allow if Referer matches
+    // Only allow Referer fallback for safe read-only methods (GET, HEAD, OPTIONS).
+    // State-mutating methods must supply an Origin header; Referer can be spoofed
+    // by a cross-site form post and is insufficient as a CSRF guard on its own.
+    const method = req.method.toUpperCase();
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return false;
     const referer = req.headers.get("referer") || "";
     if (referer && isAllowedDomain(referer)) return true;
     return false;

@@ -64,9 +64,11 @@ describe("validateOrigin", () => {
     expect(validateOrigin(makeReq({ origin: "https://attacker.example" }))).toBe(false);
   });
 
-  it("falls back to Referer when Origin is absent (same-origin GET case)", () => {
-    expect(validateOrigin(makeReq({ referer: "https://hirestepx.com/dashboard" }))).toBe(true);
-    expect(validateOrigin(makeReq({ referer: "https://attacker.com/foo" }))).toBe(false);
+  it("falls back to Referer when Origin is absent (GET only — POST must supply Origin)", () => {
+    expect(validateOrigin(makeReq({ referer: "https://hirestepx.com/dashboard" }, "GET"))).toBe(true);
+    expect(validateOrigin(makeReq({ referer: "https://attacker.com/foo" }, "GET"))).toBe(false);
+    // POST without Origin is rejected even with a valid Referer (CSRF hardening)
+    expect(validateOrigin(makeReq({ referer: "https://hirestepx.com/dashboard" }, "POST"))).toBe(false);
   });
 
   it("rejects when neither Origin nor Referer present", () => {
