@@ -1966,4 +1966,76 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.rejected).toBe(true);
     });
   });
+
+  /* ── S102-B1 — 'fine with that' accepted ── */
+  describe("S102-B1 — \"fine with that\" accepted", () => {
+    it("'I'm fine with that.' → accepted", () => {
+      const r = detectCandidateIntent("I'm fine with that.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am perfectly fine with this offer.' → accepted", () => {
+      const r = detectCandidateIntent("I am perfectly fine with this offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S102-B2 — 'I'll go for it' accepted ── */
+  describe("S102-B2 — \"I'll go for it\" accepted", () => {
+    it("'I'll go for it.' → accepted", () => {
+      const r = detectCandidateIntent("I'll go for it.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would go for it without hesitation.' → accepted", () => {
+      const r = detectCandidateIntent("I would go for it without hesitation.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S102-B3 — 'does not meet requirements' rejected ── */
+  describe("S102-B3 — \"does not meet requirements\" rejected", () => {
+    it("'This does not meet my requirements.' → rejected", () => {
+      const r = detectCandidateIntent("This does not meet my requirements.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The offer doesn't meet my needs.' → rejected", () => {
+      const r = detectCandidateIntent("The offer doesn't meet my needs.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B4 — 'falls short' rejected ── */
+  describe("S102-B4 — \"falls short\" rejected", () => {
+    it("'This falls short of my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This falls short of my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The package falls short of my standards.' → rejected", () => {
+      const r = detectCandidateIntent("The package falls short of my standards.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B5 — 'need higher number' rejected ── */
+  describe("S102-B5 — \"need higher number\" rejected", () => {
+    it("'I need a higher number.' → rejected", () => {
+      const r = detectCandidateIntent("I need a higher number.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I need a better salary.' → rejected", () => {
+      const r = detectCandidateIntent("I need a better salary.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B6 — 'I'll be passing on this' walkAway ── */
+  describe("S102-B6 — \"I'll be passing on this\" walkAway", () => {
+    it("'I'll be passing on this offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I'll be passing on this offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I will be passing on this opportunity.' → walkAway", () => {
+      const r = detectCandidateIntent("I will be passing on this opportunity.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
 });
