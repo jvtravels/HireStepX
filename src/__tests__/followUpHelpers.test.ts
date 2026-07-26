@@ -2229,4 +2229,54 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I'm withdrawing my earlier feedback.").walkAway).toBe(false);
     });
   });
+
+  /* ── S109-B2a — 'won't work for me' rejected ── */
+  describe("S109-B2a — \"won't work for me\" rejected", () => {
+    it("'I\\'m afraid this won\\'t work for me.' → rejected", () => {
+      expect(detectCandidateIntent("I'm afraid this won't work for me.").rejected).toBe(true);
+    });
+    it("'This offer won\\'t work for me.' → rejected", () => {
+      expect(detectCandidateIntent("This offer won't work for me.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S109-B2b — 'not satisfactory' rejected ── */
+  describe("S109-B2b — \"not satisfactory\" rejected", () => {
+    it("'The package is not satisfactory.' → rejected", () => {
+      expect(detectCandidateIntent("The package is not satisfactory.").rejected).toBe(true);
+    });
+    it("'This isn\\'t satisfactory for my level.' → rejected", () => {
+      expect(detectCandidateIntent("This isn't satisfactory for my level.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S109-B2c — 'was expecting more' rejected ── */
+  describe("S109-B2c — \"was expecting more\" rejected", () => {
+    it("'I was expecting more.' → rejected", () => {
+      expect(detectCandidateIntent("I was expecting more.").rejected).toBe(true);
+    });
+    it("'I expected much more for this role.' → rejected", () => {
+      expect(detectCandidateIntent("I expected much more for this role.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S109-B3a — 'taking another offer' walkAway (gerund form) ── */
+  describe("S109-B3a — \"taking another offer\" walkAway (gerund)", () => {
+    it("'I\\'m taking another offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm taking another offer.").walkAway).toBe(true);
+    });
+    it("'I\\'m taking the other offer on the table.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm taking the other offer on the table.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S109-B4b — 'let me review the offer letter' needsTime ── */
+  describe("S109-B4b — \"let me review the offer letter\" needsTime", () => {
+    it("'Let me review the offer letter first.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me review the offer letter first.").needsTime).toBe(true);
+    });
+    it("'Let me review the contract terms.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me review the contract terms.").needsTime).toBe(true);
+    });
+  });
 });
