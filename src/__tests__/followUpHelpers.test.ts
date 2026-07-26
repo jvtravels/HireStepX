@@ -2106,4 +2106,24 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I'd like some time to review the terms.").needsTime).toBe(true);
     });
   });
+
+  /* ── S105-B4d — 'formally decline' walkAway ── */
+  describe("S105-B4d — \"formally decline\" walkAway", () => {
+    it("'I formally decline.' → walkAway", () => {
+      expect(detectCandidateIntent("I formally decline.").walkAway).toBe(true);
+    });
+    it("'I formally decline the offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I formally decline the offer.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S105-B5a — 'consult my family' needsTime (no with) ── */
+  describe("S105-B5a — \"consult my family\" needsTime without 'with'", () => {
+    it("'I\\'d like to consult my family.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like to consult my family.").needsTime).toBe(true);
+    });
+    it("'I want to consult my spouse before deciding.' → needsTime", () => {
+      expect(detectCandidateIntent("I want to consult my spouse before deciding.").needsTime).toBe(true);
+    });
+  });
 });
