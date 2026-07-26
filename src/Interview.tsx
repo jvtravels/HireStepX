@@ -326,7 +326,7 @@ function InterviewInner() {
   return (
     <InterviewProvider value={engine}>
     <div style={{
-      width: "100vw", height: "100dvh", minHeight: "100vh", background: e.cream,
+      width: "100%", height: "100dvh", minHeight: "100vh", background: e.cream,
       display: "flex", flexDirection: "column", overflow: "hidden",
       fontFamily: ef.sans, color: e.coal,
     }}>

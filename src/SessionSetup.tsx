@@ -193,7 +193,7 @@ function AutocompleteInput({
         style={{
           width: "100%", padding: "12px 16px", borderRadius: 10,
           background: T.white, border: `1.5px solid ${error ? T.error : focused ? T.indigo : T.line}`,
-          color: T.coal, fontFamily: F.sans, fontSize: 14,
+          color: T.coal, fontFamily: F.sans, fontSize: 16,
           outline: "none", transition: "border-color 0.2s", boxSizing: "border-box",
         }}
       />

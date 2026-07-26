@@ -345,6 +345,9 @@ function FooterDomeMobile() {
               fontSize: 12,
               color: t.inkFaint,
               textDecoration: "none",
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
             }}>{label}</a>
           ))}
         </div>

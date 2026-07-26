@@ -262,9 +262,10 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
         onClick={dismiss}
         aria-label="Dismiss resume freshness reminder"
         style={{
-          flexShrink: 0, width: 28, height: 28, borderRadius: 8, cursor: "pointer",
+          flexShrink: 0, minWidth: 44, minHeight: 44, borderRadius: 8, cursor: "pointer",
           background: "transparent", border: "none", color: t.inkMid,
           fontFamily: f.sans, fontSize: 16, lineHeight: 1,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}
       >×</button>
     </div>
@@ -357,7 +358,7 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
           </p>
           <button
             type="button" onClick={dismiss} aria-label="Dismiss outcome prompt"
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: t.inkMid, fontSize: 16, lineHeight: 1, padding: 0 }}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: t.inkMid, fontSize: 16, lineHeight: 1, padding: 0, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
           >×</button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

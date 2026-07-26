@@ -1060,6 +1060,7 @@ function ProductMockHero() {
                 fontWeight: 600,
                 padding: "6px 12px",
                 borderRadius: 999,
+                minHeight: 44,
                 boxShadow:
                   phase === "idle" || phase === "done" ? shadows.cta : "none",
               }}
@@ -1085,6 +1086,7 @@ function ProductMockHero() {
                   fontWeight: 600,
                   padding: "5px 10px",
                   borderRadius: 999,
+                  minHeight: 44,
                 }}
               >
                 {autoPaused ? "Resume" : "Pause"}
@@ -1678,11 +1680,11 @@ export function InterviewFocusV2() {
         </defs>
       </svg>
 
-      <div style={{ ...container }}>
+      <div style={{ ...container }} className="mv2-container">
         <SectionMasthead n="03" label="Interview formats" right="10 types · 4 live now" style={{ marginBottom: 44 }} />
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
-          <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
+          <h2 id="hd-focus" style={{ ...h2, fontSize: "clamp(36px, 8vw, 64px)" }}>
             Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it&rsquo;s testing.</span>
           </h2>
@@ -1962,7 +1964,7 @@ export function ProductStoryV2() {
 
   return (
     <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 96, paddingBottom: 72 }}>
-      <div style={container}>
+      <div style={container} className="mv2-container">
         <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <h2 id="hd-story" style={h2}>
             Resume in.{" "}
@@ -2394,7 +2396,7 @@ export function FeatureGridV2() {
       className="mv2-section"
       style={{ position: "relative", background: t.cream, paddingTop: "clamp(20px,3vh,36px)", paddingBottom: "clamp(20px,3vh,36px)" }}
     >
-      <div style={container}>
+      <div style={container} className="mv2-container">
         <MotionReveal style={{ textAlign: "center", marginBottom: 40 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
             What practice alone{" "}
