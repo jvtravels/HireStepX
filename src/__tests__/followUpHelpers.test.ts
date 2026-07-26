@@ -2169,4 +2169,34 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("nahi chahiye").walkAway).toBe(true);
     });
   });
+
+  /* ── S107-B2c — 'align with industry standards' rejected ── */
+  describe("S107-B2c — \"align with industry standards\" rejected", () => {
+    it("'The compensation doesn\\'t align with industry standards.' → rejected", () => {
+      expect(detectCandidateIntent("The compensation doesn't align with industry standards.").rejected).toBe(true);
+    });
+    it("'This doesn\\'t align with market standards.' → rejected", () => {
+      expect(detectCandidateIntent("This doesn't align with market standards.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S107-B3a — 'going to have to move on' walkAway ── */
+  describe("S107-B3a — \"going to have to move on\" walkAway", () => {
+    it("'I\\'m going to have to move on.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm going to have to move on.").walkAway).toBe(true);
+    });
+    it("'I\\'ll have to move on from this.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll have to move on from this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S107-B3b — 'step back from this' (non-progressive form) walkAway ── */
+  describe("S107-B3b — \"step back from this\" walkAway (non-progressive)", () => {
+    it("'I\\'ve decided to step back from this process.' → walkAway", () => {
+      expect(detectCandidateIntent("I've decided to step back from this process.").walkAway).toBe(true);
+    });
+    it("'I need to step back from this.' → walkAway", () => {
+      expect(detectCandidateIntent("I need to step back from this.").walkAway).toBe(true);
+    });
+  });
 });
