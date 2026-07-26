@@ -42,22 +42,6 @@ const LEGAL_LINKS: Array<[string, string]> = [
 ];
 
 /* ── Icon SVGs ── */
-function IgIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.5" cy="6.5" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-function XIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817-5.966 6.817H1.68l7.73-8.835L1.254 2.25h6.83l4.713 6.231 5.447-6.231Zm-1.16 17.52h1.833L7.084 4.126H5.117L17.084 19.77Z" />
-    </svg>
-  );
-}
 function InIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -254,8 +238,6 @@ function FooterDomeDesktop() {
       {/* Social icons bottom-right */}
       <div style={{ position: "absolute", right: 96, bottom: 36, display: "flex", gap: 12 }}>
         {[
-          { icon: <IgIcon />, href: "https://instagram.com/hirestepx", label: "Instagram" },
-          { icon: <XIcon />, href: "https://twitter.com/hirestepx", label: "X" },
           { icon: <InIcon />, href: "https://linkedin.com/company/hirestepx", label: "LinkedIn" },
         ].map(({ icon, href, label }) => (
           <a key={label} href={href} aria-label={label} target="_blank" rel="noopener noreferrer"
