@@ -2495,4 +2495,91 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("Let me think out loud.").needsTime).toBe(false);
     });
   });
+
+  /* ── S114-B1 — 'I would accept nothing less' NOT accepted (FP fix) ── */
+  describe("S114-B1 — \"I would accept nothing less\" safe (no accepted)", () => {
+    it("'I would accept nothing less than 30.' → accepted=false", () => {
+      expect(detectCandidateIntent("I would accept nothing less than 30.").accepted).toBe(false);
+    });
+    it("'I would accept nothing less.' → accepted=false", () => {
+      expect(detectCandidateIntent("I would accept nothing less.").accepted).toBe(false);
+    });
+  });
+
+  /* ── S114-B2 — 'walking away with a package' NOT walkAway (FP fix) ── */
+  describe("S114-B2 — \"walking away with\" safe (no walkAway)", () => {
+    it("'I\\'d be walking away with a great package if we settle at 28.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'd be walking away with a great package if we settle at 28.").walkAway).toBe(false);
+    });
+    it("'walking away from this' still fires walkAway=true", () => {
+      expect(detectCandidateIntent("I am walking away from this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S114-B3 — 'I'll go with this' accepted ── */
+  describe("S114-B3 — \"I'll go with this\" accepted", () => {
+    it("'I\\'ll go with this.' → accepted", () => {
+      expect(detectCandidateIntent("I'll go with this.").accepted).toBe(true);
+    });
+    it("'I would go with it.' → accepted", () => {
+      expect(detectCandidateIntent("I would go with it.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S114-B4 — 'in agreement' accepted ── */
+  describe("S114-B4 — \"in agreement with the terms\" accepted", () => {
+    it("'I\\'m in agreement with the terms.' → accepted", () => {
+      expect(detectCandidateIntent("I'm in agreement with the terms.").accepted).toBe(true);
+    });
+    it("'In agreement.' → accepted", () => {
+      expect(detectCandidateIntent("In agreement.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S114-B5 — 'I'm satisfied with this' accepted ── */
+  describe("S114-B5 — \"I'm satisfied with this\" accepted", () => {
+    it("'I\\'m satisfied with this.' → accepted", () => {
+      expect(detectCandidateIntent("I'm satisfied with this.").accepted).toBe(true);
+    });
+    it("'I am fully satisfied with the offer.' → accepted", () => {
+      expect(detectCandidateIntent("I am fully satisfied with the offer.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S114-B6 — 'I'll be declining your offer' walkAway ── */
+  describe("S114-B6 — \"I'll be declining\" walkAway", () => {
+    it("'I\\'ll be declining your offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll be declining your offer.").walkAway).toBe(true);
+    });
+    it("'I will be declining.' → walkAway", () => {
+      expect(detectCandidateIntent("I will be declining.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S114-B7 — 'can't come to an agreement' walkAway ── */
+  describe("S114-B7 — \"can't come to an agreement\" walkAway", () => {
+    it("'We can\\'t come to an agreement.' → walkAway", () => {
+      expect(detectCandidateIntent("We can't come to an agreement.").walkAway).toBe(true);
+    });
+    it("'I cannot come to an agreement on this.' → walkAway", () => {
+      expect(detectCandidateIntent("I cannot come to an agreement on this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S114-B8 — 'let me sit with this' needsTime ── */
+  describe("S114-B8 — \"sit with this\" needsTime", () => {
+    it("'Let me sit with this for a bit.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me sit with this for a bit.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S114-B9 — 'have some time to process' needsTime ── */
+  describe("S114-B9 — \"have some time to process\" needsTime", () => {
+    it("'Can I have some time to process?' → needsTime", () => {
+      expect(detectCandidateIntent("Can I have some time to process?").needsTime).toBe(true);
+    });
+    it("'I\\'d like to have more time to decide.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like to have more time to decide.").needsTime).toBe(true);
+    });
+  });
 });
