@@ -245,8 +245,8 @@ function FooterDomeDesktop() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 30,
-              height: 30,
+              width: 44,
+              height: 44,
               borderRadius: 8,
               border: `1px solid ${t.line}`,
               color: t.inkFaint,
@@ -361,8 +361,8 @@ export function FooterDome() {
   return (
     <footer aria-label="Site footer">
       <style>{`
-        @media (max-width: 879px) { .fd-desktop { display: none !important; } }
-        @media (min-width: 880px) { .fd-mobile  { display: none !important; } }
+        @media (max-width: 999px) { .fd-desktop { display: none !important; } }
+        @media (min-width: 1000px) { .fd-mobile  { display: none !important; } }
       `}</style>
       <div className="fd-desktop"><FooterDomeDesktop /></div>
       <div className="fd-mobile"><FooterDomeMobile /></div>
