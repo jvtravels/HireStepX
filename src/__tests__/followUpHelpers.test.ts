@@ -2781,4 +2781,121 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I need a few days.").needsTime).toBe(true);
     });
   });
+
+  /* ── S117-B1 FP — accept: "Accept nothing below 30 LPA" ── */
+  describe("S117-B1 — \"Accept nothing below\" accepted=false (FP fix)", () => {
+    it("'Accept nothing below 30 LPA.' → accepted=false", () => {
+      expect(detectCandidateIntent("Accept nothing below 30 LPA.").accepted).toBe(false);
+    });
+    it("'I accept.' → accepted=true (short affirmative preserved)", () => {
+      expect(detectCandidateIntent("I accept.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S117-B5 FP — reject: "don't think I need more equity" ── */
+  describe("S117-B5 — \"don't think I need more equity\" rejected=false (FP fix)", () => {
+    it("'I don\\'t think I need more equity to make this work.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't think I need more equity to make this work.").rejected).toBe(false);
+    });
+    it("'I want more fixed salary.' → rejected=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I want more fixed salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S117-B7/B8 FPs — needsTime: negated think phrases ── */
+  describe("S117-B7B8 — negated think-time phrases needsTime=false (FP fixes)", () => {
+    it("'I don\\'t need time, I accept.' → needsTime=false", () => {
+      expect(detectCandidateIntent("I don't need time, I accept.").needsTime).toBe(false);
+    });
+    it("'No need to think about it, I\\'m in.' → needsTime=false", () => {
+      expect(detectCandidateIntent("No need to think about it, I'm in.").needsTime).toBe(false);
+    });
+    it("'I need more time to decide.' → needsTime=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I need more time to decide.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S117-B11 — accept: "consider it settled" (+ FN fix for bare consider) ── */
+  describe("S117-B11 — \"consider it settled\" accepted", () => {
+    it("'Consider it settled.' → accepted=true", () => {
+      expect(detectCandidateIntent("Consider it settled.").accepted).toBe(true);
+    });
+    it("'Consider it settled.' → needsTime=false (double-bug fix)", () => {
+      expect(detectCandidateIntent("Consider it settled.").needsTime).toBe(false);
+    });
+  });
+
+  /* ── S117-B12/B13/B14/B15 — accept: sign/shake/settled idioms ── */
+  describe("S117-B12-B15 — deal-close accept idioms", () => {
+    it("'I\\'m happy to sign.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm happy to sign.").accepted).toBe(true);
+    });
+    it("'Sign me up.' → accepted=true", () => {
+      expect(detectCandidateIntent("Sign me up.").accepted).toBe(true);
+    });
+    it("'That\\'s settled then.' → accepted=true", () => {
+      expect(detectCandidateIntent("That's settled then.").accepted).toBe(true);
+    });
+    it("'Let\\'s shake on it.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let's shake on it.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S117-B16/B19 — accept: content/comfortable with ── */
+  describe("S117-B16B19 — \"content/comfortable with\" accepted", () => {
+    it("'I\\'m content with this package.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm content with this package.").accepted).toBe(true);
+    });
+    it("'I\\'m comfortable with this.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm comfortable with this.").accepted).toBe(true);
+    });
+    it("'I\\'m not comfortable with this.' → accepted=false", () => {
+      expect(detectCandidateIntent("I'm not comfortable with this.").accepted).toBe(false);
+    });
+  });
+
+  /* ── S117-B21/B22/B24/B26 — reject: disappointment/underwhelming/below par ── */
+  describe("S117-B21-B26 — sentiment-based rejection FNs", () => {
+    it("'This is not what I was expecting.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is not what I was expecting.").rejected).toBe(true);
+    });
+    it("'I\\'m disappointed with this offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'm disappointed with this offer.").rejected).toBe(true);
+    });
+    it("'This feels underwhelming.' → rejected=true", () => {
+      expect(detectCandidateIntent("This feels underwhelming.").rejected).toBe(true);
+    });
+    it("'This is below par.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is below par.").rejected).toBe(true);
+    });
+    it("'I\\'m not happy with this offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'm not happy with this offer.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S117-B36/B37 — walkAway: stepping away / made up my mind ── */
+  describe("S117-B36B37 — stepping away / made up my mind walkAway", () => {
+    it("'I\\'m stepping away from this process.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm stepping away from this process.").walkAway).toBe(true);
+    });
+    it("'I\\'ve made up my mind to decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I've made up my mind to decline this offer.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S117-B48/B52 — needsTime: couple of weeks / chew on this ── */
+  describe("S117-B48B52 — needsTime new arms", () => {
+    it("'I\\'ll need a couple of weeks to decide.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I'll need a couple of weeks to decide.").needsTime).toBe(true);
+    });
+    it("'Let me chew on this a bit.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me chew on this a bit.").needsTime).toBe(true);
+    });
+    it("'I need some space to decide.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need some space to decide.").needsTime).toBe(true);
+    });
+    it("'I\\'d like to weigh my options.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I'd like to weigh my options.").needsTime).toBe(true);
+    });
+  });
 });
