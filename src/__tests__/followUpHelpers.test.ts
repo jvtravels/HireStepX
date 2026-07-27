@@ -4309,4 +4309,73 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("Let's call it quits.").walkAway).toBe(true);
     });
   });
+
+  describe("S141-B1 (wave 47, P1) — rejectWords 'rejecting' gerund missing", () => {
+    it("'I am rejecting this offer.' fires rejected=true", () => {
+      expect(detectCandidateIntent("I am rejecting this offer.").rejected).toBe(true);
+    });
+    it("regression: bare present tense 'I reject this offer.' still fires", () => {
+      expect(detectCandidateIntent("I reject this offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S141-B2/B3 (wave 47, P1) — walkAwayWords/WALKAWAY_PATTERN/walkRe missing declined/withdrew/passed past tense", () => {
+    it("'I declined the position/offer.' fires walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      expect(detectCandidateIntent("I declined the position.").walkAway).toBe(true);
+      expect(isWalkAway("I declined the position.")).toBe(true);
+      expect(detectCandidateIntent("I declined the offer.").walkAway).toBe(true);
+      expect(isWalkAway("I declined the offer.")).toBe(true);
+    });
+    it("'I withdrew from the process.' fires walkAway=true", () => {
+      expect(detectCandidateIntent("I withdrew from the process.").walkAway).toBe(true);
+      expect(isWalkAway("I withdrew from the process.")).toBe(true);
+    });
+    it("'I passed on the offer.' fires walkAway=true", () => {
+      expect(detectCandidateIntent("I passed on the offer.").walkAway).toBe(true);
+      expect(isWalkAway("I passed on the offer.")).toBe(true);
+    });
+    it("regression: existing gerund/bare forms still fire", () => {
+      expect(detectCandidateIntent("I'm declining this offer.").walkAway).toBe(true);
+      expect(detectCandidateIntent("I am withdrawing from the offer.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S141-B4 (wave 47, P2) — numberLockWords 'stuck with' past tense missing", () => {
+    it("'I stuck with my number of 30 lakhs.' fires rejected=true", () => {
+      expect(detectCandidateIntent("I stuck with my number of 30 lakhs.").rejected).toBe(true);
+    });
+    it("regression: gerund 'sticking with' still fires", () => {
+      expect(detectCandidateIntent("I'm sticking with 26 lakhs.").rejected).toBe(true);
+    });
+  });
+
+  describe("S141-B5 (wave 47, P2) — acceptWords apostrophe fully dropped ('Ill'/'Id') missed", () => {
+    it("'Ill take it.' and 'Id accept that.' fire accepted=true", () => {
+      expect(detectCandidateIntent("Ill take it.").accepted).toBe(true);
+      expect(detectCandidateIntent("Id accept that.").accepted).toBe(true);
+    });
+    it("regression: curly and straight apostrophe forms still fire", () => {
+      expect(detectCandidateIntent("I'll take it.").accepted).toBe(true);
+      expect(detectCandidateIntent("I’ll take it.").accepted).toBe(true);
+      expect(detectCandidateIntent("I'd accept that.").accepted).toBe(true);
+    });
+  });
+
+  describe("S141-B6 (wave 47, P2) — competingWords missed plain declarative 'gave/offered me an offer/N LPA'", () => {
+    it("plain declarative competing-offer phrasings fire mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("Amazon gave me an offer of 20 lakhs per annum.").mentionedCompeting,
+      ).toBe(true);
+      expect(detectCandidateIntent("Google has offered me 35 LPA.").mentionedCompeting).toBe(true);
+      expect(detectCandidateIntent("Another firm offered me a job.").mentionedCompeting).toBe(true);
+    });
+    it("regression: also/too-prefixed and percentage forms still fire", () => {
+      expect(
+        detectCandidateIntent("Amazon has also made me an offer.").mentionedCompeting,
+      ).toBe(true);
+      expect(
+        detectCandidateIntent("Another firm has offered me 20% more.").mentionedCompeting,
+      ).toBe(true);
+    });
+  });
 });
