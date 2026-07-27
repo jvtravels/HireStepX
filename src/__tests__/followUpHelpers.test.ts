@@ -3586,4 +3586,62 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("You go first, tell me your budget.").deflected).toBe(true);
     });
   });
+
+  describe("S126-B1 (wave 32, P1) — number-lock reject signal blanket-suppressed by unrelated accept phrase", () => {
+    it("'That works for me. Sticking with 30 LPA is what I need.' → rejected=true", () => {
+      expect(
+        detectCandidateIntent("That works for me. Sticking with 30 LPA is what I need.").rejected,
+      ).toBe(true);
+    });
+    it("'sounds good, I should hold at 26 lakhs.' → rejected=true", () => {
+      expect(detectCandidateIntent("sounds good, I should hold at 26 lakhs.").rejected).toBe(true);
+    });
+    it("regression: existing number-lock tests still fire unchanged", () => {
+      expect(
+        detectCandidateIntent("No, I would like to stick with 26 lakhs per annum").rejected,
+      ).toBe(true);
+      expect(detectCandidateIntent("I'm holding firm at 30 LPA").rejected).toBe(true);
+      expect(
+        detectCandidateIntent("I'd be staying at 32 LPA — that's my floor").rejected,
+      ).toBe(true);
+    });
+    it("regression: benign 'stick with the team' (no number) still not a rejection", () => {
+      expect(detectCandidateIntent("I'd love to stick with the team I have today").rejected).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("S126-B2 (wave 32, P1) — walk-away-negation guard on rejected scoped to the walk-away arm only", () => {
+    it("'I won't accept this but I won't walk away either.' → rejected=true", () => {
+      expect(
+        detectCandidateIntent("I won't accept this but I won't walk away either.").rejected,
+      ).toBe(true);
+    });
+    it("regression: S120-B1 'I don't want to walk away' still not a rejection", () => {
+      expect(detectCandidateIntent("I don't want to walk away").rejected).toBe(false);
+    });
+  });
+
+  describe("S126-B3 (wave 32, P1) — needsTime suppressed by a number that merely references the recruiter's own offer", () => {
+    it("'I need a few days to think about the 45 LPA offer.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("I need a few days to think about the 45 LPA offer.").needsTime,
+      ).toBe(true);
+    });
+    it("regression: 'could you consider 30 LPA instead?' is still a counter, not needsTime", () => {
+      expect(detectCandidateIntent("could you consider 30 LPA instead?").needsTime).toBe(false);
+    });
+  });
+
+  describe("S126-B4 (wave 32, P1) — walkAwayWords/walkRe subject frame missing 'want to'/'guess i'll'", () => {
+    it("'I want to move on from this negotiation.' → walkAway=true", () => {
+      expect(
+        detectCandidateIntent("I want to move on from this negotiation.").walkAway,
+      ).toBe(true);
+    });
+    it("'I guess I'll move on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I guess I'll move on.").walkAway).toBe(true);
+    });
+  });
 });
