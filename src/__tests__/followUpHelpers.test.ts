@@ -3958,4 +3958,39 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("My friend works at Google and got a great offer.").walkAway).toBe(false);
     });
   });
+
+  describe("S133-B1 (wave 39, P1) — acceptWords missing emphatic 'I do accept' form", () => {
+    it("'I do accept'/'I did accept' fires accepted=true", () => {
+      expect(detectCandidateIntent("Actually wait, forget what I said earlier, I do accept this offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("I did accept the offer.").accepted).toBe(true);
+    });
+    it("regression: bare 'I accept' and its negative-lookahead exclusions still hold", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("I accept nothing less than 40 LPA.").accepted).toBe(false);
+    });
+  });
+
+  describe("S133-B2 (wave 39, P1) — walkAway swallowed by unrelated post-hedge accept clause", () => {
+    it("pre-hedge walk-away statement survives an unrelated post-hedge accept", () => {
+      const r = detectCandidateIntent("I'm walking away from the equity discussion, but I accept the base salary.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("regression: genuine retraction ('I was going to walk away, but I accept') still suppresses walkAway", () => {
+      const r = detectCandidateIntent("I was going to walk away, but I accept the offer.");
+      expect(r.walkAway).toBe(false);
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  describe("S133-B3 (wave 39, P1) — trailing elliptical negation doesn't retract an earlier departure verb", () => {
+    it("'...but I won't.' retracts an earlier 'considered walking away'", () => {
+      const r = detectCandidateIntent("I'm not going to lie, I considered walking away, but I won't.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("I'm not going to lie, I considered walking away, but I won't.")).toBe(false);
+    });
+    it("regression: 'but I won't accept less than X' still has content after the negator and isn't retracted away", () => {
+      const r = detectCandidateIntent("I considered walking away, but I won't accept less than 30 LPA.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
 });
