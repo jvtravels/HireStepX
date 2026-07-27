@@ -2456,7 +2456,21 @@ Repeat-text in followUpText is FORBIDDEN.`;
         return true;
       };
       const acceptMatchForLockLocal = acceptRe.exec(answer);
-      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe))) && !numberLockAppliesToLocalFU(answer, acceptMatchForLockLocal) && !acceptSarcasmReLocal.test(answer);
+      // S136-B2 (wave 42) — the old `!hedgeRe.test(answer.slice(answer.search(acceptRe)))`
+      // suppressed didAccept on ANY hedge word anywhere after the accept match, with no
+      // distinction between a hedge that negates ("but I don't think this works out") and
+      // a hedge that's just a benign condition ("but only if you confirm the start date",
+      // "however I'd like it in writing") — the latter is exactly what conditionalAccept
+      // represents in _follow-up-helpers.ts, where `accepted` stays true. Mirrors the
+      // canonical hedgeIsRejection walk-away arm (walkRe is the local equivalent of
+      // walkAwayWords) — a full rejectWords port isn't available locally, so this covers
+      // the walk-away-flavored post-hedge case (S129-B1's "but I also do not think this is
+      // going to work out") while no longer blocking benign post-hedge conditions.
+      const postHedgeTextLocal = hedgeRe.test(answer) ? answer.slice(answer.search(hedgeRe)) : "";
+      const postHedgeIsConditionalThreatLocal = /\bif\b/i.test(postHedgeTextLocal);
+      const hedgeBlocksAcceptLocal =
+        postHedgeTextLocal !== "" && walkRe.test(postHedgeTextLocal) && !postHedgeIsConditionalThreatLocal;
+      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeBlocksAcceptLocal && !numberLockAppliesToLocalFU(answer, acceptMatchForLockLocal) && !acceptSarcasmReLocal.test(answer);
       // S121-B7 (wave 27): mirrors walkAwayNegationRe in _follow-up-helpers.ts — "was about
       // to walk away but..." is a retraction, not an intent to depart.
       // S122-B1 (wave 28): mirrors walkAwayNegationRe's bare-"not" branch (tight 0-1 word
@@ -2503,10 +2517,16 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // departure verb without repeating it; walkAwayNegationReLocal only looks backward.
       const trailingRetractionReLocal =
         /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
+      // S136-B3 (wave 42): mirrors walkAwaySarcasmRe in _follow-up-helpers.ts — "like
+      // I would ever walk away" self-mockery contains a literal walkRe phrase and
+      // previously fired didWalkAway=true despite clearly positive sentiment.
+      const walkAwaySarcasmReLocal =
+        /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
       const didWalkAway = (() => {
         if (notInterestedDoubleNegationReLocal.test(answer)) return false;
         if (thirdPartyDepartureReLocal.test(answer)) return false;
         if (trailingRetractionReLocal.test(answer)) return false;
+        if (walkAwaySarcasmReLocal.test(answer)) return false;
         // S135-B1 (wave 41): mirrors the canonical walkAway's numberLockAppliesToLocal
         // guard — didWalkAway's base branch had NO number-lock guard at all, unlike
         // didAccept, causing a live 3-way divergence with detectCandidateIntent()/

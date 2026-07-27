@@ -231,6 +231,16 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     return { accepted: false, conditionalAccept: false, rejected: false, walkAway: false, deflected: false, needsTime: false, mentionedCompeting: false };
   }
 
+  /* S136-B3 (wave 42) — acceptSarcasmRe only recognized the "like/as if...I'd accept"
+   * sarcasm frame; the mirror-image "like/as if...I'd walk away" self-mockery had no
+   * equivalent guard, so bare walkAwayWords/rejectWords arms read it literally and
+   * inverted clearly positive sentiment (e.g. "Oh sure, like I would ever walk away
+   * from a bird in hand — I accept!"). Mirrors acceptSarcasmRe's first arm verbatim.
+   * Declared early (before hedgeIsRejection) since the sarcasm frame's own "if" can
+   * itself become the detected hedge, embedding a literal "walk away" in postHedgeText. */
+  const walkAwaySarcasmRe =
+    /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
+
   const isShortAffirmative = trimmed.split(/\s+/).length < 8
     && shortAffirmativeStart.test(trimmed)
     && !hedgeWords.test(trimmed)
@@ -291,10 +301,16 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   const preHedgeRejectMatch = rejectWords.exec(preHedgeText);
   const preHedgeRejectIsWalkAwayArm = !!preHedgeRejectMatch && /^walk\s+away/i.test(preHedgeRejectMatch[0]);
   const preHedgeIsRejection = !!preHedgeRejectMatch && !preHedgeRejectIsWalkAwayArm;
+  /* S136-B3 (wave 42) — "As if I would walk away from this deal, I accept." hedges on
+   * the literal "if" inside the sarcasm frame itself, so postHedgeText contains the bare
+   * "walk away" phrase and rejectWords' unconditional arm fired hedgeIsRejection=true,
+   * blocking accepted despite the walk-away being sarcastic self-mockery, not a real
+   * hedge/condition. Guard with the same walkAwaySarcasmRe used for rejected/walkAway. */
   const hedgeIsRejection =
-    rejectWords.test(postHedgeText) ||
-    preHedgeIsRejection ||
-    (walkAwayWords.test(postHedgeText) && !postHedgeWalkAwayIsConditionalThreat);
+    !walkAwaySarcasmRe.test(trimmed) && (
+      rejectWords.test(postHedgeText) ||
+      preHedgeIsRejection ||
+      (walkAwayWords.test(postHedgeText) && !postHedgeWalkAwayIsConditionalThreat));
   /* S128-B3 (wave 34) — a bare trailing hedge word with nothing after it ("I accept,
    * though." / "Deal, though.") is a hesitation filler, not a stated condition — genuine
    * conditional accepts have actual content following the hedge ("I accept, though I'd
@@ -459,7 +475,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * less than X", where content follows the negator and introduces an unrelated point. */
   const trailingRetractionRe =
     /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
-  const rejected = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && (
+  const rejected = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
     (rejectWords.test(trimmed) && !accepted && !rejNegationRe.test(trimmed) && !(rejectMatchIsWalkAwayArm && walkAwayNegationRe.test(trimmed)) && !notInterestedDoubleNegationRe.test(trimmed))
     || (numberLockWords.test(trimmed) && !rejNegationRe.test(trimmed) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed)));
   const deflected = deflectWords.test(trimmed);
@@ -489,7 +505,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * is anchoring a number, not leaving; mirrors the same exclusion already applied to
    * `accepted`/`rejected`. */
   const baseWalkAwayMatch = walkAwayWords.exec(trimmed);
-  const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && (
+  const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
     (walkAwayWords.test(trimmed) && !accepted && !numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
     || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText))
     || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText)));

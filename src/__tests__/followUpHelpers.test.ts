@@ -4087,4 +4087,40 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.needsTime).toBe(false);
     });
   });
+
+  describe("S136-B1 (wave 42, P1) — isWalkAway() had no third-party/reported-speech guard", () => {
+    it("'my manager said I should walk away, but I accept' does not fire isWalkAway", () => {
+      expect(isWalkAway("My manager said I should walk away, but honestly I accept the offer.")).toBe(false);
+    });
+    it("'my friend said I should walk away' does not fire isWalkAway", () => {
+      expect(isWalkAway("My friend said I should walk away.")).toBe(false);
+    });
+    it("'my recruiter said I should walk away, but I need more time' does not fire isWalkAway", () => {
+      expect(isWalkAway("My recruiter said I should walk away, but I need more time to think.")).toBe(false);
+    });
+    it("stays in sync with detectCandidateIntent().walkAway on the same third-party inputs", () => {
+      const answer = "My wife said I should walk away from this, but I'm still considering it.";
+      expect(detectCandidateIntent(answer).walkAway).toBe(false);
+      expect(isWalkAway(answer)).toBe(false);
+    });
+  });
+
+  describe("S136-B3 (wave 42, P2) — sarcastic 'like/as if I'd walk away' was read literally", () => {
+    it("'like I would ever walk away...I accept' resolves to accepted, not walkAway/rejected", () => {
+      const r = detectCandidateIntent("Oh sure, like I would ever walk away from a bird in hand — I accept!");
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("'as if I would walk away...I accept' resolves to accepted, not walkAway/rejected", () => {
+      const r = detectCandidateIntent("As if I would walk away from this deal, I accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("isWalkAway() also stays false on the same sarcastic inputs", () => {
+      expect(isWalkAway("Oh sure, like I would ever walk away from a bird in hand — I accept!")).toBe(false);
+      expect(isWalkAway("As if I would walk away from this deal, I accept.")).toBe(false);
+    });
+  });
 });

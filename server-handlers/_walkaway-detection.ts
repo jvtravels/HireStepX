@@ -175,6 +175,28 @@ const WONT_WORK_NON_EXIT =
 const NOT_INTERESTED_DOUBLE_NEGATION =
   /\b(?:not\s+like|not\s+that|isn.?t\s+that|can(?:not|.t)\s+say|wouldn.?t\s+say)\s+(?:i.?m|i\s+am)\s+not\s+interested\b|(?:i.?m|i\s+am)\s+not\s+not\s+interested\b/i;
 
+/* S136-B1 (wave 42) — isWalkAway() had NO third-party/reported-speech guard at all
+ * ("My manager said I should walk away, but honestly I accept the offer." /
+ * "My friend said I should walk away." both fired isWalkAway()=true), diverging from
+ * _follow-up-helpers.ts's `walkAway` field, which is correctly guarded by
+ * thirdPartyDepartureRe. Since isWalkAway() drives the conversationDone signal and
+ * detectSalaryPhase()'s routing to closing-pressure, this let a candidate merely
+ * relaying someone else's advice prematurely terminate the negotiation. Also ports
+ * trailingRetractionRe for the same reason — both are absent here despite guarding
+ * the canonical `walkAway` and `rejected` computations. Mirrored verbatim from
+ * _follow-up-helpers.ts. */
+const THIRD_PARTY_DEPARTURE =
+  /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)\b(?:\s+\w+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+const TRAILING_RETRACTION =
+  /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
+
+/* S136-B3 (wave 42) — isWalkAway() had zero sarcasm handling: "Oh sure, like I would
+ * ever walk away from a bird in hand — I accept!" read WALKAWAY_PATTERN literally and
+ * fired true despite clearly positive sentiment. Mirrors walkAwaySarcasmRe added to
+ * _follow-up-helpers.ts verbatim. */
+const WALKAWAY_SARCASM =
+  /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
+
 /* S124-B2 (wave 30) — DEPARTURE_NEGATOR's window is per-match, not clause-aware: a
  * negator governing an unrelated earlier clause ("if you don't match this, I will
  * walk away") sat inside the 48-char lookback of the LATER, genuine departure and
@@ -199,5 +221,8 @@ export function isWalkAway(answer: string | null | undefined): boolean {
   // won't-work + temporal qualifier ("right now") or counter-ask = negotiating, not exiting
   if (WONT_WORK_NON_EXIT.test(answer)) return false;
   if (NOT_INTERESTED_DOUBLE_NEGATION.test(answer)) return false;
+  if (THIRD_PARTY_DEPARTURE.test(answer)) return false;
+  if (TRAILING_RETRACTION.test(answer)) return false;
+  if (WALKAWAY_SARCASM.test(answer)) return false;
   return WALKAWAY_PATTERN.test(stripNegatedDepartures(answer));
 }
