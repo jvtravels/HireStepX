@@ -213,7 +213,7 @@ const competingWords = /\b(other offer|another offer|another opportunity|competi
  * S98-B16 (2026-07-26) — "I have decided to go with another company." returned comp only.
  *   Added `(?:decided|chosen)\s+to\s+go\s+with\s+(?:another|a\s+different|the\s+other)\s+(?:company|offer|organization|firm|employer)`.
  *   All new patterns synced to walkRe (follow-up.ts) and WALKAWAY_PATTERN (_walkaway-detection.ts). */
-const walkAwayWords = /\b(hard\s+pass\b|walk(?:ing|in)?\s+away(?!\s+with\b)|i\s+(?:am\s+)?(?:going\s+to\s+)?walk(?!\s+(?:you|me|through|us|with)\b)(?:ing)?(?:\s+away|\s+out|(?=[.,!?;]|\s*$))|i.?m\s+done\s+(?:negotiating(?!\s+(?:about|over|with|on)\s+)|here(?!\s+for\s+now\b)|with\s+this|talking|discussing|waiting)|i\s+refuse\s+to\s+(?:play|negotiate|continue|proceed)|not a chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing))))|that won.?t work|let.?s\s+end\s+(?:this|the)\s+(?:conversation|discussion|call|negotiation)|i.?m out(?!\s+of\b(?!\s*here\b))|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no\s+longer\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|part\s+ways|no chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing))))|i(?:.ll|.?m\s+going\s+to|\s+will|\s+would\s+rather|\s+think\s+i.ll|\s+guess\s+i.ll|\s+have\s+to|\s+need\s+to|\s+am\s+going\s+to)\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b)|\s+on\s+(?:dessert|lunch|dinner|breakfast|coffee|tea|the\s+(?:food|meal|drinks?)))|no deal\b(?!\s*(?:[-\s]?breakers?|\s+on\s+the\s+table))|withdraw(?:ing)?(?!\s+(?:my|your|the|this)\s+(?:\w+\s+)?(?:counter|demand|ask|offer|request|proposal|requirement|expectation|complaint|concern|feedback|objection|comment|remark|statement|amendment)\b)|decline the offer|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|pull(?:ing)?\s+out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth(?!\s+(?:fight|argu|bicker|quarrel|quibbl|debat|nit.?pick|hassle))|won.?t work(?!\s+for\s+(?:more|longer|over|above|anything\s+less)\s+than)|is(?:n.?t|\s+not)\s+going\s+to\s+work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|guess\s+i.ll|want\s+to|have\s+to|need\s+to|am\s+going\s+to|am))\s+(?:(?:just|then|probably|simply|really|now|rather|likely|instead)\s+)?(?:going\s+to\s+(?:have\s+to\s+)?|gonna\s+(?:have\s+to\s+)?)?(?:have\s+to\s+)?(?:(?:move|moving)\s+on|explore\s+other\s+(?:options|opportunities)|pursue\s+other\s+(?:options|opportunities))|(?:choosing|chosen|decided)\s+to\s+(?:move\s+on|pursue\s+other\s+(?:options|opportunities)|explore\s+other\s+(?:options|opportunities))|made\s+(?:my|a)\s+decision\s+to\s+(?:move\s+on|pursue\s+other|explore\s+other)|(?:will\s+)?be\s+pursuing\s+other\s+(?:options|opportunities)|(?:will\s+)?be\s+moving\s+on|(?:will\s+)?be\s+passing\s+on\s+(?:this|the\s+(?:offer|opportunity|role|position))|no\s+longer\s+pursuing\s+(?:this|the)\s+(?:role|position|opportunity|offer|job)|tak(?:e|ing)\s+(?:the\s+)?(?:other|another)\s+(?:offer|opportunity|position|role|job)|accepted\s+(?:a|an|another)\s+(?:position|offer|role|job)(?:\s+elsewhere|\s+(?:at|with)\s+another)?|(?:decided|chosen)\s+to\s+go\s+with\s+(?:another|a\s+different|the\s+other)\s+(?:company|offer|organization|firm|employer)|(?:chosen|decided)\s+to\s+accept\s+(?:a|an|another)\s+(?:offer|position|role|job)|step(?:ping)?\s+back\s+from\s+(?:this|the)|opt(?:ing|ed)\s+out\s+of\s+(?:this|the)|prefer\s+to\s+(?:explore|pursue|consider)\s+other\s+(?:options?|opportunities?|avenues?|paths?|alternatives?)|thanks but no|not for me|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta|jaa?ung[ai]|lung[ai])|nahin\s+(?:chahiye|karna|chalega)|join\s+nahi(?:n)?\s+kar(?:unga|ungi|enge|na)?|mujhe\s+nahi(?:n)?\s+chahiye|remov(?:e|ing)\s+myself\s+from\s+(?:(?:this|the)\s+)?(?:process|consideration|pipeline)|take\s+me\s+off\s+(?:your|the)\s+list|have to pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|i(?:.ll|.d|\s+will)\s+need\s+to\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|(?:reached|at)\s+an?\s+impasse|(?:don.?t|do\s+not)\s+think\s+(?:this|it|that)\s+is\s+going\s+to\s+work(?:\s+out)?|call\s+it\s+quits|bow(?:ing)?\s+out(?:\s+of\s+(?:this|the))?|i(?:.ll|.d|\s+will|\s+would)\s+be\s+declin(?:ing)?|can(?:not|.t)\s+(?:come\s+to|reach)\s+(?:an?\s+agreement|terms)|(?:i(?:.ll|.d|\s+will)\s+|i\s+(?:have|need)\s+to\s+|i.?m\s+going\s+to\s+|going\s+to\s+(?:have\s+to\s+)?)look(?:ing)?\s+elsewhere|no\s+longer\s+(?:wish|want)\s+to\s+(?:proceed|continue|negotiate|participate|move\s+forward)|decided\s+not\s+to\s+(?:move\s+forward|proceed|continue|accept(?:\s+this)?)|step(?:ping)?\s+away(?:(?!\s+from\s+)|\s+from\s+(?:this|the\s+(?:negotiation|process|offer|role|position|opportunity|deal|table|conversation|discussion)))|made\s+up\s+my\s+mind\s+to\s+(?:decline|not\s+accept|walk\s+away)|end(?:ing)?\s+my\s+participation|(?:reached?\s+a|at\s+a)\s+dead\s+end|exit(?:ing)?\s+(?:this\s+|the\s+)?(?:negotiation|process|conversation|discussion)|this\s+role\s+(?:isn.?t|is\s+not)\s+for\s+me|won.?t\s+be\s+(?:accepting|moving\s+forward\s+with)\s+(?:this|the))\b/i;
+const walkAwayWords = /\b(hard\s+pass\b|walk(?:ing|in)?\s+away(?!\s+with\b)|i\s+(?:am\s+)?(?:going\s+to\s+)?walk(?!\s+(?:you|me|through|us|with)\b)(?:ing)?(?:\s+away|\s+out|(?=[.,!?;]|\s*$))|i.?m\s+done\s+(?:negotiating(?!\s+(?:about|over|with|on)\s+)|here(?!\s+for\s+now\b)|with\s+this|talking|discussing|waiting)|i\s+refuse\s+to\s+(?:play|negotiate|continue|proceed)|not a chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing))))|that won.?t work|let.?s\s+end\s+(?:this|the)\s+(?:conversation|discussion|call|negotiation)|i.?m out(?!\s+of\b(?!\s*here\b))|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no\s+longer\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|part\s+ways|no chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing))))|i(?:.ll|.?m\s+going\s+to|\s+will|\s+would\s+rather|\s+think\s+i.ll|\s+guess\s+i.ll|\s+have\s+to|\s+need\s+to|\s+am\s+going\s+to)\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b)|\s+on\s+(?:dessert|lunch|dinner|breakfast|coffee|tea|the\s+(?:food|meal|drinks?)))|no deal\b(?!\s*(?:[-\s]?breakers?|\s+on\s+the\s+table))|withdraw(?:ing)?(?!\s+(?:my|your|the|this)\s+(?:\w+\s+)?(?:counter|demand|ask|offer|request|proposal|requirement|expectation|complaint|concern|feedback|objection|comment|remark|statement|amendment)\b)|decline the offer|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|pull(?:ing)?\s+out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth(?!\s+(?:fight|argu|bicker|quarrel|quibbl|debat|nit.?pick|hassle))|won.?t work(?!\s+for\s+(?:more|longer|over|above|anything\s+less)\s+than)|is(?:n.?t|\s+not)\s+going\s+to\s+work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|guess\s+i.ll|want\s+to|have\s+to|need\s+to|am\s+going\s+to|am))\s+(?:(?:just|then|probably|simply|really|now|rather|likely|instead)\s+)?(?:going\s+to\s+(?:have\s+to\s+)?|gonna\s+(?:have\s+to\s+)?)?(?:have\s+to\s+)?(?:(?:move|moving)\s+on|explore\s+other\s+(?:options|opportunities)|pursue\s+other\s+(?:options|opportunities))|(?:choosing|chosen|decided)\s+to\s+(?:move\s+on|pursue\s+other\s+(?:options|opportunities)|explore\s+other\s+(?:options|opportunities))|made\s+(?:my|a)\s+decision\s+to\s+(?:move\s+on|pursue\s+other|explore\s+other)|(?:will\s+)?be\s+pursuing\s+other\s+(?:options|opportunities)|(?:will\s+)?be\s+moving\s+on|(?:will\s+)?be\s+passing\s+on\s+(?:this|the\s+(?:offer|opportunity|role|position))|no\s+longer\s+pursuing\s+(?:this|the)\s+(?:role|position|opportunity|offer|job)|tak(?:e|ing)\s+(?:the\s+)?(?:other|another)\s+(?:offer|opportunity|position|role|job)|accepted\s+(?:a|an|another)\s+(?:position|offer|role|job)(?:\s+elsewhere|\s+(?:at|with)\s+another)?|(?:decided|chosen)\s+to\s+go\s+with\s+(?:another|a\s+different|the\s+other)\s+(?:company|offer|organization|firm|employer)|(?:chosen|decided)\s+to\s+accept\s+(?:a|an|another)\s+(?:offer|position|role|job)|step(?:ping)?\s+back\s+from\s+(?:this|the)|opt(?:ing|ed)\s+out\s+of\s+(?:this|the)|prefer\s+to\s+(?:explore|pursue|consider)\s+other\s+(?:options?|opportunities?|avenues?|paths?|alternatives?)|thanks but no|not for me|(?<!kam\s)nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta|jaa?ung[ai]|lung[ai])|nahin\s+(?:chahiye|karna|chalega)|join\s+nahi(?:n)?\s+kar(?:unga|ungi|enge|na)?|mujhe\s+nahi(?:n)?\s+chahiye|remov(?:e|ing)\s+myself\s+from\s+(?:(?:this|the)\s+)?(?:process|consideration|pipeline)|take\s+me\s+off\s+(?:your|the)\s+list|have to pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|i(?:.ll|.d|\s+will)\s+need\s+to\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|(?:reached|at)\s+an?\s+impasse|(?:don.?t|do\s+not)\s+think\s+(?:this|it|that)\s+is\s+going\s+to\s+work(?:\s+out)?|call\s+it\s+quits|bow(?:ing)?\s+out(?:\s+of\s+(?:this|the))?|i(?:.ll|.d|\s+will|\s+would)\s+be\s+declin(?:ing)?|can(?:not|.t)\s+(?:come\s+to|reach)\s+(?:an?\s+agreement|terms)|(?:i(?:.ll|.d|\s+will)\s+|i\s+(?:have|need)\s+to\s+|i.?m\s+going\s+to\s+|going\s+to\s+(?:have\s+to\s+)?)look(?:ing)?\s+elsewhere|no\s+longer\s+(?:wish|want)\s+to\s+(?:proceed|continue|negotiate|participate|move\s+forward)|decided\s+not\s+to\s+(?:move\s+forward|proceed|continue|accept(?:\s+this)?)|step(?:ping)?\s+away(?:(?!\s+from\s+)|\s+from\s+(?:this|the\s+(?:negotiation|process|offer|role|position|opportunity|deal|table|conversation|discussion)))|made\s+up\s+my\s+mind\s+to\s+(?:decline|not\s+accept|walk\s+away)|end(?:ing)?\s+my\s+participation|(?:reached?\s+a|at\s+a)\s+dead\s+end|exit(?:ing)?\s+(?:this\s+|the\s+)?(?:negotiation|process|conversation|discussion)|this\s+role\s+(?:isn.?t|is\s+not)\s+for\s+me|won.?t\s+be\s+(?:accepting|moving\s+forward\s+with)\s+(?:this|the))\b/i;
 /* S88-B1 (2026-07-26) — Added Hindi affirmatives (haan, hanji, ji haan, theek hai,
  * bilkul, etc.) — Indian users commonly answer bare Hindi "yes" during negotiations;
  * all previously returned accepted=false. */
@@ -241,19 +241,34 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * ("Ok, if you can confirm by EOD and include joining bonus in writing" is 14 words).
    * thinkWords guard added to prevent "Ok, I need to think about this if possible" from
    * firing as a conditional accept. */
-  const hedgeIdx = trimmed.search(hedgeWords);
+  const hedgeMatch = hedgeWords.exec(trimmed);
+  const hedgeIdx = hedgeMatch ? hedgeMatch.index : -1;
   const hasAnyHedge = hedgeIdx >= 0;
   const postHedgeText = hasAnyHedge ? trimmed.slice(hedgeIdx) : "";
   const hedgeIsRejection = rejectWords.test(postHedgeText);
-  const isShortAffirmativeConditional = trimmed.split(/\s+/).length < 18
+  /* S128-B3 (wave 34) — a bare trailing hedge word with nothing after it ("I accept,
+   * though." / "Deal, though.") is a hesitation filler, not a stated condition — genuine
+   * conditional accepts have actual content following the hedge ("I accept, though I'd
+   * like to discuss equity"). Without this guard the LLM was told to address a "specific
+   * condition" that doesn't exist in the text. */
+  const hedgeTrailingContent = hasAnyHedge
+    ? trimmed.slice(hedgeIdx + hedgeMatch![0].length).replace(/^[\s,.:;!?]+|[\s.:;!?]+$/g, "")
+    : "";
+  const hedgeIsBareFiller = hasAnyHedge && hedgeTrailingContent.length === 0;
+  /* A bare filler hedge ("Deal, though.") still makes this a short affirmative ACCEPT —
+   * only the "conditional" characterization is wrong (there's no stated condition), so
+   * isShortAffirmativeHedged (used for `accepted`) intentionally ignores hedgeIsBareFiller
+   * while isShortAffirmativeConditional (used for `conditionalAccept`) does not. */
+  const isShortAffirmativeHedged = trimmed.split(/\s+/).length < 18
     && shortAffirmativeStart.test(trimmed)
     && hasAnyHedge
     && !hedgeIsRejection
     && !thinkWords.test(trimmed);
+  const isShortAffirmativeConditional = isShortAffirmativeHedged && !hedgeIsBareFiller;
 
   const acceptIdx = trimmed.search(acceptWords);
   const hasAccept = acceptIdx >= 0;
-  const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx;
+  const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx && !hedgeIsBareFiller;
 
   /* S123-B1 (wave 29) — pairs with the new rejectWords arm above: "I don't think this
    * works for me" was matching acceptWords' bare "works (for me)" arm regardless of the
@@ -267,8 +282,14 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * LLM to "TAKE THE YES" while the candidate is still firmly holding their own number —
    * a contradictory, dishonest signal. A live number-lock means the candidate hasn't
    * actually agreed to terms, so it must suppress accepted too, not just co-fire reject. */
-  const numberLockWords = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b/i;
-  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeConditional) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !numberLockWords.test(trimmed);
+  /* S128-B1 (wave 34) — Hindi anchor "<number> se kam nahi lunga/lungi" ("I won't take
+   * less than <number>") is semantically identical to the English number-lock arms but
+   * had no equivalent here, so it fell through to walkAwayWords' bare "nahi lung[ai]" arm
+   * instead — misfiring walkAway on a candidate who is still actively anchoring a number,
+   * not leaving. Added as its own arm (no lookahead needed: "kam" ("less") is inherently
+   * comparative, so it only ever follows a stated number). */
+  const numberLockWords = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai])\b/i;
+  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !numberLockWords.test(trimmed);
   const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
   /* S117-B5 FP: "I don't think I need more equity" fires rejected because the
    * lookbehind (?<!n't\s) only checks 4 chars before "need" — "think I" breaks
@@ -343,10 +364,12 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     const lookback = text.slice(Math.max(0, verbMatch.index - 48), verbMatch.index);
     return !RECLAIMED_INTENT_LOCAL.test(lookback);
   }
-  const walkAway = (walkAwayWords.test(trimmed) && !accepted && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
-    || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText));
+  /* S128-B1 (wave 34) — a live number-lock (see numberLockWords above) means the candidate
+   * is anchoring a number, not leaving; mirrors the same exclusion already applied to
+   * `accepted`/`rejected`. */
+  const walkAway = (walkAwayWords.test(trimmed) && !accepted && !numberLockWords.test(trimmed) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
+    || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText));
 
-  const candidateNum = extractCandidateSalaryNumber(trimmed);
   // "consider" co-occurring with a number is a counter, not a time request
   /* S117-B7/B8/B9/B10 FPs: negated think-time phrases ("I don't need time", "no need
    * to think about it", "not time to think") incorrectly set needsTime=true. */
@@ -364,9 +387,22 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * conjunctions and require the positive thinkWords match and its negation check to be
    * in the SAME clause. */
   const needsTimeClauses = trimmed.split(/,?\s*\b(?:but|however|although|though|yet)\b\s*/i);
+  /* S128-B2 (wave 34) — "Give me a couple of days, my target is 40 LPA minimum." lost
+   * needsTime entirely: the whole-string candidateNum gate (added in S126-B3 for the
+   * "consider 30 LPA" counter-in-disguise case) nulled out the genuine, unambiguous
+   * time-request clause just because an UNRELATED clause elsewhere stated a target
+   * number. Scope the number check to the SAME clause as the thinkWords match (splitting
+   * on commas too, since target-number statements are often comma-joined rather than
+   * conjunction-joined) so a number in one clause no longer suppresses a genuine,
+   * separate time-request in another. */
+  const needsTimeNumberClauses = trimmed.split(/,?\s*\b(?:but|however|although|though|yet)\b\s*|,\s*/i);
   const needsTime =
     needsTimeClauses.some((clause) => thinkWords.test(clause) && !thinkNegationRe.test(clause)) &&
-    (candidateNum === null || numberIsOfferReferenceRe.test(trimmed));
+    needsTimeNumberClauses.some((clause) => {
+      if (!thinkWords.test(clause)) return false;
+      const clauseNum = extractCandidateSalaryNumber(clause);
+      return clauseNum === null || numberIsOfferReferenceRe.test(clause);
+    });
   /* S127-B3 (wave 33) — competingWords had no first-person subject guard, so
    * third-party offers ("My friend got an offer of 40 LPA.") were misread as the
    * candidate's own competing offer/BATNA. */

@@ -3722,4 +3722,55 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I'll take whatever you offer.").accepted).toBe(true);
     });
   });
+
+  describe("S128-B1 (wave 34, P1) — Hindi number-anchor 'X se kam nahi lunga/lungi' misfired walkAway instead of rejected", () => {
+    it("'30 lakh se kam nahi lunga.' → walkAway=false, rejected=true", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi lunga.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'Main 30 lakh se kam nahi lungi, lekin baaki sab thik hai.' → walkAway=false", () => {
+      const r = detectCandidateIntent("Main 30 lakh se kam nahi lungi, lekin baaki sab thik hai.");
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: genuine Hindi walk-away phrasing still fires walkAway", () => {
+      expect(detectCandidateIntent("Mujhe yeh job nahi chahiye.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S128-B2 (wave 34, P1) — needsTime lost when a separate clause states a target number", () => {
+    it("'Give me a couple of days, my target is 40 LPA minimum.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("Give me a couple of days, my target is 40 LPA minimum.")
+          .needsTime,
+      ).toBe(true);
+    });
+    it("regression: 'consider' + number in the same clause is still a counter, not needsTime", () => {
+      expect(detectCandidateIntent("could you consider 30 LPA instead?").needsTime).toBe(false);
+      expect(detectCandidateIntent("I can consider 38L.").needsTime).toBe(false);
+    });
+    it("regression: offer-reference number still needsTime", () => {
+      expect(
+        detectCandidateIntent("I need a few days to think about the 45 LPA offer.").needsTime,
+      ).toBe(true);
+    });
+  });
+
+  describe("S128-B3 (wave 34, P2) — bare trailing 'though' filler over-triggered conditionalAccept", () => {
+    it("'I accept, though.' → accepted=true, conditionalAccept=false", () => {
+      const r = detectCandidateIntent("I accept, though.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(false);
+    });
+    it("'Deal, though.' → accepted=true, conditionalAccept=false", () => {
+      const r = detectCandidateIntent("Deal, though.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(false);
+    });
+    it("regression: a genuine stated condition after the hedge still fires conditionalAccept", () => {
+      const r = detectCandidateIntent("I accept, though I'd like to discuss equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
 });
