@@ -110,8 +110,12 @@ const NEGATABLE_DEPARTURE =
  * going to", "no reason for me to"). The token cap keeps a distant, unrelated
  * negation ("I don't think the scope fits, so I'll walk away") from suppressing
  * a real walk-away. */
+/* S121-B7 (wave 27) — "I was about to walk away but let's talk more" fired a false
+ * walk-away because "was about to" wasn't a recognized negator; it's a retraction
+ * frame ("I nearly did X, but didn't"), synced with walkAwayNegationRe in
+ * _follow-up-helpers.ts. */
 const DEPARTURE_NEGATOR =
-  /(?:\b(?:not|never|rather\s+than|instead\s+of|avoid(?:ing)?|no\s+(?:need|reason|point|intention|plan|desire|way)|would\s+rather\s+not|prefer\s+not|hate\s+to|reluctant\s+to|hesitant\s+to|hoping\s+not|don['']?t\s+want|do\s+not\s+want|does\s*n['']?t\s+want)\b|n['']t\b)(?:\s+\S+){0,5}?\s*$/i;
+  /(?:\b(?:not|never|rather\s+than|instead\s+of|avoid(?:ing)?|no\s+(?:need|reason|point|intention|plan|desire|way)|would\s+rather\s+not|prefer\s+not|hate\s+to|reluctant\s+to|hesitant\s+to|hoping\s+not|don['']?t\s+want|do\s+not\s+want|does\s*n['']?t\s+want|was\s+(?:about|going)\s+to)\b|n['']t\b)(?:\s+\S+){0,5}?\s*$/i;
 
 /* S76-B1 (2026-07-25) — three false-positive arms fired on legitimate counter-offer
  * phrases, catastrophically terminating a live negotiation:

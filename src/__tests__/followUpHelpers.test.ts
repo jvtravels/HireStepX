@@ -3284,4 +3284,65 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I need to run this by my manager.").needsTime).toBe(true);
     });
   });
+
+  describe("S121-B1 (wave 27) — 'sounds  good' with irregular whitespace still accepts", () => {
+    it("'Sounds  good, I accept.' → accepted=true", () => {
+      expect(detectCandidateIntent("Sounds  good, I accept.").accepted).toBe(true);
+    });
+  });
+
+  describe("S121-B2 (wave 27) — bare number + 'works' accepts", () => {
+    it("'42 LPA works for me.' → accepted=true", () => {
+      expect(detectCandidateIntent("42 LPA works for me.").accepted).toBe(true);
+    });
+    it("'42 works.' → accepted=true", () => {
+      expect(detectCandidateIntent("42 works.").accepted).toBe(true);
+    });
+  });
+
+  describe("S121-B3 (wave 27) — minutes-scale 'to think' needsTime", () => {
+    it("'Give me 30 minutes to think.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Give me 30 minutes to think.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B4 (wave 27) — Hindi 'lekin' hedge / 'sochne do' think-time", () => {
+    it("'Sounds good lekin I need to check with my family.' → conditionalAccept=true", () => {
+      const r = detectCandidateIntent("Sounds good lekin I need to check with my family.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("'Sochne do, main baad mein bataunga.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Sochne do, main baad mein bataunga.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B5 (wave 27) — Hindi 'time chahiye' needsTime", () => {
+    it("'Mujhe time chahiye isse sochne ke liye.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Mujhe time chahiye isse sochne ke liye.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B6 (wave 27) — generic topic-redirect deflection", () => {
+    it("'Can we talk about the joining bonus instead?' → deflected=true", () => {
+      expect(detectCandidateIntent("Can we talk about the joining bonus instead?").deflected).toBe(true);
+    });
+    it("'Let's circle back to this later.' → deflected=true", () => {
+      expect(detectCandidateIntent("Let's circle back to this later.").deflected).toBe(true);
+    });
+  });
+
+  describe("S121-B7 (wave 27, highest severity) — walk-away retraction suppressed, genuine walk-away still fires", () => {
+    it("'I was about to walk away but let's talk more.' → walkAway=false, rejected=false", () => {
+      const r = detectCandidateIntent("I was about to walk away but let's talk more.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("'I was going to decline but I am open to discussing.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I was going to decline but I am open to discussing.").walkAway).toBe(false);
+    });
+    it("'I am walking away, this offer is unacceptable.' → walkAway=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("I am walking away, this offer is unacceptable.").walkAway).toBe(true);
+    });
+  });
 });
