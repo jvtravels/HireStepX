@@ -3523,4 +3523,67 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.rejected).toBe(true);
     });
   });
+
+  describe("S125-A (wave 31, P1) — 'I will/now/hereby decline' desynced between canonical decline arms and the duplicate walkAwayWords/walkRe", () => {
+    it("'I will decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I will decline this offer.").walkAway).toBe(true);
+    });
+    it("'I now decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I now decline this offer.").walkAway).toBe(true);
+    });
+    it("'I hereby decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I hereby decline this offer.").walkAway).toBe(true);
+    });
+    it("'I will likely move on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I will likely move on.").walkAway).toBe(true);
+    });
+    it("isWalkAway parity: 'I will decline this offer.' / 'I hereby decline this offer.'", () => {
+      expect(isWalkAway("I will decline this offer.")).toBe(true);
+      expect(isWalkAway("I hereby decline this offer.")).toBe(true);
+    });
+  });
+
+  describe("S125-B (wave 31, P1) — hedge-branch walk-away fallback bypassed the negation guard entirely", () => {
+    it("'I will not accept this, but I will not walk away either, let's keep talking.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent(
+          "I will not accept this, but I will not walk away either, let's keep talking.",
+        ).walkAway,
+      ).toBe(false);
+    });
+    it("genuine post-hedge walk-away still fires (no regression)", () => {
+      expect(
+        detectCandidateIntent("Sounds good, but actually I am walking away if you cannot match it.")
+          .walkAway,
+      ).toBe(true);
+    });
+  });
+
+  describe("S125-C (wave 31, P1) — bare 'I walk' verb arm false-fired on unrelated habitual/possessive sentences", () => {
+    it("'I walk in on Mondays around 9am, so scheduling calls before that is tough.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent(
+          "I walk in on Mondays around 9am, so scheduling calls before that is tough.",
+        ).walkAway,
+      ).toBe(false);
+    });
+    it("'I walk her dog every morning before work, so mornings are tight.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent("I walk her dog every morning before work, so mornings are tight.")
+          .walkAway,
+      ).toBe(false);
+    });
+    it("'I walk.' (bare verb, end of reply) → walkAway=true (no regression)", () => {
+      expect(detectCandidateIntent("I walk.").walkAway).toBe(true);
+    });
+    it("'I am walking out of this meeting.' → walkAway=true (no regression)", () => {
+      expect(detectCandidateIntent("I am walking out of this meeting.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S125-D (wave 31, P3) — deflectWords missing 'you go first' verb-inserted variant", () => {
+    it("'You go first, tell me your budget.' → deflected=true", () => {
+      expect(detectCandidateIntent("You go first, tell me your budget.").deflected).toBe(true);
+    });
+  });
 });
