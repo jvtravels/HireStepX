@@ -4206,4 +4206,86 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.conditionalAccept).toBe(false);
     });
   });
+
+  describe("S139-B1 (wave 45, P1) — rejectWords had near-zero Hindi/Hinglish coverage", () => {
+    it("Hindi/Hinglish reject idioms fire rejected=true", () => {
+      const inputs = [
+        "Mujhe yeh salary manzoor nahi hai.",
+        "Main is offer ko reject karta hoon.",
+        "Ye offer theek nahi lag raha hai mujhe.",
+        "Itni kam salary mein kaam nahi kar sakta.",
+      ];
+      for (const i of inputs) {
+        expect(detectCandidateIntent(i).rejected, i).toBe(true);
+      }
+    });
+    it("regression: existing English rejectWords arms still fire", () => {
+      expect(detectCandidateIntent("That's not acceptable to me.").rejected).toBe(true);
+      expect(detectCandidateIntent("Absolutely not.").rejected).toBe(true);
+    });
+  });
+
+  describe("S139-B2 (wave 45, P1) — walkAwayWords/WALKAWAY_PATTERN/walkRe had zero Hindi coverage", () => {
+    it("Hindi walk-away idioms fire walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      const inputs = [
+        "Main is deal se hat raha hoon.",
+        "Main ab is negotiation mein interested nahi hoon.",
+        "Main peeche hatna chahta hoon.",
+        "Main is negotiation se peeche hat raha hoon.",
+      ];
+      for (const i of inputs) {
+        expect(detectCandidateIntent(i).walkAway, i).toBe(true);
+        expect(isWalkAway(i), i).toBe(true);
+      }
+    });
+    it("regression: existing English walk-away arms still fire", () => {
+      expect(detectCandidateIntent("I'm going to walk away from this.").walkAway).toBe(true);
+      expect(isWalkAway("I'm going to walk away from this.")).toBe(true);
+    });
+  });
+
+  describe("S139-B3 (wave 45, P2) — deflectWords missed Hindi idioms + 'best number' phrasing", () => {
+    it("Hindi deflection idioms and 'best number' fire deflected=true", () => {
+      expect(detectCandidateIntent("Aap hi bataiye ki kitna de sakte hain.").deflected).toBe(true);
+      expect(detectCandidateIntent("Pehle aap apna number batao.").deflected).toBe(true);
+      expect(detectCandidateIntent("What's your best number?").deflected).toBe(true);
+    });
+    it("regression: existing 'fair number' and English arms still fire", () => {
+      expect(detectCandidateIntent("What's your offer?").deflected).toBe(true);
+      expect(detectCandidateIntent("What would be a fair number?").deflected).toBe(true);
+    });
+  });
+
+  describe("S139-B4 (wave 45, P2) — thinkWords family-consultation arm missed verb-conjugation form", () => {
+    it("'<family> se baat karke' fires needsTime=true", () => {
+      expect(detectCandidateIntent("Main apni wife se baat karke batata hoon.").needsTime).toBe(true);
+    });
+    it("regression: existing Hindi/noun-phrase thinkWords arms still fire", () => {
+      expect(detectCandidateIntent("Mujhe sochne ke liye kal tak ka time chahiye.").needsTime).toBe(true);
+      expect(detectCandidateIntent("I need to discuss this with my wife se baat karni hai.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S139-B5 (wave 45, P1) — competingWords missed vague/company-name/percentage competing-offer references", () => {
+    it("company-name, vague, percentage, and Hinglish competing-offer phrasings fire mentionedCompeting=true", () => {
+      const inputs = [
+        "Amazon has also made me an offer.",
+        "I'm considering an offer from a startup too.",
+        "Another firm has offered me 20% more.",
+        "Flipkart is offering me more.",
+        "I'm weighing this against an offer from Google.",
+        "Ek MNC ne bhi mujhe offer diya hai.",
+        "I have a 15% better offer in hand from elsewhere.",
+      ];
+      for (const i of inputs) {
+        expect(detectCandidateIntent(i).mentionedCompeting, i).toBe(true);
+      }
+    });
+    it("regression: existing explicit numeric competing-offer phrasings still fire", () => {
+      expect(detectCandidateIntent("I got an offer from Wipro as well.").mentionedCompeting).toBe(true);
+      expect(
+        detectCandidateIntent("There's a competing offer on the table from another employer.").mentionedCompeting,
+      ).toBe(true);
+    });
+  });
 });
