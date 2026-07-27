@@ -3911,4 +3911,51 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.conditionalAccept).toBe(true);
     });
   });
+
+  describe("S132-B1/B2 (wave 38, P3/P1) — WALKAWAY_PATTERN drift: missing bare decline arm + curly-quote gap", () => {
+    it("bare 'decline the offer' with no first-person subject", () => {
+      expect(isWalkAway("We should decline the offer on the table.")).toBe(true);
+      expect(isWalkAway("My recommendation is to decline the offer.")).toBe(true);
+    });
+    it("curly/smart apostrophe departure forms", () => {
+      expect(isWalkAway("I’m going to move on from this opportunity.")).toBe(true);
+      expect(isWalkAway("I’ll decline this, thank you.")).toBe(true);
+      expect(isWalkAway("I’d rather move on to other opportunities.")).toBe(true);
+    });
+    it("regression: straight-apostrophe forms still fire", () => {
+      expect(isWalkAway("I'll decline this, thank you.")).toBe(true);
+      expect(isWalkAway("I am walking away from this deal.")).toBe(true);
+    });
+  });
+
+  describe("S132-B3 (wave 38, P1) — acceptWords missing 'going to accept' modal arm", () => {
+    it("'I'm/I am going to accept' fires accepted=true", () => {
+      expect(detectCandidateIntent("I'm going to accept.").accepted).toBe(true);
+      expect(detectCandidateIntent("I'm actually going to accept.").accepted).toBe(true);
+      expect(detectCandidateIntent("I am definitely going to accept.").accepted).toBe(true);
+    });
+  });
+
+  describe("S132-B4 (wave 38, P1) — walkAway/rejected missing third-party reported-speech guard", () => {
+    it("reported advice to walk away is not the candidate's own walk-away/reject", () => {
+      const r = detectCandidateIntent("My friend said I should walk away, but I'm actually going to accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("bare reported speech (no trailing accept clause) still suppressed", () => {
+      const r = detectCandidateIntent("My friend said I should walk away.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("third-party reported speech about the employer's own stance", () => {
+      const r = detectCandidateIntent("My recruiter said the company might walk away from the deal.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: genuine first-person walk-away/reject still fires", () => {
+      expect(detectCandidateIntent("I'm walking away from this offer.").walkAway).toBe(true);
+      expect(detectCandidateIntent("My friend works at Google and got a great offer.").walkAway).toBe(false);
+    });
+  });
 });
