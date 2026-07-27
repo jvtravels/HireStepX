@@ -4027,4 +4027,64 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.conditionalAccept).toBe(true);
     });
   });
+
+  describe("S135-B1 (wave 41, P1) — numberLockWords blanket-suppressed accepted/walkAway across sentence boundaries", () => {
+    it("a number-lock in a distinct 'Also,' sentence no longer blanket-suppresses an earlier walkAway", () => {
+      const r = detectCandidateIntent("I'm out. Also, I'm sticking with 30 LPA.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("a number-lock in a distinct 'Also,' sentence no longer blanket-suppresses an earlier accepted", () => {
+      const r = detectCandidateIntent("I accept. Also, I'm sticking with 30 LPA.");
+      expect(r.accepted).toBe(true);
+    });
+    it("regression: S128-B1 Hindi number-lock idiom still suppresses walkAway (same-sentence lock always applies)", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi lunga.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S127-B1 anaphoric cross-sentence lock (no discourse marker) still suppresses accepted", () => {
+      const r = detectCandidateIntent("Sticking with 30 LPA is what I need. That works for me otherwise.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  describe("S135-B2 (wave 41, P1) — preHedgeIsRejection too narrow, missed non-'I reject'-worded rejectWords arms before a hedge", () => {
+    it("'Not acceptable' stated before a hedge fires rejected=true, not accepted=true", () => {
+      const r = detectCandidateIntent("Not acceptable — although honestly the number itself sounds good.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S132-B4 third-party reported walk-away before a hedge still suppressed", () => {
+      const r = detectCandidateIntent("My friend said I should walk away, but I'm actually going to accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: S133-B2 'was going to walk away' retraction before a hedge still suppressed", () => {
+      const r = detectCandidateIntent("I was going to walk away, but I accept the offer.");
+      expect(r.walkAway).toBe(false);
+      expect(r.accepted).toBe(true);
+    });
+    it("regression: S134-B1 explicit 'I reject' before a hedge still works", () => {
+      const r = detectCandidateIntent("I reject this offer, although honestly it sounds good.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  describe("S135-B3 (wave 41, P2) — needsTime's numberIsOfferReferenceRe missed alternate offer-reference phrasings", () => {
+    it("'the X number you mentioned' framing keeps needsTime true", () => {
+      const r = detectCandidateIntent("I need a couple of days to think about the 40 LPA number you mentioned.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("regression: S126-B3 'the X offer' framing still keeps needsTime true", () => {
+      const r = detectCandidateIntent("I need a few days to think about the 45 LPA offer.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("regression: a genuine counter-in-disguise number still suppresses needsTime", () => {
+      const r = detectCandidateIntent("Let me consider 30 LPA.");
+      expect(r.needsTime).toBe(false);
+    });
+  });
 });

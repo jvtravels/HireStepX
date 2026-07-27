@@ -2421,7 +2421,42 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // to terms, even if an unrelated accept phrase appears elsewhere in the reply.
       // S128-B1 (wave 34): mirrors _follow-up-helpers.ts's numberLockWords Hindi anchor arm.
       const numberLockWordsLocal = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
-      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe))) && !numberLockWordsLocal.test(answer) && !acceptSarcasmReLocal.test(answer);
+      // S135-B1 (wave 41): mirrors numberLockAppliesToLocal in _follow-up-helpers.ts —
+      // numberLockWordsLocal.test(answer) scanned the WHOLE answer, so an unrelated
+      // number-lock in a later/earlier sentence blanket-suppressed didAccept/didWalkAway
+      // even when the accept/walk-away signal was in a totally different sentence
+      // ("I accept. Also, I'm sticking with 30 LPA." never fired didAccept=true). A naive
+      // same-sentence-only scoping broke the S127-B1 regression ("Sticking with 30 LPA is
+      // what I need. That works for me otherwise." must stay didAccept=false — the accept
+      // sentence anaphorically refers back to the number). Cross-sentence locks still
+      // apply by default; they only stop applying when the lock sentence carries a
+      // new-topic discourse marker ("Also," "Additionally," ...) flagging it as a distinct,
+      // separate remark. Same-sentence locks (incl. S128-B1's Hindi idiom) always apply.
+      const newTopicMarkerReLocal = /^\s*(?:also|additionally|besides|separately|by\s+the\s+way|aside\s+from\s+(?:that|this))\b/i;
+      const sentenceAroundLocalFU = (text: string, idx: number): string => {
+        const enders = /[.!?]/g;
+        let start = 0;
+        let end = text.length;
+        let m: RegExpExecArray | null;
+        while ((m = enders.exec(text))) {
+          if (m.index < idx) start = m.index + 1;
+          else {
+            end = m.index;
+            break;
+          }
+        }
+        return text.slice(start, end);
+      };
+      const numberLockAppliesToLocalFU = (text: string, match: RegExpExecArray | null): boolean => {
+        if (!match || !numberLockWordsLocal.test(text)) return false;
+        const matchSentence = sentenceAroundLocalFU(text, match.index);
+        if (numberLockWordsLocal.test(matchSentence)) return true;
+        const lockMatch = numberLockWordsLocal.exec(text);
+        if (lockMatch && newTopicMarkerReLocal.test(sentenceAroundLocalFU(text, lockMatch.index))) return false;
+        return true;
+      };
+      const acceptMatchForLockLocal = acceptRe.exec(answer);
+      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe))) && !numberLockAppliesToLocalFU(answer, acceptMatchForLockLocal) && !acceptSarcasmReLocal.test(answer);
       // S121-B7 (wave 27): mirrors walkAwayNegationRe in _follow-up-helpers.ts — "was about
       // to walk away but..." is a retraction, not an intent to depart.
       // S122-B1 (wave 28): mirrors walkAwayNegationRe's bare-"not" branch (tight 0-1 word
@@ -2472,8 +2507,16 @@ Repeat-text in followUpText is FORBIDDEN.`;
         if (notInterestedDoubleNegationReLocal.test(answer)) return false;
         if (thirdPartyDepartureReLocal.test(answer)) return false;
         if (trailingRetractionReLocal.test(answer)) return false;
+        // S135-B1 (wave 41): mirrors the canonical walkAway's numberLockAppliesToLocal
+        // guard — didWalkAway's base branch had NO number-lock guard at all, unlike
+        // didAccept, causing a live 3-way divergence with detectCandidateIntent()/
+        // isWalkAway() on inputs like "I'm out, sticking with 30 LPA or nothing."
+        const baseWalkMatchLocal = walkRe.exec(answer);
         const base =
-          walkRe.test(answer) && !acceptRe.test(answer) && !walkAwayNegationReLocal.test(answer);
+          walkRe.test(answer) &&
+          !acceptRe.test(answer) &&
+          !walkAwayNegationReLocal.test(answer) &&
+          !numberLockAppliesToLocalFU(answer, baseWalkMatchLocal);
         if (base) return true;
         const hi = answer.search(hedgeRe);
         if (hi < 0) return false;

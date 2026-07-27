@@ -277,14 +277,20 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * fired accepted=true because hedgeIsRejection only ever looked at postHedgeText: the
    * explicit "I reject" clause sits BEFORE the hedge here (reverse of the S129-B1/S133-B2
    * ordering), and acceptWords' "sounds good" arm matched the whole string via hasAccept,
-   * so nothing suppressed it. Deliberately narrow (only the unambiguous "I reject"/"I have
-   * to reject" phrase, not the full rejectWords list) — rejectWords also carries a bare
-   * "walk away" arm, and testing that against preHedgeText regressed the already-fixed
-   * S132-B4 (third-party "my friend said I should walk away, but...") and S133-B2
-   * ("I was going to walk away, but I accept" retraction) cases, both of which have their
-   * own dedicated guards elsewhere that this narrower check doesn't need to duplicate. */
-  const explicitPreHedgeRejectRe = /\bi\s+(?:have|need|am\s+going)\s+to\s+reject\b|\bi\s+reject\b/i;
-  const preHedgeIsRejection = explicitPreHedgeRejectRe.test(preHedgeText);
+   * so nothing suppressed it. Originally scoped to only the unambiguous "I reject"/"I have
+   * to reject" phrase (not the full rejectWords list) because testing the full list against
+   * preHedgeText regressed S132-B4 (third-party "my friend said I should walk away, but...")
+   * and S133-B2 ("I was going to walk away, but I accept" retraction) — both hit rejectWords'
+   * bare "walk away" arm.
+   * S135-B2 (wave 41) — that scoping was too narrow: "Not acceptable — although honestly
+   * the number itself sounds good." still fired accepted=true, since "not acceptable" isn't
+   * the literal "I reject" phrase. Widened to the full rejectWords list, but excluding a
+   * match on the walk-away arm specifically (mirrors rejectMatchIsWalkAwayArm below) — that
+   * arm is the one already covered by the dedicated third-party/retraction guards, and is
+   * the only arm that caused the S132-B4/S133-B2 regressions. */
+  const preHedgeRejectMatch = rejectWords.exec(preHedgeText);
+  const preHedgeRejectIsWalkAwayArm = !!preHedgeRejectMatch && /^walk\s+away/i.test(preHedgeRejectMatch[0]);
+  const preHedgeIsRejection = !!preHedgeRejectMatch && !preHedgeRejectIsWalkAwayArm;
   const hedgeIsRejection =
     rejectWords.test(postHedgeText) ||
     preHedgeIsRejection ||
@@ -353,7 +359,43 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * only covered "lena" (take) conjugations, so "X se kam nahi chalega" ("won't work for
    * me below X") returned no signal at all; added "chalega" alongside. */
   const numberLockWords = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
-  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !numberLockWords.test(trimmed) && !acceptSarcasmRe.test(trimmed);
+  /* S135-B1 (wave 41) — numberLockWords.test(trimmed) scanned the ENTIRE reply for a
+   * number-lock phrase ANYWHERE, so an unrelated number-lock in a later/earlier sentence
+   * blanket-suppressed an accept/walk-away signal in a totally different sentence
+   * ("I accept. Also, I'm sticking with 30 LPA." never fired accepted=true; "I'm out.
+   * Also, I'm sticking with 30 LPA." never fired walkAway=true even though isWalkAway()
+   * correctly did, a live divergence between the two functions).
+   * Naively scoping the guard to only the SAME sentence as the match broke the existing
+   * S127-B1 regression ("Sticking with 30 LPA is what I need. That works for me
+   * otherwise." → accepted must stay false) — there the accept sentence anaphorically
+   * refers back to the just-stated number ("that works for me" = the 30 LPA), so
+   * cross-sentence suppression is still correct by default. The distinguishing signal is
+   * whether the number-lock sentence is flagged as a distinct, separate remark via a
+   * new-topic discourse marker ("Also," "Additionally," "By the way," "Separately,") — only
+   * THEN does a cross-sentence lock stop applying; a same-sentence lock always applies
+   * (S128-B1's Hindi idiom keeps suppressing correctly, same sentence either way). */
+  const newTopicMarkerRe = /^\s*(?:also|additionally|besides|separately|by\s+the\s+way|aside\s+from\s+(?:that|this))\b/i;
+  function sentenceAroundLocal(text: string, idx: number): string {
+    const enders = /[.!?]/g;
+    let start = 0;
+    let end = text.length;
+    let m: RegExpExecArray | null;
+    while ((m = enders.exec(text))) {
+      if (m.index < idx) start = m.index + 1;
+      else { end = m.index; break; }
+    }
+    return text.slice(start, end);
+  }
+  function numberLockAppliesToLocal(text: string, match: RegExpExecArray | null): boolean {
+    if (!match || !numberLockWords.test(text)) return false;
+    const matchSentence = sentenceAroundLocal(text, match.index);
+    if (numberLockWords.test(matchSentence)) return true;
+    const lockMatch = numberLockWords.exec(text);
+    if (lockMatch && newTopicMarkerRe.test(sentenceAroundLocal(text, lockMatch.index))) return false;
+    return true;
+  }
+  const acceptMatchForLock = acceptWords.exec(trimmed);
+  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !(hasAccept ? numberLockAppliesToLocal(trimmed, acceptMatchForLock) : numberLockWords.test(trimmed)) && !acceptSarcasmRe.test(trimmed);
   const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
   /* S117-B5 FP: "I don't think I need more equity" fires rejected because the
    * lookbehind (?<!n't\s) only checks 4 chars before "need" — "think I" breaks
@@ -446,8 +488,9 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   /* S128-B1 (wave 34) — a live number-lock (see numberLockWords above) means the candidate
    * is anchoring a number, not leaving; mirrors the same exclusion already applied to
    * `accepted`/`rejected`. */
+  const baseWalkAwayMatch = walkAwayWords.exec(trimmed);
   const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && (
-    (walkAwayWords.test(trimmed) && !accepted && !numberLockWords.test(trimmed) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
+    (walkAwayWords.test(trimmed) && !accepted && !numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
     || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText))
     || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText)));
 
@@ -460,7 +503,12 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * when the number is plainly the recruiter's own offer being referenced back ("the/your
    * X offer"), not a fresh counter from the candidate. Only let a number suppress needsTime
    * when it isn't wrapped in that offer-reference framing. */
-  const numberIsOfferReferenceRe = /\b(?:the|your|this)\b(?:\s+\S+){0,3}\s+offer\b/i;
+  /* S135-B3 (wave 41) — the "the/your/this ... offer" framing missed common alternate
+   * phrasings that reference the SAME already-stated number without the literal word
+   * "offer", e.g. "the 40 LPA number you mentioned" / "that figure you quoted" — those
+   * lost needsTime exactly like the original S126-B3 "the X offer" case did. */
+  const numberIsOfferReferenceRe =
+    /\b(?:the|your|this)\b(?:\s+\S+){0,3}\s+offer\b|\b(?:number|figure|amount)\b(?:\s+\S+){0,3}\s+(?:you\s+)?(?:mentioned|stated|said|proposed|quoted|offered)\b/i;
   /* S127-B2 (wave 33) — thinkNegationRe was tested against the WHOLE string, so
    * "I don't need time to think about the base, but I do need a couple of days to think
    * about the equity component." lost its genuine, unnegated second-clause needsTime
