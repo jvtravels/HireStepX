@@ -3445,4 +3445,82 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I wouldn't accept that offer.").rejected).toBe(true);
     });
   });
+
+  describe("S124-B1 (wave 30) — bare 'I am walking out' desynced between walkAwayWords and WALKAWAY_PATTERN", () => {
+    it("'I am walking out of this meeting.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I am walking out of this meeting.").walkAway).toBe(true);
+    });
+    it("'I walk.' (bare verb, no away/out) → walkAway=true", () => {
+      expect(detectCandidateIntent("I walk.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S124-B4 (wave 30) — 'I'm out of here' wrongly excluded by the blanket 'out of X' guard", () => {
+    it("\"I'm out of here.\" → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm out of here.").walkAway).toBe(true);
+    });
+    it("\"I'm out of options here, what can you do?\" → walkAway=false (not over-firing)", () => {
+      expect(detectCandidateIntent("I'm out of options here, what can you do?").walkAway).toBe(false);
+    });
+  });
+
+  describe("S124-B4b (wave 30) — 'no deal breakers' missing the breakers guard synced from canonical", () => {
+    it("\"No deal breakers here, we're fine.\" → walkAway=false", () => {
+      expect(detectCandidateIntent("No deal breakers here, we're fine.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S124-B5 (wave 30) — 'walkin' dropped-g typo not recognized as walk-away", () => {
+    it("\"I'm walkin away from this deal.\" → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm walkin away from this deal.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S124-B1/B4/B4b/B5 (wave 30) — canonical isWalkAway() parity checks", () => {
+    it("'I am walking out of this meeting.' → isWalkAway=true", () => {
+      expect(isWalkAway("I am walking out of this meeting.")).toBe(true);
+    });
+    it("'This offer is not for me.' → isWalkAway=true (missing from canonical WALKAWAY_PATTERN)", () => {
+      expect(isWalkAway("This offer is not for me.")).toBe(true);
+    });
+    it("'Thanks but no.' → isWalkAway=true (missing from canonical WALKAWAY_PATTERN)", () => {
+      expect(isWalkAway("Thanks but no.")).toBe(true);
+    });
+    it("\"I'll walk away with nothing if you don't move.\" → isWalkAway=false (floor statement, not exit)", () => {
+      expect(isWalkAway("I'll walk away with nothing if you don't move.")).toBe(false);
+    });
+    it("\"I'm out of here.\" → isWalkAway=true", () => {
+      expect(isWalkAway("I'm out of here.")).toBe(true);
+    });
+    it("\"I'm walkin away from this deal.\" → isWalkAway=true", () => {
+      expect(isWalkAway("I'm walkin away from this deal.")).toBe(true);
+    });
+  });
+
+  describe("S124-B2 (wave 30) — stripNegatedDepartures() per-match lookback window over-suppressed a later genuine walk-away", () => {
+    it("\"I don't want to walk away, but if you don't match this I will walk away.\" → isWalkAway=true", () => {
+      expect(
+        isWalkAway("I don't want to walk away, but if you don't match this I will walk away."),
+      ).toBe(true);
+    });
+    it("\"I don't want to walk away, but if you don't match this I will walk away.\" → detectCandidateIntent walkAway=true (still correct via post-hedge fallback)", () => {
+      expect(
+        detectCandidateIntent(
+          "I don't want to walk away, but if you don't match this I will walk away.",
+        ).walkAway,
+      ).toBe(true);
+    });
+    it("existing negated walk-away is still suppressed (no regression)", () => {
+      expect(isWalkAway("I'm not walking away, just need a moment.")).toBe(false);
+      expect(detectCandidateIntent("I'm not walking away, just need a moment.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S124-B3 (wave 30, P1) — 'don't think X works' still fired accepted=true instead of rejected=true", () => {
+    it("'I don't think this works for me.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I don't think this works for me.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
 });
