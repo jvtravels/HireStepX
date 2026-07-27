@@ -2398,7 +2398,11 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // only `lekin` actually made it across. "Sounds good par salary thodi kam hai."
       // computed didAccept=true here (hedge undetected) while the canonical helper
       // correctly flagged it as conditional.
-      const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if|as\s+long\s+as|so\s+long\s+as|par\b|lekin)\b/i;
+      // S134-B1 (wave 40) — mirrors hedgeWords in _follow-up-helpers.ts: "although" was
+      // missing, and \b(...)\b's "though" arm doesn't match inside "although" (no word
+      // boundary between "al" and "though"), so hedges phrased with "although" were
+      // entirely invisible here too.
+      const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|although|though|if|as\s+long\s+as|so\s+long\s+as|par\b|lekin)\b/i;
       // S130-B1 (wave 36) — mirrors acceptSarcasmRe in _follow-up-helpers.ts: sarcastic
       // ("like I'd accept") and rhetorical-question ("do you think I'd accept") refusals,
       // plus impossible-hypothetical idioms ("if hell froze over"/"if pigs could fly"),

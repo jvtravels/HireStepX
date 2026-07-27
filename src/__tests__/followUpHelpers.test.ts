@@ -3993,4 +3993,38 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.walkAway).toBe(true);
     });
   });
+
+  describe("S134-B1 (wave 40, P1) — hedgeWords missing 'although' (word boundary blocks matching inside it via 'though')", () => {
+    it("explicit 'I reject' before an 'although' hedge is not overridden by post-hedge positive sentiment", () => {
+      const r = detectCandidateIntent("I reject this offer, although honestly it sounds good.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'I accept, although I would prefer more equity.' is a conditional accept, not a full accept", () => {
+      const r = detectCandidateIntent("I accept, although I would prefer more equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("'Although the offer sounds decent, I have to reject it.' fires rejected=true", () => {
+      const r = detectCandidateIntent("Although the offer sounds decent, I have to reject it.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S132-B4 third-party reported walk-away still suppressed (preHedgeIsRejection stays narrow)", () => {
+      const r = detectCandidateIntent("My friend said I should walk away, but I'm actually going to accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: S133-B2 'was going to walk away' retraction still suppresses walkAway, not accepted", () => {
+      const r = detectCandidateIntent("I was going to walk away, but I accept the offer.");
+      expect(r.walkAway).toBe(false);
+      expect(r.accepted).toBe(true);
+    });
+    it("regression: bare 'though' hedge still works", () => {
+      const r = detectCandidateIntent("I accept, though I would prefer more equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
 });
