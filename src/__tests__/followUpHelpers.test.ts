@@ -3345,4 +3345,50 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I am walking away, this offer is unacceptable.").walkAway).toBe(true);
     });
   });
+
+  describe("S122-B1 (wave 28, P1) — bare 'not' walk-away negation desynced from isWalkAway()", () => {
+    it("'I'm not walking away, just need a moment to think.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'm not walking away, just need a moment to think.").walkAway).toBe(false);
+    });
+    it("'I'm not sure, but I will walk away if you don't match.' → walkAway=true (not over-suppressed)", () => {
+      const r = detectCandidateIntent("I'm not sure, but I will walk away if you don't match.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  describe("S122-B2 (wave 28, P1) — bare 'too low' missing negation guard", () => {
+    it("'Not too low, actually it's pretty fair.' → rejected=false", () => {
+      expect(detectCandidateIntent("Not too low, actually it's pretty fair.").rejected).toBe(false);
+    });
+    it("'That's too low for me.' → rejected=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("That's too low for me.").rejected).toBe(true);
+    });
+  });
+
+  describe("S122-B4 (wave 28, P2) — 'insulting' required literal \"that's\", missed \"this is\"/\"it's\"", () => {
+    it("'This is insulting.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is insulting.").rejected).toBe(true);
+    });
+    it("'It's insulting, honestly.' → rejected=true", () => {
+      expect(detectCandidateIntent("It's insulting, honestly.").rejected).toBe(true);
+    });
+  });
+
+  describe("S122-B5 (wave 28, P2) — deflect 'what...offer' false-fired on legitimate non-cash questions", () => {
+    it("'What can you offer me in terms of growth here?' → deflected=false", () => {
+      expect(detectCandidateIntent("What can you offer me in terms of growth here?").deflected).toBe(false);
+    });
+    it("'What benefits do you offer besides the base salary?' → deflected=false", () => {
+      expect(detectCandidateIntent("What benefits do you offer besides the base salary?").deflected).toBe(false);
+    });
+    it("'What would you offer? You go first.' → deflected=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("What would you offer? You go first.").deflected).toBe(true);
+    });
+  });
+
+  describe("S122-B6 (wave 28, P3) — 'hard pass' returned NONE", () => {
+    it("'hard pass' → walkAway=true", () => {
+      expect(detectCandidateIntent("hard pass").walkAway).toBe(true);
+    });
+  });
 });
