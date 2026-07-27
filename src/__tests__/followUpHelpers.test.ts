@@ -3189,4 +3189,99 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("Before committing, I want to review.").needsTime).toBe(true);
     });
   });
+
+  // ── S120 wave-26 adversarial hardening ──────────────────────────────────────
+
+  describe("S120-B1 — walkAwayNegationRe extended to guard rejected too", () => {
+    it("'I don't want to walk away from this.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't want to walk away from this.").rejected).toBe(false);
+    });
+    it("'I'm not going to walk away.' → rejected=false", () => {
+      expect(detectCandidateIntent("I'm not going to walk away.").rejected).toBe(false);
+    });
+  });
+
+  describe("S120-B2 — 'walk away with' idiom must NOT fire reject/walkAway", () => {
+    it("'I'll walk away with great memories of this process.' → walkAway=false, rejected=false", () => {
+      const r = detectCandidateIntent("I'll walk away with great memories of this process.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+  });
+
+  describe("S120-B3 — 'take it as a no' must NOT fire accept", () => {
+    it("'I'll take it as a no.' → accepted=false", () => {
+      expect(detectCandidateIntent("I'll take it as a no.").accepted).toBe(false);
+    });
+  });
+
+  describe("S120-B5/B6 — new reject idioms", () => {
+    it("'This is a lowball offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is a lowball offer.").rejected).toBe(true);
+    });
+    it("'That's not even close.' → rejected=true", () => {
+      expect(detectCandidateIntent("That's not even close.").rejected).toBe(true);
+    });
+    it("'This doesn't come close.' → rejected=true", () => {
+      expect(detectCandidateIntent("This doesn't come close.").rejected).toBe(true);
+    });
+  });
+
+  describe("S120-B7/B8/B9 — losing money / seen better / below walk-away number", () => {
+    it("'I'd be losing money at this rate.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'd be losing money at this rate.").rejected).toBe(true);
+    });
+    it("'I've seen better offers elsewhere.' → rejected=true, mentionedCompeting=true", () => {
+      const r = detectCandidateIntent("I've seen better offers elsewhere.");
+      expect(r.rejected).toBe(true);
+      expect(r.mentionedCompeting).toBe(true);
+    });
+    it("'That's below my walk-away number.' → rejected=true", () => {
+      expect(detectCandidateIntent("That's below my walk-away number.").rejected).toBe(true);
+    });
+  });
+
+  describe("S120-B10 — walkAwayWords synced with canonical WALKAWAY_PATTERN", () => {
+    it("'I'm done negotiating.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm done negotiating.").walkAway).toBe(true);
+    });
+    it("'I refuse to continue.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I refuse to continue.").walkAway).toBe(true);
+    });
+    it("'Not a chance.' → walkAway=true", () => {
+      expect(detectCandidateIntent("Not a chance.").walkAway).toBe(true);
+    });
+    it("'That won't work.' → walkAway=true", () => {
+      expect(detectCandidateIntent("That won't work.").walkAway).toBe(true);
+    });
+    it("'Let's end this conversation.' → walkAway=true", () => {
+      expect(detectCandidateIntent("Let's end this conversation.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S120-B11 — 'bilkul nahi' (absolutely not) rejected, not accepted", () => {
+    it("'Bilkul nahi, this is too low.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("Bilkul nahi, this is too low.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'Bilkul, that works for me.' → accepted=true (bare bilkul preserved)", () => {
+      expect(detectCandidateIntent("Bilkul, that works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S120-B13 — Hindi 'sochna padega' needsTime", () => {
+    it("'Sochna padega, thoda time chahiye.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Sochna padega, thoda time chahiye.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S120-B14 — 'run it by my team/manager' needsTime", () => {
+    it("'Let me run it by my team.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me run it by my team.").needsTime).toBe(true);
+    });
+    it("'I need to run this by my manager.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need to run this by my manager.").needsTime).toBe(true);
+    });
+  });
 });
