@@ -4123,4 +4123,61 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway("As if I would walk away from this deal, I accept.")).toBe(false);
     });
   });
+
+  describe("S137-B1 (wave 43, P1) — 'no chance I'd reject/say no/turn down' misfired walkAway", () => {
+    it("'No chance I'm rejecting this offer.' does not fire walkAway", () => {
+      const r = detectCandidateIntent("No chance I'm rejecting this offer.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("No chance I'm rejecting this offer.")).toBe(false);
+    });
+    it("'No chance I'd say no to this.' does not fire walkAway", () => {
+      const r = detectCandidateIntent("No chance I'd say no to this.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("No chance I'd say no to this.")).toBe(false);
+    });
+    it("'No chance I'd turn this down.' does not fire walkAway", () => {
+      const r = detectCandidateIntent("No chance I'd turn this down.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("No chance I'd turn this down.")).toBe(false);
+    });
+    it("floor-assertion 'no chance I'm going below X' still does not fire walkAway (no regression)", () => {
+      expect(detectCandidateIntent("No chance I'm going below 30 LPA.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S137-B2 (wave 43, P1) — 'insulting' arm restricted to that/this/it subjects", () => {
+    it("'The offer is insulting.' fires rejected", () => {
+      expect(detectCandidateIntent("The offer is insulting.").rejected).toBe(true);
+    });
+    it("'20 LPA is insulting.' fires rejected", () => {
+      expect(detectCandidateIntent("20 LPA is insulting.").rejected).toBe(true);
+    });
+    it("'Your proposal is insulting.' fires rejected", () => {
+      expect(detectCandidateIntent("Your proposal is insulting.").rejected).toBe(true);
+    });
+    it("'This is insulting.' still fires rejected (no regression)", () => {
+      expect(detectCandidateIntent("This is insulting.").rejected).toBe(true);
+    });
+  });
+
+  describe("S137-B3 (wave 43, P2) — acceptWords had zero Hinglish coverage", () => {
+    it("'Main accept karta hoon.' fires accepted", () => {
+      expect(detectCandidateIntent("Main accept karta hoon.").accepted).toBe(true);
+    });
+    it("'Mujhe ye offer manzoor hai.' fires accepted", () => {
+      expect(detectCandidateIntent("Mujhe ye offer manzoor hai.").accepted).toBe(true);
+    });
+  });
+
+  describe("S137-B4 (wave 43, P2) — deflectWords missed reversed-question deflection", () => {
+    it("'What do you think is a fair number?' fires deflected", () => {
+      expect(detectCandidateIntent("What do you think is a fair number?").deflected).toBe(true);
+    });
+    it("'What's your best offer?' fires deflected (contraction boundary)", () => {
+      expect(detectCandidateIntent("What's your best offer?").deflected).toBe(true);
+    });
+    it("'What can you offer me in terms of growth here?' still does not fire deflected (no regression)", () => {
+      expect(detectCandidateIntent("What can you offer me in terms of growth here?").deflected).toBe(false);
+    });
+  });
 });
