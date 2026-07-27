@@ -3644,4 +3644,82 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("I guess I'll move on.").walkAway).toBe(true);
     });
   });
+
+  describe("S127-B1 (wave 33, P1) — accepted/rejected co-firing when a live number-lock accompanies an unrelated accept phrase", () => {
+    it("'Sticking with 30 LPA is what I need. That works for me otherwise.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent(
+        "Sticking with 30 LPA is what I need. That works for me otherwise.",
+      );
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'I'm fine with this. Holding firm at 32 LPA though.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I'm fine with this. Holding firm at 32 LPA though.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: plain accepts still accept", () => {
+      expect(detectCandidateIntent("Sounds good, I accept.").accepted).toBe(true);
+      expect(detectCandidateIntent("That works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S127-B2 (wave 33, P1) — needsTime negation guard tested against the whole string instead of the clause", () => {
+    it("'I don't need time to think about the base, but I do need a couple of days to think about the equity component.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent(
+          "I don't need time to think about the base, but I do need a couple of days to think about the equity component.",
+        ).needsTime,
+      ).toBe(true);
+    });
+    it("regression: negated think-time with no other clause is still suppressed", () => {
+      expect(detectCandidateIntent("I don't need time to think about it.").needsTime).toBe(false);
+    });
+    it("regression: consider+number still a counter, not needsTime", () => {
+      expect(detectCandidateIntent("could you consider 30 LPA instead?").needsTime).toBe(false);
+      expect(detectCandidateIntent("I can consider 38L.").needsTime).toBe(false);
+    });
+  });
+
+  describe("S127-B3 (wave 33, P2) — mentionedCompeting had no first-person subject guard", () => {
+    it("'My friend got an offer of 40 LPA.' → mentionedCompeting=false", () => {
+      expect(detectCandidateIntent("My friend got an offer of 40 LPA.").mentionedCompeting).toBe(
+        false,
+      );
+    });
+    it("'My brother received an offer from Google last year.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("My brother received an offer from Google last year.")
+          .mentionedCompeting,
+      ).toBe(false);
+    });
+    it("regression: candidate's own competing offer still fires", () => {
+      expect(
+        detectCandidateIntent("I already have an offer from another company.").mentionedCompeting,
+      ).toBe(true);
+      expect(
+        detectCandidateIntent("I also have another offer on the table too.").mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S127-B4/B5 (wave 33, P2) — Hindi needsTime gaps: 'sochna hai'/'time dijiye'/'baat karni hai'", () => {
+    it("'Sir mujhe sochna hai, thoda time dijiye please.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("Sir mujhe sochna hai, thoda time dijiye please.").needsTime,
+      ).toBe(true);
+    });
+    it("'Mujhe apne family se baat karni hai pehle, phir bataunga.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("Mujhe apne family se baat karni hai pehle, phir bataunga.")
+          .needsTime,
+      ).toBe(true);
+    });
+  });
+
+  describe("S127-B6 (wave 33, P2) — acceptWords missing 'I'll take whatever you offer'", () => {
+    it("'I'll take whatever you offer.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'll take whatever you offer.").accepted).toBe(true);
+    });
+  });
 });
