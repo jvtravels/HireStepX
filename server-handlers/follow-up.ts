@@ -2388,7 +2388,19 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // S84: `if` added so "I'll take it if X" / "Count me in if X" are conditionalAccept, not full accept
       // S98-B8: as long as / so long as added (matches hedgeWords in _follow-up-helpers.ts)
       // S121-B4 (wave 27): lekin added (matches hedgeWords in _follow-up-helpers.ts)
-      const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if|as\s+long\s+as|so\s+long\s+as|lekin)\b/i;
+      // S130-B2 (wave 36) — sync drift: canonical hedgeWords in _follow-up-helpers.ts
+      // has a `par\b` (Hindi "but") arm that this copy was missing since it was
+      // introduced in S121 (wave 27) — the comment above claimed both were ported but
+      // only `lekin` actually made it across. "Sounds good par salary thodi kam hai."
+      // computed didAccept=true here (hedge undetected) while the canonical helper
+      // correctly flagged it as conditional.
+      const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|though|if|as\s+long\s+as|so\s+long\s+as|par\b|lekin)\b/i;
+      // S130-B1 (wave 36) — mirrors acceptSarcasmRe in _follow-up-helpers.ts: sarcastic
+      // ("like I'd accept") and rhetorical-question ("do you think I'd accept") refusals,
+      // plus impossible-hypothetical idioms ("if hell froze over"/"if pigs could fly"),
+      // contain a literal acceptRe phrase and previously fired didAccept=true.
+      const acceptSarcasmReLocal =
+        /\b(?:like|as\s+if)\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:really\s+|actually\s+)?think\s+i(?:.?d|\s+would)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
       // S124-B3 (wave 30): mirrors acceptNegationRe in _follow-up-helpers.ts — "I don't
       // think this works for me" matched acceptRe's bare "works for me" arm and never got
       // the wave-29 negation guard ported here, so didAccept stayed true on a rejection.
@@ -2398,7 +2410,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // to terms, even if an unrelated accept phrase appears elsewhere in the reply.
       // S128-B1 (wave 34): mirrors _follow-up-helpers.ts's numberLockWords Hindi anchor arm.
       const numberLockWordsLocal = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
-      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe))) && !numberLockWordsLocal.test(answer);
+      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe))) && !numberLockWordsLocal.test(answer) && !acceptSarcasmReLocal.test(answer);
       // S121-B7 (wave 27): mirrors walkAwayNegationRe in _follow-up-helpers.ts — "was about
       // to walk away but..." is a retraction, not an intent to depart.
       // S122-B1 (wave 28): mirrors walkAwayNegationRe's bare-"not" branch (tight 0-1 word

@@ -3842,4 +3842,33 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("30 lakh se kam nahi lunga.").rejected).toBe(true);
     });
   });
+
+  describe("S130-B1 (wave 36, P1) — sarcastic/rhetorical refusals misfired accepted=true", () => {
+    const sarcasticCases = [
+      "Yeah right, like I'd accept that.",
+      "Yeah, like I'd accept that offer.",
+      "Ha, like I would accept this.",
+      "Do you really think I'd accept 20 LPA?",
+      "You really think I'd accept this?",
+      "Do you think I would accept this offer? No way.",
+      "As if I would accept this ridiculous number.",
+      "I would accept this if hell froze over.",
+      "Sure, if pigs could fly I'd accept this.",
+      "Sure, if pigs could fly.",
+    ];
+    for (const c of sarcasticCases) {
+      it(`'${c}' → accepted=false`, () => {
+        expect(detectCandidateIntent(c).accepted).toBe(false);
+      });
+    }
+    it("regression: genuine accept still fires", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("Sounds good to me.").accepted).toBe(true);
+    });
+    it("regression: genuine hedged/conditional accept still fires", () => {
+      const r = detectCandidateIntent("I would accept this if you can match 40 LPA.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
 });

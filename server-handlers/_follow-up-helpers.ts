@@ -272,6 +272,17 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     ? trimmed.slice(hedgeIdx + hedgeMatch![0].length).replace(/^[\s,.:;!?]+|[\s.:;!?]+$/g, "")
     : "";
   const hedgeIsBareFiller = hasAnyHedge && hedgeTrailingContent.length === 0;
+  /* S130-B1 (wave 36) — sarcastic/rhetorical refusals contain a literal acceptWords
+   * phrase and had no guard against it: "Yeah right, like I'd accept that.", "Do you
+   * really think I'd accept 20 LPA?", "I would accept this if hell froze over." all
+   * fired accepted=true — the single highest-priority field in follow-up.ts's
+   * intentBanner — telling the LLM to "TAKE THE YES" on an explicit refusal. Covers
+   * the "like/as if I'd accept" sarcasm frame, the "do you (really) think I'd accept"
+   * rhetorical-question frame, and "if hell froze over"/"if pigs could fly"
+   * impossible-hypothetical idioms (which also otherwise slip through as a genuine
+   * hedge condition, since "if" is a hedgeWords arm). */
+  const acceptSarcasmRe =
+    /\b(?:like|as\s+if)\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:really\s+|actually\s+)?think\s+i(?:.?d|\s+would)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
   /* A bare filler hedge ("Deal, though.") still makes this a short affirmative ACCEPT —
    * only the "conditional" characterization is wrong (there's no stated condition), so
    * isShortAffirmativeHedged (used for `accepted`) intentionally ignores hedgeIsBareFiller
@@ -280,7 +291,8 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     && shortAffirmativeStart.test(trimmed)
     && hasAnyHedge
     && !hedgeIsRejection
-    && !thinkWords.test(trimmed);
+    && !thinkWords.test(trimmed)
+    && !acceptSarcasmRe.test(trimmed);
   const isShortAffirmativeConditional = isShortAffirmativeHedged && !hedgeIsBareFiller;
 
   const acceptIdx = trimmed.search(acceptWords);
@@ -308,7 +320,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * only covered "lena" (take) conjugations, so "X se kam nahi chalega" ("won't work for
    * me below X") returned no signal at all; added "chalega" alongside. */
   const numberLockWords = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
-  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !numberLockWords.test(trimmed);
+  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !numberLockWords.test(trimmed) && !acceptSarcasmRe.test(trimmed);
   const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
   /* S117-B5 FP: "I don't think I need more equity" fires rejected because the
    * lookbehind (?<!n't\s) only checks 4 chars before "need" — "think I" breaks
