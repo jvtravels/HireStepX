@@ -4180,4 +4180,30 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("What can you offer me in terms of growth here?").deflected).toBe(false);
     });
   });
+
+  describe("S138-B1 (wave 44, P1) — hasHedgeAfterAccept had no clause/sentence boundary check", () => {
+    it("a hedge word in a wholly unrelated later sentence does not fire conditionalAccept", () => {
+      const inputs = [
+        "I accept. By the way, if it rains tomorrow I might be late.",
+        "I accept the offer. But anyway, thanks for the opportunity.",
+        "I accept the offer. Though I should mention, my train leaves at 5pm.",
+        "I accept the position. If you need anything else from me, let me know.",
+      ];
+      for (const i of inputs) {
+        const r = detectCandidateIntent(i);
+        expect(r.accepted).toBe(true);
+        expect(r.conditionalAccept).toBe(false);
+      }
+    });
+    it("regression: a genuine same-clause condition still fires conditionalAccept", () => {
+      const r = detectCandidateIntent("I accept the offer, but I'd like to discuss the joining bonus.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("regression: S128-B3 bare trailing hedge filler stays accepted, not conditional", () => {
+      const r = detectCandidateIntent("I accept, though.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(false);
+    });
+  });
 });

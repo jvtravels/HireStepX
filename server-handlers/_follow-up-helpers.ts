@@ -379,7 +379,16 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
 
   const acceptIdx = trimmed.search(acceptWords);
   const hasAccept = acceptIdx >= 0;
-  const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx && !hedgeIsBareFiller;
+  /* S138-B1 (wave 44) — hasHedgeAfterAccept only checked that the hedge word's index came
+   * after the accept match's index, with no clause/sentence boundary — so a hedge word
+   * (if/but/though/unless/...) in a wholly unrelated LATER sentence ("I accept. By the
+   * way, if it rains tomorrow I might be late.") wrongly fired conditionalAccept=true on
+   * an unconditional acceptance. If a sentence-terminator (./!/?) appears between the
+   * accept match and the hedge, the hedge belongs to a separate sentence, not a condition
+   * attached to the acceptance. */
+  const hedgeCrossesSentenceBoundary = hasAccept && hedgeIdx > acceptIdx &&
+    /[.!?]/.test(trimmed.slice(acceptIdx, hedgeIdx));
+  const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx && !hedgeIsBareFiller && !hedgeCrossesSentenceBoundary;
 
   /* S123-B1 (wave 29) — pairs with the new rejectWords arm above: "I don't think this
    * works for me" was matching acceptWords' bare "works (for me)" arm regardless of the
