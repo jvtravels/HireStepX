@@ -331,7 +331,6 @@ export function NavV2() {
     ["How it works", "/how-it-works"],
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
-    ["About", "/about"],
     ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
