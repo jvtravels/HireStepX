@@ -2399,8 +2399,11 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // ("like I'd accept") and rhetorical-question ("do you think I'd accept") refusals,
       // plus impossible-hypothetical idioms ("if hell froze over"/"if pigs could fly"),
       // contain a literal acceptRe phrase and previously fired didAccept=true.
+      // S131-B1 (wave 37) — mirrors acceptSarcasmRe's fix-up: negated rhetorical-question
+      // form ("you DON'T think I'd accept") and punctuation-tolerant "like"/"as if"
+      // separator (handles "like...I'd accept", "like, I'd accept?!").
       const acceptSarcasmReLocal =
-        /\b(?:like|as\s+if)\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:really\s+|actually\s+)?think\s+i(?:.?d|\s+would)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
+        /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:(?:don.?t|doesn.?t|didn.?t)\s+)?(?:really\s+|actually\s+)?think\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
       // S124-B3 (wave 30): mirrors acceptNegationRe in _follow-up-helpers.ts — "I don't
       // think this works for me" matched acceptRe's bare "works for me" arm and never got
       // the wave-29 negation guard ported here, so didAccept stayed true on a rejection.

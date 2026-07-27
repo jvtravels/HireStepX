@@ -280,9 +280,16 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * the "like/as if I'd accept" sarcasm frame, the "do you (really) think I'd accept"
    * rhetorical-question frame, and "if hell froze over"/"if pigs could fly"
    * impossible-hypothetical idioms (which also otherwise slip through as a genuine
-   * hedge condition, since "if" is a hedgeWords arm). */
+   * hedge condition, since "if" is a hedgeWords arm).
+   * S131-B1 (wave 37) — two gaps in the frame above: (1) the far more natural NEGATED
+   * phrasing of the rhetorical-question frame ("you DON'T think I'd accept this, do
+   * you?") wasn't covered — only the bare "do you think" form was; (2) the "like"/"as
+   * if" separator was a rigid `\s+`, so trivial punctuation variation ("like...I'd
+   * accept", "like, I'd accept?!") broke the match entirely. Added an optional
+   * negation clause to the rhetorical-question arm and widened the separator to
+   * `[\s.,]+` (tolerates ellipses/commas, still requires at least one char). */
   const acceptSarcasmRe =
-    /\b(?:like|as\s+if)\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:really\s+|actually\s+)?think\s+i(?:.?d|\s+would)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
+    /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:(?:don.?t|doesn.?t|didn.?t)\s+)?(?:really\s+|actually\s+)?think\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
   /* A bare filler hedge ("Deal, though.") still makes this a short affirmative ACCEPT —
    * only the "conditional" characterization is wrong (there's no stated condition), so
    * isShortAffirmativeHedged (used for `accepted`) intentionally ignores hedgeIsBareFiller

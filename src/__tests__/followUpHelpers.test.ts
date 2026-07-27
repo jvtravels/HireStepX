@@ -3871,4 +3871,44 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.conditionalAccept).toBe(true);
     });
   });
+
+  describe("S131-B1 (wave 37, P1) — negated rhetorical-question + punctuation-variant sarcasm gaps", () => {
+    const negatedRhetorical = [
+      "You don't actually think I'd accept this, do you?",
+      "You don't think I'd accept this, do you?",
+      "You don't really think I'd accept that, right?",
+      "Surely you don't think I'll accept this offer?",
+      "You didn't actually think I'd accept, did you?",
+    ];
+    for (const c of negatedRhetorical) {
+      it(`'${c}' → accepted=false`, () => {
+        expect(detectCandidateIntent(c).accepted).toBe(false);
+      });
+    }
+    const punctuationVariants = [
+      "like...I'd accept that",
+      "like....I'd accept that",
+      "as if... I'd accept",
+      "like, I'd accept?!?!",
+    ];
+    for (const c of punctuationVariants) {
+      it(`'${c}' → accepted=false`, () => {
+        expect(detectCandidateIntent(c).accepted).toBe(false);
+      });
+    }
+    it("regression: wave 36 sarcasm cases still fire accepted=false", () => {
+      expect(detectCandidateIntent("Yeah right, like I'd accept that.").accepted).toBe(false);
+      expect(detectCandidateIntent("Do you really think I'd accept 20 LPA?").accepted).toBe(false);
+      expect(detectCandidateIntent("I would accept this if hell froze over.").accepted).toBe(false);
+    });
+    it("regression: genuine accept still fires", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("Sounds good to me.").accepted).toBe(true);
+    });
+    it("regression: genuine hedged/conditional accept still fires", () => {
+      const r = detectCandidateIntent("I would accept this if you can match 40 LPA.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
 });
