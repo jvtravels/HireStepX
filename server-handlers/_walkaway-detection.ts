@@ -156,6 +156,15 @@ const DEPARTURE_NEGATOR =
 const WONT_WORK_NON_EXIT =
   /\b(?:won.?t work|is(?:n.?t|\s+not)\s+going\s+to\s+work|that won.?t work)\b(?:\s+for\s+\w+)?(?:\b[^.!?]{0,15}?\b(?:right\s+now|at\s+(?:the\s+)?moment|currently|for\s+now|at\s+this\s+(?:point|stage|time))|\b[^.!?]{0,40}?\b(?:can\s+you|could\s+you|is\s+there\s+any|any\s+(?:room|way|chance|flexibility)))\b/i;
 
+/* S123-B2 (wave 29) — the `not interested` arm of WALKAWAY_PATTERN is never covered by
+ * stripNegatedDepartures() (that helper only strips NEGATABLE_DEPARTURE verbs like
+ * walk/pull-out/decline, not the standalone "not interested" phrase). So a double
+ * negative like "It's not like I'm not interested." or "I can't say I'm not interested"
+ * — the candidate reassuring engagement — matched "not interested" literally and fired
+ * walkAway=true, terminating a live negotiation on a reassurance. */
+const NOT_INTERESTED_DOUBLE_NEGATION =
+  /\b(?:not\s+like|not\s+that|isn.?t\s+that|can(?:not|.t)\s+say|wouldn.?t\s+say)\s+(?:i.?m|i\s+am)\s+not\s+interested\b|(?:i.?m|i\s+am)\s+not\s+not\s+interested\b/i;
+
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
     const preceding = full.slice(Math.max(0, offset - 48), offset);
@@ -168,5 +177,6 @@ export function isWalkAway(answer: string | null | undefined): boolean {
   if (!WALKAWAY_PATTERN.test(answer)) return false;
   // won't-work + temporal qualifier ("right now") or counter-ask = negotiating, not exiting
   if (WONT_WORK_NON_EXIT.test(answer)) return false;
+  if (NOT_INTERESTED_DOUBLE_NEGATION.test(answer)) return false;
   return WALKAWAY_PATTERN.test(stripNegatedDepartures(answer));
 }

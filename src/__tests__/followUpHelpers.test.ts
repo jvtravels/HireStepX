@@ -13,6 +13,7 @@ import {
   composeDuplicateReplyRescue,
   sanitizeBehaviouralRegister,
 } from "../../server-handlers/_follow-up-helpers";
+import { isWalkAway } from "../../server-handlers/_walkaway-detection";
 
 /**
  * follow-up.ts is 697 lines and was entirely uncovered. The two highest-
@@ -3389,6 +3390,59 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
   describe("S122-B6 (wave 28, P3) — 'hard pass' returned NONE", () => {
     it("'hard pass' → walkAway=true", () => {
       expect(detectCandidateIntent("hard pass").walkAway).toBe(true);
+    });
+  });
+
+  describe("S123-B1 (wave 29, P1) — 'don't think X works' fired accepted=true instead of rejected=true", () => {
+    it("'I don't think this works for me.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I don't think this works for me.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'I dont think it works for me.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I dont think it works for me.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'42 works for me.' → accepted=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("42 works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S123-B2 (wave 29, P1) — double-negative 'not interested' reassurance fired rejected/walkAway=true", () => {
+    it("'It's not like I'm not interested.' → rejected=false, walkAway=false", () => {
+      const r = detectCandidateIntent("It's not like I'm not interested.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("isWalkAway(\"It's not like I'm not interested.\") → false", () => {
+      expect(isWalkAway("It's not like I'm not interested.")).toBe(false);
+    });
+    it("'I can't say I'm not interested.' → rejected=false, walkAway=false", () => {
+      const r = detectCandidateIntent("I can't say I'm not interested.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("isWalkAway(\"I can't say I'm not interested.\") → false", () => {
+      expect(isWalkAway("I can't say I'm not interested.")).toBe(false);
+    });
+    it("'Not interested, thanks.' → rejected=true, walkAway=true (not over-suppressed)", () => {
+      const r = detectCandidateIntent("Not interested, thanks.");
+      expect(r.rejected).toBe(true);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway("Not interested, thanks.")).toBe(true);
+    });
+  });
+
+  describe("S123-B3 (wave 29, P2) — litotes 'can't say I wouldn't accept' fired rejected=true", () => {
+    it("'I can't say I wouldn't accept that.' → rejected=false", () => {
+      expect(detectCandidateIntent("I can't say I wouldn't accept that.").rejected).toBe(false);
+    });
+    it("'Not that I wouldn't accept it, but I need to check numbers first.' → rejected=false", () => {
+      expect(detectCandidateIntent("Not that I wouldn't accept it, but I need to check numbers first.").rejected).toBe(false);
+    });
+    it("'I wouldn't accept that offer.' → rejected=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("I wouldn't accept that offer.").rejected).toBe(true);
     });
   });
 });
