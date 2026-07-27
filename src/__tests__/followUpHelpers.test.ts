@@ -3773,4 +3773,73 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.conditionalAccept).toBe(true);
     });
   });
+
+  describe("S129-B1 (wave 35, P1) — post-hedge walk-away phrasing not covered by rejectWords failed to suppress accepted", () => {
+    it("'I am in, but I also do not think this is going to work out for me.' → accepted=false, walkAway=true", () => {
+      const r = detectCandidateIntent(
+        "I am in, but I also do not think this is going to work out for me.",
+      );
+      expect(r.accepted).toBe(false);
+      expect(r.conditionalAccept).toBe(false);
+      expect(r.walkAway).toBe(true);
+    });
+    it("regression: genuine conditional accept still fires", () => {
+      const r = detectCandidateIntent("I accept, though I'd like to discuss equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S129-B2 (wave 35, P1/P2) — bare Hindi 'nahi kar sakta' (generic inability) over-triggered walkAway", () => {
+    it("'Main abhi decide nahi kar sakta, thoda time do.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent("Main abhi decide nahi kar sakta, thoda time do.").walkAway,
+      ).toBe(false);
+    });
+    it("regression: 'yeh nahi kar sakta' deal-refusal idiom still fires walkAway", () => {
+      expect(
+        detectCandidateIntent("Yeh nahi kar sakta main, deal cancel.").walkAway,
+      ).toBe(true);
+    });
+  });
+
+  describe("S129-B3 (wave 35, P2) — mentionedCompeting had no negation guard", () => {
+    it("'I don't have another offer, but I am exploring one.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("I don't have another offer, but I am exploring one.")
+          .mentionedCompeting,
+      ).toBe(false);
+    });
+    it("'I haven't received any other offer yet.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("I haven't received any other offer yet.").mentionedCompeting,
+      ).toBe(false);
+    });
+    it("'I have no other offer right now.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("I have no other offer right now.").mentionedCompeting,
+      ).toBe(false);
+    });
+    it("regression: genuine competing offer mention still fires, even alongside a negated clause", () => {
+      expect(
+        detectCandidateIntent("I have another offer at 40 LPA.").mentionedCompeting,
+      ).toBe(true);
+      expect(
+        detectCandidateIntent(
+          "I don't have another offer, but I do have a competing offer from another company.",
+        ).mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S129-B4 (wave 35, P3) — Hindi number-lock idiom 'se kam nahi chalega' returned no signal", () => {
+    it("'30 lakh se kam nahi chalega.' → walkAway=false, rejected=true", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi chalega.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: existing 'lung[ai]' arm still works", () => {
+      expect(detectCandidateIntent("30 lakh se kam nahi lunga.").rejected).toBe(true);
+    });
+  });
 });
