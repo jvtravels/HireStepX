@@ -4288,4 +4288,25 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       ).toBe(true);
     });
   });
+
+  describe("S140-B1 (wave 46, P2) — deflectWords 'what's your best number/offer' missed curly-apostrophe input", () => {
+    it("curly and straight apostrophes both fire deflected=true", () => {
+      expect(detectCandidateIntent("What’s your best number?").deflected).toBe(true);
+      expect(detectCandidateIntent("What's your best number?").deflected).toBe(true);
+      expect(detectCandidateIntent("What’s your best offer?").deflected).toBe(true);
+      expect(detectCandidateIntent("What's your best offer?").deflected).toBe(true);
+    });
+  });
+
+  describe("S140-B2 (wave 46, P2) — walkAwayWords/WALKAWAY_PATTERN/walkRe 'call it quits' missed gerund form", () => {
+    it("'calling it quits' fires walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      const t = "I'm calling it quits on this negotiation.";
+      expect(detectCandidateIntent(t).walkAway).toBe(true);
+      expect(isWalkAway(t)).toBe(true);
+    });
+    it("regression: bare imperative 'call it quits' still fires", () => {
+      expect(detectCandidateIntent("I call it quits.").walkAway).toBe(true);
+      expect(detectCandidateIntent("Let's call it quits.").walkAway).toBe(true);
+    });
+  });
 });
