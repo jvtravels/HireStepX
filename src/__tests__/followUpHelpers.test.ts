@@ -4378,4 +4378,37 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       ).toBe(true);
     });
   });
+
+  describe("S142-B2 (wave 48, P1) — rejectWords/walkAwayWords missed subjectless telegraphic replies", () => {
+    it("'Rejecting the offer.' fires rejected=true with no subject prefix", () => {
+      expect(detectCandidateIntent("Rejecting the offer.").rejected).toBe(true);
+    });
+    it("'Declining.' fires walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      expect(detectCandidateIntent("Declining.").walkAway).toBe(true);
+      expect(isWalkAway("Declining.")).toBe(true);
+    });
+    it("regression: subject-prefixed forms still fire", () => {
+      expect(detectCandidateIntent("I reject this offer.").rejected).toBe(true);
+      expect(detectCandidateIntent("I'm declining this offer.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S142-B3 (wave 48, P2) — numberLockWords 'stuck at' preposition missing", () => {
+    it("'Stuck at 30 lakhs.' fires rejected=true", () => {
+      expect(detectCandidateIntent("Stuck at 30 lakhs.").rejected).toBe(true);
+    });
+    it("regression: 'stuck with' still fires", () => {
+      expect(detectCandidateIntent("I stuck with my number of 30 lakhs.").rejected).toBe(true);
+    });
+  });
+
+  describe("S142-B4 (wave 48, P3) — numberLockWords lookahead missed spelled-out numbers with no unit word", () => {
+    it("'Sticking with thirty.' fires rejected=true", () => {
+      expect(detectCandidateIntent("Sticking with thirty.").rejected).toBe(true);
+    });
+    it("regression: digit and unit-word forms still fire", () => {
+      expect(detectCandidateIntent("I'm sticking with 26 lakhs.").rejected).toBe(true);
+      expect(detectCandidateIntent("Holding at 30 LPA.").rejected).toBe(true);
+    });
+  });
 });
