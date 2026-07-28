@@ -664,7 +664,13 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * span a contraction ("i'm") between "say" and the departure verb — \w+ alone doesn't
    * match apostrophes, so it silently failed to bridge that specific gap. Widened to
    * [\w']+ so contraction pronouns count as a single filler word like any other. */
-  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S150-B2 (wave 56) — the negator alternation enumerated explicit forms
+   * (don't/won't/wouldn't/...) but had no "ain't" arm, unlike DEPARTURE_NEGATOR
+   * in _walkaway-detection.ts, which incidentally catches it via its generic
+   * bare `n['']t\b` catch-all. "I ain't walking away from this deal." (a
+   * reassurance, "ain't" = "am not") desynced: isWalkAway() correctly
+   * suppressed it, walkAway fired true here. Added "ain.?t" as an explicit arm. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part\s+ways|declin(?:e|ing)|pass|exit)\b/i;
   /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
    * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
    * The negation guard only ever protected the walkAway field; apply it to rejected too.
@@ -737,14 +743,29 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * the bare-verb "i am walking away" already swallows the subject+modal itself, hiding the
    * "I am" reassertion inside the match instead of leaving it in the lookback window). */
   const DEPARTURE_VERB_LOCAL =
-    /\bwalk(?:ing|in)?(?:\s+away|\s+out)?\b|declin(?:e|ing)\b|withdraw(?:ing)?\b|part\s+ways\b|pull(?:ing)?\s+out\b/i;
+    /\bwalk(?:ing|in)?(?:\s+away|\s+out)?\b|declin(?:e|ing)\b|withdraw(?:ing)?\b|part\s+ways\b|pull(?:ing)?\s+out\b/gi;
+  /* S150-B1 (wave 56) — this only ever inspected the FIRST DEPARTURE_VERB_LOCAL match in the
+   * text (a non-global .exec() always returns match #1), then applied that single verdict as a
+   * blanket gate over the whole string. "I can't say I'm walking away, I can't say I'm walking
+   * away, I am walking away." has its first two departure-verb instances genuinely covered by
+   * SAY_LITOTES_LOCAL, but a third, un-negated, unhedged "I am walking away" later in the same
+   * reply — that third instance was silently discarded, desyncing from isWalkAway() (whose
+   * stripNegatedDepartures() correctly evaluates every occurrence independently via a global
+   * replace). Loop over every departure-verb occurrence; only report "covered" (suppress) if
+   * ALL of them are covered — a single genuine, uncovered instance means the candidate really
+   * is walking away somewhere in the reply. */
   function walkAwayNegationCoversLocal(text: string): boolean {
     if (!walkAwayNegationRe.test(text)) return false;
-    const verbMatch = DEPARTURE_VERB_LOCAL.exec(text);
-    if (!verbMatch) return true;
-    const lookback = text.slice(Math.max(0, verbMatch.index - 48), verbMatch.index);
-    if (SAY_LITOTES_LOCAL.test(lookback)) return true;
-    return !RECLAIMED_INTENT_LOCAL.test(lookback);
+    DEPARTURE_VERB_LOCAL.lastIndex = 0;
+    let verbMatch: RegExpExecArray | null;
+    let sawAnyVerb = false;
+    while ((verbMatch = DEPARTURE_VERB_LOCAL.exec(text))) {
+      sawAnyVerb = true;
+      const lookback = text.slice(Math.max(0, verbMatch.index - 48), verbMatch.index);
+      const covered = SAY_LITOTES_LOCAL.test(lookback) || !RECLAIMED_INTENT_LOCAL.test(lookback);
+      if (!covered) return false;
+    }
+    return sawAnyVerb;
   }
   /* S128-B1 (wave 34) — a live number-lock (see numberLockWords above) means the candidate
    * is anchoring a number, not leaving; mirrors the same exclusion already applied to
@@ -758,7 +779,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   const walkAwaySentence = baseWalkAwayMatch ? sentenceAroundLocal(trimmed, baseWalkAwayMatch.index) : "";
   const walkAwayIsExplicitUltimatum = /\b(?:otherwise|else)\b/i.test(walkAwaySentence);
   const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
-    (walkAwayWords.test(trimmed) && !accepted && (!numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) || walkAwayIsExplicitUltimatum) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
+    (walkAwayWords.test(trimmed) && !accepted && (!numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) || walkAwayIsExplicitUltimatum) && !walkAwayNegationCoversLocal(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
     || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText))
     || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText))
     // S145-B3 (wave 51) — a later un-hedged "Actually no, I'm walking away." retraction

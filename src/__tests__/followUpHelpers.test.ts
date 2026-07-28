@@ -4778,4 +4778,34 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(false);
     });
   });
+
+  describe("S150-B1 (wave 56) — walkAwayNegationCoversLocal only inspected the FIRST departure-verb occurrence", () => {
+    it("'I can't say I'm walking away, I can't say I'm walking away, I am walking away.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I can't say I'm walking away, I can't say I'm walking away, I am walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: a single, fully-covered litotes instance still suppresses", () => {
+      const s = "I can't say I'm not interested, but I also can't say I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S150-B2 (wave 56) — walkAwayNegationRe had no \"ain't\" negator arm", () => {
+    it("'I ain't walking away from this deal.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I ain't walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: genuine unhedged walk-away still fires", () => {
+      const s = "I'm walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
 });
