@@ -4546,4 +4546,66 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.walkAway).toBe(false);
     });
   });
+
+  describe("S145-B1 (wave 51) — hedgeless pivot deflection fired accepted", () => {
+    it("'Sure, let's discuss the notice period first.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Sure, let's discuss the notice period first.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'Yes, let's discuss the notice period first.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Yes, let's discuss the notice period first.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("regression: 'Sure, if you can bump to 38L' still fires accepted+conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, if you can bump to 38L");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S145-B2 (wave 51) — deflection appearing before the hedge word fired accepted", () => {
+    it("'Before that, what's your best number, but yes I'm on board.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Before that, what's your best number, but yes I'm on board.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'What's your best number, but yes I'm on board.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("What's your best number, but yes I'm on board.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+  });
+
+  describe("S145-B3 (wave 51) — accept<->walkAway retraction ordering desync", () => {
+    it("'I accept. Actually no, I'm walking away.' fires walkAway=true, not accepted, and isWalkAway()=true", () => {
+      const r = detectCandidateIntent("I accept. Actually no, I'm walking away.");
+      expect(r.walkAway).toBe(true);
+      expect(r.accepted).toBe(false);
+      expect(isWalkAway("I accept. Actually no, I'm walking away.")).toBe(true);
+    });
+    it("'I accept the offer. Actually, I'm walking away.' fires walkAway=true, not accepted", () => {
+      const r = detectCandidateIntent("I accept the offer. Actually, I'm walking away.");
+      expect(r.walkAway).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'I'm walking away. Actually no, I accept.' fires accepted=true, walkAway=false, and isWalkAway()=false", () => {
+      const r = detectCandidateIntent("I'm walking away. Actually no, I accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("I'm walking away. Actually no, I accept.")).toBe(false);
+    });
+  });
+
+  describe("S145-B4 (wave 51) — numberLockWords missed 'sticking between X and Y' range without 'with'", () => {
+    it("'I'm sticking between 26 and 28 lakhs.' fires rejected=true", () => {
+      expect(detectCandidateIntent("I'm sticking between 26 and 28 lakhs.").rejected).toBe(true);
+    });
+    it("regression: 'I'm sticking with between 26 and 28 lakhs.' still fires rejected=true", () => {
+      expect(
+        detectCandidateIntent("I'm sticking with between 26 and 28 lakhs.").rejected,
+      ).toBe(true);
+    });
+  });
 });

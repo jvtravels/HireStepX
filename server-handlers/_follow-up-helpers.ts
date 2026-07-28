@@ -379,10 +379,15 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   const walkAwaySarcasmRe =
     /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
 
+  /* S145-B1 (wave 51) — "Sure, let's discuss the notice period first." fired
+   * accepted=true: no hedge word is present (so isShortAffirmativeHedged's
+   * hedgeIsDeflection guard never applies), and isShortAffirmative itself had no
+   * deflectWords exclusion even though it already excludes hedgeWords/rejectWords. */
   const isShortAffirmative = trimmed.split(/\s+/).length < 8
     && shortAffirmativeStart.test(trimmed)
     && !hedgeWords.test(trimmed)
-    && !rejectWords.test(trimmed);
+    && !rejectWords.test(trimmed)
+    && !deflectWords.test(trimmed);
 
   /* S88-B2 (2026-07-26) — "Sure, if you can bump to 38L" / "Deal, though I want equity
    * too" returned accepted=false, conditionalAccept=false. The old code had no path for
@@ -452,8 +457,14 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   /* S144-B3 (wave 50) — "Sure, but first let's talk about the joining bonus." fired
    * accepted=true and conditionalAccept=true: the short-affirmative-plus-hedge path had
    * no guard against the hedge clause itself being a deflection redirect rather than a
-   * genuine stated condition. Mirrors hedgeIsRejection's postHedgeText check. */
-  const hedgeIsDeflection = hasAnyHedge && deflectWords.test(postHedgeText);
+   * genuine stated condition. Mirrors hedgeIsRejection's postHedgeText check.
+   * S145-B2 (wave 51) — "Before that, what's your best number, but yes I'm on board."
+   * still fired accepted=true: the deflection phrase ("what's your best number") sits
+   * BEFORE the hedge word here, mirroring the pre-hedge/post-hedge ordering split already
+   * established for hedgeIsRejection (preHedgeIsRejection) and walkAway
+   * (preHedgeText/postHedgeText OR-branches). Added a preHedgeText check. */
+  const hedgeIsDeflection = hasAnyHedge
+    && (deflectWords.test(postHedgeText) || deflectWords.test(preHedgeText));
   /* S128-B3 (wave 34) — a bare trailing hedge word with nothing after it ("I accept,
    * though." / "Deal, though.") is a hesitation filler, not a stated condition — genuine
    * conditional accepts have actual content following the hedge ("I accept, though I'd
@@ -535,7 +546,10 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * S142-B4 (wave 48) - the lookahead only recognized a literal digit or a lakh/lpa/crore
    * unit word, so a spelled-out number with no unit word ("Sticking with thirty.")
    * returned no signal at all. Added a spelled-out cardinal-number word alternative. */
-  const numberLockWords = /\b(?:stick(?:ing)?\s+with|stuck\s+(?:with|at)|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
+  /* S145-B4 (wave 51) — "I'm sticking between 26 and 28 lakhs." returned no signal at all:
+   * the "stick(?:ing)?" arm required a literal "with" immediately after, so the bare
+   * "sticking between X and Y" range form (no "with") fell through entirely. */
+  const numberLockWords = /\b(?:stick(?:ing)?\s+(?:with|between)|stuck\s+(?:with|at)|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
   /* S135-B1 (wave 41) — numberLockWords.test(trimmed) scanned the ENTIRE reply for a
    * number-lock phrase ANYWHERE, so an unrelated number-lock in a later/earlier sentence
    * blanket-suppressed an accept/walk-away signal in a totally different sentence
@@ -572,7 +586,30 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     return true;
   }
   const acceptMatchForLock = acceptWords.exec(trimmed);
-  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !acceptNegationRe.test(trimmed) && !(hasAccept ? numberLockAppliesToLocal(trimmed, acceptMatchForLock) : numberLockWords.test(trimmed)) && !acceptSarcasmRe.test(trimmed);
+  /* S145-B3 (wave 51) — "I accept. Actually no, I'm walking away." fired accepted=true
+   * and walkAway=false: nothing suppressed the base accept clause when a later, un-hedged
+   * "Actually (no,) ..." retraction reverses it into a walk-away. The existing hedge-gated
+   * rescue OR-branches on walkAway (S133-B2/S129-B1) only cover hedge-word ("but") framed
+   * reversals, not this bare "Actually" retraction marker. The reverse ordering ("I'm
+   * walking away. Actually no, I accept.") already resolves correctly here because the
+   * base walkAway clause already gates on `!accepted`. */
+  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?/i;
+  const retractionMatch = retractionMarkerRe.exec(trimmed);
+  const postRetractionText = retractionMatch
+    ? trimmed.slice(retractionMatch.index + retractionMatch[0].length)
+    : "";
+  const retractionNegatesWalkAway = /^(?:don.?t|do\s+not|won.?t|will\s+not)\s+/i.test(postRetractionText);
+  /* S94-B1 exception (mirrors postHedgeWalkAwayIsConditionalThreat) — "Sounds good, but
+   * actually I am walking away if you cannot match it." is a conditional ultimatum, not a
+   * genuine retraction: the candidate hasn't actually left. An "if" in postRetractionText
+   * means it's a threat, not an unconditional walk-away statement. */
+  const retractionIsConditionalThreat = /\bif\b/i.test(postRetractionText);
+  const retractionToWalkAway = !!retractionMatch && walkAwayWords.test(postRetractionText) && !retractionNegatesWalkAway && !retractionIsConditionalThreat;
+  /* S145-B2 (wave 51) — hedgeIsDeflection only gated isShortAffirmativeHedged, but
+   * "Before that, what's your best number, but yes I'm on board." reaches `accepted`
+   * via the hasAccept path ("on board" matches acceptWords directly), which had no
+   * deflection guard at all. Mirrors hedgeIsRejection's scope (gates the whole formula). */
+  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !hedgeIsDeflection && !acceptNegationRe.test(trimmed) && !(hasAccept ? numberLockAppliesToLocal(trimmed, acceptMatchForLock) : numberLockWords.test(trimmed)) && !acceptSarcasmRe.test(trimmed) && !retractionToWalkAway;
   const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
   /* S117-B5 FP: "I don't think I need more equity" fires rejected because the
    * lookbehind (?<!n't\s) only checks 4 chars before "need" — "think I" breaks
@@ -675,7 +712,10 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
     (walkAwayWords.test(trimmed) && !accepted && !numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
     || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText))
-    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText)));
+    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText))
+    // S145-B3 (wave 51) — a later un-hedged "Actually no, I'm walking away." retraction
+    // reverses an earlier accept clause; see retractionToWalkAway above.
+    || retractionToWalkAway);
 
   // "consider" co-occurring with a number is a counter, not a time request
   /* S117-B7/B8/B9/B10 FPs: negated think-time phrases ("I don't need time", "no need

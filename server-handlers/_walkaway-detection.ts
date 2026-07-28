@@ -225,6 +225,22 @@ function stripNegatedDepartures(text: string): string {
   });
 }
 
+/* S145-B3 (wave 51) — "I'm walking away. Actually no, I accept." fired isWalkAway()=true,
+ * diverging from _follow-up-helpers.ts's `walkAway`/`accepted` formulas (already correct
+ * for this direction). Mirrors the retractionToWalkAway mechanism added there: a later,
+ * un-hedged "Actually (no,) ..." retraction whose post-text is a genuine accept reverses
+ * an earlier walk-away phrase. (The opposite direction — an accept retracted into a
+ * walk-away — is handled by the canonical `walkAway` field itself; isWalkAway() only
+ * needs the accept-side mirror since it has no accept-detection logic of its own.) */
+const RETRACTION_MARKER = /\bactually\b[,]?\s*(?:no[,]?\s*)?/i;
+const RETRACTS_TO_ACCEPT = /^(?:i\s+)?(?:accept|agree|deal)\b|^(?:i\s+)?ok(?:ay)?\b|^yes\b/i;
+function retractsToAccept(text: string): boolean {
+  const match = RETRACTION_MARKER.exec(text);
+  if (!match) return false;
+  const postText = text.slice(match.index + match[0].length);
+  return RETRACTS_TO_ACCEPT.test(postText);
+}
+
 export function isWalkAway(answer: string | null | undefined): boolean {
   if (!answer) return false;
   if (!WALKAWAY_PATTERN.test(answer)) return false;
@@ -234,5 +250,6 @@ export function isWalkAway(answer: string | null | undefined): boolean {
   if (THIRD_PARTY_DEPARTURE.test(answer)) return false;
   if (TRAILING_RETRACTION.test(answer)) return false;
   if (WALKAWAY_SARCASM.test(answer)) return false;
+  if (retractsToAccept(answer)) return false;
   return WALKAWAY_PATTERN.test(stripNegatedDepartures(answer));
 }
