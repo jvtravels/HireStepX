@@ -4808,4 +4808,82 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(true);
     });
   });
+
+  describe("S151-B1 (wave 57) — negator lookback crossed clause boundaries", () => {
+    it("'I won't decline, I won't decline, but I decline.' fires walkAway=true (fresh clause overrides earlier negations)", () => {
+      const s = "I won't decline, I won't decline, but I decline.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'I'm not pulling out, pulling out isn't something I'd do, but pulling out is what I'd doing now.' fires walkAway=true", () => {
+      const s = "I'm not pulling out, pulling out isn't something I'd do, but pulling out is what I'd doing now.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B2 (wave 57) — per-occurrence \"covered\" defaulted true with no negator adjacent at all", () => {
+    it("'I'm not going to withdraw, I withdraw, and yeah I withdraw again.' fires walkAway=true", () => {
+      const s = "I'm not going to withdraw, I withdraw, and yeah I withdraw again.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B3 (wave 57) — NEGATABLE_DEPARTURE/walkAwayWords missing the \"parting ways\" gerund form", () => {
+    it("'I never said I'd part ways, I won't part ways, yet here I am, parting ways.' fires walkAway=true", () => {
+      const s = "I never said I'd part ways, I won't part ways, yet here I am, parting ways.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B4 (wave 57) — isWalkAway() had no general accept-clause guard (sarcastic setup / leading accept clause)", () => {
+    it("sarcastic setup clause followed by plain trailing accept: walkAway=false", () => {
+      const s = "Oh yeah, right, because I'm totally going to walk away from a package like this. Not happening — I accept!";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("second sarcastic setup variant: walkAway=false", () => {
+      const s = "Sure, sure, I'll just decline the best offer of my career. Obviously I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("third sarcastic setup variant: walkAway=false", () => {
+      const s = "Wow, what a great idea, let me just withdraw from my dream job. Yeah right, I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("fourth sarcastic setup variant, parenthetical accept: walkAway=false", () => {
+      const s = "Totally, I'll definitely walk away over 2 LPA. (I accept, obviously.)";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("leading unhedged accept clause followed by hedged departure clause: walkAway=false", () => {
+      const s = "This works for me, that said I'm leaning towards withdrawing from the process.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: plain accept alone still not walkAway", () => {
+      const s = "I accept this offer, thank you.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: genuine unhedged walk-away with no accept clause still fires", () => {
+      const s = "I'm walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
 });
