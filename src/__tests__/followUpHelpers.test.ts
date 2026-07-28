@@ -4703,4 +4703,31 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.conditionalAccept).toBe(true);
     });
   });
+
+  describe("S148-B1 (wave 54) — \"can't say I'm walking away\" litotes desynced accepted/rejected walkAway", () => {
+    it("'I can't say I'm not interested, but I also can't say I'm walking away.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I can't say I'm not interested, but I also can't say I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'I can't say I'm walking away, but I need more time to think.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I can't say I'm walking away, but I need more time to think.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S124-B2 genuine reassertion after unrelated negation still fires walkAway", () => {
+      const s = "if you don't match this, I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S122-B1 'I don't want to walk away' still suppressed", () => {
+      const s = "I don't want to walk away, just need a moment to think.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
 });

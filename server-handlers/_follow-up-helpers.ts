@@ -655,7 +655,16 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * DEPARTURE_NEGATOR in _walkaway-detection.ts, whose trailing generic n't catch-all
    * already covered "wouldn't" — isWalkAway() got this right while detectCandidateIntent()
    * didn't. Added wouldn.?t|would\s+not alongside won.?t. */
-  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to)\s+(?:\w+\s+){0,4}|not\s+(?:\w+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S148-B1 (wave 54) — "I can't say I'm not interested, but I also can't say I'm
+   * walking away." (a double-litotes reassurance — neither uninterested nor departing)
+   * fired walkAway=true, desyncing from isWalkAway() (already correct via
+   * DEPARTURE_NEGATOR's `can(?:not|.t)\s+say` arm in _walkaway-detection.ts). This
+   * negator list was missing the "can't/cannot say" litotes frame entirely. */
+  /* S148-B1's "can't say I'm walking away" gap-word requires the {0,4} filler group to
+   * span a contraction ("i'm") between "say" and the departure verb — \w+ alone doesn't
+   * match apostrophes, so it silently failed to bridge that specific gap. Widened to
+   * [\w']+ so contraction pronouns count as a single filler word like any other. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part\s+ways|declin(?:e|ing)|pass|exit)\b/i;
   /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
    * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
    * The negation guard only ever protected the walkAway field; apply it to rejected too.
@@ -702,6 +711,17 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * modal reassertion in the 48 chars immediately before the walk match. */
   const RECLAIMED_INTENT_LOCAL =
     /\b(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+  /* S148-B1 (wave 54) — RECLAIMED_INTENT_LOCAL assumes a fresh "I'm/I will" right before the
+   * departure verb is always a reassertion AFTER an unrelated earlier negation (S124-B2's "if
+   * you don't match this, I will walk away"). But "I also can't say I'm walking away." has the
+   * subject pronoun as the DIRECT OBJECT CLAUSE of the "can't say" litotes itself — not a
+   * reassertion following it — so the override wrongly re-enabled walkAway. Distinguish: a
+   * genuine reassertion has a clause break (comma/but/if-clause) between the negator and the
+   * fresh subject; the litotes frame has the subject immediately governed by "say" with no
+   * break. When the negator immediately preceding the reclaimed subject is itself the
+   * "can't/couldn't say" arm, the reassertion read doesn't apply. */
+  const SAY_LITOTES_LOCAL =
+    /\bcan(?:not|.?t)\s+say\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
   /* Locates the bare departure verb (not the full walkAwayWords match, which for arms like
    * the bare-verb "i am walking away" already swallows the subject+modal itself, hiding the
    * "I am" reassertion inside the match instead of leaving it in the lookback window). */
@@ -712,6 +732,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     const verbMatch = DEPARTURE_VERB_LOCAL.exec(text);
     if (!verbMatch) return true;
     const lookback = text.slice(Math.max(0, verbMatch.index - 48), verbMatch.index);
+    if (SAY_LITOTES_LOCAL.test(lookback)) return true;
     return !RECLAIMED_INTENT_LOCAL.test(lookback);
   }
   /* S128-B1 (wave 34) — a live number-lock (see numberLockWords above) means the candidate

@@ -225,10 +225,21 @@ const RECLAIMED_INTENT =
 const WRONG_SUBJECT_NEGATOR_RE =
   /\b(?:you|he|she|they|we)\s+(?:can|won|wouldn|don|doesn|didn|isn|aren|couldn|shouldn|hasn|haven|hadn)['']?t\b(?:\s+\S+){0,5}?\s*$/i;
 
+/* S148-B1 (wave 54) — RECLAIMED_INTENT assumes a fresh "I'm/I will" right before the
+ * departure verb is always a reassertion AFTER an unrelated earlier negation (the
+ * S124-B2 case above). But "I can't say I'm walking away, but I need more time" has the
+ * subject pronoun as the DIRECT OBJECT CLAUSE of the "can't say" litotes itself — not a
+ * reassertion following it — so the override wrongly let the (correctly negated)
+ * departure phrase through. Mirrors the identical fix in _follow-up-helpers.ts's
+ * walkAwayNegationCoversLocal() — keep in sync. */
+const SAY_LITOTES =
+  /\bcan(?:not|.?t)\s+say\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
     const preceding = full.slice(Math.max(0, offset - 48), offset);
     if (!DEPARTURE_NEGATOR.test(preceding)) return match;
+    if (SAY_LITOTES.test(preceding)) return " ";
     if (RECLAIMED_INTENT.test(preceding)) return match;
     if (WRONG_SUBJECT_NEGATOR_RE.test(preceding)) return match;
     return " ";
