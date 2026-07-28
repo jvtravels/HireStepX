@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
@@ -127,7 +127,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     /* If slug is a bare company name (e.g. "flipkart"), redirect to the first
        SEO page for that company rather than returning 404. */
     const firstForCompany = SEO_PAGES.find(p => p.company === slug);
-    if (firstForCompany) redirect(`/companies/${firstForCompany.slug}`);
+    if (firstForCompany) permanentRedirect(`/companies/${firstForCompany.slug}`);
     notFound();
   }
 

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 /**
  * Legacy `/page/<slug>` URLs are permanently retired in favour of the
@@ -25,5 +25,5 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  redirect(SLUG_REDIRECTS[slug.toLowerCase()] ?? "/");
+  permanentRedirect(SLUG_REDIRECTS[slug.toLowerCase()] ?? "/");
 }
