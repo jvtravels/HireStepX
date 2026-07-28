@@ -335,12 +335,33 @@ function stripNegatedDepartures(text: string): string {
  * an earlier walk-away phrase. (The opposite direction — an accept retracted into a
  * walk-away — is handled by the canonical `walkAway` field itself; isWalkAway() only
  * needs the accept-side mirror since it has no accept-detection logic of its own.) */
-const RETRACTION_MARKER = /\bactually\b[,]?\s*(?:no[,]?\s*)?/i;
-const RETRACTS_TO_ACCEPT = /^(?:i\s+)?(?:accept|agree|deal)\b|^(?:i\s+)?ok(?:ay)?\b|^yes\b/i;
+/* S153-B... (wave 59) — RETRACTION_MARKER only ever recognized the literal word "actually"
+ * as a retraction cue. Two shapes desynced from _follow-up-helpers.ts:
+ *   • "I'm walking away from the table, no wait, I mean I'm walking TOWARD a deal — I
+ *     accept." — "no wait, I mean" is an equally unambiguous retraction marker, but the
+ *     genuine accept sits past an em dash, not at the very start of the post-marker text
+ *     (see the RETRACTS_TO_ACCEPT widening below).
+ *   • "Ok fine, I'm out — just kidding! I'm totally on board, let's do this." — "just
+ *     kidding" is likewise an unambiguous retraction marker. Mirrors the identical widening
+ *     of retractionMarkerRe in _follow-up-helpers.ts — keep in sync. */
+const RETRACTION_MARKER =
+  /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*/i;
+/* S153-B... (wave 59) — RETRACTS_TO_ACCEPT was anchored to the very start of the
+ * post-marker text, so it missed a genuine trailing accept separated from the marker by an
+ * intervening non-accept clause ("...I mean I'm walking TOWARD a deal — I accept."). Widened
+ * to also match right after a sentence-ending or em/en-dash boundary anywhere in the
+ * post-marker text (not bare mid-word occurrences of "accept" etc.), and added the "on
+ * board"/"let's do this" phrasing "just kidding" retractions commonly resolve to. */
+const RETRACTS_TO_ACCEPT =
+  /(?:^|[.!?—–-]\s*)(?:i\s+)?(?:accept|agree|deal)\b|(?:^|[.!?—–-]\s*)(?:i\s+)?ok(?:ay)?\b|(?:^|[.!?—–-]\s*)yes\b|\b(?:i.?m|i\s+am)\s+(?:totally\s+|completely\s+|fully\s+)?on\s+board\b|let.?s\s+do\s+(?:it|this)\b/i;
 function retractsToAccept(text: string): boolean {
   const match = RETRACTION_MARKER.exec(text);
   if (!match) return false;
   const postText = text.slice(match.index + match[0].length);
+  /* A genuine, still-standing departure phrase after the marker means the retraction
+   * corrected something else (or itself), not an accept — don't let a coincidental "accept"
+   * elsewhere in that text override a departure that's still actually there. */
+  if (WALKAWAY_PATTERN.test(postText)) return false;
   return RETRACTS_TO_ACCEPT.test(postText);
 }
 
@@ -403,9 +424,19 @@ function hasUnhedgedAcceptClause(text: string): boolean {
   return true;
 }
 
+/* S153-B... (wave 59) — "WALKING AWAY IS NOT AN OPTION FOR ME RIGHT NOW, I accept your
+ * offer." fired true: DEPARTURE_NEGATOR is lookback-only (it only inspects text BEFORE the
+ * departure verb), so a negation that grammatically follows the verb — "walking away IS NOT
+ * an option" — is invisible to it. This is a distinct, narrow phrase shape (not a general
+ * lookahead rewrite of DEPARTURE_NEGATOR) so it's handled as its own post-match guard rather
+ * than complicating the lookback machinery every other negator arm relies on. */
+const DEPARTURE_FOLLOWED_BY_NOT_OPTION_RE =
+  /\b(?:walk(?:ing|in)?\s+away|withdraw(?:ing)?|declin(?:e|ing)|part(?:ing)?\s+ways|pull(?:ing)?\s+out)\b(?:\s+\S+){0,4}?\s+is\s*(?:n['’]?t|\s+not)\s+an?\s+option\b/i;
+
 export function isWalkAway(answer: string | null | undefined): boolean {
   if (!answer) return false;
   if (!WALKAWAY_PATTERN.test(answer)) return false;
+  if (DEPARTURE_FOLLOWED_BY_NOT_OPTION_RE.test(answer)) return false;
   // won't-work + temporal qualifier ("right now") or counter-ask = negotiating, not exiting
   if (WONT_WORK_NON_EXIT.test(answer)) return false;
   if (NOT_INTERESTED_DOUBLE_NEGATION.test(answer)) return false;

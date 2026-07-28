@@ -522,7 +522,14 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * works for me" was matching acceptWords' bare "works (for me)" arm regardless of the
    * preceding "don't think" negation. Suppresses accepted so the paired rejectWords arm
    * (which now positively matches the same phrase) can set rejected=true instead. */
-  const acceptNegationRe = /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|didn.?t|did\s+not|won.?t|wouldn.?t)\s+think\s+(?:\w+\s+){0,3}works?\b/i;
+  /* S153-B... (wave 59) — "Under no circumstances will I accept this — I'm walking
+   * away." fired accepted=true: acceptWords' bare "i accept" arm matched regardless of the
+   * preceding hard-denial modal, and accepted=true then suppressed the genuine trailing
+   * walkAway declaration via the base clause's `!accepted` gate, desyncing from
+   * isWalkAway() (already correct). Mirrors DEPARTURE_NEGATOR's "under no circumstances /
+   * no way / never" arms in _walkaway-detection.ts, applied here to the accept verb
+   * instead of the departure verb. */
+  const acceptNegationRe = /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|didn.?t|did\s+not|won.?t|wouldn.?t)\s+think\s+(?:\w+\s+){0,3}works?\b|\b(?:under\s+no\s+circumstances|no\s+way|never)\s+(?:will\s+i\s+|would\s+i\s+|am\s+i\s+(?:going\s+to\s+)?)?(?:\w+\s+){0,2}accept\b/i;
   /* S127-B1 (wave 33) — "Sticking with 30 LPA is what I need. That works for me
    * otherwise." fired accepted=true AND rejected=true simultaneously: the number-lock
    * reject signal (added in S126-B1) is unambiguous and self-contained, but downstream
@@ -593,7 +600,12 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * reversals, not this bare "Actually" retraction marker. The reverse ordering ("I'm
    * walking away. Actually no, I accept.") already resolves correctly here because the
    * base walkAway clause already gates on `!accepted`. */
-  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?/i;
+  /* S153-B... (wave 59) — "I accept — just kidding, obviously I'm walking away from this
+   * joke of an offer." fired walkAway=false: retractionMarkerRe only ever recognized the
+   * literal word "actually" as a retraction cue, not "just kidding" — a common, equally
+   * unambiguous retraction marker. Widened; mirrors the identical widening in
+   * RETRACTION_MARKER in _walkaway-detection.ts — keep in sync. */
+  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*/i;
   const retractionMatch = retractionMarkerRe.exec(trimmed);
   const postRetractionText = retractionMatch
     ? trimmed.slice(retractionMatch.index + retractionMatch[0].length)
@@ -676,7 +688,15 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * circumstances" arm, unlike DEPARTURE_NEGATOR in _walkaway-detection.ts (which already
    * had "no way" but was also missing "under no circumstances" — added there too). Added
    * both, mirrored — keep in sync. */
-  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S153-B... (wave 59) — "I'm not saying no, and I'm not saying I'm walking away — I just
+   * need a day to think." fired walkAway=true: the bare "not" negator arm only spans a
+   * {0,1}-word gap (too narrow to bridge "not saying I'm walking away"'s two-word "saying
+   * I'm" gap), while the phrase-specific arms above it all use a wider {0,4} gap. "not
+   * saying" is itself a hedge/litotes frame (declining to assert, not asserting a denial)
+   * so it belongs with the wide-gap group, not the narrow bare-"not" one. Mirrors
+   * DEPARTURE_NEGATOR in _walkaway-detection.ts, whose lookback-based, 5-word-gap design
+   * already covers this shape without needing a dedicated arm. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+saying|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
   /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
    * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
    * The negation guard only ever protected the walkAway field; apply it to rejected too.
@@ -876,10 +896,28 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     const tail = text.slice(match.index + match[0].length);
     return /^[^.!?]*[.!?]\s*(?:i\s+)?(?:accept|agree|deal)\b|^[^.!?]*[.!?]\s*(?:i\s+)?ok(?:ay)?\b|^[^.!?]*[.!?]\s*yes\b/i.test(tail);
   };
+  /* S153-B... (wave 59) — "Not gonna lie, I'm this close to walking away, but honestly...
+   * I accept." fired walkAway=true: the preHedgeText OR-branch's walkAwayRetractedToAccept()
+   * guard only looks for an accept clause immediately following the walk-away match WITHIN
+   * preHedgeText itself, so it's blind to a genuine accept sitting on the far side of the
+   * hedge boundary in postHedgeText. Unlike the postHedgeText branch (which already gates
+   * on the hedge, not on what precedes it), the preHedgeText branch had no way to see a
+   * later, un-hedged accept overriding it at all.
+   * Regression guard (existing S133-B2 test) — "I'm walking away from the equity
+   * discussion, but I accept the base salary." must stay walkAway=true: that pre-hedge
+   * departure is a firm, topic-scoped statement (walking away from ONE component) that
+   * coexists with an unrelated accept on a DIFFERENT component — not a retraction of the
+   * same departure. Only apply the override when the pre-hedge walk-away mention is itself
+   * tentative/hedged language ("this close to", "leaning towards", ...) — mirrors
+   * SOFT_DEPARTURE_RE in _walkaway-detection.ts's hasUnhedgedAcceptClause, which draws the
+   * identical firm-vs-tentative line for the same reason. */
+  const SOFT_DEPARTURE_RE_LOCAL =
+    /\b(?:leaning\s+(?:towards?|to)|considering|thinking\s+(?:about|of)|might|may|could|possibly|probably|likely|tempted\s+to|(?:this|so)\s+close\s+to)\b/i;
+  const postHedgeIsGenuineAcceptLocal = hasAnyHedge && SOFT_DEPARTURE_RE_LOCAL.test(preHedgeText) && acceptWords.test(postHedgeText) && !walkAwayWords.test(postHedgeText) && !acceptSarcasmRe.test(postHedgeText);
   const walkAway = !thirdPartyDepartureVetoes(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
     (walkAwayWords.test(trimmed) && !accepted && (!numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) || walkAwayIsExplicitUltimatum) && !walkAwayNegationCoversLocal(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
     || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText) && !walkAwayRetractedToAccept(postHedgeText))
-    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText) && !walkAwayRetractedToAccept(preHedgeText))
+    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText) && !walkAwayRetractedToAccept(preHedgeText) && !postHedgeIsGenuineAcceptLocal)
     // S145-B3 (wave 51) — a later un-hedged "Actually no, I'm walking away." retraction
     // reverses an earlier accept clause; see retractionToWalkAway above.
     || retractionToWalkAway) && !retractionToAccept;

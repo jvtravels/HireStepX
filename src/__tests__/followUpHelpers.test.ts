@@ -4961,4 +4961,48 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(true);
     });
   });
+
+  describe("S153-B... (wave 59) — hostile-battery hardening", () => {
+    it("'under no circumstances will I accept' no longer masks a genuine trailing walk-away", () => {
+      const s = "Under no circumstances will I accept this — I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a tentative pre-hedge near-departure ('this close to walking away') yields to a genuine trailing accept", () => {
+      const s = "Not gonna lie, I'm this close to walking away, but honestly... I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: a firm, topic-scoped pre-hedge walk-away still survives an unrelated post-hedge accept", () => {
+      const s = "I'm walking away from the equity discussion, but I accept the base salary.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+    });
+    it("'no wait, I mean' self-correction into a genuine accept is recognized (isWalkAway)", () => {
+      const s = "I'm walking away from the table, no wait, I mean I'm walking TOWARD a deal — I accept.";
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'just kidding' retraction into a genuine accept is recognized (isWalkAway)", () => {
+      const s = "Ok fine, I'm out — just kidding! I'm totally on board, let's do this.";
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'not saying I'm walking away' (gerund litotes) doesn't fire walkAway", () => {
+      const s = "I'm not saying no, and I'm not saying I'm walking away — I just need a day to think.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'just kidding' retraction FROM an accept INTO a genuine walk-away fires walkAway", () => {
+      const s = "I accept — just kidding, obviously I'm walking away from this joke of an offer.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("post-verb negation ('IS NOT AN OPTION') suppresses isWalkAway", () => {
+      const s = "WALKING AWAY IS NOT AN OPTION FOR ME RIGHT NOW, I accept your offer.";
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
 });
