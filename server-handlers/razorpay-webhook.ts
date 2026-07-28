@@ -261,15 +261,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const dedupKey = `${subscriptionId}:activated`;
         const dedupRes = await fetch(`${SUPABASE_URL}/rest/v1/payment_dedup`, {
           method: "POST",
-          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify({ razorpay_payment_id: dedupKey, user_id: userId }),
         });
-        if (dedupRes.status === 409 || (dedupRes.ok && dedupRes.status === 200 && (await dedupRes.text()) === "")) {
+        if (dedupRes.status === 409) {
           // Conflict = already processed by a prior delivery of this webhook event
           return res.status(200).json({ received: true, already_processed: true });
         }
-        // A non-conflict 2xx means we own it; a 4xx/5xx means Redis-fallback below.
-        // Either way we proceed — failing to write dedup never blocks a first delivery.
+        // A 2xx means we own it; a non-409 4xx/5xx means best-effort, proceed anyway —
+        // failing to write dedup never blocks a first delivery.
 
         // First activation — save subscription ID and activate tier
         const tier = PLAN_TIER[plan] || "starter";
@@ -312,34 +312,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(200).json({ received: true, skipped: "missing_payment_id" });
         }
 
-        if (paymentId) {
-          // Atomic claim FIRST — wins the cross-instance race before we extend
-          // the subscription. "duplicate" means another instance already owns
-          // this payment; bail without re-extending. "error" falls back to the
-          // best-effort read check so a transient DB blip can't strand a renewal.
-          const claim = await claimPayment(paymentId, userId);
-          if (claim === "duplicate") {
+        // Atomic claim FIRST — wins the cross-instance race before we extend
+        // the subscription. "duplicate" means another instance already owns
+        // this payment; bail without re-extending. "error" falls back to the
+        // best-effort read check so a transient DB blip can't strand a renewal.
+        const claim = await claimPayment(paymentId, userId);
+        if (claim === "duplicate") {
+          return res.status(200).json({ received: true, already_processed: true });
+        }
+        if (claim === "error") {
+          const dupCheck = await fetch(
+            `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
+            { headers: dbHeaders },
+          );
+          const dupRows = await dupCheck.json();
+          if (Array.isArray(dupRows) && dupRows.length > 0) {
             return res.status(200).json({ received: true, already_processed: true });
-          }
-          if (claim === "error") {
-            const dupCheck = await fetch(
-              `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
-              { headers: dbHeaders },
-            );
-            const dupRows = await dupCheck.json();
-            if (Array.isArray(dupRows) && dupRows.length > 0) {
-              return res.status(200).json({ received: true, already_processed: true });
-            }
           }
         }
 
         const tier = PLAN_TIER[plan] || "starter";
         const now = new Date();
         // Extend from current end if still active
-        const profileRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_end,email,name`,
-          { headers: dbHeaders },
-        );
+        const profileAc = new AbortController();
+        const profileTimer = setTimeout(() => profileAc.abort(), 8_000);
+        let profileRes: Response;
+        try {
+          profileRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_end,email,name`,
+            { headers: dbHeaders, signal: profileAc.signal },
+          );
+        } catch (e) {
+          clearTimeout(profileTimer);
+          const aborted = (e as { name?: string })?.name === "AbortError";
+          console.error("[webhook] subscription.charged profile read", aborted ? "timed out" : "failed");
+          return res.status(aborted ? 504 : 502).json({ error: "Profile read failed" });
+        }
+        clearTimeout(profileTimer);
         const profileRows = await profileRes.json();
         const currentEnd = Array.isArray(profileRows) && profileRows[0]?.subscription_end ? new Date(profileRows[0].subscription_end) : null;
         const base = currentEnd && currentEnd > now ? currentEnd : now;
