@@ -61,6 +61,22 @@ const nextConfig = {
         destination: "/blog/tcs-interview-questions-freshers-2026",
         permanent: true,
       },
+      // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
+      // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
+      // under (marketing) inherits loading.tsx, which wraps it in a Suspense
+      // boundary — Next starts streaming a 200 shell before a redirect() call
+      // inside the page resolves, so crawlers only ever saw a client-side
+      // meta-refresh, never a real 30x. A config-level redirect runs before
+      // React rendering and always emits a genuine 308 + Location header.
+      { source: "/page/about", destination: "/about", permanent: true },
+      { source: "/page/contact", destination: "/contact", permanent: true },
+      { source: "/page/help", destination: "/contact", permanent: true },
+      { source: "/page/careers", destination: "/about", permanent: true },
+      { source: "/page/privacy", destination: "/privacy", permanent: true },
+      { source: "/page/terms", destination: "/terms", permanent: true },
+      { source: "/page/refund", destination: "/refund", permanent: true },
+      { source: "/page/pricing", destination: "/pricing", permanent: true },
+      { source: "/page/:slug*", destination: "/", permanent: true },
     ];
   },
 
