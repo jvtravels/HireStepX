@@ -1,10 +1,18 @@
 import { ImageResponse } from "next/og";
-import { getSeoPageBySlug } from "../../../../data/seo-pages";
+import { getSeoPageBySlug, getAllSeoSlugs } from "../../../../data/seo-pages";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 
 // Not edge runtime — seo-pages.ts bundle exceeds 1 MB edge limit.
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+/* Metadata image routes under a dynamic segment don't inherit the sibling
+   page.tsx's generateStaticParams — without their own, Next can't resolve
+   slugs for this route and 404s even though /questions/[slug] itself is a
+   live 200. Confirmed on prod via GSC + curl. */
+export async function generateStaticParams() {
+  return getAllSeoSlugs().map((slug) => ({ slug }));
+}
 
 const COAL = "#0E0C08";
 const CREAM = "#FAF7F0";
