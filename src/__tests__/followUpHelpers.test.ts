@@ -4456,4 +4456,94 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       );
     });
   });
+
+  describe("S144-B1 (wave 50, P1) — competingWords missed bare plural offer mentions", () => {
+    it("'Amazon, Google, and Microsoft have all made offers.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("Amazon, Google, and Microsoft have all made offers.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("'I have offers from TCS, Infosys, and Wipro.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("I have offers from TCS, Infosys, and Wipro.").mentionedCompeting,
+      ).toBe(true);
+    });
+    it("'TCS, Infosys, and Wipro have all offered me positions.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("TCS, Infosys, and Wipro have all offered me positions.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("'I'm also considering offers from Amazon and Google.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("I'm also considering offers from Amazon and Google.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("regression: 'I have multiple offers from TCS, Infosys, and Wipro.' still fires", () => {
+      expect(
+        detectCandidateIntent("I have multiple offers from TCS, Infosys, and Wipro.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S144-B2 (wave 50, P2) — thinkWords missing 'by <deadline>' and spelled-out hours", () => {
+    it("'I need this by EOD.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("I need this by EOD.").needsTime).toBe(true);
+    });
+    it("'I'll decide by tomorrow morning.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("I'll decide by tomorrow morning.").needsTime).toBe(true);
+    });
+    it("'Give me a couple of hours to think.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("Give me a couple of hours to think.").needsTime).toBe(true);
+    });
+    it("regression: 'I need until Friday to decide.' still fires", () => {
+      expect(detectCandidateIntent("I need until Friday to decide.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S144-B3 (wave 50, P2) — deflectWords missed agree-then-pivot deflections", () => {
+    it("'Sure, but first let's talk about the joining bonus.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Sure, but first let's talk about the joining bonus.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+      expect(r.conditionalAccept).toBe(false);
+    });
+    it("'Fine, but first, what's the joining bonus?' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Fine, but first, what's the joining bonus?");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'OK, but before we finalize, can we discuss the notice period?' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent(
+        "OK, but before we finalize, can we discuss the notice period?",
+      );
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("regression: genuine hedged conditional accept still fires accepted+conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, if you can bump to 38L");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S144-B4 (wave 50, P2) — rejectWords missed bare rhetorical-question soft rejections", () => {
+    it("'You call that competitive?' fires rejected=true", () => {
+      expect(detectCandidateIntent("You call that competitive?").rejected).toBe(true);
+    });
+    it("'Is that really your best offer?' fires rejected=true", () => {
+      expect(detectCandidateIntent("Is that really your best offer?").rejected).toBe(true);
+    });
+    it("'You expect me to take this seriously?' fires rejected=true", () => {
+      expect(detectCandidateIntent("You expect me to take this seriously?").rejected).toBe(true);
+    });
+    it("regression: 'Even if it's a lowball offer I wouldn't walk away.' still returns no reject/walk signal", () => {
+      const r = detectCandidateIntent("Even if it's a lowball offer I wouldn't walk away.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+  });
 });
