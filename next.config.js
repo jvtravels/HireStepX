@@ -1,4 +1,4 @@
-/* global process */
+/* global process, URL */
 import { readFileSync } from "node:fs";
 
 // Bare company slugs (e.g. /companies/flipkart) redirect to that company's
