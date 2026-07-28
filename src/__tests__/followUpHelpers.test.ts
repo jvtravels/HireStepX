@@ -4411,4 +4411,49 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(detectCandidateIntent("Holding at 30 LPA.").rejected).toBe(true);
     });
   });
+
+  describe("S143-B1/B4 (wave 49, P1) — walkAwayNegationRe missing wouldn't/would not", () => {
+    it("'I wouldn't walk away even if you don't move on the number.' returns no walk/reject signal", () => {
+      const r = detectCandidateIntent("I wouldn't walk away even if you don't move on the number.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("I wouldn't walk away even if you don't move on the number.")).toBe(false);
+    });
+    it("'Even if it's a lowball offer I wouldn't walk away.' returns no walk/reject signal", () => {
+      const r = detectCandidateIntent("Even if it's a lowball offer I wouldn't walk away.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("'I wouldn't withdraw even if you don't move.' returns walkAway=false", () => {
+      expect(detectCandidateIntent("I wouldn't withdraw even if you don't move.").walkAway).toBe(false);
+    });
+    it("regression: full-word 'would not' form and genuine walk-away still behave correctly", () => {
+      expect(
+        detectCandidateIntent("I would not walk away even if you do not move.").walkAway,
+      ).toBe(false);
+      expect(detectCandidateIntent("I'm walking away from this offer.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S143-B2 (wave 49, P2) — thinkWords missing 'need/want until <weekday>'", () => {
+    it("'I need until Friday to decide.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("I need until Friday to decide.").needsTime).toBe(true);
+    });
+    it("regression: 'Give me until Friday to decide.' still fires", () => {
+      expect(detectCandidateIntent("Give me until Friday to decide.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S143-B3 (wave 49, P2) — competingWords missed bare past-tense 'offered me more'", () => {
+    it("'What would you say if I told you Google offered me more?' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("What would you say if I told you Google offered me more?")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("regression: present-tense 'is offering me more' still fires", () => {
+      expect(detectCandidateIntent("Another firm is offering me more.").mentionedCompeting).toBe(
+        true,
+      );
+    });
+  });
 });
