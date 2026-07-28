@@ -670,7 +670,13 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * bare `n['']t\b` catch-all. "I ain't walking away from this deal." (a
    * reassurance, "ain't" = "am not") desynced: isWalkAway() correctly
    * suppressed it, walkAway fired true here. Added "ain.?t" as an explicit arm. */
-  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S152-B... (wave 58) — "No way am I walking away from this offer." / "There's no way
+   * I'll withdraw from this process." / "Under no circumstances will I walk away from this
+   * deal." all fired true: the negator alternation had no "no way" or "under no
+   * circumstances" arm, unlike DEPARTURE_NEGATOR in _walkaway-detection.ts (which already
+   * had "no way" but was also missing "under no circumstances" — added there too). Added
+   * both, mirrored — keep in sync. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
   /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
    * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
    * The negation guard only ever protected the walkAway field; apply it to rejected too.
@@ -702,6 +708,36 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * _walkaway-detection.ts — keep in sync. */
   const thirdPartyDepartureRe =
     /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)['']?s?\b(?:\s+[\w']+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+  /* S152-B... (wave 58) — thirdPartyDepartureRe only recognizes REPORTED SPEECH ("my friend
+   * SAID I should walk away"), not a third party's own direct action ("My friend IS walking
+   * away from her offer"). That left two related, opposite-direction bugs from a flat
+   * whole-string veto with no clause scoping:
+   *   • "My manager told me to walk away, but I'm also walking away myself." — the reported-
+   *     speech clause about the manager wrongly suppressed the candidate's own, later,
+   *     genuine departure clause.
+   *   • "My friend is walking away from her offer, but I accept mine." — the friend's own
+   *     departure (no reporting verb, so thirdPartyDepartureRe didn't even match) was
+   *     misattributed to the candidate.
+   * Fix: add a pattern for a third party's own direct departure action, and scope both
+   * third-party patterns to the clause they appear in — a third-party clause no longer
+   * vetoes a genuine departure clause elsewhere in the same reply. Mirrors
+   * THIRD_PARTY_OWN_DEPARTURE / the identical fix in _walkaway-detection.ts — keep in sync. */
+  const thirdPartyOwnDepartureRe =
+    /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family)['']?s?\b(?:\s+[\w']+){0,4}\s+(?:is|are|was|were|['']s|['']re)\s+(?:[\w']+\s+){0,2}(?:walk(?:ing)?(?:\s+away)?|withdraw(?:ing)?|declin(?:e|ing)|pull(?:ing)?\s+out|part(?:ing)?\s+ways)\b/i;
+  const thirdPartyClauseSplitRe = /[.;]+|\b(?:but|yet|however|although|though)\b/i;
+  function hasOwnDepartureLocal(text: string): boolean {
+    return text
+      .split(thirdPartyClauseSplitRe)
+      .some(
+        (clause) =>
+          walkAwayWords.test(clause) &&
+          !thirdPartyDepartureRe.test(clause) &&
+          !thirdPartyOwnDepartureRe.test(clause),
+      );
+  }
+  const thirdPartyDepartureVetoes = (trimmedText: string) =>
+    (thirdPartyDepartureRe.test(trimmedText) || thirdPartyOwnDepartureRe.test(trimmedText)) &&
+    !hasOwnDepartureLocal(trimmedText);
   /* S133-B3 (wave 39) — a trailing elliptical negation ("I considered walking away, but I
    * won't.") retracts an earlier departure verb without repeating it. walkAwayNegationRe
    * only looks for a negator BEFORE the departure verb within a bounded gap; this catches
@@ -710,7 +746,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * less than X", where content follows the negator and introduces an unrelated point. */
   const trailingRetractionRe =
     /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
-  const rejected = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
+  const rejected = !thirdPartyDepartureVetoes(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
     (rejectWords.test(trimmed) && !accepted && !rejNegationRe.test(trimmed) && !(rejectMatchIsWalkAwayArm && walkAwayNegationRe.test(trimmed)) && !notInterestedDoubleNegationRe.test(trimmed))
     || (numberLockWords.test(trimmed) && !rejNegationRe.test(trimmed) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed)));
   const deflected = deflectWords.test(trimmed);
@@ -722,23 +758,43 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * Mirrors stripNegatedDepartures()'s fix in _walkaway-detection.ts: only treat the
    * negation as covering the walk-phrase if there's no fresh "I will/I'm/I am" subject+
    * modal reassertion in the 48 chars immediately before the walk match. */
-  const RECLAIMED_INTENT_LOCAL =
-    /\b(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
-  /* S148-B1 (wave 54) — RECLAIMED_INTENT_LOCAL assumes a fresh "I'm/I will" right before the
-   * departure verb is always a reassertion AFTER an unrelated earlier negation (S124-B2's "if
-   * you don't match this, I will walk away"). But "I also can't say I'm walking away." has the
-   * subject pronoun as the DIRECT OBJECT CLAUSE of the "can't say" litotes itself — not a
-   * reassertion following it — so the override wrongly re-enabled walkAway. Distinguish: a
-   * genuine reassertion has a clause break (comma/but/if-clause) between the negator and the
-   * fresh subject; the litotes frame has the subject immediately governed by "say" with no
-   * break. When the negator immediately preceding the reclaimed subject is itself the
-   * "can't/couldn't say" arm, the reassertion read doesn't apply.
+  /* S148-B1 (wave 54) — a RECLAIMED_INTENT_LOCAL override used to assume a fresh "I'm/I
+   * will" right before the departure verb was always a reassertion AFTER an unrelated
+   * earlier negation (S124-B2's "if you don't match this, I will walk away"). But "I also
+   * can't say I'm walking away." has the subject pronoun as the DIRECT OBJECT CLAUSE of the
+   * "can't say" litotes itself — not a reassertion following it — so the override wrongly
+   * re-enabled walkAway. That was fixed by requiring the litotes frame (SAY_LITOTES_LOCAL)
+   * to win over the override in that case.
    * S149-B2 (wave 55) — widened beyond the literal "can't/couldn't say" frame: "I never
    * want to say I'm walking away." / "I don't want to say I'm walking away." are the same
-   * litotes shape with a different say-verb negator and hit the identical bug in
-   * _walkaway-detection.ts's SAY_LITOTES — kept in sync here for the hedge-branch path. */
-  const SAY_LITOTES_LOCAL =
-    /\b(?:can(?:not|.?t)\s+say|couldn.?t\s+say|won.?t\s+say|wouldn.?t\s+say|would\s+not\s+say|(?:don.?t|do\s+not|doesn.?t|does\s+not|never|wouldn.?t|would\s+not)\s+want\s+to\s+say|would\s+rather\s+not\s+say|prefer\s+not\s+(?:to\s+)?say|hate\s+to\s+say|reluctant\s+to\s+say|hesitant\s+to\s+say)\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+   * litotes shape with a different say-verb negator and hit the identical bug.
+   * S152-B... (wave 58) — REMOVED RECLAIMED_INTENT_LOCAL and its override entirely. Wave 57
+   * added clauseBoundedLookbackLocal(), which truncates the lookback at the nearest clause
+   * boundary before walkAwayNegationRe ever runs against it — so the original S124-B2 case
+   * already loses its negator before this point (the lookback becomes just " i will ", which
+   * walkAwayNegationRe doesn't match at all). The override was only still reachable when a
+   * negator's OWN phrasing happens to end in "I'll/I'm/I will" within the SAME clause as the
+   * verb (e.g. "There's no way I'll withdraw..."), where it wrongly treated the negator's own
+   * tail as a fresh reassertion. Removed rather than special-cased per negator phrase —
+   * clause-bounded lookback already covers the genuine cross-clause case. The "can't/don't
+   * want to say" litotes frame is still correctly handled: those phrases are negator arms
+   * inside walkAwayNegationRe itself, so negatorCoversThis alone now covers them without a
+   * separate SAY_LITOTES_LOCAL check. Mirrors the identical removal in
+   * _walkaway-detection.ts's stripNegatedDepartures() — keep in sync.
+   * S152-B... (wave 58, correction) — that removal broke "I don't want to walk away, but
+   * if you don't match this I will walk away." (existing permanent test): the postHedgeText
+   * "if you don't match this i will walk away." has no comma/but/yet/... between "this" and
+   * "i will", so clauseBoundedLookbackLocal does NOT truncate the negator away here — unlike
+   * the original S124-B2 text, which had a comma. Reintroduced RECLAIMED_INTENT_LOCAL, but
+   * scoped narrowly this time: it only overrides (un-negates) when the lookback ALSO
+   * contains a subject-shift word (you/it/this/that/he/she/they/we) between the negator and
+   * the reasserting "I will/I'm" — i.e. a genuine subject change ("you don't match THIS, I
+   * will...") rather than the negator's own phrasing simply ending in "I'll/I will" within
+   * the same clause about the same subject ("no way I'll...", "under no circumstances will
+   * I..." — no subject-shift word present, so the override correctly stays inert there). */
+  const RECLAIMED_INTENT_LOCAL =
+    /\b(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+  const SUBJECT_SHIFT_RE_LOCAL = /\b(?:you|it|this|that|he|she|they|we)\b/i;
   /* Locates the bare departure verb (not the full walkAwayWords match, which for arms like
    * the bare-verb "i am walking away" already swallows the subject+modal itself, hiding the
    * "I am" reassertion inside the match instead of leaving it in the lookback window). */
@@ -790,8 +846,8 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
       const verbEnd = verbMatch.index + verbMatch[0].length;
       const segment = lookback + text.slice(verbMatch.index, verbEnd);
       const negatorCoversThis = walkAwayNegationRe.test(segment);
-      const covered = negatorCoversThis && (SAY_LITOTES_LOCAL.test(lookback) || !RECLAIMED_INTENT_LOCAL.test(lookback));
-      if (!covered) return false;
+      const reclaimed = RECLAIMED_INTENT_LOCAL.test(lookback) && SUBJECT_SHIFT_RE_LOCAL.test(lookback);
+      if (!negatorCoversThis || reclaimed) return false;
     }
     return sawAnyVerb;
   }
@@ -806,10 +862,24 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   const baseWalkAwayMatch = walkAwayWords.exec(trimmed);
   const walkAwaySentence = baseWalkAwayMatch ? sentenceAroundLocal(trimmed, baseWalkAwayMatch.index) : "";
   const walkAwayIsExplicitUltimatum = /\b(?:otherwise|else)\b/i.test(walkAwaySentence);
-  const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
+  /* S152-B... (wave 58) — "In your dreams if you think I'm walking away. I accept." fired
+   * walkAway=true: "if" is a hedge word, so this landed in the post-hedge OR-branch below
+   * (added by S94-B1 to deliberately fire "regardless of any PRE-hedge accept", e.g. "Sounds
+   * good, but actually I am walking away if you cannot match it."). But here the accept comes
+   * AFTER the walk-away phrase, inside postHedgeText itself ("...I'm walking away. I
+   * accept."), not before it — a genuine trailing retraction the post-hedge branch had no way
+   * to see. Mirrors RETRACTS_TO_ACCEPT_LOCAL's shape: if a bare accept clause immediately
+   * follows the walk-away match (after its own sentence boundary), the walk-away doesn't win. */
+  const walkAwayRetractedToAccept = (text: string): boolean => {
+    const match = walkAwayWords.exec(text);
+    if (!match) return false;
+    const tail = text.slice(match.index + match[0].length);
+    return /^[^.!?]*[.!?]\s*(?:i\s+)?(?:accept|agree|deal)\b|^[^.!?]*[.!?]\s*(?:i\s+)?ok(?:ay)?\b|^[^.!?]*[.!?]\s*yes\b/i.test(tail);
+  };
+  const walkAway = !thirdPartyDepartureVetoes(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
     (walkAwayWords.test(trimmed) && !accepted && (!numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) || walkAwayIsExplicitUltimatum) && !walkAwayNegationCoversLocal(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
-    || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText))
-    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText))
+    || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText) && !walkAwayRetractedToAccept(postHedgeText))
+    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText) && !walkAwayRetractedToAccept(preHedgeText))
     // S145-B3 (wave 51) — a later un-hedged "Actually no, I'm walking away." retraction
     // reverses an earlier accept clause; see retractionToWalkAway above.
     || retractionToWalkAway) && !retractionToAccept;

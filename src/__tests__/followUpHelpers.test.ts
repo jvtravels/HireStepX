@@ -4886,4 +4886,79 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(true);
     });
   });
+
+  describe("S152-B... (wave 58) — hostile-battery hardening", () => {
+    it("parenthesized accept clause no longer swallows a later genuine departure clause", () => {
+      const s = "(I accept) but (I'm withdrawing).";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("sarcasm-undercut accept clause followed by a genuine departure still fires walkAway", () => {
+      const s = "That works for me, yeah right, like I'd accept that — I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a genuinely soft/tentative later departure clause still doesn't override an accept", () => {
+      const s = "This works for me, that said I'm leaning towards withdrawing from the process.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'no way am I walking away' negator arm now recognized", () => {
+      const s = "No way am I walking away from this offer.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'there's no way I'll withdraw' — negator's own 'I'll' tail is not a fresh reassertion", () => {
+      const s = "There's no way I'll withdraw from this process.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'under no circumstances will I walk away' negator arm now recognized", () => {
+      const s = "Under no circumstances will I walk away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'under no circumstances will I decline' negator arm now recognized", () => {
+      const s = "Under no circumstances will I decline this offer.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("rhetorical-denial framing followed by a genuine trailing accept doesn't fire walkAway", () => {
+      const s = "In your dreams if you think I'm walking away. I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("third-party's own departure clause doesn't suppress a later genuine first-person departure", () => {
+      const s = "My manager told me to walk away, but I'm also walking away myself.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("third-party mention + candidate's own accept: third-party veto still suppresses walkAway", () => {
+      const s = "My friend is walking away from her offer, but I accept mine.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: 'if you don't match this I will walk away' (no comma) still fires via subject-shift reassertion", () => {
+      const s = "I don't want to walk away, but if you don't match this I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: original comma'd S124-B2 reassertion still fires", () => {
+      const s = "if you don't match this, I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
 });

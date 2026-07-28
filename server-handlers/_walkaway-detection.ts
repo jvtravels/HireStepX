@@ -160,8 +160,11 @@ function clauseBoundedLookback(full: string, matchIndex: number, maxChars: numbe
  * walk-away because "was about to" wasn't a recognized negator; it's a retraction
  * frame ("I nearly did X, but didn't"), synced with walkAwayNegationRe in
  * _follow-up-helpers.ts. */
+/* S152-B... (wave 58) — "Under no circumstances will I walk away from this deal." fired
+ * true: DEPARTURE_NEGATOR had "no way" but no "under no circumstances" arm. Added, mirrored
+ * in walkAwayNegationRe in _follow-up-helpers.ts — keep in sync. */
 const DEPARTURE_NEGATOR =
-  /(?:\b(?:not|never|rather\s+than|instead\s+of|avoid(?:ing)?|no\s+(?:need|reason|point|intention|plan|desire|way)|would\s+rather\s+not|prefer\s+not|hate\s+to|reluctant\s+to|hesitant\s+to|hoping\s+not|don['']?t\s+want|do\s+not\s+want|does\s*n['']?t\s+want|was\s+(?:about|going)\s+to)\b|n['']t\b)(?:\s+\S+){0,5}?\s*$/i;
+  /(?:\b(?:not|never|rather\s+than|instead\s+of|avoid(?:ing)?|no\s+(?:need|reason|point|intention|plan|desire|way)|under\s+no\s+circumstances|would\s+rather\s+not|prefer\s+not|hate\s+to|reluctant\s+to|hesitant\s+to|hoping\s+not|don['']?t\s+want|do\s+not\s+want|does\s*n['']?t\s+want|was\s+(?:about|going)\s+to)\b|n['']t\b)(?:\s+\S+){0,5}?\s*$/i;
 
 /* S76-B1 (2026-07-25) — three false-positive arms fired on legitimate counter-offer
  * phrases, catastrophically terminating a live negotiation:
@@ -228,6 +231,33 @@ const NOT_INTERESTED_DOUBLE_NEGATION =
  * _follow-up-helpers.ts — keep in sync. */
 const THIRD_PARTY_DEPARTURE =
   /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)['']?s?\b(?:\s+[\w']+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+/* S152-B... (wave 58) — THIRD_PARTY_DEPARTURE only recognizes REPORTED SPEECH ("my friend
+ * SAID I should walk away"), not a third party's own direct action ("My friend IS walking
+ * away from her offer"). That left two related, opposite-direction bugs, both because the
+ * veto used to be a flat whole-string test with no clause scoping:
+ *   • "My manager told me to walk away, but I'm also walking away myself." — the reported-
+ *     speech clause about the manager wrongly suppressed the candidate's OWN, later, genuine
+ *     departure clause.
+ *   • "My friend is walking away from her offer, but I accept mine." — the friend's own
+ *     departure (no reporting verb, so THIRD_PARTY_DEPARTURE didn't even match) was
+ *     misattributed to the candidate.
+ * Fix: add a pattern for a third party's own direct departure action, and scope BOTH
+ * third-party patterns to the clause they appear in — a third-party clause no longer vetoes
+ * a genuine departure clause elsewhere in the same reply. Mirrors thirdPartyDepartureRe /
+ * the identical fix in _follow-up-helpers.ts — keep in sync. */
+const THIRD_PARTY_OWN_DEPARTURE =
+  /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family)['']?s?\b(?:\s+[\w']+){0,4}\s+(?:is|are|was|were|['']s|['']re)\s+(?:[\w']+\s+){0,2}(?:walk(?:ing)?(?:\s+away)?|withdraw(?:ing)?|declin(?:e|ing)|pull(?:ing)?\s+out|part(?:ing)?\s+ways)\b/i;
+const THIRD_PARTY_CLAUSE_SPLIT_RE = /[.;]+|\b(?:but|yet|however|although|though)\b/i;
+function hasOwnDeparture(text: string): boolean {
+  return text
+    .split(THIRD_PARTY_CLAUSE_SPLIT_RE)
+    .some(
+      (clause) =>
+        WALKAWAY_PATTERN.test(clause) &&
+        !THIRD_PARTY_DEPARTURE.test(clause) &&
+        !THIRD_PARTY_OWN_DEPARTURE.test(clause),
+    );
+}
 const TRAILING_RETRACTION =
   /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
 
@@ -238,14 +268,29 @@ const TRAILING_RETRACTION =
 const WALKAWAY_SARCASM =
   /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
 
-/* S124-B2 (wave 30) — DEPARTURE_NEGATOR's window is per-match, not clause-aware: a
+/* S124-B2 (wave 30) — DEPARTURE_NEGATOR's window used to be per-match, not clause-aware: a
  * negator governing an unrelated earlier clause ("if you don't match this, I will
  * walk away") sat inside the 48-char lookback of the LATER, genuine departure and
- * wrongly suppressed it. If a fresh subject+modal ("I will", "I'll", "I'm going to")
- * immediately precedes the departure verb, that reasserts intent — the earlier
- * negator doesn't reach across it. */
-const RECLAIMED_INTENT =
-  /\b(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+ * wrongly suppressed it. The original fix added a RECLAIMED_INTENT override: if a fresh
+ * subject+modal ("I will", "I'll", "I'm going to") immediately precedes the departure verb,
+ * treat it as a reassertion the earlier negator can't reach across.
+ * S152-B... (wave 58) — REMOVED that override. Wave 57 added clauseBoundedLookback(),
+ * which truncates `preceding` at the nearest clause boundary before DEPARTURE_NEGATOR ever
+ * runs — so for the original S124-B2 text, `preceding` is already just " I will " (the
+ * comma boundary strips the earlier "if you don't match this" clause away entirely) and
+ * DEPARTURE_NEGATOR doesn't match it at all; the RECLAIMED_INTENT branch was never reached
+ * for that case anymore. But it stayed reachable whenever a negator's OWN natural phrasing
+ * ends in "I'll/I'm/I will" within the SAME clause as the departure verb — e.g. "There's no
+ * way I'll withdraw from this process." truncates to "There's no way I'll " (no internal
+ * boundary), DEPARTURE_NEGATOR correctly matches "no way", but RECLAIMED_INTENT ALSO matches
+ * the same "I'll" tail and wrongly treated it as a fresh reassertion rather than the tail of
+ * the negator phrase itself, un-suppressing a genuine denial. Since clause-bounded lookback
+ * already handles the true cross-clause reassertion case by truncating the negator away
+ * before this point is reached, RECLAIMED_INTENT no longer has a case where it fires
+ * correctly — only cases where it misfires. Removed the constant and its check entirely
+ * (single source of truth) rather than patching each new negator-phrase shape that happens
+ * to end in a first-person modal. Mirrors the identical removal in _follow-up-helpers.ts's
+ * walkAwayNegationCoversLocal() — keep in sync. */
 
 /* S147-B1 (wave 53) — DEPARTURE_NEGATOR's bare `n['']t\b` catch-all (unlike the
  * phrase-based alternatives above it, e.g. "don't want") has no subject check: "if you
@@ -278,7 +323,6 @@ function stripNegatedDepartures(text: string): string {
     const preceding = clauseBoundedLookback(full, offset, 48);
     if (!DEPARTURE_NEGATOR.test(preceding)) return match;
     if (SAY_LITOTES.test(preceding)) return " ";
-    if (RECLAIMED_INTENT.test(preceding)) return match;
     if (WRONG_SUBJECT_NEGATOR_RE.test(preceding)) return match;
     return " ";
   });
@@ -315,6 +359,28 @@ const CLAUSE_FILLER_RE =
   /^(?:oh\s+yeah\s*right\s*|sure\s*sure\s*|yeah\s*right\s*|obviously\s*|totally\s*|wow\s*what\s+a\s+great\s+idea\s*|not\s+happening\s*[-—]?\s*)+/i;
 const UNHEDGED_ACCEPT_CLAUSE_RE =
   /^(?:i\s+)?(?:accept|agree)\b$|^(?:that.?s\s+)?a?\s*deal\b$|^(?:i\s+)?ok(?:ay)?\b$|^yes\b$|^(?:this|that|it)\s+works(?:\s+for\s+me)?\b$|^sounds\s+good\b$/i;
+/* S152-B... (wave 58) — the original `.some(...)` treated ANY standalone accept clause
+ * anywhere in the reply as decisive, short-circuiting isWalkAway() to false even when a
+ * LATER clause is a genuine, un-negated departure:
+ *   • "(I accept) but (I'm withdrawing)." — parenthesized clauses split fine, but the
+ *     later "I'm withdrawing" clause was ignored once the earlier "(I accept)" clause
+ *     matched.
+ *   • "That works for me, yeah right, like I'd accept that — I'm walking away." — the
+ *     first clause ("that works for me") is a genuine standalone accept, but it's
+ *     sarcastically undercut two clauses later ("yeah right, like I'd accept that") right
+ *     before an unhedged, unrelated-to-accept departure ("I'm walking away").
+ * Fix: find the LAST clause that reads as a standalone accept, then require every clause
+ * AFTER it to also not be a genuine departure. If a later clause plainly matches
+ * WALKAWAY_PATTERN, the accept doesn't win — mirrors the "last unhedged clause wins"
+ * pattern already used by retractsToAccept()/RETRACTION_MARKER above.
+ * S152-B... (wave 58, correction) — that "later clause overrides" rule was too broad: "This
+ * works for me, that said I'm leaning towards withdrawing from the process." (existing
+ * permanent test, expects false) has a later clause matching WALKAWAY_PATTERN ("withdrawing")
+ * but it's only a tentative lean, not a firm declaration — unlike bug #1/#3's bare "I'm
+ * withdrawing"/"I'm walking away". A later departure clause only overrides the accept veto
+ * when it's a firm declaration, not when softened by tentative-language markers. */
+const SOFT_DEPARTURE_RE =
+  /\b(?:leaning\s+(?:towards?|to)|considering|thinking\s+(?:about|of)|might|may|could|possibly|probably|likely|tempted\s+to)\b/i;
 function hasUnhedgedAcceptClause(text: string): boolean {
   /* S151-B... (wave 57) regression fix — "I accept. Actually no, I'm walking away." has a
    * genuine standalone accept clause, but the S145-B3 "actually (no)" retraction mechanism
@@ -322,12 +388,19 @@ function hasUnhedgedAcceptClause(text: string): boolean {
    * ahead of that retraction. Skip entirely whenever a retraction marker is present — the
    * existing retraction-aware logic is authoritative in that case. */
   if (RETRACTION_MARKER.test(text)) return false;
-  return text
+  const clauses = text
     .split(CLAUSE_SPLIT_RE)
-    .some((raw) => {
-      const clause = (raw || "").trim().replace(CLAUSE_FILLER_RE, "").trim();
-      return clause.length > 0 && UNHEDGED_ACCEPT_CLAUSE_RE.test(clause);
-    });
+    .map((raw) => (raw || "").trim().replace(CLAUSE_FILLER_RE, "").trim())
+    .filter((clause) => clause.length > 0);
+  let lastAcceptIdx = -1;
+  clauses.forEach((clause, i) => {
+    if (UNHEDGED_ACCEPT_CLAUSE_RE.test(clause)) lastAcceptIdx = i;
+  });
+  if (lastAcceptIdx === -1) return false;
+  for (let i = lastAcceptIdx + 1; i < clauses.length; i++) {
+    if (WALKAWAY_PATTERN.test(clauses[i]) && !SOFT_DEPARTURE_RE.test(clauses[i])) return false;
+  }
+  return true;
 }
 
 export function isWalkAway(answer: string | null | undefined): boolean {
@@ -336,7 +409,9 @@ export function isWalkAway(answer: string | null | undefined): boolean {
   // won't-work + temporal qualifier ("right now") or counter-ask = negotiating, not exiting
   if (WONT_WORK_NON_EXIT.test(answer)) return false;
   if (NOT_INTERESTED_DOUBLE_NEGATION.test(answer)) return false;
-  if (THIRD_PARTY_DEPARTURE.test(answer)) return false;
+  if ((THIRD_PARTY_DEPARTURE.test(answer) || THIRD_PARTY_OWN_DEPARTURE.test(answer)) && !hasOwnDeparture(answer)) {
+    return false;
+  }
   if (TRAILING_RETRACTION.test(answer)) return false;
   if (WALKAWAY_SARCASM.test(answer)) return false;
   if (retractsToAccept(answer)) return false;
