@@ -687,8 +687,15 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * reported/third-party speech ("My friend said I should walk away."), so someone relaying
    * advice or a recruiter's/employer's own stance was misread as the candidate's own
    * walk-away or rejection. Mirrors thirdPartyOfferRe's guard on mentionedCompeting. */
+  /* S149-B1 (wave 55) — "My manager's told me I should just walk away." lost the
+   * third-party guard: the possessive contraction "manager's" glues directly onto the
+   * noun with no leading space, so the \w+ filler-word gap (which requires whitespace
+   * before each token) couldn't bridge from the noun to "told me". Widened to [\w']+
+   * so a possessive 's counts as part of the noun itself, same fix shape as wave 54's
+   * walkAwayNegationRe contraction gap. Mirrors THIRD_PARTY_DEPARTURE in
+   * _walkaway-detection.ts — keep in sync. */
   const thirdPartyDepartureRe =
-    /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)\b(?:\s+\w+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+    /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)['']?s?\b(?:\s+[\w']+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
   /* S133-B3 (wave 39) — a trailing elliptical negation ("I considered walking away, but I
    * won't.") retracts an earlier departure verb without repeating it. walkAwayNegationRe
    * only looks for a negator BEFORE the departure verb within a bounded gap; this catches
@@ -719,9 +726,13 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * genuine reassertion has a clause break (comma/but/if-clause) between the negator and the
    * fresh subject; the litotes frame has the subject immediately governed by "say" with no
    * break. When the negator immediately preceding the reclaimed subject is itself the
-   * "can't/couldn't say" arm, the reassertion read doesn't apply. */
+   * "can't/couldn't say" arm, the reassertion read doesn't apply.
+   * S149-B2 (wave 55) — widened beyond the literal "can't/couldn't say" frame: "I never
+   * want to say I'm walking away." / "I don't want to say I'm walking away." are the same
+   * litotes shape with a different say-verb negator and hit the identical bug in
+   * _walkaway-detection.ts's SAY_LITOTES — kept in sync here for the hedge-branch path. */
   const SAY_LITOTES_LOCAL =
-    /\bcan(?:not|.?t)\s+say\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+    /\b(?:can(?:not|.?t)\s+say|couldn.?t\s+say|won.?t\s+say|wouldn.?t\s+say|would\s+not\s+say|(?:don.?t|do\s+not|doesn.?t|does\s+not|never|wouldn.?t|would\s+not)\s+want\s+to\s+say|would\s+rather\s+not\s+say|prefer\s+not\s+(?:to\s+)?say|hate\s+to\s+say|reluctant\s+to\s+say|hesitant\s+to\s+say)\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
   /* Locates the bare departure verb (not the full walkAwayWords match, which for arms like
    * the bare-verb "i am walking away" already swallows the subject+modal itself, hiding the
    * "I am" reassertion inside the match instead of leaving it in the lookback window). */

@@ -4730,4 +4730,52 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(false);
     });
   });
+
+  describe("S149-B1 (wave 55) — possessive contraction broke the third-party-departure guard", () => {
+    it("'My manager's told me I should just walk away from this.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "My manager's told me I should just walk away from this.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S136-B1 third-party without possessive still suppressed", () => {
+      const s = "My friend said I should walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: genuine walk-away with an unrelated manager noun still fires", () => {
+      const s = "My manager keeps pushing but I'm walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S149-B2 (wave 55) — SAY_LITOTES/SAY_LITOTES_LOCAL too narrow, only covered can't/couldn't say", () => {
+    it("'I never want to say I'm walking away from this.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I never want to say I'm walking away from this.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'I don't want to say I'm walking away from this.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I don't want to say I'm walking away from this.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S124-B2 genuine reassertion after unrelated negation still fires", () => {
+      const s = "if you don't match this, I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S148-B1 can't-say litotes still suppressed", () => {
+      const s = "I can't say I'm not interested, but I also can't say I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
 });

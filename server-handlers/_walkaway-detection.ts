@@ -195,8 +195,13 @@ const NOT_INTERESTED_DOUBLE_NEGATION =
  * trailingRetractionRe for the same reason — both are absent here despite guarding
  * the canonical `walkAway` and `rejected` computations. Mirrored verbatim from
  * _follow-up-helpers.ts. */
+/* S149-B1 (wave 55) — "My manager's told me I should just walk away." lost this guard:
+ * the possessive contraction glues directly onto the noun with no leading space, so the
+ * \w+ filler-word gap couldn't bridge to "told me". Widened to [\w']+ and allowed an
+ * optional possessive on the noun itself. Mirrors thirdPartyDepartureRe in
+ * _follow-up-helpers.ts — keep in sync. */
 const THIRD_PARTY_DEPARTURE =
-  /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)\b(?:\s+\w+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+  /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)['']?s?\b(?:\s+[\w']+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
 const TRAILING_RETRACTION =
   /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
 
@@ -231,9 +236,16 @@ const WRONG_SUBJECT_NEGATOR_RE =
  * subject pronoun as the DIRECT OBJECT CLAUSE of the "can't say" litotes itself — not a
  * reassertion following it — so the override wrongly let the (correctly negated)
  * departure phrase through. Mirrors the identical fix in _follow-up-helpers.ts's
- * walkAwayNegationCoversLocal() — keep in sync. */
+ * walkAwayNegationCoversLocal() — keep in sync.
+ * S149-B2 (wave 55) — the original fix only recognized the literal "can't/couldn't say"
+ * frame. "I never want to say I'm walking away." / "I don't want to say I'm walking
+ * away." are the same litotes shape with a different say-verb negator prefix (both
+ * already recognized by DEPARTURE_NEGATOR above) and hit the identical false-reassertion
+ * bug, desyncing from detectCandidateIntent() (whose base walkAway clause happened to
+ * stay correct only because it never runs the reassertion-aware check at all). Widened
+ * to cover the other say-verb litotes prefixes. */
 const SAY_LITOTES =
-  /\bcan(?:not|.?t)\s+say\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+  /\b(?:can(?:not|.?t)\s+say|couldn.?t\s+say|won.?t\s+say|wouldn.?t\s+say|would\s+not\s+say|(?:don.?t|do\s+not|doesn.?t|does\s+not|never|wouldn.?t|would\s+not)\s+want\s+to\s+say|would\s+rather\s+not\s+say|prefer\s+not\s+(?:to\s+)?say|hate\s+to\s+say|reluctant\s+to\s+say|hesitant\s+to\s+say)\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
 
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
