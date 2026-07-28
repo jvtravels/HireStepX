@@ -1,4 +1,13 @@
 /* global process */
+import { readFileSync } from "node:fs";
+
+// Bare company slugs (e.g. /companies/flipkart) redirect to that company's
+// first SEO page. Regenerate via scripts/generate-company-redirect-map.mjs
+// whenever data/seo-pages.ts gains/reorders a company.
+const companyRedirectMap = JSON.parse(
+  readFileSync(new URL("./data/company-redirect-map.json", import.meta.url), "utf8"),
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable the behavioral v2 diagnostic-first report. The env-flag gate in
@@ -77,6 +86,16 @@ const nextConfig = {
       { source: "/page/refund", destination: "/refund", permanent: true },
       { source: "/page/pricing", destination: "/pricing", permanent: true },
       { source: "/page/:slug*", destination: "/", permanent: true },
+      // Bare /companies/<company> URLs (e.g. /companies/flipkart), same
+      // Suspense-streaming issue as /page/* above — moved to config so the
+      // redirect is a real 308 instead of a client-side meta-refresh. The
+      // in-page permanentRedirect() in companies/[slug]/page.tsx stays as a
+      // fallback for any company added since this map was last generated.
+      ...Object.entries(companyRedirectMap).map(([company, slug]) => ({
+        source: `/companies/${company}`,
+        destination: `/companies/${slug}`,
+        permanent: true,
+      })),
     ];
   },
 

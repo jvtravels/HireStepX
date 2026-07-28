@@ -7,6 +7,7 @@
     "check": "tsc --noEmit && eslint .",
     "dev": "next dev",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "generate:company-redirects": "node scripts/generate-company-redirect-map.mjs",
     "lint": "next lint",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview --host 127.0.0.1",
