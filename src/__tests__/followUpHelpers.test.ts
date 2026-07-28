@@ -4639,4 +4639,68 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(r.rejected).toBe(true);
     });
   });
+
+  describe("S147-B1 (wave 53) — wrong-subject negator suppressed a genuine walk-away", () => {
+    it("'I'm sticking with 35 LPA but if you can't do it I walk.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I'm sticking with 35 LPA but if you can't do it I walk.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'If she can't approve it I walk.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "If she can't approve it I walk.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: candidate's own 'I can't do this, I'm walking away' still suppressed by own-subject negator when applicable elsewhere unaffected", () => {
+      const r = detectCandidateIntent("I don't want to walk away, just need a moment.");
+      expect(r.walkAway).toBe(false);
+    });
+  });
+
+  describe("S147-B2 (wave 53) — later un-hedged accept retraction failed to cancel a pre-hedge walk-away", () => {
+    it("'I'm walking away, but give me a day to think, actually I accept.' fires accepted=true, walkAway=false, matches isWalkAway()", () => {
+      const s = "I'm walking away, but give me a day to think, actually I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S145-B3 'I accept. Actually no, I'm walking away.' still fires walkAway=true, not accepted", () => {
+      const s = "I accept. Actually no, I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(r.accepted).toBe(false);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S147-B3 (wave 53) — shared departure-frame regex missed the \"I'm\" contraction", () => {
+    it("'I'm walking away.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I'm walking away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'Stuck at 28 lakhs, or else I'm walking.' fires walkAway=true", () => {
+      const s = "Stuck at 28 lakhs, or else I'm walking.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: 'I am walking away.' (no contraction) still fires walkAway=true", () => {
+      const s = "I am walking away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S146-B1 number-lock ultimatum still works with the contraction form", () => {
+      const s = "I'm sticking with 30 LPA, otherwise I'm walking away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S94-B1 conditional threat unaffected by retractionToAccept change", () => {
+      const r = detectCandidateIntent(
+        "Sounds good, but actually I am walking away if you cannot match it.",
+      );
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
 });
