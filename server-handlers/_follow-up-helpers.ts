@@ -707,10 +707,17 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   }
   /* S128-B1 (wave 34) — a live number-lock (see numberLockWords above) means the candidate
    * is anchoring a number, not leaving; mirrors the same exclusion already applied to
-   * `accepted`/`rejected`. */
+   * `accepted`/`rejected`.
+   * S146-B1 (wave 52) — "I'm sticking with 30 LPA, otherwise I'll walk away." desynced from
+   * isWalkAway() (which has no number-lock concept and correctly returned true): the number-
+   * lock suppression zeroed out an explicit, unconditional ultimatum just because it shares a
+   * sentence with the anchor. An "otherwise"/"else" between the lock and the departure verb
+   * marks it as a genuine standalone ultimatum, not part of the anchor statement itself. */
   const baseWalkAwayMatch = walkAwayWords.exec(trimmed);
+  const walkAwaySentence = baseWalkAwayMatch ? sentenceAroundLocal(trimmed, baseWalkAwayMatch.index) : "";
+  const walkAwayIsExplicitUltimatum = /\b(?:otherwise|else)\b/i.test(walkAwaySentence);
   const walkAway = !thirdPartyDepartureRe.test(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
-    (walkAwayWords.test(trimmed) && !accepted && !numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
+    (walkAwayWords.test(trimmed) && !accepted && (!numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) || walkAwayIsExplicitUltimatum) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
     || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText))
     || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText))
     // S145-B3 (wave 51) — a later un-hedged "Actually no, I'm walking away." retraction

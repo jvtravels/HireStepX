@@ -4608,4 +4608,35 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       ).toBe(true);
     });
   });
+
+  describe("S146-B1 (wave 52) — number-lock suppression zeroed out an explicit same-sentence ultimatum", () => {
+    it("'I'm sticking with 30 LPA, otherwise I'll walk away.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I'm sticking with 30 LPA, otherwise I'll walk away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'I'm holding at 30 LPA, otherwise I'll walk away.' fires walkAway=true", () => {
+      expect(
+        detectCandidateIntent("I'm holding at 30 LPA, otherwise I'll walk away.").walkAway,
+      ).toBe(true);
+    });
+    it("'Sticking with 30 LPA. I'll walk away otherwise.' fires walkAway=true across sentences", () => {
+      expect(
+        detectCandidateIntent("Sticking with 30 LPA. I'll walk away otherwise.").walkAway,
+      ).toBe(true);
+    });
+    it("regression: S128-B1 Hindi number-lock idiom (no ultimatum marker) still suppresses walkAway", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi lunga.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S127-B1 anaphoric cross-sentence lock still suppresses accepted (no walk-away phrase present)", () => {
+      const r = detectCandidateIntent(
+        "Sticking with 30 LPA is what I need. That works for me otherwise.",
+      );
+      expect(r.accepted).toBe(false);
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
 });
