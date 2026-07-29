@@ -149,7 +149,7 @@ const posts: BlogPost[] = [
       { question: "What is the Google interview acceptance rate?", answer: "Google's acceptance rate is approximately 0.2-0.5%, making it one of the most competitive employers globally." },
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "system-design-interview-preparation", "amazon-leadership-principles-interview"],
-    practicePageSlugs: [{ label: "Google India Engineering", slug: "Google India Engineering" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Google Behavioral", slug: "Google Behavioral" }, { label: "Google Behavioral Interview Questions", slug: "google-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Google Behavioral Interview Questions", slug: "google-behavioral-interview-questions" }],
     relatedLinks: [{ label: "Google Salary Guide India 2026", href: "/salary/google" }],
     cta: "Google's rubric scores you on four dimensions simultaneously: most candidates only think about one while they're talking. Run these questions on HireStepX and get per-dimension feedback while the answers are still fresh.",
   },
@@ -179,7 +179,7 @@ const posts: BlogPost[] = [
       { question: "What is Flipkart SDE-1 salary in 2026?", answer: "Flipkart SDE-1 salary ranges from ₹18-28 LPA including base, bonus, and ESOPs." },
     ],
     relatedSlugs: ["top-10-google-interview-questions", "razorpay-interview-experience", "system-design-interview-preparation"],
-    practicePageSlugs: [{ label: "Flipkart Sde Interview Questions", slug: "Flipkart SDE Interview Questions" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Flipkart Pm Interview Questions", slug: "Flipkart PM Interview Questions" }, { label: "Flipkart Pm Interview Questions", slug: "flipkart-pm-interview-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Flipkart Pm Interview Questions", slug: "flipkart-pm-interview-questions" }],
     relatedLinks: [{ label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" }],
     cta: "The machine coding round is where most candidates stall: not because they can't code, but because they haven't practiced designing under a time constraint while someone's watching. HireStepX lets you run the full Flipkart loop end to end, so that pressure isn't new when it counts.",
   },
@@ -210,7 +210,7 @@ const posts: BlogPost[] = [
       { question: "How many behavioral questions should freshers prepare?", answer: "Prepare 8-10 strong STAR stories that can be adapted across different questions. Most behavioral questions map to themes like teamwork, leadership, conflict, failure, and initiative." },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "how-to-introduce-yourself-in-interview", "hr-interview-questions-answers-india"],
-    practicePageSlugs: [{ label: "Why Should We Hire You: Practice", slug: "Why Should We Hire You: Practice" }, { label: "Why Should We Hire You Answer India", slug: "why-should-we-hire-you-answer-india" }, { label: "Common Hr Questions: Practice", slug: "Common HR Questions: Practice" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }, { label: "Tcs Nqt 2026", slug: "TCS NQT 2026" }, { label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }, { label: "Tcs Ninja Interview", slug: "TCS Ninja Interview" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Placement", slug: "Infosys Campus Placement" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Phonepe Behavioral Interview", slug: "PhonePe Behavioral Interview" }, { label: "Phonepe Behavioral Interview Questions", slug: "phonepe-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Why Should We Hire You Answer India", slug: "why-should-we-hire-you-answer-india" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }, { label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Phonepe Behavioral Interview Questions", slug: "phonepe-behavioral-interview-questions" }],
     cta: "Most freshers discover their filler words and vague transitions only after the interview, in the elevator. Say your answers out loud on HireStepX before that: you'll get scored on STAR structure and clarity while there's still time to fix them.",
     relatedLinks: [
       { label: "How AI Mock Interviews Work: Free Voice Practice", href: "/ai-mock-interview" },
@@ -239,7 +239,7 @@ const posts: BlogPost[] = [
       { question: "What is Razorpay SDE-2 salary?", answer: "Razorpay SDE-2 salary ranges from ₹28-45 LPA including base pay, bonuses, and ESOPs." },
     ],
     relatedSlugs: ["flipkart-interview-prep-guide", "system-design-interview-preparation", "ace-case-study-interviews"],
-    practicePageSlugs: [{ label: "Razorpay Engineering Interview", slug: "Razorpay Engineering Interview" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }, { label: "Razorpay Pm Interview", slug: "Razorpay PM Interview" }, { label: "Razorpay Pm Interview Questions", slug: "razorpay-pm-interview-questions" }, { label: "Paytm Engineering Interview", slug: "Paytm Engineering Interview" }, { label: "Paytm Engineering Interview Questions", slug: "paytm-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }, { label: "Razorpay Pm Interview Questions", slug: "razorpay-pm-interview-questions" }, { label: "Paytm Engineering Interview Questions", slug: "paytm-engineering-interview-questions" }],
     relatedLinks: [{ label: "Razorpay Salary Guide India 2026", href: "/salary/razorpay" }],
     cta: "Razorpay's system design round will ask you about idempotency, retry logic, or webhook delivery guarantees: problems specific to payment infrastructure. If you haven't practiced those scenarios out loud, the first time you'll hear yourself explain them is in the room. HireStepX runs fintech-focused system design rounds so that's not how it goes.",
   },
@@ -265,7 +265,7 @@ const posts: BlogPost[] = [
       { question: "How do I prepare for case study interviews?", answer: "Practice structuring problems using frameworks (not memorized templates), do mental math daily, read business news for case inspiration, and practice out loud: recording yourself helps identify filler words and unclear transitions." },
       { question: "What is the MECE framework?", answer: "MECE stands for Mutually Exclusive, Collectively Exhaustive. It means breaking a problem into categories that don't overlap and together cover all possibilities. It's the foundation of structured problem-solving in consulting." },
     ],
-    practicePageSlugs: [{ label: "Mckinsey Case Interview Practice", slug: "McKinsey Case Interview Practice" }, { label: "Mckinsey Case Study Interview Questions", slug: "mckinsey-case-study-interview-questions" }, { label: "Bcg Case Interview Practice", slug: "BCG Case Interview Practice" }, { label: "Bcg Case Interview Practice", slug: "bcg-case-interview-practice" }, { label: "Deloitte Case Interview Practice", slug: "Deloitte Case Interview Practice" }, { label: "Deloitte Consulting Case Interview", slug: "deloitte-consulting-case-interview" }],
+    practicePageSlugs: [{ label: "Mckinsey Case Study Interview Questions", slug: "mckinsey-case-study-interview-questions" }, { label: "Bcg Case Interview Practice", slug: "bcg-case-interview-practice" }, { label: "Deloitte Consulting Case Interview", slug: "deloitte-consulting-case-interview" }],
     relatedSlugs: ["top-10-google-interview-questions", "salary-negotiation-tips-india", "tell-me-about-yourself-best-answer"],
     cta: "Case interviews are oral exams where silence costs you more than a wrong turn. HireStepX plays the interviewer: ask for data, walk through your structure, get pushback on your recommendation: and find out where you lose the thread before it happens in a real round.",
     relatedLinks: [{ label: "Deloitte Salary Guide India 2026", href: "/salary/deloitte" }],
@@ -300,7 +300,7 @@ const posts: BlogPost[] = [
       { question: "How to prepare for TCS NQT in 2 weeks?", answer: "Focus on: (1) Solve 50+ coding problems in your strongest language, (2) Practice 20 aptitude questions daily, (3) Review CS fundamentals: DBMS, OOP, OS, networking. Use HireStepX to practice behavioral answers." },
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "infosys-interview-questions-2026", "wipro-interview-questions-answers"],
-    practicePageSlugs: [{ label: "Tcs Ninja Interview", slug: "TCS Ninja Interview" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Tcs Digital Interview", slug: "TCS Digital Interview" }, { label: "Tcs Digital Interview Questions", slug: "tcs-digital-interview-questions" }, { label: "Tcs Behavioral Round", slug: "TCS Behavioral Round" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Tcs Digital Interview Questions", slug: "tcs-digital-interview-questions" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }],
     cta: "TCS's HR round has elimination power most candidates underestimate: vague answers on relocation or bond concerns get flagged. Run the full TCS interview sequence on HireStepX and get feedback on both your technical explanations and HR answers before the real thing.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -331,7 +331,7 @@ const posts: BlogPost[] = [
       { question: "How is Infosys interview different from TCS?", answer: "Infosys focuses more on conceptual understanding and coding ability, while TCS emphasizes aptitude scores. Infosys also has the InfyTQ certification path which TCS doesn't offer." },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Infosys Campus Placement", slug: "Infosys Campus Placement" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Infosys Power Programmer", slug: "Infosys Power Programmer" }, { label: "Infosys Power Programmer Interview", slug: "infosys-power-programmer-interview" }, { label: "Infosys Behavioral Round", slug: "Infosys Behavioral Round" }, { label: "Infosys Behavioral Interview Questions", slug: "infosys-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Infosys Power Programmer Interview", slug: "infosys-power-programmer-interview" }, { label: "Infosys Behavioral Interview Questions", slug: "infosys-behavioral-interview-questions" }],
     cta: "The difference between SE and PP/DSE placement often comes down to how you perform in the technical round: specifically whether you can explain your reasoning, not just produce working code. Practice that on HireStepX: get scored on your technical explanations and HR answers across all three Infosys tracks.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -362,7 +362,7 @@ const posts: BlogPost[] = [
       { question: "Should I mention personal details in my introduction?", answer: "No. Keep your introduction professional: focus on your education, experience, skills, and why you're interested in the role. Only share personal details if specifically asked." },
       { question: "How to introduce yourself as a fresher with no experience?", answer: "Lead with your education and specialization, then highlight college projects, internships, hackathons, or relevant coursework. End with what excites you about the role. No experience ≠ nothing to say." },
     ],
-    practicePageSlugs: [{ label: "Tell Me About Yourself: Fresher Practice", slug: "Tell Me About Yourself: Fresher Practice" }, { label: "Tell Me About Yourself Answer Freshers India", slug: "tell-me-about-yourself-answer-freshers-india" }, { label: "Tcs Behavioral Interview Practice", slug: "TCS Behavioral Interview Practice" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }, { label: "Amazon Leadership Principles Practice", slug: "Amazon Leadership Principles Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Infosys Behavioral Practice", slug: "Infosys Behavioral Practice" }, { label: "Infosys Behavioral Interview Questions", slug: "infosys-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Tell Me About Yourself Answer Freshers India", slug: "tell-me-about-yourself-answer-freshers-india" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Infosys Behavioral Interview Questions", slug: "infosys-behavioral-interview-questions" }],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Your self-introduction is the one answer you'll give in every interview, and most people have never actually timed themselves saying it. Run it on HireStepX: you'll find out quickly whether it's ninety seconds or three minutes, and whether your hook lands or disappears into filler.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -391,7 +391,7 @@ const posts: BlogPost[] = [
       { question: "Should I mention my hobbies in tell me about yourself?", answer: "Only if they're directly relevant to the role or demonstrate a valuable skill. 'I contribute to open-source projects' is relevant for a developer role. 'I like cooking' is not." },
       { question: "What is the best answer for tell me about yourself for experienced professionals?", answer: "Lead with your current role and a quantified achievement, briefly mention your career trajectory, then explain why this specific opportunity interests you. Focus on impact, not job descriptions." },
     ],
-    practicePageSlugs: [{ label: "Google Behavioral Interview Practice", slug: "Google Behavioral Interview Practice" }, { label: "Google Behavioral Interview Questions", slug: "google-behavioral-interview-questions" }, { label: "Tell Me About Yourself: Fresher Practice", slug: "Tell Me About Yourself: Fresher Practice" }, { label: "Tell Me About Yourself Answer Freshers India", slug: "tell-me-about-yourself-answer-freshers-india" }, { label: "Amazon Leadership Principles Practice", slug: "Amazon Leadership Principles Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Tcs Behavioral Interview Practice", slug: "TCS Behavioral Interview Practice" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Google Behavioral Interview Questions", slug: "google-behavioral-interview-questions" }, { label: "Tell Me About Yourself Answer Freshers India", slug: "tell-me-about-yourself-answer-freshers-india" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }],
     relatedSlugs: ["how-to-introduce-yourself-in-interview", "hr-interview-questions-answers-india", "behavioral-interview-questions-freshers"],
     cta: "The gap between how your answer sounds in your head and how it lands out loud is usually large. Say it to HireStepX: you'll get scored on structure, relevance, and delivery, and you'll know exactly which thirty seconds to cut.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -419,7 +419,7 @@ const posts: BlogPost[] = [
       { question: "What is the difference between Wipro Elite and Turbo?", answer: "Elite NTH (₹3.5 LPA) is for general engineering roles, while Turbo (₹6.5 LPA) targets strong coders with an additional hard coding round. Both share the same initial aptitude test." },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Wipro Campus Placement", slug: "Wipro Campus Placement" }, { label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }, { label: "Wipro Behavioral Round", slug: "Wipro Behavioral Round" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }, { label: "Wipro Nlth Preparation 2026", slug: "Wipro NLTH Preparation 2026" }, { label: "Wipro Nlth Preparation 2026", slug: "wipro-nlth-preparation-2026" }, { label: "Wipro Turbo Technical Interview", slug: "Wipro Turbo Technical Interview" }, { label: "Wipro Turbo Technical Interview", slug: "wipro-turbo-technical-interview" }],
+    practicePageSlugs: [{ label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }, { label: "Wipro Nlth Preparation 2026", slug: "wipro-nlth-preparation-2026" }, { label: "Wipro Turbo Technical Interview", slug: "wipro-turbo-technical-interview" }],
     cta: "Wipro's HR round is short but it has teeth: candidates who hesitate on relocation or shift flexibility get flagged in the notes. Practice the full sequence on HireStepX so your answers on the friction questions sound like decisions, not deliberations.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -449,7 +449,7 @@ const posts: BlogPost[] = [
       { question: "How to answer 'Why should we hire you' for freshers?", answer: "Highlight your relevant skills, a specific project or achievement that demonstrates those skills, and your enthusiasm for the company/role. End with what value you'll bring in the first 90 days." },
       { question: "Should I negotiate salary in an HR interview?", answer: "Yes, but tactfully. Research market rates, give a range (not a single number), and express that you value the total package including learning and growth opportunities." },
     ],
-    practicePageSlugs: [{ label: "Common Hr Questions: Fresher Practice", slug: "Common HR Questions: Fresher Practice" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }, { label: "Tcs Hr Round Practice", slug: "TCS HR Round Practice" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }, { label: "Accenture Behavioral Practice", slug: "Accenture Behavioral Practice" }, { label: "Accenture Behavioral Interview Questions", slug: "accenture-behavioral-interview-questions" }, { label: "Wipro Behavioral Practice", slug: "Wipro Behavioral Practice" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }, { label: "Accenture Behavioral Interview Questions", slug: "accenture-behavioral-interview-questions" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }],
     relatedSlugs: ["how-to-introduce-yourself-in-interview", "tell-me-about-yourself-best-answer", "salary-negotiation-tips-india"],
     cta: "Most people rehearse answers in their head. That's not the same as saying them out loud under mild pressure. HireStepX's AI will push back on vague answers and flag when you've gone off-track: try a free HR mock round and see where you actually stand.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -478,7 +478,7 @@ const posts: BlogPost[] = [
       { question: "What is Amazon SDE-1 salary in India?", answer: "Amazon SDE-1 salary in India (2026) is ₹22-35 LPA including base, signing bonus, and RSUs. Bangalore and Hyderabad are the primary locations." },
     ],
     relatedSlugs: ["top-10-google-interview-questions", "system-design-interview-preparation", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Amazon Sde + Leadership Principles", slug: "Amazon SDE + Leadership Principles" }, { label: "Amazon Sde Leadership Principles Interview", slug: "amazon-sde-leadership-principles-interview" }, { label: "Amazon Campus Placement India", slug: "Amazon Campus Placement India" }, { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" }],
+    practicePageSlugs: [{ label: "Amazon Sde Leadership Principles Interview", slug: "amazon-sde-leadership-principles-interview" }, { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" }],
     relatedLinks: [{ label: "Amazon Salary Guide India 2026", href: "/salary/amazon" }],
     cta: "Amazon interviewers are trained to probe until your story either holds or breaks. The best way to find the cracks before the loop is to practice with follow-up pressure: HireStepX's AI will map your answer to the LP being tested, score your STAR structure, and ask the follow-ups a real interviewer would.",
   },
@@ -509,7 +509,7 @@ const posts: BlogPost[] = [
       { question: "What if I get a system I've never designed before?", answer: "Use the framework: clarify requirements, estimate scale, draw high-level components, and deep-dive where the interviewer guides you. The process matters more than the specific system." },
     ],
     relatedSlugs: ["top-10-google-interview-questions", "amazon-leadership-principles-interview", "flipkart-interview-prep-guide"],
-    practicePageSlugs: [{ label: "Flipkart Sde Interview", slug: "Flipkart SDE Interview" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Razorpay Engineering Interview", slug: "Razorpay Engineering Interview" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }, { label: "Phonepe Engineering Interview", slug: "PhonePe Engineering Interview" }, { label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }, { label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }],
     cta: "System design only gets sharper with reps. Walk HireStepX's AI through your architecture: it'll probe your tradeoffs, flag where your reasoning is thin, and give you the kind of feedback that only comes from articulating your design out loud.",
     relatedLinks: [
       { label: "Google Salary Guide India 2026", href: "/salary/google" },
@@ -539,7 +539,7 @@ const posts: BlogPost[] = [
       { question: "How much should I counter-offer in India?", answer: "Counter 15-30% above the initial offer for experienced roles. For freshers at mass-hiring companies, counter by 5-10%. Always anchor with a specific number, not a range." },
       { question: "What if they say the offer is non-negotiable?", answer: "Ask about other components: joining bonus, ESOPs, flexible work, title, or learning budget. If everything is truly fixed, evaluate the total package against your alternatives." },
     ],
-    practicePageSlugs: [{ label: "Salary Negotiation Practice", slug: "Salary Negotiation Practice" }, { label: "Salary Negotiation India Tech", slug: "salary-negotiation-india-tech" }],
+    practicePageSlugs: [{ label: "Salary Negotiation India Tech", slug: "salary-negotiation-india-tech" }],
     relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
     relatedSlugs: ["hr-interview-questions-answers-india", "tell-me-about-yourself-best-answer", "ace-case-study-interviews"],
     cta: "The first time you say \"I was hoping for something closer to X\" out loud shouldn't be on a live call with the recruiter. Run the negotiation conversation with HireStepX's AI first: it plays the recruiter, pushes back the way they actually do, and helps you find the phrasing that doesn't make you flinch.",
@@ -570,7 +570,7 @@ const posts: BlogPost[] = [
       { question: "What GPA do companies look for in placements?", answer: "Most service companies require 60-65% (6.0-6.5 CGPA). Product companies usually require 70%+ (7.0 CGPA). Some companies like Google don't have a strict GPA cutoff." },
       { question: "How to answer 'Tell me about yourself' in campus placements?", answer: "Use Present-Past-Future: Start with your current status (final year, branch), mention 1-2 relevant projects or internships, then state your career interest. Keep it under 90 seconds." },
     ],
-    practicePageSlugs: [{ label: "Why Should We Hire You: Practice", slug: "Why Should We Hire You: Practice" }, { label: "Why Should We Hire You Answer India", slug: "why-should-we-hire-you-answer-india" }, { label: "Tell Me About Yourself: Practice", slug: "Tell Me About Yourself: Practice" }, { label: "Tell Me About Yourself Answer Freshers India", slug: "tell-me-about-yourself-answer-freshers-india" }, { label: "Common Hr Questions: Practice", slug: "Common HR Questions: Practice" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }, { label: "Tcs Campus Placement Practice", slug: "TCS Campus Placement Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Practice", slug: "Infosys Campus Interview Practice" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Amazon Campus Placement Practice", slug: "Amazon Campus Placement Practice" }, { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" }],
+    practicePageSlugs: [{ label: "Why Should We Hire You Answer India", slug: "why-should-we-hire-you-answer-india" }, { label: "Tell Me About Yourself Answer Freshers India", slug: "tell-me-about-yourself-answer-freshers-india" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" }],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "behavioral-interview-questions-freshers", "how-to-introduce-yourself-in-interview"],
     cta: "Placement day compresses four rounds into one afternoon. The candidates who stay calm under that pressure are usually the ones who've already said these answers out loud, more than once. Start your mock sessions on HireStepX: free, AI-scored, and specific to the companies visiting your campus.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -598,7 +598,7 @@ const posts: BlogPost[] = [
       { question: "Should I practice mock interviews alone or with someone?", answer: "Both serve different purposes. Practice alone to rehearse specific answers. Practice with others (or AI) to build adaptability to unexpected questions and follow-ups. AI mock interviews combine the best of both: available anytime with objective, consistent feedback." },
       { question: "Is it possible to over-practice for interviews?", answer: "Yes: if your answers start sounding rehearsed and robotic. The goal is to be naturally structured, not scripted. If you're memorizing answers word-for-word, switch to practicing with random follow-up questions to stay adaptable." },
     ],
-    practicePageSlugs: [{ label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Flipkart Sde Interview Practice", slug: "Flipkart SDE Interview Practice" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Microsoft India Sde Practice", slug: "Microsoft India SDE Practice" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }],
     relatedSlugs: ["behavioral-interview-questions-freshers", "campus-placement-interview-tips", "how-to-introduce-yourself-in-interview"],
     cta: "Start your mock interview practice right now: 2 free AI sessions with scored feedback. See your baseline score in 10 minutes.",
     relatedLinks: [
@@ -630,7 +630,7 @@ const posts: BlogPost[] = [
       { question: "What if I don't have work experience for STAR answers?", answer: "Use college projects, internships, hackathons, volunteer work, or academic team projects. The framework works the same: just be honest about the context. Freshers are expected to draw from academic and extracurricular experiences." },
       { question: "How long should a STAR answer be?", answer: "90 seconds to 2 minutes. Under 60 seconds feels too brief (missing details). Over 3 minutes loses the interviewer's attention. Practice timing yourself." },
     ],
-    practicePageSlugs: [{ label: "Amazon Leadership Principles Practice", slug: "Amazon Leadership Principles Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Google Behavioral Interview Practice", slug: "Google Behavioral Interview Practice" }, { label: "Google Behavioral Interview Questions", slug: "google-behavioral-interview-questions" }, { label: "Infosys Behavioral Practice", slug: "Infosys Behavioral Practice" }, { label: "Infosys Behavioral Interview Questions", slug: "infosys-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Google Behavioral Interview Questions", slug: "google-behavioral-interview-questions" }, { label: "Infosys Behavioral Interview Questions", slug: "infosys-behavioral-interview-questions" }],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Writing a STAR answer and delivering it are different skills. HireStepX's AI scores each component separately: so if your Situation runs long or your Result lacks specifics, you'll know exactly which part to fix, not just that the answer \"could be stronger.\"",
     relatedLinks: [
@@ -662,7 +662,7 @@ const posts: BlogPost[] = [
       { question: "Does Cognizant have a service bond for freshers?", answer: "Yes, Cognizant has a 2-year service agreement. Leaving before completion requires paying a penalty. Review the agreement carefully before accepting." },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Cognizant Campus Placement", slug: "Cognizant Campus Placement" }, { label: "Cognizant Genc Interview Questions", slug: "cognizant-genc-interview-questions" }, { label: "Cognizant Technical Interview", slug: "Cognizant Technical Interview" }, { label: "Cognizant Technical Interview Questions", slug: "cognizant-technical-interview-questions" }],
+    practicePageSlugs: [{ label: "Cognizant Genc Interview Questions", slug: "cognizant-genc-interview-questions" }, { label: "Cognizant Technical Interview Questions", slug: "cognizant-technical-interview-questions" }],
     cta: "After the CoCubes cut, the technical and HR rounds are where offers actually close. HireStepX lets you run through both with AI-graded feedback: so you're not winging the interview after surviving the assessment.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -695,7 +695,7 @@ const posts: BlogPost[] = [
       { question: "Does Accenture have a service bond?", answer: "Yes, Accenture has a 1-year service bond for freshers. Leaving before completion requires payment of a penalty amount as specified in your offer letter." },
     ],
     relatedSlugs: ["cognizant-interview-questions-freshers-2026", "tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers"],
-    practicePageSlugs: [{ label: "Accenture Campus Placement", slug: "Accenture Campus Placement" }, { label: "Accenture Ase Interview Questions", slug: "accenture-ase-interview-questions" }],
+    practicePageSlugs: [{ label: "Accenture Ase Interview Questions", slug: "accenture-ase-interview-questions" }],
     cta: "Accenture scores communication as heavily as aptitude. If you haven't practiced speaking your answers out loud: not writing them, saying them: you're not actually prepared. HireStepX covers the communication and HR rounds with the same AI scoring it applies to technical questions. Run a session before you go in.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -727,7 +727,7 @@ const posts: BlogPost[] = [
       { question: "Do Indian PM interviews have case studies?", answer: "Yes, most Indian product companies (Flipkart, Swiggy, Zomato, Meesho) include case studies. Amazon India is an exception: their PM interviews are almost entirely behavioral, mapped to Leadership Principles." },
       { question: "What is a good PM interview score at Flipkart?", answer: "Flipkart PM interviews are scored on product sense, analytical thinking, and communication. A 'strong hire' decision requires scoring above the bar on at least 3 of 4 dimensions. Product sense is the hardest to fake: it's built from using and thinking critically about products regularly." },
     ],
-    practicePageSlugs: [{ label: "Flipkart Pm Interview Practice", slug: "Flipkart PM Interview Practice" }, { label: "Flipkart Pm Interview Questions", slug: "flipkart-pm-interview-questions" }, { label: "Google Pm Interview Practice", slug: "Google PM Interview Practice" }, { label: "Google Pm Interview Questions", slug: "google-pm-interview-questions" }, { label: "Amazon Pm Interview Practice", slug: "Amazon PM Interview Practice" }, { label: "Amazon Pm Interview Questions", slug: "amazon-pm-interview-questions" }, { label: "Cred Pm Interview Practice", slug: "CRED PM Interview Practice" }, { label: "Cred Pm Interview Questions", slug: "cred-pm-interview-questions" }, { label: "Meesho Pm Interview Practice", slug: "Meesho PM Interview Practice" }, { label: "Meesho Pm Interview Questions", slug: "meesho-pm-interview-questions" }, { label: "Freshworks Pm Interview Practice", slug: "Freshworks PM Interview Practice" }, { label: "Freshworks Pm Interview Questions", slug: "freshworks-pm-interview-questions" }, { label: "Linkedin Pm Interview Practice", slug: "LinkedIn PM Interview Practice" }, { label: "Linkedin Pm Interview Questions", slug: "linkedin-pm-interview-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Pm Interview Questions", slug: "flipkart-pm-interview-questions" }, { label: "Google Pm Interview Questions", slug: "google-pm-interview-questions" }, { label: "Amazon Pm Interview Questions", slug: "amazon-pm-interview-questions" }, { label: "Cred Pm Interview Questions", slug: "cred-pm-interview-questions" }, { label: "Meesho Pm Interview Questions", slug: "meesho-pm-interview-questions" }, { label: "Freshworks Pm Interview Questions", slug: "freshworks-pm-interview-questions" }, { label: "Linkedin Pm Interview Questions", slug: "linkedin-pm-interview-questions" }],
     relatedSlugs: ["ace-case-study-interviews", "amazon-leadership-principles-interview", "salary-negotiation-tips-india"],
     cta: "Case interviews need a live interviewer. HireStepX's AI plays that role: it gives you the scenario, drip-feeds data when you ask, and scores your recommendation.",
     relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
@@ -759,7 +759,7 @@ const posts: BlogPost[] = [
       { question: "Can I get into Accenture without strong communication skills?", answer: "The communication round is eliminatory at Accenture. If English communication is not your strong suit, focus on HCL or Capgemini instead, build your skills there, and re-attempt product companies or Accenture for lateral hiring after 1–2 years." },
     ],
     relatedSlugs: ["accenture-interview-questions-freshers-2026", "cognizant-interview-questions-freshers-2026", "tcs-interview-questions-freshers-2026"],
-    practicePageSlugs: [{ label: "Hcl Campus Placement", slug: "HCL Campus Placement" }, { label: "Hcl Freshers Interview Questions", slug: "hcl-freshers-interview-questions" }, { label: "Accenture Campus Placement", slug: "Accenture Campus Placement" }, { label: "Accenture Ase Interview Questions", slug: "accenture-ase-interview-questions" }, { label: "Capgemini Campus Placement", slug: "Capgemini Campus Placement" }, { label: "Capgemini Freshers Interview Questions", slug: "capgemini-freshers-interview-questions" }, { label: "Ltimindtree Freshers Interview", slug: "LTIMindtree Freshers Interview" }, { label: "Ltimindtree Freshers Interview Questions", slug: "ltimindtree-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Hcl Freshers Interview Questions", slug: "hcl-freshers-interview-questions" }, { label: "Accenture Ase Interview Questions", slug: "accenture-ase-interview-questions" }, { label: "Capgemini Freshers Interview Questions", slug: "capgemini-freshers-interview-questions" }, { label: "Ltimindtree Freshers Interview Questions", slug: "ltimindtree-freshers-interview-questions" }],
     cta: "Each of these companies has a different interview personality: HCL's technical screen is lighter, Accenture's group exercise catches people off guard, Capgemini's CoCubes cut matters more than most candidates realise. HireStepX runs you through the specific rounds that trip candidates up, with AI feedback on the exact things each company's panel actually scores.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -794,7 +794,7 @@ const posts: BlogPost[] = [
       { question: "Does Deloitte hire freshers without experience?", answer: "Yes: Deloitte actively recruits from campus across Tier 1 and Tier 2 engineering and business colleges. Off-campus applications are also accepted via the Deloitte careers portal." },
     ],
     relatedSlugs: ["ace-case-study-interviews", "hcl-accenture-capgemini-interview-comparison", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Deloitte Case Study Interview", slug: "Deloitte Case Study Interview" }, { label: "Deloitte Consulting Case Interview", slug: "deloitte-consulting-case-interview" }, { label: "Mckinsey Case Study Interview", slug: "McKinsey Case Study Interview" }, { label: "Mckinsey Case Study Interview Questions", slug: "mckinsey-case-study-interview-questions" }, { label: "Deloitte Analyst Interview", slug: "Deloitte Analyst Interview" }, { label: "Deloitte Analyst Interview Questions", slug: "deloitte-analyst-interview-questions" }],
+    practicePageSlugs: [{ label: "Deloitte Consulting Case Interview", slug: "deloitte-consulting-case-interview" }, { label: "Mckinsey Case Study Interview Questions", slug: "mckinsey-case-study-interview-questions" }, { label: "Deloitte Analyst Interview Questions", slug: "deloitte-analyst-interview-questions" }],
     cta: "Most Deloitte rejections happen in the PI round, not the aptitude test: candidates know their content but can't structure a verbal answer under pressure. HireStepX puts you in that room: open-ended questions, a timer, AI feedback on whether your response actually had a point.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -824,7 +824,7 @@ const posts: BlogPost[] = [
       { question: "How do I perform well in a group discussion?", answer: "Speak 3–4 times minimum, each time with a clear point backed by a fact or example. Build on others' ideas, use the person's name when you reference their point, and avoid dominating airtime." },
       { question: "Does GD performance affect final placement chances?", answer: "Yes: GDs are eliminatory at most companies including Deloitte, Accenture, Wipro, Cognizant, and most PSUs. Typically 30–50% of candidates are eliminated at the GD stage." },
     ],
-    practicePageSlugs: [{ label: "Tcs Campus Interview Practice", slug: "TCS Campus Interview Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Practice", slug: "Infosys Campus Interview Practice" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Ibm Campus Placement Practice", slug: "IBM Campus Placement Practice" }, { label: "Ibm Campus Placement Interview Questions", slug: "ibm-campus-placement-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Ibm Campus Placement Interview Questions", slug: "ibm-campus-placement-interview-questions" }],
     relatedSlugs: ["behavioral-interview-questions-freshers", "deloitte-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
     cta: "Knowing the topic isn't the gap: articulating a coherent point in under 30 seconds, under pressure, in a room of eight strangers is. HireStepX gives you a place to practice that out loud, with feedback on whether your argument actually landed.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -853,7 +853,7 @@ const posts: BlogPost[] = [
       { question: "What happens after clearing TCS NQT?", answer: "After clearing NQT, you get an interview call (Technical + HR for most roles). TCS Ninja interviews focus on CS fundamentals and HR fit. TCS Digital interviews include a technical coding round. Clearing NQT doesn't guarantee an offer: the interview still eliminates candidates." },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "behavioral-interview-questions-freshers", "campus-placement-interview-tips"],
-    practicePageSlugs: [{ label: "Tcs Nqt 2026 Guide", slug: "TCS NQT 2026 Guide" }, { label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }, { label: "Tcs Ninja Interview", slug: "TCS Ninja Interview" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Tcs Digital Interview", slug: "TCS Digital Interview" }, { label: "Tcs Digital Interview Questions", slug: "tcs-digital-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Tcs Digital Interview Questions", slug: "tcs-digital-interview-questions" }],
     cta: "Once the NQT is behind you, the interview is where track placement gets confirmed: and TCS HR rounds are more structured than most candidates expect. HireStepX walks you through the questions TCS actually asks, with scoring on the answers that decide whether you stay on the track you qualified for.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -883,7 +883,7 @@ const posts: BlogPost[] = [
       { question: "Is Zoho a good company for freshers?", answer: "Yes: Zoho pays above average for freshers (₹5–8 LPA vs ₹3.36L at TCS), has no bond period, strong engineering culture, and hands-on work from day one. The main trade-off is that brand recognition for FAANG moves is lower than Flipkart or Razorpay." },
       { question: "How long is Zoho's interview process?", answer: "Zoho's 5-round process typically spans 1–2 days. Rounds 1–3 are tests (aptitude + programming), and Rounds 4–5 are interviews. The process can extend across 2 different days if multiple candidates are being evaluated." },
     ],
-    practicePageSlugs: [{ label: "Freshworks Sde Interview Practice", slug: "Freshworks SDE Interview Practice" }, { label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Zerodha Engineering Interview Practice", slug: "Zerodha Engineering Interview Practice" }, { label: "Zerodha Engineering Interview Questions", slug: "zerodha-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Zerodha Engineering Interview Questions", slug: "zerodha-engineering-interview-questions" }],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison", "cognizant-interview-questions-freshers-2026"],
     cta: "Zoho's technical rounds are conversational: they'll ask you to explain your code, not just write it. That's a different skill from passing an online judge, and it's one most candidates haven't practised. HireStepX runs you through that format: write something, then explain it out loud to an AI that actually evaluates the reasoning.",
     relatedLinks: [
@@ -914,7 +914,7 @@ const posts: BlogPost[] = [
       { question: "How early should I arrive for an in-person SDE interview?", answer: "Aim to arrive 15 minutes before the scheduled time. Earlier than that makes you anxious waiting; later than 5 minutes signals poor preparation." },
       { question: "What questions should I ask at the end of an interview?", answer: "Ask specific questions about the team, product, or challenges: not generic questions like 'What's the culture?' Better questions: 'What's the most challenging engineering problem the team is working on right now?' or 'How does the team decide what to prioritise each quarter?'" },
     ],
-    practicePageSlugs: [{ label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Microsoft India Sde Practice", slug: "Microsoft India SDE Practice" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Flipkart Sde Interview Practice", slug: "Flipkart SDE Interview Practice" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }],
     relatedSlugs: ["mock-interview-practice-guide", "system-design-interview-preparation", "star-method-interview-answers"],
     cta: "If you haven't done a full timed mock interview yet, do one now: not to learn new material, but to feel what the actual pressure is like before you're in it for real. HireStepX runs the full format: DSA, behavioral, system design, with feedback on where your answers stalled.",
     relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
@@ -941,7 +941,7 @@ const posts: BlogPost[] = [
       { question: "What Java version is asked in Indian interviews in 2026?", answer: "Most Indian interviews test core Java (Java 8 features are standard). Java 11 and 17 LTS features (records, sealed classes, text blocks) are asked at product companies but rarely at service IT companies." },
       { question: "Should I prepare Java or Python for TCS/Infosys interviews?", answer: "For TCS and Infosys, Java is preferred since most projects use it. For product companies, Python is increasingly accepted for DSA coding rounds. Prepare both if time allows, but be fluent in one." },
     ],
-    practicePageSlugs: [{ label: "Tcs Campus Placement Practice", slug: "TCS Campus Placement Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Practice", slug: "Infosys Campus Interview Practice" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Wipro Freshers Interview Practice", slug: "Wipro Freshers Interview Practice" }, { label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }, { label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "system-design-interview-preparation", "campus-placement-interview-tips"],
     cta: "Reading Java answers is not the same as saying them. HireStepX puts you in the mock interview format: you answer out loud, and the AI evaluates whether your explanation would satisfy a panel, not just whether the definition was technically correct.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -971,7 +971,7 @@ const posts: BlogPost[] = [
       { question: "Should I include my 10th and 12th marks on a fresher resume?", answer: "Yes for India campus placements: they're often required for ATS cutoffs at service companies. Include them until you have 2+ years of work experience, then they can be removed." },
       { question: "How long should a fresher resume be?", answer: "One page for freshers. No exceptions under 2 years of experience." },
     ],
-    practicePageSlugs: [{ label: "Tcs Campus Placement Practice", slug: "TCS Campus Placement Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Amazon Campus Placement Practice", slug: "Amazon Campus Placement Practice" }, { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" }, { label: "Ibm Campus Placement Practice", slug: "IBM Campus Placement Practice" }, { label: "Ibm Campus Placement Interview Questions", slug: "ibm-campus-placement-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" }, { label: "Ibm Campus Placement Interview Questions", slug: "ibm-campus-placement-interview-questions" }],
     relatedSlugs: ["campus-placement-interview-tips", "behavioral-interview-questions-freshers", "tcs-interview-questions-freshers-2026"],
     cta: "Your resume gets you in the room. What you say about it determines whether you leave with an offer. Most candidates can't explain their own projects as well on paper as they think they can out loud: HireStepX is where you find out, before the panel does.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -1000,7 +1000,7 @@ const posts: BlogPost[] = [
       { question: "How hard is the Zomato PM interview?", answer: "Moderately hard: harder than Ola/MakeMyTrip, slightly easier than Flipkart/Razorpay. The bar is high on product context (knowing Zomato's products deeply) and metric cases. Candidates who use generic frameworks without Zomato-specific examples are typically rejected." },
     ],
     relatedSlugs: ["swiggy-interview-questions-2026", "product-manager-interview-questions-india", "ace-case-study-interviews"],
-    practicePageSlugs: [{ label: "Zomato Product Interview", slug: "Zomato Product Interview" }, { label: "Zomato Product Interview Questions", slug: "zomato-product-interview-questions" }],
+    practicePageSlugs: [{ label: "Zomato Product Interview Questions", slug: "zomato-product-interview-questions" }],
     relatedLinks: [{ label: "Zomato Salary Guide India 2026", href: "/salary/zomato" }],
     cta: "The gap between a good PM answer and a Zomato PM answer is specificity: naming the right metrics, the right user segments, the right trade-offs for their specific context. HireStepX runs you through Zomato-specific cases and scores whether your diagnosis actually fits the product, or just fits the framework.",
   },
@@ -1025,7 +1025,7 @@ const posts: BlogPost[] = [
       { question: "Is Python good for Java-dominated interview questions in India?", answer: "Yes: Python is accepted at all major product companies (Flipkart, Amazon, Swiggy, Razorpay, Google India). For service IT companies (TCS, Infosys), Java or C++ is still the dominant choice for interviews, but Python is increasingly accepted." },
       { question: "What Python version should I prepare for interviews?", answer: "Python 3.10+ is standard. Know Python 3.7+ features (f-strings, dict ordering, walrus operator :=). Python 2 is dead: don't waste time on it." },
     ],
-    practicePageSlugs: [{ label: "Freshworks Sde Interview Practice", slug: "Freshworks SDE Interview Practice" }, { label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Microsoft India Sde Practice", slug: "Microsoft India SDE Practice" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
     relatedSlugs: ["java-interview-questions-freshers-india-2026", "data-analyst-interview-questions-india-2026", "system-design-interview-preparation"],
     cta: "Writing correct Python is one thing. Explaining why your approach is correct: out loud, under pressure, to someone who will ask a follow-up: is a different skill. HireStepX runs voice mock interviews where you narrate your reasoning, and the AI scores both the technical accuracy and how clearly you communicated it.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
@@ -1054,8 +1054,8 @@ const posts: BlogPost[] = [
       { question: "Does Goldman Sachs India hire freshers from IIT?", answer: "Yes, GS actively recruits from IIT campuses for the Analyst and Technology track. Shortlisting is highly competitive: typically top 10–15% of eligible students get interviewed. Off-campus applications are accepted via the GS careers portal but have a lower conversion rate." },
       { question: "How many rounds does Goldman Sachs India have?", answer: "Typically 5–6 rounds: HireVue screen → coding assessment → phone screen → super day (3–4 back-to-back interviews) → HR. Campus hires skip the HireVue and go directly to the coding test." },
     ],
-    relatedSlugs: ["system-design-interview-preparation", "top-10-google-interview-questions", "salary-negotiation-tips-india"],
-    practicePageSlugs: [{ label: "Goldman Sachs Engineering Interview", slug: "Goldman Sachs Engineering Interview" }, { label: "Goldman Sachs Interview Questions India", slug: "goldman-sachs-interview-questions-india" }],
+    relatedSlugs: ["goldman-sachs-india-interview-questions-2026", "system-design-interview-preparation", "salary-negotiation-tips-india"],
+    practicePageSlugs: [{ label: "Goldman Sachs Interview Questions India", slug: "goldman-sachs-interview-questions-india" }],
     cta: "GS behavioral rounds aren't a formality: they've rejected candidates who cleared every technical round. The difference is usually specificity: vague answers about 'teamwork' don't hold up when the interviewer asks a follow-up. HireStepX runs voice mock interviews where you practice articulating your reasoning under pressure, with AI feedback on both the technical substance and how clearly you made your case.",
     relatedLinks: [{ label: "Goldman Sachs Salary Guide India 2026", href: "/salary/goldman" }],
   },
@@ -1084,7 +1084,7 @@ const posts: BlogPost[] = [
       { question: "Which is better for work-life balance: product or service company India?", answer: "Service companies generally have better work-life balance: 9-to-6 schedules, limited on-call expectations. Product companies at funded startups often have higher pressure, on-call rotations, and hustle culture. FAANG India offices (Google, Amazon) are somewhere in between: high expectations but structured schedules." },
     ],
     relatedSlugs: ["salary-negotiation-tips-india", "tcs-interview-questions-freshers-2026", "system-design-interview-preparation"],
-    practicePageSlugs: [{ label: "Tcs Ninja Interview", slug: "TCS Ninja Interview" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Flipkart Sde Interview", slug: "Flipkart SDE Interview" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Razorpay Engineering Interview", slug: "Razorpay Engineering Interview" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
     cta: "The most common failure mode for service-to-product switchers isn't the DSA: it's the behavioral round. Product companies want engineers who have opinions about tradeoffs, not engineers who delivered what the spec said. HireStepX's voice mock interviews let you practice framing your service company experience in terms that resonate with Flipkart and Razorpay interviewers, with AI feedback on how you're positioning yourself.",
     relatedLinks: [
       { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
@@ -1119,7 +1119,7 @@ const posts: BlogPost[] = [
       { question: "What is the Microsoft 'As Appropriate' interviewer?", answer: "The 'As Appropriate' (AA) interviewer is a senior Microsoft engineer who participates in every final-round loop to calibrate the hiring bar. They can advocate strongly for or against a candidate. Treat them as the most important round: they carry significant weight in the hiring decision." },
     ],
     relatedSlugs: ["top-10-google-interview-questions", "system-design-interview-preparation", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Microsoft Engineering Interview", slug: "Microsoft Engineering Interview" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Microsoft Pm Interview", slug: "Microsoft PM Interview" }, { label: "Microsoft Pm Interview Questions", slug: "microsoft-pm-interview-questions" }, { label: "Microsoft Behavioral Interview", slug: "Microsoft Behavioral Interview" }, { label: "Microsoft Behavioral Interview Questions", slug: "microsoft-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Microsoft Pm Interview Questions", slug: "microsoft-pm-interview-questions" }, { label: "Microsoft Behavioral Interview Questions", slug: "microsoft-behavioral-interview-questions" }],
     relatedLinks: [{ label: "Microsoft Salary Guide India 2026", href: "/salary/microsoft" }],
     cta: "Microsoft's behavioral rounds are where unprepared candidates lose offers they could have gotten. The growth mindset questions aren't just soft questions: they're evaluated against a specific rubric. HireStepX runs voice mock interviews where you practice STAR answers out loud, and the AI flags when your answers lack the self-reflection Microsoft specifically looks for.",
   },
@@ -1148,7 +1148,7 @@ const posts: BlogPost[] = [
       { question: "Do freshers need to know window functions for SQL interviews?", answer: "For service IT companies (TCS, Infosys, Wipro): no, window functions are rarely asked. For product companies (Flipkart, Swiggy, Razorpay) data analyst or SDE-data roles: yes, ROW_NUMBER, RANK, LAG/LEAD are commonly asked. For senior SDE roles at any company: yes." },
     ],
     relatedSlugs: ["data-analyst-interview-questions-india-2026", "java-interview-questions-freshers-india-2026", "python-interview-questions-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Tcs Digital Interview", slug: "TCS Digital Interview" }, { label: "Tcs Digital Interview Questions", slug: "tcs-digital-interview-questions" }, { label: "Infosys Power Programmer", slug: "Infosys Power Programmer" }, { label: "Infosys Power Programmer Interview", slug: "infosys-power-programmer-interview" }],
+    practicePageSlugs: [{ label: "Tcs Digital Interview Questions", slug: "tcs-digital-interview-questions" }, { label: "Infosys Power Programmer Interview", slug: "infosys-power-programmer-interview" }],
     cta: "Knowing SQL and being able to explain SQL in an interview are different skills. Most candidates discover this gap after they fail a round they thought they were prepared for. HireStepX lets you practice explaining SQL concepts out loud: the AI evaluates whether your explanation of GROUP BY, JOINs, or window functions would actually convince a technical interviewer.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
   },
@@ -1181,7 +1181,7 @@ const posts: BlogPost[] = [
       { question: "How much does a fresher Python developer earn in India?", answer: "A fresher Python developer in India earns ₹3.5–6 LPA at IT service companies (TCS, Infosys, Wipro) and ₹6–10 LPA at product startups. Candidates with strong Python projects, internships at product companies, or ML/data specialisations can negotiate toward the higher end." },
     ],
     relatedSlugs: ["python-interview-questions-freshers-india-2026", "software-engineer-interview-checklist-2026", "data-analyst-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Freshworks Sde Interview Practice", slug: "Freshworks SDE Interview Practice" }, { label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
     relatedLinks: [
       { label: "Company Salary Guides India 2026", href: "/salary" },
       { label: "Google Salary Guide", href: "/salary/google" },
@@ -1216,7 +1216,7 @@ const posts: BlogPost[] = [
       { question: "Which companies pay the most for data analysts in India?", answer: "FAANG India offices (Google, Amazon, Meta) pay the highest: ₹18–35 LPA for mid-level roles. Indian unicorns (Razorpay, CRED, PhonePe, Groww) pay ₹14–28 LPA. IT service companies (TCS, Infosys, Wipro) pay ₹5–15 LPA for comparable experience." },
     ],
     relatedSlugs: ["data-analyst-interview-questions-india-2026", "python-developer-salary-india-2026", "python-interview-questions-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Phonepe Engineering Interview Practice", slug: "PhonePe Engineering Interview Practice" }, { label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }],
     relatedLinks: [
       { label: "Company Salary Guides India 2026", href: "/salary" },
       { label: "Flipkart Salary Guide", href: "/salary/flipkart" },
@@ -1250,7 +1250,7 @@ const posts: BlogPost[] = [
       { question: "What programming language should I use for TCS NQT coding section?", answer: "Python is recommended for the TCS NQT coding section due to its concise syntax and built-in data structures. Java and C++ are also accepted. The same logic in Python takes 40% fewer lines than in C." },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "campus-placement-interview-tips", "java-interview-questions-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Tcs Ninja Interview Practice", slug: "TCS Ninja Interview Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Tcs Hr Round Practice", slug: "TCS HR Round Practice" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }, { label: "Tcs Behavioral Interview Practice", slug: "TCS Behavioral Interview Practice" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }, { label: "Tcs Behavioral Interview Questions", slug: "tcs-behavioral-interview-questions" }],
     cta: "Most TCS candidates who fail the technical round knew the answers: they just couldn't explain them clearly enough under pressure. The verbal/reasoning/numerical sections of the NQT are one problem, but the technical interview after requires a completely different type of fluency: explaining OOPs, walking through code logic, answering behavioral questions without reading from a script. HireStepX lets you build that verbal fluency through voice mock interviews before you face the real round.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -1283,7 +1283,7 @@ const posts: BlogPost[] = [
       { question: "What LeetCode difficulty level does FAANG ask in India?", answer: "Google: Medium (85%) + Hard (15%). Amazon: Easy-Medium coding + behavioral LPs. Microsoft: Easy-Medium. Meta: Medium-Hard. A realistic target for FAANG India is solving 150+ medium problems and 30+ hard problems comfortably before the interview." },
     ],
     relatedSlugs: ["system-design-interview-preparation", "amazon-leadership-principles-interview", "microsoft-india-interview-questions-2026"],
-    practicePageSlugs: [{ label: "Google Engineering Interview Practice", slug: "Google Engineering Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Amazon Leadership Principles Practice", slug: "Amazon Leadership Principles Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Microsoft India Sde Practice", slug: "Microsoft India SDE Practice" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Meta Engineering Interview", slug: "Meta Engineering Interview" }, { label: "Meta Engineering Interview Questions", slug: "meta-engineering-interview-questions" }, { label: "Meta Behavioral Interview", slug: "Meta Behavioral Interview" }, { label: "Meta Behavioral Interview Questions", slug: "meta-behavioral-interview-questions" }, { label: "Netflix Engineering Interview", slug: "Netflix Engineering Interview" }, { label: "Netflix Engineering Interview Questions", slug: "netflix-engineering-interview-questions" }, { label: "Adobe Engineering Interview", slug: "Adobe Engineering Interview" }, { label: "Adobe Engineering Interview Questions", slug: "adobe-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Meta Engineering Interview Questions", slug: "meta-engineering-interview-questions" }, { label: "Meta Behavioral Interview Questions", slug: "meta-behavioral-interview-questions" }, { label: "Netflix Engineering Interview Questions", slug: "netflix-engineering-interview-questions" }, { label: "Adobe Engineering Interview Questions", slug: "adobe-engineering-interview-questions" }],
     cta: "You can spend 6 months on LeetCode and still fail a FAANG interview because you never practiced explaining your solutions out loud. HireStepX runs voice mock interviews where you talk through DSA problems, system design, and Amazon LP stories: and the AI tells you whether your communication is at the level FAANG interviewers expect, not just whether the logic is correct.",
     relatedLinks: [
       { label: "Google Salary Guide India 2026", href: "/salary/google" },
@@ -1317,7 +1317,7 @@ const posts: BlogPost[] = [
       { question: "How many rounds does Wipro have after NTH?", answer: "After clearing NTH, there are 2 rounds: Technical Round (OOPs, DBMS, OS, 1 coding question) and HR Round (behavioral fit, location preference). Both are usually conducted in the same day for off-campus candidates." },
     ],
     relatedSlugs: ["wipro-interview-questions-answers", "campus-placement-interview-tips", "java-interview-questions-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Wipro Freshers Interview Practice", slug: "Wipro Freshers Interview Practice" }, { label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }, { label: "Wipro Behavioral Interview Practice", slug: "Wipro Behavioral Interview Practice" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }, { label: "Wipro Nlth Preparation 2026", slug: "Wipro NLTH Preparation 2026" }, { label: "Wipro Nlth Preparation 2026", slug: "wipro-nlth-preparation-2026" }],
+    practicePageSlugs: [{ label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }, { label: "Wipro Nlth Preparation 2026", slug: "wipro-nlth-preparation-2026" }],
     cta: "The Wipro HR round eliminates candidates who sound rehearsed in a bad way: scripted, flat, or unable to handle a follow-up question. HireStepX runs voice mock interviews where you practice HR and behavioral answers out loud, and the AI tells you where your answers sound generic or where your STAR structure breaks down. 20 minutes of this is worth more than re-reading the 'top 20 HR questions' list a fifth time.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -1350,7 +1350,7 @@ const posts: BlogPost[] = [
       { question: "Which companies pay the most for React developers in India?", answer: "FAANG India (Google, Amazon, Microsoft) pay the highest: ₹28–55 LPA for mid-senior React engineers. Indian unicorns (Razorpay, CRED, PhonePe) pay ₹20–40 LPA. IT service companies pay ₹6–18 LPA for comparable experience." },
     ],
     relatedSlugs: ["frontend-developer-interview-questions-india-2026", "python-developer-salary-india-2026", "software-engineer-interview-checklist-2026"],
-    practicePageSlugs: [{ label: "Flipkart Sde Interview Practice", slug: "Flipkart SDE Interview Practice" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Freshworks Sde Interview Practice", slug: "Freshworks SDE Interview Practice" }, { label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }],
     relatedLinks: [
       { label: "Company Salary Guides India 2026", href: "/salary" },
       { label: "Flipkart Salary Guide", href: "/salary/flipkart" },
@@ -1413,7 +1413,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["goldman-sachs-india-interview-questions", "system-design-interview-preparation", "salary-negotiation-tips-india"],
-    practicePageSlugs: [{ label: "Jp Morgan Interview Practice", slug: "JP Morgan Interview Practice" }, { label: "Jpmorgan Interview Questions India", slug: "jpmorgan-interview-questions-india" }],
+    practicePageSlugs: [{ label: "Jpmorgan Interview Questions India", slug: "jpmorgan-interview-questions-india" }],
     cta: "JP Morgan's behavioral rounds use their own competency framework, not the standard STAR template most candidates practice. HireStepX runs voice mock interviews where you practice the specific competencies JPM looks for: ownership, judgment under uncertainty, and influence without authority: and the AI tells you whether your answers would score well or sound generic.",
     relatedLinks: [{ label: "JP Morgan (JPMC) Salary Guide India 2026", href: "/salary/jpmc" }],
   },
@@ -1473,7 +1473,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["salary-negotiation-tips-india", "product-manager-salary-india-2026", "system-design-interview-preparation"],
-    practicePageSlugs: [{ label: "Startup Sde Interview Practice", slug: "Startup SDE Interview Practice" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }, { label: "Mnc Technical Interview Practice", slug: "MNC Technical Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Oyo Engineering Interview", slug: "OYO Engineering Interview" }, { label: "Oyo Engineering Interview Questions", slug: "oyo-engineering-interview-questions" }, { label: "Meesho Engineering Interview", slug: "Meesho Engineering Interview" }, { label: "Meesho Engineering Interview Questions", slug: "meesho-engineering-interview-questions" }, { label: "Cred Engineering Interview", slug: "CRED Engineering Interview" }, { label: "Cred Engineering Interview Questions", slug: "cred-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }, { label: "Oyo Engineering Interview Questions", slug: "oyo-engineering-interview-questions" }, { label: "Meesho Engineering Interview Questions", slug: "meesho-engineering-interview-questions" }, { label: "Cred Engineering Interview Questions", slug: "cred-engineering-interview-questions" }],
     cta: "Switching from a service IT background to a product company? The behavioral bar is higher than most people expect: product companies probe for ownership and impact more deeply than service IT rounds do. HireStepX gives you voice mock interviews with STAR scoring so you can find your weak spots before the actual interview does.",
     relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
@@ -1535,7 +1535,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["startup-vs-mnc-india-career", "salary-negotiation-tips-india", "campus-placement-interview-tips"],
-    practicePageSlugs: [{ label: "Fresher Sde Interview Practice", slug: "Fresher SDE Interview Practice" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Hr Interview Practice For Freshers", slug: "HR Interview Practice for Freshers" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
     cta: "If you're targeting a product company for your first role, the behavioral round is harder than most freshers expect. HireStepX gives you voice mock interviews with real-time STAR scoring: practice until the structure comes naturally, not something you're building mid-answer under pressure.",
     relatedLinks: [
       { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
@@ -1594,7 +1594,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Ibm Sde Interview Practice", slug: "IBM SDE Interview Practice" }, { label: "Ibm Freshers Interview Questions", slug: "ibm-freshers-interview-questions" }, { label: "Ibm Gbs Consultant Interview", slug: "IBM GBS Consultant Interview" }, { label: "Ibm Consultant Interview Questions", slug: "ibm-consultant-interview-questions" }],
+    practicePageSlugs: [{ label: "Ibm Freshers Interview Questions", slug: "ibm-freshers-interview-questions" }, { label: "Ibm Consultant Interview Questions", slug: "ibm-consultant-interview-questions" }],
     cta: "IBM's behavioral round is the round most candidates are least prepared for, because it's not just STAR: it's STAR answers that explicitly demonstrate IBM's three values. Generic 'I worked hard and delivered results' answers score poorly. HireStepX lets you practice these answers out loud and get specific feedback on whether your answer demonstrates the ownership, innovation, or trust that IBM is actually looking for.",
     relatedLinks: [{ label: "IBM Salary Guide India 2026", href: "/salary/ibm" }],
   },
@@ -1654,7 +1654,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["system-design-interview-preparation", "faang-interview-preparation-india-2026", "star-method-interview-answers"],
-    practicePageSlugs: [{ label: "Dsa Mock Interview Practice", slug: "DSA Mock Interview Practice" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "System Design Interview Practice", slug: "System Design Interview Practice" }, { label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
+    practicePageSlugs: [{ label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }, { label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
     cta: "DSA is only half the interview. The other half is explaining your thinking out loud, under pressure, to a real person. HireStepX gives you voice practice where the AI scores not just what you say but how clearly and confidently you say it. Most candidates underestimate this gap until they're in the room.",
     relatedLinks: [
       { label: "Google Salary Guide India 2026", href: "/salary/google" },
@@ -1717,7 +1717,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["startup-vs-mnc-india-career", "zomato-product-manager-interview-2026", "salary-negotiation-tips-india"],
-    practicePageSlugs: [{ label: "Pm Interview Practice", slug: "PM Interview Practice" }, { label: "Google Pm Interview Questions", slug: "google-pm-interview-questions" }, { label: "Apm Interview Practice", slug: "APM Interview Practice" }, { label: "Amazon Pm Interview Questions", slug: "amazon-pm-interview-questions" }],
+    practicePageSlugs: [{ label: "Google Pm Interview Questions", slug: "google-pm-interview-questions" }, { label: "Amazon Pm Interview Questions", slug: "amazon-pm-interview-questions" }],
     relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
     cta: "PM and APM interviews are different from SDE interviews in ways that catch people off-guard: product case studies, prioritisation frameworks, and behavioral questions that probe judgment more than structure. If you've never done a product case out loud under time pressure, do it before the real interview. HireStepX gives you voice practice with real-time STAR feedback.",
   },
@@ -1773,7 +1773,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["system-design-interview-preparation", "startup-vs-mnc-india-career", "amazon-leadership-principles-interview"],
-    practicePageSlugs: [{ label: "Engineering Manager Interview Practice", slug: "Engineering Manager Interview Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Leadership Behavioral Interview Practice", slug: "Leadership Behavioral Interview Practice" }, { label: "Amazon Sde Leadership Principles Interview", slug: "amazon-sde-leadership-principles-interview" }],
+    practicePageSlugs: [{ label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }, { label: "Amazon Sde Leadership Principles Interview", slug: "amazon-sde-leadership-principles-interview" }],
     cta: "EM behavioral questions are harder than SDE behavioral questions because the right answers are less formulaic. 'Tell me about a time you managed an underperformer' has no clean STAR template: it requires you to demonstrate judgment about timing, directness, and what accountability actually looks like. HireStepX runs voice mock interviews for EM rounds where the AI evaluates whether your people management answers sound experienced and specific, or vague and theoretical.",
     relatedLinks: [{ label: "Google Salary Guide India 2026", href: "/salary/google" }],
   },
@@ -1825,7 +1825,7 @@ const posts: BlogPost[] = [
       { question: "How soon does Capgemini release the offer letter after campus drives?", answer: "Typically 4 to 12 weeks after the final HR round, depending on the batch size and intake cycle. Capgemini runs large-volume hiring drives and offer-letter timelines can stretch in years with high campus intake. Keep your offer communication email active and follow up through your campus TnP office if the wait exceeds 8 weeks." },
     ],
     relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-elite-nlth-preparation-2026", "hcl-accenture-capgemini-interview-comparison"],
-    practicePageSlugs: [{ label: "Capgemini Fresher Interview Practice", slug: "Capgemini Fresher Interview Practice" }, { label: "Capgemini Freshers Interview Questions", slug: "capgemini-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Capgemini Freshers Interview Questions", slug: "capgemini-freshers-interview-questions" }],
     cta: "Knowing what Capgemini tests is half the preparation. The other half is practicing under the same pressure conditions: timed questions, voice responses for the HR round, and an AI that evaluates whether your technical answers are precise enough to pass a real technical interviewer. HireStepX runs mock sessions that mirror the Capgemini technical and HR rounds, with feedback on answer depth and delivery.",
     relatedLinks: [
       { label: "Campus Placement Guide India 2026", href: "/for-students" },
@@ -1869,7 +1869,7 @@ const posts: BlogPost[] = [
       { question: "Does LTIMindtree hire off-campus freshers?", answer: "Yes. LTIMindtree runs both on-campus drives at engineering colleges and off-campus recruitment programs. Off-campus applicants go through the same online assessment and interview stages. Monitor the LTIMindtree careers portal and their official LinkedIn page for off-campus drive announcements." },
     ],
     relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-elite-nlth-preparation-2026", "dsa-60-day-preparation-plan"],
-    practicePageSlugs: [{ label: "Ltimindtree Fresher Interview Practice", slug: "LTIMindtree Fresher Interview Practice" }, { label: "Ltimindtree Freshers Interview Questions", slug: "ltimindtree-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Ltimindtree Freshers Interview Questions", slug: "ltimindtree-freshers-interview-questions" }],
     cta: "Three coding problems under time pressure is a different skill from knowing the theory. HireStepX runs timed mock coding assessments with AI feedback on your approach, time complexity, and edge-case handling: the same dimensions that distinguish shortlisted candidates from those who pass aptitude but fail the coding section.",
     relatedLinks: [
       { label: "Campus Placement Guide India 2026", href: "/for-students" },
@@ -1915,7 +1915,7 @@ const posts: BlogPost[] = [
       { question: "Is Freshworks a good company for engineers early in their career?", answer: "Freshworks is well-regarded for engineering quality, product exposure, and compensation relative to Indian product companies. The B2B SaaS context: building for business customers rather than consumers: provides a different engineering perspective and is strong for engineers interested in enterprise software, API design, and reliability engineering." },
     ],
     relatedSlugs: ["faang-interview-preparation-india-2026", "system-design-interview-preparation", "software-engineer-interview-checklist-2026"],
-    practicePageSlugs: [{ label: "Freshworks Sde Interview Practice", slug: "Freshworks SDE Interview Practice" }, { label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Freshworks Pm Interview Practice", slug: "Freshworks PM Interview Practice" }, { label: "Freshworks Pm Interview Questions", slug: "freshworks-pm-interview-questions" }],
+    practicePageSlugs: [{ label: "Freshworks Sde Interview Questions", slug: "freshworks-sde-interview-questions" }, { label: "Freshworks Pm Interview Questions", slug: "freshworks-pm-interview-questions" }],
     cta: "Explaining B2B SaaS system design under interview pressure is a skill that requires practice, not just reading. HireStepX runs mock Freshworks-style rounds: live DSA with code quality feedback, system design walkthroughs where the AI plays a skeptical customer success manager asking follow-up questions, and behavioral sessions focused on product empathy.",
     relatedLinks: [
       { label: "Freshworks Salary Guide India 2026", href: "/salary/freshworks" },
@@ -1969,7 +1969,7 @@ const posts: BlogPost[] = [
       { question: "Where is PhonePe's engineering team based?", answer: "PhonePe's engineering team is primarily based in Bengaluru. Most SDE roles require Bengaluru-based presence. Some senior roles offer flexibility, but entry and junior roles are predominantly office-based in Bengaluru." },
     ],
     relatedSlugs: ["faang-interview-preparation-india-2026", "system-design-interview-preparation", "dsa-60-day-preparation-plan"],
-    practicePageSlugs: [{ label: "Phonepe Engineering Interview Practice", slug: "PhonePe Engineering Interview Practice" }, { label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }, { label: "Phonepe Behavioral Interview Practice", slug: "PhonePe Behavioral Interview Practice" }, { label: "Phonepe Behavioral Interview Questions", slug: "phonepe-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Phonepe Engineering Interview Questions", slug: "phonepe-engineering-interview-questions" }, { label: "Phonepe Behavioral Interview Questions", slug: "phonepe-behavioral-interview-questions" }],
     cta: "Understanding PhonePe's scale is different from being able to design for it under interview pressure. HireStepX runs mock PhonePe-style system design rounds with India-scale payment constraints: the AI plays the interviewer, pushes on your trade-offs, and asks follow-up questions about failure scenarios and cost efficiency.",
     relatedLinks: [
       { label: "PhonePe Salary Guide India 2026", href: "/salary/phonepe" },
@@ -2028,7 +2028,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "infosys-interview-questions-2026"],
-    practicePageSlugs: [{ label: "Tech Mahindra Sde Interview Practice", slug: "Tech Mahindra SDE Interview Practice" }, { label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }],
+    practicePageSlugs: [{ label: "Wipro Behavioral Interview Questions", slug: "wipro-behavioral-interview-questions" }],
     cta: "Tech Mahindra's aptitude test filters 40–50% of applicants before the technical round. HireStepX includes mock aptitude rounds followed by a full technical interview simulation: so you practice the entire loop, not just coding, before your actual drive.",
     relatedLinks: [
       { label: "Tech Mahindra Salary Guide India 2026", href: "/salary/techmahindra" },
@@ -2083,7 +2083,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tech-mahindra-interview-questions", "cognizant-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
-    practicePageSlugs: [{ label: "Mphasis Sde Interview Practice", slug: "Mphasis SDE Interview Practice" }, { label: "Ibm Freshers Interview Questions", slug: "ibm-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Ibm Freshers Interview Questions", slug: "ibm-freshers-interview-questions" }],
     cta: "Mphasis's BFSI-focused technical rounds test SQL and data analysis more than most IT services interviews. HireStepX lets you practice these SQL-heavy technical rounds with real banking domain scenarios: explaining your approach out loud to an AI interviewer and getting instant feedback on both accuracy and communication clarity.",
     relatedLinks: [
       { label: "Mphasis Salary Guide India 2026", href: "/salary/mphasis" },
@@ -2142,7 +2142,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "resume-tips-freshers-india-2026"],
-    practicePageSlugs: [{ label: "It Services Interview Practice", slug: "IT Services Interview Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
     cta: "Off-campus candidates don't get college placement cell mock interviews. HireStepX fills that gap: voice-based mock interviews tailored to the company and role you're targeting, with STAR-scored feedback on every answer so you walk into your first actual interview having already practiced the same questions multiple times.",
     relatedLinks: [
       { label: "TCS Interview Questions 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
@@ -2255,7 +2255,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["razorpay-interview-experience", "phonepe-interview-questions-india-2026", "salary-negotiation-tips-india"],
-    practicePageSlugs: [{ label: "Fintech Sde Interview Practice", slug: "Fintech SDE Interview Practice" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
     cta: "Paytm interviews test payment domain knowledge alongside standard DSA and system design. HireStepX's fintech interview mode frames coding and system design questions in payment contexts: UPI flows, idempotency, fraud detection: so you're practicing what Paytm actually asks, not generic LeetCode problems.",
     relatedLinks: [
       { label: "Razorpay Interview Experience 2026", href: "/blog/razorpay-interview-experience" },
@@ -2314,7 +2314,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["razorpay-interview-experience", "system-design-interview-preparation", "faang-interview-preparation-india-2026"],
-    practicePageSlugs: [{ label: "Fintech Sde Hard Interview Practice", slug: "Fintech SDE Hard Interview Practice" }, { label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Razorpay Engineering Interview Questions", slug: "razorpay-engineering-interview-questions" }],
     cta: "CRED's interview bar requires you to articulate complex system design decisions out loud under pressure: not just write code. HireStepX's voice-based mock interviews force you to explain your reasoning in real time, the same way CRED interviewers assess problem decomposition. Practice the credit domain system design questions specifically before your CRED round.",
     relatedLinks: [
       { label: "CRED Salary Guide India 2026", href: "/salary/cred" },
@@ -2373,7 +2373,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["faang-interview-preparation-india-2026", "product-company-vs-service-company-india-career", "dsa-60-day-preparation-plan"],
-    practicePageSlugs: [{ label: "Faang Sde Interview Practice", slug: "FAANG SDE Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
     cta: "Getting into FAANG India or a Tier-1 Indian product company requires the same DSA and system design skills the interview tests: and the ability to explain your thinking out loud under time pressure. HireStepX runs voice-based mock interviews at the exact difficulty level of FAANG India coding and behavioral rounds, with detailed feedback after each answer.",
     relatedLinks: [
       { label: "FAANG Interview Preparation 2026", href: "/blog/faang-interview-preparation-india-2026" },
@@ -2432,7 +2432,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "off-campus-placement-guide-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Campus Placement Mock Interview", slug: "Campus Placement Mock Interview" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
     cta: "Aptitude clears the first filter: but the interview round is where HireStepX helps. Once you've passed the aptitude test at TCS, Infosys, or Wipro, practice your technical and HR rounds with voice-based AI mock interviews that score your answers using the same STAR framework your interviewers are trained on.",
     relatedLinks: [
       { label: "TCS Interview Questions 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
@@ -2491,7 +2491,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["java-interview-questions-freshers-india-2026", "python-interview-questions-freshers-india-2026", "dsa-60-day-preparation-plan"],
-    practicePageSlugs: [{ label: "Technical Interview Practice", slug: "Technical Interview Practice" }, { label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Ninja Interview Questions", slug: "tcs-ninja-interview-questions" }],
     cta: "C++ technical rounds test both code correctness and your ability to explain memory management and OOP design decisions out loud. HireStepX's voice-based technical interview practice is specifically useful here: explaining why you chose a shared_ptr over a raw pointer, or why you used a map vs an unordered_map, is a skill you build by saying it, not just by knowing it.",
     relatedLinks: [
       { label: "Java Interview Questions Freshers 2026", href: "/blog/java-interview-questions-freshers-india-2026" },
@@ -2664,7 +2664,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["cred-interview-questions-india-2026", "paytm-interview-questions-india-2026", "backend-developer-salary-india-2026"],
-    practicePageSlugs: [{ label: "Fintech Interview Practice", slug: "Fintech Interview Practice" }, { label: "Zerodha Engineering Interview Questions", slug: "zerodha-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Zerodha Engineering Interview Questions", slug: "zerodha-engineering-interview-questions" }],
     cta: "Groww's fintech interview tests both technical depth and financial domain understanding. HireStepX's voice mock interviews let you practice the behavioural rounds that often decide between candidates with similar DSA scores: the 'tell me about a time you built something users loved' questions that most engineers underprepare for.",
     relatedLinks: [
       { label: "CRED Interview Questions 2026", href: "/blog/cred-interview-questions-india-2026" },
@@ -2774,7 +2774,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["groww-interview-questions-india-2026", "data-analyst-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "E Commerce Pm Interview Practice", slug: "E-commerce PM Interview Practice" }, { label: "Flipkart Pm Interview Questions", slug: "flipkart-pm-interview-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Pm Interview Questions", slug: "flipkart-pm-interview-questions" }],
     cta: "Nykaa's PM and SDE interviews test both domain awareness and structured communication. HireStepX's voice-based mock interviews help you practise the product case study format out loud: the skill that separates candidates who know the framework from those who can apply it fluently under pressure.",
     relatedLinks: [
       { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
@@ -2829,7 +2829,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["groww-interview-questions-india-2026", "nykaa-interview-questions-india-2026", "backend-developer-salary-india-2026"],
-    practicePageSlugs: [{ label: "System Design Mock Interview", slug: "System Design Mock Interview" }, { label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
+    practicePageSlugs: [{ label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
     cta: "Ola's ride-hailing system design questions test whether you can reason about geospatial indexing, real-time matching, and pricing algorithms under interview pressure. HireStepX's voice mock interviews let you practice articulating system design trade-offs out loud: the skill that determines whether your architecture knowledge translates to a hire decision.",
     relatedLinks: [
       { label: "Groww Interview Questions 2026", href: "/blog/groww-interview-questions-india-2026" },
@@ -2892,7 +2892,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["salary-negotiation-tips-india", "star-method-interview-answers"],
-    practicePageSlugs: [{ label: "Hr Round Mock Interview", slug: "HR Round Mock Interview" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
+    practicePageSlugs: [{ label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
     cta: "HR rounds are won or lost on how confidently and coherently you speak: not just what you say. HireStepX's voice-based AI mock interviews simulate the entire HR round, give you real-time feedback on your answer structure, and score your responses on the same STAR framework your interviewers use. Practice 3 HR rounds before your real interview.",
     relatedLinks: [
       { label: "Salary Negotiation Tips India 2026", href: "/blog/salary-negotiation-tips-india" },
@@ -3006,7 +3006,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "star-method-interview-answers"],
-    practicePageSlugs: [{ label: "Hr Round Mock Interview", slug: "HR Round Mock Interview" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
+    practicePageSlugs: [{ label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
     cta: "Knowing what to say is only half the battle: delivering it confidently under interview pressure is the other half. HireStepX lets you practice 'tell me about yourself' with voice AI that scores your answer on structure, specificity, and confidence, then gives you a coached model answer to compare yours against. Do 5 practice rounds before your interview.",
     relatedLinks: [
       { label: "HR Interview Questions India 2026", href: "/blog/hr-interview-questions-india-2026" },
@@ -3183,7 +3183,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "tell-me-about-yourself-answer-fresher-india-2026"],
-    practicePageSlugs: [{ label: "Hr Round Mock Interview", slug: "HR Round Mock Interview" }, { label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
+    practicePageSlugs: [{ label: "Tcs Hr Round Questions", slug: "tcs-hr-round-questions" }],
     cta: "Knowing the right answer structure is one thing: delivering it fluently when a senior HR manager is staring at you is another. HireStepX lets you practice 'why do you want to join us' with voice AI that scores your answer on specificity, relevance, and delivery. Build the habit before the real interview.",
     relatedLinks: [
       { label: "HR Interview Questions India 2026", href: "/blog/hr-interview-questions-india-2026" },
@@ -3238,7 +3238,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["zomato-interview-questions-india-2026", "nykaa-interview-questions-india-2026", "full-stack-developer-salary-india-2026"],
-    practicePageSlugs: [{ label: "Social Commerce Interview Practice", slug: "Social Commerce Interview Practice" }, { label: "Meesho Engineering Interview Questions", slug: "meesho-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Meesho Engineering Interview Questions", slug: "meesho-engineering-interview-questions" }],
     cta: "Meesho's behavioural interviews test whether you think about users: specifically Tier-2 India sellers who are not like you. Interviewers probe empathy and product intuition alongside technical skill. HireStepX's voice interview practice helps you develop the habit of grounding technical answers in user outcomes.",
     relatedLinks: [
       { label: "Zomato Interview Questions 2026", href: "/blog/zomato-interview-questions-india-2026" },
@@ -3356,7 +3356,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["full-stack-developer-salary-india-2026", "react-developer-salary-india-2026"],
-    practicePageSlugs: [{ label: "Common Hr Interview Practice", slug: "Common HR Interview Practice" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "JavaScript technical interviews test both knowledge and verbal explanation: can you explain what a closure is clearly, not just write one? HireStepX's voice mock interviews train you to articulate technical concepts under pressure, the skill that converts good knowledge into strong interview performance.",
     relatedLinks: [
       { label: "Full Stack Developer Salary India 2026", href: "/blog/full-stack-developer-salary-india-2026" },
@@ -3411,7 +3411,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "resignation-letter-format-india-2026", "salary-negotiation-tips-india"],
-    practicePageSlugs: [{ label: "Hr Round Mock Interview", slug: "HR Round Mock Interview" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "Explaining a career gap confidently requires practice: the words sound different out loud than they do in your head. HireStepX's voice AI lets you rehearse the gap explanation until the delivery is natural and the structure is automatic, so when the real question comes, you're ready.",
     relatedLinks: [
       { label: "HR Interview Questions India 2026", href: "/blog/hr-interview-questions-india-2026" },
@@ -3470,7 +3470,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["full-stack-developer-salary-india-2026", "javascript-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "System Design Interview Practice", slug: "System Design Interview Practice" }, { label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
+    practicePageSlugs: [{ label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
     cta: "System design is a verbal skill: you need to explain your thinking clearly under time pressure, respond to challenges without becoming defensive, and guide the conversation toward the strongest parts of your design. HireStepX's AI interviewer simulates the back-and-forth of a real system design round so you practice the conversation, not just the diagrams.",
     relatedLinks: [
       { label: "JavaScript Interview Questions India 2026", href: "/blog/javascript-interview-questions-india-2026" },
@@ -3529,7 +3529,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "aptitude-questions-it-companies-india-2026", "off-campus-placement-guide-freshers-india-2026"],
-    practicePageSlugs: [{ label: "Tcs Interview Practice", slug: "TCS Interview Practice" }, { label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }],
+    practicePageSlugs: [{ label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }],
     cta: "TCS NQT clears the aptitude gate: but the technical and HR rounds after that are where prepared candidates stand out. HireStepX gives you a voice-based mock for the TCS technical round (OOP, DBMS, resume project questions) so you're ready for both halves of the process.",
     relatedLinks: [
       { label: "TCS Interview Questions India 2026", href: "/blog/tcs-interview-questions-india-2026" },
@@ -3588,7 +3588,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["accenture-interview-questions-india-2026", "tcs-nqt-preparation-guide-india-2026", "hr-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Wipro Technical Interview Practice", slug: "Wipro Technical Interview Practice" }, { label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Wipro Freshers Interview Questions", slug: "wipro-freshers-interview-questions" }],
     cta: "Wipro's technical and HR rounds test both your CS fundamentals and your ability to articulate clearly under pressure. HireStepX's voice mock interviews simulate the exact format: you speak your answers to OOP questions, SQL explanations, and HR scenarios, and receive scored feedback on structure, content accuracy, and communication quality.",
     relatedLinks: [
       { label: "Accenture Interview Questions India 2026", href: "/blog/accenture-interview-questions-india-2026" },
@@ -3647,7 +3647,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-nqt-preparation-guide-india-2026", "wipro-interview-questions-india-2026", "accenture-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Infosys Technical Interview Practice", slug: "Infosys Technical Interview Practice" }, { label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }],
+    practicePageSlugs: [{ label: "Infosys Campus Interview Questions", slug: "infosys-campus-interview-questions" }],
     cta: "Infosys's HR round probes motivation and behavioural fit more deeply than most IT services companies: and most candidates give generic answers. HireStepX's voice AI gives you a realistic HR mock with scored feedback on STAR structure, specificity, and how convincing your 'why Infosys' sounds before you're in the real room.",
     relatedLinks: [
       { label: "TCS NQT Preparation Guide 2026", href: "/blog/tcs-nqt-preparation-guide-india-2026" },
@@ -3706,7 +3706,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "off-campus-placement-guide-freshers-india-2026", "career-gap-explanation-interview-india-2026"],
-    practicePageSlugs: [{ label: "Fresher Hr Interview Practice", slug: "Fresher HR Interview Practice" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "A strong resume gets you to the interview. Once you're there, the preparation shifts to spoken communication: how you tell the story of your projects, answer HR questions, and handle technical probing. HireStepX gives freshers a safe space to practice both the technical and HR sides of the interview before the real one.",
     relatedLinks: [
       { label: "HR Interview Questions India 2026", href: "/blog/hr-interview-questions-india-2026" },
@@ -3765,7 +3765,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["hr-interview-questions-india-2026", "tell-me-about-yourself-best-answer", "career-gap-explanation-interview-india-2026"],
-    practicePageSlugs: [{ label: "Hr Behavioural Interview Practice", slug: "HR Behavioural Interview Practice" }, { label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Common Hr Interview Questions Freshers India", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "STAR answers sound very different when you speak them versus when you read them. A story that feels complete on paper often runs too long, loses structure, or sounds rehearsed under real interview pressure. HireStepX's voice AI evaluates your STAR answers in real-time: scoring structure, specificity, and the strength of your Result: so you can refine each story before the actual interview.",
     relatedLinks: [
       { label: "HR Interview Questions India 2026", href: "/blog/hr-interview-questions-india-2026" },
@@ -3820,7 +3820,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["wipro-interview-questions-india-2026", "infosys-interview-questions-india-2026", "accenture-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Cognizant Technical Interview Practice", slug: "Cognizant Technical Interview Practice" }, { label: "Cognizant Genc Interview Questions", slug: "cognizant-genc-interview-questions" }],
+    practicePageSlugs: [{ label: "Cognizant Genc Interview Questions", slug: "cognizant-genc-interview-questions" }],
     cta: "Cognizant's HR round specifically probes your motivation and shift/relocation flexibility: answers that feel rehearsed or evasive reduce your chances even if your technical performance was strong. HireStepX's voice mock interviews train you on exactly these questions: 'why Cognizant', 'are you comfortable with night shifts', 'how do you handle working with global clients': so the real conversation feels natural.",
     relatedLinks: [
       { label: "Wipro Interview Questions India 2026", href: "/blog/wipro-interview-questions-india-2026" },
@@ -3879,7 +3879,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "star-method-interview-answers-india-2026", "flipkart-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Amazon Interview Practice", slug: "Amazon Interview Practice" }, { label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }],
+    practicePageSlugs: [{ label: "Amazon Leadership Principles Interview", slug: "amazon-leadership-principles-interview" }],
     cta: "Amazon's Leadership Principles rounds are where Indian candidates most often stumble: the DSA preparation is familiar, but the LP interview requires structured STAR stories that demonstrate specific Amazon values. HireStepX's voice AI simulates both the LP and coding rounds, scoring your answers on LP alignment, STAR structure, and technical communication.",
     relatedLinks: [
       { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
@@ -3938,7 +3938,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "java-interview-questions-india-2026", "python-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Dsa Coding Interview Practice", slug: "DSA Coding Interview Practice" }, { label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
+    practicePageSlugs: [{ label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
     cta: "DSA knowledge and interview performance are not the same thing: you can solve a problem at your desk and freeze when explaining your approach to an interviewer. HireStepX's voice mock interviews train you to think out loud and structure your verbal explanation while coding, the skill that separates candidates who pass from those who know the material but can't demonstrate it.",
     relatedLinks: [
       { label: "System Design Interview Questions India 2026", href: "/blog/system-design-interview-questions-india-2026" },
@@ -3993,7 +3993,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["wipro-interview-questions-india-2026", "cognizant-interview-questions-india-2026", "infosys-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Hcl Technical Interview Practice", slug: "HCL Technical Interview Practice" }, { label: "Hcl Freshers Interview Questions", slug: "hcl-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Hcl Freshers Interview Questions", slug: "hcl-freshers-interview-questions" }],
     cta: "HCL's technical interview focuses on fundamentals: OOP, data structures, SQL, and a live coding problem: and the HR round assesses cultural fit and flexibility. HireStepX's voice mock interviews cover both: practice explaining C/Java concepts out loud under time pressure, and rehearse your 'why HCL' and location/shift answers before the real conversation.",
     relatedLinks: [
       { label: "Wipro Interview Questions India 2026", href: "/blog/wipro-interview-questions-india-2026" },
@@ -4052,7 +4052,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["amazon-interview-questions-india-2026", "system-design-interview-questions-india-2026", "dsa-interview-preparation-guide-india-2026"],
-    practicePageSlugs: [{ label: "Google Interview Practice", slug: "Google Interview Practice" }, { label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
+    practicePageSlugs: [{ label: "Google India Engineering Interview Questions", slug: "google-india-engineering-interview-questions" }],
     cta: "Google's Googleyness round is often where Indian engineers underperform: the DSA preparation is solid but the verbal articulation of collaboration, leadership, and impact stories is weaker. HireStepX's voice mock interviews help you build and rehearse the exact kind of specific, evidence-based answers that Google's behavioural interviewers probe for.",
     relatedLinks: [
       { label: "Amazon Interview Questions India 2026", href: "/blog/amazon-interview-questions-india-2026" },
@@ -4111,7 +4111,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["google-interview-questions-india-2026", "amazon-interview-questions-india-2026", "system-design-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Microsoft Interview Practice", slug: "Microsoft Interview Practice" }, { label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }],
+    practicePageSlugs: [{ label: "Microsoft India Sde Interview Questions", slug: "microsoft-india-sde-interview-questions" }],
     cta: "Microsoft's 'As Delivered' culture round catches many technically strong candidates off-guard: the Growth Mindset framework requires specific, evidence-based stories about learning and collaboration that most candidates haven't rehearsed. HireStepX's voice mock interviews specifically cover these questions so you're prepared for both the technical and cultural dimensions of the Microsoft loop.",
     relatedLinks: [
       { label: "Google Interview Questions India 2026", href: "/blog/google-interview-questions-india-2026" },
@@ -4166,7 +4166,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["amazon-interview-questions-india-2026", "system-design-interview-questions-india-2026", "dsa-interview-preparation-guide-india-2026"],
-    practicePageSlugs: [{ label: "Flipkart Interview Practice", slug: "Flipkart Interview Practice" }, { label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }],
+    practicePageSlugs: [{ label: "Flipkart Sde Interview Questions", slug: "flipkart-sde-interview-questions" }],
     cta: "Flipkart's technical rounds move fast and expect you to communicate your approach clearly before coding: silent coding without narrating your thinking is marked down. HireStepX's voice mock interviews train you to verbalise your DSA reasoning in real time, building the communication habit that Flipkart's interviewers specifically reward.",
     relatedLinks: [
       { label: "Amazon Interview Questions India 2026", href: "/blog/amazon-interview-questions-india-2026" },
@@ -4225,7 +4225,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["dsa-interview-preparation-guide-india-2026", "google-interview-questions-india-2026", "amazon-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Dsa Interview Practice", slug: "DSA Interview Practice" }, { label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
+    practicePageSlugs: [{ label: "Amazon System Design Interview Questions", slug: "amazon-system-design-interview-questions" }],
     cta: "LeetCode problems tell you whether your code is correct: they don't tell you whether your communication, pacing, and explanation would pass an actual interview. HireStepX's voice mock interviews simulate the real interview dynamic: you narrate your approach, explain complexity, handle edge cases under time pressure, and get feedback on both correctness and communication.",
     relatedLinks: [
       { label: "DSA Interview Preparation Guide India 2026", href: "/blog/dsa-interview-preparation-guide-india-2026" },
@@ -4284,7 +4284,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["star-method-interview-answers", "dsa-interview-preparation-guide-india-2026", "amazon-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "General Interview Practice", slug: "General Interview Practice" }, { label: "Hr Interview Questions", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Hr Interview Questions", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "The biggest gap in most Indian candidates' interview preparation is not knowing what they sound like: they prepare technical answers in their head but never speak them under pressure. HireStepX's voice mock interviews simulate the entire experience: DSA problems you narrate out loud, STAR questions you answer in English, and AI feedback that tells you exactly what to improve before your real interview.",
     relatedLinks: [
       { label: "STAR Method Interview India 2026", href: "/blog/star-method-interview-india-2026" },
@@ -4343,7 +4343,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["fresher-resume-tips-india-2026", "tcs-nqt-preparation-guide-india-2026", "infosys-interview-questions-india-2026"],
-    practicePageSlugs: [{ label: "Fresher Interview Practice", slug: "Fresher Interview Practice" }, { label: "Campus Placement Hr Questions", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Campus Placement Hr Questions", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "Campus placement HR rounds are high-stakes and often underestimated: students who ace the online test and coding rounds get rejected in the HR round because they give vague, generic answers under pressure. HireStepX's voice mock interviews simulate the HR round: 'Tell me about yourself', 'Why this company?', 'Tell me about a time you failed': all practised with voice, AI feedback, and a coached model answer so you know exactly what 'good' sounds like.",
     relatedLinks: [
       { label: "Fresher Resume Tips India 2026", href: "/blog/fresher-resume-tips-india-2026" },
@@ -4402,7 +4402,7 @@ const posts: BlogPost[] = [
       },
     ],
     relatedSlugs: ["campus-placement-preparation-india-2026", "fresher-resume-tips-india-2026", "tcs-nqt-preparation-guide-india-2026"],
-    practicePageSlugs: [{ label: "Campus Placement Practice", slug: "Campus Placement Practice" }, { label: "Campus Placement Hr Questions", slug: "common-hr-interview-questions-freshers-india" }],
+    practicePageSlugs: [{ label: "Campus Placement Hr Questions", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "The most reported cause of HR round failure in campus placements is freezing: knowing your STAR story but not being able to deliver it clearly under pressure. HireStepX's voice mock interviews recreate that pressure: a real-time voice conversation where you answer 'Tell me about yourself' and 'Why this company?' out loud, get AI feedback on your structure and confidence, and build the muscle memory that makes the real HR round feel familiar.",
     relatedLinks: [
       { label: "Campus Placement Preparation India 2026", href: "/blog/campus-placement-preparation-india-2026" },
@@ -12471,7 +12471,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-analyst-interview-questions-india-2026",
+    slug: "data-analyst-interview-questions-sql-python-business-case-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Python and Business Case Guide",
     metaDescription: "Complete data analyst interview guide for India 2026. SQL query questions, Python pandas, statistics, business case study, Excel, and data analyst salary at Flipkart, Amazon, Swiggy, and Indian banks.",
     company: "Role Guides",
@@ -12510,7 +12510,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "product-manager-interview-questions-india-2026",
+    slug: "product-manager-interview-guide-pm-india-2026",
     title: "Product Manager Interview Questions India 2026: Complete PM Interview Guide",
     metaDescription: "Complete Product Manager interview guide for India 2026. Product sense, metrics, estimation, design, strategy questions, PM interview at Google, Flipkart, Swiggy, Razorpay, and PM salary in India.",
     company: "Role Guides",
@@ -12549,7 +12549,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "frontend-developer-interview-questions-india-2026",
+    slug: "frontend-developer-interview-react-javascript-css-india-2026",
     title: "Frontend Developer Interview Questions India 2026: React, JavaScript and CSS Guide",
     metaDescription: "Complete frontend developer interview guide for India 2026. React hooks, JavaScript closures, CSS layout, performance optimisation, accessibility, and frontend developer salary at Indian product companies.",
     company: "Role Guides",
@@ -12902,7 +12902,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "android-developer-interview-questions-india-2026",
+    slug: "android-developer-interview-kotlin-jetpack-compose-india-2026",
     title: "Android Developer Interview Questions India 2026: Kotlin, Jetpack Compose and Architecture",
     metaDescription: "Complete Android developer interview guide for India 2026. Kotlin, Jetpack Compose, MVVM architecture, Coroutines, Android SDK, and Android developer salary in India.",
     company: "Role Guides",
@@ -12941,7 +12941,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-engineer-interview-questions-india-2026",
+    slug: "data-engineer-interview-spark-kafka-dbt-india-2026",
     title: "Data Engineer Interview Questions India 2026: Spark, Kafka, dbt and Pipeline Design",
     metaDescription: "Complete data engineer interview guide for India 2026. Apache Spark, Kafka, dbt, data warehouse design, pipeline orchestration, SQL at scale, and data engineer salary at Indian product companies.",
     company: "Role Guides",
@@ -12980,7 +12980,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "system-design-interview-questions-india-2026",
+    slug: "system-design-interview-how-to-prepare-ace-india-2026",
     title: "System Design Interview Questions India 2026: How to Prepare and Ace It",
     metaDescription: "Complete system design interview guide for India 2026. URL shortener, design Twitter/Instagram, ride sharing, notification system, rate limiter — with frameworks, worked examples, and how to practise.",
     company: "Role Guides",
@@ -13139,15 +13139,15 @@ const posts: BlogPost[] = [
   },
   {
     slug: "goldman-sachs-india-interview-questions-2026",
-    title: "Goldman Sachs India Interview Questions 2026: Software Engineer Guide",
-    metaDescription: "Goldman Sachs India interview questions for software engineers in 2026. Bengaluru office: HackerRank test, technical interviews, Goldman Sachs India salary, and how to prepare.",
+    title: "Goldman Sachs India CS Fundamentals Round 2026: OS, Networking, DB Internals",
+    metaDescription: "Goldman Sachs India tests CS fundamentals beyond DSA: OS (process/thread, deadlock), networking (TCP/DNS/HTTP), database internals (B-tree, ACID, WAL), and OOP design patterns.",
     company: "Goldman Sachs",
     category: "Company Guides",
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
     heroAlt: "Goldman Sachs India Bengaluru office representing the investment bank's technology engineering center",
     datePublished: "2026-07-21",
-    intro: "Goldman Sachs's Bengaluru Engineering Center (GSBEC) is one of the bank's three global technology hubs alongside New York and Salt Lake City. With over 8,000 technology professionals in Bengaluru, it works on core banking systems, quantitative trading platforms, risk management, Marcus digital banking, and developer infrastructure. For Indian software engineers, Goldman Sachs offers one of the highest-prestige technology roles in the financial sector: the GS brand opens doors to global fintech, hedge funds, and senior engineering leadership roles. This guide covers the full interview process and how to differentiate yourself.",
+    intro: "Goldman Sachs India's technical interviews test something most product-company prep doesn't cover: computer science fundamentals beyond DSA. If you're already through the coding rounds (or want the full process and salary breakdown first, see the main Goldman Sachs India interview guide), this is the deep dive on the round that trips up otherwise-strong candidates: OS internals, networking, database internals, and OOP design patterns, all with a finance-domain framing.",
     sections: [
       {
         heading: "Goldman Sachs India Interview Process",
@@ -13172,7 +13172,7 @@ const posts: BlogPost[] = [
       { question: "What is the software engineer salary at Goldman Sachs India in 2026?", answer: "Analyst: Rs 15-30 LPA total. Associate: Rs 28-55 LPA total. VP: Rs 55-110 LPA total. ED: Rs 100-180 LPA total. Structure: base + cash bonus (15-50% of base) + deferred equity. The bonus is the primary variable: it depends on firm and division performance. Strong market years significantly increase total compensation." },
       { question: "What programming skills does Goldman Sachs India test?", answer: "Java is the most common language for SWE roles (Goldman's trading and banking systems are primarily Java). Python is heavily tested for Strats (quantitative developer) roles alongside mathematical reasoning. The HackerRank MCQs test C++/Java language specifics (complexity, collections). Clean, compilable code with proper exception handling is expected, not pseudocode." },
     ],
-    relatedSlugs: ["jpmorgan-india-interview-questions-2026", "best-fintech-companies-india-2026", "system-design-interview-questions-india-2026"],
+    relatedSlugs: ["goldman-sachs-india-interview-questions", "jpmorgan-india-interview-questions-2026", "best-fintech-companies-india-2026"],
     cta: "Practise Goldman Sachs India interview questions with HireStepX. Our AI evaluates your CS fundamentals explanations, finance-domain system design, and professional communication with immediate coaching.",
     relatedLinks: [],
   },
@@ -13855,7 +13855,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "atlassian-india-interview-questions-2026",
+    slug: "atlassian-india-software-engineer-guide-bengaluru-2026",
     title: "Atlassian India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
     metaDescription: "Atlassian India interview questions for software engineers in 2026. Bengaluru office: Jira, Confluence, Bitbucket, Loom, ITSM. Interview process, Atlassian values, and Atlassian India salary.",
     company: "Atlassian",
@@ -14252,7 +14252,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "qualcomm-india-interview-questions-2026",
+    slug: "qualcomm-india-software-engineer-dsp-engineer-2026",
     title: "Qualcomm India Interview Questions 2026: Software Engineer and DSP Engineer Guide",
     metaDescription: "Qualcomm India interview questions 2026. Hyderabad and Bengaluru offices: modem software, DSP, Android BSP, camera, audio, Snapdragon engineering, C++ interview questions, and Qualcomm India salary.",
     company: "Qualcomm",
@@ -14450,7 +14450,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "devops-sre-interview-questions-india-2026",
+    slug: "devops-sre-interview-complete-engineer-guide-india-2026",
     title: "DevOps and SRE Interview Questions India 2026: Complete Engineer Guide",
     metaDescription: "Complete DevOps and SRE interview guide for India 2026. Kubernetes, Docker, CI/CD, Terraform, AWS, monitoring, incident response, SLOs, and DevOps engineer salary at Indian product companies.",
     company: "Role Guides",
@@ -14489,7 +14489,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "android-developer-interview-questions-india-2026",
+    slug: "android-developer-interview-kotlin-architecture-guide-india-2026",
     title: "Android Developer Interview Questions India 2026: Kotlin, Jetpack Compose and Architecture Guide",
     metaDescription: "Complete Android developer interview guide for India 2026. Kotlin, Jetpack Compose, MVVM, Room, Retrofit, Android architecture, and Android developer salary at Indian product companies.",
     company: "Role Guides",
@@ -14608,7 +14608,7 @@ const posts: BlogPost[] = [
 
   /* ── Wave 16: Uber/Airbnb/Stripe + Cloud/Cybersecurity/Startups + PM/DataSci + Interview Skills ── */
   {
-    slug: "uber-india-interview-questions-2026",
+    slug: "uber-india-software-engineer-bengaluru-hyderabad-2026",
     title: "Uber India Interview Questions 2026: Software Engineer Guide (Bengaluru and Hyderabad)",
     metaDescription: "Uber India interview questions for software engineers in 2026. Bengaluru and Hyderabad offices: ride-sharing platform, maps, payments, driver app, interview process, and Uber India salary guide.",
     company: "Uber",
@@ -14846,7 +14846,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "product-manager-interview-questions-india-2026",
+    slug: "product-manager-interview-complete-guide-india-2026",
     title: "Product Manager Interview Questions India 2026: Complete PM Interview Guide",
     metaDescription: "Complete product manager interview guide for India 2026. PM interview frameworks, product design questions, metrics questions, case studies, and PM salary at Indian tech companies.",
     company: "Role Guides",
@@ -15004,7 +15004,7 @@ const posts: BlogPost[] = [
 
   /* ── Wave 17: Oracle/Cisco/Nvidia + Blockchain/HealthTech + Frontend/MLEng + Interview Skills ── */
   {
-    slug: "oracle-india-interview-questions-2026",
+    slug: "oracle-india-software-engineer-bengaluru-hyderabad-2026",
     title: "Oracle India Interview Questions 2026: Software Engineer Guide (Bengaluru and Hyderabad)",
     metaDescription: "Oracle India interview questions for software engineers in 2026. Bengaluru and Hyderabad offices: database, OCI cloud, Java, interview process, and Oracle India salary benchmarks.",
     company: "Oracle",
@@ -15043,7 +15043,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "cisco-india-interview-questions-2026",
+    slug: "cisco-india-software-engineer-guide-bengaluru-2026",
     title: "Cisco India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
     metaDescription: "Cisco India interview questions for software engineers in 2026. Bengaluru office: networking, security, Webex, Cisco IOS, interview process, and Cisco India salary.",
     company: "Cisco",
@@ -15082,7 +15082,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "nvidia-india-interview-questions-2026",
+    slug: "nvidia-india-software-engineer-pune-bengaluru-2026",
     title: "Nvidia India Interview Questions 2026: Software Engineer Guide (Pune and Bengaluru)",
     metaDescription: "Nvidia India interview questions for software engineers in 2026. Pune and Bengaluru offices: GPU computing, CUDA, AI infrastructure, autonomous driving, interview process, and Nvidia India salary.",
     company: "Nvidia",
@@ -15238,7 +15238,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "machine-learning-engineer-interview-questions-india-2026",
+    slug: "machine-learning-engineer-interview-mle-guide-india-2026",
     title: "Machine Learning Engineer Interview Questions India 2026: Complete MLE Guide",
     metaDescription: "Complete machine learning engineer interview guide for India 2026. ML system design, Python, algorithms, model serving, MLOps, and MLE salary at Indian tech companies.",
     company: "Role Guides",
@@ -15277,7 +15277,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "how-to-answer-why-leaving-current-job",
+    slug: "why-are-you-leaving-current-job-indian-tech-interviews-2026",
     title: "How to Answer 'Why Are You Leaving Your Current Job?' in Indian Tech Interviews 2026",
     metaDescription: "How to answer 'Why are you leaving your current job?' in Indian software engineer interviews. Honest frameworks, example answers for different situations, and what to avoid.",
     company: "Interview Skills",
@@ -15316,7 +15316,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "group-discussion-tips-india-campus-placements",
+    slug: "group-discussion-tips-campus-placements-india-2026",
     title: "Group Discussion Tips for Campus Placements in India 2026: Complete Guide",
     metaDescription: "Complete guide to group discussions (GD) for campus placements in India 2026. GD structure, topics list, how to initiate, how to handle conflict, and what evaluators look for.",
     company: "Interview Skills",
@@ -15396,7 +15396,7 @@ const posts: BlogPost[] = [
 
   /* ── Wave 18: Adobe/Atlassian/Salesforce + DevOps/Platform + EdTech/Fintech + Interview Mastery ── */
   {
-    slug: "adobe-india-interview-questions-2026",
+    slug: "adobe-india-software-engineer-guide-noida-bengaluru-2026",
     title: "Adobe India Interview Questions 2026: Software Engineer Guide (Noida and Bengaluru)",
     metaDescription: "Adobe India interview questions for software engineers in 2026. Noida and Bengaluru offices: Creative Cloud, Adobe Experience Platform, Document Cloud, interview process, and Adobe India salary.",
     company: "Adobe",
@@ -15435,7 +15435,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "atlassian-india-interview-questions-2026",
+    slug: "atlassian-india-interview-questions-guide-bengaluru-2026",
     title: "Atlassian India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
     metaDescription: "Atlassian India interview questions for software engineers in 2026. Bengaluru TEAM Anywhere office: Jira, Confluence, Bitbucket, interview process, values interview, and Atlassian India salary.",
     company: "Atlassian",
@@ -15474,7 +15474,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "salesforce-india-interview-questions-2026",
+    slug: "salesforce-india-software-engineer-hyderabad-bengaluru-2026",
     title: "Salesforce India Interview Questions 2026: Software Engineer Guide (Hyderabad and Bengaluru)",
     metaDescription: "Salesforce India interview questions for software engineers in 2026. Hyderabad and Bengaluru offices: CRM, Slack, MuleSoft, Tableau, interview process, and Salesforce India salary.",
     company: "Salesforce",
@@ -15830,7 +15830,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "linkedin-india-interview-questions-2026",
+    slug: "linkedin-india-software-engineer-guide-bengaluru-2026",
     title: "LinkedIn India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
     metaDescription: "LinkedIn India interview questions for software engineers in 2026. Bengaluru office: feed ranking, search, economic graph, infrastructure, interview process, and LinkedIn India salary.",
     company: "LinkedIn",
@@ -15869,7 +15869,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "walmart-global-tech-india-interview-questions-2026",
+    slug: "walmart-global-tech-india-software-engineer-bengaluru-chennai-2026",
     title: "Walmart Global Tech India Interview Questions 2026: Software Engineer Guide (Bengaluru and Chennai)",
     metaDescription: "Walmart Global Tech India interview questions for software engineers in 2026. Bengaluru and Chennai offices: e-commerce, supply chain, Sam's Club, interview process, and Walmart Global Tech India salary.",
     company: "Walmart",
@@ -16064,7 +16064,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "behavioral-interview-questions-india-2026",
+    slug: "behavioural-interview-questions-software-engineers-star-guide-india-2026",
     title: "Behavioural Interview Questions for Software Engineers in India 2026: Complete STAR Guide",
     metaDescription: "Complete behavioural interview guide for software engineers in India 2026. STAR method, 20 most common questions, example answers for each, what Indian tech companies actually evaluate, and how to prepare.",
     company: "Interview Skills",
@@ -16183,7 +16183,7 @@ const posts: BlogPost[] = [
 
   /* ── Wave 20 ── */
   {
-    slug: "microsoft-india-interview-questions-2026",
+    slug: "microsoft-india-software-engineer-hyderabad-bengaluru-2026",
     title: "Microsoft India Interview Questions 2026: Software Engineer Guide (Hyderabad and Bengaluru)",
     metaDescription: "Microsoft India interview questions for software engineers in 2026. Hyderabad and Bengaluru offices: GitHub, Azure, Teams, Xbox, interview process, and Microsoft India salary ranges.",
     company: "Microsoft",
@@ -16344,7 +16344,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-engineer-interview-questions-india-2026",
+    slug: "data-engineer-interview-sql-spark-kafka-dbt-guide-india-2026",
     title: "Data Engineer Interview Questions India 2026: Complete Guide (SQL, Spark, Kafka, dbt)",
     metaDescription: "Complete data engineer interview guide for India 2026. SQL, Apache Spark, Kafka, dbt, data warehouse design, Airflow, and data engineer salary at Indian tech companies.",
     company: "Role Guides",
@@ -16422,7 +16422,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "product-manager-interview-questions-india-2026",
+    slug: "product-manager-interview-guide-tech-pms-india-2026",
     title: "Product Manager Interview Questions India 2026: Complete Guide for Tech PMs",
     metaDescription: "Complete product manager interview guide for India 2026. Product sense, analytical thinking, execution, leadership, PM salary at Indian tech companies, and how to crack PM interviews at Razorpay, Flipkart, and FAANG India.",
     company: "Role Guides",
@@ -16500,7 +16500,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "campus-placement-preparation-india-2026",
+    slug: "campus-placement-preparation-engineering-students-india-2026",
     title: "Campus Placement Preparation India 2026: Complete Guide for Engineering Students",
     metaDescription: "Complete campus placement preparation guide for India 2026. Aptitude tests, coding rounds, interview process at TCS, Infosys, Wipro, Razorpay, and FAANG India, and how to get a product company job from campus.",
     company: "Interview Skills",
@@ -16734,7 +16734,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "java-developer-interview-questions-india-2026",
+    slug: "java-developer-interview-core-java-spring-boot-system-design-india-2026",
     title: "Java Developer Interview Questions India 2026: Core Java, Spring Boot, and System Design",
     metaDescription: "Top Java developer interview questions in India 2026. Core Java concepts, Spring Boot, multithreading, collections, OOP design, microservices, and Java coding questions asked at TCS, Infosys, and product companies.",
     company: "Interview Skills",
@@ -16812,7 +16812,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "tcs-nqt-preparation-guide-2026",
+    slug: "tcs-nqt-preparation-syllabus-pattern-tips-2026",
     title: "TCS NQT Preparation Guide 2026: Syllabus, Pattern, and Tips to Clear",
     metaDescription: "Complete TCS NQT preparation guide for 2026. Exam pattern, syllabus (aptitude, verbal, programming logic), coding section tips, common mistakes, and the best resources to clear TCS National Qualifier Test.",
     company: "TCS",
@@ -16934,7 +16934,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "accenture-interview-questions-freshers-2026",
+    slug: "accenture-interview-freshers-cognitive-coding-hr-2026",
     title: "Accenture Interview Questions for Freshers 2026: Cognitive, Coding, and HR",
     metaDescription: "Complete Accenture interview guide for freshers 2026. Accenture cognitive assessment, coding section, communication assessment, technical interview, HR round, and how to get selected for higher-paying Accenture specialist roles.",
     company: "Accenture",
@@ -16973,7 +16973,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "cognizant-interview-questions-freshers-2026",
+    slug: "cognizant-interview-freshers-genc-next-elevate-2026",
     title: "Cognizant Interview Questions for Freshers 2026: GenC, GenC Next, and GenC Elevate",
     metaDescription: "Complete Cognizant interview preparation guide for freshers 2026. Cognizant GenC, GenC Next, and GenC Elevate program selection process, aptitude test, technical interview questions, and HR round answers.",
     company: "Cognizant",
@@ -17109,7 +17109,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "react-developer-interview-questions-india-2026",
+    slug: "react-developer-interview-hooks-state-management-india-2026",
     title: "React Developer Interview Questions India 2026: Hooks, State Management, and System Design",
     metaDescription: "Top React developer interview questions in India 2026. React hooks, virtual DOM, state management (Redux, Zustand), component patterns, performance optimisation, and coding questions asked at Indian product companies and startups.",
     company: "Interview Skills",
@@ -17137,7 +17137,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "sql-interview-questions-india-2026",
+    slug: "sql-interview-queries-joins-window-functions-india-2026",
     title: "SQL Interview Questions India 2026: Queries, Joins, Window Functions, and Optimisation",
     metaDescription: "Top SQL interview questions in India 2026. SQL joins, subqueries, window functions (ROW_NUMBER, RANK, LAG/LEAD), aggregations, query optimisation, indexing, and the most common SQL problems asked at Indian tech companies.",
     company: "Interview Skills",
@@ -17165,7 +17165,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-analyst-interview-questions-india-2026",
+    slug: "data-analyst-interview-sql-excel-python-case-studies-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Excel, Python, and Case Studies",
     metaDescription: "Top data analyst interview questions in India 2026. SQL queries, Excel/Google Sheets skills, Python pandas, statistics, business case studies, and how to answer 'walk me through a data project you worked on' at Indian companies.",
     company: "Interview Skills",
@@ -17192,7 +17192,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "internship-interview-questions-india-2026",
+    slug: "internship-interview-tech-mba-consulting-india-2026",
     title: "Internship Interview Questions India 2026: Tech, MBA, and Consulting Internships",
     metaDescription: "Top internship interview questions in India 2026 for tech, MBA, and consulting internships. Sample answers, what interviewers actually evaluate, and how to stand out at Google, Microsoft, McKinsey, and Indian startup internship interviews.",
     company: "Interview Skills",
@@ -17246,7 +17246,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "python-developer-interview-questions-india-2026",
+    slug: "python-developer-interview-django-system-design-india-2026",
     title: "Python Developer Interview Questions India 2026: Core Python, Django, and System Design",
     metaDescription: "Top Python developer interview questions in India 2026. Core Python (OOP, generators, decorators, GIL), Django/Flask, data structures, coding problems, and system design questions asked at Indian product companies and FAANG India.",
     company: "Interview Skills",
@@ -17273,7 +17273,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "java-developer-interview-questions-india-2026",
+    slug: "java-developer-interview-spring-boot-microservices-india-2026",
     title: "Java Developer Interview Questions India 2026: Core Java, Spring Boot, and Microservices",
     metaDescription: "Top Java developer interview questions in India 2026. Core Java (collections, concurrency, JVM, streams), Spring Boot, Spring MVC, microservices, REST API design, and coding questions asked at Indian IT companies and product startups.",
     company: "Interview Skills",
@@ -17327,7 +17327,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "aws-interview-questions-india-2026",
+    slug: "aws-interview-ec2-s3-lambda-cloud-architecture-india-2026",
     title: "AWS Interview Questions India 2026: EC2, S3, Lambda, and Cloud Architecture",
     metaDescription: "Top AWS cloud interview questions in India 2026. AWS core services (EC2, S3, Lambda, RDS, VPC, IAM), serverless architecture, cloud design patterns, and AWS certification-level questions asked at Indian IT companies and cloud roles.",
     company: "Interview Skills",
@@ -17381,7 +17381,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "product-manager-interview-questions-india-2026",
+    slug: "product-manager-interview-product-design-metrics-india-2026",
     title: "Product Manager Interview Questions India 2026: Product Design, Metrics, and Case Studies",
     metaDescription: "Top product manager interview questions in India 2026. Product design ('design an app for X'), metrics and data (how would you measure success), case studies, and PM behavioral questions asked at Indian product companies and FAANG India.",
     company: "Interview Skills",
@@ -17489,7 +17489,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "fresher-resume-tips-india-2026",
+    slug: "fresher-resume-tips-what-recruiters-look-for-india-2026",
     title: "Fresher Resume Tips India 2026: What Indian Recruiters Actually Look For",
     metaDescription: "Resume tips for freshers in India 2026. What Indian recruiters actually look for, how to structure a fresher resume with no work experience, ATS optimisation, common mistakes, and sample resume format for campus placement.",
     company: "Interview Skills",
@@ -17516,7 +17516,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "wipro-interview-questions-freshers-2026",
+    slug: "wipro-interview-freshers-nlth-technical-hr-2026",
     title: "Wipro Interview Questions for Freshers 2026: NLTH, Technical, and HR Round",
     metaDescription: "Complete Wipro interview preparation guide for freshers 2026. Wipro NLTH test pattern, technical interview questions (Java, Python, DBMS, OS), HR round questions, and tips to crack Wipro campus placement.",
     company: "Wipro",
@@ -17543,7 +17543,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "capgemini-interview-questions-freshers-2026",
+    slug: "capgemini-interview-freshers-game-based-assessment-2026",
     title: "Capgemini Interview Questions for Freshers 2026: Game-Based Assessment, Technical, and HR Round",
     metaDescription: "Complete Capgemini interview preparation guide for freshers 2026. Capgemini's game-based assessment, pseudo-code test, technical interview questions, and HR round tips for campus placement.",
     company: "Capgemini",
@@ -17570,7 +17570,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "full-stack-developer-interview-questions-india-2026",
+    slug: "full-stack-developer-interview-frontend-backend-india-2026",
     title: "Full Stack Developer Interview Questions India 2026: Frontend, Backend, and System Design",
     metaDescription: "Top full stack developer interview questions in India 2026. Frontend (React, HTML/CSS), backend (Node.js/Java/Python), databases, REST API design, system design basics, and full stack questions asked at Indian product companies and startups.",
     company: "Interview Skills",
@@ -17786,7 +17786,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "accenture-interview-questions-freshers-2026",
+    slug: "accenture-interview-freshers-cognitive-technical-hr-2026",
     title: "Accenture Interview Questions for Freshers 2026: Cognitive, Technical, and HR Round",
     metaDescription: "Complete Accenture interview preparation guide for freshers 2026. Accenture's cognitive assessment, coding test, technical interview questions, and HR round tips for campus and off-campus placement.",
     company: "Accenture",
@@ -17813,7 +17813,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "infosys-interview-questions-freshers-2026",
+    slug: "infosys-interview-freshers-infytq-hackwithinfy-2026",
     title: "Infosys Interview Questions for Freshers 2026: InfyTQ, HackWithInfy, and Interview Rounds",
     metaDescription: "Complete Infosys interview preparation guide for freshers 2026. InfyTQ platform, HackWithInfy coding competition, Infosys aptitude test, technical interview questions, and HR round tips for campus placement.",
     company: "Infosys",
@@ -17867,7 +17867,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "react-developer-interview-questions-india-2026",
+    slug: "react-developer-interview-hooks-performance-india-2026",
     title: "React Developer Interview Questions India 2026: Hooks, State Management, and Performance",
     metaDescription: "Top React developer interview questions in India 2026. React hooks (useState, useEffect, useCallback, useMemo, useRef), state management (Redux, Context, Zustand), performance optimisation, and system design for React interviews.",
     company: "Interview Skills",
@@ -17894,7 +17894,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "hr-interview-questions-freshers-india-2026",
+    slug: "hr-interview-freshers-answers-preparation-tips-india-2026",
     title: "HR Interview Questions for Freshers India 2026: Questions, Answers, and Preparation Tips",
     metaDescription: "Most common HR interview questions for freshers in India 2026. Tell me about yourself, why should we hire you, strengths and weaknesses, where do you see yourself in 5 years — with sample answers and tips.",
     company: "Interview Skills",
@@ -17948,7 +17948,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-analyst-interview-questions-india-2026",
+    slug: "data-analyst-interview-sql-python-statistics-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Python, Statistics, and Case Studies",
     metaDescription: "Top data analyst interview questions in India 2026. SQL queries, Python pandas, statistics and probability, data visualisation, and business case studies asked at Indian product companies and analytics firms.",
     company: "Interview Skills",
@@ -17975,7 +17975,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "product-manager-interview-questions-india-2026",
+    slug: "product-manager-interview-frameworks-case-studies-india-2026",
     title: "Product Manager Interview Questions India 2026: Frameworks, Case Studies, and Answers",
     metaDescription: "Top product manager interview questions in India 2026. PM frameworks (product sense, root cause analysis, estimation), technical PM questions, behavioural questions, and case studies asked at Flipkart, Swiggy, Razorpay, and FAANG India.",
     company: "Interview Skills",
@@ -18070,7 +18070,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "cognizant-interview-questions-freshers-2026",
+    slug: "cognizant-interview-freshers-genc-technical-hr-2026",
     title: "Cognizant Interview Questions for Freshers 2026: GenC, Technical, and HR Round",
     metaDescription: "Complete Cognizant interview preparation guide for freshers 2026. Cognizant GenC hiring process, aptitude test, technical interview questions, and HR round tips for campus and off-campus placement.",
     company: "Cognizant",
@@ -18111,7 +18111,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "devops-engineer-interview-questions-india-2026",
+    slug: "devops-engineer-interview-cicd-docker-kubernetes-india-2026",
     title: "DevOps Engineer Interview Questions India 2026: CI/CD, Docker, Kubernetes, and AWS",
     metaDescription: "Top DevOps engineer interview questions in India 2026. CI/CD pipelines, Docker and containers, Kubernetes orchestration, AWS (EC2, S3, EKS, Lambda), Linux, monitoring, and infrastructure as code (Terraform) questions.",
     company: "Interview Skills",
@@ -18152,7 +18152,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "sql-interview-questions-india-2026",
+    slug: "sql-interview-basic-queries-window-functions-india-2026",
     title: "SQL Interview Questions India 2026: From Basic Queries to Window Functions",
     metaDescription: "Top SQL interview questions in India 2026. Basic SELECT and JOIN queries, GROUP BY and HAVING, window functions, CTEs, subqueries, and advanced SQL concepts asked at data analyst, backend, and software engineer interviews.",
     company: "Interview Skills",
@@ -18193,7 +18193,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "backend-engineer-interview-questions-india-2026",
+    slug: "backend-engineer-interview-apis-databases-india-2026",
     title: "Backend Engineer Interview Questions India 2026: APIs, Databases, and System Design",
     metaDescription: "Top backend engineer interview questions in India 2026. REST API design, database design, authentication, system design, and language-specific questions (Java, Python, Node.js) asked at Indian product companies and FAANG India.",
     company: "Interview Skills",
@@ -18275,7 +18275,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "notice-period-negotiation-india-2026",
+    slug: "notice-period-negotiation-reduce-buyout-india-2026",
     title: "Notice Period Negotiation India 2026: How to Reduce or Buy Out Your Notice Period",
     metaDescription: "How to negotiate your notice period in India 2026. Legally required notice periods, how to negotiate a shorter notice period with your current employer, notice period buyout calculation, and how to manage the transition.",
     company: "Interview Skills",
@@ -18316,7 +18316,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "machine-learning-engineer-interview-questions-india-2026",
+    slug: "machine-learning-engineer-interview-fundamentals-coding-india-2026",
     title: "Machine Learning Engineer Interview Questions India 2026: ML Fundamentals, Coding, and System Design",
     metaDescription: "Top machine learning engineer interview questions in India 2026. ML algorithms (regression, classification, clustering), model evaluation, deep learning basics, MLOps, and system design for ML platforms.",
     company: "Interview Skills",
@@ -18439,7 +18439,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "java-developer-interview-questions-india-2026",
+    slug: "java-developer-interview-core-java-system-design-india-2026",
     title: "Java Developer Interview Questions India 2026: Core Java, Spring Boot, and System Design",
     metaDescription: "Top Java developer interview questions in India 2026. Core Java (OOP, collections, multithreading, JVM), Spring Boot, microservices, Hibernate/JPA, and system design questions asked at product companies and FAANG India.",
     company: "Interview Skills",
@@ -18480,7 +18480,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "python-developer-interview-questions-india-2026",
+    slug: "python-developer-interview-fastapi-data-questions-india-2026",
     title: "Python Developer Interview Questions India 2026: Core Python, Django, FastAPI, and Data Questions",
     metaDescription: "Top Python developer interview questions in India 2026. Core Python (OOP, decorators, generators, async), Django, FastAPI, data structures, and Python for data engineering and ML pipelines.",
     company: "Interview Skills",
@@ -18521,7 +18521,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "amazon-interview-questions-india-2026",
+    slug: "amazon-india-leadership-principles-coding-2026",
     title: "Amazon India Interview Questions 2026: Leadership Principles, Coding, and System Design",
     metaDescription: "Complete Amazon India interview preparation guide 2026. Amazon's Leadership Principles (LP) questions and answers, coding rounds, system design, and Bar Raiser round tips for SDE-1, SDE-2, and senior roles.",
     company: "Amazon",
@@ -18562,7 +18562,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "microsoft-india-interview-questions-2026",
+    slug: "microsoft-india-coding-system-design-behavioural-2026",
     title: "Microsoft India Interview Questions 2026: Coding, System Design, and Behavioural Rounds",
     metaDescription: "Complete Microsoft India interview guide 2026. Microsoft interview process, coding round questions (LeetCode style), system design, behavioural (growth mindset) questions, and tips for SDE-1, SDE-2, and senior roles at Microsoft India.",
     company: "Microsoft",
@@ -18726,7 +18726,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "google-india-interview-questions-2026",
+    slug: "google-india-coding-system-design-googliness-2026",
     title: "Google India Interview Questions 2026: Coding, System Design, and Googliness",
     metaDescription: "Complete Google India interview guide 2026. Google's interview process (coding rounds, system design, Googleyness), the most common LeetCode questions asked at Google India, and what the Google hiring committee looks for.",
     company: "Google",
@@ -18767,7 +18767,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "flipkart-interview-questions-2026",
+    slug: "flipkart-interview-sde-rounds-culture-fit-2026",
     title: "Flipkart Interview Questions 2026: SDE Rounds, System Design, and Culture Fit",
     metaDescription: "Complete Flipkart interview preparation guide 2026. Flipkart SDE interview process, coding round questions, system design (e-commerce specific), machine coding round guide, and SDE-1/SDE-2 salary details.",
     company: "Flipkart",
@@ -18849,7 +18849,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-structures-algorithms-interview-india-2026",
+    slug: "data-structures-algorithms-interview-dsa-guide-india-2026",
     title: "Data Structures and Algorithms Interview India 2026: Complete DSA Guide",
     metaDescription: "Complete DSA interview preparation guide for India 2026. Arrays, linked lists, trees, graphs, dynamic programming, and sorting algorithms with code examples and complexity analysis for Indian tech company coding rounds.",
     company: "Interview Skills",
@@ -18890,7 +18890,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "infosys-interview-questions-2026",
+    slug: "infosys-interview-infytq-elite-digital-specialist-2026",
     title: "Infosys Interview Questions 2026: InfyTQ, Elite, and Digital Specialist Track Preparation",
     metaDescription: "Complete Infosys interview preparation guide 2026. Infosys InfyTQ assessment, Elite and Digital Specialist track requirements, technical interview questions (coding, OOP, DBMS), and HR round tips.",
     company: "Infosys",
@@ -18931,7 +18931,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "wipro-interview-questions-2026",
+    slug: "wipro-interview-elite-turbo-wilp-track-2026",
     title: "Wipro Interview Questions 2026: Elite, Turbo, and WILP Track Preparation Guide",
     metaDescription: "Complete Wipro interview preparation guide 2026. Wipro Elite and Turbo track online assessment, coding questions, HR interview, WILP program details, and SDE salary for freshers at Wipro.",
     company: "Interview Skills",
@@ -18972,7 +18972,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "tcs-nqt-preparation-2026",
+    slug: "tcs-nqt-national-qualifier-test-guide-2026",
     title: "TCS NQT Preparation 2026: Complete Guide to Clear TCS National Qualifier Test",
     metaDescription: "Complete TCS NQT preparation guide 2026. TCS NQT exam pattern (Foundation, Advanced, Expert), section-wise preparation strategy, coding questions, previous year papers, and TCS NQT salary bands.",
     company: "TCS",
@@ -19013,7 +19013,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "accenture-interview-questions-2026",
+    slug: "accenture-interview-cognitive-technical-assessment-2026",
     title: "Accenture Interview Questions 2026: Cognitive and Technical Assessment, Interview Guide",
     metaDescription: "Complete Accenture interview preparation guide 2026. Accenture's hiring process (Cognitive Assessment, Technical and Communication Assessment), interview questions, and role and salary details for freshers.",
     company: "Interview Skills",
@@ -19054,7 +19054,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "cognizant-interview-questions-2026",
+    slug: "cognizant-interview-genc-elevate-preparation-guide-2026",
     title: "Cognizant Interview Questions 2026: GenC, GenC Next, and GenC Elevate Preparation Guide",
     metaDescription: "Complete Cognizant interview preparation guide 2026. Cognizant's GenC, GenC Next, and GenC Elevate tracks, online assessment, technical interview questions, HR interview tips, and Cognizant salary bands for freshers.",
     company: "Interview Skills",
@@ -19095,7 +19095,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "razorpay-interview-questions-2026",
+    slug: "razorpay-interview-sde-data-roles-fintech-2026",
     title: "Razorpay Interview Questions 2026: SDE and Data Roles, Coding, and Fintech Domain Knowledge",
     metaDescription: "Complete Razorpay interview guide 2026. Razorpay SDE and data engineering interview process, coding questions, fintech system design, and what Razorpay looks for in technical candidates.",
     company: "Razorpay",
@@ -19218,7 +19218,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "data-analyst-interview-questions-india-2026",
+    slug: "data-analyst-interview-statistics-business-case-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Statistics, Python, and Business Case Questions",
     metaDescription: "Top data analyst interview questions in India 2026. SQL (window functions, CTEs, joins), statistics (A/B testing, probability), Python for data analysis (pandas, numpy), and business case/metrics questions.",
     company: "Interview Skills",
@@ -19292,7 +19292,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "devops-sre-interview-questions-india-2026",
+    slug: "devops-sre-interview-cicd-monitoring-incident-india-2026",
     title: "DevOps and SRE Interview Questions India 2026: CI/CD, Kubernetes, Monitoring, and Incident Management",
     metaDescription: "Complete DevOps and SRE interview guide India 2026. CI/CD pipelines, Docker, Kubernetes, Terraform, monitoring and alerting, incident management, and SLO/SLI/SLA questions asked in Indian companies.",
     company: "Interview Skills",
@@ -19329,7 +19329,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "product-manager-interview-questions-india-2026",
+    slug: "product-manager-interview-product-sense-execution-india-2026",
     title: "Product Manager Interview Questions India 2026: Product Sense, Metrics, Case Studies, and Execution",
     metaDescription: "Complete product manager interview guide India 2026. Product sense questions, metrics framework, product case studies, prioritisation frameworks, and PM interview preparation for Flipkart, Swiggy, Razorpay, and FAANG India.",
     company: "Interview Skills",
@@ -19597,7 +19597,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "react-developer-interview-questions-india-2026",
+    slug: "react-developer-interview-hooks-performance-state-india-2026",
     title: "React Developer Interview Questions India 2026: Hooks, Performance, and State Management",
     metaDescription: "Complete React developer interview guide India 2026. React hooks, component lifecycle, state management, performance optimisation, and React interview questions at Indian product companies and startups.",
     company: "Interview Skills",
@@ -19655,7 +19655,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "tell-me-about-yourself-answer-india-2026",
+    slug: "tell-me-about-yourself-answer-formula-india-2026",
     title: "Tell Me About Yourself: Best Answer Formula for Indian Interviews 2026 (Fresher and Experienced)",
     metaDescription: "Best answers to 'tell me about yourself' for Indian job interviews 2026. Step-by-step formula, sample answers for freshers and experienced candidates, common mistakes, and how to customise for different company types.",
     company: "Interview Skills",
@@ -19684,7 +19684,7 @@ const posts: BlogPost[] = [
     relatedLinks: [],
   },
   {
-    slug: "why-should-we-hire-you-answer-india-2026",
+    slug: "why-should-we-hire-you-examples-freshers-india-2026",
     title: "Why Should We Hire You: Best Answer for Indian Interviews 2026 (With Examples for Freshers and Experienced)",
     metaDescription: "Best answers to 'why should we hire you' for Indian job interviews 2026. A 3-part answer structure, fresher script, experienced professional script, and company-specific examples for TCS, Infosys, Razorpay, and Google India.",
     company: "Interview Skills",
@@ -22473,7 +22473,7 @@ const posts: BlogPost[] = [
       { question: "What is the Sarvam AI interview process like for ML and engineering roles?", answer: "Sarvam AI interview process (2026): Sarvam AI is India's leading speech and language AI startup focused on Indic language models and speech technology. The interview process typically has 4–5 rounds: (1) Resume screening: Sarvam AI looks for experience in ML/NLP/speech, prior startup experience (they move fast), and genuine interest in Indian language technology. Strong GitHub profiles with NLP or speech projects stand out. (2) Technical phone screen: 45–60 minute call with a team member covering fundamentals relevant to the role. (3) ML/Technical round: deep technical interview covering the role's core domain — transformer architecture, attention mechanisms, training and fine-tuning large language models, speech-to-text pipeline design, ASR, TTS, tokenisation for Indic languages. (4) Systems design round. (5) Founder or leadership round: conversation about motivation, values alignment, past impact." },
       { question: "What salary does Sarvam AI pay for ML engineers and SWEs in India in 2026?", answer: "Sarvam AI salary India 2026: Sarvam AI is a well-funded AI startup (Series B). Estimated salary ranges (total CTC): ML Engineer / Research Engineer (2–5 years): 25–55 LPA total CTC. Senior ML Engineer / Staff Research Engineer (5+ years): 50–100 LPA. Software Engineer / Backend Engineer (2–5 years): 18–40 LPA. Senior Software Engineer (5+ years): 35–70 LPA. The company is known to pay above the Indian market median for strong candidates in ML and speech AI, with meaningful equity (ESOPs). See the full Sarvam AI salary page for a CTC breakdown by role." },
     ],
-    relatedSlugs: ["sarvam-swe-interview-questions", "machine-learning-engineer-india-2026", "startup-vs-big-tech-india-2026"],
+    relatedSlugs: ["machine-learning-engineer-interview-india-2026", "startup-vs-mnc-india-2026"],
     cta: "Practice the exact technical questions Sarvam AI interviewers ask — transformer architecture, ASR pipeline design, and system design for speech AI — using HireStepX's AI voice interviewer. Get scored feedback and a coached model answer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/sarvam-ai", label: "Sarvam AI Salary Guide India 2026 — AI Engineer CTC Breakdown" },
