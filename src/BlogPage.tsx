@@ -30085,7 +30085,7 @@ function BlogPostPage({ post, afterContent }: { post: BlogPost; afterContent?: R
 
           {/* Intro dek */}
           <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginTop: 24, marginBottom: 36 }}>
-            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 20px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.75, letterSpacing: "-0.005em", margin: 0 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: "clamp(17px, 1.8vw, 20px)", color: t.inkSoft, lineHeight: 1.75, letterSpacing: "-0.005em", margin: 0 }}>
               {post.intro}
             </p>
           </div>
