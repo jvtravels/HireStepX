@@ -1721,7 +1721,7 @@ export function PrivacyV2() {
 
 export function TermsV2() {
   return (
-    <LegalPage title="Terms of service" accent="the rules." updated="30 May 2026">
+    <LegalPage title="Terms of Service" accent="the rules." updated="30 May 2026">
       <h2>Who can use HireStepX</h2>
       <p>Anyone 16 or older with a valid email address. By signing up, you confirm you are 16+ and the information you provide is accurate.</p>
 
