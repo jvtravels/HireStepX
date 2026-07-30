@@ -272,6 +272,7 @@ export default async function TelephonicInterviewPage() {
                 { label: "AI Mock Interview Practice", href: "/ai-mock-interview" },
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                 { label: "English Speaking Practice for Interviews", href: "/english-interview-practice" },
+                { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
                 { label: "How It Works — 5 Steps", href: "/how-it-works" },

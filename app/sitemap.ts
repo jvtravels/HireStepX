@@ -46,6 +46,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/telephonic-interview-questions`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
     { url: `${baseUrl}/walk-in-interview-preparation`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
     { url: `${baseUrl}/one-way-video-interview-practice`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/bpo-interview-questions`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
     { url: `${baseUrl}/for-students`, lastModified: now, changeFrequency: "monthly", priority: 0.90 },
     { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: "monthly", priority: 0.88 },
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
