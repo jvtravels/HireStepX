@@ -567,6 +567,9 @@ export default async function AiMockInterviewPage() {
               {[
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                 { label: "English Speaking Practice for Interviews", href: "/english-interview-practice" },
+                { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
+                { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
+                { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
                 { label: "How It Works — 5 Steps", href: "/how-it-works" },

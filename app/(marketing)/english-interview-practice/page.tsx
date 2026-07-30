@@ -268,6 +268,8 @@ export default async function EnglishInterviewPracticePage() {
               {[
                 { label: "AI Mock Interview Practice", href: "/ai-mock-interview" },
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
+                { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
+                { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
