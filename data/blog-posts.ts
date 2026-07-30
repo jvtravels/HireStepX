@@ -22794,6 +22794,40 @@ export const BLOG_POSTS: BlogPost[] = [
     relatedLinks: [{ label: "What Is an AI Mock Interview? Free, Voice-Based Practice", href: "/ai-mock-interview" }],
     cta: "Most of the tools above will let you practice. Fewer will tell you exactly what to fix before your next attempt. Try a free HireStepX session built around your actual target company and role, and see the difference a scored, India-specific rubric makes.",
   },
+  {
+    slug: "early-data-hirestepx-practice-sessions-2026",
+    title: "What Our Early Practice Session Data Shows About Interview Weak Spots",
+    metaDescription: "A transparent look at early, small-sample scoring data from HireStepX practice sessions: which interview type candidates score lowest on, and why. Honest about sample size, not a claim of scale.",
+    company: "General",
+    category: "Industry Insights",
+    readTime: "5 min",
+    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
+    heroAlt: "Close-up of a laptop screen showing a scored feedback report",
+    datePublished: "2026-07-31",
+    intro: "A lot of \"data-driven\" interview content on the internet cites numbers like \"we analyzed 500,000 interviews\" without saying where the number came from. We're not going to do that. What follows is a small, honest sample from HireStepX's own scored practice sessions: recent, limited, and presented with the caveats it actually deserves. If you're looking for a definitive industry benchmark, this isn't it yet. If you're curious what an early, real dataset looks like before anyone dresses it up, here it is.",
+    sections: [
+      {
+        heading: "The sample, honestly",
+        content: "This covers scored HireStepX practice sessions from June and July 2026, which is the window our scoring analytics have been live for. It's a few hundred sessions, not tens of thousands. We're publishing it anyway because the pattern is directionally interesting and we'd rather show you real numbers at real scale than wait and pretend we have more data than we do.\n\nWe'll revisit this post with a larger sample later in the year. Treat the numbers below as an early read, not a settled conclusion.",
+      },
+      {
+        heading: "Behavioral rounds score lowest",
+        content: "Across the three practice formats we tracked scores for, average scores (on our 0-100 rubric) came out roughly like this over the sample period:\n\n1. Behavioral interviews: lowest average score of the three formats\n2. Salary negotiation: mid-range average score\n3. HR rounds: highest average score of the three, and the format that improved the most as the sample grew\n\nOur read: behavioral answers are the ones candidates prepare for least deliberately. People rehearse technical answers and negotiation scripts, but treat \"tell me about a time you disagreed with a manager\" as something they can improvise in the moment. The scoring rubric penalizes exactly what improvisation tends to produce: vague framing, no clear outcome, no specific numbers or results.",
+      },
+      {
+        heading: "What this actually means for your prep",
+        content: "If you only have time to prepare one category deliberately instead of winging it, our early data (small as it is) points at behavioral rounds as the one most likely to cost you points relative to how much attention it usually gets.\n\nConcretely:\n1. Write out 4-5 STAR stories in advance (Situation, Task, Action, Result) rather than planning to improvise from memory.\n2. Put an actual number in the Result wherever you can: \"reduced deploy time by 40%\" scores differently than \"the team was happy with it.\"\n3. Practice out loud, not just on paper. A story that reads fine on a page often falls apart in structure when spoken under time pressure, which is exactly what a live interview does to it.",
+      },
+    ],
+    faqs: [
+      { question: "How many sessions is this data based on?", answer: "A few hundred scored practice sessions from June-July 2026, the window HireStepX's scoring analytics have been live for. That's a genuine but early sample, not a large-scale industry study. We're being upfront about that instead of inflating it." },
+      { question: "Why do behavioral interviews score lower than technical or negotiation rounds?", answer: "Our read from the early sample: candidates tend to prepare technical answers and negotiation scripts deliberately, but plan to improvise behavioral answers in the moment. The scoring rubric penalizes what improvisation typically produces: vague framing, no clear outcome, missing specifics." },
+      { question: "Will HireStepX publish a bigger version of this report?", answer: "Yes, once the sample is large enough to support real breakdowns by company, role, and experience level. This post will be revisited and expanded rather than replaced by a separate piece." },
+    ],
+    relatedSlugs: ["star-method-interview-answers", "mock-interview-practice-guide", "best-ai-mock-interview-tools-india-2026"],
+    relatedLinks: [{ label: "What Is an AI Mock Interview? Free, Voice-Based Practice", href: "/ai-mock-interview" }],
+    cta: "Curious where your own behavioral answers fall short? Run a free scored HireStepX practice session and get the same STAR-based rubric feedback this data is drawn from.",
+  },
 ];
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
