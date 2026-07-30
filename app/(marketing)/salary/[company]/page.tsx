@@ -18,6 +18,7 @@ import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { BLOG_META } from "@/blog-meta";
+import { tokens as t, fonts } from "@/auth/_tokens";
 
 /* /salary/[company] — company-specific salary guide pages.
  *
@@ -262,16 +263,16 @@ export default async function SalaryCompanySlugPage({
         bondPenaltyLpa={meta?.bondPenaltyLpa}
         calibrationDate={CALIBRATION_DATE}
       />
-      {relatedSalary.length > 0 && (
+      {relatedSalary.length >= 2 && (
         <section
           aria-label={`Compare ${label} salary with similar companies`}
-          style={{ borderTop: "1px solid #e8eaed", background: "#f8f9fb", padding: "40px 24px 48px" }}
+          style={{ borderTop: `1px solid ${t.line}`, background: t.creamSoft, padding: "40px 24px 48px" }}
         >
           <div style={{ maxWidth: 960, margin: "0 auto" }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: t.inkFaint, textTransform: "uppercase", marginBottom: 12 }}>
               {SLUG_TO_GROUP[company]}
             </p>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
+            <h2 style={{ fontFamily: fonts.sans, fontSize: 20, fontWeight: 700, color: t.coal, margin: "0 0 20px" }}>
               Compare salary with similar companies
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -284,17 +285,18 @@ export default async function SalaryCompanySlugPage({
                     alignItems: "center",
                     gap: 6,
                     padding: "10px 16px",
-                    background: "#fff",
-                    border: "1px solid #e4e7ec",
+                    background: t.white,
+                    border: `1px solid ${t.line}`,
                     borderRadius: 8,
                     textDecoration: "none",
-                    color: "#1a1d23",
+                    color: t.coal,
+                    fontFamily: fonts.sans,
                     fontSize: 14,
                     fontWeight: 500,
                   }}
                 >
                   {peer.label} salary
-                  <span style={{ color: "#6366f1", fontSize: 12 }}>→</span>
+                  <span style={{ color: t.copper, fontSize: 12 }}>→</span>
                 </a>
               ))}
             </div>
