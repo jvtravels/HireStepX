@@ -55,11 +55,12 @@ export const metadata: Metadata = {
 export default async function QuestionsIndexRoute({
   searchParams,
 }: {
-  searchParams: Promise<{ focus?: string }>;
+  searchParams: Promise<{ focus?: string; page?: string }>;
 }) {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
-  const { focus } = await searchParams;
+  const { focus, page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
   /* When a ?focus= param is present, show only matching pages. The full
      ItemList schema always lists all pages so Google indexes the complete
@@ -173,6 +174,7 @@ export default async function QuestionsIndexRoute({
           sitemapPriority: p.sitemapPriority,
         }))}
         activeFilter={focus}
+        page={pageNum}
       />
       <Script
         async

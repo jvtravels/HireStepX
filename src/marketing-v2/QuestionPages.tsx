@@ -127,7 +127,7 @@ function QuestionCard({ question, index, practiceHref }: Omit<QuestionCardProps,
         </div>
 
         {/* Question text */}
-        <p style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.5, color: t.coal, margin: 0 }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 16, fontWeight: 500, lineHeight: 1.55, color: t.coal, margin: 0 }}>
           {question.text}
         </p>
       </div>
@@ -534,7 +534,10 @@ export interface QuestionsIndexPageProps {
     sitemapPriority?: number;
   }>;
   activeFilter?: string;
+  page?: number;
 }
+
+const QUESTIONS_PER_PAGE = 30;
 
 const FOCUS_DISPLAY: Record<string, string> = {
   behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
@@ -544,15 +547,33 @@ const FOCUS_DISPLAY: Record<string, string> = {
   "government-psu": "Government / PSU", strategic: "Strategic",
 };
 
-export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPageProps) {
+export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsIndexPageProps) {
+  /* Stable company-sorted order first, then paginate, then group — so each
+     page's headings reflect only the companies actually shown on it. */
+  const sorted = [...pages].sort((a, b) => a.company.localeCompare(b.company));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / QUESTIONS_PER_PAGE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const paginated = sorted.slice(
+    (safePage - 1) * QUESTIONS_PER_PAGE,
+    safePage * QUESTIONS_PER_PAGE,
+  );
+
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (activeFilter) params.set("focus", activeFilter);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/questions${qs ? `?${qs}` : ""}`;
+  };
+
   /* Group by company for a cleaner layout. */
-  const grouped = pages.reduce<Record<string, typeof pages>>((acc, p) => {
+  const grouped = paginated.reduce<Record<string, typeof pages>>((acc, p) => {
     const key = p.company;
     (acc[key] ??= []).push(p);
     return acc;
   }, {});
 
-  const companies = Object.keys(grouped).sort();
+  const companies = Object.keys(grouped);
 
   return (
     <>
@@ -687,6 +708,82 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
               </ol>
             </section>
           ))}
+
+          {/* Pagination — 30 question sets per page */}
+          {totalPages > 1 && (
+            <nav
+              aria-label="Question set pages"
+              style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 24, marginBottom: 48 }}
+            >
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginRight: 10, whiteSpace: "nowrap" }}>
+                {sorted.length} question sets · page {safePage} of {totalPages}
+              </span>
+
+              <Link
+                href={pageHref(safePage - 1)}
+                aria-disabled={safePage === 1}
+                tabIndex={safePage === 1 ? -1 : undefined}
+                style={{
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                  background: safePage === 1 ? t.creamSoft : "#fff",
+                  color: safePage === 1 ? t.inkFaint : t.coal,
+                  textDecoration: "none",
+                  pointerEvents: safePage === 1 ? "none" : "auto",
+                  opacity: safePage === 1 ? 0.45 : 1,
+                }}
+              >
+                ← Prev
+              </Link>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((n) => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+                .reduce<(number | "…")[]>((acc, n) => {
+                  const prev = acc[acc.length - 1];
+                  if (typeof prev === "number" && n - prev > 1) acc.push("…");
+                  acc.push(n);
+                  return acc;
+                }, [])
+                .map((n, i) =>
+                  n === "…" ? (
+                    <span key={`e-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
+                  ) : (
+                    <Link
+                      key={n}
+                      href={pageHref(n)}
+                      aria-current={safePage === n ? "page" : undefined}
+                      style={{
+                        fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
+                        minWidth: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        borderRadius: 8, border: `1.5px solid ${safePage === n ? t.copper : t.line}`,
+                        background: safePage === n ? t.copper : "#fff",
+                        color: safePage === n ? "#fff" : t.coal,
+                        textDecoration: "none",
+                      }}
+                    >
+                      {n}
+                    </Link>
+                  ),
+                )}
+
+              <Link
+                href={pageHref(safePage + 1)}
+                aria-disabled={safePage === totalPages}
+                tabIndex={safePage === totalPages ? -1 : undefined}
+                style={{
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                  background: safePage === totalPages ? t.creamSoft : "#fff",
+                  color: safePage === totalPages ? t.inkFaint : t.coal,
+                  textDecoration: "none",
+                  pointerEvents: safePage === totalPages ? "none" : "auto",
+                  opacity: safePage === totalPages ? 0.45 : 1,
+                }}
+              >
+                Next →
+              </Link>
+            </nav>
+          )}
         </div>
 
         {/* Visible FAQ — mirrors the FAQPage JSON-LD schema so Google

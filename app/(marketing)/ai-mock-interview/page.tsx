@@ -4,6 +4,8 @@ import Link from "next/link";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
+import { FAQItem } from "@/marketing-v2/MarketingPagesV2";
+import { DarkBand, ctaPrimaryStyle, editorialCSS } from "@/marketing-v2/_editorial";
 import { tokens as t, fonts } from "@/auth/_tokens";
 
 /*
@@ -222,6 +224,7 @@ export default async function AiMockInterviewPage() {
         crossOrigin="anonymous"
         strategy="lazyOnload"
       />
+      <style>{editorialCSS}</style>
       <NavV2 />
 
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
@@ -509,95 +512,117 @@ export default async function AiMockInterviewPage() {
             >
               AI mock interview — common questions
             </h2>
-            <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {faqSchema.mainEntity.map((item) => (
-                <div key={item.name}>
-                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.name}</dt>
-                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.acceptedAnswer.text}</dd>
-                </div>
+            <style>{`
+              .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
+              .mv2p-faq-marker { transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1); }
+              @media (prefers-reduced-motion: reduce) {
+                .mv2p-faq-marker { transition: none !important; }
+              }
+            `}</style>
+            <div style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10 }}>
+              {faqSchema.mainEntity.map((item, i) => (
+                <FAQItem key={item.name} q={item.name} a={item.acceptedAnswer.text} first={i === 0} />
               ))}
-            </dl>
+            </div>
           </div>
-        </section>
-
-        {/* ── Bottom CTA ── */}
-        <section
-          style={{ maxWidth: 720, margin: "0 auto", padding: "56px 24px 80px", textAlign: "center" }}
-        >
-          <h2
-            style={{ ...serif, fontSize: 32, fontWeight: 400, color: t.coal, marginBottom: 12, letterSpacing: "-0.02em" }}
-          >
-            Start your AI mock interview — free
-          </h2>
-          <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete sessions. No credit card. Voice-based, resume-personalized, STAR-scored.
-          </p>
-          <Link
-            href="/signup"
-            style={{
-              ...s,
-              background: t.copper,
-              color: "#fff",
-              padding: "15px 36px",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 16,
-              textDecoration: "none",
-              display: "inline-block",
-            }}
-          >
-            Practice free — 2 sessions included
-          </Link>
-          <p style={{ ...s, fontSize: 12, color: t.inkSoft, marginTop: 16 }}>
-            Already have an account?{" "}
-            <Link href="/login" style={{ color: t.copper, textDecoration: "underline" }}>Sign in</Link>
-          </p>
         </section>
 
         {/* ── Related reading ── */}
         <section
           aria-label="Related guides"
-          style={{ borderTop: `1px solid ${t.line}`, padding: "40px 24px 56px" }}
+          style={{ borderTop: `1px solid ${t.line}`, padding: "56px 24px 72px" }}
         >
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <p style={{ ...s, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.inkSoft, marginBottom: 16 }}>
+          <style>{`
+            .ami-rel-link { position: relative; text-decoration: none; color: ${t.coal}; }
+            .ami-rel-link::after { content: ""; position: absolute; left: 0; bottom: -2px; height: 1px; width: 100%; background: ${t.copper}; transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease; }
+            .ami-rel-link:hover { color: ${t.copper}; }
+            .ami-rel-link:hover::after { transform: scaleX(1); }
+            .ami-rel-link:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 3px; border-radius: 3px; }
+            @media (prefers-reduced-motion: reduce) {
+              .ami-rel-link::after { transition: none !important; }
+            }
+          `}</style>
+          <div style={{ maxWidth: 880, margin: "0 auto" }}>
+            <p style={{ ...s, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.inkFaint, marginBottom: 32 }}>
               Related guides
             </p>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: "36px 32px",
+              }}
+            >
               {[
-                { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
-                { label: "English Speaking Practice for Interviews", href: "/english-interview-practice" },
-                { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
-                { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
-                { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
-                { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
-                { label: "Bank PO Interview Questions — SBI & IBPS", href: "/bank-po-interview-questions" },
-                { label: "MBA Personal Interview (PI) Preparation", href: "/mba-personal-interview-preparation" },
-                { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                { label: "Campus Placement Preparation Guide", href: "/for-students" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
-                { label: "Salary Negotiation Tips India", href: "/blog/salary-negotiation-tips-india" },
-                { label: "Behavioral Interview Questions India", href: "/questions/behavioral-interview-questions-india" },
-                { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
-                { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
-                { label: "Infosys Salary Guide India 2026", href: "/salary/infosys" },
-                { label: "Google India Salary Guide 2026", href: "/salary/google" },
-                { label: "Amazon India Salary Guide 2026", href: "/salary/amazon" },
-                { label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" },
-                { label: "Wipro Salary Guide India 2026", href: "/salary/wipro" },
-              ].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}
-                >
-                  {link.label}
-                </Link>
+                {
+                  group: "Interview formats",
+                  links: [
+                    { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
+                    { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
+                    { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
+                    { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
+                    { label: "Bank PO Interview Questions — SBI & IBPS", href: "/bank-po-interview-questions" },
+                    { label: "MBA Personal Interview (PI) Preparation", href: "/mba-personal-interview-preparation" },
+                  ],
+                },
+                {
+                  group: "Preparation guides",
+                  links: [
+                    { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
+                    { label: "English Speaking Practice for Interviews", href: "/english-interview-practice" },
+                    { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
+                    { label: "Campus Placement Preparation Guide", href: "/for-students" },
+                    { label: "Behavioral Interview Questions India", href: "/questions/behavioral-interview-questions-india" },
+                    { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
+                    { label: "Salary Negotiation Tips India", href: "/blog/salary-negotiation-tips-india" },
+                    { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                  ],
+                },
+                {
+                  group: "Salary guides 2026",
+                  links: [
+                    { label: "TCS", href: "/salary/tcs" },
+                    { label: "Infosys", href: "/salary/infosys" },
+                    { label: "Google India", href: "/salary/google" },
+                    { label: "Amazon India", href: "/salary/amazon" },
+                    { label: "Flipkart", href: "/salary/flipkart" },
+                    { label: "Wipro", href: "/salary/wipro" },
+                  ],
+                },
+              ].map((section) => (
+                <div key={section.group}>
+                  <p style={{ ...s, fontSize: 12, fontWeight: 600, color: t.inkFaint, margin: "0 0 14px" }}>
+                    {section.group}
+                  </p>
+                  <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                    {section.links.map((link) => (
+                      <li key={link.href}>
+                        <Link href={link.href} className="ami-rel-link" style={{ ...s, fontSize: 14, lineHeight: 1.5 }}>
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
             </div>
           </div>
         </section>
       </main>
+
+      {/* ── Closing video CTA — sits directly above the footer ── */}
+      <DarkBand eyebrow="Free · 2 sessions · no card" title="Start your AI mock interview," accent="free." videoSrc="/cta.mp4">
+        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "40ch", margin: 0 }}>
+          2 complete sessions. No credit card. Voice-based, resume-personalized, STAR-scored.
+        </p>
+        <Link href="/signup" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+          Practice free — 2 sessions included <span className="ed-cta-arrow" aria-hidden>→</span>
+        </Link>
+        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.creamMuted, margin: 0 }}>
+          Already have an account?{" "}
+          <Link href="/login" style={{ color: t.cream, textDecoration: "underline" }}>Sign in</Link>
+        </p>
+      </DarkBand>
 
       <FooterDome />
       <MobileStickyCTA />

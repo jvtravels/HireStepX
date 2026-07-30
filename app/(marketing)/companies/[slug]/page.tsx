@@ -453,8 +453,8 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                     borderBottom: `1px solid ${t.line}`,
                   }}
                 >
-                  {/* Number */}
-                  <span style={{ flexShrink: 0, fontFamily: fonts.serif, fontStyle: "italic", fontSize: 22, color: t.copper, opacity: 0.6, lineHeight: 1, minWidth: 32, paddingTop: 3 }}>
+                  {/* Number — decorative; screen readers already get list order from <ol> */}
+                  <span aria-hidden style={{ flexShrink: 0, fontFamily: fonts.serif, fontStyle: "italic", fontSize: 22, color: t.copper, opacity: 0.6, lineHeight: 1, minWidth: 32, paddingTop: 3 }}>
                     {i + 1}
                   </span>
                   {/* Content */}

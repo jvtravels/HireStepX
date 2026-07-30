@@ -346,8 +346,8 @@ const tableWrap: CSSProperties = {
 
 const thStyle: CSSProperties = {
   fontFamily: fonts.mono,
-  fontSize: 10,
-  letterSpacing: "0.08em",
+  fontSize: 11,
+  letterSpacing: "0.06em",
   textTransform: "uppercase" as const,
   color: t.inkFaint,
   padding: "10px 16px",
@@ -562,7 +562,7 @@ export function SalaryCompanyPage({
                 </p>
 
                 <div style={tableWrap}>
-                  <table className="sal-table" role="table">
+                  <table className="sal-table" aria-label={`${role.roleLabel} salary bands`}>
                     <thead>
                       <tr>
                         <th style={thStyle}>Experience Level</th>
@@ -899,6 +899,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
             {/* Search bar — centered */}
             <div style={{ maxWidth: 520, margin: "0 auto", position: "relative" }}>
               <svg
+                aria-hidden="true"
                 width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke={t.inkFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                 style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
@@ -909,17 +910,18 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
                 type="search"
                 value={search}
                 placeholder="Search company…"
+                aria-label="Search company"
                 onChange={e => { setSearch(e.target.value); resetPage(); }}
                 style={{
                   width: "100%", boxSizing: "border-box" as const,
                   fontFamily: fonts.sans, fontSize: 15, color: t.coal,
                   background: "#fff", border: `1.5px solid ${t.line}`,
                   borderRadius: 999, padding: "13px 18px 13px 44px",
-                  outline: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                  transition: "border-color 180ms",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  transition: "border-color 180ms, box-shadow 180ms",
                 }}
-                onFocus={e => { e.currentTarget.style.borderColor = t.indigo; }}
-                onBlur={e => { e.currentTarget.style.borderColor = t.line; }}
+                onFocus={e => { e.currentTarget.style.borderColor = t.indigo; e.currentTarget.style.boxShadow = `0 0 0 3px ${t.indigo}33`; }}
+                onBlur={e => { e.currentTarget.style.borderColor = t.line; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)"; }}
               />
               {search && (
                 <button
@@ -931,7 +933,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
                     color: t.inkFaint, display: "flex", alignItems: "center",
                   }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
@@ -1088,7 +1090,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
                   transition: "border-color 150ms, background 150ms",
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
                 Prev
@@ -1133,7 +1135,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
                 }}
               >
                 Next
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>

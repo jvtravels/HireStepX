@@ -164,9 +164,53 @@ const GROUPS: GroupDef[] = [
   },
 ];
 
-export default async function CompaniesIndexPage() {
+const GROUPS_PER_PAGE = 30;
+
+export default async function CompaniesIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+
+  /* ── Flatten + paginate the 15 groups — same 30-per-page cap used on
+     /questions and /interview-prep, so no single page load ever renders
+     more than 30 company cards no matter how large a group is. */
+  const groupsWithPages = GROUPS.map((g) => ({
+    ...g,
+    pages: [...SEO_PAGES.filter((p) => g.companies.includes(p.company))].sort(
+      (a, b) => (b.sitemapPriority ?? 0.7) - (a.sitemapPriority ?? 0.7),
+    ),
+  })).filter((g) => g.pages.length > 0);
+
+  const flat = groupsWithPages.flatMap((g) => g.pages.map((p) => ({ p, id: g.id })));
+  const totalCompanyPages = Math.max(1, Math.ceil(flat.length / GROUPS_PER_PAGE));
+  const safePage = Math.min(Math.max(1, pageNum), totalCompanyPages);
+  const pageSlice = flat.slice((safePage - 1) * GROUPS_PER_PAGE, safePage * GROUPS_PER_PAGE);
+
+  const groupAbsStart: Record<string, number> = {};
+  let cursor = 0;
+  for (const g of groupsWithPages) {
+    groupAbsStart[g.id] = cursor;
+    cursor += g.pages.length;
+  }
+  const groupStartPage = (id: string) => Math.floor(groupAbsStart[id] / GROUPS_PER_PAGE) + 1;
+  const companyPageHref = (p: number, anchor?: string) => {
+    const qs = p > 1 ? `?page=${p}` : "";
+    return `/companies${qs}${anchor ? `#${anchor}` : ""}`;
+  };
+
+  const sections: { id: string; pages: typeof SEO_PAGES }[] = [];
+  for (const item of pageSlice) {
+    const last = sections[sections.length - 1];
+    if (last && last.id === item.id) last.pages.push(item.p);
+    else sections.push({ id: item.id, pages: [item.p] });
+  }
+  const globalStartOfPage = (safePage - 1) * GROUPS_PER_PAGE;
+
   /* ItemList schema — one ListItem per company group */
   const itemListSchema = {
     "@context": "https://schema.org",
@@ -229,6 +273,7 @@ export default async function CompaniesIndexPage() {
               </Link>
               <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
                 {SEO_PAGES.length} guides · 2 free AI mocks per company
+                {totalCompanyPages > 1 && ` · page ${safePage} of ${totalCompanyPages}`}
               </span>
             </div>
           </div>
@@ -243,9 +288,7 @@ export default async function CompaniesIndexPage() {
           <div style={{ overflowX: "auto" as const }}>
           <div className="ed-container">
             <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0 }}>
-              {GROUPS.map((group, gi) => {
-                const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
-                if (count === 0) return null;
+              {groupsWithPages.map((group, gi) => {
                 const hint = group.companies
                   .filter((c) => SEO_PAGES.some((p) => p.company === c))
                   .slice(0, 2)
@@ -254,12 +297,12 @@ export default async function CompaniesIndexPage() {
                 return (
                   <Link
                     key={group.id}
-                    href={`#${group.id}`}
+                    href={companyPageHref(groupStartPage(group.id), group.id)}
                     className="ed-cta ed-tab"
-                    style={{ display: "flex", flexDirection: "column" as const, gap: 2, padding: "16px 24px 14px", textDecoration: "none", borderRight: gi < GROUPS.length - 1 ? `1px solid ${t.line}` : "none", flexShrink: 0, whiteSpace: "nowrap" as const }}
+                    style={{ display: "flex", flexDirection: "column" as const, gap: 2, padding: "16px 24px 14px", textDecoration: "none", borderRight: gi < groupsWithPages.length - 1 ? `1px solid ${t.line}` : "none", flexShrink: 0, whiteSpace: "nowrap" as const }}
                   >
                     <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{group.label}</span>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{hint} · {count}</span>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{hint} · {group.pages.length}</span>
                   </Link>
                 );
               })}
@@ -268,23 +311,23 @@ export default async function CompaniesIndexPage() {
           </div>
         </div>
 
-        {/* ── Company groups ────────────────────────────────────────── */}
-        {GROUPS.map((group, gi) => {
-          const groupPages = SEO_PAGES.filter((p) => group.companies.includes(p.company));
-          if (groupPages.length === 0) return null;
-
-          const sorted = [...groupPages].sort((a, b) => (b.sitemapPriority ?? 0.7) - (a.sitemapPriority ?? 0.7));
+        {/* ── Company groups — paginated, 30 per page ─────────────────── */}
+        {sections.map((section) => {
+          const group = groupsWithPages.find((g) => g.id === section.id)!;
+          const gi = groupsWithPages.indexOf(group);
+          const continued = groupAbsStart[section.id] < globalStartOfPage;
 
           return (
             <section
-              key={group.id}
-              id={group.id}
+              key={`${section.id}-${globalStartOfPage}`}
+              id={continued ? undefined : section.id}
               className="ed-section ed-reveal"
               style={{
                 paddingTop: 80,
                 paddingBottom: 80,
                 borderBottom: `1px solid ${t.line}`,
                 background: t.cream,
+                scrollMarginTop: 96,
               }}
             >
               <div className="ed-container">
@@ -293,22 +336,22 @@ export default async function CompaniesIndexPage() {
                   {/* Left panel */}
                   <div className="co-group-label" style={{ flexShrink: 0, width: 256, position: "sticky", top: 24, alignSelf: "flex-start" }}>
                     <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 12px" }}>
-                      {String(gi + 1).padStart(2, "0")} / {String(GROUPS.length).padStart(2, "0")}
+                      {String(gi + 1).padStart(2, "0")} / {String(groupsWithPages.length).padStart(2, "0")}
                     </p>
                     <h2 style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: "0 0 12px", lineHeight: 1.3, letterSpacing: "-0.01em" }}>
-                      {group.label}
+                      {group.label}{continued ? " (continued)" : ""}
                     </h2>
                     <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.65, margin: "0 0 18px" }}>
                       {group.description}
                     </p>
                     <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper }}>
-                      {sorted.length} {sorted.length === 1 ? "guide" : "guides"}
+                      {group.pages.length} {group.pages.length === 1 ? "guide" : "guides"} total
                     </span>
                   </div>
 
                   {/* Right: scannable list rows */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    {sorted.map((page, i) => (
+                    {section.pages.map((page, i) => (
                       <Link
                         key={page.slug}
                         href={`/questions/${page.slug}`}
@@ -323,10 +366,10 @@ export default async function CompaniesIndexPage() {
                           margin: "0 -8px",
                         }}
                       >
-                        <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: t.copper, opacity: 0.55, lineHeight: 1, flexShrink: 0, minWidth: 22 }}>
+                        <span aria-hidden style={{ fontFamily: fonts.mono, fontSize: 12, color: t.inkFaint, lineHeight: 1, flexShrink: 0, minWidth: 22 }}>
                           {i + 1}
                         </span>
-                        <span style={{ flex: 1, fontFamily: fonts.serif, fontSize: 16, lineHeight: 1.35, color: t.coal, letterSpacing: "-0.01em" }}>
+                        <span style={{ flex: 1, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4, color: t.coal }}>
                           {page.searchPhrase}
                         </span>
                         <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: "3px 10px", flexShrink: 0, whiteSpace: "nowrap" as const }}>
@@ -343,7 +386,84 @@ export default async function CompaniesIndexPage() {
           );
         })}
 
-        {/* ── FAQ section ───────────────────────────────────────────── */}
+        {/* ── Pagination — 30 companies per page ───────────────────────── */}
+        {totalCompanyPages > 1 && (
+          <nav
+            aria-label="Company directory pages"
+            style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "32px 24px" }}
+          >
+            <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginRight: 10, whiteSpace: "nowrap" }}>
+              {flat.length} companies · page {safePage} of {totalCompanyPages}
+            </span>
+
+            <Link
+              href={companyPageHref(safePage - 1)}
+              aria-disabled={safePage === 1}
+              tabIndex={safePage === 1 ? -1 : undefined}
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                background: safePage === 1 ? t.creamSoft : "#fff",
+                color: safePage === 1 ? t.inkFaint : t.coal,
+                textDecoration: "none",
+                pointerEvents: safePage === 1 ? "none" : "auto",
+                opacity: safePage === 1 ? 0.45 : 1,
+              }}
+            >
+              ← Prev
+            </Link>
+
+            {Array.from({ length: totalCompanyPages }, (_, i) => i + 1)
+              .filter((n) => n === 1 || n === totalCompanyPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | "…")[]>((acc, n) => {
+                const prev = acc[acc.length - 1];
+                if (typeof prev === "number" && n - prev > 1) acc.push("…");
+                acc.push(n);
+                return acc;
+              }, [])
+              .map((n, i) =>
+                n === "…" ? (
+                  <span key={`e-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
+                ) : (
+                  <Link
+                    key={n}
+                    href={companyPageHref(n)}
+                    aria-current={safePage === n ? "page" : undefined}
+                    style={{
+                      fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
+                      minWidth: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      borderRadius: 8, border: `1.5px solid ${safePage === n ? t.copper : t.line}`,
+                      background: safePage === n ? t.copper : "#fff",
+                      color: safePage === n ? "#fff" : t.coal,
+                      textDecoration: "none",
+                    }}
+                  >
+                    {n}
+                  </Link>
+                ),
+              )}
+
+            <Link
+              href={companyPageHref(safePage + 1)}
+              aria-disabled={safePage === totalCompanyPages}
+              tabIndex={safePage === totalCompanyPages ? -1 : undefined}
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                background: safePage === totalCompanyPages ? t.creamSoft : "#fff",
+                color: safePage === totalCompanyPages ? t.inkFaint : t.coal,
+                textDecoration: "none",
+                pointerEvents: safePage === totalCompanyPages ? "none" : "auto",
+                opacity: safePage === totalCompanyPages ? 0.45 : 1,
+              }}
+            >
+              Next →
+            </Link>
+          </nav>
+        )}
+
+        {/* ── FAQ section — page 1 only, avoids duplicating across pages ── */}
+        {safePage === 1 && (
         <section style={{ paddingTop: 80, paddingBottom: 80, borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
           <div className="ed-container">
             <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 16px" }}>
@@ -387,6 +507,7 @@ export default async function CompaniesIndexPage() {
             </div>
           </div>
         </section>
+        )}
 
         {/* ── Closing band ──────────────────────────────────────────── */}
         <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering." videoSrc="/cta.mp4">
