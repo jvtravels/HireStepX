@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "About HireStepX — India's AI Mock Interview Platform 2026",
-    description: "AI mock interviews for 60+ Indian companies. Voice interviews, STAR scoring, skill-decay tracking. Built for India.",
+    description: "AI mock interviews for 200+ Indian companies. Voice interviews, STAR scoring, skill-decay tracking. Built for India.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
