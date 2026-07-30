@@ -319,15 +319,16 @@ function BlogIndex({ metas }: { metas: BlogMeta[] }) {
 
         {/* Real crawlable links into the category pages (the tabs above are
             client-side filters with no URL of their own — this row gives
-            search engines an actual href to follow into each category). */}
-        <nav aria-label="Browse by topic" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 14px", marginBottom: 40 }}>
+            search engines an actual href to follow into each category).
+            Visually hidden: the tabs above already serve sighted users, so
+            this is SEO-only and shouldn't visually duplicate them. */}
+        <nav
+          aria-label="Browse by topic"
+          style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}
+        >
           {CATEGORY_BUCKETS.map(bucket => (
-            <Link
-              key={bucket}
-              href={`/blog/category/${bucketToSlug(bucket)}`}
-              style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, textDecoration: "underline", textUnderlineOffset: 3 }}
-            >
-              All {bucket} guides
+            <Link key={bucket} href={`/blog/category/${bucketToSlug(bucket)}`}>
+              All {bucket === "Company Guides" ? "Company" : bucket} guides
             </Link>
           ))}
         </nav>
