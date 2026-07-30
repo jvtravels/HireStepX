@@ -33,6 +33,10 @@ export interface BlogPost {
   /* "contain" letterboxes the image instead of cropping it, for a
      company logo/wordmark rather than a photo. Defaults to cover. */
   heroImageFit?: "cover" | "contain";
+  /* Frame background behind a "contain" logo. Use the company's own brand
+     surface color instead of the site's default cream so a letterboxed
+     logo doesn't sit on an unrelated theme color. Defaults to cream. */
+  heroBg?: string;
   datePublished: string;
   intro: string;
   sections: { heading: string; content: string }[];
@@ -11487,7 +11491,7 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
     relatedSlugs: ["scaler-interview-questions-2026", "vedantu-interview-questions-2026", "system-design-interview-preparation"],
     practicePageSlugs: [{ label: "PhysicsWallah SWE Interview Practice", slug: "physicswallah-software-engineer-interview-questions" }],
-    cta: "PhysicsWallah interviews test offline-first EdTech systems design and mission alignment. Use HireStepX to practise system design and mission-fit behavioral questions.",
+    cta: "PhysicsWallah interviews test offline-first EdTech systems design and mission alignment. Practise both with HireStepX's mock interview questions.",
     relatedLinks: [],
   },
   {
@@ -21702,7 +21706,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What are the SOLID principles and how are they tested in Indian engineering interviews?", answer: "SOLID principles: S (Single Responsibility): a class has one reason to change; one responsibility. O (Open/Closed): open for extension, closed for modification; add new behaviour by adding new classes, not modifying existing ones. L (Liskov Substitution): subclass objects should be substitutable for superclass objects without breaking the program. I (Interface Segregation): clients should not be forced to implement interfaces they do not use; split large interfaces into specific ones. D (Dependency Inversion): high-level modules should not depend on low-level modules; both should depend on abstractions (interfaces). In interviews: interviewers often show code that violates a principle and ask you to identify the violation and refactor. Most commonly tested: S (god classes), D (hard-coded dependencies that cannot be swapped for testing), O (switch statements that must be modified every time a new type is added)." },
     ],
     relatedSlugs: ["low-level-design-interview-india-2026", "java-developer-interview-questions-india-2026", "system-design-for-freshers-india-2026"],
-    cta: "Practise design patterns and object-oriented design interview questions with HireStepX's AI voice interviewer. Get scored feedback on your explanations of SOLID principles, design patterns, and code architecture. First 2 sessions free.",
+    cta: "Practise design patterns and object-oriented design interview questions with HireStepX's AI voice interviewer. Get scored feedback on your explanations of SOLID principles and code architecture. First 2 sessions free.",
     relatedLinks: [],
   },
   {
@@ -22381,6 +22385,7 @@ export const BLOG_POSTS: BlogPost[] = [
     heroImage: "/logos/sarvam-ai-wordmark.png",
     heroAlt: "Sarvam AI logo",
     heroImageFit: "contain",
+    heroBg: "#F0F1F5",
     datePublished: "2026-07-01",
     intro: "Sarvam AI is India's most prominent speech and language AI startup, building Indic language models, ASR (automatic speech recognition), and TTS (text-to-speech) technology. Headquartered in Bengaluru, Sarvam AI works on models that understand and generate Hindi, Tamil, Telugu, Kannada, Bengali, and other Indian languages at a level that general-purpose LLMs do not match. If you are a ML engineer, backend engineer, or researcher interested in Indic AI, Sarvam AI is one of the most technically ambitious and high-impact places to work in India. This guide covers the interview process, what Sarvam AI looks for, and how to prepare.",
     sections: [
@@ -22402,7 +22407,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Sarvam AI pay for ML engineers and SWEs in India in 2026?", answer: "Sarvam AI salary India 2026: Sarvam AI is a well-funded AI startup (Series B). Estimated salary ranges (total CTC): ML Engineer / Research Engineer (2–5 years): 25–55 LPA total CTC. Senior ML Engineer / Staff Research Engineer (5+ years): 50–100 LPA. Software Engineer / Backend Engineer (2–5 years): 18–40 LPA. Senior Software Engineer (5+ years): 35–70 LPA. The company is known to pay above the Indian market median for strong candidates in ML and speech AI, with meaningful equity (ESOPs). See the full Sarvam AI salary page for a CTC breakdown by role." },
     ],
     relatedSlugs: ["machine-learning-engineer-interview-india-2026", "startup-vs-mnc-india-2026"],
-    cta: "Practice the exact technical questions Sarvam AI interviewers ask: transformer architecture, ASR pipeline design, and system design for speech AI, using HireStepX's AI voice interviewer. Get scored feedback and a coached model answer after every response. First 2 sessions free.",
+    cta: "Practice the exact technical questions Sarvam AI interviewers ask: transformer architecture, ASR pipeline design, and speech-system design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/sarvam-ai", label: "Sarvam AI Salary Guide India 2026: AI Engineer CTC Breakdown" },
       { href: "/salary/sarvam", label: "Sarvam AI Salary Guide India 2026: SWE Roles CTC Breakdown" },

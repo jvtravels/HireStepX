@@ -124,7 +124,7 @@ function CompactCard({ post }: { post: BlogMeta }) {
   return (
     <article className="blog-card" style={{ display: "flex", flexDirection: "column" }}>
       {/* Image: frameless, portrait ratio, badges float on top */}
-      <div className="img-frame" style={{ position: "relative", aspectRatio: "4 / 3", background: t.creamSoft, flexShrink: 0, overflow: "hidden", borderRadius: 12, border: `2px solid ${t.lineStrong}` }}>
+      <div className="img-frame" style={{ position: "relative", aspectRatio: "4 / 3", background: post.heroBg ?? t.creamSoft, flexShrink: 0, overflow: "hidden", borderRadius: 12, border: `2px solid ${t.lineStrong}` }}>
         {!imgFailed ? (
           <Image
             src={post.heroImage} alt={post.heroAlt}
@@ -137,7 +137,7 @@ function CompactCard({ post }: { post: BlogMeta }) {
             }
           />
         ) : (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: t.creamSoft }}>
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: post.heroBg ?? t.creamSoft }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.inkFaintWeak} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
             </svg>
@@ -7352,7 +7352,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
 
       {/* Hero image: flush under header, rounded */}
       <div className="blog-post-hero" style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 40px" }}>
-        <div className="blog-post-hero-frame" style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative", background: t.creamSoft }}>
+        <div className="blog-post-hero-frame" style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative", background: post.heroBg ?? t.creamSoft }}>
           <Image
             src={post.heroImage}
             alt={post.heroAlt}
