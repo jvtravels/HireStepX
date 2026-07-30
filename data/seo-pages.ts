@@ -1352,6 +1352,346 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
 
+  /* ── Nykaa ─────────────────────────────────────────────────────────── */
+  {
+    slug: "nykaa-swe-interview-questions",
+    searchPhrase: "Nykaa Software Engineer Interview Questions India 2026",
+    company: "nykaa", roleFamily: "swe", focus: "technical",
+    intro: "Nykaa's engineering interviews are rigorous and multi-staged, built to test both DSA depth and low-level design judgment across 2-3 technical rounds plus a managerial round. A DSA round with project follow-ups is standard, but the differentiator is the LLD round: Nykaa consistently designs its low-level-design problems around its own dark-store and delivery operations, order-to-delivery allocation, multi-outlet inventory concurrency, catalog and search under a beauty-and-fashion SKU catalog, so generic parking-lot or elevator answers land flat. Candidates who can reason about concurrent stock decrements and real-time inventory-aware search stand out clearly from those reciting textbook patterns.",
+    framework: { name: "Commerce-operations LLD", summary: "Start from the entity model (Order, Outlet, SKU, Rider) → decide concurrency strategy for shared inventory → separate the fast-changing stock signal from the slower relevance index → only then talk APIs." },
+    metaKeywords: ["nykaa software engineer interview india", "nykaa swe interview questions 2026", "nykaa sde2 interview process", "nykaa low level design interview", "nykaa coding interview india"],
+    sitemapPriority: 0.76,
+    faqExtra: [
+      { q: "How many rounds does Nykaa's SWE interview have?", a: "Typically 2-3 technical rounds (a DSA round with project discussion, a low-level design round, and sometimes a high-level design round) followed by a managerial round covering past projects and broader system design." },
+      { q: "What kind of system design questions does Nykaa ask?", a: "Nykaa's LLD rounds are usually framed around its own operations: dark-store delivery allocation, multi-outlet inventory with concurrent order handling, or catalog/search consistency during flash sales. HLD rounds have covered designing a scalable stock-portfolio-style manager and campaign-targeting engines." },
+      { q: "Does Nykaa ask standard DSA questions too?", a: "Yes. Expect medium-difficulty problems on trees, linked lists, graphs, and string manipulation alongside the design rounds, often paired with a 'where would this actually be useful' follow-up tied to Nykaa's product." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: e-commerce, D2C, or quick-commerce backend experience preferred",
+      "DSA round: project discussion plus 1-2 medium-difficulty coding problems",
+      "Low-Level Design round: dark-store delivery, inventory concurrency, or catalog service design",
+      "High-Level Design round (senior roles): scalable service design at Nykaa's traffic scale",
+      "Managerial round: past-project deep dive plus a lighter design or trade-off discussion",
+    ],
+    interviewRounds: [
+      "DSA Round (45-60 min): project discussion with follow-ups, then 1-2 medium-difficulty problems on trees, linked lists, or string processing.",
+      "Low-Level Design Round (60 min): design a delivery or inventory system modeled on Nykaa's own dark-store operations; functional and non-functional requirements are expected before any code.",
+      "High-Level Design Round (60 min, senior roles): a broader scalability problem, e.g. a campaign-targeting engine or a high-throughput catalog service.",
+      "Managerial Round (30-45 min): detailed walk-through of past projects, ownership, and a lighter design or prioritization discussion.",
+    ],
+  },
+
+  /* ── Myntra ────────────────────────────────────────────────────────── */
+  {
+    slug: "myntra-swe-interview-questions",
+    searchPhrase: "Myntra Software Engineer Interview Questions India 2026",
+    company: "myntra", roleFamily: "swe", focus: "technical",
+    intro: "Myntra's SWE loop runs an online assessment followed by 3-4 rounds: a DSA/technical-discussion round, a machine-coding or low-level-design round, and (for SDE-2 and above) a high-level design round, closing with an HR conversation. What sets Myntra apart is how consistently its design rounds are grounded in its own fashion-commerce operations: coupon-stacking shopping carts, flash-sale search and catalog under Big Billion Days-scale traffic, and personalisation engines that need to react to a live sale rather than a nightly batch job. DSA rounds lean noticeably toward graphs and backtracking over generic array problems.",
+    framework: { name: "Flash-sale-aware design", summary: "Assume 50x traffic spikes are the normal case, not the edge case: separate read-heavy catalog/search paths from write-heavy inventory paths, and decide upfront what can degrade gracefully versus what must stay strictly consistent." },
+    metaKeywords: ["myntra software engineer interview india", "myntra swe interview questions 2026", "myntra machine coding round", "myntra low level design interview", "myntra sde interview process"],
+    sitemapPriority: 0.76,
+    faqExtra: [
+      { q: "What is Myntra's machine-coding round like?", a: "A 90-minute round where you build a working system, not a diagram, from a product requirement like a shopping cart with stacked coupons, a fashion recommendation engine, or inventory management. It's scored on SOLID principles, extensibility, and code quality, not just whether it compiles." },
+      { q: "Does Myntra ask system design questions for SDE-1?", a: "HLD rounds are typically reserved for SDE-2 and above and cover Myntra-specific systems like search and catalog, flash-sale (Big Billion Days) architecture, order management, and personalisation. SDE-1 loops focus more on DSA and the machine-coding/LLD round." },
+      { q: "What DSA topics come up most at Myntra?", a: "Graphs and backtracking are the most consistently tested topics, alongside union-find-style problems like Accounts Merge. The online assessment is typically 3 coding problems at easy-to-medium difficulty." },
+    ],
+    recruitmentSteps: [
+      "Online Assessment: 3 coding problems, easy to medium difficulty",
+      "DSA and technical-discussion round: coding plus a deep dive into past project decisions",
+      "Machine Coding / LLD round (90 min): build a working system end-to-end, evaluated on SOLID design",
+      "System Design / HLD round (SDE-2+): a Myntra-scale system like search, flash-sale, or personalisation",
+      "HR round: culture fit, motivation, and compensation discussion",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): 3 coding problems, easy to medium, occasionally with MCQs on CS fundamentals.",
+      "DSA and Technical Discussion (45-60 min): 1-2 coding problems (graphs/backtracking are common) plus a detailed walkthrough of a past project's design choices and trade-offs.",
+      "Machine Coding / LLD Round (90 min): build a working shopping-cart, recommendation-engine, or inventory system from a product requirement; judged on SOLID principles, extensibility, and code quality.",
+      "System Design / HLD Round (60-90 min, SDE-2+): design search and catalog, flash-sale architecture, order management, or a personalisation engine at Myntra's scale.",
+      "HR Round (30 min): motivation, culture fit, and compensation discussion.",
+    ],
+  },
+
+  /* ── Dream11 ───────────────────────────────────────────────────────── */
+  {
+    slug: "dream11-swe-system-design-interview-questions",
+    searchPhrase: "Dream11 System Design Interview Questions India 2026",
+    company: "dream11", roleFamily: "swe", focus: "system-design",
+    intro: "Dream11's interview runs two online DSA rounds followed by three onsite rounds: a resume/project deep-dive, a low-level design round, and a high-level design round, closing with a hiring-manager conversation. The design rounds are consistently built around Dream11's own hard constraints: a team-creation feature with a strict credit cap and an unmovable match-lock deadline, real-time leaderboard recomputation the instant a six or a wicket changes thousands of users' fantasy points simultaneously, and match-day traffic spikes that dwarf normal load by 50x or more. Generic system-design templates (design Twitter, design an elevator) don't transfer cleanly here: interviewers expect you to reason about hard deadlines and burst concurrency specific to live sports.",
+    framework: { name: "Deadline-and-burst design", summary: "Identify the hard, non-negotiable deadline first (match lock), design the write path to be idempotent against races at that deadline, then treat scoring events as a burst-fanout problem rather than a steady-state read/write split." },
+    metaKeywords: ["dream11 system design interview", "dream11 sde interview questions 2026", "dream11 hld interview", "dream11 team creation feature design", "dream11 interview process india"],
+    sitemapPriority: 0.74,
+    faqExtra: [
+      { q: "What is Dream11's most common system design question?", a: "Designing the HLD for the team-creation feature: users pick 11 players under a credit cap before a match locks, with the database schema and race-condition handling at the deadline as the core of the discussion." },
+      { q: "Does Dream11 ask about real-time systems?", a: "Yes. A recurring prompt is designing real-time score and leaderboard updates for millions of concurrent users during a live match, where a single scoring event can affect thousands of leaderboards at once." },
+      { q: "How many rounds does the Dream11 SDE interview have?", a: "Typically five: two online DSA rounds, then onsite rounds covering resume/project discussion, low-level design, high-level design, and a hiring-manager plus HR round." },
+    ],
+    recruitmentSteps: [
+      "Online Assessment 1: DSA problems (trees, graphs, DP)",
+      "Online Assessment 2: further DSA screening",
+      "Resume and Projects round: deep dive into past technical decisions",
+      "Low-Level Design round: a concrete system built from a product requirement",
+      "High-Level Design round: a Dream11-scale system like team creation or real-time scoring",
+      "Hiring Manager and HR round: situational questions and compensation discussion",
+    ],
+    interviewRounds: [
+      "Online Assessment rounds (2x, 60-90 min each): DSA problems covering trees, graphs, and dynamic programming.",
+      "Resume and Projects Round (45 min): detailed walkthrough of past project architecture and technology choices.",
+      "Low-Level Design Round (60 min): design a concrete module (e.g. contest or wallet logic) with clean class boundaries and SOLID principles.",
+      "High-Level Design Round (60-90 min): design Dream11's team-creation feature, a real-time leaderboard system, or a monitoring/alerting system for match-day traffic; expect a direct question on handling a 50x traffic spike.",
+      "Hiring Manager and HR Round (30-45 min): situational questions, project ownership, and compensation discussion.",
+    ],
+  },
+
+  /* ── Rapido ────────────────────────────────────────────────────────── */
+  {
+    slug: "rapido-swe-system-design-interview-questions",
+    searchPhrase: "Rapido Software Engineer System Design Interview Questions 2026",
+    company: "rapido", roleFamily: "swe", focus: "system-design",
+    intro: "Rapido's technical interviews run two in-person rounds: the first is a coding round on an IDE, and the second is a design discussion focused on making systems fail-safe and scalable. Candidates report design prompts pulled straight from Rapido's own domain, log processing keyed by order ID or ride timestamp, alongside classic booking-system problems like Redbus or BookMyShow. It's also worth studying Rapido's own published engineering writing: their dispatch system originally matched captains by straight-line distance and was rebuilt around hexagonal geospatial zoning and historical ETA data once that broke down on real roads, a good template for how they expect you to reason about their domain even when a specific question isn't reported verbatim. For SDE-2 candidates, the conversation often turns theoretical: monolith vs. microservices, why each service should own its database, and how you reason about horizontal versus vertical scaling.",
+    framework: { name: "Fail-safe-first design", summary: "Before drawing boxes, name the failure mode the interviewer is actually probing, a race on a booking lock, a bad distance proxy in a matching algorithm, a service outage cascading through a shared DB, then design the specific mechanism (TTL lock, geospatial zoning, isolated datastore) that neutralizes it." },
+    metaKeywords: ["rapido system design interview", "rapido sde interview questions 2026", "rapido sde-2 interview", "rapido dispatch system design", "rapido interview process india"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What system design questions does Rapido ask?", a: "Reported prompts include designing a log-processing system queryable by order ID or timestamp and classic booking-system design (Redbus- or BookMyShow-style seat/slot locking). Rapido's own engineering blog also details how they rebuilt captain matching around H3 geospatial zoning and historical ETA data instead of straight-line distance, a useful reference for a domain-specific design question even if it isn't asked verbatim." },
+      { q: "How many interview rounds does Rapido have for SWE roles?", a: "Typically two in-person technical rounds: one focused on coding in an IDE, and one focused on system design and making the design scalable and fail-safe. SDE-2 candidates also get a rounds on distributed-systems fundamentals." },
+      { q: "Does Rapido ask about microservices?", a: "Yes, especially at the SDE-2 level: expect direct questions on monolith vs. microservices, why each microservice should own its own database, and how you think about horizontal vs. vertical scaling." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment (DSA fundamentals)",
+      "Technical Round 1: live coding on an IDE",
+      "Technical Round 2: system design and scalability discussion",
+      "For SDE-2: an additional round on distributed-systems architecture",
+      "Hiring manager and HR round: compensation and culture fit",
+    ],
+    interviewRounds: [
+      "Technical Round 1 (45-60 min): coding problems written and compiled live on an IDE.",
+      "Technical Round 2 (60 min): system design, with prompts like log processing by order ID or timestamp, a Redbus/BookMyShow-style booking system with seat-locking, or a captain-matching redesign inspired by Rapido's own published dispatch architecture.",
+      "SDE-2 Architecture Round (45 min): monolith vs. microservices, database-per-service reasoning, and scalability fundamentals (horizontal vs. vertical).",
+      "Hiring Manager and HR Round (30 min): project ownership, motivation, and compensation discussion.",
+    ],
+  },
+
+  /* ── M2P Fintech ───────────────────────────────────────────────────── */
+  {
+    slug: "m2p-fintech-swe-technical-interview-questions",
+    searchPhrase: "M2P Fintech Software Engineer Interview Questions 2026",
+    company: "m2p-fintech", roleFamily: "swe", focus: "technical",
+    intro: "M2P Fintech's interviews lean hard on SQL, candidates report three escalating rounds: a basic query round, a deeper round, and a manager round mixing SQL with payment-domain and logical questions. On the engineering side, expect real backend-systems depth, idempotent API design (critical when a card or transfer request gets retried after a timeout), transaction isolation levels and locking for concurrent balance updates, and Kafka fundamentals for streaming transaction events to fraud and reconciliation systems. As a banking-as-a-service platform powering 50+ banks and fintechs, M2P expects you to reason about correctness under concurrency, not just get the syntax right.",
+    framework: { name: "Correctness-under-concurrency", summary: "Every M2P backend question has a hidden concurrency angle, a retried request, two simultaneous debits, a crashed consumer. Name the race condition explicitly before proposing a fix; 'add a lock' or 'add a queue' without saying what you're protecting against reads as guessing." },
+    metaKeywords: ["m2p fintech interview questions", "m2p fintech sde interview 2026", "m2p fintech sql interview", "m2p fintech technical round", "m2p fintech chennai interview"],
+    sitemapPriority: 0.62,
+    faqExtra: [
+      { q: "What SQL questions does M2P Fintech ask?", a: "Candidates report three rounds of SQL, starting basic and escalating to full-fledged queries, with the final manager round mixing SQL with payment-domain and logical reasoning. Practice join-heavy reconciliation-style queries, not just single-table SELECTs." },
+      { q: "Does M2P Fintech ask about Kafka?", a: "Yes, for SDE-2 candidates especially, expect questions on Kafka basics and architecture, usually framed around streaming transaction events reliably to downstream systems like fraud detection." },
+      { q: "What's the M2P Fintech interview process like?", a: "Reported process runs about 17 days end-to-end and typically includes a project/OOP discussion, a DSA-and-design round covering Java collections, Spring Boot, caching, idempotency, isolation levels, and Kafka, plus SQL rounds of increasing depth." },
+    ],
+    recruitmentSteps: [
+      "Resume screen and recruiter call",
+      "Technical Round 1: SQL fundamentals (joins, filtering)",
+      "Technical Round 2: DSA, OOP/SOLID, and system topics (caching, idempotency, isolation levels, Kafka)",
+      "Technical Round 3 / Manager Round: deeper SQL plus payment-domain and logical questions",
+      "HR and offer discussion",
+    ],
+    interviewRounds: [
+      "Technical Round 1 (30-45 min): basic SQL, current project walkthrough.",
+      "Technical Round 2 (45-60 min): DSA and design, Java collections, Spring Boot annotations, caching, API idempotency, transaction isolation and locking, Kafka basics.",
+      "Manager Round (30-45 min): advanced SQL plus payment-domain and logical questions.",
+      "HR Round (20-30 min): compensation and offer discussion.",
+    ],
+  },
+
+  /* ── Capillary Technologies ────────────────────────────────────────── */
+  {
+    slug: "capillary-tech-swe-technical-interview-questions",
+    searchPhrase: "Capillary Technologies Software Engineer Interview Questions 2026",
+    company: "capillary-tech", roleFamily: "swe", focus: "technical",
+    intro: "Capillary Technologies runs a four-round process: a written test, a technical round, a hiring-manager round, and a culture-fit round. The technical round opens with low-level design or machine-coding (candidates report being asked to build small components like rate limiters from scratch), then moves into authentication design, SQL joins across relational tables, and basic Unix diagnostics (grep, find, ssh) to see how you'd triage a hung process. As a loyalty-and-CRM SaaS platform serving 250+ global retail brands, expect SQL questions framed around real multi-table reconciliation problems, not toy schemas.",
+    framework: { name: "Build-it-clean, explain-the-tradeoff", summary: "Capillary's machine-coding and SQL rounds reward code you can extend on the spot: a rate limiter that handles the boundary case cleanly, a join query with the right index called out unprompted. State the tradeoff you made before the interviewer has to ask for it." },
+    metaKeywords: ["capillary technologies interview questions", "capillary tech sde interview 2026", "capillary technologies machine coding", "capillary technologies sql interview", "capillary technologies bangalore interview"],
+    sitemapPriority: 0.6,
+    faqExtra: [
+      { q: "Does Capillary Technologies ask machine coding questions?", a: "Yes, the first technical round is reported to include low-level design and machine-coding problems, small, self-contained components like a rate limiter or an in-memory cache, built and reasoned about live." },
+      { q: "What SQL questions does Capillary Technologies ask?", a: "Candidates report join-heavy SQL questions, often framed around Capillary's loyalty-platform domain (customer, transaction, and points-ledger tables), plus questions on indexing for performance." },
+      { q: "How many interview rounds does Capillary Technologies have?", a: "Four rounds are commonly reported: a written test, a technical round (machine coding, SQL, auth, Unix basics), a hiring-manager round, and a culture-fit round." },
+    ],
+    recruitmentSteps: [
+      "Written test (aptitude/technical screening)",
+      "Technical Round: machine coding/LLD, authentication design, SQL, Unix command-line diagnostics",
+      "Hiring Manager Round: architecture, past projects, DBMS fundamentals",
+      "Culture Fit Round",
+    ],
+    interviewRounds: [
+      "Written Test (30-45 min): aptitude and basic technical screening.",
+      "Technical Round (45-60 min): low-level design/machine coding, authentication in past projects, SQL joins, Unix diagnostics (grep, find, ssh).",
+      "Hiring Manager Round (30-45 min): architecture and coding problems, DBMS, past-project deep dive.",
+      "Culture Fit Round (20-30 min): team and values alignment.",
+    ],
+  },
+
+  /* ── Ecom Express ──────────────────────────────────────────────────── */
+  {
+    slug: "ecom-express-swe-technical-interview-questions",
+    searchPhrase: "Ecom Express Software Engineer Interview Questions 2026",
+    company: "ecom-express", roleFamily: "swe", focus: "technical",
+    intro: "Ecom Express interviews open with resume grilling, expect detailed questions about your internship or personal projects, before moving into a DSA round (candidates specifically cite LeetCode 792, Number of Matching Subsequences) and a fundamentals round covering OOP (encapsulation, abstraction, polymorphism) and the Java/Spring Boot/MySQL stack their backend runs on. As a listed last-mile delivery company (NSE: ECOMEXPRESS), expect at least one question that ties your technical answer back to their actual logistics domain, tracking shipment status, computing delivery estimates, or handling conflicting scan updates.",
+    framework: { name: "Textbook concept, real domain", summary: "Ecom Express's fundamentals questions (OOP pillars, Spring Boot, MySQL) are rarely asked in the abstract, expect a follow-up that grounds them in a shipment-tracking or delivery-estimation scenario. Answer the textbook part fast, then spend your time on the domain-specific follow-up." },
+    metaKeywords: ["ecom express interview questions", "ecom express sde interview 2026", "ecom express dsa questions", "ecom express java spring boot interview", "ecom express interview process"],
+    sitemapPriority: 0.6,
+    faqExtra: [
+      { q: "What DSA questions does Ecom Express ask?", a: "Candidates report LeetCode 792 (Number of Matching Subsequences) as a recurring question, along with general data-structures and OOPs fundamentals (encapsulation, abstraction, polymorphism)." },
+      { q: "What tech stack does Ecom Express ask about?", a: "Technical rounds cover Java, Spring Boot, and MySQL, Ecom Express's actual backend stack, often applied to their last-mile delivery and shipment-tracking domain." },
+      { q: "Does Ecom Express ask about past projects?", a: "Yes, the interview typically opens with resume grilling focused specifically on internship projects before moving into DSA and stack-specific questions." },
+    ],
+    recruitmentSteps: [
+      "Resume screen and project deep-dive",
+      "DSA Round: data structures and algorithms",
+      "Technical Round: OOP fundamentals, Java/Spring Boot/MySQL, logistics-domain scenario",
+      "HR Round",
+    ],
+    interviewRounds: [
+      "Resume/Project Round (20-30 min): detailed questions on internship or personal projects.",
+      "DSA Round (45 min): data structures and algorithms, subsequence/string problems reported.",
+      "Technical Round (45-60 min): OOP pillars, Java, Spring Boot, MySQL, applied to shipment-tracking scenarios.",
+      "HR Round (20-30 min): logistics-related and behavioral questions, compensation discussion.",
+    ],
+  },
+
+  /* ── Yulu ──────────────────────────────────────────────────────────── */
+  {
+    slug: "yulu-swe-technical-interview-questions",
+    searchPhrase: "Yulu Software Engineer Interview Questions 2026",
+    company: "yulu", roleFamily: "swe", focus: "technical",
+    intro: "Yulu's process is compact: a technical test (app-development and DSA questions), followed by one technical round and one managerial round. Candidates report tree-related DSA problems, general OOPs questions, and project deep-dives. For Android-specific roles, expect a telephonic screen on your background followed by a dedicated coding-and-technical round. As an EV micro-mobility company (bikes and mopeds, partnered with Bajaj Auto), a well-prepared answer connects your OOP or Android-architecture answer to Yulu's actual fleet-and-ride domain rather than staying purely abstract.",
+    framework: { name: "Abstract concept, fleet-shaped example", summary: "Yulu's technical round is short, one round, one manager round, so don't burn time on textbook recitals. Pick a Yulu-shaped example (a vehicle class hierarchy, a live-tracking screen) to demonstrate the OOP or Android concept and move on." },
+    metaKeywords: ["yulu interview questions", "yulu sde interview 2026", "yulu android interview questions", "yulu bikes interview process", "yulu technical round"],
+    sitemapPriority: 0.58,
+    faqExtra: [
+      { q: "What DSA topics does Yulu ask about?", a: "Candidates report tree-related problems as a recurring theme in the technical round, alongside general OOPs questions and project-based discussion." },
+      { q: "How many interview rounds does Yulu have?", a: "A short process: a technical test (app-dev plus DSA), one technical round, and one managerial round. Android roles add a telephonic screen before the coding round." },
+      { q: "Does Yulu ask Android-specific questions?", a: "Yes, for Android engineering roles, expect a telephonic round on your background first, followed by roughly an hour of coding and technical questions, often touching app architecture and state management." },
+    ],
+    recruitmentSteps: [
+      "Technical test: app-development and DSA questions",
+      "Technical Round: DSA (trees), OOP, project walkthrough",
+      "Managerial Round",
+      "(Android roles) Telephonic screen before the coding round",
+    ],
+    interviewRounds: [
+      "Technical Test (45-60 min): app-development questions plus DSA problems.",
+      "Technical Round (45-60 min): tree-based DSA, OOPs fundamentals, project deep-dive.",
+      "Managerial Round (30 min): fit, ownership, and compensation discussion.",
+    ],
+  },
+
+  /* ── Country Delight ───────────────────────────────────────────────── */
+  {
+    slug: "country-delight-swe-system-design-interview-questions",
+    searchPhrase: "Country Delight Software Engineer System Design Interview Questions 2026",
+    company: "country-delight", roleFamily: "swe", focus: "system-design",
+    intro: "Country Delight's interviews run three rounds, commonly reported as an exploratory call, a technical round, and a CTO round covering past projects and coding. The technical round mixes system design, SQL, and Java coding with an explicit optimization bar, brute-force answers get pushed on. Given Country Delight's actual business, a cold-chain D2C dairy subscription service, expect design questions that touch their real subscription-and-delivery-cutoff model, not a generic e-commerce system. Come ready to defend an architectural choice in the CTO round; candidates report it goes deep on 'why', not just 'what'.",
+    framework: { name: "Cutoff-and-consistency", summary: "Country Delight's core operational hardness is the daily subscription cutoff, edits after the cutoff must never leak into a route that's already locked. Frame your design answers around that boundary explicitly, then layer in the SQL/optimization ask on top." },
+    metaKeywords: ["country delight interview questions", "country delight sde interview 2026", "country delight system design interview", "country delight technical round", "country delight cto round"],
+    sitemapPriority: 0.6,
+    faqExtra: [
+      { q: "What system design questions does Country Delight ask?", a: "Candidates report system-design topics as part of the technical round, often applied to Country Delight's actual subscription-delivery business, expect a design question around order cutoffs, route planning, or delivery scheduling." },
+      { q: "Does Country Delight care about code optimization?", a: "Yes, candidates specifically report being pushed to optimize Java coding answers rather than leave a brute-force solution as final." },
+      { q: "What's the final round at Country Delight like?", a: "The last round is commonly a CTO round covering your past projects in depth, including the architectural reasoning behind key decisions, plus additional coding questions." },
+    ],
+    recruitmentSteps: [
+      "Exploratory call: background and tech stack",
+      "Technical Round: system design, SQL, Java with optimization follow-ups",
+      "CTO Round: past-project deep dive and coding",
+      "Offer discussion",
+    ],
+    interviewRounds: [
+      "Exploratory Call (20-30 min): background, tech stack, motivation.",
+      "Technical Round (45-60 min): system design, SQL queries, Java coding with an explicit optimization bar.",
+      "CTO Round (45-60 min): deep dive into a past project's architecture plus additional coding questions.",
+    ],
+  },
+
+  /* ── Rivigo ────────────────────────────────────────────────────────── */
+  {
+    slug: "rivigo-swe-system-design-interview-questions",
+    searchPhrase: "Rivigo Software Engineer System Design Interview Questions 2026",
+    company: "rivigo", roleFamily: "swe", focus: "system-design",
+    intro: "Rivigo's technical process runs three rounds: a DSA round leaning on graphs and dynamic programming, a system design round covering both low-level and high-level design, and a hiring-manager round on behavioral fit; some candidates also get a take-home assignment. What sets Rivigo's interviews apart is domain grounding, expect a real-time logistics problem (a breakdown mid-route, a shipment that needs rerouting) rather than a generic system-design prompt. It's also worth understanding Rivigo's own actual innovation, the 'relay' driver model, where a truck is handed off between drivers partway through a long route instead of one driver covering the whole distance, since it's real, documented, and a natural design-question template even when a specific interview question about it isn't reported.",
+    framework: { name: "Freight-graph-first", summary: "Model Rivigo's network as a graph (hubs as nodes, routes as weighted edges) before reaching for a generic CRUD design. Most of their reported prompts, routing, rerouting on failure, relay handoffs, are graph problems wearing a logistics costume." },
+    metaKeywords: ["rivigo interview questions", "rivigo sde interview 2026", "rivigo system design interview", "rivigo logistics interview", "rivigo relay model design"],
+    sitemapPriority: 0.58,
+    faqExtra: [
+      { q: "What system design questions does Rivigo ask?", a: "Candidates report both low-level and high-level design questions, often tied to real-time logistics scenarios like rerouting a shipment after a breakdown. Rivigo's own real 'relay' driver-handoff model, drivers swap out mid-route instead of one driver covering the whole trip, is also a natural design-question template even when not asked verbatim." },
+      { q: "Does Rivigo ask graph algorithm questions?", a: "Yes, the DSA round is reported to focus on graphs and dynamic programming, a natural fit for Rivigo's actual hub-and-route freight network." },
+      { q: "How many interview rounds does Rivigo have?", a: "Typically three: a DSA round (graphs/DP), a system design round (LLD and HLD), and a hiring-manager round on behavioral fit. Some candidates also receive a take-home assignment." },
+    ],
+    recruitmentSteps: [
+      "DSA Round: graphs and dynamic programming",
+      "System Design Round: low-level and high-level design, logistics scenarios",
+      "(Optional) Take-home assignment",
+      "Hiring Manager Round: behavioral fit and compensation discussion",
+    ],
+    interviewRounds: [
+      "DSA Round (45-60 min): graph algorithms and dynamic programming.",
+      "System Design Round (60 min): LLD/HLD, often a real-time logistics scenario like rerouting after a breakdown or a relay-style driver handoff.",
+      "Hiring Manager Round (30-45 min): behavioral questions, project ownership, compensation.",
+    ],
+  },
+
+  /* ── Sumo Logic ────────────────────────────────────────────────────── */
+  {
+    slug: "sumologic-swe-system-design-interview-questions",
+    searchPhrase: "Sumo Logic Software Engineer System Design Interview Questions 2026",
+    company: "sumologic", roleFamily: "swe", focus: "system-design",
+    intro: "Sumo Logic's interview process (India engineering is based in Noida) typically opens with an online round on HackerEarth (MCQs plus coding), followed by a coding test and a live debugging round where you're given buggy code, regex matching comes up specifically, and asked to find and fix it. The system-design round is squarely in Sumo Logic's own product territory: candidates report being asked to design a time-based log search system and to design a simplified DynamoDB, both directly relevant to a log-analytics and observability platform. A recurring data-structure question is designing insert/delete/find-minimum, all in O(1).",
+    framework: { name: "Design your own product back", summary: "Sumo Logic's system-design prompts (log search by time range, a DynamoDB-style store) are close reflections of what Sumo Logic itself builds. Reason about the actual access pattern, time-range scans, key-value lookups, before reaching for a generic 'add a database' answer." },
+    metaKeywords: ["sumo logic interview questions", "sumo logic sde interview 2026", "sumo logic system design interview", "sumo logic dynamodb design", "sumo logic noida interview"],
+    sitemapPriority: 0.58,
+    faqExtra: [
+      { q: "What system design questions does Sumo Logic ask?", a: "Reported prompts include designing a time-based log search system and designing a simplified DynamoDB, both directly aligned with Sumo Logic's own log-analytics product. A recurring data-structure question asks for O(1) insert, delete, and find-minimum." },
+      { q: "Does Sumo Logic have a debugging round?", a: "Yes, candidates report a round where you're given code with an existing bug, regex-matching bugs are specifically mentioned, and asked to find and fix it live, rather than write new code from scratch." },
+      { q: "What's the Sumo Logic interview process like in India?", a: "A common flow is an online HackerEarth round (MCQs plus coding), a coding test on a shared editor like CodePair, a live debugging round, and a system-design round." },
+    ],
+    recruitmentSteps: [
+      "Online Assessment: HackerEarth MCQs plus coding questions",
+      "Coding Round: live coding on a shared editor (e.g. CodePair)",
+      "Debugging Round: find and fix a bug in provided code",
+      "System Design Round: log-search and key-value-store design",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): MCQs plus coding problems on HackerEarth.",
+      "Coding Round (45-60 min): live coding, string/regex problems reported.",
+      "Debugging Round (30-45 min): fix a bug in existing code, regex-matching bugs specifically cited.",
+      "System Design Round (60 min): design a time-based log search system or a DynamoDB-style key-value store.",
+    ],
+  },
+
+  /* ── Clari ─────────────────────────────────────────────────────────── */
+  {
+    slug: "clari-swe-technical-interview-questions",
+    searchPhrase: "Clari Software Engineer Interview Questions 2026",
+    company: "clari", roleFamily: "swe", focus: "technical",
+    intro: "Clari's process (Bengaluru engineering) runs two technical stages on a shared editor like CodePad, real front-end/full-stack problems rather than abstract whiteboard puzzles, followed by a culture-fit conversation with your prospective manager. Candidates report a mix of DSA (binary search trees at medium difficulty), core JavaScript (hoisting and closures), React internals (Virtual DOM vs. Shadow DOM), and system-design fundamentals covering both low-level and high-level design. As a revenue-operations SaaS platform, a strong answer to a design question ties back to Clari's actual problem: making near-real-time forecasting dashboards feel live on top of CRM data that only updates every few minutes.",
+    framework: { name: "Full-stack fluency, not framework trivia", summary: "Clari's JS/React questions test whether you actually understand the mechanism (why closures leak in loops, what Shadow DOM isolates that Virtual DOM doesn't) rather than whether you've memorized a definition. Answer with the underlying mechanism first, the buzzword second." },
+    metaKeywords: ["clari interview questions", "clari sde interview 2026", "clari javascript interview", "clari react interview questions", "clari bengaluru interview"],
+    sitemapPriority: 0.58,
+    faqExtra: [
+      { q: "What JavaScript questions does Clari ask?", a: "Candidates report questions on hoisting and closures specifically, including practical bugs closures can cause (e.g. inside a loop), rather than just definitions." },
+      { q: "Does Clari ask about React internals?", a: "Yes, Virtual DOM vs. Shadow DOM is a specifically reported question, expect to explain what each actually solves rather than treat them as synonyms." },
+      { q: "What's the Clari interview process like?", a: "Two technical rounds on a live coding platform (CodePad), covering DSA, JavaScript/React fundamentals, and LLD/HLD, followed by a culture-fit conversation with your future manager." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen",
+      "Technical Round 1: DSA and core JavaScript on CodePad",
+      "Technical Round 2: React internals and LLD/HLD",
+      "Culture Fit: conversation with future manager",
+    ],
+    interviewRounds: [
+      "Technical Round 1 (45-60 min): DSA (binary search trees reported), JavaScript fundamentals (hoisting, closures).",
+      "Technical Round 2 (45-60 min): React internals (Virtual DOM vs. Shadow DOM), LLD/HLD fundamentals.",
+      "Culture Fit Round (30 min): conversation with your prospective manager.",
+    ],
+  },
+
   /* ── Swiggy (engineering) ──────────────────────────────────────────── */
   {
     slug: "swiggy-engineering-interview-questions",
@@ -2873,6 +3213,34 @@ export const SEO_PAGES: SeoPage[] = [
   },
 
   {
+    slug: "icici-relationship-manager-interview-questions",
+    searchPhrase: "ICICI Bank Relationship Manager Interview Questions India 2026",
+    company: "icici", roleFamily: "bfsi-sales", focus: "case-study",
+    intro: "ICICI Bank's Relationship Manager interviews are scenario-heavy: instead of asking what cross-selling means in theory, panels hand you a live customer situation, a walk-in NTB customer, a 90-day-old territory, an MSME loan file, and score how you sequence your pitch and structure your first few weeks. Branch and territory context matters as much as product knowledge; interviewers are quick to fail candidates who recite the full product list without reading the customer's actual need or timeline.",
+    framework: { name: "Need-first sequencing", summary: "Anchor every cross-sell pitch to the customer's immediate need first (savings, payments), then layer in stickiness and protection products, never lead with the highest-commission product." },
+    metaKeywords: ["icici bank relationship manager interview", "icici bank rm interview questions india", "icici bank sales interview 2026", "icici bank cross sell case study", "icici bank branch banking interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What kind of questions does ICICI Bank ask RM candidates?", a: "Live customer scenarios: cross-selling to a new-to-bank customer, structuring a new territory in the first 90 days, and MSME loan case studies. Expect sequencing and prioritization questions, not just product recall." },
+      { q: "Does ICICI Bank test product knowledge for RM roles?", a: "Yes, but as a baseline. The real filter is whether you can match products to a customer's actual need and timeline instead of pitching everything at once." },
+      { q: "How is the ICICI Bank RM case-study round structured?", a: "You're given a short customer or territory scenario and asked to walk through your approach out loud, prioritization and reasoning are scored more than the final answer." },
+    ],
+    recruitmentSteps: [
+      "Resume screen: banking, NBFC, or insurance sales experience preferred",
+      "Aptitude and situational judgment test: numerical reasoning plus customer-scenario MCQs",
+      "Case Study Round: live customer or territory scenario, structured verbal walkthrough",
+      "Branch Manager Round: role-play or deeper scenario probing, target and pipeline discussion",
+      "HR Round: compensation, notice period, and relocation across branch network",
+    ],
+    interviewRounds: [
+      "Aptitude and Situational Judgment Test (45-60 min): numerical reasoning plus scenario-based MCQs on prioritizing customer requests and handling objections.",
+      "Case Study Round (30-45 min): a cross-sell or new-territory scenario; you think out loud through sequencing, not just naming the right products.",
+      "Branch Manager Round (30-45 min): deeper scenario or light role-play, plus questions on how you'd hit a quarterly cross-sell target from a cold start.",
+      "HR Round (20-30 min): compensation structure, incentive-linked pay, notice period, and willingness to work across the branch network.",
+    ],
+  },
+
+  {
     slug: "hul-behavioral-interview-questions",
     searchPhrase: "HUL Hindustan Unilever Interview Questions India 2026",
     company: "hul", roleFamily: "behavioral", focus: "behavioral",
@@ -3166,8 +3534,8 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
   {
-    slug: "nykaa-swe-interview-questions",
-    searchPhrase: "Nykaa Software Engineer Interview Questions India 2026",
+    slug: "nykaa-swe-interview-prep-guide-2026",
+    searchPhrase: "Nykaa SWE Interview Prep Guide: DSA, System Design & HR Rounds 2026",
     company: "nykaa", roleFamily: "swe", focus: "technical",
     intro: "Nykaa's engineering interviews focus on data structures, algorithms, and backend systems that power its beauty and fashion e-commerce platform. Expect questions around catalogue management, recommendation pipelines, and high-concurrency order flows. The process typically spans three to four rounds conducted over video call for most India-based engineering roles.",
     framework: { name: "PREP", summary: "Problem restatement, reasoning through edge cases, execution with clean code, and performance analysis" },
@@ -3193,8 +3561,8 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
   {
-    slug: "myntra-swe-interview-questions",
-    searchPhrase: "Myntra Software Engineer Interview Questions India 2026",
+    slug: "myntra-swe-interview-prep-guide-2026",
+    searchPhrase: "Myntra SWE Interview Prep Guide: DSA, LLD & System Design 2026",
     company: "myntra", roleFamily: "swe", focus: "technical",
     intro: "Myntra, part of the Flipkart group, runs a structured SDE interview process with a strong emphasis on data structures, algorithms, and low-level design. Engineers work on high-traffic fashion commerce systems, so interviewers probe your understanding of scalability, caching, and microservices. Most rounds take place on video call and follow a predictable four-stage structure.",
     framework: { name: "STAR-T", summary: "Situation, Task, Action, Result, and Technology tradeoffs used to discuss past projects" },
@@ -4430,8 +4798,8 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
   {
-    slug: "bharatpe-swe-interview-questions",
-    searchPhrase: "BharatPe Software Engineer Interview Questions India 2026",
+    slug: "bharatpe-swe-interview-prep-guide-2026",
+    searchPhrase: "BharatPe SWE Interview Prep Guide: Backend, Payments & DSA 2026",
     company: "bharatpe", roleFamily: "swe", focus: "technical",
     intro: "BharatPe engineers build payment infrastructure and lending products serving millions of small merchants across India. Interviews test core DSA, backend system design, and practical knowledge of distributed systems at scale. The process is competitive and moves quickly, with most candidates completing all rounds within two weeks.",
     framework: { name: "Backend Depth", summary: "coding screens filter on DSA: design rounds assess microservices, payment flows, and fraud detection at merchant scale" },
@@ -5044,7 +5412,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "samsung-india-software-engineer-interview-questions",
-    searchPhrase: "Samsung R&D India Software Engineer Interview Questions 2026",
+    searchPhrase: "Samsung R&D India (SRIB) Interview Guide: DSA, Android & AI/ML 2026",
     company: "samsung-india", roleFamily: "swe", focus: "technical",
     intro: "Samsung R&D Institute India (SRIB, Bangalore) is one of the largest R&D centers outside Korea and hires aggressively for Android platform, AI/ML, multimedia, and connectivity teams. The interview is distinctly C++ and algorithm-heavy compared to product startups, and the bar for data structures stays high regardless of the team you target. SRIB runs one of the largest campus programs in India through its in-house online test, pulling from IITs, NITs, and BITS.",
     framework: { name: "Algorithm-first, then platform", summary: "Nail the DSA solution with correct complexity, then layer platform context such as Android or embedded constraints only after the algorithm is solid." },
