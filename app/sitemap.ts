@@ -41,6 +41,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     /* Pillar pages — high topical authority, link to all company/focus trees */
     { url: `${baseUrl}/ai-mock-interview`, lastModified: now, changeFrequency: "monthly", priority: 0.93 },
     { url: `${baseUrl}/interview-prep`, lastModified: now, changeFrequency: "monthly", priority: 0.92 },
+    { url: `${baseUrl}/interview-anxiety`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${baseUrl}/english-interview-practice`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/for-students`, lastModified: now, changeFrequency: "monthly", priority: 0.90 },
     { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: "monthly", priority: 0.88 },
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },

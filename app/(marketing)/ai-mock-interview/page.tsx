@@ -565,6 +565,8 @@ export default async function AiMockInterviewPage() {
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
+                { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
+                { label: "English Speaking Practice for Interviews", href: "/english-interview-practice" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
                 { label: "How It Works — 5 Steps", href: "/how-it-works" },
