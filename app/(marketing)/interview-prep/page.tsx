@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
 import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../data/salary-seo";
+import { CITY_PAGES } from "../../../data/city-pages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -263,7 +264,7 @@ export default async function InterviewPrepPage({
                 Interview Preparation Guide for India 2026
               </h1>
 
-              <p style={{ ...serif, fontStyle: "italic", fontSize: 19, lineHeight: 1.55, color: sand, marginTop: 20, maxWidth: 680, textWrap: "balance" }}>
+              <p style={{ ...s, fontStyle: "italic", fontSize: 19, lineHeight: 1.55, color: sand, marginTop: 20, maxWidth: 680, textWrap: "balance" }}>
                 Not all Indian interviews are the same. TCS wants aptitude. Razorpay wants system design.
                 McKinsey wants case studies. This guide maps the terrain — and links you directly to practice
                 for each company.
@@ -568,6 +569,26 @@ export default async function InterviewPrepPage({
                     See the full campus placement guide →
                   </Link>
                 </p>
+              </section>
+
+              {/* ── City guides ──────────────────────────────────────────── */}
+              <section style={{ marginTop: 56 }}>
+                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
+                  Prepare by city
+                </h2>
+                <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
+                  Hiring mix differs by city — a Bengaluru loop skews GCC-heavy, Mumbai skews banking and consulting. See which companies are actually hiring where.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {CITY_PAGES.map((c) => (
+                    <Link key={c.slug} href={`/interview-prep/${c.slug}`} style={{
+                      padding: "10px 16px", background: t.white, border: `1px solid ${t.line}`,
+                      borderRadius: 999, textDecoration: "none", color: coal, fontSize: 13, fontWeight: 500,
+                    }}>
+                      {c.city}
+                    </Link>
+                  ))}
+                </div>
               </section>
 
               {/* ── FAQ ──────────────────────────────────────────────────── */}

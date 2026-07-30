@@ -3,6 +3,7 @@ import { SEO_PAGES, SEO_PAGES_LAST_MODIFIED } from "../data/seo-pages";
 import { getAllBlogSlugs, BLOG_META } from "../src/blog-meta";
 import { CATEGORY_BUCKETS, bucketToSlug } from "../src/blog-categories";
 import { getAllSalarySlugs } from "../data/salary-seo";
+import { getAllCitySlugs } from "../data/city-pages";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)
@@ -133,5 +134,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.65,
   }));
 
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCompanyEntries, ...blogCategoryEntries];
+  /* /interview-prep/[city] — city-specific interview prep pages. */
+  const cityEntries: MetadataRoute.Sitemap = getAllCitySlugs().map((slug) => ({
+    url: `${baseUrl}/interview-prep/${slug}`,
+    lastModified: seoPagesLastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+  }));
+
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCompanyEntries, ...blogCategoryEntries, ...cityEntries];
 }
