@@ -48,8 +48,12 @@ const DIFFICULTY_STYLES: Record<string, CSSProperties> = {
     border: "1px solid rgba(21,128,61,0.15)",
   },
   standard: {
+    /* t.warning (#A16207) on t.warning100 falls just short of the 4.5:1
+       AA floor at this weight/size (~4.4:1) — darkened locally rather
+       than touching the shared token, which is used at larger sizes
+       elsewhere where it already passes. */
     background: t.warning100,
-    color: t.warning,
+    color: "#8F5A00",
     border: `1px solid ${t.warningLine}`,
   },
   intense: {
@@ -254,8 +258,11 @@ export function QuestionSetPage({
 }: QuestionSetPageProps) {
   const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
 
-  /* Show first 5 free; gate the rest behind a signup prompt. */
-  const showSignupGate = questions.length > 5;
+  /* Show first 10 free; gate the rest behind a signup prompt. A 5-question
+     free sample bounced most visitors before they'd read enough to see the
+     page is worth the signup — 10 gives a real sense of the question bank. */
+  const FREE_QUESTION_COUNT = 10;
+  const showSignupGate = questions.length > FREE_QUESTION_COUNT;
 
   /* Difficulty breakdown for the stats sidebar */
   const diffCounts = { easy: 0, medium: 0, hard: 0 };
@@ -271,6 +278,7 @@ export function QuestionSetPage({
     const dot = page.intro.indexOf(". ");
     return dot > -1 ? page.intro.slice(0, dot + 1) : page.intro.slice(0, 180);
   })();
+  const introRest = page.intro.length > introFirst.length ? page.intro.slice(introFirst.length).trim() : "";
 
   return (
     <>
@@ -325,6 +333,12 @@ export function QuestionSetPage({
 
           {/* Left: main content */}
           <div style={{ flex: 1, minWidth: 0 }}>
+
+            {introRest && (
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.7, color: t.inkSoft, margin: "0 0 40px", maxWidth: "68ch" }}>
+                {introRest}
+              </p>
+            )}
 
             <CompanyContextBox company={page.company} companyLabel={companyLabel} />
 
@@ -398,8 +412,8 @@ export function QuestionSetPage({
                     <QuestionCard key={i} question={q} index={i} practiceHref={practiceHref} />
                   ))}
                 </ol>
-                {showSignupGate && questions.length > 5 && (
-                  <QuestionGate practiceHref={practiceHref} hiddenCount={questions.length - 5} />
+                {showSignupGate && (
+                  <QuestionGate practiceHref={practiceHref} hiddenCount={questions.length - FREE_QUESTION_COUNT} />
                 )}
               </div>
             </section>
@@ -447,8 +461,11 @@ export function QuestionSetPage({
               )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: roundCount && roundCount > 0 ? `1px solid ${t.line}` : "none", paddingTop: roundCount && roundCount > 0 ? 14 : 0 }}>
                 <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Difficulty</span>
+                {/* Actual counts, not a single "Hard"/"Mixed" label — a
+                    rounded-off summary could read as contradicting the
+                    per-question chips visible in the list below it. */}
                 <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
-                  {diffCounts.hard > diffCounts.easy ? "Hard" : diffCounts.easy > diffCounts.hard ? "Easy" : "Mixed"}
+                  {diffCounts.easy}E · {diffCounts.medium}M · {diffCounts.hard}H
                 </span>
               </div>
             </div>
