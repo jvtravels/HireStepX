@@ -78,6 +78,7 @@ function BlogShell({ children, afterContent }: { children: ReactNode; afterConte
           .blog-post-header { padding-top: 40px !important; }
           .blog-post-inner { padding: 0 20px !important; }
           .blog-post-hero { padding: 0 16px !important; }
+          .blog-post-hero-frame { aspect-ratio: 4 / 3 !important; }
         }
         .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
         .mv2p-faq-marker { transition: transform 180ms cubic-bezier(0.16,1,0.3,1); }
@@ -320,8 +321,7 @@ function BlogIndex({ metas }: { metas: BlogMeta[] }) {
         {/* Post grid */}
         {paginated.length > 0 ? (
           <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
-            {paginated.slice(0, 3).map((p) => <CompactCard key={p.slug} post={p} />)}
-            {paginated.slice(3).map((p) => <CompactCard key={p.slug} post={p} />)}
+            {paginated.map((p) => <CompactCard key={p.slug} post={p} />)}
           </div>
         ) : (
           <div style={{ textAlign: "center", padding: "80px 0", fontFamily: fonts.sans }}>
@@ -7348,7 +7348,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
 
       {/* Hero image: flush under header, rounded */}
       <div className="blog-post-hero" style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 40px" }}>
-        <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative", background: t.creamSoft }}>
+        <div className="blog-post-hero-frame" style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative", background: t.creamSoft }}>
           <Image
             src={post.heroImage}
             alt={post.heroAlt}
@@ -7401,8 +7401,12 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
             const num = match ? match[1].padStart(2, "0") : null;
             const headingText = match ? match[2] : section.heading;
             const visual = SECTION_VISUALS[`${post.slug}||${section.heading}`];
-            /* Inline CTA after every 3rd section (index 2, 5, 8…) but not the last */
-            const showInlineCta = i > 0 && i % 3 === 2 && i < post.sections.length - 1;
+            /* One inline CTA at the midpoint — not the last section, and only
+               for posts long enough that a mid-read break doesn't feel like
+               an ambush. More than one interruption per read hurts dwell
+               time more than it lifts clicks. */
+            const midpoint = Math.floor(post.sections.length / 2);
+            const showInlineCta = post.sections.length > 3 && i === midpoint && i < post.sections.length - 1;
             return (
               <React.Fragment key={i}>
                 <section id={`section-${i}`} style={{ paddingTop: i === 0 ? 0 : 56, borderTop: i > 0 ? `1px solid ${t.line}` : "none" }}>
@@ -7453,52 +7457,40 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
             </section>
           )}
 
-          {/* Practice + related links */}
-          {post.practicePageSlugs && post.practicePageSlugs.length > 0 && (
-            <section style={{ marginTop: 48, paddingTop: 48, borderTop: `1px solid ${t.line}` }}>
-              <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
-                Practice these questions on HireStepX
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                {post.practicePageSlugs.map(({ label, slug }) => (
-                  <Link key={slug} href={`/questions/${slug}`} className="ed-cta" style={{ display: "inline-block", padding: "9px 16px", background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal }}>
-                    {label} <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {post.relatedLinks && post.relatedLinks.length > 0 && (
-            <section style={{ marginTop: 16 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                {post.relatedLinks.map(({ label, href }) => (
-                  <Link key={href} href={href} className="ed-cta" style={{ display: "inline-block", padding: "9px 16px", background: t.copper100, border: `1px solid ${t.lineStrong}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal }}>
-                    {label} <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Auto-generated contextual resource links — one function, all posts */}
+          {/* Explore more — practice links, related links, and auto-generated
+              contextual links used to render as three separate sections with
+              their own headings. Merged into one deduped, capped block: three
+              stacked CTA sections in a row reads as a funnel, not a footer. */}
           {(() => {
-            const autoLinks = getAutoLinks(post);
-            const existingHrefs = new Set([
-              ...(post.relatedLinks ?? []).map(l => l.href),
-              ...(post.practicePageSlugs ?? []).map(p => `/questions/${p.slug}`),
-            ]);
-            const fresh = autoLinks.filter(l => !existingHrefs.has(l.href));
-            if (fresh.length === 0) return null;
+            const seen = new Set<string>();
+            const combined: { label: string; href: string }[] = [];
+            for (const { label, slug } of post.practicePageSlugs ?? []) {
+              const href = `/questions/${slug}`;
+              if (seen.has(href)) continue;
+              seen.add(href);
+              combined.push({ label, href });
+            }
+            for (const link of post.relatedLinks ?? []) {
+              if (seen.has(link.href)) continue;
+              seen.add(link.href);
+              combined.push(link);
+            }
+            for (const link of getAutoLinks(post)) {
+              if (seen.has(link.href)) continue;
+              seen.add(link.href);
+              combined.push(link);
+            }
+            const capped = combined.slice(0, 6);
+            if (capped.length === 0) return null;
             return (
-              <section style={{ marginTop: 32, paddingTop: 32, borderTop: `1px solid ${t.line}` }}>
-                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.inkFaint, letterSpacing: "0.12em", textTransform: "uppercase" as const, margin: "0 0 12px" }}>
+              <section style={{ marginTop: 48, paddingTop: 48, borderTop: `1px solid ${t.line}` }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
                   Explore more
                 </p>
-                <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 10 }}>
-                  {fresh.map(({ label, href }) => (
-                    <Link key={href} href={href} style={{ display: "inline-block", padding: "9px 16px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal, transition: "border-color 0.15s, color 0.15s" }}>
-                      {label} →
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {capped.map(({ label, href }) => (
+                    <Link key={href} href={href} className="ed-cta" style={{ display: "inline-block", padding: "9px 16px", background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal }}>
+                      {label} <span className="ed-cta-arrow" aria-hidden>→</span>
                     </Link>
                   ))}
                 </div>
