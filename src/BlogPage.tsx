@@ -130,7 +130,11 @@ function CompactCard({ post }: { post: BlogMeta }) {
             src={post.heroImage} alt={post.heroAlt}
             fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
             onError={() => setImgFailed(true)}
-            style={{ objectFit: "cover" }}
+            style={
+              post.heroImageFit === "contain"
+                ? { objectFit: "contain", padding: "22%" }
+                : { objectFit: "cover" }
+            }
           />
         ) : (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: t.creamSoft }}>
@@ -7353,7 +7357,11 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
             src={post.heroImage}
             alt={post.heroAlt}
             fill
-            style={{ objectFit: "cover", objectPosition: "center top" }}
+            style={
+              post.heroImageFit === "contain"
+                ? { objectFit: "contain", padding: "10% 18%" }
+                : { objectFit: "cover", objectPosition: "center top" }
+            }
             priority
             sizes="(max-width: 720px) 100vw, 880px"
           />

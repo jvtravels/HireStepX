@@ -30,6 +30,9 @@ export interface BlogPost {
   readTime: string;
   heroImage: string;
   heroAlt: string;
+  /* "contain" letterboxes the image instead of cropping it — for a
+     company logo/wordmark rather than a photo. Defaults to cover. */
+  heroImageFit?: "cover" | "contain";
   datePublished: string;
   intro: string;
   sections: { heading: string; content: string }[];
@@ -22375,8 +22378,9 @@ export const BLOG_POSTS: BlogPost[] = [
     company: "Sarvam AI",
     category: "Experience",
     readTime: "8 min",
-    heroImage: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80",
-    heroAlt: "Sarvam AI interview experience guide India 2026",
+    heroImage: "/logos/sarvam-ai-wordmark.png",
+    heroAlt: "Sarvam AI logo",
+    heroImageFit: "contain",
     datePublished: "2026-07-01",
     intro: "Sarvam AI is India's most prominent speech and language AI startup, building Indic language models, ASR (automatic speech recognition), and TTS (text-to-speech) technology. Headquartered in Bengaluru, Sarvam AI works on models that understand and generate Hindi, Tamil, Telugu, Kannada, Bengali, and other Indian languages at a level that general-purpose LLMs do not match. If you are a ML engineer, backend engineer, or researcher interested in Indic AI, Sarvam AI is one of the most technically ambitious and high-impact places to work in India. This guide covers the interview process, what Sarvam AI looks for, and how to prepare.",
     sections: [
