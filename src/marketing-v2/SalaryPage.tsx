@@ -692,14 +692,9 @@ export function SalaryCompanyPage({
               framework. Know what the interviewer is actually evaluating before
               you walk in.
             </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <a href="/signup" style={ctaPrimaryStyle("md")}>
-                Start free practice
-              </a>
-              <a href="/how-it-works" style={ctaGhostStyle("md")}>
-                See how it works
-              </a>
-            </div>
+            <a href="/signup" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+              Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
+            </a>
           </DarkBand>
         </div>
       </div>

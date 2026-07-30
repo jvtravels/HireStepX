@@ -419,7 +419,7 @@ export function DarkBand({
         /* Coal is the fallback when video hasn't loaded yet */
         background: t.coal,
         color: t.cream,
-        minHeight: 540,
+        minHeight: 720,
         paddingTop: ED_PADDING.closeV,
         paddingBottom: ED_PADDING.closeV,
         overflow: "hidden",
