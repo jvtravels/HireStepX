@@ -14,6 +14,7 @@
 export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, redisGet, redisSetEx, hashStable, getSubscriptionTier } from "./_shared";
+import { recordTtsSpendAndCheckCap } from "./_sarvam-credit-guard";
 
 /* TTS cost circuit breaker — Sarvam Bulbul is billed per character.
  *
@@ -54,10 +55,13 @@ const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
  * Free users fail over to the zero-cost browser TTS chain (Cartesia → Azure →
  * Web Speech). This makes the expensive path opt-in instead of opt-out, so a
  * traffic spike on free users can never run up a Sarvam bill.
- *   - VOICE_FREE_TIER=1        → let free users use paid Sarvam TTS too.
+ *   - FUNDED_VOICE_FREE_TIER=1  → let free users use paid Sarvam TTS too.
+ *     Separate from VOICE_FREE_TIER (which also covers Cartesia/Azure, which
+ *     we don't have a prepaid credit grant for) — see sarvam-token.ts and
+ *     stt-token.ts for the other providers this flag currently covers.
  *   - SARVAM_TTS_FREE_DISABLED=1 → legacy hard kill switch (still honoured).
  * Either guard active ⇒ free tier is pushed to the browser fallback. */
-const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
+const VOICE_FREE_TIER = process.env.FUNDED_VOICE_FREE_TIER === "1";
 const SARVAM_TTS_FREE_DISABLED = process.env.SARVAM_TTS_FREE_DISABLED === "1";
 
 /* COST GUARDRAIL — pin to bulbul:v2.
@@ -152,7 +156,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Cartesia → Azure → browser TTS fallback chain (zero cost). We resolve the
     // tier from the profiles table; the client already handles 503 by failing
     // over, so we don't need to surface a special error code. Operators can
-    // open paid voice to free users with VOICE_FREE_TIER=1.
+    // open paid voice to free users with FUNDED_VOICE_FREE_TIER=1.
     if (!VOICE_FREE_TIER || SARVAM_TTS_FREE_DISABLED) {
       const tier = await getSubscriptionTier(auth.userId!);
       if (tier === "free") {
@@ -207,6 +211,17 @@ export default async function handler(req: Request): Promise<Response> {
         usedChars: used,
         capChars: TTS_DAILY_CHAR_CAP,
       }), { status: 429, headers });
+    }
+
+    // Program-wide credit guardrail — only real upstream calls spend credits
+    // (cache hits above don't), so check/record here, before the actual
+    // Sarvam fetch. Once the monthly startup-program grant is nearly spent,
+    // fail over the same way the free-tier gate does (503 → client falls
+    // back to Cartesia → Azure → browser TTS) rather than racing Sarvam's
+    // own account-level cutoff.
+    if (await recordTtsSpendAndCheckCap(trimmedText.length)) {
+      logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "Monthly Sarvam credit pool exhausted" });
+      return new Response(JSON.stringify({ error: "Sarvam voice credits exhausted for this month", code: "sarvam_credit_cap" }), { status: 503, headers });
     }
 
     const speaker = speakerForCache;

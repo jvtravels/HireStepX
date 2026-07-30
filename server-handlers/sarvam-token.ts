@@ -4,6 +4,7 @@
 export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
+import { recordSttSpendAndCheckCap } from "./_sarvam-credit-guard";
 
 declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
@@ -18,8 +19,10 @@ const SARVAM_TOKEN_DAILY_CAP = 30;
 const SECONDS_PER_DAY = 86_400;
 
 /* Paid STT is a paying-tier benefit by default — free users fall back to the
- * browser Web Speech API (zero cost). Open it to free users with VOICE_FREE_TIER=1. */
-const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
+ * browser Web Speech API (zero cost). Open it to free users with
+ * FUNDED_VOICE_FREE_TIER=1 — separate from VOICE_FREE_TIER (Cartesia/Azure),
+ * which we don't have a prepaid credit grant for. */
+const VOICE_FREE_TIER = process.env.FUNDED_VOICE_FREE_TIER === "1";
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -58,6 +61,15 @@ export default async function handler(req: Request): Promise<Response> {
       error: "Daily voice-input limit reached. Continue in text mode or try again tomorrow.",
       code: "sarvam_token_daily_cap",
     }), { status: 429, headers });
+  }
+
+  // Program-wide credit guardrail — a token issuance is our best proxy for
+  // one Sarvam STT session. Once the monthly startup-program grant is nearly
+  // spent, fail over the same way the free-tier gate above does (503 →
+  // client falls back to the browser Web Speech API).
+  if (await recordSttSpendAndCheckCap()) {
+    logServiceUsage({ service: "sarvam_stt", endpoint: "token", userId: auth.userId, status: "error", errorMessage: "Monthly Sarvam credit pool exhausted" });
+    return new Response(JSON.stringify({ error: "Sarvam voice credits exhausted for this month", code: "sarvam_credit_cap" }), { status: 503, headers });
   }
 
   const expiresAt = Date.now() + 2 * 60 * 1000; // 2 minutes

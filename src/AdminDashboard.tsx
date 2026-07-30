@@ -34,6 +34,10 @@ interface OverviewData {
     month: { totalInr: number; llmInr: number; ttsInr: number; sttInr: number; sessions: number };
   };
   anomalies?: AnomaliesData;
+  credits?: {
+    sarvam: { usedCredits: number; capCredits: number };
+    deepgram: { usedUsd: number; capUsd: number };
+  };
 }
 
 interface UserRow {
@@ -383,6 +387,24 @@ const exportBtn = {
   border: `1px solid rgba(180,83,9,0.3)`,
   borderRadius: 6, padding: "5px 12px", cursor: "pointer",
 } as const;
+
+/* ─── Credit Grant Meter ─── */
+
+function CreditMeter({ label, used, cap, format }: { label: string; used: number; cap: number; format: (n: number) => string }) {
+  const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
+  const barColor = pct >= 90 ? c.ember : pct >= 70 ? c.gilt : c.sage;
+  return (
+    <div style={{ flex: "1 1 260px", minWidth: 220 }}>
+      <p style={labelStyle}>{label}</p>
+      <p style={{ margin: "0 0 8px", fontSize: 15, fontFamily: font.mono, color: c.ivory }}>
+        {format(used)} <span style={{ color: c.stone, fontSize: 12 }}>/ {format(cap)} ({pct}%)</span>
+      </p>
+      <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} />
+      </div>
+    </div>
+  );
+}
 
 /* ─── Mini Bar Chart (memoized) ─── */
 
@@ -1016,6 +1038,24 @@ export default function AdminDashboard() {
             </>
           )}
         </div>
+
+        {/* Prepaid voice credit grants — real remaining balance, not the estimate above */}
+        {overview.credits && (
+          <div style={{ ...card, marginBottom: 24, display: "flex", gap: 24, flexWrap: "wrap" as const }}>
+            <CreditMeter
+              label="Sarvam Credits (Startup Program)"
+              used={overview.credits.sarvam.usedCredits}
+              cap={overview.credits.sarvam.capCredits}
+              format={(n) => `₹${Math.round(n).toLocaleString("en-IN")}`}
+            />
+            <CreditMeter
+              label="Deepgram Credits (Startup Grant)"
+              used={overview.credits.deepgram.usedUsd}
+              cap={overview.credits.deepgram.capUsd}
+              format={(n) => `$${n.toFixed(2)}`}
+            />
+          </div>
+        )}
 
         {/* Activation Funnel (30d) */}
         {activation && (

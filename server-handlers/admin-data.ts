@@ -6,6 +6,8 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
 import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr } from "./_cost-helpers";
+import { getSarvamMonthlySpend } from "./_sarvam-credit-guard";
+import { getDeepgramMonthlySpend } from "./_deepgram-credit-guard";
 
 /* ─── Config ─── */
 
@@ -263,6 +265,14 @@ async function getOverview() {
 
   const anomalies = await getAnomalies();
 
+  // Prepaid/free credit grants — separate from the estimated-spend cost
+  // breakdown above, these track real remaining balance against the fixed
+  // Sarvam startup-program and Deepgram startup-credit grants.
+  const [sarvamCredits, deepgramCredits] = await Promise.all([
+    getSarvamMonthlySpend(),
+    getDeepgramMonthlySpend(),
+  ]);
+
   return {
     users: {
       total: totalUserCount,
@@ -289,6 +299,10 @@ async function getOverview() {
       todayInr: costToday.totalInr,
       month: { totalInr: cost30d.totalInr, llmInr: cost30d.llmInr, ttsInr: cost30d.ttsInr, sttInr: cost30d.sttInr, sessions: cost30d.sessions },
       estimate: true,
+    },
+    credits: {
+      sarvam: { usedCredits: sarvamCredits.usedCredits, capCredits: sarvamCredits.capCredits },
+      deepgram: { usedUsd: deepgramCredits.usedUsd, capUsd: deepgramCredits.capUsd },
     },
     anomalies,
   };

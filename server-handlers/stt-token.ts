@@ -4,6 +4,7 @@
 export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
+import { recordDeepgramSpendAndCheckCap } from "./_deepgram-credit-guard";
 
 declare const process: { env: Record<string, string | undefined> };
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
@@ -23,8 +24,10 @@ const STT_TOKEN_TTL_SECONDS = 60;
 
 /* Paid STT (Deepgram, billed per request) is a paying-tier benefit by default.
  * Free users fall back to the browser Web Speech API (zero cost) on a 503.
- * Open it to free users with VOICE_FREE_TIER=1. */
-const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
+ * Open it to free users with FUNDED_VOICE_FREE_TIER=1 — separate from
+ * VOICE_FREE_TIER (Cartesia/Azure), which we don't have a prepaid credit
+ * grant for; Deepgram does (startup credits), same as Sarvam. */
+const VOICE_FREE_TIER = process.env.FUNDED_VOICE_FREE_TIER === "1";
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -64,6 +67,15 @@ export default async function handler(req: Request): Promise<Response> {
       error: "Daily voice-input limit reached. Continue in text mode or try again tomorrow.",
       code: "stt_token_daily_cap",
     }), { status: 429, headers });
+  }
+
+  // Program-wide credit guardrail — a token issuance is our best proxy for
+  // one Deepgram STT session. Once the $200 startup-credit grant is nearly
+  // spent, fail over the same way the free-tier gate above does (503 →
+  // client falls back to the browser Web Speech API).
+  if (await recordDeepgramSpendAndCheckCap()) {
+    logServiceUsage({ service: "deepgram_stt", endpoint: "token", userId: auth.userId, status: "error", errorMessage: "Monthly Deepgram credit grant exhausted" });
+    return new Response(JSON.stringify({ error: "Deepgram voice credits exhausted for this month", code: "deepgram_credit_cap" }), { status: 503, headers });
   }
 
   // Mint a scoped, short-lived key via Deepgram's project keys API. The temp
