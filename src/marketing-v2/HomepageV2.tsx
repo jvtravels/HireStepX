@@ -4198,7 +4198,7 @@ export function VideoCtaV2({
   headingItalic = "Neither should your prep.",
   body = "One session. A STAR breakdown on every answer. Your weak spots caught before HR finds them first.",
   ctaLabel = "Start your first free session",
-  ctaHref = "/login",
+  ctaHref = "/signup",
 }: {
   headingPlain?: string;
   headingItalic?: string;
