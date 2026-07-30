@@ -85,6 +85,8 @@ export type CompanyKey =
   | "makemytrip" | "ixigo" | "sharechat" | "moengage" | "clevertap"
   | "druva" | "darwinbox" | "truecaller" | "inmobi" | "naukri"
   | "sigmoid" | "mindtickle" | "tracxn"
+  | "m2p-fintech" | "capillary-tech" | "ecom-express" | "yulu"
+  | "country-delight" | "rivigo" | "sumologic" | "clari"
   /* Conglomerates / PSUs */
   | "hdfc-ltd" | "tata-steel-india" | "sarvam-ai" | "krutrim" | "perplexity" | "databricks" | "tower-research"
   /* Generic campus / fresher pages not tied to a single company. */
