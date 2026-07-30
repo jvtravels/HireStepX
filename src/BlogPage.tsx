@@ -7198,6 +7198,50 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
     ]} />
   ),
 
+  /* Best AI mock interview tools comparison */
+  "best-ai-mock-interview-tools-india-2026||What actually matters when you're choosing one": (
+    <ComparisonTable
+      caption="Feature comparison across the tools covered below — pricing shown is the plan that unlocks full mock interview access, not a free-tier teaser."
+      columns={[
+        { name: "HireStepX", highlight: true },
+        { name: "Interviewing.io" },
+        { name: "Final Round AI" },
+        { name: "Interview Warmup" },
+        { name: "Verve / Yoodli / Big Interview" },
+      ]}
+      rows={[
+        { label: "Voice practice", values: ["Yes", "Live human", "Yes", "Yes (basic)", "Varies"] },
+        { label: "Pricing", values: ["Free start, INR/UPI", "$225+/session", "$148–225/mo (USD)", "Free", "Free tier + paid"] },
+        { label: "India question bank", values: ["Deep (50+ companies)", "N/A", "Thin", "None", "Thin"] },
+        { label: "Scored rubric feedback", values: ["Yes (STAR-based)", "Human feedback", "Yes", "No", "Varies"] },
+        { label: "Best for", values: ["Indian company interviews", "High-stakes technical gut-check", "US company interviews", "One-off free warmup", "Delivery/communication polish"] },
+      ]}
+    />
+  ),
+  /* Early practice session data */
+  "early-data-hirestepx-practice-sessions-2026||Behavioral rounds score lowest": (
+    <ComparisonTable
+      caption="Average overall score (0–100 rubric) on scored HireStepX practice sessions, by month. July is a partial month as of publication."
+      columns={[
+        { name: "HR round", highlight: true },
+        { name: "Salary negotiation" },
+        { name: "Behavioral" },
+      ]}
+      rows={[
+        { label: "June 2026", values: ["55.3", "57.7", "51.0"] },
+        { label: "July 2026 (partial)", values: ["78.0", "64.5", "55.0"] },
+      ]}
+    />
+  ),
+
+  "best-ai-mock-interview-tools-india-2026||Just using ChatGPT or Gemini directly": (
+    <TierCompare cards={[
+      { tier: "Campus / fresher", examples: "TCS NQT, Infosys InfyTQ, first job", rows: [{ label: "Pick", range: "HireStepX or Interview Warmup (free)" }] },
+      { tier: "Experienced, targeting Indian companies", examples: "Product companies, GCCs, IT services", rows: [{ label: "Pick", range: "HireStepX — India-specific rubric + voice" }] },
+      { tier: "Targeting US-headquartered companies", examples: "FAANG, US-based remote roles", rows: [{ label: "Pick", range: "Final Round AI or Interviewing.io" }] },
+    ]} />
+  ),
+
 };
 
 /* ─── Auto internal links ───────────────────────────────────────────────────
