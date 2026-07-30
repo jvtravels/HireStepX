@@ -22828,6 +22828,44 @@ export const BLOG_POSTS: BlogPost[] = [
     relatedLinks: [{ label: "What Is an AI Mock Interview? Free, Voice-Based Practice", href: "/ai-mock-interview" }],
     cta: "Curious where your own behavioral answers fall short? Run a free scored HireStepX practice session and get the same STAR-based rubric feedback this data is drawn from.",
   },
+  {
+    slug: "notice-period-buyout-negotiation-it-services-india",
+    title: "Notice Period Buyout in Indian IT Services: How Negotiation Actually Works",
+    metaDescription: "A practical guide to notice period buyouts at Indian IT services companies: why the 60-90 day norm exists, when buyout is actually negotiable, and how to raise it with your manager without burning the relationship.",
+    company: "General",
+    category: "Career Advice",
+    readTime: "6 min",
+    heroImage: "https://images.unsplash.com/photo-1454165833767-027ef9c93f83?w=1200&q=80",
+    heroAlt: "A calendar and laptop on a desk, representing a notice period timeline",
+    datePublished: "2026-07-31",
+    intro: "If you work at an Indian IT services company, you already know the number: 60 or 90 days. It's the first thing recruiters ask about, and often the thing that decides whether you get an offer at all. Most advice online either explains what a notice period is (you already know) or promises a buyout \"hack\" that doesn't hold up once you're actually in the conversation with your manager. This is the practical version: why the long notice period exists, when a buyout is realistically on the table, and how to raise it without turning your last few months into a bad reference.",
+    sections: [
+      {
+        heading: "Why IT services notice periods run so long",
+        content: "Product companies typically ask for 15-30 days. IT services companies (TCS, Infosys, Wipro, HCLTech, Cognizant, Tech Mahindra, Capgemini, and similar) commonly require 60 or 90 days, longer at senior levels. This isn't arbitrary: services firms staff people against client contracts (\"billability\"), and losing someone mid-project means finding and ramping up a replacement before the client notices. The notice period exists to protect that handover window, not to punish you.\n\nThat context matters because it changes how you negotiate. You're not asking your manager for a personal favor: you're asking them to solve a staffing problem faster than they planned to. Framing it that way gets a very different response than framing it as \"I want to leave sooner.\"",
+      },
+      {
+        heading: "What a buyout actually means, and when it's on the table",
+        content: "A notice period buyout means you (or your new employer) pay your current company your salary for the unserved portion of notice, in exchange for an earlier release date. It is almost always at the employer's discretion, not a right you can invoke unilaterally, even if it's mentioned in your HR policy.\n\nBuyout approval usually comes down to three things:\n1. Whether your project has a backfill lined up or can absorb your exit early.\n2. Whether your manager has a reason to make your exit easy (good standing, no active escalations, no critical unfinished handover).\n3. Whether the buyout amount is coming from you, your new employer, or split, since some managers push back harder when it's the company absorbing the cost versus you paying it yourself.\n\nIf a project is short-staffed or in a critical delivery phase, expect resistance regardless of how you ask. If your role is easily backfilled or your project is between phases, buyout requests get approved far more often than people expect.",
+      },
+      {
+        heading: "How to actually raise it with your manager",
+        content: "Timing and sequencing matter more than the words you use.\n\n1. Loop your manager in as early as possible, ideally before HR sees your resignation, not after. Managers who feel blindsided dig in; managers who get a heads-up become allies in getting your release date fast-tracked.\n2. Propose a concrete plan, not just a request: \"I can hand off X and Y in three weeks; can we look at a buyout for the remaining time?\" is a plan. \"Can I leave early?\" is a request with nothing for your manager to act on.\n3. Offer to document or record your handover (knowledge transfer notes, a recorded walkthrough) so the buyout doesn't read as leaving your team stranded.\n4. If buyout is refused, ask about partial serve: reducing 90 days to 45-60 with a shorter buyout on the remainder is a common middle ground managers say yes to more easily than a full buyout.\n5. Keep the tone collaborative, not transactional. You will likely need this manager as a reference, and Indian IT is a smaller world than it looks from inside a 90-day notice period.",
+      },
+      {
+        heading: "Handling it on the new employer's side",
+        content: "When a new company asks your notice period during the interview process, give the real number early rather than late. Recruiters build their hiring timeline around it, and a mismatch discovered after an offer is extended creates real friction on both sides.\n\nIf you're hoping for a buyout to start sooner, say so honestly rather than promising a start date you haven't actually secured yet: \"My notice period is 90 days, but I intend to request a partial buyout and expect to start by day 45-60\" sets expectations correctly. If the buyout falls through, you haven't already committed to a date you can't hit. Some employers will offer to cover part or all of a buyout for a candidate they want badly enough. It's reasonable to ask once you have a written offer, not before.",
+      },
+    ],
+    faqs: [
+      { question: "Can I always buy out my notice period if I'm willing to pay?", answer: "No. Most HR policies frame buyout as available \"at management's discretion,\" which means your manager or project lead can decline it regardless of whether you're willing to pay. Approval depends heavily on whether your project can absorb your exit early." },
+      { question: "Does requesting a buyout hurt my reference or reputation?", answer: "Not inherently, but how you ask matters more than the ask itself. A collaborative request with a real handover plan rarely damages the relationship. A request that reads as \"I'm already gone, figure out the rest yourselves\" often does." },
+      { question: "Should I tell a new employer my notice period before or after I get an offer?", answer: "Before, as soon as they ask. Indian IT recruiters build hiring plans around notice period length, and disclosing it early avoids a mismatch that can cost you the offer later in the process, after both sides have invested more time." },
+    ],
+    relatedSlugs: ["salary-negotiation-after-offer-letter-india", "salary-negotiation-tips-india", "mock-interview-practice-guide"],
+    relatedLinks: [{ label: "Practice HR & Behavioral Interview Questions", href: "/questions/common-hr-interview-questions-freshers-india" }],
+    cta: "Notice period conversations and salary negotiation both come down to how you handle a real-time, high-stakes conversation. Practice the salary and offer-negotiation scenario with HireStepX's scored, India-specific rubric before you have the real one.",
+  },
 ];
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
