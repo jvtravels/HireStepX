@@ -5,9 +5,6 @@ import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { getBlogMetaBySlug, getBlogMetasBySlugs } from "@/blog-meta";
 import { getBlogPostBySlug } from "../../../../data/blog-posts";
-import { SEO_PAGES } from "../../../../data/seo-pages";
-import { SALARY_SEO_PAGES } from "../../../../data/salary-seo";
-import { COMPANY_LABEL } from "../../../../data/company-labels";
 
 /* /blog/[slug] — per-post route.
  *
@@ -22,23 +19,6 @@ import { COMPANY_LABEL } from "../../../../data/company-labels";
  * If the slug isn't in the registry yet (ISR newcomer), falls back to the
  * slug-derived title so the page never has empty metadata.
  */
-
-/* Company values that represent general topics, not a specific company. */
-const GENERAL_COMPANIES = new Set([
-  "General", "Interview Skills", "Role Guides", "Industry Insights",
-  "Career Advice", "Career",
-]);
-
-/* Reverse-lookup COMPANY_LABEL to find the data key ("tcs", "flipkart", …)
-   from the display name stored in BlogMeta.company ("TCS", "Flipkart", …). */
-function companyKeyFromLabel(label: string): string | null {
-  const lower = label.toLowerCase();
-  const entry = Object.entries(COMPANY_LABEL).find(([, v]) => v.toLowerCase() === lower);
-  if (entry) return entry[0];
-  // Fallback: slug-ify the label (handles cases not yet in COMPANY_LABEL)
-  const slug = lower.replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-  return slug || null;
-}
 
 function slugToTitle(slug: string): string {
   return slug
@@ -108,17 +88,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
 
-  /* Related interview prep links — derived from the post's company field.
-     Rendered server-side so Google crawls the cross-links without JS. */
-  const companyKey = meta?.company ? companyKeyFromLabel(meta.company) : null;
-  const relatedQuestions = companyKey
-    ? SEO_PAGES.filter((p) => p.company === companyKey).slice(0, 3)
-    : [];
-  const salaryEntry = companyKey
-    ? SALARY_SEO_PAGES.find((s) => s.slug === companyKey) ?? null
-    : null;
-  const companyLabel = companyKey ? (COMPANY_LABEL[companyKey] ?? meta?.company ?? "") : "";
-
   /* BlogPosting JSON-LD — the specific subtype required for "Top Stories"
      carousel eligibility. "Article" works but "BlogPosting" gets stronger
      signals for blog content. */
@@ -181,87 +150,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       {faqSchema && (
         <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       )}
-      <BlogPage post={post} related={relatedPosts} afterContent={<>
-        {meta && !GENERAL_COMPANIES.has(meta.company) && (
-          <div style={{ padding: "12px 24px", background: "#f0f4ff", borderTop: "1px solid #e4e7ec" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto", fontSize: 13, color: "#4b5563" }}>
-              Filed under{" "}
-              <a
-                href={`/blog/company/${meta.company.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`}
-                style={{ color: "#6366f1", textDecoration: "underline" }}
-              >
-                {meta.company} interview guides
-              </a>
-            </div>
-          </div>
-        )}
-        {(relatedQuestions.length > 0 || salaryEntry) && (
-          <section
-            aria-label={`Practice resources for ${companyLabel}`}
-            style={{
-              borderTop: "1px solid #e8eaed",
-              background: "#f8f9fb",
-              padding: "40px 24px 48px",
-            }}
-          >
-            <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8a919e", textTransform: "uppercase", marginBottom: 12 }}>
-                Practice for {companyLabel}
-              </p>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1d23", margin: "0 0 20px" }}>
-                {companyLabel} Interview Prep on HireStepX
-              </h2>
-              {relatedQuestions.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: salaryEntry ? 20 : 0 }}>
-                  {relatedQuestions.map((q) => (
-                    <a
-                      key={q.slug}
-                      href={`/questions/${q.slug}`}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "14px 18px",
-                        background: "#fff",
-                        border: "1px solid #e4e7ec",
-                        borderRadius: 10,
-                        textDecoration: "none",
-                        color: "#1a1d23",
-                        fontSize: 14,
-                        fontWeight: 500,
-                      }}
-                    >
-                      <span>{q.searchPhrase}</span>
-                      <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>Practice →</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-              {salaryEntry && (
-                <a
-                  href={`/salary/${salaryEntry.slug}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 18px",
-                    background: "#fff",
-                    border: "1px solid #e4e7ec",
-                    borderRadius: 10,
-                    textDecoration: "none",
-                    color: "#1a1d23",
-                    fontSize: 14,
-                    fontWeight: 500,
-                  }}
-                >
-                  <span>{companyLabel} Salary Guide — CTC breakdown for India 2026</span>
-                  <span style={{ color: "#6366f1", fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>View →</span>
-                </a>
-              )}
-            </div>
-          </section>
-        )}
-      </>} />
+      <BlogPage post={post} related={relatedPosts} />
     </>
   );
 }
