@@ -5063,4 +5063,25 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(false);
     });
   });
+
+  describe("S154-B... (wave 62) — hostile-battery hardening", () => {
+    it("a bare 'never' negator (not just 'never want to') suppresses a caps-lock walk-away denial", () => {
+      const s = "I WOULD NEVER EVER WALK AWAY FROM THIS.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'as if X wasn't already Y' rhetorical-affirmation idiom doesn't cancel the walk-away it affirms", () => {
+      const s = "Ha! As if this offer wasn't already making me want to walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'jk jk' (texting-slang 'just kidding') retracts a walk-away into a genuine accept", () => {
+      const s = "I'll pass — jk jk, I'm in.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
 });

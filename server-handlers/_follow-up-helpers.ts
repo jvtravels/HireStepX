@@ -612,8 +612,10 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * joke of an offer." fired walkAway=false: retractionMarkerRe only ever recognized the
    * literal word "actually" as a retraction cue, not "just kidding" — a common, equally
    * unambiguous retraction marker. Widened; mirrors the identical widening in
-   * RETRACTION_MARKER in _walkaway-detection.ts — keep in sync. */
-  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*/i;
+   * RETRACTION_MARKER in _walkaway-detection.ts — keep in sync.
+   * S154-B... (wave 62) — "jk jk" (texting-slang "just kidding") mirrors the identical
+   * widening of RETRACTION_MARKER in _walkaway-detection.ts — keep in sync. */
+  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*|\bjk\s*jk\b[!.,]?\s*|\bjk\b[!.,]?\s*/i;
   const retractionMatch = retractionMarkerRe.exec(trimmed);
   const postRetractionText = retractionMatch
     ? trimmed.slice(retractionMatch.index + retractionMatch[0].length)
@@ -724,7 +726,12 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * sibling "walk(?:ing)?\s+away" arm, which already handles the gerund form. Desynced
    * from isWalkAway(), whose NEGATABLE_DEPARTURE/DEPARTURE_NEGATOR pairing already covers
    * "withdrawing" correctly. */
-  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+saying|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw(?:ing)?|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S154-B... (wave 62) — "I WOULD NEVER EVER WALK AWAY FROM THIS." fired walkAway=true:
+   * the negator group only had "never want to" (a specific phrase), never a bare "never"
+   * arm, unlike DEPARTURE_NEGATOR in _walkaway-detection.ts (which already has a bare
+   * "never" arm and correctly suppressed this). Added bare "never" alongside the other
+   * wide-gap negators — mirrors DEPARTURE_NEGATOR, keep in sync. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|never|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+saying|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw(?:ing)?|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
   /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
    * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
    * The negation guard only ever protected the walkAway field; apply it to rejected too.

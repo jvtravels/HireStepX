@@ -327,11 +327,23 @@ const SAY_LITOTES =
 const DOUBLE_NEGATION_CANCELS_RE =
   /\b(?:under\s+no\s+circumstances|no\s+way|never)\b(?:\s+\S+){0,4}?\s+(?:not|n['']t)\b\s*$/i;
 
+/* S154-B... (wave 62) — "Ha! As if this offer wasn't already making me want to walk away."
+ * fired isWalkAway()=false: DEPARTURE_NEGATOR's generic n't catch-all matched "wasn't" and
+ * treated it as negating the departure phrase, but "wasn't already X" is a rhetorical-
+ * affirmation idiom (the classic "as if X wasn't already Y" construction) that means the
+ * candidate genuinely IS feeling X — it doesn't negate it. Same double-negative-cancels
+ * family as DOUBLE_NEGATION_CANCELS_RE above, distinct trigger phrase. Desynced from
+ * detectCandidateIntent(), whose walkAwayNegationRe never had a generic "wasn't" arm in the
+ * first place and so stayed correct here by not negating at all. */
+const ALREADY_IDIOM_CANCELS_RE =
+  /\b(?:was|is|has|have|are)n['']?t\s+already\b(?:\s+\S+){0,5}?\s*$/i;
+
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
     const preceding = clauseBoundedLookback(full, offset, 48);
     if (!DEPARTURE_NEGATOR.test(preceding)) return match;
     if (DOUBLE_NEGATION_CANCELS_RE.test(preceding)) return match;
+    if (ALREADY_IDIOM_CANCELS_RE.test(preceding)) return match;
     if (SAY_LITOTES.test(preceding)) return " ";
     if (WRONG_SUBJECT_NEGATOR_RE.test(preceding)) return match;
     return " ";
@@ -353,9 +365,13 @@ function stripNegatedDepartures(text: string): string {
  *     (see the RETRACTS_TO_ACCEPT widening below).
  *   • "Ok fine, I'm out — just kidding! I'm totally on board, let's do this." — "just
  *     kidding" is likewise an unambiguous retraction marker. Mirrors the identical widening
- *     of retractionMarkerRe in _follow-up-helpers.ts — keep in sync. */
+ *     of retractionMarkerRe in _follow-up-helpers.ts — keep in sync.
+ * S154-B... (wave 62) — "I'll pass — jk jk, I'm in." fired true: "jk jk" is the texting-slang
+ * abbreviation of "just kidding" and equally unambiguous as a retraction cue, but had no arm
+ * here. Mirrors the identical widening of retractionMarkerRe in _follow-up-helpers.ts — keep
+ * in sync. */
 const RETRACTION_MARKER =
-  /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*/i;
+  /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*|\bjk\s*jk\b[!.,]?\s*|\bjk\b[!.,]?\s*/i;
 /* S153-B... (wave 59) — RETRACTS_TO_ACCEPT was anchored to the very start of the
  * post-marker text, so it missed a genuine trailing accept separated from the marker by an
  * intervening non-accept clause ("...I mean I'm walking TOWARD a deal — I accept."). Widened
