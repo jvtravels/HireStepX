@@ -5033,4 +5033,34 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(true);
     });
   });
+
+  describe("S154-B... (wave 61) — hostile-battery hardening", () => {
+    it("a stacked double-negation hedge over 'walking away'/'withdrawing' stays false on both sides", () => {
+      const s =
+        "I can't say I'm not walking away, and I also can't say I'm not withdrawing.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'under no circumstances will I not walk away' double negation confirms a genuine walk-away on both sides", () => {
+      const s = "Under no circumstances will I not walk away — I mean it, I'm out.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a retraction-into-accept whose post-text ALSO restates the walk-away doesn't win over the walk-away", () => {
+      const s =
+        "Not walking away — repeat, NOT walking away — okay actually, yes, walking away, confirmed.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a retraction into 'I'm in' overrides an earlier 'I'm out' even with a trailing bare mention of walking", () => {
+      const s =
+        "This offer? Nah, I'm out. Wait, no, actually, I'm in, forget I said anything about walking.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
 });

@@ -361,9 +361,14 @@ const RETRACTION_MARKER =
  * intervening non-accept clause ("...I mean I'm walking TOWARD a deal — I accept."). Widened
  * to also match right after a sentence-ending or em/en-dash boundary anywhere in the
  * post-marker text (not bare mid-word occurrences of "accept" etc.), and added the "on
- * board"/"let's do this" phrasing "just kidding" retractions commonly resolve to. */
+ * board"/"let's do this" phrasing "just kidding" retractions commonly resolve to.
+ * S154-B... (wave 61) — "This offer? Nah, I'm out. Wait, no, actually, I'm in, forget I said
+ * anything about walking." fired isWalkAway()=true: RETRACTS_TO_ACCEPT had no "I'm in" arm,
+ * unlike _follow-up-helpers.ts's acceptWords (which already has one and correctly returns
+ * accepted=true for this sentence) — desyncing the two functions. Added the same "(i'm|i am)
+ * in" phrase, mirroring acceptWords — keep in sync. */
 const RETRACTS_TO_ACCEPT =
-  /(?:^|[.!?—–,-]\s*)(?:i\s+)?(?:accept|agree|deal)\b|(?:^|[.!?—–,-]\s*)(?:i\s+)?ok(?:ay)?\b|(?:^|[.!?—–,-]\s*)yes\b|\b(?:i.?m|i\s+am)\s+(?:totally\s+|completely\s+|fully\s+)?on\s+board\b|let.?s\s+do\s+(?:it|this)\b/i;
+  /(?:^|[.!?—–,-]\s*)(?:i\s+)?(?:accept|agree|deal)\b|(?:^|[.!?—–,-]\s*)(?:i\s+)?ok(?:ay)?\b|(?:^|[.!?—–,-]\s*)yes\b|\b(?:i.?m|i\s+am)\s+(?:totally\s+|completely\s+|fully\s+)?on\s+board\b|let.?s\s+do\s+(?:it|this)\b|\b(?:i.?m|i\s+am)\s+in(?!\s*[a-z])/i;
 function retractsToAccept(text: string): boolean {
   const match = RETRACTION_MARKER.exec(text);
   if (!match) return false;

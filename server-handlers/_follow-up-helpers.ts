@@ -382,12 +382,20 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
   /* S145-B1 (wave 51) — "Sure, let's discuss the notice period first." fired
    * accepted=true: no hedge word is present (so isShortAffirmativeHedged's
    * hedgeIsDeflection guard never applies), and isShortAffirmative itself had no
-   * deflectWords exclusion even though it already excludes hedgeWords/rejectWords. */
+   * deflectWords exclusion even though it already excludes hedgeWords/rejectWords.
+   * S154-B... (wave 61) — "...okay actually, yes, walking away, confirmed." fired
+   * accepted=true (via the leading "yes,"), which then suppressed a genuine,
+   * unhedged, unnegated walk-away confirmation sitting right next to it in the same
+   * short reply — desyncing from isWalkAway() (which has no accept-vs-walkAway
+   * short-circuit at all and correctly returned true). A bare short-affirmative
+   * opener isn't a real accept when the same short reply also contains an
+   * un-negated walk-away phrase. */
   const isShortAffirmative = trimmed.split(/\s+/).length < 8
     && shortAffirmativeStart.test(trimmed)
     && !hedgeWords.test(trimmed)
     && !rejectWords.test(trimmed)
-    && !deflectWords.test(trimmed);
+    && !deflectWords.test(trimmed)
+    && !walkAwayWords.test(trimmed);
 
   /* S88-B2 (2026-07-26) — "Sure, if you can bump to 38L" / "Deal, though I want equity
    * too" returned accepted=false, conditionalAccept=false. The old code had no path for
@@ -631,7 +639,15 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * S145-B3 retractsToAccept() guard already handles this correctly. Mirrors
    * retractsToAccept() in _walkaway-detection.ts — keep in sync. */
   const RETRACTS_TO_ACCEPT_LOCAL = /^(?:i\s+)?(?:accept|agree|deal)\b|^(?:i\s+)?ok(?:ay)?\b|^yes\b/i;
-  const retractionToAccept = !!retractionMatch && RETRACTS_TO_ACCEPT_LOCAL.test(postRetractionText);
+  /* S154-B... (wave 61) — "...okay actually, yes, walking away, confirmed." fired
+   * walkAway=false: a bare "yes" opening postRetractionText matched RETRACTS_TO_ACCEPT_LOCAL
+   * even though the very same postRetractionText goes on to state an unhedged, un-negated
+   * walk-away right after it — the "yes" there confirms the departure itself, not an accept
+   * of the deal. Don't let a leading short-affirmative override when the same text also
+   * contains a genuine, un-negated walk-away phrase (mirrors retractionToWalkAway's own
+   * negation-aware gate in the opposite direction). */
+  const retractionToAccept =
+    !!retractionMatch && RETRACTS_TO_ACCEPT_LOCAL.test(postRetractionText) && !walkAwayWords.test(postRetractionText);
   /* S145-B2 (wave 51) — hedgeIsDeflection only gated isShortAffirmativeHedged, but
    * "Before that, what's your best number, but yes I'm on board." reaches `accepted`
    * via the hasAccept path ("on board" matches acceptWords directly), which had no
@@ -702,7 +718,13 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * so it belongs with the wide-gap group, not the narrow bare-"not" one. Mirrors
    * DEPARTURE_NEGATOR in _walkaway-detection.ts, whose lookback-based, 5-word-gap design
    * already covers this shape without needing a dedicated arm. */
-  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+saying|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S154-B... (wave 61) — "I can't say I'm not withdrawing." (alone) fired walkAway=true:
+   * the departure-verb group's "withdraw" arm had no "(?:ing)?" suffix, so the trailing
+   * \b never matched inside "withdrawing" and the negator never covered it — unlike its
+   * sibling "walk(?:ing)?\s+away" arm, which already handles the gerund form. Desynced
+   * from isWalkAway(), whose NEGATABLE_DEPARTURE/DEPARTURE_NEGATOR pairing already covers
+   * "withdrawing" correctly. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+saying|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw(?:ing)?|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
   /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
    * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
    * The negation guard only ever protected the walkAway field; apply it to rejected too.
@@ -861,6 +883,15 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * SOMEWHERE in the whole string, not that it governs THIS occurrence. Require the negator
    * to actually match within this occurrence's own clause-bounded window before treating it
    * as negated at all. */
+  /* S154-B... (wave 61) — "Under no circumstances will I not walk away — I mean it, I'm
+   * out." desynced from isWalkAway() (walkAway=true, correct): a primary negator ("under no
+   * circumstances"/"no way"/"never") followed later in the SAME clause by a second bare
+   * negation is a double negative that cancels back to an affirmed departure, not a
+   * suppressed one. isWalkAway()'s stripNegatedDepartures() already guards this via
+   * DOUBLE_NEGATION_CANCELS_RE; walkAwayNegationCoversLocal() had no equivalent, so it
+   * wrongly treated the double-negated departure as covered. Mirrors that guard. */
+  const DOUBLE_NEGATION_CANCELS_RE_LOCAL =
+    /\b(?:under\s+no\s+circumstances|no\s+way|never)\b(?:\s+\S+){0,4}?\s+(?:not|n['']t)\b\s*$/i;
   function walkAwayNegationCoversLocal(text: string): boolean {
     if (!walkAwayNegationRe.test(text)) return false;
     DEPARTURE_VERB_LOCAL.lastIndex = 0;
@@ -873,7 +904,8 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
       const segment = lookback + text.slice(verbMatch.index, verbEnd);
       const negatorCoversThis = walkAwayNegationRe.test(segment);
       const reclaimed = RECLAIMED_INTENT_LOCAL.test(lookback) && SUBJECT_SHIFT_RE_LOCAL.test(lookback);
-      if (!negatorCoversThis || reclaimed) return false;
+      const doubleNegationCancels = DOUBLE_NEGATION_CANCELS_RE_LOCAL.test(lookback);
+      if (!negatorCoversThis || reclaimed || doubleNegationCancels) return false;
     }
     return sawAnyVerb;
   }
