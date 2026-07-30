@@ -419,6 +419,11 @@ export function SalaryCompanyPage({
     ? `/questions/${questionPageSlug}`
     : "/questions";
 
+  /* Headline figure — the single number visitors came for, surfaced in the
+     hero instead of buried below the fold in the first table. */
+  const headlineRole = roles[0];
+  const headlineBand = headlineRole?.bands[headlineRole.bands.length - 1];
+
   return (
     <>
       <style>{editorialCSS}</style>
@@ -482,7 +487,7 @@ export function SalaryCompanyPage({
                   border: `1px solid ${t.line}`,
                 }}
               >
-                Data verified {calibrationDate}
+                Verified {calibrationDate} · rechecked quarterly
               </span>
               {noticePeriodDays && (
                 <span
@@ -509,6 +514,24 @@ export function SalaryCompanyPage({
                 </span>
               )}
             </div>
+
+            {/* Headline figure — the number, above the fold, before any table */}
+            {headlineRole && headlineBand && (
+              <div className="ed-rise ed-d3" style={{ marginTop: 32, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                <div>
+                  <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
+                    {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
+                  </p>
+                  <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
+                    {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
+                    <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
+                  </p>
+                </div>
+                <a href={questionHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
+                  Practice {companyLabel} questions <span className="ed-cta-arrow" aria-hidden>→</span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -628,9 +651,19 @@ export function SalaryCompanyPage({
               </section>
             ))
           ) : (
-            <p style={{ color: t.inkSoft, fontSize: 15 }}>
-              Salary data not yet available for this company.
-            </p>
+            <div style={{ padding: "32px 0 8px" }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>
+                We don&apos;t have verified {companyLabel} salary data yet.
+              </p>
+              <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 20px", maxWidth: "56ch", lineHeight: 1.6 }}>
+                We only publish ranges once we have enough sourced offers to report a
+                real percentile, not a guess. In the meantime, practice the actual
+                interview so you walk in ready regardless of the number.
+              </p>
+              <a href={questionHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
+                Practice {companyLabel} interview questions <span className="ed-cta-arrow" aria-hidden>→</span>
+              </a>
+            </div>
           )}
 
           {/* Disclaimer */}

@@ -75,6 +75,7 @@ export async function generateMetadata({
 
   const label = salaryCompanyLabel(company);
   const title = `${page.searchPhrase} | HireStepX`;
+  const hasData = buildRoleSections(company, page.roles).length > 0;
 
   return {
     title,
@@ -86,6 +87,9 @@ export async function generateMetadata({
       `${label} CTC India`,
       "salary India 2026",
     ],
+    /* No verified salary data yet for this company — don't let a stub
+       page ("data not yet available") compete for the query in search. */
+    ...(hasData ? {} : { robots: { index: false, follow: true } }),
     alternates: { canonical: `/salary/${company}` },
     openGraph: {
       type: "article",
