@@ -78,6 +78,18 @@ export const CITY_PAGES: CityPage[] = [
       "jupiter", "dmart", "purplle", "openai",
     ],
   },
+  {
+    slug: "delhi-ncr",
+    city: "Delhi NCR",
+    displayName: "Delhi NCR",
+    intro: "Delhi NCR (Delhi, Gurugram, and Noida) is India's second-largest hiring hub after Bengaluru, but with a very different composition: travel-tech, quick-commerce, logistics, and edtech companies headquartered here dominate over GCC-style delivery work.",
+    hiringContext: "Gurugram is home to travel and consumer-tech companies (MakeMyTrip, Ixigo, Cars24, Spinny) and fintech/insurance-tech (PolicyBazaar, IndMoney, BharatPe), alongside GCCs for KPMG and Nestle. Noida adds Microsoft, Adobe, and IT services firms (Thoughtworks, GlobalLogic), plus Naukri.com and edtech player Byju's. Delhi and the wider NCR belt add a dense logistics cluster (Delhivery, Shadowfax, Blackbuck, Rivigo), quick-commerce (Blinkit), and consulting (EY).",
+    companies: [
+      "makemytrip", "ixigo", "cars24", "spinny", "policybazaar", "indmoney", "bharatpe", "kpmg",
+      "microsoft", "adobe", "thoughtworks", "globallogic", "naukri", "byjus", "moglix",
+      "delhivery", "shadowfax", "blackbuck", "rivigo", "blinkit", "ey", "boat", "niyo", "yulu",
+    ],
+  },
 ];
 
 export function getCityPageBySlug(slug: string): CityPage | undefined {
