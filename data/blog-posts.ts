@@ -22866,6 +22866,44 @@ export const BLOG_POSTS: BlogPost[] = [
     relatedLinks: [{ label: "Practice HR & Behavioral Interview Questions", href: "/questions/common-hr-interview-questions-freshers-india" }],
     cta: "Notice period conversations and salary negotiation both come down to how you handle a real-time, high-stakes conversation. Practice the salary and offer-negotiation scenario with HireStepX's scored, India-specific rubric before you have the real one.",
   },
+  {
+    slug: "ai-layoffs-it-services-india-interview-prep-2026",
+    title: "AI Is Reshaping Indian IT Hiring in 2026: What It Actually Means for Your Interview Prep",
+    metaDescription: "TCS, Infosys, Wipro, and other IT services firms are restructuring around AI in 2026, not just cutting costs. Here's what's actually happening and how to prepare for interviews in a market that's judging candidates differently now.",
+    company: "General",
+    category: "Industry Insights",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&q=80",
+    heroAlt: "An office floor with fewer desks occupied, representing workforce restructuring",
+    datePublished: "2026-07-31",
+    intro: "If you work in or around Indian IT services, you've felt the shift even if you can't name it precisely: fewer open reqs, longer hiring cycles, more scrutiny in interviews, and a steady stream of headlines about layoffs at TCS, Infosys, and others. This isn't a repeat of a normal slow-hiring year. It's a real structural change driven by AI adoption inside these companies, and it changes what you need to demonstrate in an interview to actually get hired. Here's what's verifiably happening, and what to do about it.",
+    sections: [
+      {
+        heading: "What's actually happening, not just headlines",
+        content: "TCS cut over 12,000 jobs in July 2025 and its net headcount fell by more than 23,000 across FY26, despite the company reporting continued revenue growth. That combination, headcount falling while revenue holds or grows, is the signal that this is a restructuring story, not a demand slowdown. TCS's own chairman, N. Chandrasekaran, has publicly stated that AI agents are expected to match human headcount at the company within about three years, and has directly linked this to slower industry-wide hiring going forward.\n\nThis matters because it changes the honest answer to \"is this just a bad year?\" It isn't. Routine, well-defined work, the kind large IT services benches were traditionally built on, is exactly the category of work AI agents are being deployed to absorb first.",
+      },
+      {
+        heading: "Why this is genuinely different from past slowdowns",
+        content: "Indian IT hiring has cycled through slow years before (2001, 2008-09, 2016-17), usually tied to client demand softness or currency shocks that eventually reversed. What's happening in 2025-2026 is not primarily a demand problem: it's a workforce model problem. Adoption of generative AI tools among Indian employees is now above 90% by multiple independent measures (India Skills Report 2026, corroborated by EY and BCG research), meaning the tools are already inside the workflow, not a future threat.\n\nThe practical effect: companies need fewer people to do the same volume of routine work, and they're actively reorganizing around that reality rather than waiting for demand to pick up and absorb the existing bench. That's a structural shift, and it doesn't reverse the way a normal slow year does.",
+      },
+      {
+        heading: "What actually changes in how you get interviewed and hired",
+        content: "Interviewers at IT services companies are increasingly screening for a specific gap: candidates who can execute a well-defined task versus candidates who can do the parts of the job that are hard to hand to an AI agent, judgment calls, client communication, debugging ambiguous production issues, and owning a decision end to end.\n\nConcretely, this shows up in interviews as:\n1. More follow-up questions probing whether you understand *why* a solution works, not just that you can produce one, since an AI tool can already produce a correct-looking answer.\n2. More scenario and judgment questions (\"the client says X but the requirement says Y, what do you do\") rather than pure recall or syntax questions.\n3. Direct questions about which AI tools you use in your own work and how, since fluency with AI-assisted workflows is now treated as a baseline skill, not a nice-to-have.",
+      },
+      {
+        heading: "How to actually prepare for this",
+        content: "1. Be ready to talk plainly about how you use AI tools in your current work: what you use them for, what you still check or override yourself, and where you've caught them being wrong. Interviewers are testing for judgment about AI, not defensiveness about it.\n2. Shift your STAR story prep away from \"I completed task X\" toward \"I made judgment call Y when the requirement was ambiguous, and here's why.\" That's the part of your work that's hardest to replace, so it's the part worth rehearsing out loud.\n3. Don't skip technical fundamentals to over-index on AI talk. Interviewers are specifically testing whether you understand what the AI-generated code or analysis is actually doing, so surface-level familiarity without depth reads worse than not mentioning AI tools at all.\n4. If you're already in a notice period or facing restructuring at your current company, treat your interview prep timeline as more compressed than it used to be: hiring cycles are longer, but headcount also churns faster once a role opens, so being ready to interview on short notice matters more than it did a few years ago.",
+      },
+    ],
+    faqs: [
+      { question: "Is the IT services hiring slowdown in 2025-2026 really about AI, or is it just a normal down cycle?", answer: "The evidence points to AI-driven restructuring rather than a normal demand cycle. TCS's headcount fell by over 23,000 in FY26 while the company still reported revenue growth, and its chairman has publicly stated AI agents are expected to match human headcount within about three years. Headcount falling while revenue holds is the signature of a structural shift, not a temporary slowdown." },
+      { question: "Should I mention that I use AI tools in interviews, or will it make me look replaceable?", answer: "Mention it, but frame it as a workflow skill, not a crutch. Interviewers are increasingly testing AI-tool fluency directly, since it's now treated as baseline competency. What matters more is being able to explain what you check, override, or catch when the AI tool is wrong, which shows judgment rather than dependency." },
+      { question: "What should I actually practice differently for interviews in this environment?", answer: "Shift practice time toward judgment-based scenarios and follow-up questions that probe your reasoning, not just correct answers. AI tools already produce correct-looking answers quickly; interviewers are compensating by digging into why you made a choice, how you'd handle an ambiguous requirement, and where you'd catch an AI tool's mistake." },
+    ],
+    relatedSlugs: ["notice-period-buyout-negotiation-it-services-india", "salary-negotiation-after-offer-letter-india", "star-method-interview-answers"],
+    relatedLinks: [{ label: "Practice Behavioral & Judgment-Based Interview Questions", href: "/questions/common-hr-interview-questions-freshers-india" }],
+    cta: "If interviewers are now probing judgment and reasoning more than rote answers, practicing out loud against unpredictable follow-ups matters more than ever. Run a free scored HireStepX mock interview and see where your reasoning actually holds up.",
+  },
 ];
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
