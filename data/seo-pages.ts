@@ -6261,7 +6261,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "mastercard-software-engineer-interview-questions",
-    searchPhrase: "Mastercard Technology India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Mastercard Technology India Software Engineer Interview Questions 2026",
     company: "mastercard", roleFamily: "swe", focus: "system-design",
     intro: "Mastercard Technology India (Pune, Vadodara, Gurugram) hires software engineers across payments, fraud, and data platforms, with a strong bar on distributed systems and secure transaction processing. Expect a HackerRank screen, two to three technical rounds on DSA plus Java or Scala, and at least one design round on scaling a payment authorisation or settlement flow. Interviewers probe low latency, idempotency, and reliability far more than they do puzzle solving.",
     framework: { name: "AUTHNET", summary: "Authorisation flows, Uptime and reliability, Throughput at scale, Hashing and security, Networks and latency, Event streaming, Transactions and consistency" },
@@ -6286,7 +6286,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "visa-india-software-engineer-interview-questions",
-    searchPhrase: "Visa India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Visa India Software Engineer Interview Questions 2026",
     company: "visa-india", roleFamily: "swe", focus: "system-design",
     intro: "Visa's Bengaluru technology centre hires software engineers into payment processing, risk, and platform teams, where handling thousands of transactions per second reliably is the core challenge. The loop is a HackerRank or Codility screen followed by DSA rounds and a design round centred on a high-throughput, low-latency payment system. Interviewers care about fault tolerance, data consistency, and clean code more than about niche algorithm tricks.",
     framework: { name: "VISANET", summary: "Volume and throughput, Idempotent processing, Security and PCI, Availability, Networks and latency, Event-driven design, Transactions and consistency" },
@@ -6311,7 +6311,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "fiserv-software-engineer-interview-questions",
-    searchPhrase: "Fiserv India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Fiserv India Software Engineer Interview Questions 2026",
     company: "fiserv", roleFamily: "swe", focus: "technical",
     intro: "Fiserv's India centres (Noida, Pune, Bengaluru) build banking and merchant-payment platforms, so interviews lean practical: core Java or C-Sharp, Spring, SQL, and message queues over abstract puzzles. Expect an online assessment, one or two technical rounds on DSA and framework depth, and a managerial round on the payments and BFSI domain. Prior exposure to Clover, Carat, or card-processing systems is a plus for merchant-services teams.",
     framework: { name: "MERCHANT", summary: "Microservices, Enterprise Java, REST and integration, Collections and concurrency, Handling transactions, Algorithms, Networks, Testing" },
@@ -6421,7 +6421,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "standard-chartered-software-engineer-interview-questions",
-    searchPhrase: "Standard Chartered GBS India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Standard Chartered GBS India Software Engineer Interview Questions 2026",
     company: "standard-chartered", roleFamily: "swe", focus: "technical",
     intro: "Standard Chartered GBS India (its global business services arm in Bengaluru and Chennai) hires software engineers into banking platforms spanning payments, trade finance, and risk. The loop is fundamentals-heavy: core Java or Python, SQL, and data structures, plus API and microservices design for mid-level roles. Interviewers care about clean, maintainable code and clear communication, since you will work in large distributed teams across time zones, so tie your answers to real project ownership and testing discipline.",
     framework: { name: "Platform-thinking", summary: "Clarify the requirement, model the data, design a clean service boundary, handle failures and security, then discuss scale and testing." },
@@ -6560,7 +6560,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "arm-india-software-engineer-interview-questions",
-    searchPhrase: "ARM India Software Engineer Interview Questions India 2026",
+    searchPhrase: "ARM India Software Engineer Interview Questions 2026",
     company: "arm-india", roleFamily: "swe", focus: "technical",
     intro: "ARM India's software engineer interviews (Bengaluru and Noida) lean hard into low-level C/C++, computer architecture, and embedded fundamentals because most teams work on compilers, drivers, and tooling for ARM cores. Expect deep questions on pointers, memory alignment, bit manipulation, cache behaviour, and processor pipelines alongside standard DSA. Roles span compiler tooling, GPU software, and CPU verification software, so tailor prep to the specific team you applied to.",
     framework: { name: "STAR-T", summary: "Situation, Task, Action, Result, plus a Technical layer where you justify every low-level design choice" },
@@ -6586,7 +6586,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "ericsson-india-software-engineer-interview-questions",
-    searchPhrase: "Ericsson India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Ericsson India Software Engineer Interview Questions 2026",
     company: "ericsson-india", roleFamily: "swe", focus: "technical",
     intro: "Ericsson India's software engineer interviews (Bengaluru, Gurugram, Chennai, Noida) mix standard DSA with telecom and networking depth, since most teams build 5G RAN, core network, and OSS/BSS software. Expect coding rounds in Java, C++, or Python plus questions on TCP/IP, protocols, and Linux internals. The process is structured across an online test, one or two technical rounds, and a managerial plus HR round.",
     framework: { name: "CARL", summary: "Context, Action, Result, Learning: Ericsson interviewers probe what you learned from each engineering decision" },
@@ -6612,7 +6612,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "nokia-india-software-engineer-interview-questions",
-    searchPhrase: "Nokia India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Nokia India Software Engineer Interview Questions 2026",
     company: "nokia-india", roleFamily: "swe", focus: "technical",
     intro: "Nokia India's software engineer interviews (Bengaluru, Chennai, Noida) focus on DSA, C/C++ or Java, operating systems, and networking, reflecting Nokia's work on 5G, IP routing, and optical software. Expect an online test followed by two technical rounds and an HR round, with strong emphasis on fundamentals and problem solving. Teams range from network management to cloud RAN, so align your prep with the role.",
     framework: { name: "STAR-T", summary: "Situation, Task, Action, Result, with a Technical layer explaining the why behind each design choice" },
@@ -6638,7 +6638,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "lowes-india-software-engineer-interview-questions",
-    searchPhrase: "Lowe's India (GCC) Software Engineer Interview Questions India 2026",
+    searchPhrase: "Lowe's India (GCC) Software Engineer Interview Questions 2026",
     company: "lowes-india", roleFamily: "swe", focus: "system-design",
     intro: "Lowe's India is the Bengaluru GCC building retail, supply chain, and e-commerce platforms for the US home-improvement retailer. Software engineer interviews combine DSA rounds with strong system design expectations, especially for mid and senior levels, covering microservices, event-driven architecture, and high-traffic retail scale. Expect Java or Python coding plus scenario-based design of catalog, cart, inventory, and order systems.",
     framework: { name: "STAR + Design", summary: "STAR for behavioural answers, plus a structured design pass: requirements, scale, data model, components, trade-offs" },
@@ -6664,7 +6664,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "target-india-software-engineer-interview-questions",
-    searchPhrase: "Target India (TCI) Software Engineer Interview Questions India 2026",
+    searchPhrase: "Target India (TCI) Software Engineer Interview Questions 2026",
     company: "target-india", roleFamily: "swe", focus: "system-design",
     intro: "Target in India (TCI), based in Bengaluru, builds supply chain, e-commerce, and store technology for the US retailer, so software engineer interviews weigh system design heavily alongside DSA. Expect coding in Java, Python, or Go plus design rounds on high-traffic retail systems: catalog, cart, fulfilment, and real-time inventory. The process typically runs an online assessment, two technical rounds, a design round, and a behavioural plus HR round.",
     framework: { name: "STAR + Design", summary: "STAR for behavioural signals, plus a design pass: clarify requirements, estimate scale, design components, discuss trade-offs" },
@@ -6830,7 +6830,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "intuit-software-engineer-interview-questions",
-    searchPhrase: "Intuit India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Intuit India Software Engineer Interview Questions 2026",
     company: "intuit", roleFamily: "swe", focus: "technical",
     intro: "Intuit India in Bengaluru is the company's largest engineering hub outside the US, building QuickBooks, TurboTax, and Credit Karma, and it pairs a medium coding bar with a very high bar for customer empathy. The stack is Java and Kotlin on the backend with React on the front, and the design questions map to their domain: tax computation rule engines, financial data aggregation, and ML-powered recommendations. Behavioral rounds are the differentiator: frame every story around customer outcomes, not internal technical metrics, and expect OOP design questions at senior levels.",
     framework: { name: "Customer-outcome STAR", summary: "Situation, task, action, and result framed around the customer impact you delivered." },
@@ -7035,7 +7035,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "nestle-software-engineer-interview-questions",
-    searchPhrase: "Nestle India Software Engineer Interview Questions India 2026",
+    searchPhrase: "Nestle India Software Engineer Interview Questions 2026",
     company: "nestle", roleFamily: "swe", focus: "technical",
     intro: "Nestle India runs its tech hiring as an enterprise FMCG IT function, so software engineer roles skew toward SAP, data platforms, integration, and internal digital products rather than consumer-scale product engineering. The technical rounds test core programming (arrays, strings, SQL, basic algorithms) and go deep on whatever you claim: SAP ABAP, ETL and data pipelines, cloud (Azure is common here), or full-stack web. Nestle places real weight on structured behavioural interviews and often uses competency-based questions tied to its corporate values, so prepare crisp STAR stories on collaboration, ownership, and dealing with ambiguity. Entry compensation generally lands in the 6 to 14 LPA band depending on role and specialization.",
     framework: { name: "Competency STAR", summary: "Answer behavioural prompts with Situation, Task, Action, Result; keep the Action specific and quantify the Result." },
@@ -7253,7 +7253,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "optiver-quant-interview-questions",
-    searchPhrase: "Optiver India Quant Interview Questions India 2026",
+    searchPhrase: "Optiver India Quant Interview Questions 2026",
     company: "optiver", roleFamily: "quant", focus: "technical",
     intro: "Optiver's India quant and trading interviews are famous for fast mental-math and probability tests before you reach any deep discussion. In 2026 you should expect a timed arithmetic assessment (the well-known 80-in-8 style speed test), then rounds on probability, expected value, market-making games, and combinatorics. Optiver screens for raw quantitative speed and sound reasoning under pressure, so accuracy at pace matters as much as knowing the theory.",
     framework: { name: "Speed with Rigour", summary: "Combine fast, accurate mental math with clean expected-value and probability reasoning you can narrate calmly under time pressure" },
@@ -7435,7 +7435,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "millennium-quant-interview-questions",
-    searchPhrase: "Millennium India Quant Interview Questions India 2026",
+    searchPhrase: "Millennium India Quant Interview Questions 2026",
     company: "millennium", roleFamily: "quant", focus: "technical",
     intro: "Millennium's India quant and technology interviews screen for sharp probability reasoning, clean coding, and a genuine feel for markets. In 2026 expect an early quantitative and coding screen, then rounds on probability, statistics, expected value, and time-series or data-handling problems, often tied to how a strategy would behave in live trading. Because Millennium runs a multi-manager pod model, interviewers care that you can reason precisely about risk and edge, not just recite formulas.",
     framework: { name: "Edge and Rigour", summary: "Pair rigorous probability and statistics with clean, testable code and a clear story for where a trading edge comes from and how it decays" },
