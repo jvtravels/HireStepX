@@ -570,6 +570,8 @@ export default async function AiMockInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
                 { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
+                { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
+                { label: "Bank PO Interview Questions — SBI & IBPS", href: "/bank-po-interview-questions" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
                 { label: "How It Works — 5 Steps", href: "/how-it-works" },
