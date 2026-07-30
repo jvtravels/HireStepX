@@ -12,6 +12,7 @@ import { editorialCSS, MarkdownProse, ctaPrimaryStyle } from "./marketing-v2/_ed
 import { RoundFlow, SalaryLadder, TierCompare, FrameworkSteps, PrepTimeline, ComparisonTable } from "./marketing-v2/_blog-infographics";
 import type { BlogPost } from "../data/blog-posts";
 import type { BlogMeta } from "./blog-meta";
+import { CATEGORY_BUCKET_MAP, CATEGORY_BUCKETS, bucketToSlug } from "./blog-categories";
 
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
@@ -101,17 +102,11 @@ function BlogShell({ children, afterContent }: { children: ReactNode; afterConte
    that file's header for why). Lightweight per-post metadata for the
    index/related-card views lives in ./blog-meta.ts. */
 
-/* ─── Category filters: 18 raw categories consolidated into 6 user-intent buckets ─── */
-const CATEGORY_MAP: Record<string, string> = {
-  "Behavioral": "Behavioral", "HR Round": "Behavioral", "Skills": "Behavioral",
-  "Career": "Career", "Preparation": "Career",
-  "Freshers": "Freshers", "Campus": "Freshers", "Campus Placement": "Freshers",
-  "Technical": "Technical", "System Design": "Technical", "FAANG": "Technical",
-  "Product": "Technical", "Product Tech": "Technical", "Finance & Banking Tech": "Technical",
-  "Full Guide": "Company Guides", "Experience": "Company Guides", "Comparison": "Company Guides",
-  "Strategy": "Strategy", "Salary Guide": "Strategy",
-};
-const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technical", "Career", "Strategy"];
+/* Category bucketing (18 raw categories → 6 user-intent buckets) now lives in
+   ./blog-categories so the server-rendered /blog/category/[category] pages
+   can share the exact same grouping logic without importing this client file. */
+const CATEGORY_MAP = CATEGORY_BUCKET_MAP;
+const CATEGORIES = ["All", ...CATEGORY_BUCKETS];
 
 /* ─── Compact card: 3-col grid variant ───────────────────────────────
  * All cards share the same 200px image height for a balanced grid row.
@@ -321,6 +316,21 @@ function BlogIndex({ metas }: { metas: BlogMeta[] }) {
             </button>
           ))}
         </div>
+
+        {/* Real crawlable links into the category pages (the tabs above are
+            client-side filters with no URL of their own — this row gives
+            search engines an actual href to follow into each category). */}
+        <nav aria-label="Browse by topic" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 14px", marginBottom: 40 }}>
+          {CATEGORY_BUCKETS.map(bucket => (
+            <Link
+              key={bucket}
+              href={`/blog/category/${bucketToSlug(bucket)}`}
+              style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, textDecoration: "underline", textUnderlineOffset: 3 }}
+            >
+              All {bucket} guides
+            </Link>
+          ))}
+        </nav>
 
         {/* Post grid */}
         {paginated.length > 0 ? (
@@ -7452,7 +7462,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
               <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, overflow: "hidden" }}>
                 {post.faqs.map((faq, i) => (
                   <details key={i} className="mv2p-faq" style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}`, padding: "20px 24px" }}>
-                    <summary style={{ cursor: "pointer", fontFamily: fonts.serif, fontSize: 17, color: t.coal, letterSpacing: "-0.01em", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, fontWeight: 400 }}>
+                    <summary style={{ cursor: "pointer", fontFamily: fonts.sans, fontSize: 16, color: t.coal, letterSpacing: "-0.01em", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, fontWeight: 600 }}>
                       {faq.question}
                       <span aria-hidden className="mv2p-faq-marker" style={{ color: t.copper, fontSize: 22, fontFamily: fonts.sans, fontWeight: 300, lineHeight: 1, display: "inline-block", flexShrink: 0 }}>+</span>
                     </summary>

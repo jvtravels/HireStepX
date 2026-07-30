@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SEO_PAGES, SEO_PAGES_LAST_MODIFIED } from "../data/seo-pages";
 import { getAllBlogSlugs, BLOG_META } from "../src/blog-meta";
+import { CATEGORY_BUCKETS, bucketToSlug } from "../src/blog-categories";
 import { getAllSalarySlugs } from "../data/salary-seo";
 
 /* sitemap.xml — generated at build time. Includes:
@@ -116,5 +117,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.65,
   }));
 
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCompanyEntries];
+  /* /blog/category/[category] — topic-bucket blog landing pages. */
+  const blogCategoryEntries: MetadataRoute.Sitemap = CATEGORY_BUCKETS.map((bucket) => ({
+    url: `${baseUrl}/blog/category/${bucketToSlug(bucket)}`,
+    lastModified: seoPagesLastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.65,
+  }));
+
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCompanyEntries, ...blogCategoryEntries];
 }
