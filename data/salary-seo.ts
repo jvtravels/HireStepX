@@ -340,7 +340,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "tech-mahindra-interview-questions-2026",
+    questionSlug: "techmahindra-swe-interview-questions",
     hubNote: "ELP (Entry Level Programme): 90-day notice, ₹50K bond penalty",
   },
   {
@@ -351,7 +351,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
     ],
-    questionSlug: "mphasis-interview-questions-freshers-2026",
+    questionSlug: "mphasis-swe-interview-questions",
     hubNote: "Blackstone ownership since 2016: stable employer, moderate pay",
   },
   {
@@ -533,6 +533,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     hubNote: "CRM RSU vests annually not quarterly: verify vest schedule before signing",
     sitemapPriority: 0.77,
+    questionSlug: "salesforce-swe-interview-questions",
   },
   {
     slug: "oyo",
@@ -549,9 +550,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "nykaa",
-    searchPhrase: "Nykaa Software Engineer Salary India 2026: CTC Guide",
+    searchPhrase: "Nykaa Software Engineer Salary 2026: ₹10–70 LPA CTC Guide",
     metaDescription:
-      "Nykaa SWE salary 2026: freshers start at ₹10–22 LPA, senior engineers earn ₹38–70 LPA. NSE-listed RSU (FSN E-Commerce). Real CTC numbers for beauty ecommerce + fintech roles.",
+      "Nykaa SWE salary: freshers ₹10–22 LPA, senior ₹38–70 LPA. NSE-listed RSU (FSN E-Commerce). Real CTC numbers for beauty ecommerce + fintech roles.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
@@ -559,6 +560,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     hubNote: "FSN RSU listed on NSE: check stock trajectory before ESOP value estimates",
     sitemapPriority: 0.73,
+    questionSlug: "nykaa-swe-interview-questions",
   },
   {
     slug: "myntra",
@@ -572,6 +574,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     hubNote: "Flipkart-group ESOP: liquidity tied to Flipkart/Walmart exit event",
     sitemapPriority: 0.74,
+    questionSlug: "myntra-swe-interview-questions",
   },
   {
     slug: "dream11",
@@ -585,6 +588,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     hubNote: "Pre-IPO ESOP: Dream Sports valued at ~$8B; secondary transactions have occurred",
     sitemapPriority: 0.75,
+    questionSlug: "dream11-swe-system-design-interview-questions",
   },
   {
     slug: "rapido",
@@ -598,6 +602,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     hubNote: "Pre-IPO ESOP: Rapido raised Series E in 2024; IPO timeline not announced",
     sitemapPriority: 0.70,
+    questionSlug: "rapido-swe-system-design-interview-questions",
   },
   {
     slug: "icici",
@@ -610,6 +615,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     hubNote: "Banking IT: no equity, but stable employment; domain knowledge of BFSI systems valued",
     sitemapPriority: 0.70,
+    questionSlug: "icici-relationship-manager-interview-questions",
   },
   /* ── Finance & Quant ─────────────────────────────────────────── */
   {
@@ -823,14 +829,14 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam-ai",
-    searchPhrase: "Sarvam AI Engineer Salary India 2026",
+    searchPhrase: "Sarvam AI ML Engineer & Researcher Salary India 2026: ₹50–150 LPA",
     metaDescription:
-      "Sarvam AI salary India 2026: AI Engineer mid ₹50–80 LPA, senior ₹90–150 LPA. ESOP (pre-Series C). India's leading vernacular AI company. Bengaluru CTC guide.",
+      "Sarvam AI ML Engineer / Researcher salary: mid ₹50–80 LPA, senior ₹90–150 LPA, plus ESOP (Series B, $1.5B valuation). India's leading vernacular AI unicorn. Bengaluru CTC guide.",
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
     ],
     questionSlug: "sarvam-ai-ml-engineer-interview-questions",
-    hubNote: "India's leading vernacular AI: BharatGPT, Sarvam-2B; pre-Series C ESOP",
+    hubNote: "India's leading vernacular AI unicorn: BharatGPT, Sarvam-2B; Series B ($1.5B) ESOP",
     sitemapPriority: 0.73,
   },
   /* ── Quant / HFT Wave 7 ─────────────────────────────────────── */
@@ -1211,9 +1217,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "wakefit",
-    searchPhrase: "Wakefit Software Engineer Salary India 2026",
+    searchPhrase: "Wakefit Software Engineer Salary 2026: ₹16–42 LPA",
     metaDescription:
-      "Wakefit salary India 2026: SWE mid ₹16–26 LPA, senior ₹26–42 LPA. Pre-IPO ESOP. India's leading D2C sleep and furniture brand. Bengaluru CTC guide.",
+      "Wakefit salary: SWE mid ₹16–26 LPA, senior ₹26–42 LPA, plus pre-IPO ESOP. India's leading D2C sleep and furniture brand. Bengaluru CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "wakefit-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP: Wakefit; D2C furniture; smaller tech team; credibility tied to eventual IPO",
@@ -1739,7 +1745,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "M2P Fintech salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–40 LPA, senior ₹42–65 LPA. ESOP. Chennai-based BaaS (Banking-as-a-Service) fintech. Card issuance and account management APIs.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "m2p-fintech-swe-technical-interview-questions",
     hubNote: "BaaS fintech: powers 50+ banks/fintechs with card APIs; Chennai HQ; ESOP pre-IPO",
     sitemapPriority: 0.69,
   },
@@ -1936,9 +1942,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "moglix",
-    searchPhrase: "Moglix Software Engineer Salary India 2026: CTC Guide",
+    searchPhrase: "Moglix Software Engineer Salary 2026: ₹14–60 LPA CTC Guide",
     metaDescription:
-      "Moglix SWE salary 2026: entry ₹14–22 LPA, senior ₹38–60 LPA, with ESOP at a $2.6B B2B unicorn. Full CTC breakdown for Noida-based supply chain and SaaS engineering roles.",
+      "Moglix SWE salary: entry/fresher ₹14–22 LPA, senior ₹38–60 LPA, with ESOP at a $2.6B B2B unicorn. Full CTC breakdown for Noida-based supply chain and SaaS engineering roles.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "moglix-software-engineer-interview-questions",
     hubNote: "B2B industrial marketplace: $2.6B valuation; ESOP; manufacturing supply chain tech",
@@ -2050,7 +2056,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Capillary Technologies salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–32 LPA, senior ₹34–56 LPA. ESOP. Bengaluru loyalty and CRM SaaS for retail brands: 250+ brands globally.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "capillary-tech-swe-technical-interview-questions",
     hubNote: "Loyalty SaaS: 250+ global brands; ESOP; Bengaluru; retail and FMCG CRM platform",
     sitemapPriority: 0.68,
   },
@@ -2110,7 +2116,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Ecom Express salary India 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–44 LPA. Listed RSU (NSE: ECOMEXPRESS, IPO 2024). Delhi-based e-commerce logistics partner.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "ecom-express-swe-technical-interview-questions",
     hubNote: "Listed logistics (NSE: ECOMEXPRESS): RSU; e-commerce last-mile delivery tech",
     sitemapPriority: 0.68,
   },
@@ -2120,7 +2126,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Yulu salary India 2026: SWE entry ₹10–16 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. ESOP. Bengaluru EV bike-sharing startup: micro-mobility for last-mile commute. Bajaj Auto partnership.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "yulu-swe-technical-interview-questions",
     hubNote: "EV micro-mobility: Bajaj Auto partnership; ESOP; Bengaluru; IoT fleet tech",
     sitemapPriority: 0.67,
   },
@@ -2170,7 +2176,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Country Delight salary India 2026: SWE entry ₹12–18 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. ESOP. Gurugram D2C dairy startup: fresh milk, ghee, curd delivered from farm to doorstep.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "country-delight-swe-system-design-interview-questions",
     hubNote: "D2C dairy: cold-chain logistics tech; ESOP; Gurugram; Series-D funded",
     sitemapPriority: 0.67,
   },
@@ -2180,7 +2186,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Rivigo salary India 2026: SWE mid ₹12–20 LPA, senior ₹22–36 LPA. ESOP. Gurugram truck-tech logistics: relay trucking model with driver welfare focus. B2B freight marketplace.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "rivigo-swe-system-design-interview-questions",
     hubNote: "Truck-tech logistics: relay driver model innovation; ESOP; Gurugram HQ",
     sitemapPriority: 0.67,
   },
@@ -2190,7 +2196,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Sumo Logic salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. RSU. Bengaluru cloud observability and SIEM SaaS: log analytics for AWS, GCP, Azure workloads.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "sumologic-swe-system-design-interview-questions",
     hubNote: "Cloud observability SaaS: went private 2023 (Francisco Partners); ESOP post-privatisation",
     sitemapPriority: 0.68,
   },
@@ -2200,7 +2206,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     metaDescription:
       "Clari salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. Bengaluru and Hyderabad revenue operations SaaS: AI forecasting and pipeline management for B2B sales.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: undefined,
+    questionSlug: "clari-swe-technical-interview-questions",
     hubNote: "Revenue operations SaaS: $150M+ ARR; ESOP at $2.6B valuation; Bengaluru engineering",
     sitemapPriority: 0.68,
   },
@@ -2278,12 +2284,12 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam",
-    searchPhrase: "Sarvam AI Salary India 2026: All Roles CTC Breakdown",
+    searchPhrase: "Sarvam AI Software Engineer Salary India 2026: ₹18–95 LPA by Level",
     metaDescription:
-      "Sarvam AI pays SWEs ₹18–95 LPA based on level, with ESOP at India's top AI lab. Full CTC breakdown for SDE-1, SDE-2, senior, and staff roles. Bengaluru, Series A, 2026.",
+      "Sarvam AI Software Engineer salary: ₹18–95 LPA based on level (SDE-1 to staff), with ESOP at India's AI unicorn. Full CTC breakdown by level. Bengaluru, Series B ($1.5B), 2026.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "sarvam-swe-interview-questions",
-    hubNote: "India-native LLM lab Bengaluru; Series A; ESOP; 10 Indian languages AI",
+    hubNote: "India-native LLM lab Bengaluru; Series B unicorn ($1.5B); ESOP; 10 Indian languages AI",
     sitemapPriority: 0.74,
   },
   {

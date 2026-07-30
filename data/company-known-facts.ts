@@ -596,9 +596,9 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     description: "Sarvam AI (formerly Sarvam) is India's leading vernacular AI company, building Indic language models (BharatGPT), voice AI, and the Sarvam-2B open-source model. Powers government-scale AI deployments.",
     products: ["Sarvam-2B (open-source Indic LLM)", "Sarvam APIs (TTS, STT, translation for 11 Indian languages)", "BharatGPT (government AI initiative)", "Sarvam Speak (voice AI platform)"],
     competitors: ["AI4Bharat (IIT Madras research lab)", "Google (Indic support in Gemini)", "Microsoft (Azure OpenAI with Indic)", "Krutrim (Ola's AI lab)"],
-    scale: "~200 employees. Pre-Series C. Backed by Lightspeed, Peak XV. Valuation ~$400M (2024). Deployed by Indian government at national scale.",
+    scale: "~200 employees. Series B ($234M+ raised, targeting $300M round). Backed by Lightspeed, Peak XV, Khosla Ventures, HCLTech, Bessemer. Valuation ~$1.5B (unicorn, June 2026). Deployed by Indian government at national scale.",
     techHints: "Python (primary). PyTorch for LLM training. Indic data pipelines and language-specific tokenization. TTS/STT with acoustic models for 11 Indian languages. Deployed at scale via Kubernetes on GCP. Real-time voice AI (<200ms latency target).",
-    notes: "Sarvam is mission-driven: expects candidates motivated by India's AI/language problem, not just compensation. Interview rounds include ML systems + Indic NLP knowledge + research orientation. Strong preference for candidates with published work or open-source contributions. ESOP is pre-Series C but credibility has grown with government contracts.",
+    notes: "Sarvam is mission-driven: expects candidates motivated by India's AI/language problem, not just compensation. Interview rounds include ML systems + Indic NLP knowledge + research orientation. Strong preference for candidates with published work or open-source contributions. ESOP grants predate the Series B; credibility has grown with government contracts and unicorn status.",
     themes: [
       "Indic language NLP and multilingual models",
       "TTS and STT for Indian languages",
