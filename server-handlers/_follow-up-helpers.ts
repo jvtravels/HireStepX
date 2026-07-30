@@ -632,7 +632,27 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * genuine retraction: the candidate hasn't actually left. An "if" in postRetractionText
    * means it's a threat, not an unconditional walk-away statement. */
   const retractionIsConditionalThreat = /\bif\b/i.test(postRetractionText);
-  const retractionToWalkAway = !!retractionMatch && walkAwayWords.test(postRetractionText) && !retractionNegatesWalkAway && !retractionIsConditionalThreat;
+  /* S154-B... (wave 63) — "It's not like I'm not withdrawing — oh wait, I actually take that
+   * back, I'm not withdrawing after all." fired walkAway=true, diverging from isWalkAway()
+   * (correctly false): retractionNegatesWalkAway only ever checks whether postRetractionText
+   * STARTS with a negator (`^...`), so a negator that instead sits directly in front of the
+   * departure verb further into the same clause ("take that back, I'm not withdrawing after
+   * all") was invisible to it. Needs its own proximate check here rather than reusing
+   * walkAwayNegationCoversLocal() below — that helper depends on walkAwayNegationRe/
+   * DEPARTURE_VERB_LOCAL, both declared later in this function, so calling it this early
+   * hits a TDZ error. */
+  const postRetractionWalkAwayMatch = walkAwayWords.exec(postRetractionText);
+  const RETRACTION_NEGATOR_PROXIMATE_RE =
+    /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|won.?t|wouldn.?t|would\s+not|never|not)\s+(?:[\w']+\s+){0,3}$/i;
+  const retractionNegatesWalkAwayProximate =
+    !!postRetractionWalkAwayMatch &&
+    RETRACTION_NEGATOR_PROXIMATE_RE.test(postRetractionText.slice(0, postRetractionWalkAwayMatch.index));
+  const retractionToWalkAway =
+    !!retractionMatch &&
+    walkAwayWords.test(postRetractionText) &&
+    !retractionNegatesWalkAway &&
+    !retractionNegatesWalkAwayProximate &&
+    !retractionIsConditionalThreat;
   /* S147-B2 (wave 53) — "I'm walking away, but give me a day to think, actually I accept."
    * fired {accepted:true, walkAway:true} simultaneously: the S133-B2 pre-hedge OR-branch
    * below has no guard for a LATER, un-hedged "Actually ..." retraction that reverses it

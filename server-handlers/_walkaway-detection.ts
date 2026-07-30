@@ -338,12 +338,22 @@ const DOUBLE_NEGATION_CANCELS_RE =
 const ALREADY_IDIOM_CANCELS_RE =
   /\b(?:was|is|has|have|are)n['']?t\s+already\b(?:\s+\S+){0,5}?\s*$/i;
 
+/* S154-B... (wave 63) — "Wasn't already obvious I'm not walking away? Just checking
+ * flexibility on the bonus." fired isWalkAway()=true, diverging from detectCandidateIntent()
+ * (correctly false): ALREADY_IDIOM_CANCELS_RE fired on the "wasn't already" opener alone,
+ * with no check for a SECOND, fresh negator ("I'm not") sitting directly in front of the
+ * departure phrase itself — that fresh negator is the genuine one to honor ("wasn't already
+ * obvious [that] I'm not walking away" reassures a stay), unlike the wave-62 idiom shape
+ * ("wasn't already making me want to walk away") which has no such intervening negator. Only
+ * let the idiom cancel the negation when nothing directly negates the departure verb itself. */
+const ALREADY_IDIOM_NESTED_NEGATOR_RE = /\b(?:not|n['']t)\b(?:\s+[\w']+){0,2}\s*$/i;
+
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
     const preceding = clauseBoundedLookback(full, offset, 48);
     if (!DEPARTURE_NEGATOR.test(preceding)) return match;
     if (DOUBLE_NEGATION_CANCELS_RE.test(preceding)) return match;
-    if (ALREADY_IDIOM_CANCELS_RE.test(preceding)) return match;
+    if (ALREADY_IDIOM_CANCELS_RE.test(preceding) && !ALREADY_IDIOM_NESTED_NEGATOR_RE.test(preceding)) return match;
     if (SAY_LITOTES.test(preceding)) return " ";
     if (WRONG_SUBJECT_NEGATOR_RE.test(preceding)) return match;
     return " ";

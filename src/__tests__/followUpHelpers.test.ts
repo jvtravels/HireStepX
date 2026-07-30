@@ -5084,4 +5084,20 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(false);
     });
   });
+
+  describe("S154-B... (wave 63) — hostile-battery hardening", () => {
+    it("a 'wasn't already obvious I'm not walking away' rhetorical question stays a stay, not a walk-away", () => {
+      const s = "Wasn't already obvious I'm not walking away? Just checking flexibility on the bonus.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("a retraction whose post-text negator sits mid-clause (not at the very start) still suppresses the walk-away", () => {
+      const s =
+        "It's not like I'm not withdrawing — oh wait, I actually take that back, I'm not withdrawing after all.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
 });
