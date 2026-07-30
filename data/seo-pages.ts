@@ -1445,7 +1445,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Rapido ────────────────────────────────────────────────────────── */
   {
     slug: "rapido-swe-system-design-interview-questions",
-    searchPhrase: "Rapido Software Engineer System Design Interview Questions 2026",
+    searchPhrase: "Rapido SWE System Design Interview Questions 2026",
     company: "rapido", roleFamily: "swe", focus: "system-design",
     intro: "Rapido's technical interviews run two in-person rounds: the first is a coding round on an IDE, and the second is a design discussion focused on making systems fail-safe and scalable. Candidates report design prompts pulled straight from Rapido's own domain, log processing keyed by order ID or ride timestamp, alongside classic booking-system problems like Redbus or BookMyShow. It's also worth studying Rapido's own published engineering writing: their dispatch system originally matched captains by straight-line distance and was rebuilt around hexagonal geospatial zoning and historical ETA data once that broke down on real roads, a good template for how they expect you to reason about their domain even when a specific question isn't reported verbatim. For SDE-2 candidates, the conversation often turns theoretical: monolith vs. microservices, why each service should own its database, and how you reason about horizontal versus vertical scaling.",
     framework: { name: "Fail-safe-first design", summary: "Before drawing boxes, name the failure mode the interviewer is actually probing, a race on a booking lock, a bad distance proxy in a matching algorithm, a service outage cascading through a shared DB, then design the specific mechanism (TTL lock, geospatial zoning, isolated datastore) that neutralizes it." },
@@ -1503,7 +1503,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Capillary Technologies ────────────────────────────────────────── */
   {
     slug: "capillary-tech-swe-technical-interview-questions",
-    searchPhrase: "Capillary Technologies Software Engineer Interview Questions 2026",
+    searchPhrase: "Capillary Technologies SWE Interview Questions 2026",
     company: "capillary-tech", roleFamily: "swe", focus: "technical",
     intro: "Capillary Technologies runs a four-round process: a written test, a technical round, a hiring-manager round, and a culture-fit round. The technical round opens with low-level design or machine-coding (candidates report being asked to build small components like rate limiters from scratch), then moves into authentication design, SQL joins across relational tables, and basic Unix diagnostics (grep, find, ssh) to see how you'd triage a hung process. As a loyalty-and-CRM SaaS platform serving 250+ global retail brands, expect SQL questions framed around real multi-table reconciliation problems, not toy schemas.",
     framework: { name: "Build-it-clean, explain-the-tradeoff", summary: "Capillary's machine-coding and SQL rounds reward code you can extend on the spot: a rate limiter that handles the boundary case cleanly, a join query with the right index called out unprompted. State the tradeoff you made before the interviewer has to ask for it." },
@@ -1586,7 +1586,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Country Delight ───────────────────────────────────────────────── */
   {
     slug: "country-delight-swe-system-design-interview-questions",
-    searchPhrase: "Country Delight Software Engineer System Design Interview Questions 2026",
+    searchPhrase: "Country Delight SWE System Design Interview Questions 2026",
     company: "country-delight", roleFamily: "swe", focus: "system-design",
     intro: "Country Delight's interviews run three rounds, commonly reported as an exploratory call, a technical round, and a CTO round covering past projects and coding. The technical round mixes system design, SQL, and Java coding with an explicit optimization bar, brute-force answers get pushed on. Given Country Delight's actual business, a cold-chain D2C dairy subscription service, expect design questions that touch their real subscription-and-delivery-cutoff model, not a generic e-commerce system. Come ready to defend an architectural choice in the CTO round; candidates report it goes deep on 'why', not just 'what'.",
     framework: { name: "Cutoff-and-consistency", summary: "Country Delight's core operational hardness is the daily subscription cutoff, edits after the cutoff must never leak into a route that's already locked. Frame your design answers around that boundary explicitly, then layer in the SQL/optimization ask on top." },
@@ -1613,7 +1613,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Rivigo ────────────────────────────────────────────────────────── */
   {
     slug: "rivigo-swe-system-design-interview-questions",
-    searchPhrase: "Rivigo Software Engineer System Design Interview Questions 2026",
+    searchPhrase: "Rivigo SWE System Design Interview Questions 2026",
     company: "rivigo", roleFamily: "swe", focus: "system-design",
     intro: "Rivigo's technical process runs three rounds: a DSA round leaning on graphs and dynamic programming, a system design round covering both low-level and high-level design, and a hiring-manager round on behavioral fit; some candidates also get a take-home assignment. What sets Rivigo's interviews apart is domain grounding, expect a real-time logistics problem (a breakdown mid-route, a shipment that needs rerouting) rather than a generic system-design prompt. It's also worth understanding Rivigo's own actual innovation, the 'relay' driver model, where a truck is handed off between drivers partway through a long route instead of one driver covering the whole distance, since it's real, documented, and a natural design-question template even when a specific interview question about it isn't reported.",
     framework: { name: "Freight-graph-first", summary: "Model Rivigo's network as a graph (hubs as nodes, routes as weighted edges) before reaching for a generic CRUD design. Most of their reported prompts, routing, rerouting on failure, relay handoffs, are graph problems wearing a logistics costume." },
@@ -1640,7 +1640,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Sumo Logic ────────────────────────────────────────────────────── */
   {
     slug: "sumologic-swe-system-design-interview-questions",
-    searchPhrase: "Sumo Logic Software Engineer System Design Interview Questions 2026",
+    searchPhrase: "Sumo Logic SWE System Design Interview Questions 2026",
     company: "sumologic", roleFamily: "swe", focus: "system-design",
     intro: "Sumo Logic's interview process (India engineering is based in Noida) typically opens with an online round on HackerEarth (MCQs plus coding), followed by a coding test and a live debugging round where you're given buggy code, regex matching comes up specifically, and asked to find and fix it. The system-design round is squarely in Sumo Logic's own product territory: candidates report being asked to design a time-based log search system and to design a simplified DynamoDB, both directly relevant to a log-analytics and observability platform. A recurring data-structure question is designing insert/delete/find-minimum, all in O(1).",
     framework: { name: "Design your own product back", summary: "Sumo Logic's system-design prompts (log search by time range, a DynamoDB-style store) are close reflections of what Sumo Logic itself builds. Reason about the actual access pattern, time-range scans, key-value lookups, before reaching for a generic 'add a database' answer." },
@@ -2802,7 +2802,7 @@ export const SEO_PAGES: SeoPage[] = [
 
   {
     slug: "morgan-stanley-swe-interview-questions",
-    searchPhrase: "Morgan Stanley Software Engineer Interview Questions India 2026",
+    searchPhrase: "Morgan Stanley SWE Interview Questions India 2026",
     company: "morgan-stanley", roleFamily: "swe", focus: "technical",
     intro: "Morgan Stanley's SDE interview in India is heavier on object-oriented design and financial domain reasoning than a typical product company. Rounds are conducted by senior engineers who expect clean, production-grade code with explicit error handling. Expect 4 to 5 rounds with a strong emphasis on low-level design and capital-markets context.",
     framework: { name: "Domain-anchored design", summary: "Anchor every design decision to a financial use-case: latency budgets for trade execution, auditability for order books, and fault tolerance for settlement." },
@@ -2861,7 +2861,7 @@ export const SEO_PAGES: SeoPage[] = [
 
   {
     slug: "de-shaw-swe-interview-questions",
-    searchPhrase: "DE Shaw DESI Software Engineer Interview Questions India 2026",
+    searchPhrase: "DE Shaw DESI SWE Interview Questions India 2026",
     company: "de-shaw", roleFamily: "swe", focus: "technical",
     intro: "DE Shaw hires through one of the most selective processes in India's finance and tech ecosystem, anchored by their DESI (DE Shaw India) recruitment drive at premier campuses. The process combines brutally hard DSA, strong emphasis on computer science fundamentals such as OS and networking internals, and a culture-fit round that screens for intellectual curiosity. Expect 4 to 6 rounds with no compromise on algorithmic depth.",
     framework: { name: "CS fundamentals plus algorithms", summary: "Pair every algorithmic solution with OS, concurrency, or networking reasoning: show you understand the full stack below the code, not just the data structure on top." },
@@ -3214,7 +3214,7 @@ export const SEO_PAGES: SeoPage[] = [
 
   {
     slug: "icici-relationship-manager-interview-questions",
-    searchPhrase: "ICICI Bank Relationship Manager Interview Questions India 2026",
+    searchPhrase: "ICICI Bank Relationship Manager Interview Questions 2026",
     company: "icici", roleFamily: "bfsi-sales", focus: "case-study",
     intro: "ICICI Bank's Relationship Manager interviews are scenario-heavy: instead of asking what cross-selling means in theory, panels hand you a live customer situation, a walk-in NTB customer, a 90-day-old territory, an MSME loan file, and score how you sequence your pitch and structure your first few weeks. Branch and territory context matters as much as product knowledge; interviewers are quick to fail candidates who recite the full product list without reading the customer's actual need or timeline.",
     framework: { name: "Need-first sequencing", summary: "Anchor every cross-sell pitch to the customer's immediate need first (savings, payments), then layer in stickiness and protection products, never lead with the highest-commission product." },
@@ -3460,7 +3460,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "kotak-mahindra-bank-software-engineer-interview-questions",
-    searchPhrase: "Kotak Mahindra Bank Software Engineer Interview Questions India 2026",
+    searchPhrase: "Kotak Mahindra Bank SWE Interview Questions India 2026",
     company: "kotak", roleFamily: "swe", focus: "technical",
     intro: "Kotak Mahindra Bank hires software engineers primarily into its digital banking and KeFintech subsidiaries, focusing on Java microservices, React or Angular for front-end roles, and strong SQL skills for data-layer work. The interview process is leaner than HDFC or SBI, with emphasis on practical coding ability and delivery mindset. Kotak's 811 digital bank drives demand for mobile and API engineers.",
     framework: { name: "RAPID", summary: "REST API design, Algorithms in Java, Persistence and SQL, Integration with third-party services, Delivery and agile mindset" },
@@ -3510,7 +3510,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "icici-lombard-software-engineer-interview-questions",
-    searchPhrase: "ICICI Lombard Software Engineer Interview Questions India 2026",
+    searchPhrase: "ICICI Lombard SWE Interview Questions India 2026",
     company: "icici-lombard", roleFamily: "swe", focus: "technical",
     intro: "ICICI Lombard, India's largest private general insurer, hires software engineers for its digital and InsurTech teams with a focus on Java Spring Boot, microservices, and API-first product development. The interview process is moderately rigorous with emphasis on practical coding, system design for insurance workflows (claims, policy issuance), and agile delivery. Candidates with exposure to event-driven systems or cloud (AWS) are preferred.",
     framework: { name: "INSURE", summary: "Integration patterns, Node or Java proficiency, System design for insurance flows, Unit testing, REST APIs, Event-driven architecture" },
@@ -3535,7 +3535,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "nykaa-swe-interview-prep-guide-2026",
-    searchPhrase: "Nykaa SWE Interview Prep Guide: DSA, System Design & HR Rounds 2026",
+    searchPhrase: "Nykaa SWE Interview Prep: DSA, System Design & HR 2026",
     company: "nykaa", roleFamily: "swe", focus: "technical",
     intro: "Nykaa's engineering interviews focus on data structures, algorithms, and backend systems that power its beauty and fashion e-commerce platform. Expect questions around catalogue management, recommendation pipelines, and high-concurrency order flows. The process typically spans three to four rounds conducted over video call for most India-based engineering roles.",
     framework: { name: "PREP", summary: "Problem restatement, reasoning through edge cases, execution with clean code, and performance analysis" },
@@ -3562,7 +3562,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "myntra-swe-interview-prep-guide-2026",
-    searchPhrase: "Myntra SWE Interview Prep Guide: DSA, LLD & System Design 2026",
+    searchPhrase: "Myntra SWE Interview Prep: DSA, LLD & System Design 2026",
     company: "myntra", roleFamily: "swe", focus: "technical",
     intro: "Myntra, part of the Flipkart group, runs a structured SDE interview process with a strong emphasis on data structures, algorithms, and low-level design. Engineers work on high-traffic fashion commerce systems, so interviewers probe your understanding of scalability, caching, and microservices. Most rounds take place on video call and follow a predictable four-stage structure.",
     framework: { name: "STAR-T", summary: "Situation, Task, Action, Result, and Technology tradeoffs used to discuss past projects" },
@@ -3700,7 +3700,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "techmahindra-swe-interview-questions",
-    searchPhrase: "Tech Mahindra Software Engineer Interview Questions India 2026",
+    searchPhrase: "Tech Mahindra SWE Interview Questions India 2026",
     company: "techmahindra", roleFamily: "swe", focus: "technical",
     intro: "Tech Mahindra hires thousands of software engineers annually across Pune, Hyderabad, Chennai, and Noida, primarily for telecom and enterprise IT delivery. The selection process starts with a AMCAT-style online assessment and moves through two technical rounds that emphasise core CS fundamentals, networking basics, and scripting. The company's telecom heritage means interviewers frequently probe protocol knowledge alongside standard DSA.",
     framework: { name: "Fundamentals Plus Telecom Context", summary: "Master core DSA and OOPS, then add a layer of networking and protocol awareness: HTTP, REST, TCP/IP basics align directly with Tech Mahindra's delivery focus." },
@@ -3727,7 +3727,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "persistent-swe-interview-questions",
-    searchPhrase: "Persistent Systems Software Engineer Interview Questions India 2026",
+    searchPhrase: "Persistent Systems SWE Interview Questions India 2026",
     company: "persistent", roleFamily: "swe", focus: "technical",
     intro: "Persistent Systems is known for a rigorous campus hiring process that includes a timed coding test with a noticeably higher difficulty bar than most Indian IT services firms. Engineers join product engineering and ISV teams primarily in Pune, Nagpur, and Bengaluru, building software for healthcare, BFSI, and technology clients. Interviewers value clean code, proper time and space complexity analysis, and hands-on debugging ability.",
     framework: { name: "Clean Code Under Pressure", summary: "Solve DSA problems with explicit complexity analysis, write readable code without IDE support, and articulate design decisions clearly: Persistent values depth over memorised answers." },
@@ -3862,7 +3862,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "thoughtworks-india-software-engineer-interview-questions",
-    searchPhrase: "Thoughtworks India Software Engineer Interview Questions 2026",
+    searchPhrase: "Thoughtworks India SWE Interview Questions 2026",
     company: "thoughtworks", roleFamily: "swe", focus: "technical",
     intro: "Thoughtworks India runs one of the most distinctive interview processes in the Indian tech industry: it evaluates you on analytical thinking, object-oriented design via a take-home assignment, pair programming, and social-change values alongside coding ability. The four-stage process is identical for Pune, Hyderabad, Chennai, and Bengaluru offices and takes two to three weeks end to end. Strong TDD discipline and clean code practices will set you apart.",
     framework: { name: "TDD-SOLID", summary: "Test-Driven Development and SOLID principles: Thoughtworks explicitly scores your code against these during the pairing round" },
@@ -3996,7 +3996,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "physicswallah-software-engineer-interview-questions",
-    searchPhrase: "PhysicsWallah Software Engineer Interview Questions India 2026",
+    searchPhrase: "PhysicsWallah SWE Interview Questions India 2026",
     company: "physicswallah", roleFamily: "swe", focus: "technical",
     intro: "PhysicsWallah's engineering team is growing rapidly after its unicorn round, and interviews in 2026 reflect a startup urgency: you are expected to write clean, working code fast and to reason about cost-efficient architecture for a price-sensitive user base. The process is leaner than older edtech peers, often finishing in two to three rounds, but each round is dense with practical coding and real-system questions drawn from PW's live infrastructure.",
     framework: { name: "Lean and Practical", summary: "Prioritise a working, readable solution over a theoretically perfect one, then discuss cost and simplicity trade-offs" },
@@ -4182,7 +4182,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "browserstack-swe-interview-questions",
-    searchPhrase: "BrowserStack Software Engineer Interview Questions India 2026",
+    searchPhrase: "BrowserStack SWE Interview Questions India 2026",
     company: "browserstack", roleFamily: "swe", focus: "technical",
     intro: "BrowserStack's Mumbai-headquartered engineering team interviews with a strong emphasis on algorithms, browser internals, and distributed infrastructure that powers real-device cloud testing at global scale. Candidates often face questions on parallelism, cloud orchestration, and building reliable test automation tooling. The typical interview loop is four rounds over one to two weeks.",
     framework: { name: "RELIC", summary: "Restate the problem, Enumerate edge cases, Layout your algorithm, Implement iteratively, and Check complexity" },
@@ -4522,7 +4522,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "dr-lal-pathlabs-swe-interview-questions",
-    searchPhrase: "Dr Lal PathLabs Software Engineer Interview Questions India 2026",
+    searchPhrase: "Dr Lal PathLabs SWE Interview Questions India 2026",
     company: "dr-lal-pathlabs", roleFamily: "swe", focus: "technical",
     intro: "Dr Lal PathLabs is one of India's largest diagnostic chains, headquartered in New Delhi, and its engineering team builds platforms for home sample collection, lab reporting, and B2B integrations with hospitals. SWE interviews focus on backend correctness, REST API design, and integrating with healthcare data workflows. Candidates should be comfortable with database query optimisation and building reliable, auditable systems.",
     framework: { name: "PREP", summary: "Problem restatement, Reasoning through approach, Edge-case enumeration, Polish and complexity analysis" },
@@ -4745,7 +4745,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "naukri-infoedge-swe-interview-questions",
-    searchPhrase: "Naukri InfoEdge Software Engineer Interview Questions India 2026",
+    searchPhrase: "Naukri InfoEdge SWE Interview Questions India 2026",
     company: "naukri", roleFamily: "swe", focus: "technical",
     intro: "Info Edge (Naukri.com, 99acres, Jeevansathi, Shiksha) is one of India's oldest internet companies and runs a structured, engineer-friendly hiring loop that has stayed consistent over many years. The process is 4-5 rounds and covers DSA, object-oriented design, and a managerial discussion. Naukri's engineering challenges are search and matching at scale: resume-to-job matching, real-time search ranking, and recruiter-candidate graph traversal. Candidates who know how Naukri's core product works: what makes a search result rank, how recruiter views are tracked, how job alerts are generated: tend to perform better in the system design and product context questions.",
     framework: { name: "Search-first design", summary: "Query understanding → inverted index → ranking signals → candidate-job matching model → freshness vs. relevance trade-off." },
@@ -4799,7 +4799,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "bharatpe-swe-interview-prep-guide-2026",
-    searchPhrase: "BharatPe SWE Interview Prep Guide: Backend, Payments & DSA 2026",
+    searchPhrase: "BharatPe SWE Interview Prep: Backend, Payments & DSA 2026",
     company: "bharatpe", roleFamily: "swe", focus: "technical",
     intro: "BharatPe engineers build payment infrastructure and lending products serving millions of small merchants across India. Interviews test core DSA, backend system design, and practical knowledge of distributed systems at scale. The process is competitive and moves quickly, with most candidates completing all rounds within two weeks.",
     framework: { name: "Backend Depth", summary: "coding screens filter on DSA: design rounds assess microservices, payment flows, and fraud detection at merchant scale" },
@@ -4852,7 +4852,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "cashfree-payments-swe-interview-questions",
-    searchPhrase: "Cashfree Payments Software Engineer Interview Questions India 2026",
+    searchPhrase: "Cashfree Payments SWE Interview Questions India 2026",
     company: "cashfree", roleFamily: "swe", focus: "technical",
     intro: "Cashfree Payments powers disbursements, payment links, and payment gateway infrastructure for thousands of Indian businesses. Engineers work on latency-sensitive APIs and high-volume reconciliation pipelines. Interviews emphasize strong DSA, backend fundamentals, and knowledge of distributed systems in a startup-paced environment.",
     framework: { name: "DSA plus API Design", summary: "coding rounds cover classic DSA: technical rounds also test REST API design, database choices, and scalability for payment workloads" },
@@ -4907,7 +4907,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wave 4b: EV / auto mobility ── */
   {
     slug: "ola-electric-software-engineer-interview-questions",
-    searchPhrase: "Ola Electric Software Engineer Interview Questions India 2026",
+    searchPhrase: "Ola Electric SWE Interview Questions India 2026",
     company: "ola-electric", roleFamily: "swe", focus: "technical",
     intro: "Ola Electric hires software engineers across its Bengaluru product and platform teams building the mobility app, charging network software, and vehicle telemetry systems. Interviews lean heavily on data structures, algorithms, and system design, with a strong emphasis on scale given India-wide fleet and app traffic. Expect a fast-moving, ownership-driven bar reflecting the startup culture.",
     framework: { name: "SCALE Method", summary: "Structure the problem, Clarify constraints, Approach with brute force first, Layer in optimizations, Evaluate tradeoffs." },
@@ -4933,7 +4933,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "ather-energy-software-engineer-interview-questions",
-    searchPhrase: "Ather Energy Software Engineer Interview Questions India 2026",
+    searchPhrase: "Ather Energy SWE Interview Questions India 2026",
     company: "ather-energy", roleFamily: "swe", focus: "technical",
     intro: "Ather Energy builds connected electric scooters, the AtherStack software, and the Ather Grid charging network from its Bengaluru offices. Software interviews test strong fundamentals in data structures, algorithms, and, depending on the team, embedded, backend, or app development. The bar values clean engineering and genuine curiosity about product and hardware-software integration.",
     framework: { name: "CODE Method", summary: "Clarify requirements, Outline the approach, Develop clean working code, Examine edge cases and complexity." },
@@ -5119,7 +5119,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "deutsche-bank-software-engineer-interview-questions",
-    searchPhrase: "Deutsche Bank India Software Engineer Interview Questions 2026",
+    searchPhrase: "Deutsche Bank India SWE Interview Questions 2026",
     company: "deutsche-bank", roleFamily: "swe", focus: "technical",
     intro: "Deutsche Bank's technology centres in Pune and Bengaluru run trading, risk, and cloud-platform engineering, and the 2026 SWE loop leans toward strong core computer-science fundamentals over trick algorithm puzzles. Interviews weigh core Java, multithreading, JVM internals, SQL, and design heavily, with medium DSA used to gauge problem solving rather than to stump you. Campus and early-career candidates typically start with an online coding and aptitude test, followed by technical rounds and a behavioral discussion on Deutsche Bank's collaborative, low-ego engineering culture.",
     framework: { name: "Fundamentals-first", summary: "Show depth in language internals, concurrency, and databases before reaching for clever algorithms." },
@@ -5200,7 +5200,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "jupiter-software-engineer-interview-questions",
-    searchPhrase: "Jupiter Money Software Engineer Interview Questions India 2026",
+    searchPhrase: "Jupiter Money SWE Interview Questions India 2026",
     company: "jupiter", roleFamily: "swe", focus: "technical",
     intro: "Jupiter Money runs a neobanking SDE loop where DSA is table stakes and system reasoning around banking partnerships carries real weight. Expect a coding round on medium DSA (arrays, strings, hashmaps, trees, occasional DP) followed by a low-level or system design round where you model something like account statements, transaction categorisation, or a rewards ledger. Because Jupiter sits on top of partner banks and card networks, interviewers ask how you handle eventual consistency, webhook-driven updates, and reconciliation between your system and a bank of record. Clear trade-off talk and production-readiness thinking matter more than clever one-liners.",
     framework: { name: "Partner-bank consistency", summary: "Define source of truth, then async webhook updates, then reconciliation and idempotency, then observability." },
@@ -5254,7 +5254,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "policybazaar-software-engineer-interview-questions",
-    searchPhrase: "PolicyBazaar Software Engineer Interview Questions India 2026",
+    searchPhrase: "PolicyBazaar SWE Interview Questions India 2026",
     company: "policybazaar", roleFamily: "swe", focus: "technical",
     intro: "PolicyBazaar (PB Fintech) runs a practical SDE loop weighted toward DSA fundamentals and hands-on backend or full-stack skills over abstract theory. Expect a coding round on medium DSA (arrays, strings, hashmaps, linked lists, trees) plus a technical round on your primary stack, commonly Java or Node with SQL and REST API design. Because the platform handles insurance quotes, lead funnels, and high traffic during campaigns, interviewers ask about database indexing, query optimisation, caching, and how you keep APIs fast under spikes. Clear fundamentals and real project depth land better than name-dropping frameworks.",
     framework: { name: "Fundamentals-first backend", summary: "Solid DSA, then clean API and schema design, then indexing and caching for traffic spikes." },
@@ -5386,7 +5386,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "texas-instruments-software-engineer-interview-questions",
-    searchPhrase: "Texas Instruments India Software Engineer Interview Questions 2026",
+    searchPhrase: "Texas Instruments India SWE Interview Questions 2026",
     company: "texas-instruments", roleFamily: "swe", focus: "technical",
     intro: "Texas Instruments India (Bangalore) hires software and embedded engineers to work close to the hardware, so interviews lean heavily on C, pointers, memory, and embedded systems fundamentals alongside data structures. Expect strong emphasis on low-level reasoning: bit manipulation, microcontroller concepts, and how code maps to hardware, which is unusual for candidates coming from pure web backgrounds. TI runs a structured process with an online test followed by technical rounds, and campus hiring pulls from top engineering colleges.",
     framework: { name: "Close to the metal", summary: "Reason about memory, pointers, and hardware behavior explicitly; embedded correctness matters more than clever abstractions." },
@@ -5412,7 +5412,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "samsung-india-software-engineer-interview-questions",
-    searchPhrase: "Samsung R&D India (SRIB) Interview Guide: DSA, Android & AI/ML 2026",
+    searchPhrase: "Samsung SRIB Interview Guide: DSA, Android & AI/ML 2026",
     company: "samsung-india", roleFamily: "swe", focus: "technical",
     intro: "Samsung R&D Institute India (SRIB, Bangalore) is one of the largest R&D centers outside Korea and hires aggressively for Android platform, AI/ML, multimedia, and connectivity teams. The interview is distinctly C++ and algorithm-heavy compared to product startups, and the bar for data structures stays high regardless of the team you target. SRIB runs one of the largest campus programs in India through its in-house online test, pulling from IITs, NITs, and BITS.",
     framework: { name: "Algorithm-first, then platform", summary: "Nail the DSA solution with correct complexity, then layer platform context such as Android or embedded constraints only after the algorithm is solid." },
@@ -5577,7 +5577,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "walmart-global-tech-software-engineer-interview-questions",
-    searchPhrase: "Walmart Global Tech India Software Engineer Interview Questions 2026",
+    searchPhrase: "Walmart Global Tech SWE Interview Questions India 2026",
     company: "walmart-global-tech", roleFamily: "swe", focus: "system-design",
     intro: "Walmart Global Tech India, based mainly in Bengaluru and Chennai, runs a FAANG-adjacent loop with a genuinely hard bar: an online assessment on a platform like HackerRank, two or three DSA rounds, a system design round for SDE-2 and above, and a hiring-manager or leadership round mapped to Walmart's leadership principles. DSA questions skew medium to hard across arrays and strings, trees and graphs, dynamic programming, and heaps, and the coding rounds expect clean, runnable code with edge cases handled. System design is retail and supply-chain flavored: think inventory at massive scale, order fulfillment, cart and checkout, and catalog search, where you should start from capacity estimates and defend trade-offs explicitly.",
     framework: { name: "Estimate-then-design", summary: "Open with QPS and storage math, then data model, then bottlenecks, then trade-offs, all in retail-scale terms." },
@@ -5922,7 +5922,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "metropolis-software-engineer-interview-questions",
-    searchPhrase: "Metropolis Healthcare Software Engineer Interview Questions India 2026",
+    searchPhrase: "Metropolis Healthcare SWE Interview Questions India 2026",
     company: "metropolis", roleFamily: "swe", focus: "technical",
     intro: "Metropolis Healthcare, one of India's largest diagnostics chains, hires software engineers to build the systems behind lab test ordering, sample tracking, report delivery, and its consumer and B2B apps. The interview loop is technical-first: expect a DSA and coding round at easy-to-medium difficulty, then rounds on practical engineering such as API design, SQL and database modelling, and role-specific stack depth. Because the domain covers lab operations, patient reports, and integrations with labs and hospitals, interviewers value correctness, data integrity, and clean design over algorithmic flair. Prepare to discuss real projects end to end: how you modelled the data, handled edge cases, and shipped. A hiring-manager round then covers ownership, collaboration with non-engineering teams, and fit with a healthcare-operations context.",
     framework: { name: "Data-First Design", summary: "Model the entities and relationships first, define clean APIs and queries, then handle edge cases and data-integrity constraints." },
@@ -5957,7 +5957,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wave 6: Remaining fintech, GCCs, D2C, SaaS, quant ── */
   {
     slug: "bajaj-finance-software-engineer-interview-questions",
-    searchPhrase: "Bajaj Finance Software Engineer Interview Questions India 2026",
+    searchPhrase: "Bajaj Finance SWE Interview Questions India 2026",
     company: "bajaj-finance", roleFamily: "swe", focus: "technical",
     intro: "Bajaj Finance (part of the Bajaj Finserv group) hires engineers for its lending and BFS-Direct app platform, so interviews lean on core Java, Spring Boot, microservices, and SQL rather than competitive programming. Expect scenarios grounded in loan origination, EMI schedules, and high-volume transaction processing. Domain awareness of NBFC lending flows and RBI compliance gives you a visible edge in later rounds.",
     framework: { name: "LENDIT", summary: "Loan-domain knowledge, Efficient DSA, Networks and security, Design of microservices, Integration and APIs, Testing and reliability" },
@@ -6261,7 +6261,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "mastercard-software-engineer-interview-questions",
-    searchPhrase: "Mastercard Technology India Software Engineer Interview Questions 2026",
+    searchPhrase: "Mastercard India SWE Interview Questions 2026",
     company: "mastercard", roleFamily: "swe", focus: "system-design",
     intro: "Mastercard Technology India (Pune, Vadodara, Gurugram) hires software engineers across payments, fraud, and data platforms, with a strong bar on distributed systems and secure transaction processing. Expect a HackerRank screen, two to three technical rounds on DSA plus Java or Scala, and at least one design round on scaling a payment authorisation or settlement flow. Interviewers probe low latency, idempotency, and reliability far more than they do puzzle solving.",
     framework: { name: "AUTHNET", summary: "Authorisation flows, Uptime and reliability, Throughput at scale, Hashing and security, Networks and latency, Event streaming, Transactions and consistency" },
@@ -6386,7 +6386,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "bny-mellon-software-engineer-interview-questions",
-    searchPhrase: "BNY Mellon Technology Software Engineer Interview Questions India 2026",
+    searchPhrase: "BNY Mellon SWE Interview Questions India 2026",
     company: "bny-mellon", roleFamily: "swe", focus: "technical",
     intro: "BNY Mellon Technology runs large engineering centres in Pune and Chennai, and its software engineer loop leans toward core Java, Spring Boot, and SQL rather than heavy competitive coding. Expect questions grounded in custody, payments, and settlement systems: idempotent transaction processing, multithreading, and data consistency across services. The bar is solid CS fundamentals plus the ability to reason about correctness in money-moving systems, and the culture round weighs stability and clarity over flash.",
     framework: { name: "Correctness-first", summary: "Requirements, then data model, then concurrency and failure handling, then a clean testable API, then trade-offs." },
@@ -6421,7 +6421,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "standard-chartered-software-engineer-interview-questions",
-    searchPhrase: "Standard Chartered GBS India Software Engineer Interview Questions 2026",
+    searchPhrase: "Standard Chartered GBS Interview Questions India 2026",
     company: "standard-chartered", roleFamily: "swe", focus: "technical",
     intro: "Standard Chartered GBS India (its global business services arm in Bengaluru and Chennai) hires software engineers into banking platforms spanning payments, trade finance, and risk. The loop is fundamentals-heavy: core Java or Python, SQL, and data structures, plus API and microservices design for mid-level roles. Interviewers care about clean, maintainable code and clear communication, since you will work in large distributed teams across time zones, so tie your answers to real project ownership and testing discipline.",
     framework: { name: "Platform-thinking", summary: "Clarify the requirement, model the data, design a clean service boundary, handle failures and security, then discuss scale and testing." },
@@ -6456,7 +6456,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "star-health-software-engineer-interview-questions",
-    searchPhrase: "Star Health Insurance Software Engineer Interview Questions India 2026",
+    searchPhrase: "Star Health Insurance SWE Interview Questions India 2026",
     company: "star-health", roleFamily: "swe", focus: "technical",
     intro: "Star Health Insurance, India's largest standalone health insurer, builds most engineering in Chennai around policy issuance, claims processing, and agent and hospital portals. The software engineer loop is practical and delivery-focused: core Java or .NET, SQL, and web fundamentals, with fewer competitive-coding puzzles than a product startup. Expect questions on how you would model policies and claims, keep data consistent, and integrate with hospital and TPA systems, so lead with concrete project work.",
     framework: { name: "Domain-grounded delivery", summary: "Understand the insurance workflow, model entities cleanly, ensure data integrity, integrate reliably with external systems, then discuss testing." },
@@ -6490,7 +6490,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "digit-software-engineer-interview-questions",
-    searchPhrase: "Go Digit Insurance Software Engineer Interview Questions India 2026",
+    searchPhrase: "Go Digit Insurance SWE Interview Questions India 2026",
     company: "digit", roleFamily: "swe", focus: "technical",
     intro: "Go Digit is a digital-first general insurer in Bengaluru, so its software engineer bar sits closer to a product company than a legacy insurer. The loop mixes solid data structures and algorithms with practical backend design in Java or Python and SQL, plus scenario questions on policy quoting, claims, and paperless onboarding at scale. Interviewers reward clean problem decomposition and the ability to reason about API design and data consistency, so be specific rather than generic about your choices.",
     framework: { name: "Product-backend reasoning", summary: "Break down the problem, pick data structures with complexity in mind, design clean APIs, handle consistency and edge cases, then justify trade-offs." },
@@ -6638,7 +6638,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "lowes-india-software-engineer-interview-questions",
-    searchPhrase: "Lowe's India (GCC) Software Engineer Interview Questions 2026",
+    searchPhrase: "Lowe's India (GCC) SWE Interview Questions 2026",
     company: "lowes-india", roleFamily: "swe", focus: "system-design",
     intro: "Lowe's India is the Bengaluru GCC building retail, supply chain, and e-commerce platforms for the US home-improvement retailer. Software engineer interviews combine DSA rounds with strong system design expectations, especially for mid and senior levels, covering microservices, event-driven architecture, and high-traffic retail scale. Expect Java or Python coding plus scenario-based design of catalog, cart, inventory, and order systems.",
     framework: { name: "STAR + Design", summary: "STAR for behavioural answers, plus a structured design pass: requirements, scale, data model, components, trade-offs" },
@@ -6664,7 +6664,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "target-india-software-engineer-interview-questions",
-    searchPhrase: "Target India (TCI) Software Engineer Interview Questions 2026",
+    searchPhrase: "Target India (TCI) SWE Interview Questions 2026",
     company: "target-india", roleFamily: "swe", focus: "system-design",
     intro: "Target in India (TCI), based in Bengaluru, builds supply chain, e-commerce, and store technology for the US retailer, so software engineer interviews weigh system design heavily alongside DSA. Expect coding in Java, Python, or Go plus design rounds on high-traffic retail systems: catalog, cart, fulfilment, and real-time inventory. The process typically runs an online assessment, two technical rounds, a design round, and a behavioural plus HR round.",
     framework: { name: "STAR + Design", summary: "STAR for behavioural signals, plus a design pass: clarify requirements, estimate scale, design components, discuss trade-offs" },
@@ -7306,7 +7306,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wave 7 additions: Morgan Stanley India, P&G, Tower Research, Databricks, Sarvam AI ── */
   {
     slug: "morgan-stanley-india-swe-interview-questions",
-    searchPhrase: "Morgan Stanley India Software Engineer Interview Questions 2026",
+    searchPhrase: "Morgan Stanley India SWE Interview Questions 2026",
     company: "morgan-stanley-india", roleFamily: "swe", focus: "technical",
     intro: "Morgan Stanley India Technology (MSIT) in Mumbai is one of the most prestigious technology employers in India's financial services sector, with over 6,000 technology professionals building trading systems, risk platforms, and data infrastructure for Morgan Stanley's global operations. In 2026, software engineer interviews at MSIT test Java proficiency, distributed systems design, and capital markets domain knowledge. MSIT prizes engineers who can operate in a high-accountability environment where software correctness directly impacts trading desks and client portfolios.",
     framework: { name: "Correctness at Velocity", summary: "Demonstrate clean Java and systems design with an emphasis on correctness, testability, and understanding the financial domain context where software failures are not acceptable" },
