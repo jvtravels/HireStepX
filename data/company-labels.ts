@@ -80,6 +80,7 @@ export const COMPANY_LABEL: Record<string, string> = {
   goldman: "Goldman Sachs",
   jpmc: "JPMorgan Chase",
   "morgan-stanley": "Morgan Stanley",
+  "morgan-stanley-india": "Morgan Stanley",
   "jane-street": "Jane Street",
   "de-shaw": "DE Shaw",
   "tower-research": "Tower Research Capital",
@@ -117,6 +118,7 @@ export const COMPANY_LABEL: Record<string, string> = {
   "star-health": "Star Health Insurance",
   "icici-lombard": "ICICI Lombard",
   "bajaj-finance": "Bajaj Finance",
+  bajaj: "Bajaj Finance",
 
   // D2C / Consumer
   lenskart: "Lenskart",
@@ -136,6 +138,7 @@ export const COMPANY_LABEL: Record<string, string> = {
   // Mobility / Auto
   ola: "Ola Cabs",
   "tata-motors": "Tata Motors",
+  "tata-steel": "Tata Steel",
   mahindra: "Mahindra Group",
 
   // EdTech
@@ -193,6 +196,7 @@ export const COMPANY_LABEL: Record<string, string> = {
   "arm-india": "ARM Holdings India",
   thoughtworks: "Thoughtworks",
   "samsung-india": "Samsung R&D India",
+  samsung: "Samsung R&D India",
   "ericsson-india": "Ericsson India",
   "nokia-india": "Nokia India",
   "ntt-data": "NTT Data India",

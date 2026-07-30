@@ -56,25 +56,25 @@ const FOCUS_LABEL: Record<string, string> = {
 
 const DIFFICULTY_CHIP: Record<string, { background: string; color: string; border: string }> = {
   warmup: { background: t.success100, color: t.success, border: "1px solid rgba(21,128,61,0.15)" },
-  standard: { background: t.warning100, color: t.warning, border: `1px solid ${t.warningLine}` },
+  /* Darkened from t.warning (#A16207) — fails 4.5:1 AA on warning100 at this size/weight. */
+  standard: { background: t.warning100, color: "#8F5A00", border: `1px solid ${t.warningLine}` },
   intense: { background: t.error100, color: t.error, border: "1px solid rgba(185,28,28,0.15)" },
 };
 const DIFFICULTY_LABEL: Record<string, string> = { warmup: "Easy", standard: "Medium", intense: "Hard" };
 
-/* Fetch matching bank entries for a page. Uses tier fallback so pages
-   never render with zero questions even if the (company × focus)
-   combo has thin coverage. */
+/* Fetch matching bank entries for a page. Falls back to dropping the
+   role-family constraint when a company × focus combo is thin, but never
+   crosses into another company's questions — a page must only ever show
+   questions actually asked at that company, even if that means fewer
+   than 8. */
 function questionsForPage(p: SeoPage): BankEntry[] {
   const exact = QUESTION_BANK.filter(
     (q) => q.company === p.company && q.focus === p.focus && (!p.roleFamily || q.roleFamily === p.roleFamily),
   );
   if (exact.length >= 4) return exact.slice(0, 8);
-  /* Fallback 1: drop role constraint, keep company + focus. */
+  /* Drop role constraint, keep company + focus. */
   const noRole = QUESTION_BANK.filter((q) => q.company === p.company && q.focus === p.focus);
-  if (noRole.length >= 4) return noRole.slice(0, 8);
-  /* Fallback 2: focus only — same focus across companies. */
-  const focusOnly = QUESTION_BANK.filter((q) => q.focus === p.focus);
-  return focusOnly.slice(0, 8);
+  return noRole.slice(0, 8);
 }
 
 export const revalidate = 86400; /* 24 h ISR — refresh content daily without a full rebuild */
@@ -208,8 +208,10 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     datePublished: "2026-05-05",
     dateModified: "2026-07-14",
     inLanguage: "en-IN",
-    url: `https://hirestepx.com/companies/${slug}`,
-    mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/companies/${slug}` },
+    /* Points at the canonical URL (see generateMetadata above), not the
+       /companies alias this page is served from. */
+    url: `https://hirestepx.com/questions/${slug}`,
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/questions/${slug}` },
     articleSection: focusLabel,
     keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
   };
@@ -259,7 +261,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: "https://hirestepx.com" },
       { "@type": "ListItem", position: 2, name: "Companies", item: "https://hirestepx.com/companies" },
-      { "@type": "ListItem", position: 3, name: page.searchPhrase, item: `https://hirestepx.com/companies/${slug}` },
+      { "@type": "ListItem", position: 3, name: page.searchPhrase, item: `https://hirestepx.com/questions/${slug}` },
     ],
   };
 
@@ -279,7 +281,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
           description: `Understand ${companyLabel}'s hiring process, interview rounds, and what evaluators look for.`,
           provider: { "@type": "Organization", name: "HireStepX", sameAs: "https://hirestepx.com" },
           educationalLevel: "Intermediate",
-          url: `https://hirestepx.com/companies/${slug}`,
+          url: `https://hirestepx.com/questions/${slug}`,
         },
       },
       {
@@ -485,10 +487,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         <section className="ed-section" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, background: t.creamSoft }}>
           <div className="ed-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 40 }}>
             <RelatedBlogPosts companyLabel={companyLabel} />
-            <div>
-              <p style={{ ...edEyebrow, color: t.inkFaint, marginBottom: 16 }}>Related interview prep</p>
-              <RelatedLinks currentSlug={slug} />
-            </div>
+            <RelatedLinks currentSlug={slug} />
           </div>
         </section>
 
@@ -552,23 +551,35 @@ function RelatedBlogPosts({ companyLabel }: { companyLabel: string }) {
    long-tail pages quickly. */
 function RelatedLinks({ currentSlug }: { currentSlug: string }) {
   const current = SEO_PAGES.find((p: SeoPage) => p.slug === currentSlug);
-  if (!current) return null;
-  const related = SEO_PAGES
-    .filter((p: SeoPage) =>
-      p.slug !== currentSlug &&
-      (p.company === current.company || p.focus === current.focus),
-    )
-    .slice(0, 4);
-  if (related.length === 0) return null;
+  const related = current
+    ? SEO_PAGES
+        .filter((p: SeoPage) =>
+          p.slug !== currentSlug &&
+          (p.company === current.company || p.focus === current.focus),
+        )
+        .slice(0, 4)
+    : [];
   return (
-    <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-      {related.map((p: SeoPage) => (
-        <li key={p.slug}>
-          <Link href={`/questions/${p.slug}`} className="ed-link" style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>
-            {p.searchPhrase}
+    <div>
+      <p style={{ ...edEyebrow, color: t.inkFaint, marginBottom: 16 }}>Related interview prep</p>
+      {related.length > 0 ? (
+        <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+          {related.map((p: SeoPage) => (
+            <li key={p.slug}>
+              <Link href={`/questions/${p.slug}`} className="ed-link" style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>
+                {p.searchPhrase}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, lineHeight: 1.5, margin: 0 }}>
+          Guides for this company are still being written.{" "}
+          <Link href="/questions" className="ed-link" style={{ color: t.copper, fontWeight: 500 }}>
+            Browse all companies →
           </Link>
-        </li>
-      ))}
-    </ul>
+        </p>
+      )}
+    </div>
   );
 }
