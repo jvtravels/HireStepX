@@ -318,10 +318,20 @@ const WRONG_SUBJECT_NEGATOR_RE =
 const SAY_LITOTES =
   /\b(?:can(?:not|.?t)\s+say|couldn.?t\s+say|won.?t\s+say|wouldn.?t\s+say|would\s+not\s+say|(?:don.?t|do\s+not|doesn.?t|does\s+not|never|wouldn.?t|would\s+not)\s+want\s+to\s+say|would\s+rather\s+not\s+say|prefer\s+not\s+(?:to\s+)?say|hate\s+to\s+say|reluctant\s+to\s+say|hesitant\s+to\s+say)\s+(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
 
+/* S154-B... (wave 60) — "Under no circumstances will I walk away — oh wait, no, actually,
+ * under no circumstances will I NOT walk away." desynced from detectCandidateIntent()
+ * (walkAway=true, correct). DEPARTURE_NEGATOR matched the trailing bare "not" and stripped
+ * the departure phrase, but a primary negator ("under no circumstances"/"no way"/"never")
+ * followed later in the SAME clause by a second bare negation is a double negative that
+ * cancels back to an affirmed departure — it must not be stripped. */
+const DOUBLE_NEGATION_CANCELS_RE =
+  /\b(?:under\s+no\s+circumstances|no\s+way|never)\b(?:\s+\S+){0,4}?\s+(?:not|n['']t)\b\s*$/i;
+
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
     const preceding = clauseBoundedLookback(full, offset, 48);
     if (!DEPARTURE_NEGATOR.test(preceding)) return match;
+    if (DOUBLE_NEGATION_CANCELS_RE.test(preceding)) return match;
     if (SAY_LITOTES.test(preceding)) return " ";
     if (WRONG_SUBJECT_NEGATOR_RE.test(preceding)) return match;
     return " ";
@@ -353,7 +363,7 @@ const RETRACTION_MARKER =
  * post-marker text (not bare mid-word occurrences of "accept" etc.), and added the "on
  * board"/"let's do this" phrasing "just kidding" retractions commonly resolve to. */
 const RETRACTS_TO_ACCEPT =
-  /(?:^|[.!?—–-]\s*)(?:i\s+)?(?:accept|agree|deal)\b|(?:^|[.!?—–-]\s*)(?:i\s+)?ok(?:ay)?\b|(?:^|[.!?—–-]\s*)yes\b|\b(?:i.?m|i\s+am)\s+(?:totally\s+|completely\s+|fully\s+)?on\s+board\b|let.?s\s+do\s+(?:it|this)\b/i;
+  /(?:^|[.!?—–,-]\s*)(?:i\s+)?(?:accept|agree|deal)\b|(?:^|[.!?—–,-]\s*)(?:i\s+)?ok(?:ay)?\b|(?:^|[.!?—–,-]\s*)yes\b|\b(?:i.?m|i\s+am)\s+(?:totally\s+|completely\s+|fully\s+)?on\s+board\b|let.?s\s+do\s+(?:it|this)\b/i;
 function retractsToAccept(text: string): boolean {
   const match = RETRACTION_MARKER.exec(text);
   if (!match) return false;

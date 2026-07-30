@@ -5005,4 +5005,32 @@ describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => 
       expect(isWalkAway(s)).toBe(false);
     });
   });
+
+  describe("S154-B... (wave 60) — hostile-battery hardening", () => {
+    it("a bare 'no wait, I'm not walking away, I mean I'm walking straight into this deal' stays false on both sides", () => {
+      const s = "No wait, I'm not walking away, I mean I'm walking straight into this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("a tentative pre-hedge near-departure retracted via 'no wait, I mean, actually' yields to a genuine accept", () => {
+      const s = "I'm this close to walking away, no wait, I mean, actually, I accept everything.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("a double negation ('under no circumstances ... will I NOT walk away') cancels back to an affirmed walk-away", () => {
+      const s =
+        "Under no circumstances will I walk away — oh wait, no, actually, under no circumstances will I NOT walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("an emoji-heavy 'NO WAIT ... WALKING AWAY' retraction fires walkAway on both sides", () => {
+      const s = "😊 sounds good... 😡 NO WAIT 😡 i'm WALKING AWAY 🚶 for real this time 🙄";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
 });

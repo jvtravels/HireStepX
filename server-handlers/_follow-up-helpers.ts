@@ -605,12 +605,18 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * literal word "actually" as a retraction cue, not "just kidding" — a common, equally
    * unambiguous retraction marker. Widened; mirrors the identical widening in
    * RETRACTION_MARKER in _walkaway-detection.ts — keep in sync. */
-  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*/i;
+  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*/i;
   const retractionMatch = retractionMarkerRe.exec(trimmed);
   const postRetractionText = retractionMatch
     ? trimmed.slice(retractionMatch.index + retractionMatch[0].length)
     : "";
-  const retractionNegatesWalkAway = /^(?:don.?t|do\s+not|won.?t|will\s+not)\s+/i.test(postRetractionText);
+  /* S154-B... (wave 60) — "No wait, I'm not walking away, I mean I'm walking straight into
+   * this deal." fired walkAway=true: retractionNegatesWalkAway only recognized a leading
+   * "don't/won't" negator, missing the equally common "I'm not"/"I am not" subject+negator
+   * frame that a "no wait" retraction marker commonly precedes. Widened to accept an
+   * optional leading subject pronoun before the negator. */
+  const retractionNegatesWalkAway =
+    /^(?:i(?:['’]m|\s+am)\s+)?(?:don.?t|do\s+not|won.?t|will\s+not|not)\s+/i.test(postRetractionText);
   /* S94-B1 exception (mirrors postHedgeWalkAwayIsConditionalThreat) — "Sounds good, but
    * actually I am walking away if you cannot match it." is a conditional ultimatum, not a
    * genuine retraction: the candidate hasn't actually left. An "if" in postRetractionText
@@ -819,7 +825,7 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
    * the bare-verb "i am walking away" already swallows the subject+modal itself, hiding the
    * "I am" reassertion inside the match instead of leaving it in the lookback window). */
   const DEPARTURE_VERB_LOCAL =
-    /\bwalk(?:ing|in)?(?:\s+away|\s+out)?\b|declin(?:e|ing)\b|withdraw(?:ing)?\b|part(?:ing)?\s+ways\b|pull(?:ing)?\s+out\b/gi;
+    /\bwalk(?:ing|in)?(?:\s+away|\s+out)\b|\bwalk(?:ing|in)?\b(?=[.,!?;]|\s*$)|declin(?:e|ing)\b|withdraw(?:ing)?\b|part(?:ing)?\s+ways\b|pull(?:ing)?\s+out\b/gi;
   /* S150-B1 (wave 56) — this only ever inspected the FIRST DEPARTURE_VERB_LOCAL match in the
    * text (a non-global .exec() always returns match #1), then applied that single verdict as a
    * blanket gate over the whole string. "I can't say I'm walking away, I can't say I'm walking
