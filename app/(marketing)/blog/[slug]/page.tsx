@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Script from "next/script";
 import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
-import { getBlogMetaBySlug } from "@/blog-meta";
+import { getBlogMetaBySlug, getBlogMetasBySlugs } from "@/blog-meta";
+import { getBlogPostBySlug } from "../../../../data/blog-posts";
 import { SEO_PAGES } from "../../../../data/seo-pages";
 import { SALARY_SEO_PAGES } from "../../../../data/salary-seo";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
@@ -96,8 +98,12 @@ export const dynamicParams = true;
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const post = getBlogPostBySlug(slug);
+  if (!post) notFound();
+
   const meta = getBlogMetaBySlug(slug);
   const title = meta?.title ?? slugToTitle(slug);
+  const relatedPosts = getBlogMetasBySlugs(post.relatedSlugs);
 
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
@@ -175,7 +181,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       {faqSchema && (
         <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       )}
-      <BlogPage afterContent={<>
+      <BlogPage post={post} related={relatedPosts} afterContent={<>
         {meta && !GENERAL_COMPANIES.has(meta.company) && (
           <div style={{ padding: "12px 24px", background: "#f0f4ff", borderTop: "1px solid #e4e7ec" }}>
             <div style={{ maxWidth: 720, margin: "0 auto", fontSize: 13, color: "#4b5563" }}>

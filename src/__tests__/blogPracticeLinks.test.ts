@@ -13,16 +13,16 @@ import { SEO_PAGES } from "../../data/seo-pages";
  * soft-404 signals, silently, with no type error to catch them.
  *
  * This gate parses the practicePageSlugs entries straight out of the
- * BlogPage.tsx source (the data lives inline in a client component, so a
- * source scan is the idiomatic check here — mirrors designTokenHexGate)
- * and asserts each slug resolves to a real /questions/[slug] page.
+ * data/blog-posts.ts source (a source scan is the idiomatic check here —
+ * mirrors designTokenHexGate) and asserts each slug resolves to a real
+ * /questions/[slug] page.
  *
  * When you add or rename an SEO page, update the referencing blog posts
  * and this test stays green automatically. When a reference breaks, it
  * names the offending slug.
  */
 
-const BLOG_SRC = join(process.cwd(), "src", "BlogPage.tsx");
+const BLOG_SRC = join(process.cwd(), "data", "blog-posts.ts");
 
 /* practicePageSlugs entries are object literals of the shape
    `{ label: "…", slug: "…" }`. Match the slug of any entry that also

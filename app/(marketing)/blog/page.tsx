@@ -73,7 +73,7 @@ export default async function Page() {
         crossOrigin="anonymous"
         strategy="lazyOnload"
       />
-      <BlogPage />
+      <BlogPage metas={BLOG_META} />
     </>
   );
 }
