@@ -62,6 +62,17 @@ export const editorialCSS = `
   .ed-tab:hover { background: rgba(14, 12, 8, 0.06); }
   .ed-tab-active { background: rgba(14, 12, 8, 0.08); }
 
+  /* Keyboard focus — every interactive editorial element gets a visible
+     ring. Hover states above have no keyboard equivalent without this. */
+  .ed-cta:focus-visible,
+  .ed-link:focus-visible,
+  .ed-row:focus-visible,
+  .ed-tab:focus-visible {
+    outline: 2px solid ${t.copper};
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
   /* Timeline connecting rule */
   .ed-tl-item:last-child .ed-tl-rule { display: none; }
 
