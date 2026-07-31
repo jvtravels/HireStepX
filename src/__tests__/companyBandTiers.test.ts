@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  canonicalizeRoleTitle,
   classifyCompanyTier,
   classifyRoleFamily,
   getBandForRole,
@@ -244,6 +245,40 @@ describe("S189-S198: exec / director / head / founding seniority lift (unknown Y
     const a = getBandForRole("unicorn", "VP of Engineering", 6);
     const b = getBandForRole("unicorn", "VP of Engineering", 6);
     expect(a).toEqual(b);
+  });
+});
+
+describe("S172/S152/S164/S198/S206: role-abbreviation canonicalization", () => {
+  it("expands EM to Engineering Manager", () => {
+    expect(canonicalizeRoleTitle("EM")).toBe("Engineering Manager");
+    expect(canonicalizeRoleTitle("E.M.")).toMatch(/^Engineering Manager\.?$/);
+    expect(canonicalizeRoleTitle("EM II")).toBe("Engineering Manager II");
+  });
+  it("expands APM and SDM", () => {
+    expect(canonicalizeRoleTitle("APM")).toBe("Associate Product Manager");
+    expect(canonicalizeRoleTitle("SDM")).toBe("Engineering Manager");
+  });
+  it("does not mangle words that merely contain the abbreviation letters", () => {
+    // whole-token \b guards: OEM / System / Emma / REM must pass through intact
+    expect(canonicalizeRoleTitle("System Architect")).toBe("System Architect");
+    expect(canonicalizeRoleTitle("OEM Partnerships Manager")).toBe("OEM Partnerships Manager");
+    expect(canonicalizeRoleTitle("Emma Frost")).toBe("Emma Frost");
+    expect(canonicalizeRoleTitle("Senior Manager")).toBe("Senior Manager");
+  });
+  it("is idempotent", () => {
+    expect(canonicalizeRoleTitle("Engineering Manager")).toBe("Engineering Manager");
+    expect(canonicalizeRoleTitle(canonicalizeRoleTitle("EM"))).toBe("Engineering Manager");
+  });
+  it("a bare EM resolves to the same tier band as the spelled-out title", () => {
+    // getBandForRole canonicalizes internally, so "EM" and "Engineering Manager"
+    // are byte-identical here. (The manager band FLOOR lift itself is applied one
+    // layer up in resolveServerBand via liftPeopleManagerBand — covered there.)
+    const em = getBandForRole("unicorn", "EM", null);
+    const full = getBandForRole("unicorn", "Engineering Manager", null);
+    expect(em).toEqual(full);
+  });
+  it("APM routes to the product family (not engineering default)", () => {
+    expect(classifyRoleFamily("APM")).toBe("product");
   });
 });
 

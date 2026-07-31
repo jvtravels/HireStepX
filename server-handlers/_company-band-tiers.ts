@@ -273,11 +273,32 @@ export type RoleFamily =
   | "data"
   | "ops";
 
+/** Expand unambiguous role-title abbreviations to their canonical spelled-out
+ *  form BEFORE any band / family / seniority classification. The legacy
+ *  salary-lookup and the seniority helpers (roleModifier / impliedYoeFromTitle)
+ *  key off the spelled-out words, so a bare "EM" was treated as a generic
+ *  junior IC — a Razorpay "EM" resolved to a ₹16L opener against the ₹28-56L an
+ *  "Engineering Manager" gets. Only abbreviations with a single dominant meaning
+ *  in Indian tech hiring are expanded; genuinely ambiguous ones (SM, TL, RM) are
+ *  left untouched. Whole-token, case-insensitive, idempotent. Pure. */
+export function canonicalizeRoleTitle(role: string | null | undefined): string {
+  const r = (role || "").trim();
+  if (!r) return "";
+  const EXPANSIONS: ReadonlyArray<[RegExp, string]> = [
+    [/\bE\.?M\.?\b/gi, "Engineering Manager"], // EM / E.M. → Engineering Manager
+    [/\bSDM\b/gi, "Engineering Manager"], // Software/Service Delivery Manager (people-manager level)
+    [/\bAPM\b/gi, "Associate Product Manager"],
+  ];
+  let out = r;
+  for (const [re, full] of EXPANSIONS) out = out.replace(re, full);
+  return out;
+}
+
 /** Classify a free-form role title into one of 8 families. Keyword-
  *  based; conservative; falls back to "engineering" for unknown
  *  technical titles. Pure. */
 export function classifyRoleFamily(role: string | null | undefined): RoleFamily {
-  const r = (role || "").toLowerCase().trim();
+  const r = canonicalizeRoleTitle(role).toLowerCase().trim();
   if (!r) return "engineering";
   if (/\b(customer\s+success|cs\s+manager|csm|customer\s+experience|account\s+management|account\s+manager|client\s+success|client\s+partner|support\s+manager|technical\s+account\s+manager|tam)\b/.test(r)) return "csm-cs";
   if (/\b(product\s+manager|product\s+owner|pm\b|po\b|product\s+lead|head\s+of\s+product|group\s+product|tpm\b|program\s+manager|technical\s+program|chief\s+product)\b/.test(r)) return "product";
@@ -474,6 +495,7 @@ export function getBandForRole(
   role: string,
   yoe: number | null | undefined,
 ): RoleBand {
+  role = canonicalizeRoleTitle(role); // expand "EM"/"APM"/… so seniority helpers below fire
   const family = classifyRoleFamily(role);
   const base = FAMILY_TIER_REFERENCE_5YR[family][tier];
   /* When YoE is unknown, let a seniority-bearing title floor the effective
