@@ -75,6 +75,13 @@ const UNICORN = [
   /* Wave-8 — social/content/creator-economy unicorns. */
   "sharechat", "moj", "koo", "josh", "dailyhunt", "verse", "lokal",
   "inmobi", "glance", "roposo",
+  /* S181/S182 (2026-07-31 band audit) — Reliance Jio (decacorn-scale product/
+   * telecom-tech) and PayU (major Prosus-owned fintech-payments) were absent
+   * from every tier array and fell through to "sme", handing a Jio Senior
+   * Engineer a ₹14.5L opener and a PayU PM ₹12L — both severe lowballs vs the
+   * ₹30–45L these employers actually pay. `any()` matches whole tokens, so the
+   * bare "jio" token also covers "Reliance Jio" / "Jio Platforms". */
+  "jio", "payu",
 ];
 const PRODUCT_INDIA = [
   "zoho", "freshworks", "postman", "hasura", "browserstack",

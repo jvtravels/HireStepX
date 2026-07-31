@@ -54,6 +54,14 @@ describe("Bug 1: classifyCompanyTier (band-tier)", () => {
     expect(classifyCompanyTier("Dunzo Daily")).toBe("unicorn");
     expect(classifyCompanyTier("Instamart")).toBe("unicorn");
   });
+  it("classifies Reliance Jio and PayU as unicorn, not sme (S181/S182)", () => {
+    expect(classifyCompanyTier("Reliance Jio")).toBe("unicorn");
+    expect(classifyCompanyTier("Jio Platforms")).toBe("unicorn");
+    expect(classifyCompanyTier("Jio")).toBe("unicorn");
+    expect(classifyCompanyTier("PayU")).toBe("unicorn");
+    // Regression guard: the bare "jio" token must not swallow unrelated names.
+    expect(classifyCompanyTier("Religion Tech")).toBe("sme");
+  });
   it("classifies product-india", () => {
     expect(classifyCompanyTier("Zoho")).toBe("product-india");
     expect(classifyCompanyTier("Freshworks")).toBe("product-india");
