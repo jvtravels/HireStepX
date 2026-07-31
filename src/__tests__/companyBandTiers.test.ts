@@ -59,6 +59,9 @@ describe("Bug 1: classifyCompanyTier (band-tier)", () => {
     expect(classifyCompanyTier("Jio Platforms")).toBe("unicorn");
     expect(classifyCompanyTier("Jio")).toBe("unicorn");
     expect(classifyCompanyTier("PayU")).toBe("unicorn");
+    // S188: Juspay (payments-infra fintech) must not fall through to sme.
+    expect(classifyCompanyTier("Juspay")).toBe("unicorn");
+    expect(classifyCompanyTier("Juspay Technologies")).toBe("unicorn");
     // Regression guard: the bare "jio" token must not swallow unrelated names.
     expect(classifyCompanyTier("Religion Tech")).toBe("sme");
   });

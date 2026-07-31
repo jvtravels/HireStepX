@@ -82,6 +82,11 @@ const UNICORN = [
    * ₹30–45L these employers actually pay. `any()` matches whole tokens, so the
    * bare "jio" token also covers "Reliance Jio" / "Jio Platforms". */
   "jio", "payu",
+  /* S188 (2026-07-31 band audit) — Juspay, the SoftBank/Accel-backed payments-
+   * infra company (~$900M val) that powers UPI for HDFC/Amazon Pay, fell through
+   * to "sme" and anchored a Senior Engineer near ₹15L vs the ~₹30–45L it pays.
+   * Same fintech-payments class as PayU above. */
+  "juspay",
 ];
 const PRODUCT_INDIA = [
   "zoho", "freshworks", "postman", "hasura", "browserstack",
