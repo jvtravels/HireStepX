@@ -7621,6 +7621,195 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 3 (60 min): harder coding round with complexity analysis and payments-context follow-ups.",
     ],
   },
+
+  /* ── Flipkart — technical (DSA + machine coding) ─────────────── */
+  {
+    slug: "flipkart-technical-interview-questions",
+    searchPhrase: "Flipkart Technical Interview Questions 2026",
+    company: "flipkart", roleFamily: "swe", focus: "technical",
+    intro: "Flipkart's technical loop pairs classic data-structures and algorithms with a machine-coding round, and both are usually framed in commerce terms: top-K best-sellers over a sales stream, an in-memory cache or rate limiter for a product-detail service, delivery-slot assignment without overbooking. In 2026 the machine-coding round rewards clean, extensible OOP with clear interfaces and unit-testable structure, not everything crammed into one function. Interviewers want a correct optimal solution, an honest complexity analysis, and code they would be comfortable reviewing.",
+    framework: { name: "Clean Machine Code", summary: "For DSA, state the pattern and complexity aloud; for machine coding, design clear interfaces and testable classes before writing the logic" },
+    metaKeywords: ["Flipkart technical interview questions", "Flipkart machine coding round 2026", "Flipkart DSA interview", "Flipkart SDE coding questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What is the Flipkart machine-coding round?", a: "A 60-90 minute round where you build a small, working system (a cache, a rate limiter, a cart) with clean OOP, clear interfaces, and unit-testable structure. Extensibility and code quality are judged as much as correctness." },
+      { q: "What DSA topics does Flipkart test?", a: "Arrays, strings, hashing, heaps for top-K, trees, and graphs, usually framed around catalogue, cart, inventory, or delivery problems rather than abstract puzzles." },
+      { q: "How hard are Flipkart coding rounds?", a: "Medium to hard. The bar is an optimal solution with a clear complexity analysis, plus clean, reviewable code in the machine-coding round." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment",
+      "Machine-coding round building a small working system",
+      "DSA and problem-solving round",
+      "Hiring-manager and design round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online assessment with DSA problems.",
+      "Round 2 (90 min): machine-coding round building an extensible, testable component.",
+      "Round 3 (60 min): DSA round on arrays, hashing, heaps, or graphs with complexity analysis.",
+    ],
+  },
+
+  /* ── Razorpay — technical (DSA) ──────────────────────────────── */
+  {
+    slug: "razorpay-technical-interview-questions",
+    searchPhrase: "Razorpay Technical Interview Questions 2026",
+    company: "razorpay", roleFamily: "swe", focus: "technical",
+    intro: "Razorpay's coding rounds anchor data-structures and algorithms to real payments scenarios: idempotent retries, NPCI rate limits, and settlement reconciliation. In 2026 expect medium-to-hard problems where the interviewer wants your reasoning stated aloud, a clean implementation, and an awareness that the code would sit in a payments backend where correctness and concurrency matter. Pure algorithmic answers that ignore edge cases like duplicate callbacks or partial failures tend to lose points; framing your solution around production reality is the Razorpay differentiator.",
+    framework: { name: "Payments-Aware DSA", summary: "Solve the algorithm cleanly with a stated complexity, then name the production edge case (idempotency, concurrency, partial failure) the code must survive" },
+    metaKeywords: ["Razorpay technical interview questions", "Razorpay coding round 2026", "Razorpay DSA interview", "Razorpay SDE technical questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What coding topics does Razorpay test?", a: "Arrays, strings, hashing, heaps, trees, and graphs, frequently framed around payments scenarios like retries, rate limiting, and reconciliation rather than abstract puzzles." },
+      { q: "Does Razorpay care about production concerns in coding rounds?", a: "Yes. Because the code maps to a payments backend, interviewers value candidates who mention idempotency, concurrency, and how the solution behaves on duplicate or partial-failure inputs." },
+      { q: "How hard are Razorpay coding rounds?", a: "Medium to hard. Correctness, clean code, and honest complexity analysis matter most, along with reasoning about real-world edge cases." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment or resume screen",
+      "Technical coding round one on DSA",
+      "Technical coding round two on harder problems and system framing",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online assessment with DSA problems.",
+      "Round 2 (60 min): live coding on arrays, strings, hashing, or trees.",
+      "Round 3 (60 min): harder coding round with complexity analysis and payments-context follow-ups.",
+    ],
+  },
+
+  /* ── Meesho — behavioral (Bharat user empathy) ──────────────── */
+  {
+    slug: "meesho-behavioral-interview-questions",
+    searchPhrase: "Meesho Behavioral Interview Questions 2026",
+    company: "meesho", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Meesho serves next-billion Bharat users, tier-2 and tier-3 resellers, first-time internet users, so its behavioral rounds probe genuine user empathy and frugal, resourceful problem-solving. In 2026 expect prompts about building for a user very different from yourself, a decision where the data pointed one way but user reality pointed another, and shipping under a real constraint on budget or headcount. Interviewers reward low-ego learning and concrete resourcefulness; metro-user assumptions and stories where more resources magically appeared are red flags.",
+    framework: { name: "Empathy-and-Frugality STAR", summary: "Tell each story as STAR, but make the Action show how you learned the real user's need and how you shipped within a genuine constraint" },
+    metaKeywords: ["Meesho behavioral interview questions", "Meesho HR interview 2026", "Meesho culture interview", "Meesho values interview questions"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What does Meesho look for in behavioral rounds?", a: "Genuine empathy for Bharat users who are very different from a typical metro engineer, low-ego learning, and frugal, resourceful problem-solving under real constraints." },
+      { q: "Is frugality really tested at Meesho?", a: "Yes. Frugality is a stated value. Expect a prompt about shipping under a budget, time, or headcount constraint, and be ready with a concrete resourceful outcome." },
+      { q: "How should I answer Meesho user-empathy questions?", a: "Use a real story where you learned what a different kind of user actually needed, ideally by talking to them or watching them, and changed your approach as a result." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Hiring-manager behavioral round on user empathy and frugality",
+      "Peer or skip-level round drilling into one story",
+      "Values and closing round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why Meesho.",
+      "Round 2 (45-60 min): hiring-manager behavioral round on user empathy, learning, and frugal problem-solving.",
+      "Round 3 (45 min): peer or skip-level round drilling into the specifics of one story.",
+    ],
+  },
+
+  /* ── Freshworks — technical (SaaS DSA) ──────────────────────── */
+  {
+    slug: "freshworks-technical-interview-questions",
+    searchPhrase: "Freshworks Technical Interview Questions 2026",
+    company: "freshworks", roleFamily: "swe", focus: "technical",
+    intro: "Freshworks, the Chennai-born global SaaS company, runs technical rounds that favour clean, practical data-structures and algorithms over exotic tricks. In 2026 expect problems framed around product data: single-pass per-account aggregation over a large stream with bounded memory, prefix-based autocomplete or ticket search, and traversal of nested comment threads with cycle detection. Interviewers want correct code, sensible data-structure choices (hashing, tries, BFS or DFS), and a clear complexity analysis. Cleanliness and clarity matter as much as raw cleverness.",
+    framework: { name: "Practical DSA", summary: "Pick the simplest data structure that fits (hash map, trie, queue), implement it cleanly, and defend the time and space complexity out loud" },
+    metaKeywords: ["Freshworks technical interview questions", "Freshworks coding round 2026", "Freshworks DSA interview", "Freshworks SDE technical questions"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What DSA topics does Freshworks test?", a: "Hashing and streaming aggregation, tries for prefix search, and tree or graph traversal with cycle detection, usually framed around SaaS product data like tickets and accounts." },
+      { q: "How hard are Freshworks coding rounds?", a: "Standard to intense. The bar is correct, clean code with a sensible data-structure choice and an honest complexity analysis, not the most obscure algorithm." },
+      { q: "Does Freshworks value code quality?", a: "Yes. As a product SaaS company, Freshworks weights readable, well-structured code and clear edge-case handling alongside correctness." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment",
+      "Technical coding round one on DSA",
+      "Technical coding round two plus low-level design",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online assessment with DSA problems.",
+      "Round 2 (60 min): live coding on hashing, tries, or traversal problems.",
+      "Round 3 (60 min): harder coding plus low-level design with complexity discussion.",
+    ],
+  },
+
+  /* ── Google — technical (DSA) ────────────────────────────────── */
+  {
+    slug: "google-technical-interview-questions",
+    searchPhrase: "Google Technical Interview Questions India 2026",
+    company: "google", roleFamily: "swe", focus: "technical",
+    intro: "Google's coding rounds are the most documented in the industry, and the bar in India is the same as anywhere: medium-to-hard algorithmic problems where the interviewer cares as much about how you think as whether you finish. In 2026 expect graph traversal, dynamic programming with memoisation, sliding-window and two-pointer patterns, and clean, bug-free implementation. Strong candidates clarify the problem, state the brute force, optimise while narrating the invariant, and analyse time and space honestly. Communication and structured problem-solving are graded, not just the final answer.",
+    framework: { name: "Clarify-Brute-Optimise", summary: "Clarify inputs and constraints, state the brute force and its complexity, optimise while narrating the key insight, then code cleanly and analyse" },
+    metaKeywords: ["Google technical interview questions", "Google coding interview India 2026", "Google DSA interview", "Google SDE coding questions"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What coding topics does Google test?", a: "Arrays and strings, hash maps, graphs (BFS, DFS, shortest path), dynamic programming with memoisation, sliding window, two pointers, and recursion, at medium-to-hard difficulty." },
+      { q: "How does Google grade coding interviews?", a: "On four axes: problem-solving (how you reason toward the optimal), coding (clean, correct, bug-free), communication (thinking aloud, clarifying), and testing (walking through edge cases). The final answer alone is not enough." },
+      { q: "How should I approach a Google coding problem?", a: "Clarify constraints first, state a brute-force baseline with its complexity, then optimise while narrating the insight, code cleanly, and dry-run your solution on an edge case." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and online assessment or phone screen",
+      "Technical phone or virtual coding round",
+      "Onsite loop of multiple coding rounds plus behavioral",
+      "Hiring committee review, then team match and offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min): phone or virtual coding round on one to two DSA problems.",
+      "Round 2-4 (45 min each): onsite coding rounds on graphs, DP, and arrays or strings.",
+      "Round 5 (45 min): behavioral and Googleyness round on collaboration and impact.",
+    ],
+  },
+
+  /* ── Microsoft — technical (DSA) ─────────────────────────────── */
+  {
+    slug: "microsoft-technical-interview-questions",
+    searchPhrase: "Microsoft Technical Interview Questions India 2026",
+    company: "microsoft", roleFamily: "swe", focus: "technical",
+    intro: "Microsoft's coding rounds in India weight clean code, correctness, and explicit edge-case reasoning as heavily as the algorithm itself. In 2026 expect linked-list manipulation in groups, tree views and traversals, and sliding-window string problems, each with a follow-up on how you would test it. Interviewers want you to talk through nulls, boundary conditions, and off-by-one cases before and after you code. A working solution that ignores edge cases scores lower than a slightly slower one that is provably correct and clearly explained.",
+    framework: { name: "Correct-and-Tested", summary: "Reason aloud about the approach, write clean code, then explicitly enumerate and check the edge cases (nulls, boundaries, empty input) as your test pass" },
+    metaKeywords: ["Microsoft technical interview questions", "Microsoft coding interview India 2026", "Microsoft DSA interview", "Microsoft SDE coding questions"],
+    sitemapPriority: 0.73,
+    faqExtra: [
+      { q: "What coding topics does Microsoft test?", a: "Linked lists, trees (traversals and views), strings and sliding window, arrays, and recursion, at standard-to-hard difficulty, with heavy emphasis on edge cases and clean code." },
+      { q: "How does Microsoft grade coding interviews?", a: "On correctness, code cleanliness, and how thoroughly you reason about edge cases and testing. Talking through nulls, boundaries, and off-by-one errors is a large part of the signal." },
+      { q: "How should I approach a Microsoft coding problem?", a: "Reason aloud about your approach first, write clean and correct code, then run an explicit test pass over edge cases like empty input, single elements, and boundary values." },
+    ],
+    recruitmentSteps: [
+      "Online assessment or campus test",
+      "Technical coding round one on DSA",
+      "Technical coding round two on harder problems and design",
+      "As-appropriate (hiring-manager) round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): coding round on linked lists, trees, or strings.",
+      "Round 2 (45-60 min): harder coding round with sliding window or DP and testing discussion.",
+      "Round 3 (45 min): as-appropriate round on design, fundamentals, and behavioral.",
+    ],
+  },
+
+  /* ── Atlassian — behavioral (values-anchored) ───────────────── */
+  {
+    slug: "atlassian-behavioral-interview-questions",
+    searchPhrase: "Atlassian Behavioral Interview Questions 2026",
+    company: "atlassian", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Atlassian runs a dedicated values round, and it is not a formality: interviewers explicitly map your stories to values like 'Open company, no bullshit,' 'Build with heart and balance,' 'Don't #@!% the customer,' and 'Play as a team.' In 2026 expect to anchor each answer to a specific value and show it through a concrete decision, not a slogan. Strong candidates pick a real situation where a value was actually tested, name the value, and walk through what they did. Generic teamwork answers that could apply anywhere are the failure mode.",
+    framework: { name: "Value-Anchored STAR", summary: "For each story, name the Atlassian value it demonstrates, then tell it as STAR with the Action showing the value under real tension" },
+    metaKeywords: ["Atlassian behavioral interview questions", "Atlassian values interview 2026", "Atlassian culture interview", "Atlassian values round questions"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What is the Atlassian values interview?", a: "A dedicated behavioral round where interviewers map your stories to Atlassian's company values. You are expected to anchor each answer to a specific value and demonstrate it through a real decision." },
+      { q: "How do I prepare for the Atlassian values round?", a: "Study the five values, then prepare one concrete story per value where it was genuinely tested. Name the value explicitly and use STAR, with the Action showing the value under real tension." },
+      { q: "What is the most common mistake in Atlassian behavioral rounds?", a: "Generic teamwork or leadership answers that could apply to any company. Interviewers want a specific situation tied to a specific Atlassian value, not a slogan." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Technical or role-specific rounds",
+      "Dedicated Atlassian values round",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why Atlassian.",
+      "Round 2 (45-60 min): values round mapping your stories to Atlassian's company values.",
+      "Round 3 (45 min): hiring-manager round on ownership, collaboration, and impact.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

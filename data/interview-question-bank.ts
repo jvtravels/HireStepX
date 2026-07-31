@@ -2008,4 +2008,80 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
     styleNote: "Heap-based merge framed in-domain. Paytm wants the min-heap insight and an honest complexity analysis, plus handling of duplicate timestamps.",
   },
+
+  /* ── Flipkart — technical (DSA + machine coding) ─────────────── */
+  {
+    text: "Given a large product catalogue, return the top-K best-selling items in a category efficiently as new sales stream in. Which data structure, and why?",
+    company: "flipkart", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Flipkart technical rounds pair classic DSA with a machine-coding round; problems are usually framed in commerce terms (catalogue, cart, inventory). Expect a heap or count-min discussion and a follow-up on updates.",
+  },
+  {
+    text: "Design and code an in-memory rate limiter or LRU cache for a product-detail service. Keep it clean, testable, and thread-safe.",
+    company: "flipkart", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Flipkart's machine-coding round rewards clean, extensible OOP with clear interfaces and unit-testable structure over cramming everything into one function.",
+  },
+  {
+    text: "Given delivery slots and orders, assign orders to slots to maximise fulfilment without overbooking any slot. Walk through your approach and complexity.",
+    company: "flipkart", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+
+  /* ── Meesho — behavioral (Bharat user empathy) ──────────────── */
+  {
+    text: "Tell me about a time you built or changed something for a user very different from yourself. How did you learn what they actually needed?",
+    company: "meesho", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Meesho serves next-billion Bharat users (tier-2/3, first-time internet, resellers). Behavioral rounds probe genuine user empathy and low-ego learning, not assumptions from a metro-user lens.",
+  },
+  {
+    text: "Describe a decision where the data pointed one way but user reality pointed another. What did you do?",
+    company: "meesho", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Give me an example of frugal problem-solving: a real constraint on budget, time, or headcount, and how you still shipped.",
+    company: "meesho", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Frugality is a stated Meesho value. Interviewers want a concrete constraint and a resourceful outcome, not a story where more resources magically appeared.",
+  },
+
+  /* ── Freshworks — technical (SaaS DSA) ──────────────────────── */
+  {
+    text: "Parse a large log or CSV stream and compute per-account aggregates in one pass. How do you keep memory bounded as accounts grow?",
+    company: "freshworks", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Freshworks (Chennai global SaaS) technical rounds favour clean, practical DSA over exotic algorithms: hashing, streaming aggregation, and clear complexity reasoning applied to product data.",
+  },
+  {
+    text: "Implement an autocomplete or ticket-search feature that returns matches as the user types. Which data structure gives you fast prefix lookups?",
+    company: "freshworks", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Given nested comment threads on a support ticket, flatten them into a correctly ordered display and detect cycles. Walk through your traversal.",
+    company: "freshworks", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Tree/graph traversal framed in-domain. Freshworks wants correct BFS/DFS, cycle detection, and clean handling of edge cases like orphaned or self-referencing nodes.",
+  },
+
+  /* ── Microsoft — technical (DSA) ────────────────────────────── */
+  {
+    text: "Reverse a linked list in groups of K. Then explain how you'd test it, including the edge cases you'd worry about.",
+    company: "microsoft", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Microsoft coding rounds weight clean code, correctness, and explicit edge-case reasoning as much as the algorithm itself. Talk through nulls, K larger than the list, and off-by-one boundaries.",
+  },
+  {
+    text: "Given a binary tree, return its right-side view. Reason aloud about your traversal choice before you write code.",
+    company: "microsoft", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Find the minimum window in a string that contains all characters of another string. Optimise it, then walk me through your complexity.",
+    company: "microsoft", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Classic sliding-window at Microsoft difficulty. Interviewers look for the two-pointer window, correct shrink condition, and an honest O(n) analysis with the character-count map.",
+  },
 ];
