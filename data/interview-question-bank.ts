@@ -2672,4 +2672,99 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "IBM frequently tests DBMS and SQL basics. A concrete two-table example makes the join explanation land clearly.",
   },
+
+  /* ── Goldman Sachs — system design (trading/risk) ───────────── */
+  {
+    text: "Design a real-time position and risk aggregation system across many trading desks. How do you keep it consistent and low-latency?",
+    company: "goldman", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Goldman system-design rounds are finance-native. Strong answers address consistency of aggregated positions, event ordering, and correctness under high message rates.",
+  },
+  {
+    text: "Design an order-management system that accepts, validates, and routes trade orders to exchanges. How do you handle partial fills and cancellations?",
+    company: "goldman", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a system to store and query years of tick-level market data for backtesting. How do you optimise for time-range reads?",
+    company: "goldman", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Goldman probes time-series storage and read optimisation. Address columnar/time-partitioned storage and the write-vs-read trade-off for tick data.",
+  },
+
+  /* ── JPMorgan — system design (transaction scale) ───────────── */
+  {
+    text: "Design a system to process millions of card transactions per day with fraud checks in the authorisation path. How do you keep latency low?",
+    company: "jpmc", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "JPMorgan system-design rounds centre on high-volume transaction processing. Strong answers separate the low-latency authorisation path from asynchronous fraud scoring.",
+  },
+  {
+    text: "Design a ledger for a retail bank that records every account movement and must always balance. How do you handle concurrency and audit?",
+    company: "jpmc", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a notification system that alerts customers of transactions in near real time across SMS, email, and push. How do you guarantee delivery?",
+    company: "jpmc", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "JPMorgan probes reliable multi-channel delivery. Address at-least-once delivery, deduplication, and channel fallback.",
+  },
+
+  /* ── Morgan Stanley — system design (market data/trade lifecycle) */
+  {
+    text: "Design a market-data distribution system that fans out live price updates to thousands of internal consumers with minimal latency.",
+    company: "morgan-stanley", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Morgan Stanley system-design rounds probe low-latency fan-out. Strong answers cover pub/sub, back-pressure, and slow-consumer handling.",
+  },
+  {
+    text: "Design a system that tracks a trade through its full lifecycle (execution, confirmation, settlement) with a full audit trail. How do you model state transitions?",
+    company: "morgan-stanley", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a reconciliation system that compares internal trade records against a counterparty's and flags mismatches. How do you scale the comparison?",
+    company: "morgan-stanley", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Morgan Stanley probes reconciliation at scale. Address batching, keyed matching, and how you surface and resolve breaks.",
+  },
+
+  /* ── Barclays — system design (payments/reconciliation) ─────── */
+  {
+    text: "Design a payment-processing system for a bank that handles transfers reliably and never loses or double-sends money. Walk through the failure handling.",
+    company: "barclays", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Barclays system-design rounds are correctness-focused. Strong answers use idempotency, a state machine per transfer, and reconciliation for every failure mode.",
+  },
+  {
+    text: "Design a fraud-detection pipeline that scores transactions in real time and flags suspicious ones for review. What signals and storage do you use?",
+    company: "barclays", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a batch job that reconciles a day's transactions against clearing-house files and produces a mismatch report. How do you make it restartable?",
+    company: "barclays", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Barclays probes reliable batch processing. Address idempotent, restartable jobs, checkpointing, and clear mismatch reporting.",
+  },
+
+  /* ── Deutsche Bank — system design (settlement/regulatory) ──── */
+  {
+    text: "Design a trade-settlement system that moves securities and cash between parties and must be auditable and regulator-reportable. How do you guarantee correctness?",
+    company: "deutsche-bank", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Deutsche Bank system-design rounds weigh auditability and regulatory reporting. Strong answers use an append-only event log and a clear settlement state machine.",
+  },
+  {
+    text: "Design a system that ingests regulatory-reporting data from many source systems and produces accurate, timely reports. How do you handle late or corrected data?",
+    company: "deutsche-bank", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design an audit-log service that records every sensitive action immutably and supports fast point-in-time queries. How do you store and index it?",
+    company: "deutsche-bank", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Deutsche Bank probes immutable audit trails. Address append-only storage, tamper-evidence, and read-optimised point-in-time queries.",
+  },
 ];

@@ -8652,6 +8652,146 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 3 (15-30 min): HR round on motivation and mobility.",
     ],
   },
+
+  /* ── Goldman Sachs — system design (trading/risk) ───────────── */
+  {
+    slug: "goldman-sachs-system-design-interview-questions",
+    searchPhrase: "Goldman Sachs System Design Interview Questions 2026",
+    company: "goldman", roleFamily: "swe", focus: "system-design",
+    intro: "Goldman Sachs's system-design rounds are finance-native and correctness-obsessed. In 2026 expect prompts on real-time position and risk aggregation across trading desks, an order-management system that routes trades and handles partial fills and cancellations, and tick-level market-data storage optimised for backtesting reads. Interviewers probe consistency of aggregated state under high message rates, event ordering, and time-series read optimisation. Generic web-scale answers miss the mark; the bar is precise reasoning about correctness, latency, and the write-versus-read trade-off in a trading context. Grounding your design in real financial workflows is what separates strong candidates.",
+    framework: { name: "Consistent-and-Ordered", summary: "Design for correctness first: consistent aggregated state, strict event ordering, and read-optimised time-series storage, with clear latency budgets for the trading path" },
+    metaKeywords: ["Goldman Sachs system design interview questions", "Goldman Sachs SDE system design 2026", "trading system design interview", "Goldman Sachs India engineering interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What system-design questions does Goldman Sachs ask?", a: "Real-time position and risk aggregation, an order-management system handling partial fills and cancellations, and tick-level market-data storage optimised for time-range reads." },
+      { q: "How is Goldman Sachs system design different?", a: "It is finance-native and correctness-focused. Interviewers weigh consistency of aggregated positions, event ordering, and latency under high message rates over generic horizontal-scaling answers." },
+      { q: "How do I prepare for Goldman Sachs system design?", a: "Understand trading workflows (orders, fills, positions, risk), practise time-series storage and low-latency aggregation designs, and be ready to reason precisely about consistency and event ordering." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment (HackerRank)",
+      "Technical coding round on DSA",
+      "System-design round on a trading or risk service",
+      "Hiring-manager and Superday rounds, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online coding assessment.",
+      "Round 2 (45-60 min): coding round on data structures and algorithms.",
+      "Round 3 (45-60 min): system-design round on trading, risk, or market data.",
+      "Round 4 (45 min): behavioral and hiring-manager round.",
+    ],
+  },
+
+  /* ── JPMorgan — system design (transaction scale) ───────────── */
+  {
+    slug: "jpmorgan-system-design-interview-questions",
+    searchPhrase: "JPMorgan System Design Interview Questions 2026",
+    company: "jpmc", roleFamily: "swe", focus: "system-design",
+    intro: "JPMorgan's system-design rounds centre on high-volume, high-correctness banking systems. In 2026 expect prompts on processing millions of card transactions a day with fraud checks in the authorisation path, a retail-bank ledger that must always balance, and near-real-time multi-channel customer notifications. Interviewers reward separating the low-latency authorisation path from asynchronous fraud scoring, using an append-only double-entry ledger with careful concurrency control, and guaranteeing at-least-once delivery with deduplication. The domain is unforgiving: money must never be lost or double-counted, so precise reasoning about consistency, idempotency, and failure handling is what distinguishes strong answers.",
+    framework: { name: "Fast-Path-Slow-Path", summary: "Keep the authorisation path low-latency, push fraud and heavy work to an async slow path, and back money movement with a balancing ledger and idempotent delivery" },
+    metaKeywords: ["JPMorgan system design interview questions", "JPMorgan SDE system design 2026", "banking transaction system design", "JPMorgan India engineering interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What system-design questions does JPMorgan ask?", a: "High-volume card-transaction processing with fraud checks, a retail-bank ledger that always balances, and near-real-time multi-channel customer notifications." },
+      { q: "How do I design transaction processing for JPMorgan?", a: "Keep the authorisation path low-latency with only essential synchronous checks, push fraud scoring and analytics to an asynchronous slow path, and record every movement in a balancing ledger." },
+      { q: "What does JPMorgan look for in system design?", a: "Financial correctness: money never lost or double-counted. Interviewers probe idempotency, an append-only ledger, concurrency control, and reliable delivery over pure scaling." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment",
+      "Technical coding and OOP round",
+      "System-design round on a banking-scale service",
+      "Hiring-manager and fit round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online coding assessment.",
+      "Round 2 (60 min): coding and object-oriented design round.",
+      "Round 3 (60 min): system-design round on transactions, ledgers, or notifications.",
+      "Round 4 (45 min): behavioral round with a finance-domain framing.",
+    ],
+  },
+
+  /* ── Morgan Stanley — system design (market data/trade lifecycle) */
+  {
+    slug: "morgan-stanley-system-design-interview-questions",
+    searchPhrase: "Morgan Stanley System Design Interview Questions 2026",
+    company: "morgan-stanley", roleFamily: "swe", focus: "system-design",
+    intro: "Morgan Stanley's system-design rounds probe low-latency distribution and the trade lifecycle. In 2026 expect prompts on a market-data distribution system that fans out live prices to thousands of internal consumers, a system tracking a trade through execution, confirmation, and settlement with a full audit trail, and a reconciliation service that compares internal records against a counterparty's. Interviewers reward pub/sub design with back-pressure and slow-consumer handling, clean state-machine modelling of trade lifecycles, and scalable keyed matching for reconciliation. The finance domain makes correctness and auditability first-class concerns, not afterthoughts bolted on at the end.",
+    framework: { name: "Fan-out-and-Lifecycle", summary: "Design low-latency pub/sub with back-pressure for market data, model the trade lifecycle as an audited state machine, and scale reconciliation with keyed matching" },
+    metaKeywords: ["Morgan Stanley system design interview questions", "Morgan Stanley SDE system design 2026", "market data system design", "trade lifecycle system design"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What system-design questions does Morgan Stanley ask?", a: "Market-data distribution with low-latency fan-out, tracking a trade through its full lifecycle with an audit trail, and reconciliation of internal records against a counterparty's." },
+      { q: "How do I design market-data distribution for Morgan Stanley?", a: "Use a pub/sub model with topic partitioning, handle back-pressure and slow consumers explicitly, and minimise latency on the hot path so thousands of consumers get updates promptly." },
+      { q: "What makes Morgan Stanley system design distinct?", a: "It is finance-native: correctness, auditability, and low latency are first-class. Interviewers probe trade-lifecycle state machines and scalable reconciliation, not just CRUD scaling." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment",
+      "Technical coding round on DSA",
+      "System-design round on a market-data or trade service",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online coding assessment.",
+      "Round 2 (45-60 min): coding round on data structures and algorithms.",
+      "Round 3 (45-60 min): system-design round on market data, trade lifecycle, or reconciliation.",
+      "Round 4 (45 min): behavioral and hiring-manager round.",
+    ],
+  },
+
+  /* ── Barclays — system design (payments/reconciliation) ─────── */
+  {
+    slug: "barclays-system-design-interview-questions",
+    searchPhrase: "Barclays System Design Interview Questions 2026",
+    company: "barclays", roleFamily: "swe", focus: "system-design",
+    intro: "Barclays's system-design rounds are payments-and-correctness focused. In 2026 expect prompts on a payment-processing system that transfers money reliably and never loses or double-sends it, a real-time fraud-detection pipeline that scores and flags transactions, and a restartable batch job that reconciles a day's transactions against clearing-house files. Interviewers reward idempotency, a state machine per transfer, reconciliation for every failure mode, and checkpointed restartable batch processing. Because the domain is money movement, hand-waving on failure handling does not survive; the interview rewards precise reasoning about exactly-once semantics and recovery.",
+    framework: { name: "Idempotent-and-Restartable", summary: "Model each transfer as an idempotent state machine, reconcile every failure mode, and make batch jobs checkpointed and restartable so no money is lost or double-sent" },
+    metaKeywords: ["Barclays system design interview questions", "Barclays SDE system design 2026", "payment processing system design", "Barclays India engineering interview"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What system-design questions does Barclays ask?", a: "A reliable payment-processing system, a real-time fraud-detection pipeline, and a restartable batch reconciliation job against clearing-house files." },
+      { q: "How do I design reliable payments for Barclays?", a: "Model each transfer as an idempotent state machine, use idempotency keys to avoid double-sends, and reconcile against downstream records so every failure mode is detected and resolved." },
+      { q: "What does Barclays look for in system design?", a: "Correctness in money movement: idempotency, exactly-once semantics, reconciliation, and restartable, checkpointed batch processing rather than pure throughput scaling." },
+    ],
+    recruitmentSteps: [
+      "Online coding and aptitude assessment",
+      "Technical coding round on DSA",
+      "System-design round on a payments or reconciliation service",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online coding and aptitude assessment.",
+      "Round 2 (45-60 min): coding round on data structures and algorithms.",
+      "Round 3 (45-60 min): system-design round on payments, fraud, or reconciliation.",
+      "Round 4 (45 min): behavioral and hiring-manager round.",
+    ],
+  },
+
+  /* ── Deutsche Bank — system design (settlement/regulatory) ──── */
+  {
+    slug: "deutsche-bank-system-design-interview-questions",
+    searchPhrase: "Deutsche Bank System Design Interview Questions 2026",
+    company: "deutsche-bank", roleFamily: "swe", focus: "system-design",
+    intro: "Deutsche Bank's system-design rounds weigh auditability and regulatory reporting alongside correctness. In 2026 expect prompts on a trade-settlement system that moves securities and cash and must be regulator-reportable, a regulatory-reporting pipeline ingesting data from many source systems that handles late or corrected data, and an immutable audit-log service supporting fast point-in-time queries. Interviewers reward append-only event logs, clear settlement state machines, and read-optimised, tamper-evident audit storage. The regulatory context makes correctness, traceability, and handling of corrections first-class design concerns rather than edge cases you mention at the end.",
+    framework: { name: "Append-Only-and-Auditable", summary: "Use append-only event logs and clear state machines for settlement, handle late and corrected data explicitly, and make audit storage tamper-evident and read-optimised" },
+    metaKeywords: ["Deutsche Bank system design interview questions", "Deutsche Bank SDE system design 2026", "trade settlement system design", "regulatory reporting system design"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What system-design questions does Deutsche Bank ask?", a: "A trade-settlement system that is auditable and regulator-reportable, a regulatory-reporting pipeline that handles late and corrected data, and an immutable audit-log service with fast point-in-time queries." },
+      { q: "How do I handle late or corrected data in a Deutsche Bank design?", a: "Use an append-only event log with corrections modelled as new events, version records, and recompute affected reports so history stays accurate and auditable rather than overwriting in place." },
+      { q: "What does Deutsche Bank emphasise in system design?", a: "Auditability, correctness, and regulatory reporting. Interviewers probe append-only logs, settlement state machines, tamper-evidence, and handling of corrections as first-class concerns." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment",
+      "Technical coding round on DSA",
+      "System-design round on settlement, reporting, or audit",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online coding assessment.",
+      "Round 2 (45-60 min): coding round on data structures and algorithms.",
+      "Round 3 (45-60 min): system-design round on settlement, regulatory reporting, or audit logging.",
+      "Round 4 (45 min): behavioral and hiring-manager round.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
