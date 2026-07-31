@@ -2967,4 +2967,32 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "CRED probes governance-aware data engineering: tokenisation, access controls, and lineage for sensitive financial data.",
   },
+
+  /* ── RBI Grade B — interview (personal + policy) ───────────── */
+  {
+    text: "Interview board: 'Explain the RBI's monetary-policy transmission mechanism. Why does a repo-rate cut not always reach borrowers?' Structure a crisp answer.",
+    company: "rbi", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "RBI Grade B interview boards probe monetary-policy fundamentals. Strong answers cover the rate-corridor, bank spreads, and transmission lags concisely.",
+  },
+  {
+    text: "Interview board: 'You have an engineering background, not economics. Why the RBI, and what would you bring to banking supervision?' Answer convincingly.",
+    company: "rbi", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "RBI boards test motivation and cross-domain fit. Address genuine interest in central banking and transferable analytical strengths without sounding rehearsed.",
+  },
+
+  /* ── IBPS PO — interview (banking awareness + fit) ─────────── */
+  {
+    text: "PI: 'What is the difference between a NBFC and a bank, and why does the distinction matter for the customer?' Explain simply.",
+    company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "IBPS PO panels test banking awareness. Cover deposit-taking, regulation, and lending scope in plain language, with a customer lens.",
+  },
+  {
+    text: "PI: 'A customer is angry that a UPI transaction failed but money was debited. As a probationary officer at the branch, how do you handle it?' Walk through your steps.",
+    company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "IBPS PO panels probe customer-service temperament. Strong answers show empathy, knowledge of the reversal/complaint process, and composure under pressure.",
+  },
 ];

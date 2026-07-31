@@ -9072,12 +9072,146 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 4 (45 min): behavioural and hiring-manager round.",
     ],
   },
+
+  /* ── UPSC — personality test (civil services) ──────────────── */
+  {
+    slug: "upsc-personality-test-interview-questions",
+    searchPhrase: "UPSC Personality Test Interview Questions 2026",
+    company: "upsc", roleFamily: "civil-services", focus: "government-psu",
+    intro: "The UPSC Personality Test, the final stage of the Civil Services Examination, is not a knowledge quiz; it is a 30-minute board assessment of judgement, balance, and integrity. In 2026 expect situational administrative dilemmas (imposing Section 144 during communal tension, handling a district crisis as Collector), questions rooted in your Detailed Application Form (home state, optional subject, hobbies), and opinion questions that test whether you can defend a reasoned position without dogmatism (uniform civil code, AI displacing government clerical jobs). The board rewards honesty, structured thinking, and calm under probing over rehearsed answers. Prepare your DAF cold, form balanced views on current issues, and practise thinking aloud like an administrator.",
+    framework: { name: "Balanced-Administrator", summary: "Answer as a fair, decisive civil servant: acknowledge trade-offs, ground decisions in law and public interest, stay honest under probing, and never take a dogmatic stance" },
+    metaKeywords: ["UPSC personality test questions", "UPSC interview questions 2026", "IAS interview questions", "civil services personality test preparation"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What is asked in the UPSC Personality Test?", a: "Situational administrative dilemmas, questions from your Detailed Application Form (home state, optional subject, hobbies), and balanced-opinion questions on current issues. It tests judgement and integrity, not factual recall." },
+      { q: "How long is the UPSC interview and how many marks?", a: "The Personality Test is roughly 30 minutes before a board and carries 275 marks, a decisive share of the final merit list, so it often changes ranks and service allocation." },
+      { q: "How should I answer UPSC opinion questions?", a: "Take a reasoned, balanced position, acknowledge the other side, and ground your view in law, ethics, and public interest. The board rewards honesty and composure over a 'correct' answer." },
+    ],
+    recruitmentSteps: [
+      "Clear the Preliminary examination (objective screening)",
+      "Clear the Mains examination (written descriptive papers)",
+      "Personality Test (interview) before a UPSC board",
+      "Final merit list and service allocation",
+    ],
+    interviewRounds: [
+      "Stage 1: Preliminary exam (two objective papers, screening only).",
+      "Stage 2: Mains exam (nine descriptive papers counted for merit).",
+      "Stage 3 (~30 min): Personality Test before a board, 275 marks.",
+    ],
+  },
+
+  /* ── SSB — services selection board (defence) ──────────────── */
+  {
+    slug: "ssb-interview-questions",
+    searchPhrase: "SSB Interview Questions and Process 2026",
+    company: "ssb", roleFamily: "defence", focus: "government-psu",
+    intro: "The SSB (Services Selection Board) interview is a five-day assessment for officer entry into the Indian Armed Forces, and it measures Officer Like Qualities rather than academic marks. In 2026 expect the two-stage format: Day 1 screening (OIR intelligence tests plus Picture Perception and Description), then psychological tests (TAT, WAT, SRT, Self-Description), Group Testing Officer tasks (Group Discussion, Group Planning, Progressive Group Tasks, Command Task), and the Personal Interview. Boards probe consistency across all three assessors (psychologist, GTO, interviewing officer), so manufactured answers collapse. The Personal Interview digs into your background honestly (grades, friendships, leadership gaps) and the GTO tasks test real-time planning and teamwork under constraints. Authenticity, initiative, and coherent leadership win recommendations.",
+    framework: { name: "Officer-Like-Qualities", summary: "Show genuine, consistent Officer Like Qualities across psychology, group tasks, and interview: initiative, teamwork, decisiveness, and honesty, not a rehearsed persona" },
+    metaKeywords: ["SSB interview questions", "SSB interview process 2026", "defence SSB preparation", "Officer Like Qualities SSB"],
+    sitemapPriority: 0.73,
+    faqExtra: [
+      { q: "How many days is the SSB interview?", a: "Five days. Day 1 is screening (OIR tests and Picture Perception & Description); those who clear stay for psychological tests, GTO group tasks, the Personal Interview, and a conference." },
+      { q: "What are the GTO tasks in SSB?", a: "Group Discussion, Group Planning Exercise, Progressive Group Tasks, Half Group Task, Command Task, Lecturette, and the Final Group Task, all assessing teamwork, planning, and leadership under time and resource constraints." },
+      { q: "How do I prepare for the SSB Personal Interview?", a: "Know your own life honestly, grades, friendships, hobbies, and leadership experiences, and be ready to discuss gaps candidly. Consistency with your psychological tests and group behaviour matters more than polish." },
+    ],
+    recruitmentSteps: [
+      "Day 1: Screening (OIR tests + Picture Perception & Description Test)",
+      "Days 2-4: Psychological tests, GTO group tasks, and Personal Interview",
+      "Day 5: Conference and results",
+      "Medical examination, then merit list",
+    ],
+    interviewRounds: [
+      "Stage 1 (Day 1): OIR intelligence tests and Picture Perception & Description, with a screen-out.",
+      "Stage 2 (Days 2-4): psychological tests (TAT, WAT, SRT), GTO tasks, and the Personal Interview.",
+      "Conference (Day 5): board conference and final recommendation.",
+    ],
+  },
+
+  /* ── RBI Grade B — officer interview (central banking) ─────── */
+  {
+    slug: "rbi-grade-b-interview-questions",
+    searchPhrase: "RBI Grade B Interview Questions 2026",
+    company: "rbi", roleFamily: "civil-services", focus: "government-psu",
+    intro: "The RBI Grade B interview is the final stage for the central bank's flagship officer cadre, and it rewards genuine command of monetary economics and financial-system awareness. In 2026 expect a board that probes monetary-policy transmission (why a repo-rate cut may not reach borrowers), financial-inclusion versus macroprudential-stability trade-offs in the UPI era, and your motivation and fit, especially if you come from a non-economics background. Because the written stage already tested Economic & Social Issues and Finance & Management, the interview digs into depth and clarity of thought rather than breadth. Prepare to structure crisp answers on RBI functions, current policy debates, and your own reasons for choosing central banking over the private sector.",
+    framework: { name: "Central-Banker's-Clarity", summary: "Demonstrate real understanding of monetary policy and financial stability, structure crisp answers, and give an honest, well-reasoned case for choosing the RBI" },
+    metaKeywords: ["RBI Grade B interview questions", "RBI Grade B interview 2026", "RBI officer interview preparation", "central banking interview India"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What is asked in the RBI Grade B interview?", a: "Monetary-policy fundamentals (transmission, the rate corridor), financial-inclusion and macroprudential trade-offs, RBI functions, current policy debates, and your motivation and fit for central banking." },
+      { q: "Can non-economics graduates clear the RBI Grade B interview?", a: "Yes. Many officers come from engineering or other backgrounds. The board tests clarity of thought and genuine interest; be ready to explain why the RBI and what analytical strengths you bring." },
+      { q: "How much does the RBI Grade B interview carry?", a: "The interview carries 75 marks and follows Phase I and Phase II written exams. It is decisive at the margin, so depth on core monetary and financial topics matters." },
+    ],
+    recruitmentSteps: [
+      "Phase I: objective screening exam",
+      "Phase II: descriptive papers (ESI, Finance & Management, English)",
+      "Interview before an RBI board (75 marks)",
+      "Final merit list",
+    ],
+    interviewRounds: [
+      "Phase I: objective online exam (screening).",
+      "Phase II: three descriptive papers counted for merit.",
+      "Interview (~75 marks): board interview on economics, finance, and motivation.",
+    ],
+  },
+
+  /* ── ISRO — scientist/engineer interview ───────────────────── */
+  {
+    slug: "isro-scientist-interview-questions",
+    searchPhrase: "ISRO Scientist Engineer Interview Questions 2026",
+    company: "isro", roleFamily: "scientist", focus: "government-psu",
+    intro: "The ISRO Scientist/Engineer (SC) interview is a technical viva that follows the written examination and assesses genuine engineering depth in your discipline. In 2026 expect a panel that drills into core subject fundamentals, your final-year project and any publications, and applied design reasoning (for example, which sensors you would fuse for a guidance algorithm and why). Interviewers value first-principles clarity, honest 'I don't know' over bluffing, and awareness of how your specialisation connects to space and defence applications. Because ISRO hires for long-term research careers, the panel also gauges motivation and awareness of the PSU pay structure versus private offers. Revise your core branch subjects and project cold, and be ready to reason aloud through open-ended design questions.",
+    framework: { name: "First-Principles-Depth", summary: "Show deep command of your core discipline and project, reason from first principles on applied design questions, and be honest about the limits of your knowledge" },
+    metaKeywords: ["ISRO scientist interview questions", "ISRO engineer SC interview 2026", "ISRO technical interview preparation", "ISRO viva questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What is asked in the ISRO Scientist/Engineer interview?", a: "Core subject fundamentals from your discipline, deep questions on your final-year project and publications, and applied, open-ended design reasoning connected to space and defence systems." },
+      { q: "How should I prepare for the ISRO technical interview?", a: "Revise your core branch subjects and your project cold, be ready to reason from first principles on open-ended design questions, and prefer an honest 'I don't know' over bluffing." },
+      { q: "Does the ISRO interview cover motivation and pay?", a: "Yes. Because ISRO hires for long research careers, panels gauge genuine motivation and may discuss the 7th-CPC PSU pay structure versus private-sector offers you hold." },
+    ],
+    recruitmentSteps: [
+      "Written examination in your discipline",
+      "Shortlisting based on written score",
+      "Technical interview (viva) before a panel",
+      "Final merit list and appointment",
+    ],
+    interviewRounds: [
+      "Stage 1: written exam in your engineering discipline (screening).",
+      "Stage 2: technical interview/viva before an ISRO panel on fundamentals, project, and applied design.",
+    ],
+  },
+
+  /* ── IBPS PO — probationary officer interview ──────────────── */
+  {
+    slug: "ibps-po-interview-questions",
+    searchPhrase: "IBPS PO Interview Questions 2026",
+    company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
+    intro: "The IBPS PO interview is the final stage for probationary-officer entry into public-sector banks, and it tests banking awareness, temperament, and genuine motivation rather than exam trivia. In 2026 expect a panel that asks why banking and why now (especially if you hold an engineering degree and skipped IT placements), core banking-awareness questions (the difference between an NBFC and a bank and why it matters to customers), and customer-service scenarios (handling an angry customer whose UPI payment failed but was debited). The board rewards clear, simple explanations, an empathetic service temperament, and a coherent story for choosing a banking career. Prepare current banking and economy awareness, the basics of banking products and regulation, and honest answers about your background and motivation.",
+    framework: { name: "Service-Minded-Banker", summary: "Explain banking concepts simply, show an empathetic customer-service temperament, and give an honest, coherent reason for choosing a public-sector banking career" },
+    metaKeywords: ["IBPS PO interview questions", "IBPS PO interview 2026", "bank PO interview preparation", "probationary officer interview questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What is asked in the IBPS PO interview?", a: "Why banking and why now, banking-awareness basics (like NBFC versus bank), current economy and banking developments, customer-service scenarios, and questions about your background and motivation." },
+      { q: "How should engineers answer the 'why banking' question?", a: "Give an honest, coherent story: transferable analytical and people skills, genuine interest in a stable, impactful public-sector banking career, and awareness of the sector, rather than a rehearsed line." },
+      { q: "How much does the IBPS PO interview carry?", a: "The interview carries 100 marks (scaled), and the final score combines the main exam and interview in an 80:20 weightage, so the interview is a meaningful differentiator." },
+    ],
+    recruitmentSteps: [
+      "Preliminary exam (objective screening)",
+      "Main exam (objective + descriptive)",
+      "Interview before a panel (100 marks, 80:20 weightage with mains)",
+      "Provisional allotment to a participating bank",
+    ],
+    interviewRounds: [
+      "Stage 1: Preliminary exam (screening).",
+      "Stage 2: Main exam (objective and descriptive).",
+      "Stage 3: Interview before a panel on banking awareness, temperament, and motivation.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
  *  or intro/framework text is rewritten. Shared by sitemap.ts and the question
  *  page Article schema so dateModified is never duplicated out of sync. */
-export const SEO_PAGES_LAST_MODIFIED = "2026-07-31";
+export const SEO_PAGES_LAST_MODIFIED = "2026-08-01";
 
 /** Lookup helper. */
 export function getSeoPageBySlug(slug: string): SeoPage | undefined {
