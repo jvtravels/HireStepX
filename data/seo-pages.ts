@@ -7972,6 +7972,144 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 3 (45-60 min): design deep-dive on constrained-hardware trade-offs plus behavioral.",
     ],
   },
+
+  /* ── Meta — system design ───────────────────────────────────── */
+  {
+    slug: "meta-system-design-interview-questions",
+    searchPhrase: "Meta System Design Interview Questions 2026",
+    company: "meta", roleFamily: "swe", focus: "system-design",
+    intro: "Meta's system-design rounds famously use its own products as the canvas: design News Feed, design a photo store like the one behind Instagram, design Messenger. In 2026 the bar is a clean separation between candidate generation, ranking, and delivery, plus a real decision on fan-out on write versus fan-out on read for feeds and messaging. Interviewers push on scale numbers, consistency and ordering guarantees, and the hot-path latency budget. They reward candidates who state assumptions, do quick capacity math, and defend one design over the alternatives rather than listing every option.",
+    framework: { name: "Generate-Rank-Deliver", summary: "Split the problem into candidate generation, ranking, and delivery, decide fan-out on write vs read explicitly, and defend the latency and consistency trade-offs with rough capacity math" },
+    metaKeywords: ["Meta system design interview questions", "Facebook system design interview 2026", "Meta SDE system design", "design news feed interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What system-design questions does Meta ask?", a: "Design News Feed, a photo storage and serving system, a real-time messaging system like Messenger, and typeahead search, usually at billions-of-users scale." },
+      { q: "Fan-out on write or read for a Meta feed design?", a: "It depends on the user's follower count. Fan-out on write suits most users but is costly for celebrities, so a hybrid (write for normal users, read/pull for high-fan-out accounts) is the expected answer." },
+      { q: "How do I prepare for Meta system design?", a: "Practise the requirement-gathering and capacity-estimation opening, then drill the generate-rank-deliver split on feed, messaging, and storage problems. Defend one design, do not list every option." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and coding phone screen",
+      "Onsite coding rounds on DSA",
+      "System-design round on a Meta-style product",
+      "Behavioral round on impact and collaboration, then debrief",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min): coding phone screen on data structures and algorithms.",
+      "Round 2-3 (45 min each): onsite coding rounds.",
+      "Round 4 (45 min): system-design round on feed, storage, or messaging.",
+      "Round 5 (45 min): behavioral round on impact and working with others.",
+    ],
+  },
+
+  /* ── LinkedIn — system design ───────────────────────────────── */
+  {
+    slug: "linkedin-system-design-interview-questions",
+    searchPhrase: "LinkedIn System Design Interview Questions 2026",
+    company: "linkedin", roleFamily: "swe", focus: "system-design",
+    intro: "LinkedIn's system-design rounds revolve around its social graph and professional feed: design 'People You May Know', design 'who viewed your profile', design a feed blending posts, jobs, and recommendations. In 2026 strong candidates lead with graph storage and second-degree traversal, decide what to precompute offline versus serve online, and handle write-heavy event streams like profile views. Interviewers probe how you rank and dedupe heterogeneous content and how you keep latency low while the graph grows. Vague 'use a graph database and it scales' answers get taken apart in the follow-ups.",
+    framework: { name: "Graph-and-Precompute", summary: "Model the social graph explicitly, decide what to precompute offline versus serve online, and design write-heavy event ingestion separately from low-latency reads" },
+    metaKeywords: ["LinkedIn system design interview questions", "LinkedIn SDE system design 2026", "People You May Know design", "LinkedIn feed system design"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What system-design questions does LinkedIn ask?", a: "Design 'People You May Know' connection recommendations, 'who viewed your profile' with counts, and a feed blending posts, jobs, and recommendations, all on top of the social graph." },
+      { q: "How do I design 'People You May Know'?", a: "Store the connection graph, compute second-degree candidates offline in batch, rank them by mutual connections and other signals, and serve the precomputed list online for low latency." },
+      { q: "How does LinkedIn handle write-heavy features like profile views?", a: "Ingest view events through a streaming pipeline, aggregate counts asynchronously, and separate the write path from the low-latency read path that renders the recent-viewers list." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and coding phone screen",
+      "Onsite coding rounds on DSA",
+      "System-design round on a graph or feed problem",
+      "Hiring-manager and values round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min): coding phone screen on data structures and algorithms.",
+      "Round 2-3 (45 min each): onsite coding rounds.",
+      "Round 4 (45-60 min): system-design round on graph or feed problems.",
+      "Round 5 (45 min): hiring-manager round on ownership and collaboration.",
+    ],
+  },
+
+  /* ── Apple — behavioral ─────────────────────────────────────── */
+  {
+    slug: "apple-behavioral-interview-questions",
+    searchPhrase: "Apple Behavioral Interview Questions 2026",
+    company: "apple", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Apple's behavioral rounds test craftsmanship, collaboration under secrecy, and the willingness to sweat a detail others would skip. In 2026 expect prompts about obsessing over something small that mattered to the end user, delivering on a decision you disagreed with, and staying effective on a project with limited cross-team information. Interviewers listen for why a detail mattered to the customer rather than perfectionism for its own sake, and for comfort working inside Apple's need-to-know culture. Generic 'I'm a hard worker' answers do not survive the specificity the interviewers push for.",
+    framework: { name: "Detail-that-Mattered STAR", summary: "Use STAR and make the Action a specific, customer-facing detail you chose to get right, closing with why it mattered to the user and what you learned" },
+    metaKeywords: ["Apple behavioral interview questions", "Apple HR interview 2026", "Apple culture interview", "Apple values interview questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does Apple look for in behavioral rounds?", a: "Craftsmanship and attention to detail tied to customer impact, the ability to deliver on decisions you disagreed with, and comfort working effectively inside a need-to-know, secretive culture." },
+      { q: "How should I answer Apple behavioral questions?", a: "Use STAR and centre the Action on a specific detail you chose to get right, then explain why it mattered to the end user. Avoid perfectionism-for-its-own-sake framing." },
+      { q: "Does Apple ask about working with limited information?", a: "Yes. Apple's secrecy culture is real, so expect a prompt on staying effective with limited cross-team visibility. Show how you delivered without full context." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Hiring-manager behavioral round on craft and decisions",
+      "Team-fit rounds with cross-functional partners",
+      "Values and closing round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why Apple.",
+      "Round 2 (45-60 min): hiring-manager behavioral round on craftsmanship and disagreement.",
+      "Round 3 (45 min): team-fit round drilling into ownership and collaboration.",
+    ],
+  },
+
+  /* ── NVIDIA — system design (ML/GPU infra) ──────────────────── */
+  {
+    slug: "nvidia-system-design-interview-questions",
+    searchPhrase: "NVIDIA System Design Interview Questions 2026",
+    company: "nvidia", roleFamily: "swe", focus: "system-design",
+    intro: "NVIDIA's system-design rounds reflect its ML and GPU world: serve a large model for inference across many GPUs, schedule training jobs on a shared GPU cluster, and stream a massive dataset into GPUs without starving them. In 2026 interviewers reward candidates who reason about dynamic batching, GPU memory limits, and the throughput-versus-latency trade-off, and who can name the real bottleneck, often data loading rather than compute. They probe fair GPU allocation, fragmentation, and prefetching. Generic web-CRUD scaling answers miss the point; the constraints here are hardware-shaped.",
+    framework: { name: "Feed-the-GPU", summary: "Design around GPU memory and throughput limits: dynamic batching for inference, fair allocation for training, and a data pipeline that keeps the GPUs from starving" },
+    metaKeywords: ["NVIDIA system design interview questions", "NVIDIA ML infra interview 2026", "NVIDIA GPU system design", "NVIDIA SDE system design"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What system-design questions does NVIDIA ask?", a: "Design a low-latency inference-serving system across many GPUs, a scheduler for a shared GPU training cluster, and a data pipeline that streams a large dataset into GPUs without starving them." },
+      { q: "How is NVIDIA system design different from web-scale interviews?", a: "It is hardware-shaped: GPU memory limits, dynamic batching, and throughput-versus-latency trade-offs matter more than pure request-scaling. The bottleneck is often data loading, not compute." },
+      { q: "How do I keep GPUs from starving in an NVIDIA design?", a: "Prefetch and pipeline data loading, use high-throughput I/O and caching, and overlap data movement with compute so the GPU is never idle waiting for the next batch." },
+    ],
+    recruitmentSteps: [
+      "Recruiter or online assessment screen",
+      "Technical coding round on DSA",
+      "System-design round on ML serving or GPU infrastructure",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on data structures and algorithms.",
+      "Round 2 (60 min): system-design round on inference serving, GPU scheduling, or data pipelines.",
+      "Round 3 (45-60 min): design deep-dive on hardware trade-offs plus behavioral.",
+    ],
+  },
+
+  /* ── Google — system design ─────────────────────────────────── */
+  {
+    slug: "google-system-design-interview-questions",
+    searchPhrase: "Google System Design Interview Questions 2026",
+    company: "google", roleFamily: "swe", focus: "system-design",
+    intro: "Google's system-design rounds prize crisp requirement-gathering, quick capacity estimation, and a clean read and write path. In 2026 common prompts include a URL shortener handling billions of redirects, a typeahead or autocomplete service under a 100ms budget, and a distributed rate limiter shared across services. Interviewers push hard on the distributed-consistency trade-off, sharding and caching, and how your numbers back your choices. They want a candidate who states assumptions, does the back-of-envelope math out loud, and defends a single design against its alternatives rather than hedging across all of them.",
+    framework: { name: "Estimate-Then-Commit", summary: "Gather requirements, do quick capacity math out loud, then commit to one read/write design and defend its sharding, caching, and consistency choices" },
+    metaKeywords: ["Google system design interview questions", "Google SDE system design 2026", "design URL shortener interview", "Google distributed systems interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What system-design questions does Google ask?", a: "Design a URL shortener at billions of redirects, an autocomplete/typeahead service under tight latency, and a distributed rate limiter, among other large-scale services." },
+      { q: "How important is capacity estimation at Google?", a: "Very. Interviewers expect you to state assumptions and do back-of-envelope math out loud (QPS, storage, bandwidth) so your design choices are backed by numbers, not guesses." },
+      { q: "How do I design a distributed rate limiter for Google?", a: "Use sharded counters or token buckets, decide between strict and eventual accuracy, and avoid a single global bottleneck. Discuss the consistency-versus-throughput trade-off explicitly." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and coding phone screen",
+      "Onsite coding rounds on DSA",
+      "System-design round on a large-scale service",
+      "Behavioral (Googleyness) round, then hiring committee",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min): coding phone screen on data structures and algorithms.",
+      "Round 2-3 (45 min each): onsite coding rounds.",
+      "Round 4 (45 min): system-design round with capacity estimation.",
+      "Round 5 (45 min): Googleyness and leadership behavioral round.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

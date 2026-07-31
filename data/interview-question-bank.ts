@@ -2197,4 +2197,99 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "Cisco cares about constrained-hardware trade-offs. Interviewers reward candidates who reason about memory footprint and worst-case latency, not just big-O.",
   },
+
+  /* ── Meta — system design ───────────────────────────────────── */
+  {
+    text: "Design the News Feed ranking and delivery system. How do you generate a personalised feed for hundreds of millions of users with low latency?",
+    company: "meta", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Meta system-design rounds favour their own products. Strong answers separate the ranking/candidate-generation path from delivery and discuss fan-out on write vs read.",
+  },
+  {
+    text: "Design a system to store and serve billions of photos with fast reads. Walk through storage, CDN, and metadata.",
+    company: "meta", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a real-time messaging system (like Messenger) with delivery receipts and presence. How do you handle ordering and offline delivery?",
+    company: "meta", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Meta interviewers probe the fan-out and consistency trade-offs. Address message ordering, delivery guarantees, and how presence scales.",
+  },
+
+  /* ── LinkedIn — system design ───────────────────────────────── */
+  {
+    text: "Design the 'People You May Know' connection-recommendation system. How do you compute second-degree connections at scale?",
+    company: "linkedin", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "LinkedIn system-design rounds centre on the social graph. Strong answers discuss graph storage, offline batch computation, and serving precomputed candidates.",
+  },
+  {
+    text: "Design a system to show 'who viewed your profile' with counts and a recent-viewers list. How do you handle write-heavy view events?",
+    company: "linkedin", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Design LinkedIn's feed with a mix of posts, jobs, and recommendations. How do you rank and dedupe across content types?",
+    company: "linkedin", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "LinkedIn feed questions want a candidate-generation plus ranking pipeline and a discussion of blending heterogeneous content types.",
+  },
+
+  /* ── Apple — behavioral ─────────────────────────────────────── */
+  {
+    text: "Tell me about a time you obsessed over a detail others thought was too small to matter. What was the outcome?",
+    company: "apple", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Apple behavioral rounds prize craftsmanship and attention to detail. Strong answers show why the detail mattered to the end user, not perfectionism for its own sake.",
+  },
+  {
+    text: "Describe a time you disagreed with a decision but had to deliver on it anyway. How did you handle it?",
+    company: "apple", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Tell me about a project you kept confidential or worked on with very limited information. How did you stay effective?",
+    company: "apple", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Apple's secrecy culture is real. Interviewers value candidates comfortable delivering with limited cross-team visibility.",
+  },
+
+  /* ── NVIDIA — system design (ML/GPU infra) ──────────────────── */
+  {
+    text: "Design a system to serve a large deep-learning model for inference at low latency across many GPUs. How do you batch and route requests?",
+    company: "nvidia", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "NVIDIA system-design rounds lean on ML-serving and GPU realities. Strong answers cover dynamic batching, GPU memory limits, and throughput-vs-latency trade-offs.",
+  },
+  {
+    text: "Design a job scheduler for a shared GPU cluster running many training jobs. How do you allocate GPUs fairly and avoid fragmentation?",
+    company: "nvidia", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a pipeline to stream and preprocess a massive training dataset into GPUs without starving them. Where is the bottleneck?",
+    company: "nvidia", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "NVIDIA cares about keeping GPUs fed. Interviewers probe the data-loading bottleneck, prefetching, and I/O throughput.",
+  },
+
+  /* ── Google — system design ─────────────────────────────────── */
+  {
+    text: "Design a URL shortener (like Google's) that handles billions of redirects with low latency. How do you generate and store keys?",
+    company: "google", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Google system-design rounds want crisp requirement-gathering, capacity estimation, and a clean read/write path. Discuss key generation and cache strategy.",
+  },
+  {
+    text: "Design an autocomplete / typeahead suggestion service. How do you rank suggestions and keep latency under 100ms?",
+    company: "google", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a distributed rate limiter used across many services. How do you keep counts consistent without a single bottleneck?",
+    company: "google", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Google interviewers push on the distributed-consistency trade-off. Address token buckets, sharded counters, and eventual-vs-strict accuracy.",
+  },
 ];
