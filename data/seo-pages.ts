@@ -9287,6 +9287,110 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 3 (45-60 min): algorithms and data-structures round for quant-developer roles, or deeper quant for research roles.",
     ],
   },
+
+  /* ── L&T — Graduate Engineer Trainee (core engineering) ────── */
+  {
+    slug: "lt-graduate-engineer-trainee-interview-questions",
+    searchPhrase: "L&T Graduate Engineer Trainee Interview Questions 2026",
+    company: "l-and-t", roleFamily: "campus", focus: "campus-placement",
+    intro: "L&T's Graduate Engineer Trainee (GET) interview is a core-engineering campus round focused on applied fundamentals and genuine readiness for site life, not coding. In 2026 expect a technical round that maps your branch subjects to real EPC, construction, and heavy-engineering scenarios (how a core concept applies on site, your final-year project end to end), plus an HR round that probes willingness for long postings at remote project locations. L&T recruits mechanical, civil, electrical, and instrumentation engineers for large infrastructure projects, so interviewers reward candidates who connect theory to field application and have honestly thought through mobility. Revise your core subjects and project, and prepare a considered answer on site postings.",
+    framework: { name: "Applied-and-Field-Ready", summary: "Map core branch fundamentals to real EPC and site scenarios, know your project cold, and give an honest, thought-through answer on remote postings" },
+    metaKeywords: ["L&T GET interview questions", "L&T graduate engineer trainee interview 2026", "L&T campus interview preparation", "core engineering PSU interview India"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What is asked in the L&T GET interview?", a: "Applied technical questions mapping your branch fundamentals to EPC, construction, or heavy-engineering scenarios, a deep dive into your final-year project, and HR questions on mobility and site postings." },
+      { q: "Does the L&T GET interview include coding?", a: "No. It is a core-engineering interview for mechanical, civil, electrical, and instrumentation branches, focused on applied fundamentals and site readiness rather than programming." },
+      { q: "How do I answer L&T's questions about site postings?", a: "Honestly and with evidence you have thought it through. L&T site work can mean long stints at remote projects, so a considered, genuine willingness beats an eager but hollow yes." },
+    ],
+    recruitmentSteps: [
+      "Campus shortlisting on academics and eligibility",
+      "Technical interview on branch fundamentals and project",
+      "HR interview on motivation and mobility",
+      "Offer and GET onboarding",
+    ],
+    interviewRounds: [
+      "Round 1 (20-30 min): technical interview on core branch subjects and final-year project.",
+      "Round 2 (15-25 min): HR interview on motivation, mobility, and site postings.",
+    ],
+  },
+
+  /* ── BHEL — Engineer Trainee (power equipment) ─────────────── */
+  {
+    slug: "bhel-engineer-trainee-interview-questions",
+    searchPhrase: "BHEL Engineer Trainee Interview Questions 2026",
+    company: "bhel", roleFamily: "campus", focus: "campus-placement",
+    intro: "BHEL's Engineer Trainee interview is a core-engineering PSU round centred on power-equipment fundamentals and genuine long-term motivation. In 2026 expect a technical round that maps thermodynamics, manufacturing, and electrical-machines concepts to real equipment (turbines, boilers, generators), a division-preference discussion (thermal, hydro, nuclear, or renewables and your reasoning), and an HR round on why a PSU manufacturing career over private options. BHEL recruits mechanical, electrical, and allied engineers to build heavy power equipment, so interviewers reward candidates who ground fundamentals in power-plant hardware and show authentic interest in a stable, engineering-heavy public-sector career. Revise core subjects with a power-equipment lens and form a reasoned division preference.",
+    framework: { name: "Equipment-Grounded", summary: "Tie thermodynamics, manufacturing, and machines concepts to real power equipment, form a reasoned division preference, and show authentic PSU-career motivation" },
+    metaKeywords: ["BHEL engineer trainee interview questions", "BHEL ET interview 2026", "BHEL campus interview preparation", "power PSU engineer interview India"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What is asked in the BHEL Engineer Trainee interview?", a: "Core mechanical and electrical fundamentals mapped to power equipment like turbines and boilers, a division-preference discussion, and HR questions on motivation for a PSU manufacturing career." },
+      { q: "Which technical topics matter most for BHEL?", a: "Thermodynamics, heat transfer, manufacturing processes, and electrical machines, applied to power-plant hardware. Grounding concepts in turbines, boilers, and generators signals real understanding." },
+      { q: "How do I answer 'why BHEL over private sector'?", a: "Address the stability, scale, and engineering depth of the work and your genuine interest in a long manufacturing career, without disparaging private options or sounding purely security-driven." },
+    ],
+    recruitmentSteps: [
+      "Shortlisting via exam score or campus eligibility",
+      "Technical interview on core fundamentals and power equipment",
+      "HR interview on motivation and division preference",
+      "Offer and Engineer Trainee onboarding",
+    ],
+    interviewRounds: [
+      "Round 1 (20-30 min): technical interview on branch fundamentals mapped to power equipment.",
+      "Round 2 (15-25 min): HR interview on motivation, division preference, and PSU career.",
+    ],
+  },
+
+  /* ── ONGC — Graduate Trainee (upstream oil & gas) ──────────── */
+  {
+    slug: "ongc-graduate-trainee-interview-questions",
+    searchPhrase: "ONGC Graduate Trainee Interview Questions 2026",
+    company: "ongc", roleFamily: "campus", focus: "campus-placement",
+    intro: "ONGC's Graduate Trainee interview is a core-engineering PSU round focused on upstream oil-and-gas fundamentals and honest readiness for field postings. In 2026 expect a technical round that ties your branch (petroleum, mechanical, chemical, or geoscience) to drilling and production (fluid mechanics, reservoir concepts, equipment), and an HR round that directly probes willingness for offshore, Assam, or remote-site postings in the early years. ONGC's work is field-heavy, so interviewers reward candidates who connect theory to upstream operations and have genuinely thought through the posting reality rather than giving a reflexive yes. Revise your core subjects with a drilling-and-production lens and prepare a candid answer on remote and offshore work.",
+    framework: { name: "Upstream-and-Field-Honest", summary: "Connect branch fundamentals to drilling and production, and give a candid, well-reasoned answer on offshore and remote-site postings" },
+    metaKeywords: ["ONGC graduate trainee interview questions", "ONGC GT interview 2026", "ONGC campus interview preparation", "oil and gas PSU interview India"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What is asked in the ONGC Graduate Trainee interview?", a: "Branch fundamentals tied to upstream operations, such as fluid mechanics and reservoir concepts related to drilling and production, plus HR questions on willingness for offshore and remote postings." },
+      { q: "Which branches does ONGC recruit and test?", a: "Petroleum, mechanical, chemical, electrical, instrumentation, and geoscience disciplines, with technical questions mapped to drilling, production, and upstream equipment." },
+      { q: "How do I answer ONGC's questions on remote postings?", a: "Candidly. ONGC postings can be offshore, in Assam, or at remote sites for the first few years, so a genuine, thought-through willingness carries far more weight than a reflexive yes." },
+    ],
+    recruitmentSteps: [
+      "Shortlisting via exam score and eligibility",
+      "Technical interview on branch fundamentals and upstream operations",
+      "HR interview on motivation and posting flexibility",
+      "Medical and offer, then Graduate Trainee onboarding",
+    ],
+    interviewRounds: [
+      "Round 1 (20-30 min): technical interview on branch fundamentals tied to drilling and production.",
+      "Round 2 (15-25 min): HR interview on motivation and offshore or remote postings.",
+    ],
+  },
+
+  /* ── NTPC — Executive Trainee (power generation) ───────────── */
+  {
+    slug: "ntpc-executive-trainee-interview-questions",
+    searchPhrase: "NTPC Executive Trainee Interview Questions 2026",
+    company: "ntpc", roleFamily: "campus", focus: "campus-placement",
+    intro: "NTPC's Executive Trainee interview is a core-engineering PSU round focused on power-generation fundamentals, comfort with structured training, and awareness of India's energy transition. In 2026 expect a technical round on how a power plant converts fuel to electricity and where efficiency losses occur, mapped to your branch, plus HR questions on comfort with the structured multi-year GET or ET training cycle and rotation across plants, and views on NTPC's shift toward renewables alongside thermal. NTPC recruits mechanical, electrical, electronics, and instrumentation engineers, so interviewers reward a clear grasp of the generation chain, genuine comfort with structured development, and balanced awareness of the thermal-plus-renewables mix. Revise power-plant fundamentals and form a considered view on the energy transition.",
+    framework: { name: "Generation-Chain-Clarity", summary: "Explain the fuel-to-electricity chain and loss points clearly, show comfort with structured training and rotation, and hold a balanced view on thermal plus renewables" },
+    metaKeywords: ["NTPC executive trainee interview questions", "NTPC ET interview 2026", "NTPC campus interview preparation", "power generation PSU interview India"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What is asked in the NTPC Executive Trainee interview?", a: "Power-plant fundamentals such as the fuel-to-electricity conversion chain and efficiency losses mapped to your branch, plus HR questions on structured training, plant rotation, and the energy transition." },
+      { q: "Which branches does NTPC recruit and test?", a: "Mechanical, electrical, electronics, and instrumentation engineers, with technical questions grounded in thermal and renewable power-generation systems." },
+      { q: "How do I discuss NTPC's renewables shift in the interview?", a: "With balance. Show awareness that NTPC is expanding renewables alongside thermal generation, and offer a genuine angle on how you would want to contribute to that evolving mix as a young engineer." },
+    ],
+    recruitmentSteps: [
+      "Shortlisting via exam score and eligibility",
+      "Technical interview on power-generation fundamentals",
+      "HR interview on training comfort, rotation, and motivation",
+      "Medical and offer, then Executive Trainee onboarding",
+    ],
+    interviewRounds: [
+      "Round 1 (20-30 min): technical interview on power-plant fundamentals and your branch.",
+      "Round 2 (15-25 min): HR interview on structured training, plant rotation, and the energy transition.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

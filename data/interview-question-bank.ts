@@ -3029,4 +3029,54 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "Citadel expected-value games test optimal-stopping thresholds; strong answers state the re-roll rule (below 3.5) and compute the fair price.",
   },
+
+  /* ── L&T — core-engineering campus (GET) ───────────────────── */
+  {
+    text: "L&T runs large EPC projects with tight schedules. Explain a core concept from your branch that would matter on a construction or heavy-engineering site, and how you'd apply it.",
+    company: "l-and-t", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "L&T GET interviews test applied fundamentals for site work. Connect a branch concept to real EPC or construction scenarios, not textbook definitions.",
+  },
+  {
+    text: "L&T site postings can mean long stints at remote project locations. Are you genuinely prepared for that, and how have you thought it through?",
+    company: "l-and-t", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "L&T HR rounds probe willingness for site life. Honest, thought-through answers about mobility and field work beat eager but hollow yeses.",
+  },
+
+  /* ── BHEL — core-engineering campus (ET) ───────────────────── */
+  {
+    text: "BHEL manufactures heavy power equipment like turbines and boilers. Pick a thermodynamics or manufacturing concept from your syllabus and explain where it applies in a power plant.",
+    company: "bhel", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "BHEL ET interviews test core mechanical/electrical fundamentals mapped to power equipment. Ground answers in turbines, boilers, or generators.",
+  },
+  {
+    text: "Why a PSU like BHEL over a private-sector job, and are you aware of what a long-term manufacturing career here involves?",
+    company: "bhel", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "BHEL HR rounds test genuine PSU motivation. Address stability, scale of work, and awareness of a manufacturing career without disparaging private options.",
+  },
+
+  /* ── ONGC — core-engineering campus (GT) ───────────────────── */
+  {
+    text: "ONGC works across upstream oil and gas. Explain a fluid-mechanics or reservoir concept from your branch and how it relates to drilling or production.",
+    company: "ongc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "ONGC GT interviews test branch fundamentals tied to upstream operations. Petroleum, mechanical, and chemical concepts should map to drilling or production.",
+  },
+
+  /* ── NTPC — core-engineering campus (GET) ──────────────────── */
+  {
+    text: "NTPC runs large thermal and renewable generation. Explain how a power plant converts fuel to electricity at a high level, and where efficiency losses occur.",
+    company: "ntpc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "NTPC GET interviews test power-plant fundamentals. A clear energy-conversion chain (fuel to steam to turbine to generator) with loss points signals real understanding.",
+  },
+  {
+    text: "India is pushing renewables alongside thermal. Where do you see NTPC's generation mix heading, and how would you want to contribute as a young engineer?",
+    company: "ntpc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "NTPC HR rounds probe awareness of the energy transition. Balanced views on thermal-plus-renewables and a genuine contribution angle land well.",
+  },
 ];
