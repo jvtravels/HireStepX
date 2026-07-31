@@ -2995,4 +2995,38 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "IBPS PO panels probe customer-service temperament. Strong answers show empathy, knowledge of the reversal/complaint process, and composure under pressure.",
   },
+
+  /* ── D. E. Shaw — quant/probability ────────────────────────── */
+  {
+    text: "A fair coin is flipped until two consecutive heads appear. What is the expected number of flips? Derive it.",
+    company: "de-shaw", roleFamily: "quant", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "D. E. Shaw probability rounds test clean expected-value derivations via recurrence relations, narrated clearly under questioning.",
+  },
+  {
+    text: "You have 25 horses and can race 5 at a time with no timer. What is the minimum number of races to find the top 3 fastest?",
+    company: "de-shaw", roleFamily: "quant", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "D. E. Shaw uses classic combinatorial-logic puzzles; the signal is a rigorous, minimal-case argument, not just the known answer of 7.",
+  },
+
+  /* ── Citadel / Citadel Securities — quant ──────────────────── */
+  {
+    text: "Two players alternately pick coins from either end of a row of coins with known values. Both play optimally to maximise their own total. Do you go first, and what's your strategy?",
+    company: "citadel", roleFamily: "quant", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Citadel game-theory rounds test optimal-play reasoning and dynamic programming; explain the recurrence and why first-mover choice matters.",
+  },
+  {
+    text: "A stick is broken at two uniformly random points. What is the probability the three pieces can form a triangle? Derive it.",
+    company: "citadel", roleFamily: "quant", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Citadel probability rounds test geometric-probability reasoning; the clean 1/4 answer must come from a correct region argument.",
+  },
+  {
+    text: "I offer you a game: roll a die, and you may re-roll once if you choose. You get the final face value in rupees. What's the fair price to play, and your re-roll rule?",
+    company: "citadel", roleFamily: "quant", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Citadel expected-value games test optimal-stopping thresholds; strong answers state the re-roll rule (below 3.5) and compute the fair price.",
+  },
 ];

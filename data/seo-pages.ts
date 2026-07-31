@@ -9206,6 +9206,87 @@ export const SEO_PAGES: SeoPage[] = [
       "Stage 3: Interview before a panel on banking awareness, temperament, and motivation.",
     ],
   },
+
+  /* ── Jane Street — quant/trading ───────────────────────────── */
+  {
+    slug: "jane-street-quant-interview-questions",
+    searchPhrase: "Jane Street Quant Interview Questions India 2026",
+    company: "jane-street", roleFamily: "quant", focus: "technical",
+    intro: "Jane Street's quant and trading interviews are probability-and-games heavy, prizing clean reasoning you can narrate out loud over memorised formulas. In 2026 expect combinatorial brain teasers (the classic handshake puzzle), expected-value and optimal-stopping games (stop a die roll and take its value), market-making and betting exercises, and mental-math under mild time pressure. Interviewers care how you think: they will push on your assumptions, ask you to price a bet, and watch whether you update correctly when given new information. No finance background is required; Jane Street screens for probabilistic intuition, comfort with expected value and variance, and the composure to reason aloud while being questioned. Practise thinking in bets and stating your logic clearly.",
+    framework: { name: "Think-in-Bets", summary: "Reason aloud through probability and expected-value games, price bets from first principles, and update cleanly when the interviewer adds information" },
+    metaKeywords: ["Jane Street interview questions", "Jane Street quant interview India 2026", "Jane Street probability interview", "Jane Street trading games interview"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What quant topics does Jane Street ask?", a: "Probability, expected value, optimal stopping, combinatorics, and market-making and betting games. Brain teasers like the handshake puzzle and die-stopping games are common." },
+      { q: "Do I need a finance background for Jane Street?", a: "No. Jane Street teaches trading in-house and screens for probabilistic intuition, expected-value reasoning, and clear thinking under questioning rather than finance knowledge." },
+      { q: "How should I prepare for Jane Street interviews?", a: "Practise probability and expected-value problems, betting and market-making games, and mental math, and rehearse narrating your reasoning aloud while updating on new information." },
+    ],
+    recruitmentSteps: [
+      "Apply or get sourced; online assessment or recruiter screen",
+      "Probability and mental-math phone or virtual round",
+      "Interviews on expected value, games, and market-making",
+      "Final rounds with traders or researchers, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30-45 min): probability and mental-math screen with brain teasers.",
+      "Round 2 (45-60 min): expected-value and market-making games with the interviewer probing your reasoning.",
+      "Round 3 (45-60 min): deeper trading games and behavioural fit with traders or researchers.",
+    ],
+  },
+
+  /* ── D. E. Shaw — quant/probability ────────────────────────── */
+  {
+    slug: "de-shaw-quant-interview-questions",
+    searchPhrase: "D. E. Shaw Quant Interview Questions India 2026",
+    company: "de-shaw", roleFamily: "quant", focus: "technical",
+    intro: "D. E. Shaw's India quant and technical interviews blend rigorous probability, combinatorial logic, and clean derivations, reflecting a research-driven firm. In 2026 expect expected-value problems solved via recurrence relations (expected flips to see two consecutive heads), classic combinatorial puzzles (the 25-horses racing problem), and probability and estimation questions where the reasoning matters more than the memorised answer. For technical roles, algorithms and data-structures depth is also tested. Interviewers reward a minimal, rigorous argument and honest handling of what you are unsure about. Practise deriving expected values from first principles, structuring combinatorial arguments cleanly, and narrating your logic so a sceptical interviewer can follow every step.",
+    framework: { name: "Derive-from-First-Principles", summary: "Solve probability with clean recurrences, build minimal rigorous combinatorial arguments, and show every step so the reasoning, not the memorised answer, carries the round" },
+    metaKeywords: ["D. E. Shaw interview questions", "DE Shaw quant interview India 2026", "DE Shaw probability interview", "DE Shaw technical interview questions"],
+    sitemapPriority: 0.74,
+    faqExtra: [
+      { q: "What quant topics does D. E. Shaw ask?", a: "Expected value via recurrence relations, combinatorial-logic puzzles like the 25-horses problem, probability and estimation, and, for technical roles, algorithms and data structures." },
+      { q: "Is the answer or the method more important at D. E. Shaw?", a: "The method. Many puzzles have known answers, so interviewers push on your derivation and reasoning. A rigorous, minimal argument scores far better than reciting a result." },
+      { q: "Do D. E. Shaw interviews include coding?", a: "For technical and software roles, yes. Expect data-structures and algorithms rounds alongside the probability and quantitative-reasoning questions." },
+    ],
+    recruitmentSteps: [
+      "Apply or get sourced; online assessment or recruiter screen",
+      "Probability and quantitative-reasoning round",
+      "Technical and algorithms rounds (for technical roles)",
+      "Final rounds with the team, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): probability and combinatorial-reasoning round.",
+      "Round 2 (45-60 min): expected-value derivations and estimation questions.",
+      "Round 3 (45-60 min): algorithms and data-structures round for technical roles, or deeper quant for research roles.",
+    ],
+  },
+
+  /* ── Citadel / Citadel Securities — quant ──────────────────── */
+  {
+    slug: "citadel-quant-interview-questions",
+    searchPhrase: "Citadel Quant Interview Questions India 2026",
+    company: "citadel", roleFamily: "quant", focus: "technical",
+    intro: "Citadel and Citadel Securities interviews probe game theory, probability, and optimal decision-making at a high bar, reflecting a top-tier hedge fund and market maker. In 2026 expect game-theory problems with optimal play (the coins-from-either-end game solved with dynamic programming), geometric and combinatorial probability (the broken-stick triangle problem), and expected-value games with optimal-stopping rules (a die game with a re-roll). Interviewers reward candidates who set up the recurrence or region argument cleanly, state their strategy explicitly, and compute a fair price with confidence. For quant-developer roles, strong coding and algorithms are tested alongside. Practise optimal-play reasoning, geometric probability, and stating decision rules precisely under questioning.",
+    framework: { name: "Optimal-Play-and-Price", summary: "Set up recurrences or region arguments cleanly, state your optimal strategy explicitly, and price games with confidence under a demanding interviewer" },
+    metaKeywords: ["Citadel interview questions", "Citadel quant interview India 2026", "Citadel Securities probability interview", "Citadel game theory interview"],
+    sitemapPriority: 0.74,
+    faqExtra: [
+      { q: "What quant topics does Citadel ask?", a: "Game theory with optimal play (dynamic-programming games), geometric and combinatorial probability (the broken-stick problem), and expected-value games with optimal-stopping rules." },
+      { q: "Does Citadel test coding?", a: "For quant-developer and software roles, yes. Expect algorithms and data-structures rounds alongside the probability and game-theory questions, at a high difficulty bar." },
+      { q: "How should I prepare for Citadel quant interviews?", a: "Practise optimal-play game problems, geometric probability, and expected-value games with re-roll or stopping rules, and rehearse stating your strategy and fair price precisely under pressure." },
+    ],
+    recruitmentSteps: [
+      "Apply or get sourced; online assessment or recruiter screen",
+      "Probability and game-theory round",
+      "Technical and algorithms rounds (for quant-developer roles)",
+      "Final rounds with the desk, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): probability and expected-value round with games.",
+      "Round 2 (45-60 min): game-theory and optimal-play problems.",
+      "Round 3 (45-60 min): algorithms and data-structures round for quant-developer roles, or deeper quant for research roles.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
