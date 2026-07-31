@@ -2084,4 +2084,117 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
     styleNote: "Classic sliding-window at Microsoft difficulty. Interviewers look for the two-pointer window, correct shrink condition, and an honest O(n) analysis with the character-count map.",
   },
+
+  /* ── Amazon — technical (DSA) ───────────────────────────────── */
+  {
+    text: "Given a list of orders with timestamps, find the K most frequently ordered items in a time range. Optimise it, then state your complexity.",
+    company: "amazon", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Amazon coding rounds pair DSA with a Leadership Principle undertone (Dive Deep, Customer Obsession). Expect a heap or bucket approach and a follow-up on ties and streaming updates.",
+  },
+  {
+    text: "Given a grid of warehouse cells with obstacles, find the shortest path a robot can take from pickup to drop. Which traversal, and why?",
+    company: "amazon", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Design an in-memory structure that returns the current most-recently-used product for a session in O(1). Walk me through the data structures.",
+    company: "amazon", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "LRU-style problem framed in-domain. Amazon wants the hash-map-plus-doubly-linked-list insight stated clearly, with correct handling of eviction and updates.",
+  },
+
+  /* ── Zomato — behavioral ────────────────────────────────────── */
+  {
+    text: "Tell me about a time you shipped something under a hard deadline where you had to trade off scope. How did you decide what to cut?",
+    company: "zomato", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Zomato's fast, demand-supply-driven culture rewards a defensible prioritisation rule under pressure, not recklessness. Interviewers want the specific trade-off and a measurable outcome.",
+  },
+  {
+    text: "Describe a decision you made that had a measurable customer impact, good or bad. What did you learn?",
+    company: "zomato", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Give me an example of navigating a trade-off between moving fast and getting it right. Which did you pick, and would you again?",
+    company: "zomato", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+
+  /* ── Salesforce — system design ─────────────────────────────── */
+  {
+    text: "Design a multi-tenant SaaS data model where thousands of customers share infrastructure but never see each other's data. How do you enforce isolation?",
+    company: "salesforce", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Salesforce is the canonical multi-tenant CRM; system-design rounds probe tenant isolation, per-tenant limits, and metadata-driven customisation. Expect follow-ups on the 'noisy neighbour' problem.",
+  },
+  {
+    text: "Design a workflow/automation engine that lets customers define triggers and actions on records without writing code. How do you execute rules reliably at scale?",
+    company: "salesforce", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design an audit trail that records every change to a customer record and supports fast point-in-time queries. What are your storage and indexing trade-offs?",
+    company: "salesforce", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Enterprise-grade auditability is a Salesforce staple. Strong answers separate the write-optimised append log from the read-optimised query path.",
+  },
+
+  /* ── Adobe — technical (DSA) ────────────────────────────────── */
+  {
+    text: "Given a large image represented as a 2D matrix, implement a flood-fill (paint bucket). Then discuss how you'd bound memory on a huge canvas.",
+    company: "adobe", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Adobe coding rounds often use graphics- and document-flavoured DSA. Flood-fill tests BFS/DFS, and the memory follow-up separates strong candidates.",
+  },
+  {
+    text: "Implement an LRU cache for rendered document thumbnails. Walk through the data structures and the eviction path.",
+    company: "adobe", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Given a stream of edit operations, implement undo/redo efficiently. What data structures back each operation?",
+    company: "adobe", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Undo/redo framed in-domain (Adobe's editors). Interviewers want two stacks or a command pattern, with clear handling of the redo-invalidation-on-new-edit case.",
+  },
+
+  /* ── Oracle — technical (DSA + SQL) ─────────────────────────── */
+  {
+    text: "Given two large sorted datasets that don't fit in memory, describe how you'd compute their intersection efficiently.",
+    company: "oracle", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Oracle's database heritage shows up in external-memory and merge-style problems. Expect the two-pointer merge insight plus a discussion of I/O cost.",
+  },
+  {
+    text: "Write a query to find the second-highest salary per department, then explain how you'd make it efficient on a large table.",
+    company: "oracle", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "SQL fluency is heavily tested at Oracle. Interviewers want window functions or a correlated subquery and an awareness of indexing.",
+  },
+  {
+    text: "Detect a cycle in a linked list and return the node where the cycle begins. Walk me through why your pointer math works.",
+    company: "oracle", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+
+  /* ── Cisco — system design (networking scale) ──────────────── */
+  {
+    text: "Design a service that collects telemetry from millions of network devices and lets operators query health in near real time. What's your ingestion path?",
+    company: "cisco", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Cisco system-design rounds lean on networking and device-scale telemetry. Strong answers address high-cardinality ingestion, time-series storage, and back-pressure.",
+  },
+  {
+    text: "Design a configuration-management system that pushes and rolls back settings across a fleet of devices safely. How do you avoid bricking the fleet on a bad config?",
+    company: "cisco", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a rate limiter or ACL evaluator that runs on a device's hot path with tight latency and memory budgets. What data structures fit constrained hardware?",
+    company: "cisco", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Cisco cares about constrained-hardware trade-offs. Interviewers reward candidates who reason about memory footprint and worst-case latency, not just big-O.",
+  },
 ];

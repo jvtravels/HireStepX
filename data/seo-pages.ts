@@ -7810,6 +7810,168 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 3 (45 min): hiring-manager round on ownership, collaboration, and impact.",
     ],
   },
+
+  /* ── Amazon — technical (DSA) ───────────────────────────────── */
+  {
+    slug: "amazon-technical-interview-questions",
+    searchPhrase: "Amazon Technical Interview Questions India 2026",
+    company: "amazon", roleFamily: "swe", focus: "technical",
+    intro: "Amazon's SDE coding rounds in India pair medium-to-hard data-structures and algorithms with a Leadership Principle undertone, usually Dive Deep and Customer Obsession. In 2026 expect problems framed around orders, warehouses, and sessions: top-K frequent items over a time range, shortest path for a warehouse robot, an O(1) most-recently-used structure. Interviewers grade correctness, clean code, and how you reason toward the optimal, and most loops interleave a behavioral prompt tied to a Leadership Principle. Bring the algorithmic answer and the ownership story.",
+    framework: { name: "Optimal-and-Owned", summary: "State the brute force and complexity, optimise while narrating the insight, code cleanly, then be ready to attach a Leadership Principle story to the work" },
+    metaKeywords: ["Amazon technical interview questions", "Amazon SDE coding interview India 2026", "Amazon DSA interview", "Amazon SDE technical questions"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What coding topics does Amazon test in India?", a: "Arrays and strings, hash maps, heaps for top-K, graphs and BFS/DFS, trees, and dynamic programming, at medium-to-hard difficulty, usually framed around orders, warehouses, or sessions." },
+      { q: "Do Amazon coding rounds include Leadership Principles?", a: "Yes. Most loops interleave behavioral prompts tied to Leadership Principles like Dive Deep and Customer Obsession, even inside technical rounds. Prepare STAR stories alongside the DSA." },
+      { q: "How hard are Amazon SDE coding rounds?", a: "Medium to hard. The bar is an optimal solution with clean, bug-free code and a clear complexity analysis, plus the ability to discuss edge cases." },
+    ],
+    recruitmentSteps: [
+      "Online assessment with coding and work-simulation sections",
+      "Technical phone or virtual coding round",
+      "Onsite loop of coding, design, and Leadership Principle rounds",
+      "Bar-raiser round and debrief, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (90 min): online assessment with two coding problems and a work-style survey.",
+      "Round 2-4 (60 min each): coding rounds on DSA interleaved with Leadership Principle questions.",
+      "Round 5 (60 min): bar-raiser round on depth, ownership, and a hard behavioral dive.",
+    ],
+  },
+
+  /* ── Zomato — behavioral ────────────────────────────────────── */
+  {
+    slug: "zomato-behavioral-interview-questions",
+    searchPhrase: "Zomato Behavioral Interview Questions 2026",
+    company: "zomato", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Zomato's behavioral rounds mirror its engineering reality: fast, demand-supply-driven, and dinner-peak-pressured. In 2026 expect prompts about shipping under a hard deadline with scope you had to cut, a decision with a measurable customer impact, and navigating the trade-off between moving fast and getting it right. Interviewers listen for a defensible prioritisation rule rather than recklessness, and for a quantified outcome with an honest learning. Vague 'we collaborated and it worked out' answers do not survive the follow-up questions.",
+    framework: { name: "Trade-off STAR", summary: "Use STAR, but make the Action the specific trade-off you owned under time or resource pressure, and close with a quantified result and one learning" },
+    metaKeywords: ["Zomato behavioral interview questions", "Zomato HR interview 2026", "Zomato culture interview", "Zomato manager round questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does Zomato look for in behavioral rounds?", a: "A defensible prioritisation rule under time pressure, ownership of a measurable customer impact, and honest reasoning about speed-versus-correctness trade-offs, not recklessness or vague teamwork stories." },
+      { q: "How should I structure Zomato behavioral answers?", a: "Use STAR and spend most of your time on the Action: the specific trade-off you made and why. Quantify the Result and add one honest learning." },
+      { q: "Does Zomato ask about moving fast?", a: "Yes. Expect at least one prompt on shipping under a hard deadline or choosing speed over polish. Show a defensible rule for what you cut and why." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Hiring-manager behavioral round on decisions and trade-offs",
+      "Peer or skip-level round drilling into one story",
+      "Values and closing round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why Zomato.",
+      "Round 2 (45-60 min): hiring-manager behavioral round on deadlines, trade-offs, and customer impact.",
+      "Round 3 (45 min): peer or skip-level round drilling into the specifics of one story.",
+    ],
+  },
+
+  /* ── Salesforce — system design (multi-tenant SaaS) ─────────── */
+  {
+    slug: "salesforce-system-design-interview-questions",
+    searchPhrase: "Salesforce System Design Interview Questions 2026",
+    company: "salesforce", roleFamily: "swe", focus: "system-design",
+    intro: "Salesforce is the canonical multi-tenant CRM, so its system-design rounds centre on tenant isolation, metadata-driven customisation, and enterprise-grade auditability. In 2026 expect prompts like designing a data model where thousands of customers share infrastructure but never see each other's data, a no-code workflow engine that executes customer-defined rules reliably at scale, and an audit trail supporting fast point-in-time queries. Interviewers probe the 'noisy neighbour' problem, per-tenant limits, and how you separate write-optimised logs from read-optimised query paths.",
+    framework: { name: "Multi-Tenant-First", summary: "Start from the isolation and per-tenant-limit requirements, then design shared infrastructure that enforces them, and separate the write path from the read path" },
+    metaKeywords: ["Salesforce system design interview questions", "Salesforce multi-tenant interview 2026", "Salesforce SDE system design", "Salesforce backend interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What system-design topics does Salesforce ask?", a: "Multi-tenant data models with strict isolation, no-code workflow and automation engines, and audit trails with fast point-in-time queries, all at enterprise scale." },
+      { q: "What is the 'noisy neighbour' problem in Salesforce interviews?", a: "In a shared multi-tenant system, one heavy tenant can degrade others. Interviewers want per-tenant quotas, throttling, and resource isolation so no single customer starves the rest." },
+      { q: "How should I approach a Salesforce system-design round?", a: "Lead with the isolation and per-tenant-limit requirements, design shared infrastructure that enforces them, and separate the write-optimised log from the read-optimised query path for audit and reporting." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen or online assessment",
+      "Technical coding round on DSA",
+      "System-design round on a multi-tenant enterprise service",
+      "Hiring-manager and values round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on data structures and algorithms.",
+      "Round 2 (60 min): multi-tenant system-design round with isolation and scale constraints.",
+      "Round 3 (45-60 min): design deep-dive plus behavioral on ownership and collaboration.",
+    ],
+  },
+
+  /* ── Adobe — technical (graphics/document DSA) ──────────────── */
+  {
+    slug: "adobe-technical-interview-questions",
+    searchPhrase: "Adobe Technical Interview Questions India 2026",
+    company: "adobe", roleFamily: "swe", focus: "technical",
+    intro: "Adobe's coding rounds in India often use graphics- and document-flavoured data-structures and algorithms: flood-fill on an image matrix, an LRU cache for rendered thumbnails, efficient undo/redo over a stream of edit operations. In 2026 expect medium-to-hard problems where the interviewer wants correct code, sensible data-structure choices, and a follow-up on memory when the canvas or document is huge. The in-domain framing is deliberate; Adobe values engineers who connect the algorithm to how a real editor would use it.",
+    framework: { name: "In-Domain DSA", summary: "Solve the algorithm cleanly with a stated complexity, then answer the memory or scale follow-up in terms of a real editor or document workload" },
+    metaKeywords: ["Adobe technical interview questions", "Adobe coding interview India 2026", "Adobe DSA interview", "Adobe SDE technical questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What coding topics does Adobe test?", a: "BFS/DFS (flood-fill), caching and LRU, stacks for undo/redo, arrays and matrices, and trees, at medium-to-hard difficulty, usually framed around graphics or document editing." },
+      { q: "How hard are Adobe coding rounds?", a: "Medium to hard. Correctness, a sensible data-structure choice, and an honest complexity and memory discussion matter most." },
+      { q: "Does Adobe ask domain-specific coding questions?", a: "Often. Problems are framed around images, documents, and editors. Be ready for a follow-up on how your solution scales to a large canvas or long edit history." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment or campus test",
+      "Technical coding round one on DSA",
+      "Technical coding round two plus low-level design",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online assessment with DSA problems.",
+      "Round 2 (60 min): live coding on flood-fill, caching, or stack-based problems.",
+      "Round 3 (60 min): harder coding plus low-level design with memory and scale discussion.",
+    ],
+  },
+
+  /* ── Oracle — technical (DSA + SQL) ─────────────────────────── */
+  {
+    slug: "oracle-technical-interview-questions",
+    searchPhrase: "Oracle Technical Interview Questions India 2026",
+    company: "oracle", roleFamily: "swe", focus: "technical",
+    intro: "Oracle's database heritage shows up in its coding rounds: external-memory and merge-style problems, strong SQL fluency, and clean pointer manipulation. In 2026 expect prompts like computing the intersection of two large sorted datasets that don't fit in memory, writing an efficient second-highest-salary-per-department query, and detecting where a linked-list cycle begins. Interviewers want the algorithmic insight, an awareness of I/O and indexing cost, and correct SQL using window functions or subqueries. Practical efficiency matters as much as textbook big-O here.",
+    framework: { name: "Algorithm-Plus-IO", summary: "Give the optimal algorithm and complexity, then discuss the I/O, memory, or indexing cost the way a database engineer would" },
+    metaKeywords: ["Oracle technical interview questions", "Oracle coding interview India 2026", "Oracle SQL interview", "Oracle SDE technical questions"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What coding topics does Oracle test?", a: "Arrays and merges, external-memory problems, linked lists and pointer math, and strong SQL (window functions, joins, subqueries), often with an eye on I/O and indexing cost." },
+      { q: "Is SQL tested in Oracle coding rounds?", a: "Yes, heavily. Expect to write queries like second-highest salary per department and to reason about how to make them efficient on large tables with the right indexes." },
+      { q: "How hard are Oracle coding rounds?", a: "Standard to intense. The bar is a correct optimal solution plus practical reasoning about memory, I/O, and indexing, reflecting Oracle's database roots." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment or campus test",
+      "Technical coding round one on DSA and SQL",
+      "Technical coding round two on harder problems and design",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online assessment with DSA and SQL problems.",
+      "Round 2 (60 min): live coding on arrays, linked lists, and SQL queries.",
+      "Round 3 (60 min): harder coding and design round with efficiency discussion.",
+    ],
+  },
+
+  /* ── Cisco — system design (networking scale) ──────────────── */
+  {
+    slug: "cisco-system-design-interview-questions",
+    searchPhrase: "Cisco System Design Interview Questions 2026",
+    company: "cisco", roleFamily: "swe", focus: "system-design",
+    intro: "Cisco's system-design rounds lean on networking and device-scale realities: telemetry from millions of network devices, safe configuration rollout and rollback across a fleet, and hot-path evaluators that must fit constrained hardware. In 2026 expect prompts on high-cardinality ingestion and time-series storage, how you avoid bricking a fleet on a bad config, and which data structures fit tight memory and latency budgets on a device. Interviewers reward candidates who reason about worst-case latency and memory footprint, not just average-case big-O.",
+    framework: { name: "Scale-and-Constraint", summary: "Separate the control plane from the data plane, design ingestion and rollout for device scale, and defend the worst-case latency and memory on constrained hardware" },
+    metaKeywords: ["Cisco system design interview questions", "Cisco networking interview 2026", "Cisco SDE system design", "Cisco backend interview"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What system-design topics does Cisco ask?", a: "Device telemetry ingestion and near-real-time health queries, safe fleet-wide configuration rollout and rollback, and hot-path evaluators (rate limiters, ACLs) that fit constrained hardware." },
+      { q: "How is Cisco system design different from web-scale interviews?", a: "It emphasises networking and constrained-hardware trade-offs: high-cardinality telemetry, worst-case latency, and memory footprint on devices, rather than pure web CRUD scaling." },
+      { q: "How do I avoid bricking a fleet in a Cisco config-rollout design?", a: "Design staged rollout with health checks, automatic rollback on failure, and a safe-mode fallback, so a bad config never takes down every device at once." },
+    ],
+    recruitmentSteps: [
+      "Resume screen or online assessment",
+      "Technical coding round on DSA",
+      "System-design round on a device-scale or networking service",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on data structures and algorithms.",
+      "Round 2 (60 min): system-design round on telemetry, config management, or hot-path evaluation.",
+      "Round 3 (45-60 min): design deep-dive on constrained-hardware trade-offs plus behavioral.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
