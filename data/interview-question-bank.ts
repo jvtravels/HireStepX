@@ -2292,4 +2292,99 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
     styleNote: "Google interviewers push on the distributed-consistency trade-off. Address token buckets, sharded counters, and eventual-vs-strict accuracy.",
   },
+
+  /* ── Uber — system design ───────────────────────────────────── */
+  {
+    text: "Design the rider-driver matching system. How do you find nearby drivers and assign rides at city scale with low latency?",
+    company: "uber", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Uber system-design rounds centre on geospatial matching. Strong answers use geohashing or quadtrees for proximity search and discuss the assignment/dispatch trade-offs.",
+  },
+  {
+    text: "Design surge pricing: how do you compute and update price multipliers per area in near real time based on supply and demand?",
+    company: "uber", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design the system that tracks live driver locations and streams ETAs to riders. How do you handle the high write volume of location pings?",
+    company: "uber", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Uber probes write-heavy geospatial ingestion. Address location-update throughput, spatial indexing, and separating the write path from ETA reads.",
+  },
+
+  /* ── JPMorgan Chase — technical ─────────────────────────────── */
+  {
+    text: "Reverse a linked list, then explain how you'd do it iteratively vs recursively and the trade-offs.",
+    company: "jpmc", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "JPMorgan coding rounds favour clean fundamentals and OOP. Expect core DSA plus questions on Java/Spring, exception handling, and clean design.",
+  },
+  {
+    text: "Given a stream of stock trades, compute a running maximum profit from one buy and one sell. State your time and space complexity.",
+    company: "jpmc", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Design a class hierarchy for different order types in a trading system. How would you keep it extensible and testable?",
+    company: "jpmc", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "JPMorgan values OOP design and finance-domain framing. Interviewers reward SOLID principles, testability, and awareness of correctness in money-handling code.",
+  },
+
+  /* ── Stripe — system design ─────────────────────────────────── */
+  {
+    text: "Design a payments API that must never double-charge a customer. How do you make charge creation idempotent?",
+    company: "stripe", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Stripe system-design rounds are correctness-obsessed. Idempotency keys, exactly-once semantics, and reconciliation are the load-bearing concepts.",
+  },
+  {
+    text: "Design a webhook delivery system that reliably notifies merchants of events, with retries and ordering. How do you guarantee at-least-once delivery?",
+    company: "stripe", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a ledger that records every money movement and must always balance. How do you handle concurrency and auditability?",
+    company: "stripe", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Stripe interviewers probe financial correctness. Strong answers use an append-only double-entry ledger, careful concurrency control, and a clear audit trail.",
+  },
+
+  /* ── Flipkart — behavioral ──────────────────────────────────── */
+  {
+    text: "Tell me about a time you owned a problem end to end that wasn't strictly your responsibility. What made you step in?",
+    company: "flipkart", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart behavioral rounds prize ownership and bias for action. Strong answers show initiative with a measurable customer or business outcome.",
+  },
+  {
+    text: "Describe a high-pressure launch (like a Big Billion Days-scale event) where things went wrong. How did you respond?",
+    company: "flipkart", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Tell me about a decision you made with incomplete data under a tight deadline. How did you decide, and what happened?",
+    company: "flipkart", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart values decisiveness under ambiguity. Interviewers want a defensible decision rule and an honest reflection on the outcome.",
+  },
+
+  /* ── Razorpay — system design ───────────────────────────────── */
+  {
+    text: "Design a payment gateway that routes transactions across multiple banks and handles failures. How do you maximise success rate?",
+    company: "razorpay", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Razorpay system-design rounds are payments-native. Strong answers cover smart routing across acquirers, retries, idempotency, and reconciliation.",
+  },
+  {
+    text: "Design the settlement system that reconciles payments and pays out to merchants on schedule. How do you guarantee no money is lost or double-paid?",
+    company: "razorpay", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a system to handle UPI payment callbacks and status updates that can arrive late, out of order, or twice. How do you keep state consistent?",
+    company: "razorpay", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Razorpay probes UPI-specific realities: asynchronous callbacks, duplicate and delayed notifications, and idempotent state transitions.",
+  },
 ];

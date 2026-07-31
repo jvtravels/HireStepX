@@ -8110,6 +8110,143 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 5 (45 min): Googleyness and leadership behavioral round.",
     ],
   },
+
+  /* ── Uber — system design ───────────────────────────────────── */
+  {
+    slug: "uber-system-design-interview-questions",
+    searchPhrase: "Uber System Design Interview Questions 2026",
+    company: "uber", roleFamily: "swe", focus: "system-design",
+    intro: "Uber's system-design rounds are built on its own hard problems: match riders to nearby drivers at city scale, compute surge pricing in near real time, and stream live driver locations and ETAs under heavy write load. In 2026 strong candidates reach for geospatial indexing (geohashing or quadtrees) for proximity search, separate the write-heavy location-ping path from ETA reads, and reason about the dispatch and assignment trade-offs. Interviewers push on latency budgets, hotspot cities, and consistency of the matching state. A generic 'store locations in a database and query' answer gets dismantled fast.",
+    framework: { name: "Geo-Index-and-Dispatch", summary: "Use a geospatial index for proximity search, separate high-write location ingestion from ETA reads, and defend the matching and dispatch trade-offs under latency budgets" },
+    metaKeywords: ["Uber system design interview questions", "Uber SDE system design 2026", "design ride matching interview", "surge pricing system design"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What system-design questions does Uber ask?", a: "Design rider-driver matching, surge pricing computed in near real time, and live location tracking with ETAs, all at city scale with heavy write volume." },
+      { q: "How do I design Uber's ride matching?", a: "Index driver locations with geohashing or a quadtree for fast proximity search, then run a dispatch step that assigns the best driver while accounting for latency, fairness, and in-flight matches." },
+      { q: "How does Uber handle the high write volume of location pings?", a: "Ingest location updates through a streaming pipeline into a spatial index optimised for writes, and serve ETA reads from a separate read-optimised path so the write load never blocks queries." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and coding phone screen",
+      "Onsite coding rounds on DSA",
+      "System-design round on a geospatial or real-time service",
+      "Behavioral and hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min): coding phone screen on data structures and algorithms.",
+      "Round 2-3 (45 min each): onsite coding rounds.",
+      "Round 4 (45-60 min): system-design round on matching, pricing, or tracking.",
+      "Round 5 (45 min): behavioral round on ownership and impact.",
+    ],
+  },
+
+  /* ── JPMorgan Chase — technical ─────────────────────────────── */
+  {
+    slug: "jpmorgan-technical-interview-questions",
+    searchPhrase: "JPMorgan Technical Interview Questions India 2026",
+    company: "jpmc", roleFamily: "swe", focus: "technical",
+    intro: "JPMorgan's software-engineer rounds in India blend core data structures and algorithms with object-oriented design and a finance-domain framing. In 2026 expect clean-fundamentals problems (reverse a linked list, running max-profit over a trade stream) alongside design questions like modelling order types in a trading system for extensibility and testability. Interviewers reward SOLID design, correctness in money-handling logic, and fluency in Java or Spring. The bar is not exotic algorithms; it is disciplined, testable code and clear reasoning about edge cases in a financial context.",
+    framework: { name: "Fundamentals-Plus-OOP", summary: "Solve core DSA cleanly, then show SOLID, testable object-oriented design and careful correctness reasoning for the finance-domain framing" },
+    metaKeywords: ["JPMorgan technical interview questions", "JPMorgan coding interview India 2026", "JPMC SDE interview", "JPMorgan software engineer interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does JPMorgan test in technical rounds?", a: "Core data structures and algorithms (linked lists, arrays, streams), object-oriented design with SOLID principles, and Java/Spring fundamentals, often framed around trading or money-handling scenarios." },
+      { q: "How hard are JPMorgan coding rounds?", a: "Standard difficulty. The emphasis is disciplined, testable code and correct edge-case handling rather than exotic algorithms." },
+      { q: "Does JPMorgan ask design questions?", a: "Yes. Expect object-oriented design prompts like modelling order types in a trading system, judged on extensibility, testability, and correctness in a financial context." },
+    ],
+    recruitmentSteps: [
+      "Online coding assessment (HackerRank or similar)",
+      "Technical coding and OOP round",
+      "System/OOP design round with finance framing",
+      "Hiring-manager and fit round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online coding assessment.",
+      "Round 2 (60 min): coding and object-oriented design round.",
+      "Round 3 (45-60 min): design plus behavioral with a finance-domain framing.",
+    ],
+  },
+
+  /* ── Stripe — system design ─────────────────────────────────── */
+  {
+    slug: "stripe-system-design-interview-questions",
+    searchPhrase: "Stripe System Design Interview Questions 2026",
+    company: "stripe", roleFamily: "swe", focus: "system-design",
+    intro: "Stripe's system-design rounds are correctness-obsessed because the domain is money. In 2026 expect prompts on making charge creation idempotent so a customer is never double-charged, building a webhook system that delivers events reliably with retries and ordering, and designing an append-only ledger that must always balance. Interviewers probe idempotency keys, exactly-once versus at-least-once semantics, reconciliation, and how you handle concurrency without losing or duplicating money. Hand-wavy availability answers do not survive; the interview rewards precise reasoning about failure modes and financial invariants.",
+    framework: { name: "Idempotent-and-Reconciled", summary: "Design for financial correctness first: idempotency keys, exactly-once or at-least-once semantics stated explicitly, an append-only ledger, and reconciliation for every failure mode" },
+    metaKeywords: ["Stripe system design interview questions", "Stripe SDE system design 2026", "payments idempotency interview", "design payment system interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What system-design questions does Stripe ask?", a: "Design an idempotent charge API, a reliable webhook delivery system with retries and ordering, and an append-only ledger that always balances, all framed around financial correctness." },
+      { q: "How do I make a payments API idempotent in a Stripe interview?", a: "Require an idempotency key per request, store the first result keyed by it, and return that stored result on retries so a repeated call never creates a second charge." },
+      { q: "Why is Stripe system design different?", a: "The bar is financial correctness, not just availability. Interviewers probe exactly-once semantics, double-entry ledgers, reconciliation, and concurrency so that no money is lost or duplicated." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and coding round",
+      "Integration/API coding round",
+      "System-design round on a payments primitive",
+      "Behavioral and values round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on practical, correctness-focused problems.",
+      "Round 2 (60 min): integration or API-design coding round.",
+      "Round 3 (60 min): system-design round on charges, webhooks, or ledgers.",
+      "Round 4 (45 min): behavioral round on ownership and rigour.",
+    ],
+  },
+
+  /* ── Flipkart — behavioral ──────────────────────────────────── */
+  {
+    slug: "flipkart-behavioral-interview-questions",
+    searchPhrase: "Flipkart Behavioral Interview Questions 2026",
+    company: "flipkart", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Flipkart's behavioral rounds test ownership, bias for action, and decisiveness under the kind of pressure a Big Billion Days-scale launch creates. In 2026 expect prompts about owning a problem end to end that wasn't strictly yours, responding when a high-stakes launch went wrong, and deciding with incomplete data under a tight deadline. Interviewers listen for initiative tied to a measurable customer or business outcome and for a defensible decision rule under ambiguity, not heroics or blame-shifting. Vague 'we worked as a team' answers get pushed until a specific, owned action emerges.",
+    framework: { name: "Ownership STAR", summary: "Use STAR and make the Action a specific thing you owned or decided under ambiguity, closing with a measurable outcome and an honest reflection" },
+    metaKeywords: ["Flipkart behavioral interview questions", "Flipkart HR interview 2026", "Flipkart leadership interview", "Flipkart culture interview questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does Flipkart look for in behavioral rounds?", a: "Ownership and bias for action, decisiveness with incomplete data, and grace under high-pressure launches, all tied to a measurable customer or business outcome." },
+      { q: "How should I structure Flipkart behavioral answers?", a: "Use STAR and spend most of the answer on the Action: the specific thing you owned or decided. Quantify the Result and add an honest reflection." },
+      { q: "Does Flipkart ask about high-pressure situations?", a: "Yes. Expect a prompt about a high-stakes launch (Big Billion Days-scale) going wrong. Show how you responded, what you owned, and what changed afterward." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Hiring-manager behavioral round on ownership and decisions",
+      "Cross-functional or bar-raiser behavioral round",
+      "Values and closing round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why Flipkart.",
+      "Round 2 (45-60 min): hiring-manager behavioral round on ownership and pressure.",
+      "Round 3 (45 min): cross-functional or bar-raiser round drilling into one story.",
+    ],
+  },
+
+  /* ── Razorpay — system design ───────────────────────────────── */
+  {
+    slug: "razorpay-system-design-interview-questions",
+    searchPhrase: "Razorpay System Design Interview Questions 2026",
+    company: "razorpay", roleFamily: "swe", focus: "system-design",
+    intro: "Razorpay's system-design rounds are payments-native and India-specific. In 2026 expect prompts on a payment gateway that routes transactions across multiple banks to maximise success rate, a settlement system that reconciles and pays out to merchants without losing or double-paying money, and handling UPI callbacks that arrive late, out of order, or twice. Interviewers probe smart routing across acquirers, idempotency, reconciliation, and consistent state transitions under asynchronous, unreliable notifications. Candidates who understand UPI's real-world messiness and design idempotent, reconcilable flows stand out from generic web-scale answers.",
+    framework: { name: "Route-Reconcile-Idempotent", summary: "Route across acquirers to maximise success, make every state transition idempotent, and build reconciliation to guarantee no money is lost or double-paid under async UPI callbacks" },
+    metaKeywords: ["Razorpay system design interview questions", "Razorpay SDE system design 2026", "payment gateway system design", "UPI system design interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What system-design questions does Razorpay ask?", a: "Design a multi-bank payment gateway that maximises success rate, a merchant settlement and reconciliation system, and UPI callback handling that tolerates late, duplicate, and out-of-order notifications." },
+      { q: "How do I handle UPI callbacks in a Razorpay design?", a: "Treat callbacks as unreliable: make status updates idempotent, key them by transaction id, and design state transitions that are safe under duplicate, delayed, or out-of-order delivery." },
+      { q: "What makes Razorpay system design distinct?", a: "It is payments-native and India-specific. Interviewers reward understanding of acquirer routing, settlement reconciliation, idempotency, and the real-world messiness of UPI over generic web-scale answers." },
+    ],
+    recruitmentSteps: [
+      "Recruiter or online assessment screen",
+      "Technical coding round on DSA",
+      "System-design round on a payments service",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on data structures and algorithms.",
+      "Round 2 (60 min): system-design round on gateways, settlement, or UPI flows.",
+      "Round 3 (45-60 min): design deep-dive on correctness and reconciliation plus behavioral.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
