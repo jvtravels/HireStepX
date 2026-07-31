@@ -8382,6 +8382,141 @@ export const SEO_PAGES: SeoPage[] = [
       "Fit is woven through every round alongside the case.",
     ],
   },
+
+  /* ── Paytm — behavioral ─────────────────────────────────────── */
+  {
+    slug: "paytm-behavioral-interview-questions",
+    searchPhrase: "Paytm Behavioral Interview Questions 2026",
+    company: "paytm", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Paytm's behavioral rounds reflect a fast, high-scale fintech culture where shipping speed and incident response are daily realities. In 2026 expect prompts about shipping something quickly in a chaotic environment and deciding what to cut, your role in a production incident, and a time you disagreed with a manager on a technical or product call. Interviewers look for a defensible prioritisation rule, ownership during incidents, and the ability to disagree constructively and then commit. Vague teamwork stories without a clear personal contribution or a quantified outcome do not hold up against the follow-up questions.",
+    framework: { name: "Prioritise-and-Own STAR", summary: "Use STAR with the Action centred on what you personally decided or owned under pressure, closing with a quantified result and an honest learning" },
+    metaKeywords: ["Paytm behavioral interview questions", "Paytm HR interview 2026", "Paytm culture interview", "Paytm manager round questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does Paytm look for in behavioral rounds?", a: "A defensible prioritisation rule under time pressure, ownership during production incidents, and the ability to disagree constructively then commit, all tied to measurable outcomes." },
+      { q: "How should I answer Paytm behavioral questions?", a: "Use STAR and centre the Action on what you personally decided or owned. Quantify the Result and add one honest learning rather than a generic 'we succeeded'." },
+      { q: "Does Paytm ask about production incidents?", a: "Often. As a high-scale fintech, Paytm values candidates who can describe their specific role in detecting, responding to, and fixing an incident." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Hiring-manager behavioral round on decisions and incidents",
+      "Peer or skip-level round drilling into one story",
+      "Values and closing round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why Paytm.",
+      "Round 2 (45-60 min): hiring-manager behavioral round on speed, incidents, and disagreement.",
+      "Round 3 (45 min): peer or skip-level round drilling into the specifics of one story.",
+    ],
+  },
+
+  /* ── Accenture — technical ──────────────────────────────────── */
+  {
+    slug: "accenture-technical-interview-questions",
+    searchPhrase: "Accenture Technical Interview Questions 2026",
+    company: "accenture", roleFamily: "swe", focus: "technical",
+    intro: "Accenture's technical round for freshers rewards clear fundamentals across OOP, DBMS, and one programming language. In 2026 expect questions on SQL versus NoSQL and when to pick each, a simple coding problem like finding the second-largest array element without sorting, and language basics such as exception handling and checked versus unchecked exceptions. Interviewers want textbook-accurate explanations with concrete examples and a correct small program, not competitive-programming depth. The differentiator is whether you can reason about when to use a concept and write clean code without fumbling the basics.",
+    framework: { name: "Concept-plus-When", summary: "Explain fundamentals with a concrete example and when you would use them, then write a correct simple program with a stated complexity" },
+    metaKeywords: ["Accenture technical interview questions", "Accenture interview freshers 2026", "Accenture coding interview", "Accenture DBMS OOP interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does Accenture ask in the technical round?", a: "OOP concepts, SQL versus NoSQL and when to use each, a simple coding problem like second-largest element, and language fundamentals such as exception handling." },
+      { q: "How hard is the Accenture technical interview?", a: "For freshers it is fundamentals-focused and moderate. Clear explanations with examples and when-to-use reasoning matter more than advanced algorithms." },
+      { q: "How do I prepare for the Accenture technical round?", a: "Revise OOP, DBMS, and your chosen language's fundamentals, practise a few easy coding problems, and be ready to explain when you would pick one approach over another." },
+    ],
+    recruitmentSteps: [
+      "Cognitive and technical online assessment",
+      "Coding assessment",
+      "Technical interview on fundamentals and coding",
+      "HR interview on fit and flexibility, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): cognitive and technical assessment plus coding.",
+      "Round 2 (30-45 min): technical round on OOP, DBMS, and a coding problem.",
+      "Round 3 (15-30 min): HR round on motivation and mobility.",
+    ],
+  },
+
+  /* ── Tech Mahindra — HR round ───────────────────────────────── */
+  {
+    slug: "techmahindra-hr-interview-questions",
+    searchPhrase: "Tech Mahindra HR Interview Questions 2026",
+    company: "techmahindra", roleFamily: "campus", focus: "hr",
+    intro: "The Tech Mahindra HR round is the final fit-and-commitment gate after the aptitude and technical stages. In 2026 expect questions on why Tech Mahindra and its business, willingness to relocate and work in any assigned technology, the classic 'tell me about yourself', and comfort with the training and service agreement. Interviewers assess motivation, communication, and flexibility rather than technical depth. The candidates who stumble are usually those with generic answers, no knowledge of the company, or rigidity on location and technology. Be specific, be honest about what you can commit to, and communicate clearly.",
+    framework: { name: "Fit-and-Flexibility", summary: "Show specific motivation, knowledge of the company, and honest flexibility on location, technology, and service terms, communicated clearly" },
+    metaKeywords: ["Tech Mahindra HR interview questions", "Tech Mahindra HR round 2026", "Tech Mahindra HR interview freshers", "Tech Mahindra final round"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What questions are asked in the Tech Mahindra HR round?", a: "Why Tech Mahindra, tell me about yourself, willingness to relocate and work in any technology, and comfort with the training and service agreement." },
+      { q: "Is the Tech Mahindra HR round difficult?", a: "It is not technically hard, but it is a real gate. Rejections usually come from generic answers, no company knowledge, or rigidity on location and technology." },
+      { q: "How do I pass the Tech Mahindra HR round?", a: "Research the company, give specific reasons for wanting to join, communicate clearly, and be honestly flexible on location, technology, and service terms." },
+    ],
+    recruitmentSteps: [
+      "Online aptitude and reasoning test",
+      "Technical interview on fundamentals and one language",
+      "HR interview on fit, mobility, and motivation",
+      "Offer and documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online aptitude, reasoning, and verbal test.",
+      "Round 2 (30-45 min): technical round on programming and CS fundamentals.",
+      "Round 3 (15-30 min): HR round on motivation, mobility, and commitment.",
+    ],
+  },
+
+  /* ── Wipro — HR round ───────────────────────────────────────── */
+  {
+    slug: "wipro-hr-interview-questions",
+    searchPhrase: "Wipro HR Interview Questions 2026",
+    company: "wipro", roleFamily: "campus", focus: "hr",
+    intro: "The Wipro HR round is the final gate after the online test and technical stages, focused on fit, communication, and commitment. In 2026 expect questions on why Wipro and why IT services over a core or product role, willingness to sign the service agreement and work from any location in any shift, and strengths backed by a concrete example. Interviewers assess motivation, honesty, and flexibility more than technical skill. Candidates trip up with generic praise, adjective-only strength answers, or rigidity on location and shifts. A short, specific STAR story and honest flexibility go a long way here.",
+    framework: { name: "Honest-Fit-STAR", summary: "Give a genuine reason for choosing Wipro and services, back strengths with a short STAR example, and be honestly flexible on location and shifts" },
+    metaKeywords: ["Wipro HR interview questions", "Wipro HR round 2026", "Wipro HR interview freshers", "Wipro final round questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What questions are asked in the Wipro HR round?", a: "Why Wipro and why IT services, willingness to sign the service agreement and work any location or shift, tell me about yourself, and strengths with a concrete example." },
+      { q: "Is the Wipro HR round difficult?", a: "It is not technically hard but is a genuine gate. Rejections usually come from generic answers, rigidity on location or shifts, or weak communication rather than wrong facts." },
+      { q: "How do I answer strengths in the Wipro HR round?", a: "Name a strength and back it with a short STAR story showing you used it to solve a real problem, rather than listing adjectives without evidence." },
+    ],
+    recruitmentSteps: [
+      "Online aptitude, coding, and essay test",
+      "Technical interview on fundamentals and coding",
+      "HR interview on fit, flexibility, and communication",
+      "Offer and service-agreement documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online aptitude, coding, and written-communication test.",
+      "Round 2 (30-45 min): technical round on programming and CS fundamentals.",
+      "Round 3 (15-30 min): HR round on motivation, flexibility, and commitment.",
+    ],
+  },
+
+  /* ── McKinsey — behavioral (Personal Experience Interview) ──── */
+  {
+    slug: "mckinsey-behavioral-interview-questions",
+    searchPhrase: "McKinsey Personal Experience Interview Questions 2026",
+    company: "mckinsey", roleFamily: "consultant", focus: "behavioral",
+    intro: "Alongside the case, McKinsey runs the Personal Experience Interview (PEI), a deep, structured probe of one story per theme, usually leadership, personal impact, and persuasion or conflict. In 2026 expect a single question like leading a team to a difficult goal, followed by many layers of 'what exactly did you do', 'how did you feel', and 'what would you change'. Interviewers reward depth over breadth, a clearly personal contribution, and honest reflection. Candidates who tell a broad, un-owned 'we' story or run out of detail three follow-ups deep underperform even when the case goes well.",
+    framework: { name: "One-Story-Deep", summary: "Pick one rich story per PEI theme and prepare for repeated 'what did you personally do' and 'why' follow-ups, foregrounding your own contribution and reflection" },
+    metaKeywords: ["McKinsey PEI questions", "McKinsey Personal Experience Interview 2026", "McKinsey behavioral interview", "McKinsey fit interview questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What is the McKinsey Personal Experience Interview?", a: "The PEI is a deep behavioral interview that drills into one story per theme (leadership, personal impact, persuasion/conflict) with many follow-ups on your specific actions, feelings, and reflections." },
+      { q: "How is the PEI different from normal behavioral questions?", a: "It rewards depth over breadth. Instead of many stories, you go three or four follow-ups deep on one, so you need detailed, personally-owned examples rather than broad summaries." },
+      { q: "How do I prepare for the McKinsey PEI?", a: "Prepare one rich, personally-owned story per theme, map out the specific actions you took, and rehearse answering repeated 'what exactly did you do' and 'why' follow-ups honestly." },
+    ],
+    recruitmentSteps: [
+      "Resume screen and Solve assessment",
+      "First-round case plus PEI interviews",
+      "Final-round cases plus PEI with senior partners",
+      "Offer decision",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min each): first-round interviews pairing a case with the PEI.",
+      "Round 2 (45 min each): final-round cases and PEI with partners.",
+      "The PEI is woven through every round alongside the case.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

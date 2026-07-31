@@ -2482,4 +2482,99 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "BCG fit rounds probe leadership, influence, and drive. Strong answers use structured STAR with a quantified, personal contribution.",
   },
+
+  /* ── Paytm — behavioral ─────────────────────────────────────── */
+  {
+    text: "Tell me about a time you shipped something fast in a chaotic environment. How did you decide what to cut?",
+    company: "paytm", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Paytm behavioral rounds reflect a fast, high-scale fintech culture. Strong answers show a defensible prioritisation rule and a quantified outcome.",
+  },
+  {
+    text: "Describe a production incident you were part of. What was your role in the response and the fix?",
+    company: "paytm", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Tell me about a time you disagreed with your manager on a technical or product decision. How did it resolve?",
+    company: "paytm", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Paytm values candidates who can disagree constructively and commit. Interviewers want the reasoning and the outcome, not just the disagreement.",
+  },
+
+  /* ── Accenture — technical ──────────────────────────────────── */
+  {
+    text: "What is the difference between SQL and NoSQL databases, and when would you pick each?",
+    company: "accenture", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Accenture technical rounds for freshers cover OOP, DBMS, and one language. Clear fundamentals with when-to-use reasoning matter more than tricky code.",
+  },
+  {
+    text: "Write a program to find the second-largest element in an array without sorting it. State the complexity.",
+    company: "accenture", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "Explain exception handling in your preferred language, and the difference between checked and unchecked exceptions.",
+    company: "accenture", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Accenture frequently probes language fundamentals like exception handling. A concrete example beats a definition recited from memory.",
+  },
+
+  /* ── Tech Mahindra — HR round ───────────────────────────────── */
+  {
+    text: "Why do you want to join Tech Mahindra, and are you willing to relocate and work in any technology we assign?",
+    company: "techmahindra", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Tech Mahindra HR rounds check motivation, mobility, and communication. Genuine, specific reasons and flexibility on location and tech land well.",
+  },
+  {
+    text: "Tell me about yourself, and what do you know about Tech Mahindra and its business?",
+    company: "techmahindra", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "Are you comfortable with the service agreement and a bond period if applicable?",
+    company: "techmahindra", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Tech Mahindra HR often confirms comfort with the training and service terms. Be honest rather than agreeing to terms you will not keep.",
+  },
+
+  /* ── Wipro — HR round ───────────────────────────────────────── */
+  {
+    text: "Why Wipro, and why did you choose IT services over a core or product role?",
+    company: "wipro", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Wipro HR rounds want honest motivation and flexibility. A clear reason for choosing services and openness to any technology or location work well.",
+  },
+  {
+    text: "Are you willing to sign the service agreement and work from any of our locations in any shift?",
+    company: "wipro", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "What are your strengths, and can you give an example where you used one to solve a problem?",
+    company: "wipro", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Wipro HR wants strengths backed by a concrete example, not adjectives. A short STAR story makes the answer credible.",
+  },
+
+  /* ── McKinsey — behavioral (Personal Experience Interview) ──── */
+  {
+    text: "Tell me about a time you led a team to achieve a difficult goal. What did you personally do, and what was the result?",
+    company: "mckinsey", roleFamily: "consultant", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "McKinsey's Personal Experience Interview drills deep on one story. Expect many follow-ups on your specific actions, feelings, and reflections.",
+  },
+  {
+    text: "Describe a situation where you had to persuade a resistant stakeholder. How did you approach it?",
+    company: "mckinsey", roleFamily: "consultant", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Tell me about your most significant personal achievement and why it matters to you.",
+    company: "mckinsey", roleFamily: "consultant", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "The PEI rewards depth over breadth. Pick one rich story and be ready for repeated 'why' and 'what exactly did you do' follow-ups.",
+  },
 ];
