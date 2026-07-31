@@ -2284,9 +2284,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam",
-    searchPhrase: "Sarvam AI Software Engineer Salary India 2026: ₹18–95 LPA by Level",
+    searchPhrase: "Sarvam AI Salary India 2026: Software Engineer CTC ₹18–95 LPA by Level",
     metaDescription:
-      "Sarvam AI Software Engineer salary: ₹18–95 LPA based on level (SDE-1 to staff), with ESOP at India's AI unicorn. Full CTC breakdown by level. Bengaluru, Series B ($1.5B), 2026.",
+      "Sarvam AI salary in India 2026: Software Engineer CTC ₹18–95 LPA by level (SDE-1 to staff), plus ESOP at India's AI unicorn. Full pay breakdown for freshers to senior. Bengaluru, Series B ($1.5B).",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "sarvam-swe-interview-questions",
     hubNote: "India-native LLM lab Bengaluru; Series B unicorn ($1.5B); ESOP; 10 Indian languages AI",

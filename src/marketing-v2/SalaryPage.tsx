@@ -16,7 +16,7 @@ import {
   ctaPrimaryStyle,
   ctaGhostStyle,
 } from "./_editorial";
-
+import { FAQItem } from "./MarketingPagesV2";
 /* ─── Types ─────────────────────────────────────────────────────── */
 
 export interface SalaryBandRow {
@@ -31,6 +31,7 @@ export interface SalaryBandRow {
   equityMax?: number;
   notes?: string;
   source: string;
+  dataConfidenceTier?: "high" | "medium" | "low";
   lastVerified: string;
 }
 
@@ -50,6 +51,9 @@ export interface SalaryPageProps {
   noticePeriodDays?: number;
   bondPenaltyLpa?: number;
   calibrationDate: string;
+  /* Visible FAQ content — must mirror the FAQPage JSON-LD schema built in
+     the route file so structured data matches what's actually shown. */
+  faqs?: { q: string; a: string }[];
 }
 
 /* ─── Company logo domains (Clearbit) ───────────────────────────── */
@@ -380,6 +384,37 @@ const tdMono: CSSProperties = {
   fontVariantNumeric: "tabular-nums",
 };
 
+/* Surfaces dataConfidenceTier (already used to hedge the LLM negotiation
+   prompt) as a visible trust signal, so a "low" cell — a directional
+   estimate synthesized from tier benchmarks, not a company-verified
+   figure — reads as such instead of sitting next to a "verified" row
+   with identical styling. */
+function ConfidenceBadge({ tier }: { tier?: "high" | "medium" | "low" }) {
+  const config = {
+    high: { label: "Verified", color: t.success, background: t.success100 },
+    medium: { label: "Est.", color: t.inkFaint, background: t.creamSoft },
+    low: { label: "Directional", color: t.warning, background: t.warning100 },
+  }[tier ?? "high"];
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontFamily: fonts.sans,
+        fontSize: 11,
+        fontWeight: 600,
+        padding: "2px 8px",
+        borderRadius: 4,
+        color: config.color,
+        background: config.background,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {config.label}
+    </span>
+  );
+}
+
 const disclaimer: CSSProperties = {
   fontFamily: fonts.sans,
   fontSize: 12,
@@ -413,6 +448,7 @@ export function SalaryCompanyPage({
   noticePeriodDays,
   bondPenaltyLpa,
   calibrationDate,
+  faqs = [],
 }: SalaryPageProps) {
   const hasRoles = roles.length > 0;
   const questionHref = questionPageSlug
@@ -458,10 +494,10 @@ export function SalaryCompanyPage({
               {companyLabel} Salary Guide India 2026
             </h1>
             <p className="ed-rise ed-d2" style={leadStyle}>
-              {companyDescription} Salary ranges below are sourced from
-              AmbitionBox, Glassdoor, and Levels.fyi and reflect total CTC
-              (base + variable + equity) at the 25th–90th percentile of reported
-              offers in India.
+              {companyDescription} Salary ranges below are sourced primarily from
+              AmbitionBox, with Glassdoor as a secondary cross-check, and reflect
+              total CTC (base + variable + equity) at the 25th–90th percentile of
+              reported offers in India.
             </p>
 
             {/* Quick meta chips */}
@@ -565,14 +601,17 @@ export function SalaryCompanyPage({
                   <table className="sal-table" aria-label={`${role.roleLabel} salary bands`}>
                     <thead>
                       <tr>
-                        <th style={thStyle}>Experience Level</th>
-                        <th style={thStyle}>Total CTC (LPA)</th>
-                        <th style={{ ...thStyle }} className="sal-hide-sm">
+                        <th scope="col" style={thStyle}>Experience Level</th>
+                        <th scope="col" style={thStyle}>Total CTC (LPA)</th>
+                        <th scope="col" style={{ ...thStyle }} className="sal-hide-sm">
                           Base CTC
                         </th>
-                        <th style={thStyle}>Equity</th>
-                        <th style={{ ...thStyle }} className="sal-hide-sm">
+                        <th scope="col" style={thStyle}>Equity</th>
+                        <th scope="col" style={{ ...thStyle }} className="sal-hide-sm">
                           Last Verified
+                        </th>
+                        <th scope="col" style={{ ...thStyle }} className="sal-hide-sm">
+                          Confidence
                         </th>
                       </tr>
                     </thead>
@@ -618,6 +657,9 @@ export function SalaryCompanyPage({
                             </td>
                             <td style={tdFaint} className="sal-hide-sm">
                               {band.lastVerified}
+                            </td>
+                            <td style={tdFaint} className="sal-hide-sm">
+                              <ConfidenceBadge tier={band.dataConfidenceTier} />
                             </td>
                           </tr>
                         );
@@ -668,8 +710,8 @@ export function SalaryCompanyPage({
 
           {/* Disclaimer */}
           <p style={disclaimer}>
-            <strong>Data sources:</strong> AmbitionBox, Glassdoor India, Levels.fyi,
-            and public DRHP/IPO filings where applicable. Ranges represent the 25th–90th
+            <strong>Data sources:</strong> AmbitionBox (primary) and Glassdoor India
+            (secondary cross-check). Ranges represent the 25th–90th
             percentile of reported total CTC (base + variable + annual equity value) in
             Indian cities. Individual offers vary by negotiation, team, location, and
             joining year. These figures are market reference data, not a guarantee of any
@@ -703,6 +745,30 @@ export function SalaryCompanyPage({
             </a>
           </div>
         </div>
+
+        {/* ── FAQ — mirrors the FAQPage JSON-LD schema so what Google indexes
+              as structured data matches the visible page. ── */}
+        {faqs.length > 0 && (
+          <div className="sal-container" style={{ ...containerNarrow, marginTop: 64 }}>
+            <h2
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: "clamp(26px, 3vw, 34px)",
+                fontWeight: 400,
+                letterSpacing: "-0.02em",
+                color: t.coal,
+                margin: "0 0 24px",
+              }}
+            >
+              {companyLabel} salary FAQs
+            </h2>
+            <div style={{ background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 14, overflow: "hidden" }}>
+              {faqs.map((faq, i) => (
+                <FAQItem key={faq.q} q={faq.q} a={faq.a} first={i === 0} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── CTA band ── */}
         <div style={{ marginTop: 64 }}>
@@ -758,7 +824,18 @@ const MAX_CTC_SCALE = 70; // LPA — bar fills at ₹70L+
 const CARDS_PER_PAGE = 30;
 const TIER_TABS = ["All", "FAANG", "Startup", "Service"] as const;
 
-export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
+/* Curated "in-demand" rail. The hub grid sorts by pay and paginates, which
+   buries our lowest-competition, highest-opportunity pages (AI-frontier +
+   niche startups) below the fold and off page 1 — starving them of internal
+   links. This strip hard-links them from the top of the hub regardless of
+   pay rank, concentrating internal PageRank where GSC shows we rank page-1
+   on long-tail queries and are one nudge from breaking into the top 5. */
+const FEATURED_SLUGS = [
+  "sarvam", "sarvam-ai", "krutrim", "perplexity",
+  "databricks", "openai", "moglix", "zepto",
+] as const;
+
+export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[]; faqs?: { q: string; a: string }[] }) {
   const [search, setSearch] = useState("");
   const [activeTier, setActiveTier] = useState<typeof TIER_TABS[number]>("All");
   const [page, setPage] = useState(1);
@@ -781,6 +858,14 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
   const paginated = filtered.slice((safePage - 1) * CARDS_PER_PAGE, safePage * CARDS_PER_PAGE);
 
   const resetPage = () => setPage(1);
+
+  /* Featured rail — resolved from the entries we were handed, in curated
+     order, silently skipping any slug without a live page. Shown only in the
+     default (unfiltered) view so it never competes with an active search. */
+  const featured = FEATURED_SLUGS
+    .map((slug) => entries.find((e) => e.slug === slug))
+    .filter((e): e is SalaryHubEntry => e != null);
+  const showFeatured = !q && activeTier === "All" && featured.length > 0;
 
   /* Page number buttons — up to 7 slots with ellipsis */
   const pageNumbers: (number | "…")[] = [];
@@ -855,6 +940,32 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
           border-color: ${t.coal};
           color: #fff;
           font-weight: 700;
+        }
+        .sal-feat-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: #fff;
+          border: 1.5px solid ${t.copperBorder};
+          border-radius: 99px;
+          padding: 8px 15px;
+          text-decoration: none;
+          font-family: ${fonts.sans};
+          font-size: 13.5px;
+          font-weight: 600;
+          color: ${t.coal};
+          white-space: nowrap;
+          transition: border-color 140ms, background 140ms, transform 140ms, box-shadow 140ms;
+        }
+        .sal-feat-chip:hover {
+          border-color: ${t.copper};
+          background: ${t.copperWash};
+          transform: translateY(-1px);
+          box-shadow: 0 2px 12px rgba(180,83,9,0.10);
+        }
+        .sal-feat-chip img {
+          width: 18px; height: 18px; border-radius: 4px;
+          object-fit: contain; background: #fff; flex-shrink: 0;
         }
         @media (max-width: 640px) {
           .sal-grid { grid-template-columns: 1fr !important; }
@@ -960,6 +1071,46 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               </button>
             ))}
           </div>
+
+          {/* ── In-demand rail — curated internal links to our lowest-
+                competition, highest-opportunity salary pages, kept above
+                the pay-sorted grid so they're never buried by pagination. ── */}
+          {showFeatured && (
+            <div style={{ marginBottom: 34 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <span aria-hidden="true" style={{ fontSize: 15 }}>🔥</span>
+                <h2 style={{
+                  fontFamily: fonts.mono, fontSize: 11, fontWeight: 700,
+                  letterSpacing: "0.12em", textTransform: "uppercase" as const,
+                  color: t.copper, margin: 0,
+                }}>
+                  In-demand salary searches
+                </h2>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {featured.map((entry) => {
+                  const logoUrl = companyLogoUrl(entry.slug);
+                  return (
+                    <a key={entry.slug} href={`/salary/${entry.slug}`} className="sal-feat-chip">
+                      {logoUrl && (
+                        <img
+                          src={logoUrl}
+                          alt=""
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                      )}
+                      {entry.label}
+                      {entry.entryMax != null && (
+                        <span style={{ fontFamily: fonts.mono, fontSize: 11, color: t.inkFaint, fontWeight: 500 }}>
+                          {fmt(entry.entryMax)}
+                        </span>
+                      )}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {paginated.length > 0 ? (
             <div className="sal-grid">
@@ -1139,6 +1290,30 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
+            </div>
+          )}
+
+          {/* ── FAQ — mirrors the FAQPage JSON-LD schema so what Google
+                indexes as structured data matches the visible page. ── */}
+          {faqs.length > 0 && (
+            <div style={{ marginTop: 64 }}>
+              <h2
+                style={{
+                  fontFamily: fonts.serif,
+                  fontSize: "clamp(26px, 3vw, 34px)",
+                  fontWeight: 400,
+                  letterSpacing: "-0.02em",
+                  color: t.coal,
+                  margin: "0 0 24px",
+                }}
+              >
+                Salary FAQs
+              </h2>
+              <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, overflow: "hidden" }}>
+                {faqs.map((faq, i) => (
+                  <FAQItem key={faq.q} q={faq.q} a={faq.a} first={i === 0} />
+                ))}
+              </div>
             </div>
           )}
         </div>
