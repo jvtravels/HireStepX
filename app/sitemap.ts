@@ -100,6 +100,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.85,
     },
+    /* Aggregate salary report — the citable digital-PR data asset. */
+    {
+      url: `${baseUrl}/salary-report-2026`,
+      lastModified: seoPagesLastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.9,
+    },
   ];
   const salaryEntries: MetadataRoute.Sitemap = getAllSalarySlugs().map((slug) => ({
     url: `${baseUrl}/salary/${slug}`,
