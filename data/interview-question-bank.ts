@@ -2577,4 +2577,99 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "The PEI rewards depth over breadth. Pick one rich story and be ready for repeated 'why' and 'what exactly did you do' follow-ups.",
   },
+
+  /* ── Swiggy — system design ─────────────────────────────────── */
+  {
+    text: "Design the food-delivery order-assignment system that matches orders to nearby delivery partners at dinner-peak load. How do you keep latency low?",
+    company: "swiggy", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Swiggy system-design rounds centre on real-time logistics. Strong answers use geospatial indexing, batching for efficiency, and handle the dinner-peak demand spike.",
+  },
+  {
+    text: "Design the live order-tracking system that streams delivery-partner location and ETA to the customer. How do you handle high write volume?",
+    company: "swiggy", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Design a restaurant search and discovery feed personalised by location, cuisine, and time of day. How do you rank and keep it fresh?",
+    company: "swiggy", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Swiggy probes personalised ranking under freshness constraints. Address candidate generation, ranking signals, and cache invalidation for menu availability.",
+  },
+
+  /* ── CRED — technical ───────────────────────────────────────── */
+  {
+    text: "Given a list of credit-card transactions, detect duplicate charges within a short time window. Optimise it and state your complexity.",
+    company: "cred", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "CRED technical rounds favour clean, correct code with a product-quality bar. Expect DSA framed around payments, rewards, and card data.",
+  },
+  {
+    text: "Design an in-memory cache with expiry (TTL) and an eviction policy. Which data structures give O(1) get and put?",
+    company: "cred", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Given reward points earned across many transactions, compute the maximum points redeemable under a set of constraints. Explain your approach.",
+    company: "cred", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "CRED interviewers pair DSA with a product framing. Strong candidates model the constraints cleanly and reason about the greedy-vs-DP trade-off.",
+  },
+
+  /* ── OYO — behavioral ───────────────────────────────────────── */
+  {
+    text: "Tell me about a time you had to deliver under a very aggressive timeline. What did you trade off and why?",
+    company: "oyo", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "OYO behavioral rounds reflect a fast, scrappy operating culture. Strong answers show a defensible trade-off and a quantified outcome.",
+  },
+  {
+    text: "Describe a time you worked with limited resources or data to solve a problem. How did you make progress?",
+    company: "oyo", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Tell me about a time you took ownership of something outside your defined role. What drove you to step in?",
+    company: "oyo", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "OYO values ownership and bias for action. Interviewers want initiative tied to a real business or customer outcome, not busywork.",
+  },
+
+  /* ── Capgemini — HR round ───────────────────────────────────── */
+  {
+    text: "Why Capgemini, and are you comfortable relocating and working in any technology or domain we assign?",
+    company: "capgemini", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Capgemini HR rounds check motivation, mobility, and communication. Specific, genuine reasons and flexibility on location and tech work best.",
+  },
+  {
+    text: "Tell me about yourself, and are you okay with the training period and service agreement?",
+    company: "capgemini", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "How do you handle pressure, and can you give an example of a time you did?",
+    company: "capgemini", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Capgemini HR wants self-awareness backed by an example. A short STAR story about handling pressure beats a generic 'I stay calm'.",
+  },
+
+  /* ── IBM — technical ────────────────────────────────────────── */
+  {
+    text: "Explain the difference between an array and a linked list, and when you would choose each.",
+    company: "ibm", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "IBM technical rounds for freshers cover DSA basics, OOP, DBMS, and one language. Clear fundamentals with trade-off reasoning matter most.",
+  },
+  {
+    text: "Write a program to count the frequency of each character in a string. What data structure do you use and why?",
+    company: "ibm", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "What are joins in SQL? Explain inner, left, and right joins with a simple example.",
+    company: "ibm", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "IBM frequently tests DBMS and SQL basics. A concrete two-table example makes the join explanation land clearly.",
+  },
 ];

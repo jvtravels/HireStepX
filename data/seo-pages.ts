@@ -8517,6 +8517,141 @@ export const SEO_PAGES: SeoPage[] = [
       "The PEI is woven through every round alongside the case.",
     ],
   },
+
+  /* ── Swiggy — system design ─────────────────────────────────── */
+  {
+    slug: "swiggy-system-design-interview-questions",
+    searchPhrase: "Swiggy System Design Interview Questions 2026",
+    company: "swiggy", roleFamily: "swe", focus: "system-design",
+    intro: "Swiggy's system-design rounds are built on real-time logistics at dinner-peak scale: assign orders to nearby delivery partners with low latency, stream live location and ETA to customers, and serve a personalised restaurant-discovery feed. In 2026 strong candidates reach for geospatial indexing and batching for the assignment problem, separate the write-heavy location-ping path from ETA reads, and handle the demand spike during peak hours. Interviewers push on freshness of menu availability, ranking signals, and cache invalidation. Generic 'store it in a database and scale horizontally' answers get taken apart by the follow-ups.",
+    framework: { name: "Real-Time-Logistics", summary: "Use geospatial indexing and batching for assignment, separate high-write tracking from reads, and design ranking and caching for a fresh, personalised feed under peak load" },
+    metaKeywords: ["Swiggy system design interview questions", "Swiggy SDE system design 2026", "food delivery system design", "Swiggy order assignment design"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What system-design questions does Swiggy ask?", a: "Design order-to-partner assignment at peak load, live order tracking with ETAs, and a personalised restaurant search and discovery feed." },
+      { q: "How do I design Swiggy's order assignment?", a: "Index delivery-partner locations geospatially for fast proximity search, batch nearby orders for efficiency, and run an assignment step that keeps latency low even during the dinner-peak spike." },
+      { q: "What makes Swiggy system design distinct?", a: "It is real-time logistics under a sharp demand curve. Interviewers reward handling the dinner-peak spike, freshness of menu availability, and the write-heavy location-tracking path." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen or online assessment",
+      "Technical coding round on DSA",
+      "System-design round on a logistics or discovery service",
+      "Hiring-manager and behavioral round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on data structures and algorithms.",
+      "Round 2 (60 min): system-design round on assignment, tracking, or discovery.",
+      "Round 3 (45-60 min): design deep-dive plus behavioral on ownership.",
+    ],
+  },
+
+  /* ── CRED — technical ───────────────────────────────────────── */
+  {
+    slug: "cred-technical-interview-questions",
+    searchPhrase: "CRED Technical Interview Questions 2026",
+    company: "cred", roleFamily: "swe", focus: "technical",
+    intro: "CRED's coding rounds pair clean data-structures-and-algorithms with a product-quality bar, often framed around payments, rewards, and card data. In 2026 expect problems like detecting duplicate charges within a time window, building an O(1) in-memory cache with TTL and eviction, and maximising redeemable reward points under constraints. Interviewers want correct, readable code, a sensible data-structure choice, and a clear complexity analysis, plus the judgement to model a fuzzy product constraint precisely. CRED's engineering brand is polish, so sloppy code or hand-waving on edge cases stands out for the wrong reasons.",
+    framework: { name: "Clean-and-Product-Aware", summary: "Solve the DSA cleanly with the right data structure and stated complexity, and model the product constraint (payments, rewards) precisely" },
+    metaKeywords: ["CRED technical interview questions", "CRED coding interview 2026", "CRED SDE technical questions", "CRED DSA interview"],
+    sitemapPriority: 0.68,
+    faqExtra: [
+      { q: "What coding topics does CRED test?", a: "Hash maps and sliding windows (duplicate detection), caching with TTL and eviction, and greedy or dynamic-programming problems, often framed around payments and rewards." },
+      { q: "How hard are CRED coding rounds?", a: "Standard to intense. The bar is correct, readable code with a sensible data-structure choice and a clear complexity analysis, matching CRED's polish-focused engineering brand." },
+      { q: "Does CRED frame questions around its product?", a: "Often. Expect DSA wrapped in payments, rewards, or card-data scenarios. Model the constraints precisely rather than solving a generic version of the problem." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen or online assessment",
+      "Technical coding round one on DSA",
+      "Technical coding round two plus low-level design",
+      "Hiring-manager round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): coding round on DSA with a product framing.",
+      "Round 2 (60 min): harder coding plus low-level design.",
+      "Round 3 (45-60 min): design and behavioral round on quality and ownership.",
+    ],
+  },
+
+  /* ── OYO — behavioral ───────────────────────────────────────── */
+  {
+    slug: "oyo-behavioral-interview-questions",
+    searchPhrase: "OYO Behavioral Interview Questions 2026",
+    company: "oyo", roleFamily: "behavioral", focus: "behavioral",
+    intro: "OYO's behavioral rounds reflect a fast, scrappy operating culture where delivering with limited resources under aggressive timelines is the norm. In 2026 expect prompts about delivering under a very tight deadline and the trade-off you made, working with limited data or resources, and taking ownership outside your defined role. Interviewers look for a defensible trade-off, resourcefulness, and initiative tied to a real business or customer outcome. Vague 'we worked hard and pulled it off' answers without a specific, owned action and a measurable result do not survive the follow-up questions.",
+    framework: { name: "Resourceful-Ownership STAR", summary: "Use STAR with the Action centred on a defensible trade-off or an owned initiative under constraints, closing with a quantified outcome" },
+    metaKeywords: ["OYO behavioral interview questions", "OYO HR interview 2026", "OYO culture interview", "OYO manager round questions"],
+    sitemapPriority: 0.66,
+    faqExtra: [
+      { q: "What does OYO look for in behavioral rounds?", a: "Resourcefulness under constraints, a defensible trade-off under aggressive timelines, and ownership beyond your defined role, all tied to a measurable outcome." },
+      { q: "How should I answer OYO behavioral questions?", a: "Use STAR and centre the Action on the specific trade-off or initiative you owned. Quantify the Result and add one honest learning." },
+      { q: "Does OYO ask about working with limited resources?", a: "Yes. Its scrappy operating culture means interviewers value candidates who make progress with limited data or resources rather than waiting for perfect conditions." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen on background and motivation",
+      "Hiring-manager behavioral round on trade-offs and ownership",
+      "Peer or skip-level round drilling into one story",
+      "Closing round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (30 min): recruiter screen on fit and why OYO.",
+      "Round 2 (45-60 min): hiring-manager behavioral round on timelines, constraints, and ownership.",
+      "Round 3 (45 min): peer or skip-level round drilling into one story.",
+    ],
+  },
+
+  /* ── Capgemini — HR round ───────────────────────────────────── */
+  {
+    slug: "capgemini-hr-interview-questions",
+    searchPhrase: "Capgemini HR Interview Questions 2026",
+    company: "capgemini", roleFamily: "campus", focus: "hr",
+    intro: "The Capgemini HR round is the final fit-and-commitment gate after the aptitude and technical stages. In 2026 expect questions on why Capgemini, willingness to relocate and work in any assigned technology or domain, the classic 'tell me about yourself', comfort with the training period and service agreement, and how you handle pressure. Interviewers assess motivation, communication, and flexibility rather than technical depth. Candidates trip up with generic praise, no company knowledge, or rigidity on location and technology. Specific reasons, an honest example when asked about pressure, and clear communication are what carry this round.",
+    framework: { name: "Fit-and-Flexibility", summary: "Show specific motivation, flexibility on location and technology, and self-awareness backed by a short example, communicated clearly" },
+    metaKeywords: ["Capgemini HR interview questions", "Capgemini HR round 2026", "Capgemini HR interview freshers", "Capgemini final round questions"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What questions are asked in the Capgemini HR round?", a: "Why Capgemini, tell me about yourself, willingness to relocate and work in any technology, comfort with the training and service agreement, and how you handle pressure." },
+      { q: "Is the Capgemini HR round difficult?", a: "It is not technically hard but is a genuine gate. Rejections usually come from generic answers, no company knowledge, or rigidity on location and technology." },
+      { q: "How do I answer 'how do you handle pressure' at Capgemini?", a: "Give a short STAR example of a time you delivered under pressure rather than a generic 'I stay calm'. Evidence makes the answer credible." },
+    ],
+    recruitmentSteps: [
+      "Online aptitude and pseudocode/coding test",
+      "Technical interview on fundamentals and coding",
+      "HR interview on fit, mobility, and communication",
+      "Offer and documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online aptitude, pseudocode, and coding test.",
+      "Round 2 (30-45 min): technical round on OOP, DBMS, and a coding problem.",
+      "Round 3 (15-30 min): HR round on motivation, mobility, and commitment.",
+    ],
+  },
+
+  /* ── IBM — technical ────────────────────────────────────────── */
+  {
+    slug: "ibm-technical-interview-questions",
+    searchPhrase: "IBM Technical Interview Questions 2026",
+    company: "ibm", roleFamily: "swe", focus: "technical",
+    intro: "IBM's technical round for freshers covers data-structures-and-algorithms basics, OOP, DBMS, and one programming language, with an emphasis on clear fundamentals. In 2026 expect questions on array versus linked list and when to choose each, a simple coding problem like counting character frequency in a string, and SQL joins explained with an example. Interviewers reward textbook-accurate explanations with trade-off reasoning and a correct small program. You do not need competitive-programming depth; the differentiator is whether you can explain core concepts cleanly, pick the right data structure, and write correct code without stumbling on the basics.",
+    framework: { name: "Fundamentals-with-Trade-offs", summary: "Explain DSA, OOP, and DBMS basics with concrete examples and when-to-use reasoning, then write a correct simple program" },
+    metaKeywords: ["IBM technical interview questions", "IBM interview freshers 2026", "IBM coding interview", "IBM DSA SQL interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does IBM ask in the technical round?", a: "DSA basics like array versus linked list, a simple coding problem such as character frequency, OOP concepts, and DBMS/SQL basics like joins." },
+      { q: "How hard is the IBM technical interview?", a: "For freshers it is fundamentals-focused and moderate. Clear explanations with trade-off reasoning and a correct small program matter more than hard algorithms." },
+      { q: "How do I prepare for the IBM technical round?", a: "Revise DSA basics, OOP, and DBMS/SQL, practise a few easy coding problems in your preferred language, and be ready to explain when you would choose one data structure over another." },
+    ],
+    recruitmentSteps: [
+      "Online cognitive and coding assessment",
+      "Technical interview on fundamentals and coding",
+      "HR interview on fit and flexibility",
+      "Offer and documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online cognitive ability and coding assessment.",
+      "Round 2 (30-45 min): technical round on DSA, OOP, and SQL.",
+      "Round 3 (15-30 min): HR round on motivation and mobility.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
