@@ -33,7 +33,7 @@ const report = buildSalaryReport(
 
 export function generateMetadata(): Metadata {
   const { companyCount, emergingCount } = report.stats;
-  const desc = `Total-CTC software-engineer salary bands across ${companyCount} companies hiring in India for 2026, including ${emergingCount} emerging AI startups and new unicorns (Sarvam, Krutrim, Perplexity, Moglix). Median entry, mid, and senior ranges with sources.`;
+  const desc = `Total-CTC software-engineer salary bands across ${companyCount} companies hiring in India for 2026, including ${emergingCount} emerging AI startups and new unicorns (Sarvam, Moglix, Navi, Zepto). Median entry, mid, and senior ranges with sources.`;
   return {
     title: "Indian Startup Engineer Salary Report 2026 | HireStepX",
     description: desc,
@@ -41,8 +41,8 @@ export function generateMetadata(): Metadata {
       "Indian startup salary report 2026",
       "AI startup engineer salary India",
       "Sarvam salary",
-      "Krutrim salary",
-      "Perplexity India salary",
+      "Moglix salary",
+      "Navi salary",
       "software engineer salary India 2026",
       "startup CTC India",
       "unicorn salary India 2026",

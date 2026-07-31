@@ -255,7 +255,7 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
             Total-CTC ranges for software engineers across{" "}
             <strong style={{ color: t.coal }}>{stats.companyCount} companies</strong> hiring in India — including{" "}
             <strong style={{ color: t.coal }}>{stats.emergingCount} emerging AI-native startups and new unicorns</strong>{" "}
-            (Sarvam, Krutrim, Perplexity, Moglix and more) that have almost no public compensation data anywhere else.
+            (Sarvam, Moglix, Navi, Zepto and more) that have almost no public compensation data anywhere else.
             Every band links to a full per-company breakdown with sources and a verification date.
           </p>
         </div>

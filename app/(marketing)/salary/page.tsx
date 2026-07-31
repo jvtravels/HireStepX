@@ -181,7 +181,7 @@ export default async function SalaryIndexPage() {
           </span>
           <span style={{ flex: "1 1 260px", fontFamily: fonts.sans, fontSize: 15, color: t.coal, lineHeight: 1.45 }}>
             <strong>Indian Startup Engineer Salary Report 2026</strong> — median entry/mid/senior CTC across every
-            company below, including emerging AI startups (Sarvam, Krutrim, Perplexity) no one else has data on.
+            company below, including emerging AI startups (Sarvam, Moglix, Navi) no one else has data on.
           </span>
           <span style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.copper, whiteSpace: "nowrap" }}>
             View the report →
