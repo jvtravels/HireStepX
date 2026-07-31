@@ -1,4 +1,4 @@
-/* HireStepX — Curated interview-question bank
+/* HireStepX, Curated interview-question bank
  *
  * Hand-curated reference questions for the top Indian companies, used by
  * the question-generation pipeline to anchor the LLM's output to real-
@@ -35,12 +35,12 @@ export type CompanyKey =
   | "salesforce" | "cisco" | "oracle" | "nvidia"
   | "hdfc" | "icici"
   | "hul" | "p&g" | "itc"
-  /* Government / PSU bodies — distinct from corporate companies in
+  /* Government / PSU bodies, distinct from corporate companies in
      hiring format. UPSC = civil services; SSC = staff selection
      (Group B/C); IBPS = banking PO; RBI = central-bank Grade B; ISRO
      /DRDO = scientist viva; SSB = defence forces. */
   | "upsc" | "ssc" | "ibps" | "rbi" | "sebi" | "isro" | "drdo" | "ssb"
-  /* Core-engineering / PSU / manufacturing campus recruiters — added
+  /* Core-engineering / PSU / manufacturing campus recruiters, added
      2026-Q2 to support non-IT campus pipelines (mech / elec / civil).
      These dominate tier-2/3 college placements and were previously
      getting routed to generic behavioral. */
@@ -96,7 +96,7 @@ export type RoleFamily =
   | "swe" | "pm" | "em" | "data" | "design" | "behavioral"
   | "consultant" | "quant" | "ml" | "writer" | "ds-research"
   | "designer-senior" | "salary"
-  /* Govt/PSU role families — civil-services and defence-services
+  /* Govt/PSU role families, civil-services and defence-services
      have radically different formats from private-sector behavioral
      so they get their own retrieval families. */
   | "civil-services" | "defence" | "psu-engineer" | "scientist"
@@ -109,7 +109,7 @@ export type RoleFamily =
   | "sales" | "marketing" | "finance" | "legal" | "healthcare" | "ops"
   /* Banking subfamily (RM / branch / BFSI sales). */
   | "bfsi-sales"
-  /* HR / People / Talent family — distinct interview format from
+  /* HR / People / Talent family, distinct interview format from
      generic behavioral. HRBP / TA / Comp / L&D / Workday-Specialist
      all route here. Unlike `behavioral` (STAR-style probes for any
      role), `hr` rounds focus on org-design, conflict resolution,
@@ -122,7 +122,7 @@ export type FocusArea =
   /* Management is now a distinct focus (was silently falling back
      to behavioral). EM/director rounds have unique probes around
      hiring/firing, scaling, performance management, cross-functional
-     alignment — different signal from generic behavioral. */
+     alignment, different signal from generic behavioral. */
   | "management"
   /* Government / PSU is a distinct focus (was missing entirely).
      UPSC personality-test format, SSB defence rounds, RBI Grade B
@@ -136,7 +136,7 @@ export type FocusArea =
   | "strategic";
 
 export interface BankEntry {
-  /** Question text — anchored, never shown verbatim to the user. */
+  /** Question text, anchored, never shown verbatim to the user. */
   text: string;
   company: CompanyKey;
   roleFamily: RoleFamily;
@@ -178,7 +178,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Design a system to predict same-day delivery feasibility for a new pincode in tier-3 India.",
     company: "flipkart", roleFamily: "swe", focus: "system-design",
     addedQuarter: "2026-Q1", difficulty: "intense",
-    styleNote: "Flipkart engineering loves India-specific constraints — pincode coverage, monsoon patterns, kirana partnerships.",
+    styleNote: "Flipkart engineering loves India-specific constraints: pincode coverage, monsoon patterns, kirana partnerships.",
   },
   {
     text: "Reverse a linked list in O(1) extra space. Then explain when you'd use this in production.",
@@ -191,7 +191,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "We're seeing UPI failure rates spike at 9pm on weekends. How would you debug, and what's your hypothesis?",
     company: "razorpay", roleFamily: "swe", focus: "system-design",
     addedQuarter: "2026-Q1", difficulty: "intense",
-    styleNote: "Razorpay loves real production scenarios — payments failures, NPCI rate limits, settlement reconciliation. Be specific.",
+    styleNote: "Razorpay loves real production scenarios: payments failures, NPCI rate limits, settlement reconciliation. Be specific.",
   },
   {
     text: "Walk me through how you'd build idempotency into a payment retry system. What happens if the network drops mid-callback?",
@@ -214,7 +214,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "A restaurant partner's order acceptance rate has dropped from 92% to 78% over two weeks. Walk me through your investigation.",
     company: "swiggy", roleFamily: "pm", focus: "case-study",
     addedQuarter: "2026-Q1", difficulty: "standard",
-    styleNote: "Swiggy PM rounds heavily test marketplace dynamics — partner economics, delivery-partner availability, demand-supply imbalance.",
+    styleNote: "Swiggy PM rounds heavily test marketplace dynamics: partner economics, delivery-partner availability, demand-supply imbalance.",
   },
   {
     text: "Design Swiggy Genie's matching algorithm. How does it differ from food-order matching?",
@@ -244,7 +244,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Walk me through how you'd architect transaction-level fraud detection for 100M daily UPI transactions.",
     company: "phonepe", roleFamily: "swe", focus: "system-design",
     addedQuarter: "2026-Q1", difficulty: "intense",
-    styleNote: "PhonePe engineering rounds are scale-obsessed — every answer should explicitly address throughput, latency, and cost at India scale.",
+    styleNote: "PhonePe engineering rounds are scale-obsessed: every answer should explicitly address throughput, latency, and cost at India scale.",
   },
   {
     text: "How would you build a recommendation engine that suggests bills the user is about to forget?",
@@ -269,7 +269,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "What is the difference between a class and an object? Give an example.",
     company: "tcs", roleFamily: "swe", focus: "technical",
     addedQuarter: "2026-Q1", difficulty: "warmup",
-    styleNote: "TCS Ninja/Digital tracks lean heavily on CS fundamentals — OOP, OS, DBMS, SQL basics. Expect rapid-fire Q's, not deep dives.",
+    styleNote: "TCS Ninja/Digital tracks lean heavily on CS fundamentals: OOP, OS, DBMS, SQL basics. Expect rapid-fire Q's, not deep dives.",
   },
   {
     text: "Why TCS over the other IT services companies?",
@@ -292,7 +292,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Tell me about your final-year project. What was your specific contribution?",
     company: "infosys", roleFamily: "behavioral", focus: "campus-placement",
     addedQuarter: "2026-Q1", difficulty: "warmup",
-    styleNote: "Infosys campus rounds dwell on the academic project — be ready for 5-6 follow-ups on architecture, your role, and trade-offs.",
+    styleNote: "Infosys campus rounds dwell on the academic project: be ready for 5-6 follow-ups on architecture, your role, and trade-offs.",
   },
   {
     text: "What is normalisation in databases? When would you de-normalise?",
@@ -307,7 +307,7 @@ export const QUESTION_BANK: BankEntry[] = [
 
   /* ── Wipro ─────────────────────────────────────────────────────── */
   {
-    text: "Walk me through your resume — start from your most recent experience.",
+    text: "Walk me through your resume, starting from your most recent experience.",
     company: "wipro", roleFamily: "behavioral", focus: "hr",
     addedQuarter: "2026-Q1", difficulty: "warmup",
   },
@@ -394,7 +394,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Tell me about a time you championed a customer's needs against pushback from your own team.",
     company: "atlassian", roleFamily: "behavioral", focus: "behavioral",
     addedQuarter: "2026-Q1", difficulty: "standard",
-    styleNote: "Atlassian leans hard on their values — 'Open company, no bullshit', 'Play as a team'. Anchor stories to one explicitly.",
+    styleNote: "Atlassian leans hard on their values: 'Open company, no bullshit', 'Play as a team'. Anchor stories to one explicitly.",
   },
 
   /* ── Salary negotiation (multi-company) ────────────────────────── */
@@ -415,7 +415,7 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q1", difficulty: "intense",
   },
 
-  /* ── Amazon SDE2 / India 2026 — Leadership Principles deep-dive ──── */
+  /* ── Amazon SDE2 / India 2026, Leadership Principles deep-dive ──── */
   {
     text: "Tell me about a disagreement you had with a team decision. How did you handle it?",
     company: "amazon", roleFamily: "swe", focus: "behavioral",
@@ -432,7 +432,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "What's your role when a job fails in production at 2am? Walk me through your last incident end to end.",
     company: "amazon", roleFamily: "swe", focus: "behavioral",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Amazon LP: Bias for Action + Dive Deep. They want runbooks, MTTR numbers, root-cause depth — not 'we paged the on-call'.",
+    styleNote: "Amazon LP: Bias for Action + Dive Deep. They want runbooks, MTTR numbers, root-cause depth, not 'we paged the on-call'.",
   },
   {
     text: "Tell me about a time you missed a tight deadline. How did you handle it with the customer?",
@@ -467,7 +467,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Googleyness: structured debugging, hypothesis-driven, instrumentation-first.",
   },
 
-  /* ── Stripe — bug-bash + writing clarity (2026) ─────────────────── */
+  /* ── Stripe, bug-bash + writing clarity (2026) ─────────────────── */
   {
     text: "Here's 200 lines of payment-processing code with several intentional bugs. Find them and explain the production impact of each.",
     company: "stripe", roleFamily: "swe", focus: "technical",
@@ -478,7 +478,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Design an idempotency layer for a payment API. What happens when the same key shows up with a different request body?",
     company: "stripe", roleFamily: "swe", focus: "system-design",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Stripe API design rounds dig into edge cases. The 'different body, same key' case is a classic — answer is to reject, not silently overwrite.",
+    styleNote: "Stripe API design rounds dig into edge cases. The 'different body, same key' case is a classic: the answer is to reject, not silently overwrite.",
   },
   {
     text: "Explain webhooks vs. polling for a developer who has never built a payment integration. You have 4 sentences.",
@@ -487,12 +487,12 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Stripe values writing clarity above almost everything. Length-constrained explanation tests prioritisation of ideas.",
   },
 
-  /* ── Razorpay — fintech depth + ML risk (2026) ──────────────────── */
+  /* ── Razorpay, fintech depth + ML risk (2026) ──────────────────── */
   {
     text: "Walk me through Razorpay's fraud-detection model. How would you reduce false positives without increasing chargeback losses?",
     company: "razorpay", roleFamily: "ml", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Razorpay ML rounds tie model decisions to ₹ impact — chargeback cost vs. blocked-good-txn cost. Pure ML answers without business framing fail.",
+    styleNote: "Razorpay ML rounds tie model decisions to ₹ impact, chargeback cost vs. blocked-good-txn cost. Pure ML answers without business framing fail.",
   },
   {
     text: "Design Razorpay's settlement system. Money flows from acquirer → aggregator → merchant. Where can it break and how do you reconcile?",
@@ -507,7 +507,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Real Razorpay scenario. Expected: bank-side downtime (most likely), peak load + thread-pool exhaustion, NPCI rate limits.",
   },
 
-  /* ── PhonePe — UPI scale + reliability (2026) ───────────────────── */
+  /* ── PhonePe, UPI scale + reliability (2026) ───────────────────── */
   {
     text: "Design a system that processes 10 billion UPI transactions/day with 99.99% availability. How do you handle a partner-bank outage during peak?",
     company: "phonepe", roleFamily: "swe", focus: "system-design",
@@ -521,7 +521,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Tests ownership + ops chops. They want: pull settlement logs, check NPCI status, check internal pipeline lag, communicate with merchant during investigation.",
   },
 
-  /* ── Atlassian PM (2026) — value-driven 5-question structure ─── */
+  /* ── Atlassian PM (2026), value-driven 5-question structure ─── */
   {
     text: "Tell me about your favourite product. Now tell me three concrete things you'd change about it.",
     company: "atlassian", roleFamily: "pm", focus: "case-study",
@@ -535,13 +535,13 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Atlassian probes deep on user-segment understanding (SRE ≠ generic dev). Wrong metric (e.g., 'engagement') = fail.",
   },
   {
-    text: "A PM at Atlassian needs to lead and inspire, seek mastery, communicate, and deliver outcomes. Tell me about a time you fell short on one of these — which one and what changed?",
+    text: "A PM at Atlassian needs to lead and inspire, seek mastery, communicate, and deliver outcomes. Tell me about a time you fell short on one of these, which one and what changed?",
     company: "atlassian", roleFamily: "pm", focus: "behavioral",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Atlassian's 4 PM expectations are publicly published. Self-aware failure stories anchored to one of them outscore polished success stories.",
   },
 
-  /* ── Microsoft PM (2026) — growth mindset ───────────────────── */
+  /* ── Microsoft PM (2026), growth mindset ───────────────────── */
   {
     text: "Describe a product decision you got wrong. What did you learn that you've applied since?",
     company: "microsoft", roleFamily: "pm", focus: "behavioral",
@@ -549,7 +549,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Microsoft growth-mindset signature question. They want a real wrong call (not 'we shipped a feature 2 weeks late'), the cost, and a specific changed behaviour.",
   },
   {
-    text: "Design Copilot for a non-technical audience — say, a small-business owner doing their GST filing. What's the killer feature?",
+    text: "Design Copilot for a non-technical audience, say, a small-business owner doing their GST filing. What's the killer feature?",
     company: "microsoft", roleFamily: "pm", focus: "case-study",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "MS India PM rounds increasingly probe Indic-market product thinking around Copilot/Bharat use cases. Generic Western examples fall flat.",
@@ -594,10 +594,10 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "A PE firm is considering acquiring a regional dairy chain in South India. What are the 3 most important things you'd validate in due diligence?",
     company: "bain", roleFamily: "consultant", focus: "case-study",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Bain frequently uses PE-DD cases. Conversational style — interviewer will guide if you're stuck. Top 3: market growth defensibility, route-density economics, working-capital cycle.",
+    styleNote: "Bain frequently uses PE-DD cases. Conversational style, interviewer will guide if you're stuck. Top 3: market growth defensibility, route-density economics, working-capital cycle.",
   },
 
-  /* ── Jane Street — probability + mental math (2026) ──────────── */
+  /* ── Jane Street, probability + mental math (2026) ──────────── */
   {
     text: "What's 54% of 110? You have 10 seconds.",
     company: "jane-street", roleFamily: "quant", focus: "technical",
@@ -617,7 +617,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Tests EV reasoning + dynamic-programming intuition under time pressure. Stop on 5 or 6; EV = ~4.66.",
   },
 
-  /* ── DE Shaw — algorithms + math intuition ──────────────────── */
+  /* ── DE Shaw, algorithms + math intuition ──────────────────── */
   {
     text: "Find the median of two sorted arrays in O(log(min(m,n))). Explain why your invariant is correct, not just that it works.",
     company: "de-shaw", roleFamily: "quant", focus: "technical",
@@ -625,7 +625,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "DE Shaw probes whether you understand the algorithm vs. memorised LeetCode 4. Push for the partition-invariant proof.",
   },
 
-  /* ── Goldman Sachs — engineering + market context (2026) ────── */
+  /* ── Goldman Sachs, engineering + market context (2026) ────── */
   {
     text: "Tell me about a time you handled pressure from a deadline you knew you'd miss. What did you tell stakeholders, and when?",
     company: "goldman", roleFamily: "swe", focus: "behavioral",
@@ -633,7 +633,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Goldman 14 Business Principles bias. They want early communication + concrete remediation, not heroism narratives.",
   },
 
-  /* ── CRED — design / craft / pushback (2026) ─────────────────── */
+  /* ── CRED, design / craft / pushback (2026) ─────────────────── */
   {
     text: "Critique this onboarding flow [shown on screen]. What feels CRED-y here vs generic? Be specific.",
     company: "cred", roleFamily: "design", focus: "case-study",
@@ -647,7 +647,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "CRED culture allows pushback. Tests whether you've built that muscle, not whether you'll fold to the loudest stakeholder.",
   },
 
-  /* ── Zerodha — first-principles eng (2026) ──────────────────── */
+  /* ── Zerodha, first-principles eng (2026) ──────────────────── */
   {
     text: "We have 1M users hitting the order-book endpoint simultaneously at 9:15am. We don't want to use Redis or any managed cache. How would you handle it?",
     company: "zerodha", roleFamily: "swe", focus: "system-design",
@@ -655,7 +655,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Zerodha intentionally constrains stack to test fundamentals. In-process cache, careful invalidation, single-binary thinking. 'I'd use Redis' fails the round.",
   },
 
-  /* ── Meesho — Bharat user empathy (2026) ────────────────────── */
+  /* ── Meesho, Bharat user empathy (2026) ────────────────────── */
   {
     text: "A reseller in Tier-3 India earns ₹3,000/month from Meesho. Walk me through how she actually uses the app on her ₹6K phone, what frustrates her, and one feature you'd build.",
     company: "meesho", roleFamily: "pm", focus: "case-study",
@@ -663,7 +663,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Meesho PM rounds test whether you actually understand the Bharat-female-reseller persona vs. urban-ICP fluency. Vernacular, low-bandwidth, WhatsApp-native answers expected.",
   },
 
-  /* ── Freshworks — global SaaS engineering (2026) ────────────── */
+  /* ── Freshworks, global SaaS engineering (2026) ────────────── */
   {
     text: "Design a multi-tenant authorization service that supports both row-level and column-level permissions across 10K customers.",
     company: "freshworks", roleFamily: "swe", focus: "system-design",
@@ -671,7 +671,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Freshworks engineering bar = US SaaS, not Indian unicorn. Multi-tenancy isolation, ABAC policy, eventual consistency on policy fanout.",
   },
 
-  /* ── OpenAI / Anthropic / Sarvam — AI engineering (2026) ─────── */
+  /* ── OpenAI / Anthropic / Sarvam, AI engineering (2026) ─────── */
   {
     text: "Walk me through how you'd evaluate an LLM-based customer-support bot in production. What's your eval harness?",
     company: "openai", roleFamily: "ml", focus: "technical",
@@ -694,21 +694,21 @@ export const QUESTION_BANK: BankEntry[] = [
     confidence: "inferred",
   },
 
-  /* ── Salary negotiation — multi-tier patterns (2026) ────────── */
+  /* ── Salary negotiation, multi-tier patterns (2026) ────────── */
   {
     text: "We've benchmarked your offer at ₹42 LPA fixed + ₹8 LPA RSU vesting over 4 years. Where do you see this against your other options?",
     company: "google", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "FAANG India 2026 opening offer for 5-7 YOE SWE. The 'where do you see this against your other options' invites you to disclose competing offers — disclose only ranges, never specific numbers.",
+    styleNote: "FAANG India 2026 opening offer for 5-7 YOE SWE. The 'where do you see this against your other options' invites you to disclose competing offers, disclose only ranges, never specific numbers.",
   },
   {
-    text: "We can't move on base, but we can frontload your equity vesting — 30/30/20/20 instead of 25/25/25/25. Does that work for you?",
+    text: "We can't move on base, but we can frontload your equity vesting, 30/30/20/20 instead of 25/25/25/25. Does that work for you?",
     company: "phonepe", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Common 2026 unicorn pattern post-IPO-wave: vesting acceleration as a counter-lever when base is capped. Real value depends on how confident you are about staying 4 years.",
   },
   {
-    text: "Your current CTC is ₹22 LPA. We're offering ₹32 LPA — that's a 45% hike, which is well above market norms. Can you accept by Friday?",
+    text: "Your current CTC is ₹22 LPA. We're offering ₹32 LPA, that's a 45% hike, which is well above market norms. Can you accept by Friday?",
     company: "tcs", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "IT-services 2026 anchor + deadline pressure. The 'above market norms' framing is meant to discourage negotiation. Counter-anchor on tier of target role, not on % hike.",
@@ -720,10 +720,10 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Joining-bonus as concession lever. Decent at unicorns. Pin down: clawback period (usually 1-2 yrs), tax treatment.",
   },
   {
-    text: "Honest question — what would it take to get you to say yes today?",
+    text: "Honest question, what would it take to get you to say yes today?",
     company: "atlassian", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Sophisticated closing move. Sounds friendly but is asking you to drop your last leverage. Counter: 'Let me think about it overnight' — never reveal your floor at the table.",
+    styleNote: "Sophisticated closing move. Sounds friendly but is asking you to drop your last leverage. Counter: 'Let me think about it overnight', never reveal your floor at the table.",
   },
   {
     text: "Our offer is ₹38 LPA fixed + 15% bonus + ₹65 LPA RSUs vesting 25/25/25/25 over 4 years. We also have a 15% ESPP discount with a 6-month look-back. Where do you see this against your other options?",
@@ -735,55 +735,55 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "We can't budge on the cash, but we can move the post-termination ESOP exercise window from 90 days to 7 years. How does that change the package for you?",
     company: "cred", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "intense",
-    styleNote: "Top-quartile unicorn 2026 lever — the exercise-window concession. 90-day → 7-year windows changes effective ESOP NPV by 30-60% for long-tenure candidates. Offer-stage negotiable; almost never re-opened post-signing. Senior candidates who don't ask leave real money on the table.",
+    styleNote: "Top-quartile unicorn 2026 lever, the exercise-window concession. 90-day → 7-year windows changes effective ESOP NPV by 30-60% for long-tenure candidates. Offer-stage negotiable; almost never re-opened post-signing. Senior candidates who don't ask leave real money on the table.",
   },
   {
-    text: "Our budget is ₹45 LPA fixed plus a 30% target bonus, but the bonus is tied to firm-wide P&L — last year payouts ranged 40% to 130% of target. Can you live with that variability?",
+    text: "Our budget is ₹45 LPA fixed plus a 30% target bonus, but the bonus is tied to firm-wide P&L, last year payouts ranged 40% to 130% of target. Can you live with that variability?",
     company: "goldman", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "intense",
-    styleNote: "BFSI / IB India pattern: heavy variable share with firm-P&L tie. Negotiate the floor (push for ₹2-3L variable-floor guarantee year-1) rather than the target. Counter the bonus structure with: 'What's the 5-year median realisation?' — most banks won't share but the question signals you understand the risk.",
+    styleNote: "BFSI / IB India pattern: heavy variable share with firm-P&L tie. Negotiate the floor (push for ₹2-3L variable-floor guarantee year-1) rather than the target. Counter the bonus structure with: 'What's the 5-year median realisation?', most banks won't share but the question signals you understand the risk.",
   },
   {
-    text: "We're at ₹52 LPA fixed; you wanted ₹58 LPA. We can't move the headline, but our finance team can structure 14% of basic into corporate NPS Tier 1 — same CTC for us, ~₹1L+ extra in your pocket post-tax. Does that close the gap?",
+    text: "We're at ₹52 LPA fixed; you wanted ₹58 LPA. We can't move the headline, but our finance team can structure 14% of basic into corporate NPS Tier 1, same CTC for us, ~₹1L+ extra in your pocket post-tax. Does that close the gap?",
     company: "zomato", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "intense",
-    styleNote: "2025 NPS unlock — biggest restructuring play in the Indian market. §80CCD(2) cap raised 10% → 14% of basic for all private-sector under new tax regime (Apr 2025). Tax-free routing of ~₹1.5-3L on senior CTCs. Most large employers will agree — it's a payroll setting, not a comp negotiation. Watch the ₹7.5L combined cap (PF + NPS + Super) on very-senior offers (basic > ₹40L).",
+    styleNote: "2025 NPS unlock, biggest restructuring play in the Indian market. §80CCD(2) cap raised 10% → 14% of basic for all private-sector under new tax regime (Apr 2025). Tax-free routing of ~₹1.5-3L on senior CTCs. Most large employers will agree, it's a payroll setting, not a comp negotiation. Watch the ₹7.5L combined cap (PF + NPS + Super) on very-senior offers (basic > ₹40L).",
   },
   {
-    text: "Standard package: ₹35 LPA fixed + ₹4 LPA sign-on (clawback over 2 years) + relocation ₹3 LPA. Our consulting bands are tight — base is fixed for your level, and joining bonus is the only flex.",
+    text: "Standard package: ₹35 LPA fixed + ₹4 LPA sign-on (clawback over 2 years) + relocation ₹3 LPA. Our consulting bands are tight, base is fixed for your level, and joining bonus is the only flex.",
     company: "mckinsey", roleFamily: "consultant", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "standard",
-    styleNote: "MBB consulting India 2026 norm: rigid bands, joining-bonus as the only real lever. Counter on relocation generosity, post-MBA promotion timing, and study-program reimbursement (sometimes ₹5-15L for Wharton/Stanford EMBA). Don't push base — it's tied to cohort equity and signals you don't understand the firm.",
+    styleNote: "MBB consulting India 2026 norm: rigid bands, joining-bonus as the only real lever. Counter on relocation generosity, post-MBA promotion timing, and study-program reimbursement (sometimes ₹5-15L for Wharton/Stanford EMBA). Don't push base, it's tied to cohort equity and signals you don't understand the firm.",
   },
   {
-    text: "Your current CTC is ₹14 LPA at TCS. We're offering ₹19 LPA — a 35% hike. Variable is 15% of CTC, paid quarterly. Variable realised average has been 65-80% lately. When can you join?",
+    text: "Your current CTC is ₹14 LPA at TCS. We're offering ₹19 LPA, a 35% hike. Variable is 15% of CTC, paid quarterly. Variable realised average has been 65-80% lately. When can you join?",
     company: "infosys", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "standard",
-    styleNote: "IT services 2026 reality: variable target ≠ variable realised. Q4 FY25 actuals: TCS 100%, Wipro 90%, Infosys 65%. Counter by asking for fixed-CTC framing instead of total-CTC ('₹14L hike on FIXED, not on inclusive-of-variable'). Senior IT services bands have higher variable share AND lower realisation — push to convert variable to fixed where possible.",
+    styleNote: "IT services 2026 reality: variable target ≠ variable realised. Q4 FY25 actuals: TCS 100%, Wipro 90%, Infosys 65%. Counter by asking for fixed-CTC framing instead of total-CTC ('₹14L hike on FIXED, not on inclusive-of-variable'). Senior IT services bands have higher variable share AND lower realisation, push to convert variable to fixed where possible.",
   },
   {
-    text: "We're offering ₹48 LPA fixed + ₹15 LPA RSU (Apple stock, 25/25/25/25 over 4 years). Apple India's RSU refresh cycle is annual at ~₹10 LPA. Your competing offer at Razorpay was ₹52 LPA + ESOPs — how do you weigh that against listed-company liquidity?",
+    text: "We're offering ₹48 LPA fixed + ₹15 LPA RSU (Apple stock, 25/25/25/25 over 4 years). Apple India's RSU refresh cycle is annual at ~₹10 LPA. Your competing offer at Razorpay was ₹52 LPA + ESOPs, how do you weigh that against listed-company liquidity?",
     company: "apple", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "intense",
-    styleNote: "Big Tech India 2026 standard. Listed-stock RSUs (Apple/Microsoft/Google) are tradable on vest day; ESOPs at unicorns are illiquid until buyback or IPO. Discount unicorn ESOPs by 30-50% face value when comparing. Refresh grants stack — by year 3, total annual vest can be 1.5-2x year-1.",
+    styleNote: "Big Tech India 2026 standard. Listed-stock RSUs (Apple/Microsoft/Google) are tradable on vest day; ESOPs at unicorns are illiquid until buyback or IPO. Discount unicorn ESOPs by 30-50% face value when comparing. Refresh grants stack, by year 3, total annual vest can be 1.5-2x year-1.",
   },
   {
     text: "Our seed-stage budget is ₹22 LPA fixed plus 0.4% equity (1.6L shares at face value ₹10, current 409A ₹250). We can't move on cash but we can go up to 0.6%. We've raised our seed; Series A is targeted in 18 months.",
     company: "stripe", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "intense",
-    styleNote: "Early-stage / seed-Series-A-style offer (using Stripe as the recognised proxy). Apply 70-80% expected-value discount to face equity — most early ESOPs expire worthless. Negotiate: (a) extended exercise window (7+ yrs vs 90 days), (b) acceleration on change-of-control, (c) refresh-grant policy at next round. Headline equity % is meaningless without these terms.",
+    styleNote: "Early-stage / seed-Series-A-style offer (using Stripe as the recognised proxy). Apply 70-80% expected-value discount to face equity, most early ESOPs expire worthless. Negotiate: (a) extended exercise window (7+ yrs vs 90 days), (b) acceleration on change-of-control, (c) refresh-grant policy at next round. Headline equity % is meaningless without these terms.",
   },
   {
     text: "₹38 LPA fixed + ₹6 LPA target variable + ESPP at 15% discount (Freshworks NASDAQ-listed). We can stretch to ₹40 LPA but variable doesn't move. What does it take to get you across the line?",
     company: "freshworks", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "standard",
-    styleNote: "Listed Indian SaaS unicorn (Freshworks went public 2021). ESPP at 15% discount with look-back is real liquidity vs unicorn ESOP — ~17.6% guaranteed gross return per cycle when maxed. Counter by anchoring on competing tier rather than 'across the line' — the latter signals desperation. Listed SaaS is 1.2-1.4x unicorn cash bands at senior, well below FAANG.",
+    styleNote: "Listed Indian SaaS unicorn (Freshworks went public 2021). ESPP at 15% discount with look-back is real liquidity vs unicorn ESOP, ~17.6% guaranteed gross return per cycle when maxed. Counter by anchoring on competing tier rather than 'across the line', the latter signals desperation. Listed SaaS is 1.2-1.4x unicorn cash bands at senior, well below FAANG.",
   },
   {
     text: "Our offer is ₹62 LPA fixed + 20% target bonus + ₹40 LPA RSU vesting 4 years. New grants are 25/25/25/25, but we have a legacy 5/15/40/40 option for senior hires who commit to 4-year tenure. Which would you prefer?",
     company: "amazon", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q4", difficulty: "intense",
-    styleNote: "Amazon 2026 vesting structure question — they historically used 5/15/40/40 (back-loaded, retention-focused) and now offer 25/25/25/25 to compete with Google/Microsoft. Front-loaded is better for shorter-tenure plans (1-2 years), back-loaded gives more if you stay the full 4 years. Pick based on your honest tenure intent, not on which sounds bigger at year-1.",
+    styleNote: "Amazon 2026 vesting structure question, they historically used 5/15/40/40 (back-loaded, retention-focused) and now offer 25/25/25/25 to compete with Google/Microsoft. Front-loaded is better for shorter-tenure plans (1-2 years), back-loaded gives more if you stay the full 4 years. Pick based on your honest tenure intent, not on which sounds bigger at year-1.",
   },
   {
     text: "Why do you want to join the IAS specifically, and not the IRS or IFS where your optional subject would give you a better edge?",
@@ -855,10 +855,10 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "GD topic for IBPS PO: 'Should small-finance banks be allowed to convert into universal banks?' 8-min discussion, you're 1 of 10.",
     company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "IBPS PO group discussion. Banking-specific topic; tests sectoral awareness + GD etiquette (entering, not interrupting, summarising). Generic CSR / women-empowerment templates fail here — banking literacy required.",
+    styleNote: "IBPS PO group discussion. Banking-specific topic; tests sectoral awareness + GD etiquette (entering, not interrupting, summarising). Generic CSR / women-empowerment templates fail here, banking literacy required.",
   },
   {
-    text: "PI: Why banking, why this bank, why now? You have a B.Tech IT degree — why aren't you sitting for IT placements?",
+    text: "PI: Why banking, why this bank, why now? You have a B.Tech IT degree, why aren't you sitting for IT placements?",
     company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Standard IBPS-PO panel interview. Engineering-degree background is the most-probed angle. Concrete answers (job-security, family considerations, public-service interest) outscore aspirational framing.",
@@ -884,7 +884,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "ISRO entry-level fundamentals viva. Specific-mission grounding ('why GSAT-29') tests beyond textbook knowledge.",
   },
 
-  /* ── Campus Placements — TCS NQT ────────────────────────────── */
+  /* ── Campus Placements, TCS NQT ────────────────────────────── */
   {
     text: "Walk me through a project from your final year. Why did you choose this stack? Where did it break?",
     company: "tcs", roleFamily: "campus", focus: "campus-placement",
@@ -892,7 +892,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "TCS NQT Tech round opener. Tests genuine project ownership vs. group-project free-riders. 'My contribution was X' specificity expected.",
   },
   {
-    text: "Why TCS specifically? You've also applied to Infosys and Wipro — what's different about TCS for you?",
+    text: "Why TCS specifically? You've also applied to Infosys and Wipro, what's different about TCS for you?",
     company: "tcs", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "TCS HR round. Generic 'big brand, good training' fails. Concrete: TCS-specific hiring patterns (NQT consistency), training (TCS Ignite), client portfolio research.",
@@ -904,7 +904,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "TCS HR signature question. Tests realistic acceptance vs. impressive-sounding 'yes' that the recruiter knows is brittle. Honest 'I'd prefer X but I'm flexible' beats blanket assent.",
   },
 
-  /* ── Campus Placements — Infosys InfyTQ ─────────────────────── */
+  /* ── Campus Placements, Infosys InfyTQ ─────────────────────── */
   {
     text: "Code: Given a string, find the first non-repeating character in O(n) using a single pass. Walk me through your approach before writing.",
     company: "infosys", roleFamily: "campus", focus: "campus-placement",
@@ -918,12 +918,12 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Infosys InfyTQ scenario round. Tests SDLC awareness + structured onboarding thinking. Wants: read docs, run end-to-end, find a small fixable bug, talk to PM/client. 'I'd ask my manager' alone fails.",
   },
 
-  /* ── Campus Placements — Wipro NLTH ─────────────────────────── */
+  /* ── Campus Placements, Wipro NLTH ─────────────────────────── */
   {
     text: "What's the difference between OOP and procedural programming? Give me a real-world example where one is clearly better than the other.",
     company: "wipro", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "warmup",
-    styleNote: "Wipro NLTH technical-fundamentals round. Textbook definition fails — wants concrete examples (e.g. banking system → OOP for accounts; data ETL → procedural fine).",
+    styleNote: "Wipro NLTH technical-fundamentals round. Textbook definition fails, wants concrete examples (e.g. banking system → OOP for accounts; data ETL → procedural fine).",
   },
   {
     text: "Tell me about a time you handled ambiguity. Specific story, please.",
@@ -932,7 +932,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Wipro 'Spirit of Wipro' (integrity, customer-centricity) cultural fit. STAR format expected even from freshers.",
   },
 
-  /* ── Campus Placements — Cognizant GenC / GenC Next ─────────── */
+  /* ── Campus Placements, Cognizant GenC / GenC Next ─────────── */
   {
     text: "GenC Next aptitude follow-up: Explain how a hash table handles collisions. Now tell me which Indian app you've used that you suspect uses one heavily.",
     company: "cognizant", roleFamily: "campus", focus: "campus-placement",
@@ -940,7 +940,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Cognizant GenC Next technical round. Two-part: textbook + applied speculation. Tests connecting CS concepts to real systems (Ola/Swiggy lookup, IRCTC seat-booking).",
   },
 
-  /* ── Campus Placements — Accenture ──────────────────────────── */
+  /* ── Campus Placements, Accenture ──────────────────────────── */
   {
     text: "Accenture cares about 'innovation, inclusion, stewardship'. Pick one and tell me a college instance where you embodied it.",
     company: "accenture", roleFamily: "campus", focus: "campus-placement",
@@ -948,7 +948,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Accenture campus values-anchor question. The values are explicit on their careers page; not knowing them = unprepared. Concrete college example (club, project, fest) > abstract reflection.",
   },
 
-  /* ── Campus Placements — Amazon SDE-1 / Flipkart GET ────────── */
+  /* ── Campus Placements, Amazon SDE-1 / Flipkart GET ────────── */
   {
     text: "Reverse a linked list, then find the middle node in a single pass. Walk me through both, then explain the time/space complexity.",
     company: "amazon", roleFamily: "campus", focus: "campus-placement",
@@ -959,16 +959,16 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Tell me about a time in college you took ownership of something nobody asked you to. (LP: Ownership)",
     company: "amazon", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "Amazon LP for campus. STAR format expected even at fresher level. 'Volunteered for X' weak — wants self-initiated + measurable outcome.",
+    styleNote: "Amazon LP for campus. STAR format expected even at fresher level. 'Volunteered for X' weak, wants self-initiated + measurable outcome.",
   },
   {
     text: "Design a basic library-management system. Tell me your data model and 2-3 endpoints.",
     company: "flipkart", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "Flipkart GET / SDE-1 campus design round. Calibrated for fresher — wants entities + relationships + key endpoints, NOT distributed-systems framing. Over-engineering = lack of judgement.",
+    styleNote: "Flipkart GET / SDE-1 campus design round. Calibrated for fresher, wants entities + relationships + key endpoints, NOT distributed-systems framing. Over-engineering = lack of judgement.",
   },
 
-  /* ── Campus Placements — LTIMindtree / HCL / Capgemini / IBM ── */
+  /* ── Campus Placements, LTIMindtree / HCL / Capgemini / IBM ── */
   {
     text: "What is normalisation in DBMS? Walk me through 1NF → 2NF → 3NF on a student-marks table you'd build for your college.",
     company: "ltimindtree", roleFamily: "campus", focus: "campus-placement",
@@ -979,7 +979,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Tell me one thing that's not on your resume that I should know about you. Why didn't you put it on the resume?",
     company: "hcl", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
-    styleNote: "HCL TechBee / GET HR round. Tests self-awareness about resume editing choices. 'Nothing, my resume is complete' fails — wants a real story (a fest organised, a hackathon DNF, a hobby) with reasoning.",
+    styleNote: "HCL TechBee / GET HR round. Tests self-awareness about resume editing choices. 'Nothing, my resume is complete' fails, wants a real story (a fest organised, a hackathon DNF, a hobby) with reasoning.",
   },
   {
     text: "Capgemini works across 50+ countries. If your first project puts you on a midnight shift for a French client for 3 months, how do you handle it?",
@@ -991,27 +991,27 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Pick any one IBM product or service you've heard of. Tell me what problem it solves and who its biggest competitor is.",
     company: "ibm", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
-    styleNote: "IBM campus screening. Watson / Red Hat / Z-mainframe / Cloud — pick any. Tests basic homework on the company. 'IBM makes computers' = unprepared.",
+    styleNote: "IBM campus screening. Watson / Red Hat / Z-mainframe / Cloud, pick any. Tests basic homework on the company. 'IBM makes computers' = unprepared.",
   },
 
-  /* ── Campus Placements — Microsoft / Google / Adobe India ────── */
+  /* ── Campus Placements, Microsoft / Google / Adobe India ────── */
   {
     text: "You're given two sorted arrays of size m and n. Find the median in O(log(min(m,n))). Talk me through your approach before you write.",
     company: "microsoft", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Microsoft IDC / Engage campus DSA round. The bar is genuine — partition-based binary search expected. Strong candidates state O(m+n) merge first, then optimise; weak ones go silent.",
+    styleNote: "Microsoft IDC / Engage campus DSA round. The bar is genuine, partition-based binary search expected. Strong candidates state O(m+n) merge first, then optimise; weak ones go silent.",
   },
   {
     text: "Why software engineering and not the M.Tech / MBA route your peers are taking? Talk me through how you decided.",
     company: "microsoft", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
-    styleNote: "Microsoft campus motivation probe. Tests genuine deliberation vs. herd choice. 'I love coding' alone weak — wants a counter-option they considered and why they ruled it out.",
+    styleNote: "Microsoft campus motivation probe. Tests genuine deliberation vs. herd choice. 'I love coding' alone weak, wants a counter-option they considered and why they ruled it out.",
   },
   {
-    text: "Google STEP — design a data structure that supports insert, delete, and getRandom all in O(1). Now extend it to allow duplicates.",
+    text: "Google STEP, design a data structure that supports insert, delete, and getRandom all in O(1). Now extend it to allow duplicates.",
     company: "google", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Google STEP / APAC campus DSA. HashMap + dynamic array combo. The duplicate extension is the real test — most miss the index-tracking nuance.",
+    styleNote: "Google STEP / APAC campus DSA. HashMap + dynamic array combo. The duplicate extension is the real test, most miss the index-tracking nuance.",
   },
   {
     text: "Adobe asks for a real-world bug you've debugged. Tell me about a project bug that took you more than a day to find. What was the root cause and what would you do differently?",
@@ -1020,7 +1020,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Adobe MTS-1 campus debugging probe. Tests genuine engineering reflection. 'I added more print statements' acceptable but want articulation of WHY the bug was hard (assumption violated, async race, env mismatch).",
   },
 
-  /* ── Campus Placements — Oracle / Cisco / Salesforce / NVIDIA ── */
+  /* ── Campus Placements, Oracle / Cisco / Salesforce / NVIDIA ── */
   {
     text: "Oracle Apps DBA fresher: explain a deadlock in a transactional database. Now tell me how you'd detect one programmatically.",
     company: "oracle", roleFamily: "campus", focus: "campus-placement",
@@ -1031,22 +1031,22 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Walk me through what happens, packet by packet, when you type cisco.com into a browser and hit enter. Stop me at any layer you want to go deeper on.",
     company: "cisco", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
-    styleNote: "Cisco campus networking fundamentals. The classic — wants DNS → TCP → TLS → HTTP coverage with at least one layer drilled into. 'Browser sends a request' = fail.",
+    styleNote: "Cisco campus networking fundamentals. The classic, wants DNS → TCP → TLS → HTTP coverage with at least one layer drilled into. 'Browser sends a request' = fail.",
   },
   {
-    text: "Salesforce Trailhead — have you done any Trailhead modules? If yes, which one and what was the most surprising thing you learned. If no, why not?",
+    text: "Salesforce Trailhead, have you done any Trailhead modules? If yes, which one and what was the most surprising thing you learned. If no, why not?",
     company: "salesforce", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
     styleNote: "Salesforce campus / Futureforce HR. Trailhead engagement is a real signal of self-driven learning. 'No' is acceptable IF paired with another concrete self-learning thread (LeetCode streak, Coursera cert).",
   },
   {
-    text: "NVIDIA — you've worked with PyTorch in college? Tell me what happens to a tensor in memory when you call .cuda() on it. What could go wrong?",
+    text: "NVIDIA, you've worked with PyTorch in college? Tell me what happens to a tensor in memory when you call .cuda() on it. What could go wrong?",
     company: "nvidia", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
     styleNote: "NVIDIA India campus DLI / SWE-ML. Tests whether ML coursework was conceptual or applied. Want: host→device copy, alignment, OOM, async semantics. 'It runs on GPU' = surface-level.",
   },
 
-  /* ── Campus Placements — Indian product cos (Swiggy/Zomato/etc) */
+  /* ── Campus Placements, Indian product cos (Swiggy/Zomato/etc) */
   {
     text: "Swiggy delivery promise is 30 minutes. If your college fest catered through Swiggy and 4 of 200 orders missed the SLA, what data would you ask Swiggy for to figure out why?",
     company: "swiggy", roleFamily: "campus", focus: "campus-placement",
@@ -1054,7 +1054,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Swiggy campus / Step-Up case round. Operational empathy + data instinct. Strong: order timestamps, restaurant prep time, rider assignment latency, distance, weather. Weak: 'I'd ask for delay reasons' generic.",
   },
   {
-    text: "Zomato — design the database schema for restaurant menus that supports daily specials and out-of-stock items in real time.",
+    text: "Zomato, design the database schema for restaurant menus that supports daily specials and out-of-stock items in real time.",
     company: "zomato", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "Zomato campus SWE schema design. Wants restaurant→menu→item→variant tables + a separate availability/specials table with TTL. Over-normalisation or stuffing it all in one table both fail.",
@@ -1072,16 +1072,16 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "PhonePe campus humility / scale-awareness probe. Strong: name a specific failure mode (cache stampede, schema migration lock, money-handling race). Weak: 'everything' / 'nothing, I'll be careful'.",
   },
   {
-    text: "Paytm — explain how you'd handle a refund that's been initiated twice by accident. Walk me through your idempotency strategy.",
+    text: "Paytm, explain how you'd handle a refund that's been initiated twice by accident. Walk me through your idempotency strategy.",
     company: "paytm", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "Paytm campus SDE-1 fintech round. Idempotency keys + state machine for refunds. Wants explicit 'request_id' or 'refund_id' uniqueness, plus what state transitions are valid.",
   },
   {
-    text: "CRED's audience is the top 1% credit-card user. Pick one feature in the CRED app and tell me what you'd change for a tier-2 city user — and whether CRED should care.",
+    text: "CRED's audience is the top 1% credit-card user. Pick one feature in the CRED app and tell me what you'd change for a tier-2 city user, and whether CRED should care.",
     company: "cred", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "CRED campus product round. Tests strategic awareness — the 'should CRED care' is the real probe. Strong candidates note CRED's premium positioning and argue both sides; weak ones add tier-2 features uncritically.",
+    styleNote: "CRED campus product round. Tests strategic awareness, the 'should CRED care' is the real probe. Strong candidates note CRED's premium positioning and argue both sides; weak ones add tier-2 features uncritically.",
   },
   {
     text: "Meesho's resellers are mostly women in tier-2/3 cities running WhatsApp shops. Design the simplest possible 'low-stock' notification for them. What's your channel and what's your message?",
@@ -1090,33 +1090,33 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Meesho campus PM / SDE-with-product-lens. Tests audience empathy. Wants: SMS/WhatsApp push (not email), Hindi/regional fallback, time-of-day awareness. 'In-app push' alone shows poor user model.",
   },
   {
-    text: "Freshworks builds B2B SaaS. As a fresher SDE, what's the difference between writing a feature for 100 customers vs. 100,000 — concretely, what changes in your code?",
+    text: "Freshworks builds B2B SaaS. As a fresher SDE, what's the difference between writing a feature for 100 customers vs. 100,000, concretely, what changes in your code?",
     company: "freshworks", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "Freshworks campus SDE-1. Tests scale-thinking. Want: pagination, async jobs, tenant isolation, observability. 'Better code' generic = fail.",
   },
   {
-    text: "Zoho doesn't believe in the IIT premium — we hire from Tier-3 colleges too. Tell me one thing about your engineering ability that doesn't show up in your CGPA.",
+    text: "Zoho doesn't believe in the IIT premium, we hire from Tier-3 colleges too. Tell me one thing about your engineering ability that doesn't show up in your CGPA.",
     company: "zoho", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "Zoho campus / Schools-of-Learning HR round. Zoho's anti-pedigree culture is real and on the careers page. Wants: a side-project, an OSS contrib, a problem solved without coursework support. CGPA-defending answers fail.",
   },
   {
-    text: "Zerodha — explain what happens between you placing a market-buy order on Kite at 9:15:00 AM and the trade settling. Where could it fail?",
+    text: "Zerodha, explain what happens between you placing a market-buy order on Kite at 9:15:00 AM and the trade settling. Where could it fail?",
     company: "zerodha", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Zerodha campus SDE — exchange-flow literacy. Wants: order routing → exchange matching → trade confirmation → T+1 settlement at clearing corp. Fresher pass-mark = naming three of these stages.",
+    styleNote: "Zerodha campus SDE, exchange-flow literacy. Wants: order routing → exchange matching → trade confirmation → T+1 settlement at clearing corp. Fresher pass-mark = naming three of these stages.",
   },
 
-  /* ── Campus Placements — Banking / NBFC / Investment grad programs */
+  /* ── Campus Placements, Banking / NBFC / Investment grad programs */
   {
-    text: "HDFC Pragati — you're a branch officer. A senior citizen wants to invest 20 lakhs of retirement money in equity mutual funds because his neighbour told him to. What do you do in the next 10 minutes?",
+    text: "HDFC Pragati, you're a branch officer. A senior citizen wants to invest 20 lakhs of retirement money in equity mutual funds because his neighbour told him to. What do you do in the next 10 minutes?",
     company: "hdfc", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
     styleNote: "HDFC Pragati / management-trainee branch-banking ethics probe. Wants: risk-profiling, suitability assessment, debt allocation suggestion, written record. 'Sell him the equity fund, hit my target' = instant fail.",
   },
   {
-    text: "ICICI — pitch me the savings account I should open. I'm 22, just placed, ₹6 LPA, single, in Bangalore.",
+    text: "ICICI, pitch me the savings account I should open. I'm 22, just placed, ₹6 LPA, single, in Bangalore.",
     company: "icici", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "ICICI campus PO / management trainee. Tests product knowledge + needs-based selling. Want: question first (spending pattern, debit-card use, salary credit), then product. Pitch-without-questions = fails.",
@@ -1134,12 +1134,12 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "JPMC India CCB campus analyst. Tests risk + customer-experience trade-off. Want: merchant pattern, customer history, fraud rules, dispute timeline. RBI 'shadow reversal' rules are a bonus signal.",
   },
 
-  /* ── Campus Placements — Consulting analyst programs ────────── */
+  /* ── Campus Placements, Consulting analyst programs ────────── */
   {
     text: "McKinsey BA case: an Indian quick-commerce player's profit per order has dropped 40% YoY despite GMV growth. Where do you start?",
     company: "mckinsey", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "McKinsey India BA / fellow campus case. Profitability framework — revenue/order vs. cost/order. Strong: structures cost into rider, packaging, dark-store, discounting. Weak: jumps to 'reduce discounts'.",
+    styleNote: "McKinsey India BA / fellow campus case. Profitability framework, revenue/order vs. cost/order. Strong: structures cost into rider, packaging, dark-store, discounting. Weak: jumps to 'reduce discounts'.",
   },
   {
     text: "BCG Associate: estimate the size of the second-hand smartphone market in India per year. Walk me through your structure.",
@@ -1151,7 +1151,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Bain Associate: a friend asks if she should leave her ₹14 LPA Bangalore PM job to start a D2C clothing brand. What three numbers do you ask her for first?",
     company: "bain", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
-    styleNote: "Bain India campus — applied-judgment screen. Tests business instincts on real-life decision. Strong: runway months, beach-head SKU CAC/AOV, competitor density. Weak: 'go for it / don't go for it' opinions without numbers.",
+    styleNote: "Bain India campus, applied-judgment screen. Tests business instincts on real-life decision. Strong: runway months, beach-head SKU CAC/AOV, competitor density. Weak: 'go for it / don't go for it' opinions without numbers.",
   },
   {
     text: "Deloitte S&O analyst: a mid-sized Indian retail bank wants to enter wealth management. What are the top 3 risks you'd flag in week 1?",
@@ -1160,7 +1160,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Deloitte campus analyst case. Wants: regulatory (SEBI/AMFI licences), capability (RM hiring + tech), conflict (existing bancassurance partners). Naming specific Indian regulators = strong.",
   },
 
-  /* ── Campus Placements — FMCG MT / Sales-leadership programs ── */
+  /* ── Campus Placements, FMCG MT / Sales-leadership programs ── */
   {
     text: "HUL Future Leaders: you're managing the Surf Excel team in Patna for 6 months. Modern trade is 5% there; the other 95% is kirana. What's your week-1 priority?",
     company: "hul", roleFamily: "campus", focus: "campus-placement",
@@ -1180,7 +1180,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "ITC GenNxt campus FMCG product probe. Tests trade-channel awareness. Strong: smaller SKU for ₹5/₹10 price points, grammage, kirana shelf-fit. Weak: aesthetic redesign without distribution rationale.",
   },
 
-  /* ── Campus Placements — Group Discussion / Aptitude transitions */
+  /* ── Campus Placements, Group Discussion / Aptitude transitions */
   {
     text: "Group discussion topic: 'AI tools should be banned in college coursework.' You have 2 minutes to take and defend a position. Take one now.",
     company: "tcs", roleFamily: "campus", focus: "campus-placement",
@@ -1202,13 +1202,13 @@ export const QUESTION_BANK: BankEntry[] = [
 
   /* ── Campus placement: core-engineering & tier-3 pipelines ──── */
   {
-    text: "Walk me through your final-year project — what was the deliverable, what tools did you use, and what would you change if you had another semester?",
+    text: "Walk me through your final-year project, what was the deliverable, what tools did you use, and what would you change if you had another semester?",
     company: "l-and-t", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
     styleNote: "L&T / BHEL / Mahindra GET opener. Expect: deliverable, software (AutoCAD / SolidWorks / ANSYS / MATLAB), and one calibrated regret. Hand-waves like 'I designed something' without naming the CAD package fail the project_no_tech_stack check.",
   },
   {
-    text: "BHEL operates across thermal, hydro, nuclear and renewables. Which division would you want to be posted to and why — what's your reasoning?",
+    text: "BHEL operates across thermal, hydro, nuclear and renewables. Which division would you want to be posted to and why, what's your reasoning?",
     company: "bhel", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "BHEL GET interview classic. Tests division-awareness + posting flexibility. 'Renewables because of the energy transition' is fine if backed by one concrete BHEL renewables fact (Trichy plant, recent solar capacity announcement). Generic 'any division is fine sir' = weak signal.",
@@ -1238,7 +1238,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Automotive fresher technical probe. Tests core mechanical knowledge + product-context bridge. Strong: cost / vibration / fuel-economy / serviceability trade-offs framed against Indian commuter use-case. Surface-level 'twin is smoother' answer leaves marks on the table.",
   },
   {
-    text: "Cummins is a global power-systems company. Why are you applying to Cummins specifically and not Caterpillar or Kirloskar — what makes you think you'd thrive here?",
+    text: "Cummins is a global power-systems company. Why are you applying to Cummins specifically and not Caterpillar or Kirloskar, what makes you think you'd thrive here?",
     company: "cummins", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
     styleNote: "Engine-OEM why-us probe. Bad: 'Cummins is a great brand.' Strong: names a recent Cummins announcement (hydrogen ICE platform, Phaltan plant expansion) or a values cue from the Cummins Code of Business Conduct.",
@@ -1247,13 +1247,13 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Tier-2 college candidate: how do you compete with IIT / NIT applicants for the same role? Convince me your fundamentals are strong.",
     company: "tcs", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Common Indian tier-3 college framing probe. Strong: pivots to concrete proof — coursework, projects shipped, certifications cleared, NQT score. Weak: 'colleges don't matter sir' (avoids the question). Watch for badmouth_college regression.",
+    styleNote: "Common Indian tier-3 college framing probe. Strong: pivots to concrete proof, coursework, projects shipped, certifications cleared, NQT score. Weak: 'colleges don't matter sir' (avoids the question). Watch for badmouth_college regression.",
   },
   {
     text: "You have one backlog cleared in the supplementary exam. Walk me through what happened, what you fixed, and what you'd do if I gave you that semester back.",
     company: "infosys", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Direct deficit-probe — appropriate framing when the AI initiates it. Strong: one-sentence cause (subject, why), specific corrective step (taught it, project, certification), and reflective close. Avoids over-explanation.",
+    styleNote: "Direct deficit-probe, appropriate framing when the AI initiates it. Strong: one-sentence cause (subject, why), specific corrective step (taught it, project, certification), and reflective close. Avoids over-explanation.",
   },
   {
     text: "ITI / diploma to BTech lateral entry students often feel behind on coursework. If that's your path, how did you bridge the gap, and which specific topics did you have to grind to catch up?",
@@ -1268,7 +1268,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "PSU / Tata role-clarity probe. Strong: GET = technical / plant-floor / process-engineering; MT = cross-functional rotations / strategy / operations. Picks one with reasoning grounded in their internship or aptitude. Weak: 'sir whatever the company decides'.",
   },
   {
-    text: "ISRO / DRDO scientist-B exam — you cleared the written but the interview is technical-deep. Walk me through one applied physics or signals problem from your coursework that you genuinely understand to the bone.",
+    text: "ISRO / DRDO scientist-B exam, you cleared the written but the interview is technical-deep. Walk me through one applied physics or signals problem from your coursework that you genuinely understand to the bone.",
     company: "isro", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
     styleNote: "ISRO / DRDO interview rigor probe. Strong: picks one well-bounded problem (FFT decomposition, control-loop stability, orbital mechanics), walks through derivation, and admits where the limit of their understanding is. Surface answers get a follow-up that exposes them fast.",
@@ -1280,13 +1280,13 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "PSU compensation-literacy probe. Strong: knows pay-band (E-1 / Rs 50k-160k), HRA + perks structure, and frames PSU stability vs private growth honestly. Weak: 'I don't know sir' = unprepared. Watch for naive 'private pays more' framing.",
   },
   {
-    text: "Open-source contribution — have you ever filed an issue or PR on a public repo? Walk me through the workflow you followed, even if it was a doc-typo fix.",
+    text: "Open-source contribution, have you ever filed an issue or PR on a public repo? Walk me through the workflow you followed, even if it was a doc-typo fix.",
     company: "google", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
     styleNote: "Modern-fresher signal probe. Strong: even a typo PR shows comfort with fork → branch → PR → review cycle. Bonus: cites the repo. Empty answer is fine for non-IT freshers; an exaggerated 'I contribute to React' that the candidate can't back up is a credibility hit.",
   },
   {
-    text: "Tell me one engineering concept that you learned in college but found a real-world application for during a project or internship — what was the disconnect between textbook and practice?",
+    text: "Tell me one engineering concept that you learned in college but found a real-world application for during a project or internship, what was the disconnect between textbook and practice?",
     company: "samsung", roleFamily: "campus", focus: "campus-placement",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
     styleNote: "Samsung R&D / GE / Honeywell campus differentiator. Strong: names the concept (PID tuning, Big-O vs cache effects, Bode plot vs real damping), the project, and the specific gap. This is the question that separates rote-prep from genuine learners.",
@@ -1321,7 +1321,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "How do you measure your team's health beyond velocity? Walk me through 3 signals you actually look at weekly.",
     company: "stripe", roleFamily: "em", focus: "management",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "EM signal-craft probe. Generic 'eNPS' weak — wants specifics (review-cycle latency, on-call distribution, 1:1 cancellation rate, code-review p90). Stripe-style writing-clarity expected.",
+    styleNote: "EM signal-craft probe. Generic 'eNPS' weak, wants specifics (review-cycle latency, on-call distribution, 1:1 cancellation rate, code-review p90). Stripe-style writing-clarity expected.",
   },
   {
     text: "How do you decide when to promote a senior engineer to staff? What's the moment they crossed the line?",
@@ -1333,7 +1333,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Two of your senior engineers want the same architecture lead role. Both are good. Walk me through how you handled the conversation.",
     company: "flipkart", roleFamily: "em", focus: "management",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Zero-sum people decision. Tests transparency, retention thinking, and willingness to have hard conversations. Avoid 'I let HR decide' — interviewer wants YOUR play.",
+    styleNote: "Zero-sum people decision. Tests transparency, retention thinking, and willingness to have hard conversations. Avoid 'I let HR decide', interviewer wants YOUR play.",
   },
   {
     text: "Describe a time you killed a project that the team had spent 6+ months on. How did you announce it?",
@@ -1342,7 +1342,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Hardest delivery-pivot moment. Wants: sunk-cost discipline + team morale repair + leadership communication craft. Sample line of the actual announcement is gold.",
   },
   {
-    text: "How do you onboard a senior hire — say a Staff Engineer with 10 YOE — versus a junior new-grad? What's different about the first 30 days?",
+    text: "How do you onboard a senior hire, say a Staff Engineer with 10 YOE, versus a junior new-grad? What's different about the first 30 days?",
     company: "atlassian", roleFamily: "em", focus: "management",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Onboarding craft. Tests calibration: senior hire = autonomy + context-load + early-win identification; junior = scaffolding + safety + ramp-up. Same playbook for both = fail.",
@@ -1355,14 +1355,14 @@ export const QUESTION_BANK: BankEntry[] = [
   },
 
   /* ── High-traffic tier-1 fillers (audit-coverage expansion) ── */
-  /* Apple SWE — system design */
+  /* Apple SWE, system design */
   {
     text: "Design a battery-aware background sync that doesn't drain the device. Walk me through the trade-off between freshness and power.",
     company: "apple", roleFamily: "swe", focus: "system-design",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Apple system design favors device-constraint problems (battery, memory, thermal). Wants: power-budget reasoning, OS API selection (BGTask / WorkManager), failure-mode degradation strategy.",
   },
-  /* Apple — behavioral craft */
+  /* Apple, behavioral craft */
   {
     text: "Walk me through a UX detail you obsessed over that nobody else on your team thought mattered. How did you get them to care?",
     company: "apple", roleFamily: "behavioral", focus: "behavioral",
@@ -1381,14 +1381,14 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Walk me through a feature you'd kill at Instagram, and what you'd build with the freed-up engineering capacity.",
     company: "meta", roleFamily: "pm", focus: "case-study",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Meta PM signature — tests opinionated product judgment. Generic answers (Threads, Reels) fail; wants a less-obvious feature + a contrarian replacement bet.",
+    styleNote: "Meta PM signature, tests opinionated product judgment. Generic answers (Threads, Reels) fail; wants a less-obvious feature + a contrarian replacement bet.",
   },
   /* Amazon PM × case-study */
   {
     text: "Write the press-release for a new Prime feature you'd launch in India next quarter. Title + 3 headline benefits + customer quote.",
     company: "amazon", roleFamily: "pm", focus: "case-study",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Amazon PR-FAQ working-backwards method. Tests customer-obsession + clarity. The customer quote is the load-bearing element — must reveal a real-not-marketing pain.",
+    styleNote: "Amazon PR-FAQ working-backwards method. Tests customer-obsession + clarity. The customer quote is the load-bearing element, must reveal a real-not-marketing pain.",
   },
   /* Stripe PM × strategic */
   {
@@ -1409,14 +1409,14 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "We have a flow that fires after every Account update. It now triggers 15× per save due to recursion. Diagnose and fix without breaking dependent flows.",
     company: "salesforce", roleFamily: "swe", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "Salesforce platform debug — tests Apex + flow runtime knowledge. Wants: trigger-handler pattern, flow recursion guards, Static.depth tracking, isolation-tag strategy.",
+    styleNote: "Salesforce platform debug, tests Apex + flow runtime knowledge. Wants: trigger-handler pattern, flow recursion guards, Static.depth tracking, isolation-tag strategy.",
   },
   /* Zerodha PM × strategic */
   {
     text: "Zerodha hit ₹2,000Cr profit this year without VC money. The board asks where to deploy capital. What's your three-bet allocation?",
     company: "zerodha", roleFamily: "pm", focus: "strategic",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Zerodha capital-allocation case. Anti-VC philosophy is the constraint — answers like 'spin out a SaaS arm' fail. Wants: in-line product extensions (commodities, MFs, US stocks), R&D-heavy bets (Coin / Varsity), employee equity alternatives.",
+    styleNote: "Zerodha capital-allocation case. Anti-VC philosophy is the constraint, answers like 'spin out a SaaS arm' fail. Wants: in-line product extensions (commodities, MFs, US stocks), R&D-heavy bets (Coin / Varsity), employee equity alternatives.",
   },
   /* CRED PM × case-study */
   {
@@ -1496,18 +1496,18 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Razorpay ops-incident war-room probe. Tests: triage discipline (flame-graph first, narrow scope), upstream-vs-self attribution, comms cadence (every 15 min), post-incident artifacts (timeline, MTR review, runbook update).",
   },
 
-  /* ── Sales — Account Executive / Business Development ───────── */
+  /* ── Sales, Account Executive / Business Development ───────── */
   {
-    text: "Walk me through your biggest closed-won deal — what was the ACV, sales cycle length, and the moment the prospect tipped from undecided to signing?",
+    text: "Walk me through your biggest closed-won deal, what was the ACV, sales cycle length, and the moment the prospect tipped from undecided to signing?",
     company: "freshworks", roleFamily: "sales", focus: "behavioral",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "AE / BD interview classic. Wants ACV + cycle length + the SPECIFIC inflection point. 'They saw the value' fails — wants the demo / artifact / referral that flipped them.",
+    styleNote: "AE / BD interview classic. Wants ACV + cycle length + the SPECIFIC inflection point. 'They saw the value' fails, wants the demo / artifact / referral that flipped them.",
   },
   {
     text: "How do you qualify a lead in the first 10 minutes? Walk me through your discovery framework.",
     company: "salesforce", roleFamily: "sales", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "MEDDIC / BANT / SPIN — wants framework name + how they actually use it, not textbook recitation.",
+    styleNote: "MEDDIC / BANT / SPIN, wants framework name + how they actually use it, not textbook recitation.",
   },
   {
     text: "Your prospect ghosted after 3 calls. They were our top opportunity. What's your re-engagement play?",
@@ -1522,12 +1522,12 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Honesty + reflection probe. Common failure: blaming pricing or competitor. Strong: identifying the discovery miss / champion gap.",
   },
 
-  /* ── Marketing — Brand / Performance / Growth ───────────────── */
+  /* ── Marketing, Brand / Performance / Growth ───────────────── */
   {
-    text: "Walk me through a brand campaign you led — brief, insight, output, and the metric you moved.",
+    text: "Walk me through a brand campaign you led, brief, insight, output, and the metric you moved.",
     company: "hul", roleFamily: "marketing", focus: "case-study",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Brand-side classic. Insight is the non-obvious part — wants a customer-truth that the campaign expressed. Generic 'we ran ads on Meta' fails.",
+    styleNote: "Brand-side classic. Insight is the non-obvious part, wants a customer-truth that the campaign expressed. Generic 'we ran ads on Meta' fails.",
   },
   {
     text: "Your CAC has been climbing 30% YoY. What's your diagnosis and where do you cut?",
@@ -1539,7 +1539,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Defend an ad creative you're proud of that initially flopped in testing but you pushed through to launch.",
     company: "p&g", roleFamily: "marketing", focus: "behavioral",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "P&G classic — tests conviction + pattern-recognition over data. Want: testing methodology critique + what the candidate saw that the test missed.",
+    styleNote: "P&G classic, tests conviction + pattern-recognition over data. Want: testing methodology critique + what the candidate saw that the test missed.",
   },
   {
     text: "Take a brand of your choice. Tell me what their next 3-year strategy should be and why.",
@@ -1548,7 +1548,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "FMCG strategic-brand probe. Reveals candidate's ability to think category dynamics + competitive moves. Generic answers (premiumize, go digital) fail.",
   },
 
-  /* ── Finance — Audit / IB / Equity Research ─────────────────── */
+  /* ── Finance, Audit / IB / Equity Research ─────────────────── */
   {
     text: "Walk me through a 3-statement model. Start with revenue and tell me what hits the cash flow statement vs the income statement.",
     company: "goldman", roleFamily: "finance", focus: "technical",
@@ -1568,13 +1568,13 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Big 4 audit ethics + process probe. Tests escalation chain, partner-involvement timing, materiality threshold judgment, fee-pressure resistance.",
   },
   {
-    text: "An MSME client wants to take a ₹50Cr loan. Walk me through your credit assessment — what 5 things matter most?",
+    text: "An MSME client wants to take a ₹50Cr loan. Walk me through your credit assessment, what 5 things matter most?",
     company: "icici", roleFamily: "finance", focus: "case-study",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Credit risk / commercial banking probe. Wants: cash-flow coverage, collateral, promoter-track-record, sector dynamics, RBI compliance. Order of weighting reveals seniority.",
   },
 
-  /* ── Legal — Litigation / Corporate / IP ─────────────────────── */
+  /* ── Legal, Litigation / Corporate / IP ─────────────────────── */
   {
     text: "We have a Section 138 cheque-bounce matter. Opposing counsel is offering a settlement at 60% of face value. The client is liquid. Walk me through your advice.",
     company: "mckinsey", roleFamily: "legal", focus: "case-study",
@@ -1594,7 +1594,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "IP litigation strategic probe. Wants: divisional patents, pre-grant opposition timing, chances on appeal, settle-vs-fight calculus, business-impact framing.",
   },
 
-  /* ── Healthcare — Clinical / Hospital Admin ─────────────────── */
+  /* ── Healthcare, Clinical / Hospital Admin ─────────────────── */
   {
     text: "A patient's family disagrees with your treatment recommendation and demands a different protocol they read online. Walk me through your conversation.",
     company: "mckinsey", roleFamily: "healthcare", focus: "behavioral",
@@ -1614,7 +1614,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Critical-care clinical viva (entry resident). Wants: airway-breathing-circulation, fluid resuscitation, broad-spectrum antibiotics, source identification, vasopressor threshold.",
   },
 
-  /* ── Operations — Hospitality / Aviation / Manufacturing ─── */
+  /* ── Operations, Hospitality / Aviation / Manufacturing ─── */
   {
     text: "It's 2pm on Saturday at a 200-cover restaurant. F&B kitchen is 40 min behind. Walk me through your next 30 minutes.",
     company: "atlassian", roleFamily: "ops", focus: "behavioral",
@@ -1634,7 +1634,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Logistics ops case. Wants: shift-management fundamentals, supervision-density, supply-chain dependencies (truck arrivals), motivation/incentive design.",
   },
 
-  /* ── BFSI Sales — Banking RM / Wealth Manager ─────────────── */
+  /* ── BFSI Sales, Banking RM / Wealth Manager ─────────────── */
   {
     text: "Pitch our wealth-management offering to a 55-year-old senior executive with ₹15Cr corpus and 10 years to retirement. You have 5 minutes.",
     company: "icici", roleFamily: "bfsi-sales", focus: "case-study",
@@ -1659,10 +1659,10 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Walk me through an architecture migration you led across 30+ engineers. What was the rollback plan and when did you nearly need it?",
     company: "razorpay", roleFamily: "em", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Tech-leadership probe (not pure IC). Wants migration scope + organisational coordination + actual rollback trigger criteria. 'We didn't need the rollback' fails — interviewer wants the *moment you almost pulled the trigger*.",
+    styleNote: "Tech-leadership probe (not pure IC). Wants migration scope + organisational coordination + actual rollback trigger criteria. 'We didn't need the rollback' fails, interviewer wants the *moment you almost pulled the trigger*.",
   },
   {
-    text: "You inherit a system over-engineered with microservices for what's effectively a CRUD app serving 200 RPS. How do you handle — leave it, fix it, or escalate?",
+    text: "You inherit a system over-engineered with microservices for what's effectively a CRUD app serving 200 RPS. How do you handle, leave it, fix it, or escalate?",
     company: "stripe", roleFamily: "em", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Senior-tech-leadership scope-judgment. Tests over-engineering pattern recognition + political awareness (the original architect may still be on the team). Wants a phased plan, not a religious answer.",
@@ -1680,10 +1680,10 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "2026-defining tech-leadership question. Wants: phased rollout (junior-pair → senior-pair → solo), guardrails (security review boundaries, never-trust patterns), measurement (PR-review-time, defect-escape rate, NOT lines-of-code).",
   },
   {
-    text: "On-call has gotten miserable — engineers paged 3-4 times/night, half false alarms. Walk me through the redesign you'd lead.",
+    text: "On-call has gotten miserable, engineers paged 3-4 times/night, half false alarms. Walk me through the redesign you'd lead.",
     company: "phonepe", roleFamily: "em", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "standard",
-    styleNote: "Tech-leadership operational craft. Wants: alert-tier discipline (paging vs warning), runbook hygiene, blameless postmortem culture, on-call-load metric tracked weekly. 'We'd just fix the alerts' fails — wants the system change.",
+    styleNote: "Tech-leadership operational craft. Wants: alert-tier discipline (paging vs warning), runbook hygiene, blameless postmortem culture, on-call-load metric tracked weekly. 'We'd just fix the alerts' fails, wants the system change.",
   },
   {
     text: "Two of your senior engineers want very different architectures for the same problem. Both are technically defensible. How do you decide and how do you communicate the decision?",
@@ -1692,7 +1692,7 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Senior-tech-leadership disambiguation moment. Tests: framework for tie-breaking (reversibility, cost-of-being-wrong, who's on the hook for ops), genuine ownership (not 'I let them debate'), and post-decision retention thinking for the engineer whose call you didn't take.",
   },
   {
-    text: "How do you set the bar for promoting an SE3 to Staff? Walk me through the last time you said 'not yet' — what was missing?",
+    text: "How do you set the bar for promoting an SE3 to Staff? Walk me through the last time you said 'not yet', what was missing?",
     company: "amazon", roleFamily: "em", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Tech-leadership calibration probe. Wants concrete missing-bar dimension (scope-of-influence, ambiguity handling, cross-team mentoring) AND specific evidence the candidate gathered. 'Not enough technical depth' is too vague.",
@@ -1700,10 +1700,10 @@ export const QUESTION_BANK: BankEntry[] = [
 
   /* ── HR Round (additions) ─────────────────────────────────────── */
   {
-    text: "Tell me about yourself — keep it to 90 seconds, focused on what's relevant for this role.",
+    text: "Tell me about yourself, keep it to 90 seconds, focused on what's relevant for this role.",
     company: "tcs", roleFamily: "campus", focus: "hr",
     addedQuarter: "2026-Q2", difficulty: "warmup",
-    styleNote: "TCS NQT HR opener. The 90-second cap is real — over-running signals weak self-editing. Should hit: education + flagship project + why-TCS-fit, in that order.",
+    styleNote: "TCS NQT HR opener. The 90-second cap is real, over-running signals weak self-editing. Should hit: education + flagship project + why-TCS-fit, in that order.",
   },
   {
     text: "Walk me through your three biggest projects in the last role. Which one are you proudest of, and why?",
@@ -1715,7 +1715,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Personal Experience Interview (PEI): Tell me about a time you led a team through a difficult moment. Where exactly did your leadership show up?",
     company: "mckinsey", roleFamily: "consultant", focus: "hr",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "McKinsey PEI Leadership dimension. Story must be quantified, candidate must own a clear personal action, and 'where exactly' probe is mandatory — push for the specific moment + the specific words used.",
+    styleNote: "McKinsey PEI Leadership dimension. Story must be quantified, candidate must own a clear personal action, and 'where exactly' probe is mandatory, push for the specific moment + the specific words used.",
   },
   {
     text: "PEI: Walk me through a time you had a strong personal conviction about something but the evidence forced you to change your mind. How did you handle the change?",
@@ -1741,7 +1741,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "You're a Senior PM and the CEO wants to kill your roadmap's flagship feature to redirect engineers to a board-pitched bet. The data on your feature is strong. Walk me through the conversation.",
     company: "swiggy", roleFamily: "pm", focus: "strategic",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Strategic stakeholder defense. Tests: bringing data, separating ego from argument, offering a phased compromise vs. all-or-nothing, knowing when to fold. 'I'd push back firmly' alone fails — wants the actual sequence of moves.",
+    styleNote: "Strategic stakeholder defense. Tests: bringing data, separating ego from argument, offering a phased compromise vs. all-or-nothing, knowing when to fold. 'I'd push back firmly' alone fails, wants the actual sequence of moves.",
   },
   {
     text: "You're CTO. The board wants you to commit to a major GenAI bet that you privately think is overhyped for your company's current scale. How do you frame your honest position?",
@@ -1753,7 +1753,7 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "Walk me through a strategic bet you made that didn't pay off. Be specific about what you'd do differently with hindsight.",
     company: "google", roleFamily: "pm", focus: "strategic",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Google PM 'L5+ judgment' question. Wants a real bet (not a tactical miss), the reasoning at the time of the call (steelmanning past-self), and a specific changed mental model — not 'I'd do it the same way'.",
+    styleNote: "Google PM 'L5+ judgment' question. Wants a real bet (not a tactical miss), the reasoning at the time of the call (steelmanning past-self), and a specific changed mental model, not 'I'd do it the same way'.",
   },
   {
     text: "You're a founding PM at a Series B. Your CEO wants to expand to 3 new geographies in the next 12 months. You think one is wrong. What do you do?",
@@ -1788,37 +1788,37 @@ export const QUESTION_BANK: BankEntry[] = [
 
   /* ── Panel Interview (cross-persona handoffs) ──────────────────── */
   {
-    text: "[Hiring Manager opens] Walk me through your most impactful project in the last 18 months — what was the business outcome? [Tech Lead enters mid-answer] Hmm, but that scaling number — what was your p99 read latency before vs. after? [HR Partner closes] How did the team feel during the crunch?",
+    text: "[Hiring Manager opens] Walk me through your most impactful project in the last 18 months, what was the business outcome? [Tech Lead enters mid-answer] Hmm, but that scaling number, what was your p99 read latency before vs. after? [HR Partner closes] How did the team feel during the crunch?",
     company: "atlassian", roleFamily: "behavioral", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Real Atlassian panel handoff. Tests: same story told three ways (business → technical → human). Candidates who can pivot framing without re-explaining win; candidates who repeat the same answer to all three personae fail.",
   },
   {
-    text: "[Tech Lead] Walk me through a system migration you owned. [Hiring Manager picks up] Building on what you just said — how did you sell that migration timeline to the VP when they pushed for half the schedule?",
+    text: "[Tech Lead] Walk me through a system migration you owned. [Hiring Manager picks up] Building on what you just said, how did you sell that migration timeline to the VP when they pushed for half the schedule?",
     company: "google", roleFamily: "em", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Cross-persona reference + escalation pivot. Tests: technical credibility AND stakeholder communication on the same fact pattern. Don't repeat what you said to Tech Lead — extend it.",
+    styleNote: "Cross-persona reference + escalation pivot. Tests: technical credibility AND stakeholder communication on the same fact pattern. Don't repeat what you said to Tech Lead, extend it.",
   },
   {
-    text: "[HR Partner observes] You mentioned to my colleague that you fired an underperformer. Tell me what you said in the room — the actual words, not the summary.",
+    text: "[HR Partner observes] You mentioned to my colleague that you fired an underperformer. Tell me what you said in the room, the actual words, not the summary.",
     company: "amazon", roleFamily: "em", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "HR Partner deep-empathy probe building on a previous panelist's question. Wants the actual phrasing used, not a sanitized recap. Vulnerability + specificity = signal.",
   },
   {
-    text: "[Hiring Manager → Tech Lead handoff] OK my colleague will go deeper on the architecture, but before they do — give me the one-sentence elevator version of why you chose X over Y.",
+    text: "[Hiring Manager → Tech Lead handoff] OK my colleague will go deeper on the architecture, but before they do, give me the one-sentence elevator version of why you chose X over Y.",
     company: "razorpay", roleFamily: "swe", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Panel handoff that pre-frames the next interviewer. Tests: ability to summarize a deep technical decision in business terms before the technical deep-dive starts. The TL is listening for the summary too.",
   },
   {
-    text: "[Tech Lead, skeptical] You said you'd use Kafka here. Picking up on the cost concern Sarah raised earlier — is Kafka still the right choice given the budget constraint, or were you anchored to your last team's stack?",
+    text: "[Tech Lead, skeptical] You said you'd use Kafka here. Picking up on the cost concern Sarah raised earlier, is Kafka still the right choice given the budget constraint, or were you anchored to your last team's stack?",
     company: "stripe", roleFamily: "swe", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense",
-    styleNote: "Stripe panel — Tech Lead drilling on a constraint introduced by Hiring Manager (Sarah). Tests: willingness to revise on new info vs. defending past-self, awareness of stack-anchoring bias.",
+    styleNote: "Stripe panel, Tech Lead drilling on a constraint introduced by Hiring Manager (Sarah). Tests: willingness to revise on new info vs. defending past-self, awareness of stack-anchoring bias.",
   },
   {
-    text: "[HR Partner closing] Across our three conversations today, what did you learn about us that surprised you? And — be honest — what made you most nervous about joining?",
+    text: "[HR Partner closing] Across our three conversations today, what did you learn about us that surprised you? And, be honest, what made you most nervous about joining?",
     company: "atlassian", roleFamily: "behavioral", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Panel closing reflective probe. Tests: self-awareness + genuine engagement with the panel content (vs. canned closer). 'Nothing makes me nervous' = soft signal you weren't really listening.",
@@ -1827,13 +1827,13 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "[Product Counterpart] Engineering has told us they want six weeks; the GM in this room wants three. Walk us through how *you'd* arbitrate that, knowing both of us are listening.",
     company: "flipkart", roleFamily: "pm", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Indian e-commerce panel pattern — PM caught between Eng and GM in the same room. Tests: can the candidate run a real tradeoff conversation without flattering either side? Strong: names the scope cut, the risk owner, and the deadline they'd commit to.",
+    styleNote: "Indian e-commerce panel pattern, PM caught between Eng and GM in the same room. Tests: can the candidate run a real tradeoff conversation without flattering either side? Strong: names the scope cut, the risk owner, and the deadline they'd commit to.",
   },
   {
-    text: "[Tech Lead, follow-up to design] My colleague drew the system on the whiteboard — pick the single component you'd worry about first if traffic 5x'd overnight, and explain *to the non-engineer in the room* why it's the one to worry about.",
+    text: "[Tech Lead, follow-up to design] My colleague drew the system on the whiteboard, pick the single component you'd worry about first if traffic 5x'd overnight, and explain *to the non-engineer in the room* why it's the one to worry about.",
     company: "phonepe", roleFamily: "swe", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "PhonePe / Razorpay panel — Tech Lead asks you to translate the bottleneck for HR/Hiring Manager. Tests: dual register (technical accuracy + business intelligibility). Win: 'the payments DB — because if it slows down, every transaction in the country slows down, and we'd lose customer trust before we lose money.'",
+    styleNote: "PhonePe / Razorpay panel, Tech Lead asks you to translate the bottleneck for HR/Hiring Manager. Tests: dual register (technical accuracy + business intelligibility). Win: 'the payments DB, because if it slows down, every transaction in the country slows down, and we'd lose customer trust before we lose money.'",
   },
   {
     text: "[Hiring Manager + Skip-level both in the room] We sometimes disagree about the bar for this role. If you joined and the two of us gave you conflicting calibration feedback in your first quarter, what would you do?",
@@ -1845,24 +1845,167 @@ export const QUESTION_BANK: BankEntry[] = [
     text: "[Cross-functional Partner from Marketing] Your engineering colleague spent ten minutes on the data pipeline. From a marketing-ops point of view, *why should I care* about any of that? Convince me.",
     company: "swiggy", roleFamily: "data", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
-    styleNote: "Panel translation probe — a non-engineering panelist deliberately challenges the technical depth. Tests: ability to anchor technical work in commercial outcome (CAC, attribution, campaign ROI). Failure mode: re-explaining the pipeline at the same depth.",
+    styleNote: "Panel translation probe, a non-engineering panelist deliberately challenges the technical depth. Tests: ability to anchor technical work in commercial outcome (CAC, attribution, campaign ROI). Failure mode: re-explaining the pipeline at the same depth.",
   },
   {
-    text: "[Senior IC peer, after HM has left the room] You don't have to be diplomatic with me — tell me one thing about your previous workplace that you'd never tell the recruiter, but that would matter to anyone working with you here.",
+    text: "[Senior IC peer, after HM has left the room] You don't have to be diplomatic with me, tell me one thing about your previous workplace that you'd never tell the recruiter, but that would matter to anyone working with you here.",
     company: "stripe", roleFamily: "swe", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
-    styleNote: "Bar-raiser / peer-IC panel probe done off-script. Tests: candour calibrated to context — does the candidate trust the peer enough to be real, without trash-talking? Strong: one honest cultural mismatch + what they did about it. Weak: 'everything was great' (no calibration) or trash-talking (no judgement).",
+    styleNote: "Bar-raiser / peer-IC panel probe done off-script. Tests: candour calibrated to context, does the candidate trust the peer enough to be real, without trash-talking? Strong: one honest cultural mismatch + what they did about it. Weak: 'everything was great' (no calibration) or trash-talking (no judgement).",
   },
   {
-    text: "[Director, observing two interviewers debate your last answer] My team is split on the trade-off you just described. Sarah thinks you optimised for the wrong thing; Raj thinks you got it right. Without taking sides — what *new* information would change *your* answer?",
+    text: "[Director, observing two interviewers debate your last answer] My team is split on the trade-off you just described. Sarah thinks you optimised for the wrong thing; Raj thinks you got it right. Without taking sides, what *new* information would change *your* answer?",
     company: "uber", roleFamily: "pm", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
     styleNote: "Director-level meta-probe in a panel. Tests: epistemic humility + ability to state falsifiability conditions. Strong: names a concrete piece of evidence ('if our churn data showed X, I'd flip'). Weak: re-defending the original answer or agreeing with whichever interviewer is more senior.",
   },
   {
-    text: "[HR Partner, picking up a thread from Hiring Manager 20 minutes ago] You mentioned you 'managed conflict' on that project — Aakash heard the same word. I want the conflict, not the management. What was actually said, and by whom?",
+    text: "[HR Partner, picking up a thread from Hiring Manager 20 minutes ago] You mentioned you 'managed conflict' on that project, Aakash heard the same word. I want the conflict, not the management. What was actually said, and by whom?",
     company: "tcs", roleFamily: "em", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
     styleNote: "HR partner doing a callback to an earlier panelist's question to extract specificity. Tests: STAR-level granularity under cross-reference. The 'managed conflict' euphemism gets called out. Win: names the people (role, not real name), the specific words, the resolution.",
+  },
+
+  /* ── Swiggy — behavioral (2026-Q3 expansion) ───────────────────── */
+  {
+    text: "Tell me about a decision you made with incomplete data that turned out wrong. What was the cost, and what did you change in how you decide next time?",
+    company: "swiggy", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Swiggy behavioral rounds probe ownership and 'first principles' decision-making under ambiguity — a stated cultural value. Strong answers quantify the cost and name a concrete process change, not a vague lesson.",
+  },
+  {
+    text: "Describe a time you disagreed with your manager on a launch. How did you push back, and what happened?",
+    company: "swiggy", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Give me an example of a time you had to move fast and cut scope. How did you decide what to drop, and did the trade-off hold up?",
+    company: "swiggy", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Bias-for-action probe. Swiggy values speed; interviewers want to see a defensible prioritisation rule, not recklessness.",
+  },
+  {
+    text: "Tell me about the hardest cross-team dependency you've had to unblock. Who did you have to influence without authority?",
+    company: "swiggy", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+
+  /* ── Zomato — system-design (2026-Q3 expansion) ────────────────── */
+  {
+    text: "Design the live order-tracking system that shows a customer their delivery partner moving on a map in real time. What are the write and read paths at peak dinner load?",
+    company: "zomato", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Zomato system design centres on hyperlocal, real-time constraints: high-frequency GPS writes, geospatial fan-out, and dinner-peak spikes. Expect probes on location update frequency vs. battery/cost trade-offs.",
+  },
+  {
+    text: "How would you design the restaurant search and ranking service so results reflect delivery time, availability, and personalisation for a given pincode?",
+    company: "zomato", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design a surge/dynamic-pricing engine for delivery fees during rain or peak demand. How do you avoid oscillation and keep it explainable?",
+    company: "zomato", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Zomato loves demand-supply imbalance problems. Strong answers separate the signal (demand, rider availability) from the policy (caps, smoothing) and address fairness/explainability.",
+  },
+  {
+    text: "Design the notification system that tells a customer their order is confirmed, being prepared, picked up, and arriving. How do you guarantee ordering and avoid duplicate pushes?",
+    company: "zomato", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+
+  /* ── PhonePe — technical (2026-Q3 expansion) ───────────────────── */
+  {
+    text: "Given a stream of UPI transactions, find the top-K merchants by volume in the last 10 minutes with a sliding window. Walk me through your data structure choice.",
+    company: "phonepe", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "PhonePe technical rounds tie DSA to payments reality: expect stream-processing, idempotency, and concurrency framed around real UPI scale rather than abstract puzzles.",
+  },
+  {
+    text: "Implement a rate limiter for an API that must allow 5000 requests per second per merchant. Which algorithm, and how does it behave at the boundary?",
+    company: "phonepe", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Find the number of ways to make a payment of amount N using given UPI cashback denominations. Then optimise the space complexity of your DP.",
+    company: "phonepe", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Classic coin-change framed in-domain. PhonePe wants the optimal-substructure reasoning stated aloud and the 2D→1D DP space optimisation.",
+  },
+
+  /* ── CRED — behavioral (2026-Q3 expansion) ─────────────────────── */
+  {
+    text: "Show me something you built or shipped that you're genuinely proud of. Why does the detail matter?",
+    company: "cred", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "CRED interviews are craft- and detail-obsessed; interviewers reward candidates who care about the last 10% of polish and can articulate *why* a small detail mattered to the user.",
+  },
+  {
+    text: "Tell me about a time you rejected 'good enough' and pushed for a higher bar. What did it cost, and was it worth it?",
+    company: "cred", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Describe a product experience (any company's) you think is beautifully designed, and one you think is broken. What separates them?",
+    company: "cred", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Taste probe. CRED filters hard for product sense and opinions held with reasons; a generic 'it's intuitive' answer is a red flag.",
+  },
+
+  /* ── Zerodha — system-design (2026-Q3 expansion) ───────────────── */
+  {
+    text: "Design the order-matching flow for Kite so a market order gets acknowledged in single-digit milliseconds during the 9:15 AM open surge. Where are your bottlenecks?",
+    company: "zerodha", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Zerodha runs India's largest retail brokerage on a lean stack; system-design rounds probe low-latency, market-open spikes, and correctness under load rather than web-scale CRUD.",
+  },
+  {
+    text: "Design a system to stream live market ticks to millions of concurrent Kite users. How do you fan out updates without melting the backend?",
+    company: "zerodha", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "How would you build the end-of-day reconciliation between trades, the exchange, and the depository so no position is ever wrong? What happens on a mismatch?",
+    company: "zerodha", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Correctness-over-cleverness probe. In broking, a reconciliation bug is a regulatory event; interviewers want idempotency, audit trails, and a clear mismatch-handling policy.",
+  },
+
+  /* ── Groww — system-design (2026-Q3, backs existing SEO page) ──── */
+  {
+    text: "Design the mutual-fund order and portfolio system for Groww so a user's holdings and NAV update correctly across SIPs, redemptions, and market close. What's your source of truth?",
+    company: "groww", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Groww spans MF, stocks, and F&O for a huge retail base; system-design rounds probe correctness of money movement, eventual consistency of portfolio views, and reconciliation with RTAs/exchanges.",
+  },
+  {
+    text: "How would you design the SIP scheduler that executes millions of recurring investments on the same date each month without double-charging or missing any?",
+    company: "groww", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+  },
+  {
+    text: "Design the watchlist and price-alert service that pushes a notification the moment a stock crosses a user's target. How do you evaluate millions of alert rules cheaply?",
+    company: "groww", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Fan-in evaluation problem. Strong answers index alerts by price bucket rather than scanning every rule per tick.",
+  },
+
+  /* ── Paytm — technical (2026-Q3 expansion) ─────────────────────── */
+  {
+    text: "Design a data structure that supports insert, delete, and getRandom in O(1). Then explain where you'd use it in a payments backend.",
+    company: "paytm", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Paytm technical rounds mix standard DSA with a 'where would you use this' follow-up that ties back to wallet/payments systems. Have the production framing ready.",
+  },
+  {
+    text: "Given transaction logs, detect the first duplicate transaction ID in a stream. Optimise for memory when the stream is unbounded.",
+    company: "paytm", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Merge K sorted lists of settlement records into a single time-ordered ledger. What's your time complexity and why?",
+    company: "paytm", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Heap-based merge framed in-domain. Paytm wants the min-heap insight and an honest complexity analysis, plus handling of duplicate timestamps.",
   },
 ];
