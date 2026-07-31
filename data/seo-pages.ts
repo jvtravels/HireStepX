@@ -8247,6 +8247,141 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 3 (45-60 min): design deep-dive on correctness and reconciliation plus behavioral.",
     ],
   },
+
+  /* ── Infosys — HR round ─────────────────────────────────────── */
+  {
+    slug: "infosys-hr-interview-questions",
+    searchPhrase: "Infosys HR Interview Questions 2026",
+    company: "infosys", roleFamily: "campus", focus: "hr",
+    intro: "The Infosys HR round is the final gate after the aptitude and technical stages, and it is more about fit, mobility, and commitment than technical depth. In 2026 expect questions on why Infosys, willingness to relocate to any development centre, comfort with the training agreement and being assigned any technology or domain, and the classic 'tell me about yourself' plus five-year plan. Interviewers look for genuine, specific motivation, honest self-awareness, and flexibility with the service-company model. Over-rehearsed generic praise and rigidity on location or tech stack are the common ways candidates stumble here.",
+    framework: { name: "Fit-Mobility-Commitment", summary: "Show specific motivation for Infosys, flexibility on location and technology, and honest self-awareness, keeping every answer crisp and genuine" },
+    metaKeywords: ["Infosys HR interview questions", "Infosys HR round 2026", "Infosys HR interview freshers", "Infosys final round questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What questions are asked in the Infosys HR round?", a: "Why Infosys, willingness to relocate, comfort with the training agreement and any assigned technology, tell me about yourself, strengths and weaknesses, and your five-year plan." },
+      { q: "Is the Infosys HR round difficult?", a: "It is not technically hard, but it is a real gate. Rejections usually come from rigidity on location or technology, generic answers, or poor communication rather than wrong facts." },
+      { q: "Should I agree to relocate and sign the training agreement?", a: "If you genuinely intend to join, yes. Infosys uses a rotational, centre-based model, and flexibility on location and technology is expected. Be honest rather than agreeing to terms you will not honour." },
+    ],
+    recruitmentSteps: [
+      "Online aptitude and reasoning test",
+      "Technical interview on fundamentals and one language",
+      "HR interview on fit, mobility, and motivation",
+      "Offer and training-agreement documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online aptitude, logical reasoning, and verbal test.",
+      "Round 2 (30-45 min): technical round on programming and CS fundamentals.",
+      "Round 3 (15-30 min): HR round on motivation, mobility, and commitment.",
+    ],
+  },
+
+  /* ── Cognizant — HR round ───────────────────────────────────── */
+  {
+    slug: "cognizant-hr-interview-questions",
+    searchPhrase: "Cognizant HR Interview Questions 2026",
+    company: "cognizant", roleFamily: "campus", focus: "hr",
+    intro: "The Cognizant HR round follows the GenC aptitude and technical stages and focuses on fit, flexibility, and a client-service mindset. In 2026 expect questions on why Cognizant, what you know about the company and role, comfort with night shifts or client-timezone hours and relocation, strengths and weaknesses, and how you would handle a difficult client. Interviewers reward candidates who did their homework, show self-awareness, and demonstrate a service orientation. Vague answers, no knowledge of the company, or rigidity on shifts and location are the usual reasons strong technical candidates still get filtered here.",
+    framework: { name: "Homework-and-Service", summary: "Know the company and role, show flexibility on shifts and location, and answer with self-awareness and a client-service mindset" },
+    metaKeywords: ["Cognizant HR interview questions", "Cognizant HR round 2026", "Cognizant GenC HR interview", "Cognizant final round questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What questions are asked in the Cognizant HR round?", a: "Why Cognizant, what you know about the company and role, comfort with night shifts and relocation, strengths and weaknesses, and how you would handle a difficult client situation." },
+      { q: "Does Cognizant ask about night shifts in the HR round?", a: "Often. Client-timezone and shift flexibility is a real requirement for many projects, so be honest about what you can commit to rather than agreeing to everything." },
+      { q: "How do I pass the Cognizant HR round?", a: "Research the company and role, show a client-service mindset, answer strengths and weaknesses with self-awareness, and be flexible on location and shifts if you intend to join." },
+    ],
+    recruitmentSteps: [
+      "GenC online aptitude and coding assessment",
+      "Technical interview on fundamentals and coding",
+      "HR interview on fit, flexibility, and communication",
+      "Offer and onboarding documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): GenC aptitude and coding assessment.",
+      "Round 2 (30-45 min): technical round on programming and CS fundamentals.",
+      "Round 3 (15-30 min): HR round on motivation, flexibility, and client mindset.",
+    ],
+  },
+
+  /* ── Capgemini — technical ──────────────────────────────────── */
+  {
+    slug: "capgemini-technical-interview-questions",
+    searchPhrase: "Capgemini Technical Interview Questions 2026",
+    company: "capgemini", roleFamily: "swe", focus: "technical",
+    intro: "Capgemini's technical round for freshers rewards clear fundamentals over tricky algorithms. In 2026 expect OOP concepts with real examples (the four pillars, abstract class versus interface), a simple coding problem like palindrome checking with variants, and DBMS basics such as normalization up to third normal form. Interviewers want textbook-accurate explanations backed by concrete examples and one language you are genuinely comfortable in. Deep dynamic-programming puzzles are rare; the differentiator is whether you can explain core concepts cleanly and write a correct small program without fumbling the basics.",
+    framework: { name: "Fundamentals-with-Examples", summary: "Explain OOP, DBMS, and core concepts with concrete examples, write a correct simple program, and stay fluent in one language" },
+    metaKeywords: ["Capgemini technical interview questions", "Capgemini interview freshers 2026", "Capgemini coding interview", "Capgemini OOP DBMS interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does Capgemini ask in the technical round?", a: "OOP concepts with examples, the difference between abstract class and interface, a simple coding problem like palindrome checking, and DBMS basics such as normalization." },
+      { q: "How hard is the Capgemini technical interview?", a: "For freshers it is fundamentals-focused and moderate. Clear, textbook-accurate explanations with examples matter more than advanced algorithms." },
+      { q: "Which language should I use for the Capgemini coding question?", a: "Whichever you are most fluent in, commonly Java, C++, or Python. Correctness and clear explanation matter more than the language choice." },
+    ],
+    recruitmentSteps: [
+      "Online aptitude and pseudocode/coding test",
+      "Technical interview on fundamentals and coding",
+      "HR interview on fit and flexibility",
+      "Offer and documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online aptitude, pseudocode, and coding test.",
+      "Round 2 (30-45 min): technical round on OOP, DBMS, and a coding problem.",
+      "Round 3 (15-30 min): HR round on motivation and mobility.",
+    ],
+  },
+
+  /* ── HCL — technical ────────────────────────────────────────── */
+  {
+    slug: "hcl-technical-interview-questions",
+    searchPhrase: "HCL Technical Interview Questions 2026",
+    company: "hcl", roleFamily: "swe", focus: "technical",
+    intro: "HCL's technical round for freshers spans OS, DBMS, networking, and a coding language, with an emphasis on breadth of fundamentals. In 2026 expect questions on process versus thread and when to use multithreading, reversing a string and a linked list with complexity, and networking basics like the OSI model or what happens when you type a URL and press enter. Interviewers reward structured, textbook-accurate answers and a correct small program. You do not need competitive-programming depth; you need to explain core CS concepts clearly and code a simple problem without stumbling on the basics.",
+    framework: { name: "Broad-Fundamentals", summary: "Cover OS, DBMS, and networking basics with structured answers, and write a correct simple program with a stated complexity" },
+    metaKeywords: ["HCL technical interview questions", "HCL interview freshers 2026", "HCL coding interview", "HCL OS networking interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does HCL ask in the technical round?", a: "OS concepts like process versus thread and multithreading, DBMS basics, networking (OSI model, DNS resolution), and a simple coding problem like reversing a string or linked list." },
+      { q: "How hard is the HCL technical interview?", a: "For freshers it is fundamentals-focused and moderate. Breadth across OS, DBMS, and networking with clear explanations matters more than hard algorithms." },
+      { q: "How do I prepare for the HCL technical round?", a: "Revise OS, DBMS, and computer-networking basics, practise a few easy coding problems in your preferred language, and be ready to explain what happens when you load a URL." },
+    ],
+    recruitmentSteps: [
+      "Online aptitude and coding test",
+      "Technical interview on CS fundamentals and coding",
+      "HR interview on fit and flexibility",
+      "Offer and documentation",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online aptitude and coding test.",
+      "Round 2 (30-45 min): technical round on OS, DBMS, networking, and a coding problem.",
+      "Round 3 (15-30 min): HR round on motivation and mobility.",
+    ],
+  },
+
+  /* ── BCG — behavioral / fit round ───────────────────────────── */
+  {
+    slug: "bcg-behavioral-interview-questions",
+    searchPhrase: "BCG Behavioral Interview Questions 2026",
+    company: "bcg", roleFamily: "consultant", focus: "behavioral",
+    intro: "Alongside the case, BCG runs a fit or personal-experience interview that carries real weight. In 2026 expect questions on why consulting and why BCG specifically, a time you led a team through a difficult situation, and a time you influenced someone without formal authority. Interviewers look for genuine, specific motivation and concrete evidence of leadership, influence, and drive, structured cleanly with your personal contribution front and centre. Rehearsed generic answers and vague 'we' stories that hide your individual role are the fastest ways to underperform in the fit round even when the case goes well.",
+    framework: { name: "Leadership STAR", summary: "Answer fit questions with genuine motivation and structured STAR stories that foreground your personal contribution to leadership and influence" },
+    metaKeywords: ["BCG behavioral interview questions", "BCG fit interview 2026", "BCG personal experience interview", "why consulting why BCG"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What does BCG ask in the fit interview?", a: "Why consulting and why BCG, a time you led a team through difficulty, and a time you influenced someone without formal authority, all probing leadership, drive, and impact." },
+      { q: "How important is the fit interview at BCG?", a: "Very. It runs alongside the case and can decide the outcome. Strong candidates who nail the case but give generic, un-owned fit answers still get dinged." },
+      { q: "How should I answer 'why BCG'?", a: "Be specific and genuine: connect BCG's work, people you have spoken to, or its approach to your own goals, rather than reciting generic praise that applies to any firm." },
+    ],
+    recruitmentSteps: [
+      "Resume and cover-letter screen",
+      "First-round case plus fit interviews",
+      "Final-round cases with partners plus fit",
+      "Offer decision",
+    ],
+    interviewRounds: [
+      "Round 1 (45 min each): first-round interviews pairing a case with fit questions.",
+      "Round 2 (45 min each): final-round cases with senior consultants and partners.",
+      "Fit is woven through every round alongside the case.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

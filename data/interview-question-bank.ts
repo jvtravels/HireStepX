@@ -2387,4 +2387,99 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
     styleNote: "Razorpay probes UPI-specific realities: asynchronous callbacks, duplicate and delayed notifications, and idempotent state transitions.",
   },
+
+  /* ── Infosys — HR round ─────────────────────────────────────── */
+  {
+    text: "Why do you want to join Infosys, and are you comfortable relocating to any of our development centres?",
+    company: "infosys", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Infosys HR rounds check motivation, mobility, and comfort with the service-bond and training model. Genuine, specific reasons beat generic praise.",
+  },
+  {
+    text: "Are you willing to sign the training agreement and work in any technology or domain we assign you to?",
+    company: "infosys", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "Tell me about yourself, and where do you see yourself in five years at Infosys?",
+    company: "infosys", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Standard Infosys HR opener. Interviewers want a crisp, honest pitch and realistic ambition aligned with a services-company career path.",
+  },
+
+  /* ── Cognizant — HR round ───────────────────────────────────── */
+  {
+    text: "Why Cognizant, and what do you know about the company and the role you applied for?",
+    company: "cognizant", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Cognizant HR rounds reward candidates who did their homework on the company and show flexibility on location and technology.",
+  },
+  {
+    text: "Are you okay with working night shifts or client-timezone hours, and relocating as per project needs?",
+    company: "cognizant", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "What are your strengths and weaknesses, and how would you handle a difficult client situation?",
+    company: "cognizant", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Cognizant HR wants self-awareness and a client-service mindset. A weakness with a concrete improvement step lands better than a humblebrag.",
+  },
+
+  /* ── Capgemini — technical ──────────────────────────────────── */
+  {
+    text: "Explain the four pillars of OOP with a real example for each, then tell me the difference between an abstract class and an interface.",
+    company: "capgemini", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Capgemini technical rounds for freshers lean on OOP, DBMS, and one language of your choice. Clear fundamentals with examples matter more than tricky algorithms.",
+  },
+  {
+    text: "Write a program to check whether a string is a palindrome, and then handle the case-insensitive and ignore-spaces variants.",
+    company: "capgemini", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "What is normalization in databases? Explain up to third normal form with an example.",
+    company: "capgemini", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Capgemini interviewers frequently test DBMS basics. A concrete table example walking 1NF to 3NF answers this cleanly.",
+  },
+
+  /* ── HCL — technical ────────────────────────────────────────── */
+  {
+    text: "What is the difference between a process and a thread, and when would you use multithreading?",
+    company: "hcl", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+    styleNote: "HCL technical rounds for freshers cover OS, DBMS, networking, and a coding language. Clear, textbook-accurate fundamentals are the bar.",
+  },
+  {
+    text: "Reverse a string and then a linked list. Explain your approach and complexity for each.",
+    company: "hcl", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "warmup", confidence: "inferred",
+  },
+  {
+    text: "Explain the OSI model layers, and what happens when you type a URL into a browser and press enter?",
+    company: "hcl", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "HCL often tests networking fundamentals. A structured DNS-to-render walkthrough shows breadth without needing deep systems knowledge.",
+  },
+
+  /* ── BCG — behavioral / fit round ───────────────────────────── */
+  {
+    text: "Why consulting, and why BCG specifically over other firms you're considering?",
+    company: "bcg", roleFamily: "consultant", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "BCG fit interviews want a genuine, specific motivation and evidence of leadership and impact. Rehearsed generic answers are easy to spot.",
+  },
+  {
+    text: "Tell me about a time you led a team through a difficult situation. What was your role and the outcome?",
+    company: "bcg", roleFamily: "consultant", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+  },
+  {
+    text: "Describe a time you had to influence someone without formal authority to get a result.",
+    company: "bcg", roleFamily: "consultant", focus: "behavioral",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "BCG fit rounds probe leadership, influence, and drive. Strong answers use structured STAR with a quantified, personal contribution.",
+  },
 ];
