@@ -3079,4 +3079,104 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "NTPC HR rounds probe awareness of the energy transition. Balanced views on thermal-plus-renewables and a genuine contribution angle land well.",
   },
+
+  /* ── Google — data scientist / ML ──────────────────────────── */
+  {
+    text: "You launch a feature and DAU rises but session length falls. Design an analysis to decide whether the feature is net positive. What metrics and tests do you use?",
+    company: "google", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Google data-scientist rounds test product-sense analytics: metric trade-offs, guardrail metrics, and rigorous experiment design over rote statistics.",
+  },
+  {
+    text: "Explain the bias-variance trade-off and how you'd diagnose whether a model is underfitting or overfitting from its learning curves.",
+    company: "google", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Google tests ML fundamentals with practical diagnosis. Connect bias-variance to learning curves, regularisation, and data-size decisions.",
+  },
+  {
+    text: "Derive why maximum-likelihood estimation for linear regression with Gaussian noise gives the least-squares objective.",
+    company: "google", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Google data-scientist rounds probe statistical foundations. A clean MLE-to-least-squares derivation signals genuine depth.",
+  },
+
+  /* ── Amazon — applied scientist ────────────────────────────── */
+  {
+    text: "Design a recommendation model for a marketplace with millions of items and cold-start users. How do you handle sparsity and evaluate offline versus online?",
+    company: "amazon", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Amazon applied-scientist rounds test recommender design: cold start, sparsity, candidate generation versus ranking, and offline/online eval alignment.",
+  },
+  {
+    text: "How would you detect and correct for label leakage in a fraud-detection model before it silently inflates offline metrics?",
+    company: "amazon", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Amazon probes ML rigour: leakage detection, temporal validation, and the gap between offline metrics and production performance.",
+  },
+  {
+    text: "Explain precision, recall, and how you'd choose an operating threshold for a model that flags suspicious transactions where false positives annoy customers.",
+    company: "amazon", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Amazon applied-scientist rounds tie metrics to business cost. Reason about the precision-recall trade-off in terms of customer friction and cost.",
+  },
+
+  /* ── Flipkart — data scientist ─────────────────────────────── */
+  {
+    text: "Design an ML system to predict delivery delays at order time. What features, model, and feedback loop would you use, and how do you avoid stale predictions?",
+    company: "flipkart", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Flipkart data-scientist rounds test end-to-end ML system thinking: feature engineering, model choice, retraining cadence, and feedback loops.",
+  },
+  {
+    text: "A pricing model performs well in offline tests but underperforms live. List the likely reasons and how you'd investigate each.",
+    company: "flipkart", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart probes the offline-online gap: distribution shift, feedback loops, leakage, and train-serve skew, diagnosed systematically.",
+  },
+  {
+    text: "How would you design an A/B test for a new ranking model when network effects mean one user's experience affects another's?",
+    company: "flipkart", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Flipkart data-scientist rounds probe experiment design under interference: cluster randomisation and handling network effects.",
+  },
+
+  /* ── Microsoft — data scientist ────────────────────────────── */
+  {
+    text: "You must build a churn-prediction model for an enterprise SaaS product. Walk through problem framing, features, model, and how you'd make predictions actionable for the business.",
+    company: "microsoft", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Microsoft data-scientist rounds emphasise problem framing and actionability, not just modelling. Tie predictions to business intervention.",
+  },
+  {
+    text: "Explain how you'd handle a heavily imbalanced classification problem, and why accuracy is misleading here. What metrics and techniques apply?",
+    company: "microsoft", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Microsoft tests imbalanced-learning fundamentals: resampling, class weights, PR-AUC over accuracy, and threshold selection.",
+  },
+  {
+    text: "Given a large user-events table, write SQL to compute a funnel conversion rate across four ordered steps, then explain how you'd model drop-off.",
+    company: "microsoft", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Microsoft data-scientist rounds combine SQL funnel analysis with modelling intuition about where and why users drop off.",
+  },
+
+  /* ── Meesho — data scientist ───────────────────────────────── */
+  {
+    text: "Design a model to rank supplier listings for a value-conscious shopper where price sensitivity is high. How do you balance relevance, price, and quality?",
+    company: "meesho", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Meesho data-scientist rounds test ranking under multiple objectives: relevance, price sensitivity, and quality signals for a value marketplace.",
+  },
+  {
+    text: "You want to reduce returns without hurting orders. Frame this as an ML and experimentation problem end to end.",
+    company: "meesho", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Meesho probes problem framing tied to a real cost (returns) with a guardrail (orders), plus sound experiment design.",
+  },
+  {
+    text: "Explain how you'd evaluate a recommendation model offline when you only have logged data from the current production model (selection bias).",
+    company: "meesho", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Meesho data-scientist rounds probe off-policy evaluation and selection bias in logged recommendation data.",
+  },
 ];

@@ -9391,6 +9391,146 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 2 (15-25 min): HR interview on structured training, plant rotation, and the energy transition.",
     ],
   },
+
+  /* ── Google — data scientist ───────────────────────────────── */
+  {
+    slug: "google-data-scientist-interview-questions",
+    searchPhrase: "Google Data Scientist Interview Questions India 2026",
+    company: "google", roleFamily: "ml", focus: "technical",
+    intro: "Google's data-scientist interviews blend product analytics, statistical depth, and ML fundamentals, and product sense is weighted as heavily as maths. In 2026 expect analytics-and-experimentation questions (a feature raises DAU but cuts session length, so is it net positive, and how would you decide), statistical foundations (bias-variance diagnosis from learning curves, deriving least-squares from Gaussian-MLE), and applied ML reasoning, alongside SQL. Interviewers reward rigorous experiment design, guardrail-metric thinking, and clean derivations you can narrate. Whether you target Product Analytics or a research-leaning role, the bar is connecting statistics to real product decisions. Prepare A/B testing, metric trade-offs, core statistics, and ML fundamentals, and practise reasoning aloud.",
+    framework: { name: "Product-Sense-and-Rigour", summary: "Pair rigorous experiment design and guardrail-metric thinking with clean statistical derivations and ML fundamentals, always tied to a real product decision" },
+    metaKeywords: ["Google data scientist interview questions", "Google data scientist interview India 2026", "Google product analytics interview", "Google statistics interview questions"],
+    sitemapPriority: 0.75,
+    faqExtra: [
+      { q: "What does the Google data-scientist interview cover?", a: "Product analytics and experimentation (A/B tests, metric trade-offs, guardrail metrics), statistics (bias-variance, MLE, hypothesis testing), ML fundamentals, and SQL." },
+      { q: "How important is product sense for Google data scientists?", a: "Very. Many questions frame statistics inside a product decision, like whether a feature that raises DAU but cuts session length is net positive. Rigorous, decision-oriented analysis is rewarded." },
+      { q: "How do I prepare for Google data-scientist interviews?", a: "Practise A/B testing and metric trade-offs, core statistics and clean derivations, ML fundamentals like bias-variance, and SQL, and rehearse narrating your reasoning to a product decision." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and role alignment",
+      "Technical phone screen on statistics, SQL, and analytics",
+      "Onsite loop: analytics case, statistics, ML fundamentals, and behavioural",
+      "Team match and offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): statistics and SQL screen.",
+      "Round 2 (45-60 min): product-analytics and experiment-design case.",
+      "Round 3 (45-60 min): ML fundamentals and statistical-reasoning round.",
+      "Round 4 (45 min): behavioural and Googleyness round.",
+    ],
+  },
+
+  /* ── Amazon — applied scientist ────────────────────────────── */
+  {
+    slug: "amazon-applied-scientist-interview-questions",
+    searchPhrase: "Amazon Applied Scientist Interview Questions India 2026",
+    company: "amazon", roleFamily: "ml", focus: "technical",
+    intro: "Amazon's applied-scientist interviews test ML depth, modelling rigour, and coding, all scored against the Leadership Principles. In 2026 expect recommender and modelling design (a marketplace recommender with cold-start users and sparsity, aligning offline and online evaluation), ML rigour questions (detecting label leakage before it inflates offline metrics), metric reasoning tied to business cost (choosing a precision-recall operating threshold where false positives annoy customers), plus a coding round and ML-breadth questions. Interviewers weight practical judgement, the offline-online gap, and clear communication over exotic architectures, and every round is scored against principles like Dive Deep and Are Right, A Lot. Prepare ML fundamentals, applied design, coding, and STAR stories.",
+    framework: { name: "Rigorous-Applied-ML", summary: "Design recommenders and models with cold-start and evaluation rigour, tie metrics to business cost, and back judgement with Leadership-Principle stories" },
+    metaKeywords: ["Amazon applied scientist interview questions", "Amazon applied scientist interview India 2026", "Amazon ML interview", "Amazon data scientist interview questions"],
+    sitemapPriority: 0.74,
+    faqExtra: [
+      { q: "What does the Amazon applied-scientist interview cover?", a: "ML fundamentals and applied design (recommenders, cold start, sparsity), modelling rigour (leakage, temporal validation), metric-to-business-cost reasoning, coding, and Leadership Principles." },
+      { q: "Do Amazon applied-scientist interviews use Leadership Principles?", a: "Yes. Every round is scored against principles like Dive Deep and Are Right, A Lot, so prepare STAR stories alongside the technical ML preparation." },
+      { q: "How much coding is in the Amazon applied-scientist loop?", a: "There is a coding round in addition to ML rounds. Expect data-structures and algorithms plus practical implementation questions relevant to modelling work." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and online assessment",
+      "Technical phone screen on ML and coding",
+      "Onsite loop: ML design, ML breadth, coding, and Leadership Principles",
+      "Debrief and offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60 min): ML fundamentals and coding screen.",
+      "Round 2 (60 min): ML system and modelling design round (recommenders, evaluation).",
+      "Round 3 (60 min): ML breadth and rigour round with metric reasoning.",
+      "Round 4 (45-60 min): Leadership-Principles behavioural round.",
+    ],
+  },
+
+  /* ── Flipkart — data scientist ─────────────────────────────── */
+  {
+    slug: "flipkart-data-scientist-interview-questions",
+    searchPhrase: "Flipkart Data Scientist Interview Questions India 2026",
+    company: "flipkart", roleFamily: "ml", focus: "technical",
+    intro: "Flipkart's data-scientist interviews test end-to-end ML system thinking, the offline-online gap, and experiment design at e-commerce scale. In 2026 expect applied ML design (predicting delivery delays at order time, including features, model choice, retraining cadence, and feedback loops), diagnosis questions (a pricing model that looks good offline but underperforms live), and experiment-design questions where network effects break naive A/B tests. Interviewers reward candidates who reason about distribution shift, train-serve skew, feedback loops, and interference rather than just naming algorithms. Flipkart's data science powers pricing, delivery, and ranking, so grounding answers in a real e-commerce workflow with a working feedback loop stands out. Prepare ML system design, evaluation pitfalls, and experimentation.",
+    framework: { name: "End-to-End-and-Live", summary: "Design ML systems with feature, retraining, and feedback loops, diagnose the offline-online gap, and handle interference in experiments at e-commerce scale" },
+    metaKeywords: ["Flipkart data scientist interview questions", "Flipkart data scientist interview India 2026", "Flipkart ML interview", "Flipkart machine learning interview questions"],
+    sitemapPriority: 0.73,
+    faqExtra: [
+      { q: "What does the Flipkart data-scientist interview cover?", a: "End-to-end ML system design (like predicting delivery delays), diagnosing the offline-online performance gap, experiment design under network effects, plus ML fundamentals and coding." },
+      { q: "What ML pitfalls does Flipkart probe?", a: "The offline-online gap: distribution shift, feedback loops, label leakage, and train-serve skew. Expect to diagnose why a model that tests well offline underperforms live." },
+      { q: "How do I prepare for Flipkart data-scientist interviews?", a: "Practise end-to-end ML system design with feedback loops, evaluation pitfalls, and experiment design (including cluster randomisation for network effects), grounded in e-commerce scenarios." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "ML fundamentals and coding round",
+      "ML system design and experimentation round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): ML fundamentals and coding round.",
+      "Round 2 (60 min): ML system design round with feedback loops.",
+      "Round 3 (45-60 min): experimentation and model-diagnosis round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── Microsoft — data scientist ────────────────────────────── */
+  {
+    slug: "microsoft-data-scientist-interview-questions",
+    searchPhrase: "Microsoft Data Scientist Interview Questions India 2026",
+    company: "microsoft", roleFamily: "ml", focus: "technical",
+    intro: "Microsoft's data-scientist interviews emphasise problem framing, actionability, and solid ML and statistics fundamentals, reflecting an enterprise-product context. In 2026 expect end-to-end framing questions (building a churn-prediction model for an enterprise SaaS product and making predictions actionable for the business), fundamentals (handling heavily imbalanced classification and why accuracy misleads), and SQL analytics (computing a multi-step funnel conversion and modelling drop-off). Interviewers reward candidates who frame the business problem before modelling, tie predictions to concrete interventions, and reason clearly about metrics for skewed data. The bar is turning data into decisions, not just training a classifier. Prepare problem framing, ML and statistics fundamentals, SQL, and clear communication of impact.",
+    framework: { name: "Frame-and-Action", summary: "Frame the business problem first, apply solid ML and statistics fundamentals, and tie every prediction to a concrete, actionable intervention" },
+    metaKeywords: ["Microsoft data scientist interview questions", "Microsoft data scientist interview India 2026", "Microsoft ML interview", "Microsoft data science interview questions"],
+    sitemapPriority: 0.73,
+    faqExtra: [
+      { q: "What does the Microsoft data-scientist interview cover?", a: "End-to-end problem framing (like enterprise churn prediction), ML and statistics fundamentals (imbalanced classification, metrics), SQL analytics (funnels, drop-off), and communication of business impact." },
+      { q: "What does Microsoft emphasise in data-scientist interviews?", a: "Problem framing and actionability. Interviewers want you to frame the business problem before modelling and tie predictions to concrete interventions, not just report a model score." },
+      { q: "Does the Microsoft data-scientist interview include SQL?", a: "Yes. Expect SQL analytics such as computing multi-step funnel conversion rates, combined with modelling intuition about where and why users drop off." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and role alignment",
+      "Technical screen on ML, statistics, and SQL",
+      "Onsite loop: problem framing, ML fundamentals, SQL, and behavioural",
+      "Team match and offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): ML, statistics, and SQL screen.",
+      "Round 2 (45-60 min): end-to-end problem-framing case round.",
+      "Round 3 (45-60 min): ML and statistics fundamentals round.",
+      "Round 4 (45 min): behavioural round.",
+    ],
+  },
+
+  /* ── Meesho — data scientist ───────────────────────────────── */
+  {
+    slug: "meesho-data-scientist-interview-questions",
+    searchPhrase: "Meesho Data Scientist Interview Questions India 2026",
+    company: "meesho", roleFamily: "ml", focus: "technical",
+    intro: "Meesho's data-scientist interviews test multi-objective ranking, cost-aware problem framing, and rigorous offline evaluation, reflecting a value-focused social-commerce marketplace. In 2026 expect ranking design under competing objectives (ranking supplier listings for a price-sensitive shopper while balancing relevance, price, and quality), cost-and-guardrail framing (reducing returns without hurting orders, framed end to end as ML and experimentation), and evaluation rigour (off-policy evaluation and selection bias when you only have logged data from the current production model). Interviewers reward candidates who reason about multiple objectives, real business costs, and the biases baked into logged data rather than optimising a single metric. Prepare ranking, experiment design, and off-policy evaluation grounded in marketplace scenarios.",
+    framework: { name: "Multi-Objective-and-Unbiased", summary: "Rank under competing objectives, frame problems around real costs and guardrails, and evaluate rigorously against selection bias in logged data" },
+    metaKeywords: ["Meesho data scientist interview questions", "Meesho data scientist interview India 2026", "Meesho ML interview", "Meesho machine learning interview questions"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What does the Meesho data-scientist interview cover?", a: "Multi-objective ranking (relevance, price, quality for price-sensitive shoppers), cost-aware problem framing (like reducing returns without hurting orders), off-policy evaluation, and ML fundamentals." },
+      { q: "What evaluation topics does Meesho probe?", a: "Off-policy evaluation and selection bias: evaluating a recommendation model offline when you only have logged data from the current production model, which biases naive estimates." },
+      { q: "How do I prepare for Meesho data-scientist interviews?", a: "Practise ranking under multiple objectives, experiment design tied to real business costs and guardrails, and off-policy or unbiased evaluation, all grounded in marketplace scenarios." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "ML fundamentals and coding round",
+      "ML design and experimentation round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): ML fundamentals and coding round.",
+      "Round 2 (60 min): ranking and ML design round with multiple objectives.",
+      "Round 3 (45-60 min): experimentation and off-policy-evaluation round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
