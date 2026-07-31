@@ -2867,4 +2867,104 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "Swiggy is experimentation-heavy; rounds probe A/B metric pipelines, SRM detection, and statistically sound aggregation.",
   },
+
+  /* ── PhonePe — data engineer ───────────────────────────────── */
+  {
+    text: "Design a pipeline that computes daily per-merchant settlement summaries from a high-volume UPI transaction stream. How do you guarantee no transaction is double-counted?",
+    company: "phonepe", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "PhonePe data-engineer rounds probe exactly-once aggregation over payment streams: idempotency keys, dedup windows, and reconciliation against ledger.",
+  },
+  {
+    text: "Write SQL to detect merchants whose daily transaction success rate dropped below 90% on any day in the last week, across all states.",
+    company: "phonepe", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "PhonePe tests analytical SQL with conditional aggregation and partitioned thresholds for payment-health monitoring.",
+  },
+  {
+    text: "How would you build a fraud-signal feature pipeline that computes rolling per-user aggregates (velocity, distinct devices) with low latency for scoring?",
+    company: "phonepe", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "PhonePe probes real-time feature engineering: rolling windows, stateful stream processing, and latency budgets for fraud scoring.",
+  },
+
+  /* ── Paytm — data engineer ─────────────────────────────────── */
+  {
+    text: "Design an ingestion pipeline that consolidates transaction data across wallet, UPI, and cards into a unified warehouse table. How do you reconcile differing schemas and late data?",
+    company: "paytm", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Paytm data-engineer rounds probe multi-source ingestion, schema unification, and late-data reconciliation across payment rails.",
+  },
+  {
+    text: "Write SQL to compute the 7-day rolling active user count per city from an events table, and explain how to make it incremental.",
+    company: "paytm", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Paytm tests rolling-window SQL and incremental-computation design for large user-activity datasets.",
+  },
+  {
+    text: "How would you design a data-quality and alerting layer so a broken upstream feed does not silently corrupt daily revenue dashboards?",
+    company: "paytm", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Paytm probes operational data-quality: freshness/volume/schema checks, circuit-breaking, and clear pipeline ownership for financial reporting.",
+  },
+
+  /* ── Zomato — data engineer ────────────────────────────────── */
+  {
+    text: "Design a pipeline that computes per-city delivery-partner utilisation metrics in near-real-time from order and location events. How do you handle bursty dinner-time load?",
+    company: "zomato", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Zomato data-engineer rounds probe stream processing under bursty load: autoscaling, back-pressure, and event-time windowing for delivery analytics.",
+  },
+  {
+    text: "Write SQL to rank restaurants by repeat-order rate within each city, treating a repeat as an order from a user who ordered from that restaurant before.",
+    company: "zomato", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Zomato tests self-join and window-function SQL for cohort-style metrics partitioned by city.",
+  },
+  {
+    text: "How would you model a warehouse to support both operational dashboards and ad-hoc analyst queries without them contending for the same resources?",
+    company: "zomato", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Zomato probes warehouse design: workload isolation, materialised aggregates, and serving-layer separation for mixed query patterns.",
+  },
+
+  /* ── Meesho — data engineer ────────────────────────────────── */
+  {
+    text: "Design a pipeline that computes supplier catalogue-quality scores from listing, order, and return events. How do you handle high return rates skewing the signal?",
+    company: "meesho", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Meesho data-engineer rounds probe multi-event scoring pipelines and handling of noisy signals like returns in a social-commerce context.",
+  },
+  {
+    text: "Write SQL to find, per category, the suppliers whose order volume grew fastest month-over-month, excluding suppliers with fewer than 100 orders.",
+    company: "meesho", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Meesho tests window-function growth metrics with LAG and threshold filtering for supplier analytics.",
+  },
+  {
+    text: "How would you design a cost-efficient data platform for a value-focused marketplace where controlling warehouse and compute spend is a hard constraint?",
+    company: "meesho", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Meesho is cost-conscious; rounds probe partition pruning, storage-format choices, and compute-cost trade-offs in platform design.",
+  },
+
+  /* ── CRED — data engineer ──────────────────────────────────── */
+  {
+    text: "Design a pipeline that computes per-user creditworthiness features from bureau data, transaction history, and app behaviour, ensuring feature reproducibility for model training.",
+    company: "cred", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "CRED data-engineer rounds probe feature pipelines with point-in-time correctness and reproducibility for credit ML models.",
+  },
+  {
+    text: "Write SQL to compute each user's on-time payment ratio over the trailing 6 statements, handling users with fewer than 6 statements gracefully.",
+    company: "cred", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "CRED tests window-function SQL over statement history with careful handling of partial windows.",
+  },
+  {
+    text: "How would you design a data pipeline that respects strict PII and financial-data governance while still enabling analytics and model training?",
+    company: "cred", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "CRED probes governance-aware data engineering: tokenisation, access controls, and lineage for sensitive financial data.",
+  },
 ];

@@ -8932,6 +8932,146 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 4 (45 min): behavioural and hiring-manager round.",
     ],
   },
+
+  /* ── PhonePe — data engineer ───────────────────────────────── */
+  {
+    slug: "phonepe-data-engineer-interview-questions",
+    searchPhrase: "PhonePe Data Engineer Interview Questions India 2026",
+    company: "phonepe", roleFamily: "data", focus: "technical",
+    intro: "PhonePe's data-engineering rounds are payment-stream native and correctness-obsessed. In 2026 expect a pipeline round on computing daily per-merchant settlement summaries from a high-volume UPI transaction stream with exactly-once guarantees, a SQL round on payment-health monitoring (merchants whose success rate drops below a threshold, conditional aggregation, partitioned by state), and a feature-engineering round on low-latency rolling per-user fraud signals. Because money is involved, interviewers weight idempotency, deduplication, and reconciliation against the ledger over generic ETL. Ground every answer in real UPI settlement and fraud-scoring workflows, and be precise about how you avoid double-counting.",
+    framework: { name: "Exactly-Once-and-Reconciled", summary: "Guarantee exactly-once aggregation over payment streams with idempotency and dedup, monitor payment health in SQL, and engineer low-latency fraud features" },
+    metaKeywords: ["PhonePe data engineer interview questions", "PhonePe data engineer interview India 2026", "PhonePe SQL interview", "PhonePe UPI data pipeline interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What pipeline questions does PhonePe ask data engineers?", a: "Computing daily per-merchant settlement summaries from a high-volume UPI transaction stream with exactly-once guarantees, using idempotency keys, dedup windows, and reconciliation against the ledger." },
+      { q: "What SQL does PhonePe ask data engineers?", a: "Analytical SQL with conditional aggregation and partitioned thresholds, such as detecting merchants whose daily transaction success rate drops below 90% in any state." },
+      { q: "Does PhonePe test fraud feature engineering?", a: "Yes. Rounds probe low-latency rolling per-user aggregates like velocity and distinct devices, using stateful stream processing within a tight latency budget for scoring." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Payment-stream pipeline and feature-engineering round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on conditional aggregation and payment-health metrics.",
+      "Round 2 (60 min): pipeline design round on exactly-once settlement aggregation.",
+      "Round 3 (45-60 min): fraud feature-engineering round with rolling windows.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── Paytm — data engineer ─────────────────────────────────── */
+  {
+    slug: "paytm-data-engineer-interview-questions",
+    searchPhrase: "Paytm Data Engineer Interview Questions India 2026",
+    company: "paytm", roleFamily: "data", focus: "technical",
+    intro: "Paytm's data-engineering rounds probe multi-rail ingestion, rolling analytics, and operational data quality across a broad payments and commerce business. In 2026 expect a pipeline round on consolidating transaction data across wallet, UPI, and cards into a unified warehouse table (reconciling differing schemas and late data), a SQL round on rolling active-user counts made incremental, and a data-quality round on preventing a broken upstream feed from silently corrupting revenue dashboards. Interviewers reward engineers who reason about schema unification, late-data handling, incremental computation, and circuit-breaking data-quality gates rather than one-off batch jobs. Ground answers in real payment-rail reconciliation.",
+    framework: { name: "Unify-and-Guard", summary: "Unify multi-rail transaction data with schema reconciliation and late-data handling, compute rolling metrics incrementally, and guard dashboards with data-quality gates" },
+    metaKeywords: ["Paytm data engineer interview questions", "Paytm data engineer interview India 2026", "Paytm SQL interview", "Paytm data pipeline interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What pipeline questions does Paytm ask data engineers?", a: "Consolidating transaction data across wallet, UPI, and cards into a unified warehouse table, reconciling differing schemas and handling late-arriving data." },
+      { q: "What SQL does Paytm ask data engineers?", a: "Rolling-window analytics such as 7-day active user counts per city, plus reasoning about how to make the computation incremental over large event tables." },
+      { q: "Does Paytm test data quality?", a: "Yes. Rounds probe operational data-quality: freshness, volume, and schema checks, circuit-breaking on bad feeds, and clear pipeline ownership so revenue dashboards stay trustworthy." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Multi-source ingestion and pipeline design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on rolling-window and incremental analytics.",
+      "Round 2 (60 min): ingestion pipeline round on multi-rail schema unification.",
+      "Round 3 (45-60 min): data-quality and reliability round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── Zomato — data engineer ────────────────────────────────── */
+  {
+    slug: "zomato-data-engineer-interview-questions",
+    searchPhrase: "Zomato Data Engineer Interview Questions India 2026",
+    company: "zomato", roleFamily: "data", focus: "technical",
+    intro: "Zomato's data-engineering rounds probe bursty stream processing, cohort SQL, and warehouse workload isolation, reflecting a delivery business with sharp demand peaks. In 2026 expect a pipeline round on near-real-time per-city delivery-partner utilisation metrics from order and location events that survives dinner-time bursts, a SQL round on ranking restaurants by repeat-order rate within each city (self-joins and window functions), and a modelling round on a warehouse that serves operational dashboards and ad-hoc analyst queries without resource contention. Interviewers reward reasoning about autoscaling, back-pressure, event-time windowing, and workload isolation over generic batch ETL. Ground answers in real delivery-operations analytics.",
+    framework: { name: "Burst-and-Isolate", summary: "Handle bursty delivery streams with autoscaling and event-time windowing, write cohort SQL with self-joins, and isolate operational from analytical warehouse workloads" },
+    metaKeywords: ["Zomato data engineer interview questions", "Zomato data engineer interview India 2026", "Zomato SQL interview", "Zomato data pipeline interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What pipeline questions does Zomato ask data engineers?", a: "Near-real-time per-city delivery-partner utilisation metrics from order and location events, with autoscaling, back-pressure, and event-time windowing to survive bursty dinner-time load." },
+      { q: "What SQL does Zomato ask data engineers?", a: "Cohort-style metrics like ranking restaurants by repeat-order rate within each city, using self-joins and window functions partitioned by city." },
+      { q: "Does Zomato test warehouse design?", a: "Yes. Rounds probe workload isolation, materialised aggregates, and serving-layer separation so operational dashboards and ad-hoc analyst queries do not contend for resources." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Streaming pipeline and warehouse-design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on cohort metrics and self-joins.",
+      "Round 2 (60 min): streaming pipeline round under bursty load.",
+      "Round 3 (45-60 min): warehouse-modelling and workload-isolation round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── Meesho — data engineer ────────────────────────────────── */
+  {
+    slug: "meesho-data-engineer-interview-questions",
+    searchPhrase: "Meesho Data Engineer Interview Questions India 2026",
+    company: "meesho", roleFamily: "data", focus: "technical",
+    intro: "Meesho's data-engineering rounds probe multi-event scoring, growth SQL, and cost-efficient platform design, reflecting a value-focused social-commerce marketplace. In 2026 expect a pipeline round on computing supplier catalogue-quality scores from listing, order, and return events while handling high return rates that skew the signal, a SQL round on fastest-growing suppliers per category month-over-month with volume thresholds, and a platform round on a cost-efficient data stack where controlling warehouse and compute spend is a hard constraint. Interviewers reward reasoning about noisy-signal handling, window-function growth metrics, and partition pruning and storage-format cost trade-offs over throwing compute at the problem. Ground answers in real marketplace analytics.",
+    framework: { name: "Score-and-Economise", summary: "Build multi-event scoring pipelines robust to noisy signals, compute growth metrics in SQL with thresholds, and design a genuinely cost-efficient data platform" },
+    metaKeywords: ["Meesho data engineer interview questions", "Meesho data engineer interview India 2026", "Meesho SQL interview", "Meesho data pipeline interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What pipeline questions does Meesho ask data engineers?", a: "Computing supplier catalogue-quality scores from listing, order, and return events, including handling high return rates that can skew the quality signal." },
+      { q: "What SQL does Meesho ask data engineers?", a: "Window-function growth metrics such as fastest-growing suppliers per category month-over-month using LAG, with threshold filters to exclude low-volume suppliers." },
+      { q: "Does Meesho test cost-efficient platform design?", a: "Yes. Meesho is cost-conscious, so rounds probe partition pruning, storage-format choices, and compute-cost trade-offs when designing the data platform." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Scoring pipeline and cost-efficient platform round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on growth metrics and threshold filtering.",
+      "Round 2 (60 min): scoring pipeline round with noisy-signal handling.",
+      "Round 3 (45-60 min): cost-efficient data-platform design round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── CRED — data engineer ──────────────────────────────────── */
+  {
+    slug: "cred-data-engineer-interview-questions",
+    searchPhrase: "CRED Data Engineer Interview Questions India 2026",
+    company: "cred", roleFamily: "data", focus: "technical",
+    intro: "CRED's data-engineering rounds probe reproducible feature pipelines, statement-history SQL, and governance-aware design, reflecting a credit-focused fintech handling sensitive financial data. In 2026 expect a pipeline round on computing per-user creditworthiness features from bureau data, transaction history, and app behaviour with point-in-time correctness for model training, a SQL round on trailing on-time payment ratios over recent statements with careful partial-window handling, and a governance round on enabling analytics and model training while respecting strict PII and financial-data controls. Interviewers reward reasoning about feature reproducibility, point-in-time correctness, tokenisation, and lineage over generic pipelines. Ground answers in real credit-ML and compliance workflows.",
+    framework: { name: "Reproducible-and-Governed", summary: "Build point-in-time-correct, reproducible feature pipelines for credit ML, write statement-history SQL, and design with PII tokenisation and lineage from the start" },
+    metaKeywords: ["CRED data engineer interview questions", "CRED data engineer interview India 2026", "CRED SQL interview", "CRED data pipeline interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What pipeline questions does CRED ask data engineers?", a: "Computing per-user creditworthiness features from bureau data, transaction history, and app behaviour, ensuring point-in-time correctness and reproducibility for model training." },
+      { q: "What SQL does CRED ask data engineers?", a: "Window-function SQL over statement history, such as trailing on-time payment ratios over the last 6 statements, with careful handling of users who have fewer than 6." },
+      { q: "Does CRED test data governance?", a: "Yes. Because CRED handles sensitive financial data, rounds probe PII tokenisation, access controls, and lineage that still enable analytics and model training." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Feature pipeline and governance design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on statement-history window functions.",
+      "Round 2 (60 min): feature-pipeline round with point-in-time correctness.",
+      "Round 3 (45-60 min): data-governance and platform design round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added
