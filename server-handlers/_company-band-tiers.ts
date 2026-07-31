@@ -272,7 +272,7 @@ export function classifyRoleFamily(role: string | null | undefined): RoleFamily 
   if (/\b(ux\s+designer|ui\s+designer|product\s+designer|interaction\s+designer|visual\s+designer|graphic\s+designer|design\s+lead|design\s+manager|head\s+of\s+design|brand\s+designer|motion\s+designer|illustrator|ux\s+researcher|design\s+researcher)\b/.test(r)) return "design";
   if (/\b(sales|account\s+executive|ae\b|bdr|sdr|bdm|business\s+development|inside\s+sales|enterprise\s+sales|relationship\s+manager|sales\s+manager|sales\s+lead|sales\s+director|head\s+of\s+sales|chief\s+revenue|cro\b|territory\s+manager|key\s+account)\b/.test(r)) return "sales";
   if (/\b(marketing|growth|seo|sem|content\s+marketing|digital\s+marketing|brand\s+manager|product\s+marketing|pmm|marketing\s+manager|head\s+of\s+marketing|cmo\b|chief\s+marketing|community\s+manager|social\s+media\s+manager|demand\s+gen|email\s+marketing)\b/.test(r)) return "marketing";
-  if (/\b(data\s+scientist|data\s+analyst|business\s+analyst|ba\b|analytics|machine\s+learning|ml\s+engineer|ai\s+engineer|data\s+engineer|nlp|research\s+scientist|quant|quantitative|statistician)\b/.test(r)) return "data";
+  if (/\b(data\s+scien(?:ce|tist)|data\s+analyst|business\s+analyst|ba\b|analytics|machine\s+learning|ml\s+engineer|ai\s+engineer|data\s+engineer|nlp|research\s+scientist|quant|quantitative|statistician)\b/.test(r)) return "data";
   if (/\b(operations\s+manager|ops\s+manager|operations\s+lead|coo\b|chief\s+operating|supply\s+chain|logistics|fulfilment|fulfillment|warehouse\s+manager|city\s+manager|category\s+manager|head\s+of\s+operations|business\s+operations|biz\s+ops|biz-ops)\b/.test(r)) return "ops";
   /* Default to engineering for software / dev / SDE / SWE / java / react /
    * etc — the historical reference family. */
@@ -396,8 +396,16 @@ function yoeScale(yoe: number | null | undefined): number {
 
 function roleModifier(role: string): number {
   const r = (role || "").toLowerCase();
+  /* Exec / director-level leadership sits ABOVE staff-IC: a VP or Head-of-
+   * function commands materially more than a principal IC. Without these,
+   * S193 (VP of Engineering) and S191 (Head of Data Science) collapsed to
+   * the 5-yr IC anchor — a VP resolved BELOW a plain SWE at the same firm.
+   * Ordered most-senior-first; the tier-ceiling overshoot ratchet in
+   * resolveServerBand compresses any over-lift back to the market ceiling. */
+  if (/\b(chief|cto|ceo|cfo|cpo|cmo|coo|cro|vp|vice\s+president|svp|evp)\b/.test(r)) return 1.6;
+  if (/\b(director|head\s+of)\b/.test(r)) return 1.45;
   if (/\b(staff|principal|architect)\b/.test(r)) return 1.3;
-  if (/\b(senior|sr\.|lead)\b/.test(r)) return 1.15;
+  if (/\b(senior|sr\.|lead|founding)\b/.test(r)) return 1.15;
   if (/\b(intern|trainee)\b/.test(r)) return 0.35;
   return 1.0;
 }
@@ -413,8 +421,13 @@ function roleModifier(role: string): number {
  * explicit-YoE caller and test is byte-identical; a supplied YoE always wins.
  * Ordered most-senior-first; representative Indian-market YoE per band. */
 const TITLE_IMPLIED_YOE: Array<{ re: RegExp; yoe: number }> = [
+  /* Exec / director titles imply a deep experience floor (S191/S193/S194):
+   * "VP of Engineering" / "Head of Data Science" / "Director" with no supplied
+   * YoE previously defaulted to the 5-yr mid anchor. "Founding" engineer is a
+   * senior-equivalent floor, so it rides the 8-yr bucket below. */
+  { re: /\b(chief|cto|ceo|cfo|cpo|cmo|coo|cro|vp|vice\s+president|svp|evp|director|head\s+of)\b/, yoe: 14 },
   { re: /\b(staff|principal|architect|distinguished|fellow)\b/, yoe: 12 },
-  { re: /\b(senior|sr\.?|lead)\b/, yoe: 8 },
+  { re: /\b(senior|sr\.?|lead|founding)\b/, yoe: 8 },
 ];
 
 function impliedYoeFromTitle(role: string): number | null {

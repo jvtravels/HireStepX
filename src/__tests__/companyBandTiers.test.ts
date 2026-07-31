@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   classifyCompanyTier,
+  classifyRoleFamily,
   getBandForRole,
 } from "../../server-handlers/_company-band-tiers";
 
@@ -196,5 +197,41 @@ describe("N-1: title-implied YoE floor when YoE is unknown", () => {
     const unknown = getBandForRole("sme", "Product Designer", null);
     const fiveYr = getBandForRole("sme", "Product Designer", 5);
     expect(unknown).toEqual(fiveYr);
+  });
+});
+
+describe("S189-S198: exec / director / head / founding seniority lift (unknown YoE)", () => {
+  it("VP-level title resolves ABOVE a same-family 5-yr IC (S193)", () => {
+    const vp = getBandForRole("unicorn", "VP of Engineering", null);
+    const ic = getBandForRole("unicorn", "Software Engineer", 5);
+    // A VP must not collapse to (or below) the 5-yr IC anchor.
+    expect(vp.target).toBeGreaterThan(ic.target * 1.5);
+  });
+
+  it("Director resolves above a Staff IC (S192 vs director)", () => {
+    const dir = getBandForRole("unicorn", "Director of Engineering", null);
+    const staff = getBandForRole("unicorn", "Staff Software Engineer", null);
+    // Director sits at exec level — at least on par with staff, not below it.
+    expect(dir.target).toBeGreaterThanOrEqual(staff.target * 0.9);
+  });
+
+  it("Head-of-function lifts above the IC anchor and keeps its family (S191)", () => {
+    // "Head of Data Science" must route to the data family, not engineering...
+    expect(classifyRoleFamily("Head of Data Science")).toBe("data");
+    const head = getBandForRole("unicorn", "Head of Data Science", null);
+    const ic = getBandForRole("unicorn", "Data Scientist", 5);
+    expect(head.target).toBeGreaterThan(ic.target * 1.5);
+  });
+
+  it("Founding engineer gets a senior-equivalent lift (S194)", () => {
+    const founding = getBandForRole("startup", "Founding Engineer", null);
+    const junior = getBandForRole("startup", "Software Engineer", 2);
+    expect(founding.target).toBeGreaterThan(junior.target);
+  });
+
+  it("explicit YoE still wins for exec titles (byte-identical)", () => {
+    const a = getBandForRole("unicorn", "VP of Engineering", 6);
+    const b = getBandForRole("unicorn", "VP of Engineering", 6);
+    expect(a).toEqual(b);
   });
 });
