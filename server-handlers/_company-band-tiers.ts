@@ -443,6 +443,25 @@ function impliedYoeFromTitle(role: string): number | null {
   return null;
 }
 
+/* S123 (2026-07-31 band audit) — the consulting-senior ladder (Partner /
+ * Associate Partner / Principal / Engagement Manager) carries none of the
+ * generic senior/staff/lead keywords, so a McKinsey Partner AND an Engagement
+ * Manager both resolved to the 5-yr IC Consultant anchor (₹20L). These are the
+ * highest-earning consulting roles. Returns the effective-YoE floor + title
+ * multiplier for the matched rank; the caller gates this to tier==="consulting"
+ * so sales/BD "Channel Partner" / "Partner Manager" titles elsewhere are never
+ * lifted. Ordered so the more-specific rank wins (Engagement Manager and
+ * Associate Partner are checked before the bare "partner"). */
+function consultingSeniorRank(role: string): { yoe: number; mod: number } | null {
+  const r = (role || "").toLowerCase();
+  if (/\b(engagement\s+manager|project\s+leader|case\s+team\s+lead)/.test(r)) return { yoe: 9, mod: 1.25 };
+  if (/\b(associate\s+partner|principal)\b/.test(r)) return { yoe: 13, mod: 1.5 };
+  if (/\bpartner\b/.test(r) && !/\b(channel|alliance|partnership|referral|partner\s+manager)\b/.test(r)) {
+    return { yoe: 16, mod: 1.9 };
+  }
+  return null;
+}
+
 /** Compute (floor, ceil, target) LPA band for a (tier, role, yoe) tuple.
  *  Uses the role family × tier matrix (Fix 2, 2026-05-15). */
 export function getBandForRole(
@@ -455,8 +474,15 @@ export function getBandForRole(
   /* When YoE is unknown, let a seniority-bearing title floor the effective
    * YoE (see TITLE_IMPLIED_YOE) instead of silently defaulting to the 5-yr
    * mid anchor. Explicit YoE always passes through untouched. */
+  /* Consulting-senior ladder (Partner / Engagement Manager …) — gated to the
+   * consulting tier so the "partner" token can't lift sales titles elsewhere.
+   * The rank's YoE floor fires only on unknown YoE (byte-identical for explicit-
+   * YoE callers); its title multiplier replaces roleModifier where matched. */
+  const csr = tier === "consulting" ? consultingSeniorRank(role) : null;
   const effYoe =
-    yoe == null || !Number.isFinite(yoe) ? impliedYoeFromTitle(role) ?? yoe : yoe;
+    yoe == null || !Number.isFinite(yoe)
+      ? (csr?.yoe ?? impliedYoeFromTitle(role) ?? yoe)
+      : yoe;
   /* S54-B2 (2026-07-24) — IT-services companies (TCS/Infosys/Wipro/Cognizant/HCL)
    * have compressed, YoE-driven pay bands. Title premiums (Senior=1.15×,
    * Principal=1.3×) compound on top of yoeScale and inflate ceilings enough to
@@ -465,7 +491,7 @@ export function getBandForRole(
   const m =
     tier === "it-services"
       ? yoeScale(effYoe)
-      : yoeScale(effYoe) * roleModifier(role);
+      : yoeScale(effYoe) * (csr?.mod ?? roleModifier(role));
   return {
     floor: Math.round(base.floor * m * 10) / 10,
     ceil: Math.round(base.ceil * m * 10) / 10,

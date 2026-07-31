@@ -243,3 +243,34 @@ describe("S189-S198: exec / director / head / founding seniority lift (unknown Y
     expect(a).toEqual(b);
   });
 });
+
+describe("S123: consulting-senior ladder lifts above the IC Consultant anchor", () => {
+  const consultant = getBandForRole("consulting", "Consultant", null);
+  it("Partner resolves far above a base Consultant", () => {
+    const partner = getBandForRole("consulting", "Partner", null);
+    expect(partner.target).toBeGreaterThan(consultant.target * 2.5);
+  });
+  it("Associate Partner sits between Partner and Engagement Manager", () => {
+    const ap = getBandForRole("consulting", "Associate Partner", null);
+    const partner = getBandForRole("consulting", "Partner", null);
+    const em = getBandForRole("consulting", "Engagement Manager", null);
+    expect(ap.target).toBeLessThan(partner.target);
+    expect(ap.target).toBeGreaterThan(em.target);
+  });
+  it("Engagement Manager lifts above the IC Consultant", () => {
+    const em = getBandForRole("consulting", "Engagement Manager", null);
+    expect(em.target).toBeGreaterThan(consultant.target * 1.4);
+  });
+  it("the consulting-senior lift is gated to the consulting tier", () => {
+    // "Partner" outside consulting (e.g. a sales 'Partner' at a unicorn) must
+    // NOT get the equity-partner lift — it stays at the generic anchor.
+    const uniPartner = getBandForRole("unicorn", "Partner", null);
+    const uniBase = getBandForRole("unicorn", "Software Engineer", null);
+    expect(uniPartner.target).toBeLessThanOrEqual(uniBase.target * 1.1);
+  });
+  it("sales/BD 'Partner Manager' in consulting is not lifted as equity partner", () => {
+    const pm = getBandForRole("consulting", "Partner Manager", null);
+    const partner = getBandForRole("consulting", "Partner", null);
+    expect(pm.target).toBeLessThan(partner.target * 0.6);
+  });
+});
