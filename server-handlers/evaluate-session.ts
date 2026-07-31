@@ -766,7 +766,7 @@ EXEMPLARS — CRITICAL RULES:
 
 COACHING TONE: Coach within fresher context. Say "tie your final-year project to the business outcome more clearly" — not "reference your previous role's production impact". If CGPA is ≥7.5, coach the candidate to mention it proactively.
 
-BGV / BACKGROUND-VERIFICATION FLAGS: Do NOT fire "company mentioned in interview isn't on resume" flags for campus/fresher sessions. Freshers mentioning internship companies, practice examples, or aspirational companies in answers is EXPECTED — it is not a BGV gap. Set bgvGaps to [] (empty array) for all campus placement sessions.`
+BGV / DOCUMENT-GAP FIELD: Campus/fresher sessions have no background-verification round, so set bgvGaps to [] (empty array) — never infer document gaps (relieving letter, Form-16, notice-period proof, etc.) for a student who has never been employed full-time. NOTE: the resume-vs-transcript credibility cross-check ("company mentioned in interview isn't on resume") is computed deterministically by the campus analyzer, not by you — do not try to add, echo, or suppress it here.`
       : "";
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
