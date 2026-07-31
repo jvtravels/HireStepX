@@ -23,8 +23,10 @@ import {
   ctaPrimaryStyle,
   edEyebrow,
   ED_PADDING,
+  FAQEntry,
 } from "./_editorial";
-import { COMPANY_LABEL } from "../../data/company-labels";
+import { FAQItem } from "./MarketingPagesV2";
+import { QuestionsBrowser } from "./QuestionsBrowser";
 import { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
 import { SEO_PAGES } from "../../data/seo-pages";
@@ -244,6 +246,10 @@ export interface QuestionSetPageProps {
   relatedPages: { slug: string; searchPhrase: string }[];
   relatedBlogPosts?: { slug: string; title: string }[];
   salaryPageSlug?: string;
+  /* Visible FAQ content — must mirror the FAQPage JSON-LD schema built in
+     the route file (same q/a pairs, same order) so what Google indexes as
+     structured data matches what the page actually shows. */
+  faqs?: { q: string; a: string }[];
 }
 
 export function QuestionSetPage({
@@ -255,6 +261,7 @@ export function QuestionSetPage({
   relatedPages,
   relatedBlogPosts = [],
   salaryPageSlug,
+  faqs = [],
 }: QuestionSetPageProps) {
   const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
 
@@ -506,6 +513,28 @@ export function QuestionSetPage({
 
         </div>
 
+        {/* Visible FAQ — the same q/a pairs as the page's FAQPage JSON-LD
+            schema, rendered as a collapsible accordion via the shared
+            FAQItem component so Google (and readers) see the real,
+            per-page content the structured data claims, not a generic
+            block repeated across every /questions/[slug] page. */}
+        {faqs.length > 0 && (
+          <section aria-label="Frequently asked questions" style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, paddingTop: 72, paddingBottom: 80 }}>
+            <div className="ed-container">
+              <p style={{ ...edEyebrow, margin: "0 0 20px" }}>Common questions</p>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.2vw, 40px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 40px" }}>
+                Questions about {companyLabel}{" "}
+                <em style={{ fontStyle: "italic", color: t.copper }}>{focusLabel.toLowerCase()} interviews.</em>
+              </h2>
+              <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, overflow: "hidden" }}>
+                {faqs.map((faq, i) => (
+                  <FAQItem key={faq.q} q={faq.q} a={faq.a} first={i === 0} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Closing CTA */}
         <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
@@ -534,47 +563,9 @@ export interface QuestionsIndexPageProps {
     sitemapPriority?: number;
   }>;
   activeFilter?: string;
-  page?: number;
 }
 
-const QUESTIONS_PER_PAGE = 30;
-
-const FOCUS_DISPLAY: Record<string, string> = {
-  behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
-  "case-study": "Case Study", "campus-placement": "Campus Placement",
-  hr: "HR Round", "salary-negotiation": "Salary Negotiation",
-  leadership: "Leadership", general: "General", management: "Management",
-  "government-psu": "Government / PSU", strategic: "Strategic",
-};
-
-export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsIndexPageProps) {
-  /* Stable company-sorted order first, then paginate, then group — so each
-     page's headings reflect only the companies actually shown on it. */
-  const sorted = [...pages].sort((a, b) => a.company.localeCompare(b.company));
-  const totalPages = Math.max(1, Math.ceil(sorted.length / QUESTIONS_PER_PAGE));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const paginated = sorted.slice(
-    (safePage - 1) * QUESTIONS_PER_PAGE,
-    safePage * QUESTIONS_PER_PAGE,
-  );
-
-  const pageHref = (p: number) => {
-    const params = new URLSearchParams();
-    if (activeFilter) params.set("focus", activeFilter);
-    if (p > 1) params.set("page", String(p));
-    const qs = params.toString();
-    return `/questions${qs ? `?${qs}` : ""}`;
-  };
-
-  /* Group by company for a cleaner layout. */
-  const grouped = paginated.reduce<Record<string, typeof pages>>((acc, p) => {
-    const key = p.company;
-    (acc[key] ??= []).push(p);
-    return acc;
-  }, {});
-
-  const companies = Object.keys(grouped);
-
+export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPageProps) {
   return (
     <>
       <style>{editorialCSS}</style>
@@ -595,208 +586,31 @@ export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsI
                 Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
               </Link>
               <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
-                {pages.length} question sets · 2 sessions free
+                {SEO_PAGES.length} question sets · 2 sessions free
               </span>
+              <a href="#questions-faq" style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                New here? Read common questions ↓
+              </a>
             </div>
           </div>
         </header>
 
         <div className="ed-container" style={{ paddingTop: 56, paddingBottom: 8 }}>
-          {/* Filter chip bar — browse by question type */}
-          {(() => {
-            /* Count pages per focus across ALL SEO pages (not just filtered set) */
-            const focusCounts = SEO_PAGES.reduce<Record<string, number>>((acc, p) => {
-              acc[p.focus] = (acc[p.focus] ?? 0) + 1;
-              return acc;
-            }, {});
-            /* Order chips by relevance to Indian freshers */
-            const CHIP_ORDER = [
-              "campus-placement", "hr", "behavioral", "technical",
-              "system-design", "case-study", "salary-negotiation",
-            ];
-            return (
-              <div style={{ marginBottom: 48 }}>
-                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
-                  Browse by type
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {/* All chip */}
-                  <Link
-                    href="/questions"
-                    className={`ed-cta${!activeFilter ? "" : " ed-tab"}`}
-                    style={{
-                      fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
-                      padding: "6px 14px", borderRadius: 999, textDecoration: "none",
-                      border: `1px solid ${!activeFilter ? t.copper : t.line}`,
-                      background: !activeFilter ? t.copper : "transparent",
-                      color: !activeFilter ? "#fff" : t.inkSoft,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    All · {SEO_PAGES.length}
-                  </Link>
-                  {CHIP_ORDER.filter(f => focusCounts[f]).map(f => {
-                    const isActive = activeFilter === f;
-                    return (
-                      <Link
-                        key={f}
-                        href={`/questions?focus=${f}`}
-                        className={`ed-cta${isActive ? "" : " ed-tab"}`}
-                        style={{
-                          fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
-                          padding: "6px 14px", borderRadius: 999, textDecoration: "none",
-                          border: `1px solid ${isActive ? t.copper : t.line}`,
-                          background: isActive ? t.copper : "transparent",
-                          color: isActive ? "#fff" : t.inkSoft,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {FOCUS_DISPLAY[f] ?? f} · {focusCounts[f]}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Grouped question sets — compact rule-divider per company */}
-          {companies.map((company) => (
-            <section key={company} className="ed-reveal" style={{ marginBottom: 40 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 4, paddingTop: 16 }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: t.coal, whiteSpace: "nowrap" }}>
-                  {COMPANY_LABEL[company] ?? company.charAt(0).toUpperCase() + company.slice(1)}
-                </span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkFaint, whiteSpace: "nowrap" }}>
-                  · {grouped[company].length} {grouped[company].length === 1 ? "set" : "sets"}
-                </span>
-                <div style={{ flex: 1, height: 1, background: t.line }} />
-              </div>
-              <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {grouped[company].map((p, i) => (
-                  <li key={p.slug}>
-                    <Link
-                      href={`/questions/${p.slug}`}
-                      className="ed-cta ed-row"
-                      style={{
-                        display: "flex",
-                        gap: 22,
-                        padding: "18px 8px",
-                        borderBottom: `1px solid ${t.line}`,
-                        textDecoration: "none",
-                        alignItems: "flex-start",
-                        margin: "0 -8px",
-                      }}
-                    >
-                      <span style={{ fontFamily: fonts.serif, fontSize: 22, fontStyle: "italic", color: t.copper, opacity: 0.5, lineHeight: 1, flexShrink: 0, minWidth: 34 }}>
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: t.inkFaint }}>
-                          {p.focus.replace(/-/g, " ")}
-                        </span>
-                        <p style={{ fontFamily: fonts.serif, fontSize: 18, lineHeight: 1.32, color: t.coal, margin: "5px 0 0", letterSpacing: "-0.01em" }}>
-                          {p.searchPhrase}
-                        </p>
-                      </div>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, flexShrink: 0, paddingTop: 3, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        View <span className="ed-cta-arrow" aria-hidden>→</span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
-
-          {/* Pagination — 30 question sets per page */}
-          {totalPages > 1 && (
-            <nav
-              aria-label="Question set pages"
-              style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 24, marginBottom: 48 }}
-            >
-              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginRight: 10, whiteSpace: "nowrap" }}>
-                {sorted.length} question sets · page {safePage} of {totalPages}
-              </span>
-
-              <Link
-                href={pageHref(safePage - 1)}
-                aria-disabled={safePage === 1}
-                tabIndex={safePage === 1 ? -1 : undefined}
-                style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                  background: safePage === 1 ? t.creamSoft : "#fff",
-                  color: safePage === 1 ? t.inkFaint : t.coal,
-                  textDecoration: "none",
-                  pointerEvents: safePage === 1 ? "none" : "auto",
-                  opacity: safePage === 1 ? 0.45 : 1,
-                }}
-              >
-                ← Prev
-              </Link>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((n) => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
-                .reduce<(number | "…")[]>((acc, n) => {
-                  const prev = acc[acc.length - 1];
-                  if (typeof prev === "number" && n - prev > 1) acc.push("…");
-                  acc.push(n);
-                  return acc;
-                }, [])
-                .map((n, i) =>
-                  n === "…" ? (
-                    <span key={`e-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
-                  ) : (
-                    <Link
-                      key={n}
-                      href={pageHref(n)}
-                      aria-current={safePage === n ? "page" : undefined}
-                      style={{
-                        fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
-                        minWidth: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        borderRadius: 8, border: `1.5px solid ${safePage === n ? t.copper : t.line}`,
-                        background: safePage === n ? t.copper : "#fff",
-                        color: safePage === n ? "#fff" : t.coal,
-                        textDecoration: "none",
-                      }}
-                    >
-                      {n}
-                    </Link>
-                  ),
-                )}
-
-              <Link
-                href={pageHref(safePage + 1)}
-                aria-disabled={safePage === totalPages}
-                tabIndex={safePage === totalPages ? -1 : undefined}
-                style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                  background: safePage === totalPages ? t.creamSoft : "#fff",
-                  color: safePage === totalPages ? t.inkFaint : t.coal,
-                  textDecoration: "none",
-                  pointerEvents: safePage === totalPages ? "none" : "auto",
-                  opacity: safePage === totalPages ? 0.45 : 1,
-                }}
-              >
-                Next →
-              </Link>
-            </nav>
-          )}
+          <QuestionsBrowser pages={pages} initialFocus={activeFilter} />
         </div>
 
         {/* Visible FAQ — mirrors the FAQPage JSON-LD schema so Google
-            sees substantive Q&A content on the page, not just 232 links. */}
-        <style>{`.ed-faq-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 20px 48px; } @media (max-width: 720px) { .ed-faq-row { grid-template-columns: 1fr !important; } }`}</style>
-        <section aria-label="Frequently asked questions" style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, paddingTop: 72, paddingBottom: 80 }}>
+            sees substantive Q&A content on the page, not just 232 links.
+            Always-visible FAQEntry rows (not an accordion): these answers
+            are themselves scannable content a visitor came here to read. */}
+        <section id="questions-faq" aria-label="Frequently asked questions" style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, paddingTop: 72, paddingBottom: 80 }}>
           <div className="ed-container">
             <p style={{ ...edEyebrow, margin: "0 0 20px" }}>Common questions</p>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.2vw, 40px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 56px" }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.2vw, 40px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 40px" }}>
               How to prepare for your next{" "}
               <em style={{ fontStyle: "italic", color: t.copper }}>Indian tech interview.</em>
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <div>
               {[
                 {
                   q: "How do I prepare for a campus placement interview in India?",
@@ -823,25 +637,7 @@ export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsI
                   a: "STAR stands for Situation, Task, Action, Result. Situation: set the scene in one sentence (team, project, timeline). Task: state your specific responsibility. Action: describe the 2 to 3 concrete steps you personally took — this is the most important part and where most answers collapse. Result: give a measurable outcome (time saved, bugs fixed, score improved, money earned). Interviewers score answers on whether the Action paragraph is specific and personal, not generic. Practice each STAR story until you can tell it in under 2 minutes.",
                 },
               ].map(({ q, a }, i) => (
-                <div
-                  key={q}
-                  style={{
-                    borderTop: `1px solid ${t.line}`,
-                    paddingTop: 28,
-                    paddingBottom: 28,
-                  }}
-                  className="ed-faq-row"
-                >
-                  <h3 style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: t.coal, margin: 0 }}>
-                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper, fontSize: 18, marginRight: 10, opacity: 0.6 }}>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    {q}
-                  </h3>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.7, color: t.inkSoft, margin: 0 }}>
-                    {a}
-                  </p>
-                </div>
+                <FAQEntry key={q} index={i} q={q} a={a} first={i === 0} />
               ))}
             </div>
           </div>

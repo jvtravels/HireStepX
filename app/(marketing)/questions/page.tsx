@@ -15,8 +15,9 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
  */
 
 /* Accessing searchParams makes this page dynamic — intentional. The ?focus=
-   filter renders a subset of SEO_PAGES without duplicate-content risk since
-   filtered URLs are not in the sitemap and carry rel=canonical pointing here. */
+   param only seeds the client-side filter's initial state (QuestionsBrowser);
+   the full SEO_PAGES set always renders so filtering is combinable and
+   instant without a reload, and crawlers always see every link. */
 
 export const metadata: Metadata = {
   title: "Interview Questions by Company & Role India 2026 | HireStepX",
@@ -55,19 +56,11 @@ export const metadata: Metadata = {
 export default async function QuestionsIndexRoute({
   searchParams,
 }: {
-  searchParams: Promise<{ focus?: string; page?: string }>;
+  searchParams: Promise<{ focus?: string }>;
 }) {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
-  const { focus, page } = await searchParams;
-  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
-
-  /* When a ?focus= param is present, show only matching pages. The full
-     ItemList schema always lists all pages so Google indexes the complete
-     set regardless of filter state. */
-  const filteredPages = focus
-    ? SEO_PAGES.filter((p) => p.focus === focus)
-    : SEO_PAGES;
+  const { focus } = await searchParams;
 
   /* FAQPage schema — targets "how to prepare for interview" head terms.
      Answers sourced from established HireStepX preparation methodology. */
@@ -165,7 +158,7 @@ export default async function QuestionsIndexRoute({
       <NavV2 />
       {/* Page body */}
       <QuestionsIndexPage
-        pages={filteredPages.map((p) => ({
+        pages={SEO_PAGES.map((p) => ({
           slug: p.slug,
           searchPhrase: p.searchPhrase,
           company: p.company,
@@ -174,7 +167,6 @@ export default async function QuestionsIndexRoute({
           sitemapPriority: p.sitemapPriority,
         }))}
         activeFilter={focus}
-        page={pageNum}
       />
       <Script
         async

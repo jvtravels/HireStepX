@@ -18,6 +18,7 @@ interface CopyEmailLinkProps {
 
 export function CopyEmailLink({ email, children, style, className }: CopyEmailLinkProps) {
   const [copied, setCopied] = useState(false);
+  const visibleLabel = typeof children === "string" ? children : email;
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,7 +49,7 @@ export function CopyEmailLink({ email, children, style, className }: CopyEmailLi
       type="button"
       onClick={handleClick}
       title={copied ? "Copied!" : `Click to copy ${email}`}
-      aria-label={copied ? "Email address copied" : `Copy email address ${email}`}
+      aria-label={copied ? "Email address copied" : `${visibleLabel}: copy email address ${email}`}
       className={className}
       style={{
         background: "none",
