@@ -429,6 +429,7 @@ export function resolveCalibrationLabel(
   targetCompany: string | null | undefined,
   profile: CompanyProfile | null,
   hrSector: HrSectorOverlay = "none",
+  focus?: string | null,
 ): { companyLabel: string; companyNote: string } {
   if (profile) return { companyLabel: profile.label, companyNote: profile.note };
   const named = (targetCompany ?? "").trim();
@@ -446,10 +447,14 @@ export function resolveCalibrationLabel(
     "consulting": "Consulting calibration — 'why this firm' specificity, up-or-out switch rationale, and travel/utilisation commitment weighted up.",
     "psu": "Government / PSU calibration — compliance and document readiness weighted up; compensation treated as fixed pay-scale, not negotiable.",
   };
-  const companyNote =
-    hrSector !== "none"
-      ? sectorNote[hrSector]
+  // Campus / fresher sessions are graded on an entry-level rubric, so the
+  // fallback copy must not say "senior bar" — that misdescribes the bar to the
+  // exact audience (final-year students) the campus focus targets.
+  const defaultBar =
+    focus === "campus-placement"
+      ? `Calibrated to a general fresher / campus bar — ${named} isn't in our tuned profile set yet, so band thresholds use the default rubric.`
       : `Calibrated to a general senior bar — ${named} isn't in our tuned profile set yet, so band thresholds use the default rubric.`;
+  const companyNote = hrSector !== "none" ? sectorNote[hrSector] : defaultBar;
   return { companyLabel: named, companyNote };
 }
 

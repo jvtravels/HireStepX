@@ -609,6 +609,7 @@ export default async function handler(req: Request): Promise<Response> {
       meta?.targetCompany,
       companyProfile,
       calibrationSector,
+      meta?.focus,
     );
 
     // Cross-session memory: fetch the user's last 3 reports (structured

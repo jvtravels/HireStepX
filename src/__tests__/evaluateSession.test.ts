@@ -192,6 +192,13 @@ describe("resolveCalibrationLabel", () => {
     expect(r.companyNote).toMatch(/general senior bar/i);
     expect(r.companyNote).not.toMatch(/set a target company/i);
   });
+
+  it("uses a fresher/campus bar (never 'senior bar') for campus-placement sessions", () => {
+    const r = resolveCalibrationLabel("TCS", null, "none", "campus-placement");
+    expect(r.companyLabel).toBe("TCS");
+    expect(r.companyNote).toMatch(/fresher|campus/i);
+    expect(r.companyNote).not.toMatch(/senior bar/i);
+  });
 });
 
 describe("computeCoreMetrics", () => {
