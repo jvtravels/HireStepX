@@ -8792,6 +8792,146 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 4 (45 min): behavioral and hiring-manager round.",
     ],
   },
+
+  /* ── Flipkart — data engineer ──────────────────────────────── */
+  {
+    slug: "flipkart-data-engineer-interview-questions",
+    searchPhrase: "Flipkart Data Engineer Interview Questions India 2026",
+    company: "flipkart", roleFamily: "data", focus: "technical",
+    intro: "Flipkart's data-engineering interviews test SQL depth, pipeline design, and dimensional modelling at e-commerce scale. In 2026 expect a SQL screen heavy on window functions (top-N sellers per category, running metrics, tie-handling), a pipeline round on ingesting clickstream events into near-real-time conversion metrics with late-event handling, and a data-modelling round on orders fact tables, grain, and slowly changing dimensions. Flipkart's data org powers pricing, category, and finance analytics, so interviewers reward engineers who reason about correctness of aggregates, idempotency of reloads, and the batch-versus-streaming trade-off rather than reciting tool names. Ground every answer in a real e-commerce analytics workflow.",
+    framework: { name: "Model-and-Aggregate", summary: "Show fluent window-function SQL, model facts and dimensions at the right grain, and reason about idempotent, late-event-tolerant aggregation for e-commerce analytics" },
+    metaKeywords: ["Flipkart data engineer interview questions", "Flipkart data engineer interview India 2026", "Flipkart SQL interview", "Flipkart data pipeline interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What SQL does Flipkart ask data engineers?", a: "Window functions are central: top-N sellers per category, running and week-over-week metrics, deduplication, and correct tie-handling with ROW_NUMBER, RANK, and LAG." },
+      { q: "What pipeline questions does Flipkart ask?", a: "Designing batch and streaming pipelines for clickstream and order data, handling late-arriving events with watermarking, and producing idempotent near-real-time conversion metrics." },
+      { q: "Does Flipkart test data modelling?", a: "Yes. Expect dimensional modelling: fact-table grain, star schema, and slowly changing dimensions (SCD type-2) for an analytics warehouse serving multiple teams." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and SQL/coding pre-screen",
+      "SQL and data-manipulation round (window functions, joins)",
+      "Data pipeline and modelling design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL screen on window functions, joins, and aggregation.",
+      "Round 2 (60 min): pipeline design round on batch and streaming ingestion with late-event handling.",
+      "Round 3 (45-60 min): data-modelling round on facts, dimensions, grain, and SCDs.",
+      "Round 4 (45 min): behavioural and hiring-manager round on ownership and collaboration.",
+    ],
+  },
+
+  /* ── Amazon — data engineer / BIE ──────────────────────────── */
+  {
+    slug: "amazon-data-engineer-interview-questions",
+    searchPhrase: "Amazon Data Engineer Interview Questions India 2026",
+    company: "amazon", roleFamily: "data", focus: "technical",
+    intro: "Amazon's data-engineer and BIE interviews in India combine advanced SQL, AWS-native ETL, and operational rigour, all wrapped in the Leadership Principles. In 2026 expect a SQL round with warehouse-aware optimisation (retention cohorts on Redshift, distribution and sort keys, columnar scans), an ETL-design round on loading transactional data with schema-drift and idempotent reloads using Glue, S3, EMR, and Redshift, and a data-quality round on catching broken pipelines before dashboards. Interviewers weight correctness, cost-awareness, and clear pipeline SLAs, and every round is scored against Ownership, Dive Deep, and Insist on the Highest Standards. Bring STAR stories alongside technical depth.",
+    framework: { name: "Optimise-and-Own", summary: "Write warehouse-aware SQL, design idempotent AWS-native ETL with data-quality gates, and back every choice with cost, SLA, and Leadership-Principle reasoning" },
+    metaKeywords: ["Amazon data engineer interview questions", "Amazon BIE interview India 2026", "Amazon Redshift SQL interview", "Amazon data engineer AWS interview"],
+    sitemapPriority: 0.74,
+    faqExtra: [
+      { q: "What SQL does Amazon ask data engineers?", a: "Advanced analytical SQL like month-over-month retention cohorts, plus warehouse-aware optimisation on Redshift: distribution keys, sort keys, and reasoning about columnar scans." },
+      { q: "What AWS tools appear in Amazon data-engineer interviews?", a: "Glue, S3, Redshift, EMR, and Kinesis. Expect ETL design that handles schema drift, supports idempotent reloads, and is cost-aware." },
+      { q: "Do Amazon data-engineer interviews use Leadership Principles?", a: "Yes. Every round is scored against principles like Ownership, Dive Deep, and Insist on the Highest Standards. Prepare STAR stories alongside technical prep." },
+    ],
+    recruitmentSteps: [
+      "Online assessment with SQL and data problems",
+      "Technical phone screen on SQL and ETL",
+      "Onsite loop: SQL, data modelling, pipeline design, and Leadership Principles",
+      "Debrief and offer",
+    ],
+    interviewRounds: [
+      "Round 1 (60-90 min): online assessment with SQL and data-manipulation problems.",
+      "Round 2 (60 min): advanced SQL and warehouse-optimisation round.",
+      "Round 3 (60 min): ETL and pipeline design round on AWS with schema-drift and idempotency.",
+      "Round 4 (45-60 min): data-quality and Leadership-Principles behavioural round.",
+    ],
+  },
+
+  /* ── Walmart Global Tech — data engineer ───────────────────── */
+  {
+    slug: "walmart-data-engineer-interview-questions",
+    searchPhrase: "Walmart Global Tech Data Engineer Interview Questions India 2026",
+    company: "walmart-global-tech", roleFamily: "data", focus: "technical",
+    intro: "Walmart Global Tech's Bangalore and Chennai data-engineering rounds probe Spark internals, SQL, and data-lake architecture at retail scale. In 2026 expect a Spark round on joining a huge sales fact table against skewed dimensions (salting, broadcast joins, partition tuning), a SQL round on deduplicating inventory snapshots with window functions and making it incremental, and an architecture round on data-lake and warehouse layout for supply-chain analytics (partitioning, Parquet, serving layers). Walmart's data volumes are enormous, so interviewers reward engineers who reason precisely about shuffle cost, skew, incremental processing, and file layout rather than reaching for defaults. Concrete retail-scale reasoning wins.",
+    framework: { name: "Scale-and-Skew", summary: "Reason about Spark shuffle and skew at retail scale, write incremental window-function SQL, and design partitioned lakehouse layouts with the right file formats" },
+    metaKeywords: ["Walmart Global Tech data engineer interview questions", "Walmart data engineer interview India 2026", "Walmart Spark interview", "Walmart data engineer SQL interview"],
+    sitemapPriority: 0.7,
+    faqExtra: [
+      { q: "What Spark topics does Walmart Global Tech test?", a: "Skew handling with salting, broadcast versus sort-merge joins, partition tuning, and reasoning about shuffle cost when joining large fact and dimension tables." },
+      { q: "What SQL does Walmart ask data engineers?", a: "Window-function deduplication (latest record per store-SKU), incremental processing design, and analytical queries over very large retail datasets." },
+      { q: "What architecture questions does Walmart ask?", a: "Data-lake and warehouse layout for supply-chain analytics: partition strategy, columnar formats like Parquet, and choosing appropriate serving layers." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and Spark coding round",
+      "Data-architecture and pipeline design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on window functions and deduplication.",
+      "Round 2 (60 min): Spark round on joins, skew handling, and partition tuning.",
+      "Round 3 (45-60 min): data-lake and warehouse architecture round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── Uber — data engineer ──────────────────────────────────── */
+  {
+    slug: "uber-data-engineer-interview-questions",
+    searchPhrase: "Uber Data Engineer Interview Questions India 2026",
+    company: "uber", roleFamily: "data", focus: "technical",
+    intro: "Uber's data-engineering rounds are streaming-heavy and metrics-obsessed, reflecting a business built on real-time supply and demand. In 2026 expect a streaming round on computing surge-relevant supply/demand metrics per geohash from trip events with bounded latency and out-of-order handling, a SQL round on percentile metrics (median trip duration per city-hour) and scaling to billions of rows with approximate algorithms, and a platform round on designing a self-serve semantic/metrics layer for consistent metric definitions. Interviewers reward precise reasoning about windowing, watermarks, geospatial bucketing, and metric governance rather than generic ETL. Uber pioneered internal metrics platforms, so governance thinking stands out.",
+    framework: { name: "Stream-and-Standardise", summary: "Design low-latency streaming with watermarks and geospatial bucketing, compute percentiles at scale with approximate algorithms, and standardise metrics via a semantic layer" },
+    metaKeywords: ["Uber data engineer interview questions", "Uber data engineer interview India 2026", "Uber streaming data interview", "Uber SQL data engineer interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What streaming questions does Uber ask data engineers?", a: "Designing pipelines that compute real-time supply/demand metrics per geohash from trip events, with windowing, watermarks, and explicit handling of out-of-order events." },
+      { q: "What SQL does Uber ask data engineers?", a: "Percentile computation such as median trip duration per city-hour, plus reasoning about approximate algorithms like t-digest to scale to billions of rows." },
+      { q: "Does Uber test metrics-platform design?", a: "Yes. Uber pioneered internal metrics platforms, so rounds probe self-serve semantic layers, standardised metric definitions, and governance over ad-hoc definitions." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Streaming pipeline and platform design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on percentiles and large-scale analytical queries.",
+      "Round 2 (60 min): streaming pipeline design round with windowing and out-of-order handling.",
+      "Round 3 (45-60 min): metrics-platform and semantic-layer design round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
+
+  /* ── Swiggy — data engineer ────────────────────────────────── */
+  {
+    slug: "swiggy-data-engineer-interview-questions",
+    searchPhrase: "Swiggy Data Engineer Interview Questions India 2026",
+    company: "swiggy", roleFamily: "data", focus: "technical",
+    intro: "Swiggy's data-engineering rounds mix stream processing, analytical SQL, and experimentation pipelines, reflecting a food-delivery business run on real-time signals. In 2026 expect a streaming round on producing per-restaurant delivery-time analytics from order and GPS event streams (joining streams with different arrival rates, event-time processing), a SQL round on week-over-week order-volume drops using window functions with LAG, and an experimentation round on building reliable A/B metric pipelines that guard against sample-ratio mismatch and peeking. Swiggy is experimentation-heavy, so interviewers reward statistically sound aggregation and correct stream-stream joins over generic batch ETL. Ground answers in real delivery workflows.",
+    framework: { name: "Join-and-Experiment", summary: "Handle stream-stream joins and event-time processing for delivery analytics, write window-function SQL for trend detection, and build statistically sound A/B pipelines" },
+    metaKeywords: ["Swiggy data engineer interview questions", "Swiggy data engineer interview India 2026", "Swiggy streaming data interview", "Swiggy SQL data engineer interview"],
+    sitemapPriority: 0.72,
+    faqExtra: [
+      { q: "What streaming questions does Swiggy ask data engineers?", a: "Designing pipelines for per-restaurant delivery-time analytics from order and GPS event streams, including stream-stream joins with different arrival rates and event-time processing." },
+      { q: "What SQL does Swiggy ask data engineers?", a: "Window functions with LAG for week-over-week comparisons, such as finding restaurants whose weekly order volume dropped beyond a threshold, partitioned by restaurant and city." },
+      { q: "Does Swiggy test experimentation pipelines?", a: "Yes. Swiggy is experimentation-heavy, so rounds probe reliable A/B metric pipelines, sample-ratio-mismatch detection, and statistically sound aggregation." },
+    ],
+    recruitmentSteps: [
+      "Recruiter screen and technical pre-screen",
+      "SQL and data-manipulation round",
+      "Streaming pipeline and experimentation design round",
+      "Hiring-manager and behavioural round, then offer",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): SQL round on window functions and trend detection.",
+      "Round 2 (60 min): streaming pipeline design round with stream-stream joins.",
+      "Round 3 (45-60 min): experimentation and A/B metric pipeline round.",
+      "Round 4 (45 min): behavioural and hiring-manager round.",
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

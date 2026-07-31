@@ -2767,4 +2767,104 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
     styleNote: "Deutsche Bank probes immutable audit trails. Address append-only storage, tamper-evidence, and read-optimised point-in-time queries.",
   },
+
+  /* ── Flipkart — data engineer ──────────────────────────────── */
+  {
+    text: "Write a SQL query to find, for each product category, the top 3 sellers by revenue in the last 30 days, handling ties consistently.",
+    company: "flipkart", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart data-engineer screens lean heavily on window functions. Expect ROW_NUMBER/RANK, partitioning, and correct tie-handling.",
+  },
+  {
+    text: "Design a batch and streaming pipeline that ingests clickstream events and produces near-real-time category-level conversion metrics. How do you handle late-arriving events?",
+    company: "flipkart", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Flipkart probes lambda/kappa trade-offs, watermarking, and idempotent aggregation for e-commerce analytics at scale.",
+  },
+  {
+    text: "How would you model an orders fact table and its dimensions for an analytics warehouse serving both finance and category teams? Discuss grain and slowly changing dimensions.",
+    company: "flipkart", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart data-modelling rounds test dimensional modelling: fact-table grain, star schema, and SCD type-2 handling.",
+  },
+
+  /* ── Amazon — data engineer / BIE ──────────────────────────── */
+  {
+    text: "Given a large fact table of orders and a dimension table of customers, write SQL to compute month-over-month retention cohorts. Optimise for a columnar warehouse like Redshift.",
+    company: "amazon", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Amazon BIE/data-engineer rounds combine advanced SQL with warehouse-aware optimisation (distribution keys, sort keys, columnar scans).",
+  },
+  {
+    text: "Design an ETL pipeline that loads daily transactional data from operational databases into a warehouse, handling schema drift and idempotent reloads. What do you use on AWS?",
+    company: "amazon", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Amazon data-engineer rounds test AWS-native ETL (Glue, S3, Redshift, EMR), idempotency, and schema-evolution handling.",
+  },
+  {
+    text: "How do you design a data-quality framework that catches broken pipelines and bad data before it reaches business dashboards? What checks and alerts do you add?",
+    company: "amazon", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Amazon prizes operational rigour: data-quality gates, freshness/volume/schema checks, and clear ownership of pipeline SLAs.",
+  },
+
+  /* ── Walmart Global Tech — data engineer ───────────────────── */
+  {
+    text: "Design a Spark pipeline that joins a huge sales fact table against several dimension tables where one dimension is heavily skewed. How do you avoid the skew bottleneck?",
+    company: "walmart-global-tech", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Walmart Global Tech data-engineer rounds probe Spark internals: skew handling, salting, broadcast joins, and partition tuning at retail scale.",
+  },
+  {
+    text: "Write SQL to deduplicate a table of inventory snapshots keeping only the latest record per store-SKU, then explain how you'd make this incremental.",
+    company: "walmart-global-tech", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Walmart tests window-function deduplication and incremental-processing design for large retail datasets.",
+  },
+  {
+    text: "How would you design a scalable data lake and warehouse layout for retail supply-chain analytics? Discuss partitioning, file formats, and serving layers.",
+    company: "walmart-global-tech", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Walmart data-architecture rounds test lakehouse layout, columnar formats (Parquet), partition strategy, and serving-layer choices.",
+  },
+
+  /* ── Uber — data engineer ──────────────────────────────────── */
+  {
+    text: "Design a pipeline that computes real-time surge-relevant supply/demand metrics per geohash from a stream of trip events. How do you bound latency and handle out-of-order events?",
+    company: "uber", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Uber data-engineer rounds probe streaming systems: windowing, watermarks, geospatial bucketing, and latency budgets for real-time metrics.",
+  },
+  {
+    text: "Write a SQL query to compute the median trip duration per city per hour from a trips table, and explain how you'd scale it to billions of rows.",
+    company: "uber", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Uber tests percentile computation in SQL plus reasoning about approximate algorithms (t-digest) at very large scale.",
+  },
+  {
+    text: "How would you design a self-serve metrics/semantic layer so analysts get consistent definitions of core business metrics across teams?",
+    company: "uber", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Uber pioneered internal metrics platforms; rounds probe metric standardisation, semantic layers, and governance over ad-hoc definitions.",
+  },
+
+  /* ── Swiggy — data engineer ────────────────────────────────── */
+  {
+    text: "Design a pipeline that produces per-restaurant delivery-time analytics from order and GPS event streams. How do you join streams with different arrival rates?",
+    company: "swiggy", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Swiggy data-engineer rounds probe stream-stream joins, event-time processing, and handling GPS event volume in food delivery.",
+  },
+  {
+    text: "Write SQL to find restaurants whose weekly order volume dropped more than 20% compared to the previous week, across all cities.",
+    company: "swiggy", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Swiggy tests window functions with LAG for week-over-week comparison and correct partitioning by restaurant and city.",
+  },
+  {
+    text: "How would you design an experimentation data pipeline that computes A/B test metrics reliably, guarding against sample-ratio mismatch and peeking?",
+    company: "swiggy", roleFamily: "data", focus: "technical",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Swiggy is experimentation-heavy; rounds probe A/B metric pipelines, SRM detection, and statistically sound aggregation.",
+  },
 ];
