@@ -6,6 +6,7 @@ import { SalaryHubPage, type SalaryHubEntry } from "@/marketing-v2/SalaryPage";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { tokens as t, fonts } from "@/auth/_tokens";
 
 export const revalidate = 86400;
 
@@ -145,6 +146,48 @@ export default async function SalaryIndexPage() {
         strategy="lazyOnload"
       />
       <NavV2 />
+      <div style={{ background: t.cream, padding: "18px 24px 0" }}>
+        <a
+          href="/salary-report-2026"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            flexWrap: "wrap",
+            maxWidth: 1080,
+            margin: "0 auto",
+            background: t.creamRaised,
+            border: `1px solid ${t.copperBorder}`,
+            borderRadius: 14,
+            padding: "16px 20px",
+            textDecoration: "none",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: fonts.mono,
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: t.copper,
+              background: t.copperWash,
+              border: `1px solid ${t.copperBorder}`,
+              borderRadius: 6,
+              padding: "4px 9px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            New · 2026 Report
+          </span>
+          <span style={{ flex: "1 1 260px", fontFamily: fonts.sans, fontSize: 15, color: t.coal, lineHeight: 1.45 }}>
+            <strong>Indian Startup Engineer Salary Report 2026</strong> — median entry/mid/senior CTC across every
+            company below, including emerging AI startups (Sarvam, Moglix, Navi) no one else has data on.
+          </span>
+          <span style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.copper, whiteSpace: "nowrap" }}>
+            View the report →
+          </span>
+        </a>
+      </div>
       <SalaryHubPage
         entries={entries}
         faqs={faqSchema.mainEntity.map((e) => ({ q: e.name, a: e.acceptedAnswer.text }))}
