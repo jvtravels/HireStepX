@@ -99,6 +99,7 @@ export const editorialCSS = `
     .ed-split { flex-direction: column !important; align-items: flex-start !important; gap: 28px !important; }
     .ed-cta-row { flex-direction: column !important; align-items: stretch !important; }
     .ed-cta-row > a { justify-content: center !important; text-align: center; }
+    .ed-faq-row { grid-template-columns: 1fr !important; gap: 12px !important; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -402,6 +403,48 @@ export function SpecTimeline({
         </li>
       ))}
     </ol>
+  );
+}
+
+/* ── FAQEntry ─────────────────────────────────────────────────────────────
+   Always-visible two-column FAQ row: leading italic serif ordinal + bold
+   question on the left, full answer on the right. No accordion — for
+   surfaces where the answers themselves are the scannable content (unlike
+   FAQItem's collapsed-by-default pattern, meant for denser FAQ blocks). */
+export function FAQEntry({
+  index,
+  q,
+  a,
+  first,
+}: {
+  index: number;
+  q: string;
+  a: string;
+  first?: boolean;
+}) {
+  return (
+    <div
+      className="ed-faq-row"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(220px, 34%) 1fr",
+        gap: 40,
+        padding: "32px 0",
+        borderTop: first ? "none" : `1px solid ${t.line}`,
+      }}
+    >
+      <div style={{ display: "flex", gap: 14, alignItems: "baseline" }}>
+        <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 20, color: t.copper, lineHeight: 1.3, flexShrink: 0 }}>
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <p style={{ fontFamily: fonts.sans, fontSize: 17, fontWeight: 700, lineHeight: 1.4, color: t.coal, margin: 0 }}>
+          {q}
+        </p>
+      </div>
+      <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.7, color: t.inkSoft, margin: 0 }}>
+        {a}
+      </p>
+    </div>
   );
 }
 

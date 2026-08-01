@@ -65,21 +65,28 @@ export async function generateMetadata({
 
   return {
     title: `${displayName} Interview Questions & Tips 2026 | HireStepX Blog`,
-    description: `All ${displayName} interview guides on HireStepX — preparation tips, question breakdowns, and strategy for ${displayName} roles in India 2026.`,
+    description: `All ${displayName} interview guides on HireStepX: preparation tips, question breakdowns, and strategy for ${displayName} roles in India 2026.`,
     alternates: { canonical: `/blog/company/${slug}` },
+    // Thin list-of-links page: it has no unique content beyond linking out to the
+    // real articles/salary/questions pages for this company, so it was competing
+    // with (and losing to) those pages for the same query intent — GSC showed
+    // all 49 instances stuck at position 40-77 with a 0.6% CTR. noindex stops it
+    // from cannibalizing search visibility while `follow` keeps passing link
+    // equity to the pages that actually rank.
+    robots: { index: false, follow: true },
     openGraph: {
-      title: `${displayName} Interview Guides — HireStepX Blog`,
-      description: `All ${displayName} interview guides on HireStepX — preparation tips, question breakdowns, and strategy for ${displayName} roles in India 2026.`,
+      title: `${displayName} Interview Guides, HireStepX Blog`,
+      description: `All ${displayName} interview guides on HireStepX: preparation tips, question breakdowns, and strategy for ${displayName} roles in India 2026.`,
       url: `https://hirestepx.com/blog/company/${slug}`,
       type: "website",
       siteName: "HireStepX",
       locale: "en_IN",
-      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: `${displayName} Interview Guides — HireStepX` }],
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: `${displayName} Interview Guides, HireStepX` }],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${displayName} Interview Guides — HireStepX Blog`,
-      description: `All ${displayName} interview preparation articles on HireStepX — tips, question breakdowns, and strategy for India 2026.`,
+      title: `${displayName} Interview Guides, HireStepX Blog`,
+      description: `All ${displayName} interview preparation articles on HireStepX: tips, question breakdowns, and strategy for India 2026.`,
       images: ["https://hirestepx.com/opengraph-image"],
     },
   };
@@ -118,7 +125,7 @@ export default async function BlogCompanyPage({
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `${displayName} Interview Guides — HireStepX Blog`,
+    name: `${displayName} Interview Guides, HireStepX Blog`,
     description: `All ${displayName} interview preparation articles on HireStepX`,
     url: `https://hirestepx.com/blog/company/${slug}`,
     numberOfItems: posts.length,
@@ -161,7 +168,7 @@ export default async function BlogCompanyPage({
             {displayName} Interview Questions &amp; Tips
           </h1>
           <p style={{ fontFamily: fonts.serif, fontSize: 16, color: t.inkSoft, margin: "0 0 48px", lineHeight: 1.7 }}>
-            All {displayName} interview preparation guides on HireStepX — question breakdowns, preparation strategy, and role-specific tips for Indian candidates in 2026.
+            All {displayName} interview preparation guides on HireStepX: question breakdowns, preparation strategy, and role-specific tips for Indian candidates in 2026.
           </p>
 
           {/* Post list */}
@@ -224,7 +231,7 @@ export default async function BlogCompanyPage({
                       borderRadius: 10, textDecoration: "none", color: t.coal, fontSize: 14, fontWeight: 500,
                     }}
                   >
-                    <span>{salaryCompanyLabel(salaryEntry.slug)} Salary Guide — India 2026 CTC breakdown</span>
+                    <span>{salaryCompanyLabel(salaryEntry.slug)} Salary Guide, India 2026 CTC breakdown</span>
                     <span style={{ color: t.copper, fontSize: 13, marginLeft: 12, whiteSpace: "nowrap" }}>View →</span>
                   </Link>
                 )}

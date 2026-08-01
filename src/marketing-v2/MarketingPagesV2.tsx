@@ -481,11 +481,11 @@ export function PricingPageV2() {
   const faqs: Array<[string, string]> = [
     [
       "Do plans auto-renew?",
-      "The Sprint Pack (₹39 for 5 sessions) renews automatically each month. Cancel any time from Settings before the next billing date and you won't be charged again. Per-session credits (₹9) never expire and never auto-renew — buy one and use it whenever.",
+      "The Sprint Pack (₹39 for 5 sessions) renews automatically each month. Cancel any time from Settings before the next billing date and you won't be charged again. Per-session credits (₹9) never expire and never auto-renew: buy one and use it whenever.",
     ],
     [
       "What happens to unused Sprint Pack sessions?",
-      "You get 5 fresh sessions each 30-day billing cycle — they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 7 days of purchase.",
+      "You get 5 fresh sessions each 30-day billing cycle, and they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 7 days of purchase.",
     ],
     [
       "Can I switch plans?",
@@ -577,8 +577,9 @@ export function PricingPageV2() {
                   <p
                     style={{
                       margin: "10px 0 0",
-                      fontFamily: fonts.serif,
-                      fontSize: 44,
+                      fontFamily: fonts.mono,
+                      fontSize: 40,
+                      fontWeight: 600,
                       lineHeight: 1,
                       letterSpacing: "-0.02em",
                       color: tier.featured ? t.cream : t.coal,
@@ -718,7 +719,7 @@ export function PricingPageV2() {
               <tbody>
                 {compareRows.map(([feature, free, perSession, weekly], i) => (
                   <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-                    <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
+                    <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14, maxWidth: 200 }}>{feature}</th>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{free}</td>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{perSession}</td>
                     <td style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, borderLeft: `1px solid ${t.line}`, background: t.indigoMist }}>{weekly}</td>
@@ -786,7 +787,7 @@ export function HowItWorksV2() {
       n: "02",
       label: "Pick target",
       title: "Choose the room you're walking into.",
-      body: "200+ Indian roles in the question bank: TCS, Infosys, Wipro, Razorpay, Zomato, Flipkart, Cred, Deloitte, ISRO, RBI, Paytm — across IT services, unicorns, PSUs, and MNCs. Pair with a role and round type: HR screen, technical, campus placement, panel, salary negotiation.",
+      body: "200+ Indian roles in the question bank: TCS, Infosys, Wipro, Razorpay, Zomato, Flipkart, Cred, Deloitte, ISRO, RBI, Paytm, across IT services, unicorns, PSUs, and MNCs. Pair with a role and round type: HR screen, technical, campus placement, panel, salary negotiation.",
       detail: "We refresh question patterns regularly as new public interview reports surface. Don't see your target company? Tell us and we'll add it within 48 hours.",
     },
     {
@@ -801,7 +802,7 @@ export function HowItWorksV2() {
       label: "Get scored",
       title: "STAR breakdown on every answer.",
       body: "Every answer is scored on Situation, Task, Action, Result, plus communication clarity, technical depth, and authenticity. You get a 1–10 score, the rubric behind it, and a model answer to compare against.",
-      detail: "Rubrics built from publicly aggregated interview reports across Glassdoor, Levels.fyi and AmbitionBox — each question cross-checked against two independent sources. Disagree with a score? Hit 'Dispute' and we review within 24h. Credit refunded if we agree.",
+      detail: "Rubrics built from publicly aggregated interview reports across Glassdoor, Levels.fyi and AmbitionBox: each question cross-checked against two independent sources. Disagree with a score? Hit 'Dispute' and we review within 24h. Credit refunded if we agree.",
     },
     {
       n: "05",
@@ -864,7 +865,10 @@ export function HowItWorksV2() {
                 <h3
                   style={{
                     ...h3,
-                    fontSize: "clamp(28px, 3.4vw, 40px)",
+                    /* Capped at 40px so this never outgrows the page h1
+                       (72px) on ultra-wide viewports where 3.4vw alone
+                       would otherwise push past it. */
+                    fontSize: "clamp(24px, 3vw, 40px)",
                     marginBottom: 20,
                   }}
                 >
@@ -880,9 +884,27 @@ export function HowItWorksV2() {
                     padding: "16px 20px",
                     background: t.creamSoft,
                     borderRadius: 12,
+                    position: "relative",
                   }}
                 >
-                  <span aria-hidden style={{ color: t.copper, fontWeight: 700, marginRight: 6 }}>“</span>
+                  {/* Decorative flourish only — sized/positioned to sit
+                      behind the copy instead of competing with it. */}
+                  <span
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      top: -6,
+                      left: 12,
+                      fontSize: 40,
+                      lineHeight: 1,
+                      color: t.copper,
+                      fontWeight: 700,
+                      opacity: 0.16,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    “
+                  </span>
                   {p.detail}
                 </p>
               </div>
@@ -992,7 +1014,7 @@ export function AboutV2() {
         <div className="mv2-container" style={containerNarrow}>
           <MDXProse>
             <p style={{ fontSize: 18, lineHeight: 1.7 }}>
-              India produces over a million engineering graduates a year. Most can't make it past round one — not because of talent. It's that interview prep, the way it's taught, was designed for a labor market that doesn't exist anymore: coaching that costs ₹5,000 or more a session, friends who can only roleplay so many times, and YouTube videos from 2018 about a hiring funnel that's already changed twice.
+              India produces over a million engineering graduates a year. Most can't make it past round one, not because of talent. It's that interview prep, the way it's taught, was designed for a labor market that doesn't exist anymore: coaching that costs ₹5,000 or more a session, friends who can only roleplay so many times, and YouTube videos from 2018 about a hiring funnel that's already changed twice.
             </p>
             <p>
               We've been on both sides of the table. Hiring at unicorns, coaching at colleges, taking the rounds ourselves. The pattern was always the same: the people who got better got <em>reps</em>: specific, scored, immediate. Not generic advice.
@@ -1053,13 +1075,15 @@ export function AboutV2() {
               fontFamily: fonts.sans,
               fontSize: 16,
               lineHeight: 1.7,
-              color: t.cream,
-              opacity: 0.78,
+              // creamMuted is the established "muted body copy on dark band"
+              // token (see HomepageV2 dark-section usages); a flat opacity
+              // trick here compounded with the #221A10 bg and failed AA.
+              color: t.creamMuted,
               margin: "32px 0 0",
               maxWidth: "60ch",
             }}
           >
-            We've sat through enough Indian-tech interview cycles — services, GCC, product — to know where the prep most candidates do actually breaks. The product reflects that frustration, not a placement-cell pitch deck.
+            We've sat through enough Indian-tech interview cycles (services, GCC, product) to know where the prep most candidates do actually breaks. The product reflects that frustration, not a placement-cell pitch deck.
           </p>
         </div>
       </section>
@@ -1156,13 +1180,13 @@ export function ContactV2() {
           border: none;
           border-bottom: 1.5px solid ${t.lineStrong};
           border-radius: 0;
-          padding: 9px 0;
+          padding: 12px 0;
           font-family: ${fonts.sans};
           font-size: 15px;
           color: ${t.coal};
           outline: none;
           transition: border-color 0.18s ease;
-          min-height: 44px;
+          min-height: 50px;
           appearance: none;
           -webkit-appearance: none;
         }
@@ -1243,7 +1267,7 @@ export function ContactV2() {
               {/* ── RIGHT — form ── */}
               <div className="hsx-contact-form" style={{ padding: "48px 44px" }}>
                 <h2 style={{
-                  fontFamily: fonts.serif,
+                  fontFamily: fonts.sans,
                   fontSize: "clamp(22px, 2.2vw, 28px)",
                   lineHeight: 1.1,
                   letterSpacing: "-0.02em",
@@ -1335,7 +1359,7 @@ export function ContactV2() {
                       {status === "sent"
                         ? `Got it${ref ? ` (ref: ${ref})` : ""}. We'll reply within 1 business day.`
                         : status === "error"
-                        ? "Couldn't send — email hello@hirestepx.com instead."
+                        ? "Couldn't send, email hello@hirestepx.com instead."
                         : null}
                     </p>
                   </div>
@@ -1491,7 +1515,7 @@ export function ForStudentsV2() {
               ["Capgemini Interview Questions for Freshers 2026", "/blog/capgemini-interview-questions-freshers-2026"],
               ["LTIMindtree Interview Questions for Freshers 2026", "/blog/ltimindtree-interview-questions-freshers-2026"],
               ["HR Interview Questions & Answers India", "/blog/hr-interview-questions-answers-india"],
-              ["Group Discussion Topics — Campus Placement 2026", "/blog/group-discussion-topics-campus-placement-2026"],
+              ["Group Discussion Topics: Campus Placement 2026", "/blog/group-discussion-topics-campus-placement-2026"],
               ["How to Pass TCS NQT 2026", "/blog/how-to-pass-tcs-nqt-2026"],
               ["Resume Tips for Freshers India 2026", "/blog/resume-tips-freshers-india-2026"],
             ] as [string, string][]).map(([label, href]) => (
@@ -1535,12 +1559,12 @@ export function ForStudentsV2() {
           >
             <p style={{ ...eyebrow, marginBottom: 16 }}>Before you pay</p>
             <p style={{ fontFamily: fonts.serif, fontSize: 22, lineHeight: 1.45, color: t.coal, margin: 0, marginBottom: 16 }}>
-              HireStepX is in early access. Try two full mocks free first — see the
+              HireStepX is in early access. Try two full mocks free first: see the
               voice, the questions, and the scored report yourself before you decide.
               If the free tier doesn't change how you're preparing, paid won't either.
             </p>
             <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
-              No testimonials shown yet — outcomes get published once early-access users
+              No testimonials shown yet, outcomes get published once early-access users
               opt in to share theirs.
             </p>
           </div>
@@ -1675,7 +1699,7 @@ export function PrivacyV2() {
   return (
     <LegalPage title="Privacy" accent="explained simply." updated="26 July 2026">
       <h2>What we collect</h2>
-      <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions — if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
+      <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions: if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
 
       <h2>Why we collect it</h2>
       <p>To run the product. The resume tunes the AI's questions to your background. The transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies.</p>
@@ -1686,19 +1710,19 @@ export function PrivacyV2() {
       <h2>Who we share with</h2>
       <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>
       <ul>
-        <li><strong>Supabase</strong> — database, authentication, and file storage (Ireland / US-East)</li>
-        <li><strong>Vercel</strong> — serverless hosting and edge functions (global CDN)</li>
-        <li><strong>Groq</strong> — primary AI inference for interview scoring and question generation (US)</li>
-        <li><strong>Google (Gemini)</strong> — secondary AI inference fallback (US)</li>
-        <li><strong>Deepgram</strong> — primary speech-to-text transcription of voice answers (US)</li>
-        <li><strong>Sarvam AI</strong> — Indian-English text-to-speech and speech-to-text fallback (India)</li>
-        <li><strong>Cartesia</strong> — secondary text-to-speech (US)</li>
-        <li><strong>Microsoft Azure</strong> — tertiary text-to-speech fallback (global)</li>
-        <li><strong>Resend</strong> — transactional email delivery (US)</li>
-        <li><strong>Razorpay</strong> — payment processing and subscription billing (India)</li>
-        <li><strong>PostHog</strong> — product analytics (US); only loaded after explicit cookie consent</li>
-        <li><strong>Upstash</strong> — Redis-based rate limiting and caching (US)</li>
-        <li><strong>Google AdSense</strong> — advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
+        <li><strong>Supabase</strong>: database, authentication, and file storage (Ireland / US-East)</li>
+        <li><strong>Vercel</strong>: serverless hosting and edge functions (global CDN)</li>
+        <li><strong>Groq</strong>: primary AI inference for interview scoring and question generation (US)</li>
+        <li><strong>Google (Gemini)</strong>: secondary AI inference fallback (US)</li>
+        <li><strong>Deepgram</strong>: primary speech-to-text transcription of voice answers (US)</li>
+        <li><strong>Sarvam AI</strong>: Indian-English text-to-speech and speech-to-text fallback (India)</li>
+        <li><strong>Cartesia</strong>: secondary text-to-speech (US)</li>
+        <li><strong>Microsoft Azure</strong>: tertiary text-to-speech fallback (global)</li>
+        <li><strong>Resend</strong>: transactional email delivery (US)</li>
+        <li><strong>Razorpay</strong>: payment processing and subscription billing (India)</li>
+        <li><strong>PostHog</strong>: product analytics (US); only loaded after explicit cookie consent</li>
+        <li><strong>Upstash</strong>: Redis-based rate limiting and caching (US)</li>
+        <li><strong>Google AdSense</strong>: advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
       </ul>
       <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash. Google AdSense is only active on public content pages and is never loaded inside authenticated product surfaces (dashboard, interview sessions, reports).</p>
 
@@ -1762,7 +1786,7 @@ export function RefundPolicyV2() {
       <p>Refundable up to 7 days after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
 
       <h2>Sprint Pack (₹39 / month)</h2>
-      <p>Full refund within 7 days of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge — your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
+      <p>Full refund within 7 days of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge: your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
 
       <h2>How to request a refund</h2>
       <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
@@ -1860,7 +1884,7 @@ export function PaymentFailedPage() {
         eyebrow="Payment"
         title="Payment didn't"
         accent="go through."
-        lead="This happens sometimes with UPI — your money has NOT been debited. You can try again safely."
+        lead="This happens sometimes with UPI: your money has NOT been debited. You can try again safely."
       />
 
       <section style={{ ...sectionBase, paddingTop: 64, paddingBottom: 96 }}>
@@ -1913,7 +1937,7 @@ export function PaymentFailedPage() {
                 margin: "0 auto 32px",
               }}
             >
-              UPI payments can fail due to bank timeouts, network issues, or daily limits — it{"'"}s common and completely safe to retry. Your bank will not charge you for a failed transaction.
+              UPI payments can fail due to bank timeouts, network issues, or daily limits: it{"'"}s common and completely safe to retry. Your bank will not charge you for a failed transaction.
             </p>
 
             {/* Primary CTA */}
@@ -1989,8 +2013,8 @@ export function PaymentFailedPage() {
               {[
                 "Switch from UPI to debit/credit card or netbanking if UPI keeps failing",
                 "Check that your UPI daily transaction limit hasn't been reached",
-                "Try on a stable WiFi or 4G connection — poor signal causes timeouts",
-                "Wait 5 minutes before retrying — your bank may need a moment to release the hold",
+                "Try on a stable WiFi or 4G connection, poor signal causes timeouts",
+                "Wait 5 minutes before retrying: your bank may need a moment to release the hold",
               ].map((tip) => (
                 <li key={tip} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.5, color: t.inkSoft }}>
                   <span aria-hidden style={{ color: t.copper, marginTop: 2, flexShrink: 0 }}>→</span>
@@ -2016,7 +2040,7 @@ const HOW_IT_WORKS = [
   {
     step: "02",
     heading: "Share it",
-    body: "Send your link to a friend preparing for interviews — WhatsApp, LinkedIn, or a direct message.",
+    body: "Send your link to a friend preparing for interviews: WhatsApp, LinkedIn, or a direct message.",
   },
   {
     step: "03",
@@ -2079,7 +2103,7 @@ export function ReferralPageV2() {
         >
           Refer a friend preparing for interviews. They get a free session credit
           the moment they sign up with your link. You earn one free session
-          credit once they practise. No codes to track — your link does it automatically.
+          credit once they practise. No codes to track: your link does it automatically.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a

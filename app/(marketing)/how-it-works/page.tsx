@@ -4,7 +4,7 @@ import { HowItWorksV2 } from "@/marketing-v2/MarketingPagesV2";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const metadata: Metadata = {
-  title: "How AI Mock Interviews Work — 5-Step Practice Guide India 2026 | HireStepX",
+  title: "How AI Mock Interviews Work: 5-Step Practice Guide India 2026 | HireStepX",
   description:
     "How HireStepX works: upload resume, pick a company, practice a voice interview with AI, get a scored STAR report. Start free, no card needed.",
   keywords: [
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   ].join(", "),
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How HireStepX AI Mock Interviews Work — 5 Steps to Interview-Ready",
+    title: "How HireStepX AI Mock Interviews Work: 5 Steps to Interview-Ready",
     description: "Upload resume → pick target company → practice voice interview with AI → get scored STAR report → repeat. Start free, no card.",
     url: "https://hirestepx.com/how-it-works",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "How AI Mock Interviews Work — HireStepX 5-Step Guide India 2026",
+    title: "How AI Mock Interviews Work: HireStepX 5-Step Guide India 2026",
     description: "Upload resume, pick role + company, practice voice interview with AI, get scored report. 2 sessions free.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
@@ -59,7 +59,7 @@ const HOWTO_SCHEMA = {
 const ARTICLE_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "How AI Mock Interviews Work — 5-Step Practice Guide",
+  headline: "How AI Mock Interviews Work: 5-Step Practice Guide",
   description: "How HireStepX works: upload resume, pick target company and interview type, practice a voice interview with AI, get a scored STAR report, and repeat with spaced repetition.",
   author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
   publisher: {

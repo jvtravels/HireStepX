@@ -26,7 +26,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "AI Mock Interview Practice — Free, Voice-Based | HireStepX",
+  title: "AI Mock Interview Practice: Free, Voice-Based | HireStepX",
   description:
     "Practice AI mock interviews for free. Voice-based AI interviewer asks company-specific questions, evaluates your answers on STAR structure, and scores communication. 2 free sessions, no card needed.",
   keywords: [
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/ai-mock-interview" },
   openGraph: {
     type: "article",
-    title: "AI Mock Interview Practice — Free, Voice-Based | HireStepX",
+    title: "AI Mock Interview Practice: Free, Voice-Based | HireStepX",
     description:
       "Practice AI mock interviews for free. Voice-based AI interviewer, STAR scoring, and company-specific questions for Google, TCS, Flipkart, and 200+ companies.",
     url: "https://hirestepx.com/ai-mock-interview",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Mock Interview Practice — Free | HireStepX",
+    title: "AI Mock Interview Practice, Free | HireStepX",
     description: "Voice-based AI mock interviews with STAR scoring. 2 free sessions, no card. Practice for Google, TCS, Flipkart, and 200+ companies.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
@@ -107,7 +107,7 @@ const HOW_IT_WORKS = [
   {
     step: "1",
     title: "Upload your resume",
-    desc: "The AI reads your experience and crafts role-specific questions — not generic ones from a bank.",
+    desc: "The AI reads your experience and crafts role-specific questions, not generic ones from a bank.",
   },
   {
     step: "2",
@@ -147,7 +147,7 @@ export default async function AiMockInterviewPage() {
         name: "Is AI mock interview practice effective?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes. Research on deliberate practice consistently shows that repeated realistic simulation improves performance. AI mock interviews let you practice the same question 10 times at 2am without scheduling anyone — the volume and immediacy of feedback is the key advantage over human coaches. The STAR scoring gives you objective data on what specifically is weak (situation setup, action clarity, result quantification) rather than vague subjective impressions.",
+          text: "Yes. Research on deliberate practice consistently shows that repeated realistic simulation improves performance. AI mock interviews let you practice the same question 10 times at 2am without scheduling anyone: the volume and immediacy of feedback is the key advantage over human coaches. The STAR scoring gives you objective data on what specifically is weak (situation setup, action clarity, result quantification) rather than vague subjective impressions.",
         },
       },
       {
@@ -163,7 +163,7 @@ export default async function AiMockInterviewPage() {
         name: "How is AI mock interview different from practicing with ChatGPT?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "ChatGPT is text-only — it cannot speak questions, cannot hear your spoken answers, cannot score your communication delivery, and has no resume integration. HireStepX is purpose-built: voice-based (the AI speaks and listens), resume-personalised questions, STAR structure scoring, company-specific question banks, progress tracking across sessions, and a coached model answer after every response.",
+          text: "ChatGPT is text-only, it cannot speak questions, cannot hear your spoken answers, cannot score your communication delivery, and has no resume integration. HireStepX is purpose-built: voice-based (the AI speaks and listens), resume-personalised questions, STAR structure scoring, company-specific question banks, progress tracking across sessions, and a coached model answer after every response.",
         },
       },
       {
@@ -187,7 +187,7 @@ export default async function AiMockInterviewPage() {
         name: "Does the AI mock interview work on mobile?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, HireStepX works on any modern browser including mobile. For the best AI mock interview experience — especially for voice recognition accuracy — a laptop or desktop with a microphone in a quiet room is recommended. Mobile works for quick practice but a headset significantly improves STT accuracy.",
+          text: "Yes, HireStepX works on any modern browser including mobile. For the best AI mock interview experience (especially for voice recognition accuracy), a laptop or desktop with a microphone in a quiet room is recommended. Mobile works for quick practice but a headset significantly improves STT accuracy.",
         },
       },
     ],
@@ -197,7 +197,7 @@ export default async function AiMockInterviewPage() {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "How to do an AI mock interview on HireStepX",
-    description: "Practice a full voice-based AI mock interview in 4 steps — free, no card needed.",
+    description: "Practice a full voice-based AI mock interview in 4 steps, free, no card needed.",
     step: HOW_IT_WORKS.map((s) => ({
       "@type": "HowToStep",
       name: s.title,
@@ -208,7 +208,7 @@ export default async function AiMockInterviewPage() {
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: "AI Mock Interview Practice — Free, Voice-Based",
+    headline: "AI Mock Interview Practice: Free, Voice-Based",
     description:
       "How AI mock interviews work, how they compare to ChatGPT and human coaches, and how to start practicing for free on HireStepX.",
     url: "https://hirestepx.com/ai-mock-interview",
@@ -275,7 +275,7 @@ export default async function AiMockInterviewPage() {
                 display: "inline-block",
               }}
             >
-              Start free — no card needed
+              Start free, no card needed
             </Link>
             <Link
               href="/how-it-works"
@@ -309,13 +309,13 @@ export default async function AiMockInterviewPage() {
             What is an AI mock interview?
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            An AI mock interview is a simulated job interview run entirely by an AI system — no human interviewer, no scheduling, available at 2am before your real interview tomorrow. The AI acts as an interviewer: it speaks questions, listens to your spoken answers, asks intelligent follow-ups, and then evaluates your responses.
+            An AI mock interview is a simulated job interview run entirely by an AI system: no human interviewer, no scheduling, available at 2am before your real interview tomorrow. The AI acts as an interviewer: it speaks questions, listens to your spoken answers, asks intelligent follow-ups, and then evaluates your responses.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            On HireStepX, the AI is personalized to your resume — it knows you worked at Company X, that you have Y years of experience, and what role you're interviewing for. Every question is company-specific, not pulled from a generic bank. The scored report after each session breaks down your STAR structure, communication clarity, filler word frequency, and pacing — with a coached model answer for every question you answered.
+            On HireStepX, the AI is personalized to your resume: it knows you worked at Company X, that you have Y years of experience, and what role you're interviewing for. Every question is company-specific, not pulled from a generic bank. The scored report after each session breaks down your STAR structure, communication clarity, filler word frequency, and pacing, with a coached model answer for every question you answered.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            Unlike ChatGPT (text-only, no scoring, no resume integration, no progress tracking), a voice-based AI mock interview replicates the actual pressure of speaking in a real interview — which is where most preparation fails.
+            Unlike ChatGPT (text-only, no scoring, no resume integration, no progress tracking), a voice-based AI mock interview replicates the actual pressure of speaking in a real interview, which is where most preparation fails.
           </p>
         </section>
 
@@ -463,7 +463,7 @@ export default async function AiMockInterviewPage() {
             Practice AI mock interviews for top companies
           </h2>
           <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 28 }}>
-            Company-specific questions, interview patterns, and round-by-round guidance — not generic prep.
+            Company-specific questions, interview patterns, and round-by-round guidance, not generic prep.
           </p>
           <div
             style={{
@@ -510,7 +510,7 @@ export default async function AiMockInterviewPage() {
               id="ami-faq"
               style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}
             >
-              AI mock interview — common questions
+              AI mock interview: common questions
             </h2>
             <style>{`
               .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
@@ -561,7 +561,7 @@ export default async function AiMockInterviewPage() {
                     { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
                     { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
                     { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
-                    { label: "Bank PO Interview Questions — SBI & IBPS", href: "/bank-po-interview-questions" },
+                    { label: "Bank PO Interview Questions: SBI & IBPS", href: "/bank-po-interview-questions" },
                     { label: "MBA Personal Interview (PI) Preparation", href: "/mba-personal-interview-preparation" },
                   ],
                 },
@@ -575,7 +575,7 @@ export default async function AiMockInterviewPage() {
                     { label: "Behavioral Interview Questions India", href: "/questions/behavioral-interview-questions-india" },
                     { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
                     { label: "Salary Negotiation Tips India", href: "/blog/salary-negotiation-tips-india" },
-                    { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                    { label: "How It Works: 5 Steps", href: "/how-it-works" },
                   ],
                 },
                 {
@@ -616,7 +616,7 @@ export default async function AiMockInterviewPage() {
           2 complete sessions. No credit card. Voice-based, resume-personalized, STAR-scored.
         </p>
         <Link href="/signup" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-          Practice free — 2 sessions included <span className="ed-cta-arrow" aria-hidden>→</span>
+          Practice free, 2 sessions included <span className="ed-cta-arrow" aria-hidden>→</span>
         </Link>
         <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.creamMuted, margin: 0 }}>
           Already have an account?{" "}

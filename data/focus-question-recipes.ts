@@ -24,7 +24,7 @@ export interface FocusRecipe {
   mandatory: CategoryKey[];
   /** Category keys that MAY be drawn from to fill remaining slots. */
   optional: CategoryKey[];
-  /** Trap-question slots — 0 = none, 1 = at most one, 2 = up to two. */
+  /** Trap-question slots, 0 = none, 1 = at most one, 2 = up to two. */
   trapBudget: 0 | 1 | 2;
   /** True if the closing turn should explicitly invite candidate questions
    *  (and the AI should be ready to answer them). */
@@ -54,11 +54,11 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["communication", "leadership", "decision-making", "pressure-resilience", "adaptability-learning", "failure-learning", "self-awareness"],
     trapBudget: 1,
     inviteCandidateQuestions: true,
-    pacingNote: "Q1 is opening (low-stakes), Q2 is the deep-dive on a real project, Q3-4 mix collaboration/problem-solving with one optional. Q5 is the signature stretch — failure, judgement, or trade-off. For senior candidates, prefer self-awareness or failure-learning as the signature; for junior, prefer pressure-resilience or decision-making.",
+    pacingNote: "Q1 is opening (low-stakes), Q2 is the deep-dive on a real project, Q3-4 mix collaboration/problem-solving with one optional. Q5 is the signature stretch, failure, judgement, or trade-off. For senior candidates, prefer self-awareness or failure-learning as the signature; for junior, prefer pressure-resilience or decision-making.",
     scoringRubric: [
       { dimension: "STAR completeness", description: "Did the candidate name a Situation, the Task they owned, the Action they took, and the Result/metric? Penalise when they describe a 'team result' without their specific contribution.", weight: 0.22 },
       { dimension: "Specific evidence", description: "Did the answer include a real metric, a named decision, a stakeholder name (or proxy), or a date? Generic 'we improved performance' without numbers = weak.", weight: 0.18 },
-      { dimension: "Ownership signal", description: "Does the candidate own outcomes — including failures — or distribute blame? 'I' vs. 'we' ratio and willingness to name a real mistake.", weight: 0.18 },
+      { dimension: "Ownership signal", description: "Does the candidate own outcomes, including failures, or distribute blame? 'I' vs. 'we' ratio and willingness to name a real mistake.", weight: 0.18 },
       { dimension: "Reflection / learning", description: "Did they articulate what they'd do differently, in concrete terms? 'Better communication' = weak; 'I'd run a 30-min pre-mortem in week 1' = strong.", weight: 0.14 },
       { dimension: "Self-awareness", description: "When asked about strengths/weaknesses or feedback, did the answer feel honest and calibrated? Real weakness with real plan = strong; humble-brag ('I care too much') or generic motivator = weak.", weight: 0.10 },
       { dimension: "Communication clarity", description: "Was the answer structured, on-time (60-180s), and free of filler/jargon? Long meandering answers without a takeaway = weak.", weight: 0.18 },
@@ -66,25 +66,25 @@ export const RECIPES: Record<string, FocusRecipe> = {
   },
 
   /* ─── HR Round (Indian context) ───
-     Indian HR round is NOT light screening — it's a final gate after
+     Indian HR round is NOT light screening, it's a final gate after
      technical clears. It spans 7 evaluation areas (scored as 8 rubric axes
-     below — area 7, Fit & motivation, splits into Self-awareness +
+     below, area 7, Fit & motivation, splits into Self-awareness +
      Motivation specificity):
-       1. Logistics       — notice period, LWD, buyout, location, shift
-       2. Comp discovery  — current CTC structure, expected hike %,
-                            payslip/Form-16 validation (not negotiation —
+       1. Logistics      , notice period, LWD, buyout, location, shift
+       2. Comp discovery , current CTC structure, expected hike %,
+                            payslip/Form-16 validation (not negotiation ,
                             that's the salary-negotiation focus)
-       3. Stability       — reason for leaving, gaps, tenure pattern
-       4. Compliance      — BGV consent, documents (PAN/Aadhaar/UAN,
+       3. Stability      , reason for leaving, gaps, tenure pattern
+       4. Compliance     , BGV consent, documents (PAN/Aadhaar/UAN,
                             relieving letters, marksheets), references,
                             medical disclosure
-       5. Commitment      — other offers in hand, counter-offer
+       5. Commitment     , other offers in hand, counter-offer
                             protection, joining-date lock, exploding-
                             offer acceptance
-       6. Benefits/policy — joining bonus clawback, probation, bond /
+       6. Benefits/policy, joining bonus clawback, probation, bond /
                             service agreement, ESOP vesting, insurance,
                             PF, NPS
-       7. Fit & motivation— "why us / why this role", values, culture
+       7. Fit & motivation, "why us / why this role", values, culture
                             alignment, manager-fit, 3-5 yr plan
      Recipe enforces that EVERY session touches dimensions 1-5 at minimum;
      6 and 7 are sampled from optional pool + culture-fit. */
@@ -94,14 +94,14 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["hr-essentials", "pressure-resilience", "communication", "adaptability-learning", "trap"],
     trapBudget: 1,
     inviteCandidateQuestions: true,
-    pacingNote: "Indian HR round — final gate, not screening. Across the session, cover ALL of: (1) notice period + LWD + buyout, (2) current CTC structure + expected hike % with rationale, (3) BGV consent + document readiness (payslips, Form 16, relieving letters, PAN/Aadhaar/UAN, marksheets) AND a dual-employment / moonlighting check (any overlapping payroll or second active job — UAN exposes concurrent PF, so this is verified, not taken on trust), (4) other offers + counter-offer commitment + joining-date lock, (5) reason for leaving + gap explanation (no bad-mouthing), (6) at least ONE benefits/policy item (joining bonus clawback, probation, bond, ESOP vesting, insurance), (7) a 'why this company specifically' probe tied to a real product/leader/domain. Tone: warm but transactional. Push back on inflated CTC ('payslips will validate that, right?'), evasive notice answers, and generic 'why us'. The trap question, if used, targets rehearsed answers (fake weakness, '20% less offer?', counter-offer scenarios).",
+    pacingNote: "Indian HR round, final gate, not screening. Across the session, cover ALL of: (1) notice period + LWD + buyout, (2) current CTC structure + expected hike % with rationale, (3) BGV consent + document readiness (payslips, Form 16, relieving letters, PAN/Aadhaar/UAN, marksheets) AND a dual-employment / moonlighting check (any overlapping payroll or second active job, UAN exposes concurrent PF, so this is verified, not taken on trust), (4) other offers + counter-offer commitment + joining-date lock, (5) reason for leaving + gap explanation (no bad-mouthing), (6) at least ONE benefits/policy item (joining bonus clawback, probation, bond, ESOP vesting, insurance), (7) a 'why this company specifically' probe tied to a real product/leader/domain. Tone: warm but transactional. Push back on inflated CTC ('payslips will validate that, right?'), evasive notice answers, and generic 'why us'. The trap question, if used, targets rehearsed answers (fake weakness, '20% less offer?', counter-offer scenarios).",
     scoringRubric: [
-      { dimension: "Logistics clarity", description: "Notice period, LWD, buyout stance, location/shift acceptance — crisp and committed, with realistic dates. Vague or shifting answers = weak.", weight: 0.15 },
-      { dimension: "Comp transparency", description: "Did they share current CTC structure (fixed/variable/bonus/RSUs) honestly, with an expected number anchored on rationale (market data, % hike justified)? Refusal to share payslips or inflated current = strong negative signal — it will fail BGV.", weight: 0.18 },
+      { dimension: "Logistics clarity", description: "Notice period, LWD, buyout stance, location/shift acceptance, crisp and committed, with realistic dates. Vague or shifting answers = weak.", weight: 0.15 },
+      { dimension: "Comp transparency", description: "Did they share current CTC structure (fixed/variable/bonus/RSUs) honestly, with an expected number anchored on rationale (market data, % hike justified)? Refusal to share payslips or inflated current = strong negative signal, it will fail BGV.", weight: 0.18 },
       { dimension: "Switch-rationale honesty", description: "On 'why are you leaving': concrete push (scope, manager, domain, comp ceiling) without bad-mouthing. Vague 'looking for growth' = weak. Bad-mouthing current employer = red flag.", weight: 0.12 },
-      { dimension: "Compliance readiness", description: "Comfort with BGV; document trail in order (payslips, Form 16, relieving letters from every prior employer, education marksheets, PAN/Aadhaar/UAN); gaps and short stints explained without defensiveness; references ready. Dual-employment / moonlighting: if probed, a clean 'no overlapping payroll / no second active employment' — UAN shows concurrent PF contributions, so an evasive or contradictory answer is a hard BGV-failure signal, not a small thing.", weight: 0.13 },
-      { dimension: "Commitment signal", description: "On other offers, counter-offer scenarios, joining-date commitment: do they read as someone who'll actually join, or someone using this as a counter-offer lever? Pre-joining drop-out risk is the single biggest HR fear in India — score this honestly.", weight: 0.12 },
-      { dimension: "Benefits/policy literacy", description: "When probed on joining bonus clawback, probation terms, bond / service agreement, ESOP vesting cliff, insurance coverage — did they engage substantively or get blindsided? Senior candidates should ask back; junior candidates should at minimum understand what was said.", weight: 0.08 },
+      { dimension: "Compliance readiness", description: "Comfort with BGV; document trail in order (payslips, Form 16, relieving letters from every prior employer, education marksheets, PAN/Aadhaar/UAN); gaps and short stints explained without defensiveness; references ready. Dual-employment / moonlighting: if probed, a clean 'no overlapping payroll / no second active employment', UAN shows concurrent PF contributions, so an evasive or contradictory answer is a hard BGV-failure signal, not a small thing.", weight: 0.13 },
+      { dimension: "Commitment signal", description: "On other offers, counter-offer scenarios, joining-date commitment: do they read as someone who'll actually join, or someone using this as a counter-offer lever? Pre-joining drop-out risk is the single biggest HR fear in India, score this honestly.", weight: 0.12 },
+      { dimension: "Benefits/policy literacy", description: "When probed on joining bonus clawback, probation terms, bond / service agreement, ESOP vesting cliff, insurance coverage, did they engage substantively or get blindsided? Senior candidates should ask back; junior candidates should at minimum understand what was said.", weight: 0.08 },
       { dimension: "Self-awareness", description: "On weaknesses / feedback / manager-fit, named something real with a real plan. Humble-brag ('perfectionist', 'work too hard') or rehearsed-sounding = weak.", weight: 0.10 },
       { dimension: "Motivation specificity", description: "'Why this role' / 'why this company' tied to a recent product launch, a leader they've followed, a domain bet. Generic 'great culture / great brand' = weak.", weight: 0.12 },
     ],
@@ -120,13 +120,13 @@ export const RECIPES: Record<string, FocusRecipe> = {
     pacingNote: "Focus on planning, escalation, stakeholder handling, decision rationale. At least ONE 'first 30 days' or 'business impact' question. At least ONE question on managing AI-augmented teams (how they decide where AI tooling helps vs. dilutes craft).",
     scoringRubric: [
       { dimension: "Decision framing", description: "Did the candidate frame decisions with explicit options + trade-offs + one chosen + WHY? Or did they describe the outcome only (the easy half)?", weight: 0.25 },
-      { dimension: "Stakeholder navigation", description: "Concrete moments where they handled conflicting agendas — named the friction, the negotiation, and the landing. 'I aligned the team' = weak.", weight: 0.20 },
+      { dimension: "Stakeholder navigation", description: "Concrete moments where they handled conflicting agendas, named the friction, the negotiation, and the landing. 'I aligned the team' = weak.", weight: 0.20 },
       { dimension: "Escalation discipline", description: "Did they escalate WITH a recommendation, not just a problem? Did they manage up clearly?", weight: 0.15 },
       { dimension: "Performance management", description: "Real moments of giving difficult feedback, handling underperformance, or naming a hire mistake. 'I motivate the team' = weak.", weight: 0.20 },
       { dimension: "AI-augmented team thinking", description: "Did they articulate where AI tooling helps their team vs. where it dilutes craft, with concrete examples? 2026 standard.", weight: 0.20 },
     ],
   },
-  /* Legacy alias — older code may still ship "managerial". */
+  /* Legacy alias, older code may still ship "managerial". */
   managerial: {
     label: "Management",
     mandatory: ["managerial", "leadership", "decision-making", "experience-deepdive"],
@@ -150,12 +150,12 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["customer-user", "adaptability-learning", "ownership"],
     trapBudget: 1,
     inviteCandidateQuestions: true,
-    pacingNote: "Q1 opening, Q2 a 3-year vision-setting moment they led, Q3 multi-stakeholder alignment under conflict, Q4 a strategic bet that failed and what changed, Q5 closing. Reward second-order thinking — push back on first-order answers.",
+    pacingNote: "Q1 opening, Q2 a 3-year vision-setting moment they led, Q3 multi-stakeholder alignment under conflict, Q4 a strategic bet that failed and what changed, Q5 closing. Reward second-order thinking, push back on first-order answers.",
     scoringRubric: [
-      { dimension: "Second-order thinking", description: "Did they articulate consequences-of-consequences? 'If we ship X, then Y team has to absorb Z, which means we'd need ABC' — strong. 'X will improve metric Y' alone — weak.", weight: 0.25 },
+      { dimension: "Second-order thinking", description: "Did they articulate consequences-of-consequences? 'If we ship X, then Y team has to absorb Z, which means we'd need ABC', strong. 'X will improve metric Y' alone, weak.", weight: 0.25 },
       { dimension: "Vision specificity", description: "Did they state a concrete 3-year vision with measurable milestones, not abstractions like 'be the leader in our space'?", weight: 0.20 },
-      { dimension: "Trade-off honesty", description: "Did they name what they GAVE UP for the strategic bet — opportunity cost, team trust, brand risk? Or just 'we won big'?", weight: 0.20 },
-      { dimension: "Alignment work", description: "Concrete steps to align dissenting stakeholders. Naming the dissenter and the conversation — strong. 'I built consensus' — weak.", weight: 0.20 },
+      { dimension: "Trade-off honesty", description: "Did they name what they GAVE UP for the strategic bet, opportunity cost, team trust, brand risk? Or just 'we won big'?", weight: 0.20 },
+      { dimension: "Alignment work", description: "Concrete steps to align dissenting stakeholders. Naming the dissenter and the conversation, strong. 'I built consensus', weak.", weight: 0.20 },
       { dimension: "Failed-bet reflection", description: "Did the failed strategic bet story include a real cost owned, not externalised? And a behaviour change since?", weight: 0.15 },
     ],
   },
@@ -167,10 +167,10 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["communication", "ownership", "adaptability-learning"],
     trapBudget: 0,
     inviteCandidateQuestions: true,
-    pacingNote: "Architecture trade-offs, debugging at scale, system rewrites, on-call and incident response. Probe AI-assisted development discipline (Cursor / Copilot / Claude Code) — 2026 candidates should articulate WHEN they trust AI output and when they verify by hand. At least ONE failure-mode + recovery question.",
+    pacingNote: "Architecture trade-offs, debugging at scale, system rewrites, on-call and incident response. Probe AI-assisted development discipline (Cursor / Copilot / Claude Code), 2026 candidates should articulate WHEN they trust AI output and when they verify by hand. At least ONE failure-mode + recovery question.",
     scoringRubric: [
       { dimension: "Trade-off articulation", description: "Every architectural decision should have an articulated trade-off. 'We picked X because Y' is half-credit; 'We picked X because Y, knowing it cost us Z which we accepted because W' is full.", weight: 0.30 },
-      { dimension: "Failure-mode reasoning", description: "Did they think in terms of failure modes — what breaks at 10x, where the latency budget actually goes, who's on-call? Or did they describe the happy path only?", weight: 0.25 },
+      { dimension: "Failure-mode reasoning", description: "Did they think in terms of failure modes, what breaks at 10x, where the latency budget actually goes, who's on-call? Or did they describe the happy path only?", weight: 0.25 },
       { dimension: "Scale calibration", description: "Their answers should be calibrated to the system's actual scale. Don't claim Kafka where SQS works, don't claim sharding for a 10K-row table. Over-engineering = weak signal.", weight: 0.15 },
       { dimension: "AI-tooling discipline", description: "Did they articulate WHEN they trust AI output (boilerplate, syntax, refactors with tests) vs. WHEN they verify by hand (security-sensitive code, novel algorithms, system boundaries)? 2026 standard.", weight: 0.15 },
       { dimension: "Code-review judgment", description: "Concrete moments of catching real bugs in PR review, or of being overruled and what they did. Pattern-recognition from real systems = strong.", weight: 0.15 },
@@ -187,10 +187,10 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["ownership", "pressure-resilience"],
     trapBudget: 0,
     inviteCandidateQuestions: false,
-    pacingNote: "At least ONE current-affairs / public-policy question relevant to the posting. At least ONE ethical dilemma (corruption pressure, due-process vs. speed, public-interest vs. directive). DAF-style biographical cross-questioning encouraged — probe hometown, hobbies, college specifics. Skip product/customer-user category.",
+    pacingNote: "At least ONE current-affairs / public-policy question relevant to the posting. At least ONE ethical dilemma (corruption pressure, due-process vs. speed, public-interest vs. directive). DAF-style biographical cross-questioning encouraged, probe hometown, hobbies, college specifics. Skip product/customer-user category.",
     scoringRubric: [
       { dimension: "Ethical reasoning structure", description: "On dilemmas, did they map stakeholders, name the principle in tension (efficiency vs. due process, public good vs. political directive), and reason transparently? Or jump to a 'right' answer?", weight: 0.30 },
-      { dimension: "Public-service motivation", description: "Genuine articulation of WHY public service vs. private — concrete experiences, not platitudes about 'serving the nation'.", weight: 0.20 },
+      { dimension: "Public-service motivation", description: "Genuine articulation of WHY public service vs. private, concrete experiences, not platitudes about 'serving the nation'.", weight: 0.20 },
       { dimension: "Current-affairs depth", description: "On policy / current-affairs questions: did they show working knowledge (not headline-level), name actors and acts, and articulate a position?", weight: 0.20 },
       { dimension: "Biographical specificity", description: "On DAF-style cross-questioning (hometown, hobby, college), did the candidate provide specific, verifiable detail? Vague answers signal rehearsed prep.", weight: 0.15 },
       { dimension: "Composure under pressure", description: "Held their position when pushed without breaking; conceded when wrong without panic.", weight: 0.15 },
@@ -206,9 +206,9 @@ export const RECIPES: Record<string, FocusRecipe> = {
     inviteCandidateQuestions: true,
     pacingNote: "Distribute categories across the three personas: Hiring Manager → leadership/decision/strategic, Technical Lead → problem-solving/experience-deepdive, HR Partner → collaboration/culture-fit/communication.",
     scoringRubric: [
-      { dimension: "Multi-audience adaptation", description: "Did the candidate ADJUST their answer for each persona — depth+jargon for Tech Lead, scope+impact for Hiring Manager, tone+collaboration for HR Partner? Or did they give the same answer style to all three?", weight: 0.25 },
+      { dimension: "Multi-audience adaptation", description: "Did the candidate ADJUST their answer for each persona, depth+jargon for Tech Lead, scope+impact for Hiring Manager, tone+collaboration for HR Partner? Or did they give the same answer style to all three?", weight: 0.25 },
       { dimension: "Cross-persona consistency", description: "Did they tell the SAME story across panellists where it overlapped? Contradicting your own claims to different panellists = strong negative signal.", weight: 0.20 },
-      { dimension: "Senior-level framing", description: "Answers framed at appropriate scope — for senior roles, talk in terms of org / quarter / metric, not individual ticket / sprint / bug.", weight: 0.20 },
+      { dimension: "Senior-level framing", description: "Answers framed at appropriate scope, for senior roles, talk in terms of org / quarter / metric, not individual ticket / sprint / bug.", weight: 0.20 },
       { dimension: "Stakeholder thinking", description: "When discussing past work, did they reference partner teams (PM, Eng, Design, GTM, Legal) by name/role and what each owned?", weight: 0.20 },
       { dimension: "Composure under cross-fire", description: "Handled rapid-fire from multiple angles without panic; conceded gracefully when one panellist surfaced something the other had asked.", weight: 0.15 },
     ],
@@ -221,12 +221,12 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["adaptability-learning", "collaboration", "communication"],
     trapBudget: 0,
     inviteCandidateQuestions: true,
-    pacingNote: "Tailor experience-deepdive to college projects/internships. Skip ownership/leadership categories — not relevant for 0-2 yrs. Trap budget = 0 (don't trap freshers).",
+    pacingNote: "Tailor experience-deepdive to college projects/internships. Skip ownership/leadership categories, not relevant for 0-2 yrs. Trap budget = 0 (don't trap freshers).",
     scoringRubric: [
       { dimension: "Project ownership", description: "On college projects/internships, did they articulate THEIR specific contribution vs. the team's, with technical depth appropriate for 0-2 YOE?", weight: 0.25 },
-      { dimension: "Fundamentals fluency", description: "Comfort with CS / domain fundamentals (DBMS, OS, OOP for tech; case math for biz; etc.) — not encyclopaedic, but workable.", weight: 0.25 },
+      { dimension: "Fundamentals fluency", description: "Comfort with CS / domain fundamentals (DBMS, OS, OOP for tech; case math for biz; etc.), not encyclopaedic, but workable.", weight: 0.25 },
       { dimension: "Learning attitude", description: "Genuine curiosity vs. checklist learner. Ability to articulate one thing they learned recently and applied.", weight: 0.20 },
-      { dimension: "Teamwork stories", description: "Real moments of collaboration / disagreement / feedback in college teams — without bad-mouthing peers or professors.", weight: 0.15 },
+      { dimension: "Teamwork stories", description: "Real moments of collaboration / disagreement / feedback in college teams, without bad-mouthing peers or professors.", weight: 0.15 },
       { dimension: "Communication clarity", description: "Structured, on-time answers without college-style filler ('basically', 'as such', 'thank you ma'am'). Confidence appropriate to 0-2 YOE.", weight: 0.15 },
     ],
   },
@@ -238,9 +238,9 @@ export const RECIPES: Record<string, FocusRecipe> = {
     optional: ["customer-user"],
     trapBudget: 0,
     inviteCandidateQuestions: false,
-    pacingNote: "Recipe is structural — single evolving case, not category-mix. Categories listed are the EVALUATION lens, not separate questions. The case arc itself (FRAME → STRUCTURE → QUANTIFY → REVEAL → SYNTHESIZE) is defined in TYPE_GUIDANCE.",
+    pacingNote: "Recipe is structural, single evolving case, not category-mix. Categories listed are the EVALUATION lens, not separate questions. The case arc itself (FRAME → STRUCTURE → QUANTIFY → REVEAL → SYNTHESIZE) is defined in TYPE_GUIDANCE.",
     scoringRubric: [
-      { dimension: "MECE structure", description: "Did the candidate's framework cover the problem space without overlap and without gaps? 'I'd look at customers, market, and operations' — strong if they then drill cleanly. Weak if buckets overlap or miss the obvious.", weight: 0.30 },
+      { dimension: "MECE structure", description: "Did the candidate's framework cover the problem space without overlap and without gaps? 'I'd look at customers, market, and operations', strong if they then drill cleanly. Weak if buckets overlap or miss the obvious.", weight: 0.30 },
       { dimension: "Quantification rigour", description: "Did they show their math when asked to estimate? Back-of-envelope is fine, hand-waving is not. Bonus for sanity-checking their own number against intuition.", weight: 0.25 },
       { dimension: "Adaptability under new info", description: "When new data was revealed mid-case, did they update cleanly and explain HOW their conclusion changes? Or did they stick to their original answer?", weight: 0.20 },
       { dimension: "Recommendation quality", description: "60-second close: did they take a position, name the top 1-2 risks, and prioritise next steps? Or did they list everything as equally important?", weight: 0.15 },
@@ -276,8 +276,8 @@ export const RECIPES: Record<string, FocusRecipe> = {
     scoringRubric: [
       { dimension: "Anchor strength", description: "Did the candidate state their target with confident rationale (market data, competing offer, current package + reasonable jump)? Or did they wait for the AI's offer?", weight: 0.20 },
       { dimension: "Counter-offer judgement", description: "When offered below target, did they push back with specific levers (base vs. variable, joining bonus, equity, role title, start date)? Or accept too quickly / over-demand?", weight: 0.20 },
-      { dimension: "Trade-off awareness", description: "Did they think about the WHOLE package — equity vesting, ESOP liquidity risk, notice buyout, flexibility — not just CTC headline?", weight: 0.18 },
-      { dimension: "Structural fluency", description: "Did the candidate recognise structural levers that don't change CTC for the employer but raise net wealth for them? E.g. NPS 14% restructuring (saves 30%+ tax on routed amount), exercise-window extension (30-60% ESOP NPV swing), ESPP enrolment, basic-floor adjustment. 2026 standard — these are the single largest negotiable items at senior offers and most candidates miss them.", weight: 0.15 },
+      { dimension: "Trade-off awareness", description: "Did they think about the WHOLE package, equity vesting, ESOP liquidity risk, notice buyout, flexibility, not just CTC headline?", weight: 0.18 },
+      { dimension: "Structural fluency", description: "Did the candidate recognise structural levers that don't change CTC for the employer but raise net wealth for them? E.g. NPS 14% restructuring (saves 30%+ tax on routed amount), exercise-window extension (30-60% ESOP NPV swing), ESPP enrolment, basic-floor adjustment. 2026 standard, these are the single largest negotiable items at senior offers and most candidates miss them.", weight: 0.15 },
       { dimension: "Tactical composure", description: "Stayed warm + professional under pushback; didn't reveal floor or get rattled by 'budget is tight' / 'we have other candidates' tactics.", weight: 0.15 },
       { dimension: "Walk-away discipline", description: "Knew where their walk-away was. Didn't accept below it; didn't bluff a walk they couldn't follow through on.", weight: 0.12 },
     ],
@@ -293,7 +293,7 @@ export const RECIPES: Record<string, FocusRecipe> = {
     pacingNote: "Three questions only. Q1 = opener (60s), Q2 = deep-dive on one real project, Q3 = pick ONE optional category that fits the resume.",
     scoringRubric: [
       { dimension: "Time discipline", description: "Each answer landed in 60-180s. No rambling, no rehearsed monologues.", weight: 0.20 },
-      { dimension: "Specificity per turn", description: "Each answer included AT LEAST one concrete metric, name, decision, or trade-off — not abstract claims.", weight: 0.30 },
+      { dimension: "Specificity per turn", description: "Each answer included AT LEAST one concrete metric, name, decision, or trade-off, not abstract claims.", weight: 0.30 },
       { dimension: "STAR completeness", description: "On the deep-dive, were Situation/Task/Action/Result all present?", weight: 0.30 },
       { dimension: "Self-awareness", description: "On the optional category (whichever was picked), did they show learning / reflection / ownership of failure?", weight: 0.20 },
     ],
@@ -320,7 +320,7 @@ export function formatRecipe(focusKey: string): string {
       `     INTENT: ${c.intent}`,
       `     STRONG SIGNAL: ${c.signals.strong}`,
       `     WEAK SIGNAL: ${c.signals.weak}`,
-      `     SAMPLE STEMS (paraphrase + personalise — never copy verbatim):`,
+      `     SAMPLE STEMS (paraphrase + personalise, never copy verbatim):`,
       ...c.stems.slice(0, 4).map((s) => `       • ${s}`),
     ].join("\n");
   };
@@ -331,14 +331,14 @@ export function formatRecipe(focusKey: string): string {
 
   const trapLine = recipe.trapBudget === 0
     ? "TRAP QUESTIONS: Do NOT use trap-style questions in this focus."
-    : `TRAP QUESTIONS: At most ${recipe.trapBudget} trap-style question(s) total. Use sparingly — only when it surfaces real signal.`;
+    : `TRAP QUESTIONS: At most ${recipe.trapBudget} trap-style question(s) total. Use sparingly, only when it surfaces real signal.`;
 
   const closingLine = recipe.inviteCandidateQuestions
-    ? `CLOSING: Invite the candidate to ask questions ("Do you have any questions for me?"). When they ask, answer IN CHARACTER as the hiring manager — plausible role-and-company-specific responses, not generic platitudes. Don't claim certainty about things a real interviewer wouldn't know off-hand. If their question is something you genuinely shouldn't answer (compensation specifics, head-count details), say so warmly and offer to take it back to HR.`
+    ? `CLOSING: Invite the candidate to ask questions ("Do you have any questions for me?"). When they ask, answer IN CHARACTER as the hiring manager, plausible role-and-company-specific responses, not generic platitudes. Don't claim certainty about things a real interviewer wouldn't know off-hand. If their question is something you genuinely shouldn't answer (compensation specifics, head-count details), say so warmly and offer to take it back to HR.`
     : "";
 
   return [
-    `\n═══ QUESTION RECIPE — ${recipe.label} ═══`,
+    `\n═══ QUESTION RECIPE, ${recipe.label} ═══`,
     `MANDATORY categories (must appear in the question set, in roughly this order):`,
     recipe.mandatory.map(renderCategory).join("\n\n"),
     "",
@@ -372,10 +372,10 @@ export function formatScoringRubric(
   );
   const totalWeight = dims.reduce((acc, r) => acc + r.weight, 0);
   const overlayLine = overlay && (overlay.sector || overlay.seniority)
-    ? `\nContext overlay applied — sector: ${overlay.sector || "n/a"}, seniority: ${overlay.seniority || "n/a"}. Weights are tuned for this context.`
+    ? `\nContext overlay applied, sector: ${overlay.sector || "n/a"}, seniority: ${overlay.seniority || "n/a"}. Weights are tuned for this context.`
     : "";
   return [
-    `\n═══ FOCUS-SPECIFIC SCORING RUBRIC — ${recipe.label} ═══${overlayLine}`,
+    `\n═══ FOCUS-SPECIFIC SCORING RUBRIC, ${recipe.label} ═══${overlayLine}`,
     `Score the candidate on these dimensions (0-100 each), weighted as shown.`,
     `Overall score = weighted average of the dimensions.`,
     ...lines,

@@ -38,7 +38,7 @@ export const COMPANY_GUIDANCE: Record<string, string> = {
   microsoft: "Microsoft interviews emphasize growth mindset, collaboration, and customer obsession. Focus on: system design thinking, behavioral scenarios about influence and impact, and technical depth in the relevant stack. Ask about learning from failures.",
   amazon: "Amazon interviews are heavily LP (Leadership Principles) driven. Focus on: Customer Obsession, Ownership, Invent and Simplify, Bias for Action, Deliver Results. Every question should map to an LP. Expect deep-dive follow-ups like 'What would you do differently?' and 'Give me the metrics.'",
   meta: "Meta interviews focus on impact, move fast, and be bold. Ask about scaling systems, building for billions of users, and cross-functional collaboration. Behavioral questions should explore how candidates handle disagreement, prioritize ruthlessly, and measure success.",
-  apple: "Apple interviews emphasize craft, attention to detail, and 'thinking different'. Focus on: deep technical mastery in the candidate's domain, design taste, ability to defend trade-offs articulately, and willingness to obsess over the small things. Apple resists generic answers — push for specifics.",
+  apple: "Apple interviews emphasize craft, attention to detail, and 'thinking different'. Focus on: deep technical mastery in the candidate's domain, design taste, ability to defend trade-offs articulately, and willingness to obsess over the small things. Apple resists generic answers; push for specifics.",
   netflix: "Netflix interviews follow the 'culture deck' (Freedom & Responsibility, Keeper Test). Focus on: judgment under ambiguity, ability to disagree-and-commit, transparency about failure, and high-performance mindset. The bar is 'would I fight to keep this person?' Ask about times the candidate raised a hard truth.",
   adobe: "Adobe interviews emphasize craft + creativity blend. Focus on: technical depth (especially in the Creative Cloud / Document Cloud stack), product thinking around digital experiences, and collaboration across design + engineering. Ask about user-centric trade-offs and customer empathy.",
   oracle: "Oracle interviews emphasize database fundamentals, enterprise sales context, and large-scale systems thinking. Focus on: SQL depth, distributed systems for cloud roles (OCI), and HR questions about handling enterprise customer escalations. Less product/UX, more engineering rigor.",
@@ -48,13 +48,13 @@ export const COMPANY_GUIDANCE: Record<string, string> = {
   stripe: "Stripe interviews are famously high-bar on writing clarity. Focus on: written communication (Stripe interviewers literally read your writing samples), technical depth, attention to detail (e.g. API design, idempotency, edge cases), and ability to think about developers as customers. Ask candidates to explain a complex concept in 3 sentences.",
   // ─── Indian unicorns (highest-target) ───
   flipkart: "Flipkart interviews emphasize scale, India-specific e-commerce challenges, and product thinking. Focus on: system design for scale, data-driven decision making, and startup-like ownership mentality. Ask about handling competing priorities and fast execution.",
-  razorpay: "Razorpay interviews emphasize fintech depth, attention to compliance, and engineering rigor. Focus on: payment-system design (UPI, cards, settlement), API design (idempotency, retries, webhooks), and willingness to debug in production. Ask about handling money-movement edge cases — they care about correctness more than speed.",
-  phonepe: "PhonePe interviews emphasize UPI-scale thinking and reliability. Focus on: distributed systems handling billions of transactions, partner-bank integration, fraud detection, and behavioral scenarios about ownership in incidents. PhonePe values engineering rigor over product polish — push for technical specifics.",
+  razorpay: "Razorpay interviews emphasize fintech depth, attention to compliance, and engineering rigor. Focus on: payment-system design (UPI, cards, settlement), API design (idempotency, retries, webhooks), and willingness to debug in production. Ask about handling money-movement edge cases, they care about correctness more than speed.",
+  phonepe: "PhonePe interviews emphasize UPI-scale thinking and reliability. Focus on: distributed systems handling billions of transactions, partner-bank integration, fraud detection, and behavioral scenarios about ownership in incidents. PhonePe values engineering rigor over product polish, push for technical specifics.",
   paytm: "Paytm interviews emphasize breadth across payments + commerce + financial services. Focus on: ability to context-switch, comfort with ambiguous priorities, and resilience under fast pivots. Less about deep specialization, more about being a generalist who can ship.",
   cred: "CRED interviews emphasize craft, design taste, and product premium positioning. Focus on: attention to detail, ability to articulate why something feels 'CRED-y' vs generic, and willingness to push back on lazy decisions. Engineering bar is high; design bar is even higher.",
   zerodha: "Zerodha interviews emphasize first-principles thinking and engineering simplicity. Focus on: technical depth (most engineering is in-house, no over-reliance on cloud abstractions), ability to defend trade-offs, and alignment with Zerodha's no-bullshit culture (no marketing fluff, no growth-hacking). Self-taught engineers welcome.",
   swiggy: "Swiggy interviews emphasize India-scale logistics, ownership of P&L, and operational rigor. Focus on: optimization thinking (delivery time, cost per order, partner economics), comfort with messy data, and willingness to dive into specific city-level operations. Ask about competing trade-offs.",
-  zomato: "Zomato interviews emphasize bias for action and product judgment. Focus on: product thinking with real numbers (orders, AOV, retention), comfort with rapid iteration, and ability to defend a controversial decision. Zomato culture is direct and unfiltered — fluffy answers get pushback.",
+  zomato: "Zomato interviews emphasize bias for action and product judgment. Focus on: product thinking with real numbers (orders, AOV, retention), comfort with rapid iteration, and ability to defend a controversial decision. Zomato culture is direct and unfiltered, fluffy answers get pushback.",
   nykaa: "Nykaa interviews emphasize consumer-product depth, beauty-vertical knowledge for product roles, and full-funnel thinking (acquisition → conversion → retention → loyalty). Focus on: data-driven decisions, India-specific consumer behavior, and ability to translate brand into product.",
   meesho: "Meesho interviews emphasize Bharat (Tier 2/3 India) consumer thinking and seller ecosystem dynamics. Focus on: low-ARPU economics, vernacular UX considerations, and ability to design for low-bandwidth / low-trust users. Push for understanding of the reseller persona.",
   ola: "Ola interviews emphasize marketplace dynamics, India-specific mobility, and product judgment. Focus on: supply-demand modeling, surge pricing rationale, EV transition for newer roles, and resilience in a fast-changing competitive landscape.",
@@ -62,9 +62,9 @@ export const COMPANY_GUIDANCE: Record<string, string> = {
   freshworks: "Freshworks interviews emphasize SaaS engineering rigor and global-from-day-1 product thinking. Focus on: API design, multi-tenant architecture, customer-segment understanding (SMB vs mid-market), and willingness to ship to international customers. Engineering bar is closer to US SaaS than Indian unicorn.",
   zoho: "Zoho interviews emphasize first-principles engineering and self-reliance (Zoho builds everything in-house, including their own languages). Focus on: technical depth, willingness to work on legacy systems, and alignment with Zoho's anti-VC, slow-growth, profitability-first culture. Self-taught talent strongly preferred.",
   // ─── Top consulting (specific cultures) ───
-  mckinsey: "McKinsey interviews are case-heavy. Focus on: structured problem-solving (issue tree, MECE, 80/20), top-down communication (answer first, then evidence), data-driven hypothesis testing, and personal experience interview (PEI) — leadership stories with quantified impact. Bar is structure + delivery; content can be approximated.",
+  mckinsey: "McKinsey interviews are case-heavy. Focus on: structured problem-solving (issue tree, MECE, 80/20), top-down communication (answer first, then evidence), data-driven hypothesis testing, and personal experience interview (PEI), leadership stories with quantified impact. Bar is structure + delivery; content can be approximated.",
   bcg: "BCG interviews are case + behavioral, with emphasis on creativity within structure. Focus on: ability to brainstorm frameworks (not just apply textbook ones), comfort with ambiguity, and crisp top-down communication. BCG looks for 'pattern recognition + curiosity' more than rigid frameworking.",
-  bain: "Bain interviews emphasize the 'Bainie' — collaborative, results-oriented, driven. Cases are similar to MBB peers but interviewers actively coach during the case. Focus on: structured thinking, ability to take direction without losing confidence, and warm interpersonal style. Bain interviews are conversational; treat the interviewer as a teammate.",
+  bain: "Bain interviews emphasize the 'Bainie', collaborative, results-oriented, driven. Cases are similar to MBB peers but interviewers actively coach during the case. Focus on: structured thinking, ability to take direction without losing confidence, and warm interpersonal style. Bain interviews are conversational; treat the interviewer as a teammate.",
   deloitte: "Deloitte interviews vary widely by service line (Strategy & Analytics, Consulting, Risk Advisory, Technology). For consulting roles: case studies + behavioral, structured thinking. For tech: technical depth + client-facing stories. Common thread: stakeholder management at scale.",
   // ─── Investment banks + quant ───
   goldmansachs: "Goldman Sachs interviews emphasize technical fundamentals (especially for engineering / quant roles), cultural fit ('14 Business Principles'), and resilience under pressure. Focus on: deep technical preparation, ability to discuss markets even for non-trading roles, and articulate why-Goldman over peers. Multiple-round process; consistency across rounds matters.",
@@ -76,13 +76,13 @@ export const COMPANY_GUIDANCE: Record<string, string> = {
   hdfcbank: "HDFC Bank interviews emphasize banking domain knowledge and risk-aware mindset. Focus on: banking products understanding (CASA, retail vs corporate banking), regulatory awareness (RBI guidelines, KYC/AML), and HR questions about handling cash, customer escalations, and cross-selling ethically.",
   icicibank: "ICICI Bank interviews emphasize digital-banking depth and tech-led product thinking. Focus on: banking domain + technology blend, comfort with iMobile / iLens-type initiatives, and willingness to handle customer escalations. ICICI interviews are noticeably faster-paced than peer PSBs.",
   // ─── PSUs (worth specific guidance) ───
-  isro: "ISRO interviews emphasize technical depth in the candidate's specialization (mechanical, aerospace, electronics, computer science, etc.), publication record / project rigor, and alignment with the Indian space mission. Less behavioral, more technical viva. Salary-negotiation framing is irrelevant — focus on mission fit and technical contribution.",
-  drdo: "DRDO interviews emphasize defense R&D context + deep technical specialization. Focus on: domain knowledge (specific to the lab the candidate is targeting — ADA, RCI, LRDE, etc.), security clearance awareness, and willingness to handle classified work with discretion.",
+  isro: "ISRO interviews emphasize technical depth in the candidate's specialization (mechanical, aerospace, electronics, computer science, etc.), publication record / project rigor, and alignment with the Indian space mission. Less behavioral, more technical viva. Salary-negotiation framing is irrelevant, focus on mission fit and technical contribution.",
+  drdo: "DRDO interviews emphasize defense R&D context + deep technical specialization. Focus on: domain knowledge (specific to the lab the candidate is targeting, ADA, RCI, LRDE, etc.), security clearance awareness, and willingness to handle classified work with discretion.",
   // ─── Top Indian conglomerates ───
   tatagroup: "Tata Group interviews vary wildly by entity (TCS, Tata Steel, Tata Motors, Tata Communications, Tata Digital, etc.). Common thread: emphasis on Tata values (integrity, excellence, unity, responsibility, pioneering), long-term thinking over quarterly hits, and willingness to work in legacy + transforming systems together. Specify the exact Tata entity early.",
   reliance: "Reliance Industries (incl. Jio, Reliance Retail, Reliance Digital) interviews emphasize scale and bias for action. Focus on: ability to ship at India-scale (100M+ users for Jio, sub-second latency for retail), comfort with hierarchy + autonomy mix, and willingness to operate at Mukesh-time (faster than typical Indian corporates).",
   // ─── New Indian AI/SaaS startups (small but growing) ───
-  sarvam: "Sarvam AI interviews emphasize India-first AI / language-model thinking. Focus on: NLP depth (especially for Indic languages — Hindi, Tamil, Telugu, etc.), ability to evaluate model output rigorously, and alignment with Sarvam's mission of democratizing AI in India. Engineering bar is research-level.",
+  sarvam: "Sarvam AI interviews emphasize India-first AI / language-model thinking. Focus on: NLP depth (especially for Indic languages, Hindi, Tamil, Telugu, etc.), ability to evaluate model output rigorously, and alignment with Sarvam's mission of democratizing AI in India. Engineering bar is research-level.",
 };
 
 // ─── Type-pattern fallbacks ───
@@ -143,12 +143,12 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_unicorn_fintech",
     pattern: /^(slice|jupiter|fimoney|unicards|kreditbee|lendingkart|indmoney|smallcase|niyo|cashfree|instamojo|bharatpe|mobikwik|freecharge|lazypay|zestmoney|rupeek|pinelabs|mswipe|payu|juspay|simpl|paytmmoney|upstox|angelone|5paisa|motilaloswal|setu|decentro|m2pfintech|cleartax|khatabook|okcredit)$/,
-    guidance: "Indian fintech startup interviews emphasize speed, regulatory awareness, and engineering rigor. Focus on: payment-system or lending-system design (UPI, cards, BNPL, settlement, KYC), comfort with India's regulatory layer (RBI, NPCI, SEBI guidelines), and willingness to debug production-money-movement issues. Push for specifics — fintech failures are loud and traceable, so candidates should give exact numbers.",
+    guidance: "Indian fintech startup interviews emphasize speed, regulatory awareness, and engineering rigor. Focus on: payment-system or lending-system design (UPI, cards, BNPL, settlement, KYC), comfort with India's regulatory layer (RBI, NPCI, SEBI guidelines), and willingness to debug production-money-movement issues. Push for specifics, fintech failures are loud and traceable, so candidates should give exact numbers.",
   },
   {
     key: "indian_unicorn_consumer",
     pattern: /^(myntra|jabong|firstcry|purplle|lenskart|mamaearth|boat|sugarcosmetics|bewakoof|licious|freshtohome|wakefit|thesouledstore|bombayshavingcompany|beardo|wowskinscience|plumgoodness|myglamm|sleepyowl|ustraa|bodywise|mensabrands|globalbees|gokwik|toplyne|snitch|freakins|pepperfry|urbanladder|fabindia|chumbak)$/,
-    guidance: "D2C / consumer-internet interviews emphasize brand judgement, marketplace dynamics, and unit economics. Focus on: ability to articulate brand positioning (why us vs commodity alternatives), comfort with the full marketing funnel (acquisition CAC, retention, repeat-rate), and willingness to dive into specifics — Tier-1 vs Tier-2 customer behavior, COD vs prepaid mix, return rates.",
+    guidance: "D2C / consumer-internet interviews emphasize brand judgement, marketplace dynamics, and unit economics. Focus on: ability to articulate brand positioning (why us vs commodity alternatives), comfort with the full marketing funnel (acquisition CAC, retention, repeat-rate), and willingness to dive into specifics, Tier-1 vs Tier-2 customer behavior, COD vs prepaid mix, return rates.",
   },
   {
     key: "indian_unicorn_edtech",
@@ -168,7 +168,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_it_services",
     pattern: /^(persistentSystems|persistentsystems|mphasis|coforge|lttechnologyservices|cyient|kpittechnologies|mindtree|hexaware|zensar|sonatasoftware|birlasoft|niittechnologies|happiestminds|igate|saskenfactor|tataElxsi|tataelxsi|amdocs|dxctechnology|ntt|atos|cgi|unisys|bahwancybertek|rolta|polaris|saksoft|datamatics|subex)$/,
-    guidance: "Indian IT services interviews emphasize technical fundamentals, willingness to relocate, and client-facing maturity. Focus on: language fundamentals (Java, Python, .NET, depending on practice), agile / SDLC familiarity, comfort with shift work or onsite assignments, and HR questions about handling client escalations across cultures. Bar varies by tier — top-tier (Persistent, Mphasis) closer to product companies; mid-tier closer to TCS pattern.",
+    guidance: "Indian IT services interviews emphasize technical fundamentals, willingness to relocate, and client-facing maturity. Focus on: language fundamentals (Java, Python, .NET, depending on practice), agile / SDLC familiarity, comfort with shift work or onsite assignments, and HR questions about handling client escalations across cultures. Bar varies by tier, top-tier (Persistent, Mphasis) closer to product companies; mid-tier closer to TCS pattern.",
   },
   {
     key: "indian_pharma",
@@ -183,7 +183,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "psu_central",
     pattern: /^(bhel|ongc|ntpc|indianoil|iocl|gail|bpcl|hpcl|coalindia|powergrid|sail|nmdc|nalco|mmtc|stc|nhpc|nlcindia|rites|concor|irctc|railtel|irfc|rvnl|ircon|dfcc|hal|bel|bdl|beml|grse|mazagondock|cochinshipyard|midhani|ofb)$/,
-    guidance: "Central PSU interviews emphasize technical depth in the candidate's specialization, written-paper rigor (most have a stage-1 written test before the interview), and long-term commitment signals. Focus on: domain mastery (avoid surface-level answers), ability to discuss the PSU's specific projects / mandates, and HR questions about willingness to work at remote sites. Compensation talk is irrelevant — pay is grade-based, not negotiated.",
+    guidance: "Central PSU interviews emphasize technical depth in the candidate's specialization, written-paper rigor (most have a stage-1 written test before the interview), and long-term commitment signals. Focus on: domain mastery (avoid surface-level answers), ability to discuss the PSU's specific projects / mandates, and HR questions about willingness to work at remote sites. Compensation talk is irrelevant, pay is grade-based, not negotiated.",
   },
   {
     key: "academia_iit_iim",
@@ -213,7 +213,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_telecom",
     pattern: /^(jio|reliancejio|airtel|bhartiairtel|vodafoneidea|vi|bsnl|mtnl|jioplatforms|airteldigital|tatacommunications|sterlitetechnologies|tejasnetworks|industowers|bhartihexacom|nokiasiemensnetworksindia)$/,
-    guidance: "Telecom interviews emphasize scale + reliability under non-stop traffic. Focus on: technical depth (network engineering, OSS/BSS, 5G stack, IoT for newer roles), comfort with 24/7 incident response, and behavioral scenarios about handling regulatory shifts (TRAI, spectrum auctions). India-scale is the dominant theme — billions of subscribers, sub-second SLAs.",
+    guidance: "Telecom interviews emphasize scale + reliability under non-stop traffic. Focus on: technical depth (network engineering, OSS/BSS, 5G stack, IoT for newer roles), comfort with 24/7 incident response, and behavioral scenarios about handling regulatory shifts (TRAI, spectrum auctions). India-scale is the dominant theme, billions of subscribers, sub-second SLAs.",
   },
   {
     key: "ai_genai_startup",
@@ -223,7 +223,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "global_gaming",
     pattern: /^(activisionblizzard|activision|electronicarts|ea|riotgames|riot|ubisoft|epicgames|epic|roblox|unitytechnologies|unity|taketwo|taketwointeractive|naughtydog|bungie|microsoftgaming|playstation|nintendo|tencentgames|miHoYo|hoyoverse)$/,
-    guidance: "Global gaming-studio interviews emphasize craft + ship-it discipline. Focus on: depth in the candidate's specialty (engine programming, gameplay, tools, multiplayer, anti-cheat, monetization, server-meta), comfort with crunch + post-launch live-ops, and behavioral scenarios about handling community backlash or balancing pivots. Indian offices often serve as pipeline / live-ops / QA arms — the bar is meaningful but tighter than HQ.",
+    guidance: "Global gaming-studio interviews emphasize craft + ship-it discipline. Focus on: depth in the candidate's specialty (engine programming, gameplay, tools, multiplayer, anti-cheat, monetization, server-meta), comfort with crunch + post-launch live-ops, and behavioral scenarios about handling community backlash or balancing pivots. Indian offices often serve as pipeline / live-ops / QA arms, the bar is meaningful but tighter than HQ.",
   },
   {
     key: "indian_gaming_realmoney",
@@ -248,12 +248,12 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_travel_aggregator",
     pattern: /^(makemytrip|goibibo|oyorooms|oyo|yatra|cleartrip|easemytrip|ixigo|redbus|treebo|fabhotels|tripadvisorindia|tripadvisor|bookingcomindia|booking|expediaindia|expedia)$/,
-    guidance: "Travel / hospitality-aggregator interviews emphasize marketplace dynamics + multi-stakeholder ops. Focus on: search-relevance / personalization for travel, supply (hotel / airline / cab) + demand (consumer) economics, comfort with seasonality + booking-cycle anomalies, and behavioral scenarios about cancellation / refund / fraud handling. Margins are thin — discipline around CAC + repeat-rate is the dominant theme.",
+    guidance: "Travel / hospitality-aggregator interviews emphasize marketplace dynamics + multi-stakeholder ops. Focus on: search-relevance / personalization for travel, supply (hotel / airline / cab) + demand (consumer) economics, comfort with seasonality + booking-cycle anomalies, and behavioral scenarios about cancellation / refund / fraud handling. Margins are thin, discipline around CAC + repeat-rate is the dominant theme.",
   },
   {
     key: "indian_healthcare_chain",
     pattern: /^(apollohospitals|fortishealthcare|fortis|maxhealthcare|max|manipalhospitals|narayanahealth|asterdmhealthcare|aster|medanta|kokilabenhospital|aiims|tatamemorialhospital|pgimer|jipmer|cmcvellore|hcghealthcareglobal|hcg|rainbowchildrenshospitals|mgmhealthcare|drlalpathlabs|drlal|metropolishealthcare|metropolis|thyrocare)$/,
-    guidance: "Healthcare-chain interviews emphasize patient-outcome + regulatory rigour. Focus on: clinical / operational depth (depending on role — clinician, admin, tech), familiarity with NABH / JCI / CGHS empanelment dynamics, and behavioral scenarios about handling adverse events + family communication. Compensation skews on long-term equity (especially at chains nearing IPO post-2025 wave).",
+    guidance: "Healthcare-chain interviews emphasize patient-outcome + regulatory rigour. Focus on: clinical / operational depth (depending on role, clinician, admin, tech), familiarity with NABH / JCI / CGHS empanelment dynamics, and behavioral scenarios about handling adverse events + family communication. Compensation skews on long-term equity (especially at chains nearing IPO post-2025 wave).",
   },
   {
     key: "indian_insurance_amc",
@@ -283,7 +283,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_audit_legal_midtier",
     pattern: /^(walkerchandiok|srbatlioibo|srbatlioi|lodhaco|khimjikunverji|mgbco|mgb|anejaassociates|aneja|rsmastute|nangiaandersen|nangia|grantthorntonindia|grantthornton|bdoindia|bdo|rsmindia|rsm|cyrilamarchandmangaldas|cyril|azbpartners|azb|khaitanco|khaitan|jsagarassociates|jsa|trilegal|shardulamarchandmangaldas|shardul|luthraluthra|sandrassociates|nishithdesaiassociates|dsklegal|anblegal|arguspartners)$/,
-    guidance: "Indian mid-tier audit / legal-firm interviews emphasize technical depth + client-hour discipline. Focus on: domain knowledge (CA-specific for audit firms, area-of-law for legal — corporate / M&A / banking / IP / litigation), comfort with billable-hour culture and partner-track timelines, and behavioral scenarios about handling client / regulator escalations. Pay scales much lower than MBB / Big 4 tax-advisory but partner-level economics are competitive.",
+    guidance: "Indian mid-tier audit / legal-firm interviews emphasize technical depth + client-hour discipline. Focus on: domain knowledge (CA-specific for audit firms, area-of-law for legal, corporate / M&A / banking / IP / litigation), comfort with billable-hour culture and partner-track timelines, and behavioral scenarios about handling client / regulator escalations. Pay scales much lower than MBB / Big 4 tax-advisory but partner-level economics are competitive.",
   },
   {
     key: "indian_saas_broad",
@@ -293,14 +293,14 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_advertising_agency",
     pattern: /^(ogilvyindia|ogilvy|leoburnett|jwt|wundermanthompson|mccannworldgroup|mccann|ddbmudra|bbdo|dentsuwebchutney|webchutney|dentsucreative|famousinnovations|lowelintas|fcb|havasindia|havas|publicisindia|publicis|greygroup|tbwa|saatchi|scarecrowmcsaatchi|bcwebwise|iprospect|mirumindia|schbang|watconsult|tonicworldwide|isobarindia|isobar|foxymoron|logicservedigital|kinnect|performicsindia|performics|groupmindia|groupm|madisonworld|madison|mullenlintas|mullen|rediffusion|cheilindia|cheil|cheilworldwide|contractadvertising|batesicandpartners|crayonscommunications|vmlyrindia|vmlyr|22feettribalworldwide|digitaslbiindia|digitaslbi|mediacomindia|mediacom|wavemakerindia|wavemaker|zenithindia|zenith|caratindia|carat|omdindia|omd|mindshareindia|mindshare|initiativeindia|starcomindia|starcom|sparkfoundry|tritoncommunications|quotientventures|talented|thewomb|dentsuimpact|dentsuaegisnetwork|enormousbrands|springmarketing|spring marketing|lksaatchisaatchi|lksaatchi|lemoncommunications|bombaydesigncentre|lollypopdesignstudio|lollypop|nilenso|obvious|elephantdesign|umbrelladesign|codesign|onio|indidesign|studiolotus|foleydesigns|dyworks|landorfitchindia|ogilvydesignindia|wiedenkennedydelhi|wiedenkennedyindia|wiedenkennedy|animal|futurefactory|plus91foundry|briefcase|karyaux|fourplusstudio|algorythm|ennobleip|psidesign|geometryencompass|quicksanddesignstudio|quicksand|finalmileconsulting|designaware|studiocarbon|redesign|kpmgindia|tataelxsidesign|infosyswongdoody|wongdoody|mindtreedesign|thoughtworks|thoughtworksdesign)$/,
-    guidance: "Indian advertising / creative-agency interviews emphasize portfolio + idea-quality + craft. Focus on: campaign-effectiveness measurement (creative + media outcomes), comfort with client-pitch grind + revision cycles, and behavioral scenarios about handling creative differences / client pushback. Pay structure: services-firm economics — limited equity, billable-hour compression. Top creative directors at Ogilvy / DDB Mudra / Lowe Lintas hit ₹50-150L+; the median is much tighter.",
+    guidance: "Indian advertising / creative-agency interviews emphasize portfolio + idea-quality + craft. Focus on: campaign-effectiveness measurement (creative + media outcomes), comfort with client-pitch grind + revision cycles, and behavioral scenarios about handling creative differences / client pushback. Pay structure: services-firm economics, limited equity, billable-hour compression. Top creative directors at Ogilvy / DDB Mudra / Lowe Lintas hit ₹50-150L+; the median is much tighter.",
   },
   {
     key: "indian_civil_services",
     pattern: /^(upsc|indianadministrativeservice|ias|indianforeignservice|ifs|indianpoliceservice|ips|indianrevenueservice|irs|indianforestservice|statepublicservicecommission|ibpspoclerk|sbipo|rbigradeb|nabardgradea|sidbigradea|ssccgl|ssccshsl|indianrailwaysrrb|isroscientist|drdoscientist|barcscientist|tifr|reservebankofindiadirect|npci|uidai)$/,
     guidance: "Civil-services / government-job interviews emphasize values alignment (integrity, impartiality, public service), domain knowledge of governance + current affairs, and stress resilience. Focus on: ability to articulate views on contemporary policy debates without partisan colour, comfort with formal interview settings (panel format, hypothetical ethics scenarios), and motivation that goes beyond compensation.",
   },
-  /* Generic catch-all — MUST be the LAST entry. Matches anything not
+  /* Generic catch-all, MUST be the LAST entry. Matches anything not
      caught by a more specific bucket. Ensures every company in the
      autocomplete (~1,700 entries) has explicit source attribution
      even if it's just "Indian-market-median for role × experience".
@@ -309,7 +309,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
   {
     key: "indian_market_generic",
     pattern: /^.*$/,
-    guidance: "Generic Indian-market interview. Without a more specific company classification, treat the candidate's role + experience as the dominant signal. Compensation discussions should anchor to Indian-market median for the role-tier (per AmbitionBox / Glassdoor / Naukri 2026 cohort). Avoid claiming company-specific facts (founders, scale, recent news) — the LLM doesn't have grounded data for this company.",
+    guidance: "Generic Indian-market interview. Without a more specific company classification, treat the candidate's role + experience as the dominant signal. Compensation discussions should anchor to Indian-market median for the role-tier (per AmbitionBox / Glassdoor / Naukri 2026 cohort). Avoid claiming company-specific facts (founders, scale, recent news), the LLM doesn't have grounded data for this company.",
   },
 ];
 
@@ -322,7 +322,7 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
 
       • Short tokens (≤3 chars, e.g. "ey", "vi", "ias") must match the
         WHOLE normalized input (exact equality). Otherwise short tokens
-        false-match — "vi" appears inside "ser-vi-ce" so a UPSC input
+        false-match, "vi" appears inside "ser-vi-ce" so a UPSC input
         would mis-classify as telecom.
       • Long tokens (≥4 chars) match by substring. "upsc" in
         "upscindianadministrativeservice" → civil-services. */
@@ -347,7 +347,7 @@ export function classifyCompanyType(company: string): { key: string; guidance: s
 
   /* Stage 1: full-pattern regex test (handles character classes
      like `iit[a-z]*` that don't survive token splitting). Skip the
-     catch-all — it would pre-empt specific buckets. */
+     catch-all, it would pre-empt specific buckets. */
   for (const bucket of COMPANY_TYPE_BUCKETS) {
     if (isCatchAll(bucket)) continue;
     if (bucket.pattern.test(normalized)) {

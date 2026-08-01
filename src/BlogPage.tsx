@@ -305,33 +305,22 @@ function BlogIndex({ metas }: { metas: BlogMeta[] }) {
       <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 48px 96px" }}>
         {/* Category filter tabs */}
         <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 36, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              className={`blog-cat-tab${activeCategory === cat ? " active" : ""}`}
-              onClick={() => { setActiveCategory(cat); resetPage(); }}
-              aria-pressed={activeCategory === cat}
-            >
-              {cat}
-            </button>
-          ))}
+          {CATEGORIES.map(cat => {
+            const isActive = activeCategory === cat;
+            const href = cat === "All" ? "/blog" : `/blog/category/${bucketToSlug(cat)}`;
+            return (
+              <a
+                key={cat}
+                href={href}
+                className={`blog-cat-tab${isActive ? " active" : ""}`}
+                onClick={e => { e.preventDefault(); setActiveCategory(cat); resetPage(); }}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {cat}
+              </a>
+            );
+          })}
         </div>
-
-        {/* Real crawlable links into the category pages (the tabs above are
-            client-side filters with no URL of their own — this row gives
-            search engines an actual href to follow into each category).
-            Visually hidden: the tabs above already serve sighted users, so
-            this is SEO-only and shouldn't visually duplicate them. */}
-        <nav
-          aria-label="Browse by topic"
-          style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}
-        >
-          {CATEGORY_BUCKETS.map(bucket => (
-            <Link key={bucket} href={`/blog/category/${bucketToSlug(bucket)}`}>
-              All {bucket === "Company Guides" ? "Company" : bucket} guides
-            </Link>
-          ))}
-        </nav>
 
         {/* Post grid */}
         {paginated.length > 0 ? (
@@ -7399,7 +7388,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
             <span aria-hidden style={{ color: t.lineStrong }}>·</span>
             <span>{post.category}</span>
           </div>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.024em", lineHeight: 1.1, textWrap: "balance" as const, margin: 0 }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.024em", lineHeight: 1.15, textWrap: "balance" as const, margin: 0 }}>
             {post.title}
           </h1>
         </div>
@@ -7437,7 +7426,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
 
           {/* Table of contents */}
           {showToc && (
-            <nav aria-label="Contents" style={{ background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "22px 24px", marginBottom: 56 }}>
+            <nav aria-label="Contents" style={{ background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 12, padding: "22px 24px", marginBottom: 56 }}>
               <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 14px" }}>
                 In this guide
               </p>

@@ -46,7 +46,7 @@ const SERVICES_T1: HrCompanyNorms = {
   sector: "services-tier1",
   sectorLabel: "IT services",
   noticeNorm: "60–90 days",
-  buyoutNote: "Buyouts are uncommon and often disallowed — plan to serve the full notice.",
+  buyoutNote: "Buyouts are uncommon and often disallowed, plan to serve the full notice.",
   bgvDocs: [
     "3 months' payslips",
     "Form-16 / Form-26AS",
@@ -56,15 +56,15 @@ const SERVICES_T1: HrCompanyNorms = {
     "UAN / PF passbook",
   ],
   bgvFirms: ["AuthBridge", "First Advantage", "OnGrid"],
-  compNote: "Bands are largely grade-fixed; expect limited room — anchor on a realistic hike (often capped near 30–40% over current CTC).",
-  dualEmploymentNote: "Dual employment is a hard red flag — overlapping UAN/PF activity surfaces in checks. Disclose any concurrent work.",
+  compNote: "Bands are largely grade-fixed; expect limited room, anchor on a realistic hike (often capped near 30–40% over current CTC).",
+  dualEmploymentNote: "Dual employment is a hard red flag, overlapping UAN/PF activity surfaces in checks. Disclose any concurrent work.",
 };
 
 const PRODUCT_UNICORN: HrCompanyNorms = {
   sector: "product-unicorn",
   sectorLabel: "product / startup",
   noticeNorm: "30–60 days",
-  buyoutNote: "Buyouts are common for in-demand roles — you can negotiate the company covering a notice shortfall.",
+  buyoutNote: "Buyouts are common for in-demand roles, you can negotiate the company covering a notice shortfall.",
   bgvDocs: [
     "3 months' payslips",
     "offer + relieving letters",
@@ -73,15 +73,15 @@ const PRODUCT_UNICORN: HrCompanyNorms = {
     "degree certificate",
   ],
   bgvFirms: ["AuthBridge", "First Advantage", "SpringVerify"],
-  compNote: "ESOP/RSU literacy matters — know the 1-year cliff, 4-year vest, and buyback cadence. Cash-vs-equity split is negotiable.",
-  dualEmploymentNote: "Moonlighting is scrutinised post-2022 — disclose any side income or concurrent contracts up front.",
+  compNote: "ESOP/RSU literacy matters, know the 1-year cliff, 4-year vest, and buyback cadence. Cash-vs-equity split is negotiable.",
+  dualEmploymentNote: "Moonlighting is scrutinised post-2022, disclose any side income or concurrent contracts up front.",
 };
 
 const BFSI: HrCompanyNorms = {
   sector: "bfsi",
   sectorLabel: "banking / financial services",
   noticeNorm: "30–90 days",
-  buyoutNote: "Buyouts vary by grade — some banks allow them, many don't. Confirm early.",
+  buyoutNote: "Buyouts vary by grade, some banks allow them, many don't. Confirm early.",
   bgvDocs: [
     "3 months' payslips",
     "Form-16",
@@ -92,14 +92,14 @@ const BFSI: HrCompanyNorms = {
   ],
   bgvFirms: ["AuthBridge", "First Advantage", "in-house compliance"],
   compNote: "Comp upside is capped vs product; fixed-heavy. Negotiate grade, joining bonus, and variable rather than base alone.",
-  dualEmploymentNote: "Regulatory conduct rules apply — conflicts of interest and outside directorships are checked. Disclose everything.",
+  dualEmploymentNote: "Regulatory conduct rules apply, conflicts of interest and outside directorships are checked. Disclose everything.",
 };
 
 const GCC: HrCompanyNorms = {
   sector: "gcc",
   sectorLabel: "MNC captive / GCC",
   noticeNorm: "30–90 days",
-  buyoutNote: "Buyouts are often covered for in-demand roles — the parent's India entity has budget; ask.",
+  buyoutNote: "Buyouts are often covered for in-demand roles, the parent's India entity has budget; ask.",
   bgvDocs: [
     "3 months' payslips",
     "offer + relieving letters (every employer)",
@@ -109,15 +109,15 @@ const GCC: HrCompanyNorms = {
     "criminal / court-record check consent",
   ],
   bgvFirms: ["First Advantage", "HireRight", "AuthBridge"],
-  compNote: "Parent-stock RSUs are real, liquid equity — know your grant, vest schedule, and refresh cadence; ESPP too. Base bands are benchmarked and fairly firm.",
-  dualEmploymentNote: "Global code-of-conduct bars undisclosed dual employment — moonlighting and outside engagements must be declared and are often disallowed.",
+  compNote: "Parent-stock RSUs are real, liquid equity, know your grant, vest schedule, and refresh cadence; ESPP too. Base bands are benchmarked and fairly firm.",
+  dualEmploymentNote: "Global code-of-conduct bars undisclosed dual employment, moonlighting and outside engagements must be declared and are often disallowed.",
 };
 
 const CONSULTING: HrCompanyNorms = {
   sector: "consulting",
   sectorLabel: "consulting / advisory",
   noticeNorm: "60–90 days",
-  buyoutNote: "Buyouts are uncommon — plan to serve notice; client staffing drives start dates.",
+  buyoutNote: "Buyouts are uncommon, plan to serve notice; client staffing drives start dates.",
   bgvDocs: [
     "3 months' payslips",
     "relieving + experience letters",
@@ -127,15 +127,15 @@ const CONSULTING: HrCompanyNorms = {
     "client-conflict / prior-engagement disclosure",
   ],
   bgvFirms: ["First Advantage", "AuthBridge", "in-house risk & compliance"],
-  compNote: "Comp is variable-heavy (bonus + profit share) on an up-or-out track — negotiate the bonus target and grade, not just base. Travel and utilisation expectations are part of the deal.",
-  dualEmploymentNote: "Client conflict-of-interest is scrutinised hard — any outside consulting, board seat, or investment that touches a client must be disclosed.",
+  compNote: "Comp is variable-heavy (bonus + profit share) on an up-or-out track, negotiate the bonus target and grade, not just base. Travel and utilisation expectations are part of the deal.",
+  dualEmploymentNote: "Client conflict-of-interest is scrutinised hard, any outside consulting, board seat, or investment that touches a client must be disclosed.",
 };
 
 const PSU: HrCompanyNorms = {
   sector: "psu",
   sectorLabel: "government / PSU",
   noticeNorm: "relieving-based; joining tied to allotment / offer validity",
-  buyoutNote: "Buyouts don't apply — serve notice and produce a clean relieving letter; joining follows the allotment timeline.",
+  buyoutNote: "Buyouts don't apply, serve notice and produce a clean relieving letter; joining follows the allotment timeline.",
   bgvDocs: [
     "police / character verification",
     "category certificate (SC/ST/OBC/EWS) if claimed",
@@ -145,8 +145,8 @@ const PSU: HrCompanyNorms = {
     "PAN + Aadhaar",
   ],
   bgvFirms: ["state police verification", "in-house vigilance / administration"],
-  compNote: "Pay is a fixed CPC pay-scale (basic + DA + HRA + perks) — effectively non-negotiable. Focus on grade/level, not a number.",
-  dualEmploymentNote: "Conduct rules bar any private employment, business, or unapproved outside work — disclosure and prior permission are mandatory.",
+  compNote: "Pay is a fixed CPC pay-scale (basic + DA + HRA + perks), effectively non-negotiable. Focus on grade/level, not a number.",
+  dualEmploymentNote: "Conduct rules bar any private employment, business, or unapproved outside work, disclosure and prior permission are mandatory.",
 };
 
 const NONE: HrCompanyNorms = {

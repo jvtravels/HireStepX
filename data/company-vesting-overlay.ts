@@ -34,13 +34,13 @@
 
 import { getCompanyTier } from "./company-tiers";
 
-/** Canonical schedule identifiers. Keep ~8 — every entry must map to a
+/** Canonical schedule identifiers. Keep ~8, every entry must map to a
  *  schedule that materially differs from the others in how the recruiter
  *  describes vesting OR how liquidity works. */
 export type VestingScheduleId =
   | "us-standard-4yr-cliff"     // 4-year vest, 1-year cliff (25%), monthly thereafter (US SV norm; default for product-india startups without a more specific entry)
   | "walmart-rsu-annual"         // 4-year ANNUAL vest (25/25/25/25), no 1-year cliff for senior hires
-  | "esop-buyback-dependent"     // 4yr / 1yr cliff — but liquidity gated on board-discretion buybacks
+  | "esop-buyback-dependent"     // 4yr / 1yr cliff, but liquidity gated on board-discretion buybacks
   | "phonepe-flip-buyback"       // 4yr / 1yr cliff with recurring buyback program (₹1,150 Cr 2022 + 2024 round)
   | "listed-rsu-quarterly"       // 1-year cliff, then quarterly vest over 3 more years (listed Indian product cos)
   | "it-services-none"           // No equity for non-leadership ICs; performance bonus only
@@ -69,7 +69,7 @@ export const VESTING_SCHEDULES: Record<VestingScheduleId, VestingSchedule> = {
   },
   "esop-buyback-dependent": {
     scheduleId: "esop-buyback-dependent",
-    description: "ESOP, 4-year vest with 1-year cliff (25%), monthly thereafter — liquidity is buyback-dependent (board discretion)",
+    description: "ESOP, 4-year vest with 1-year cliff (25%), monthly thereafter; liquidity is buyback-dependent (board discretion)",
     liquidityNote: "Vesting and liquidity are decoupled: shares vest on schedule but cash-out requires a buyback / secondary window the company is not obligated to run.",
   },
   "phonepe-flip-buyback": {
@@ -83,7 +83,7 @@ export const VESTING_SCHEDULES: Record<VestingScheduleId, VestingSchedule> = {
   },
   "it-services-none": {
     scheduleId: "it-services-none",
-    description: "No equity at this level — IT services compensate via performance bonus / one-time joining award, not stock",
+    description: "No equity at this level: IT services compensate via performance bonus / one-time joining award, not stock",
   },
   "mnc-amazon-back-loaded": {
     scheduleId: "mnc-amazon-back-loaded",

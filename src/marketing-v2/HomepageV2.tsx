@@ -7,6 +7,7 @@ import { useAuth, hasStoredSession } from "../AuthContext";
 import { captureClientEvent } from "../posthogClient";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { CopyEmailLink } from "../_CopyEmailLink";
+import { HeroV2 } from "./Hero";
 export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
@@ -756,584 +757,6 @@ function Waveform({ accent }: { accent?: string }) {
   );
 }
 
-function ProductMockHero() {
-  type Phase = "idle" | "listening" | "scoring" | "done";
-  const scenarios = [
-    {
-      company: "Razorpay",
-      round: "Behavioral Round",
-      question:
-        "Tell me about a time you led a cross-functional project under a tight deadline.",
-      transcript:
-        "Last quarter at Razorpay, our checkout latency spiked during a Tier-1 sale. I was asked to lead a tiger team across infra and product",
-      score: "8.4",
-      bars: [
-        ["Situation", 92],
-        ["Task", 88],
-        ["Action", 71],
-        ["Result", 64],
-      ] as Array<[string, number]>,
-      fix: 'Quantify the result. Try "checkout p95 latency from 1.4s → 380ms".',
-    },
-    {
-      company: "Zomato",
-      round: "Product Sense",
-      question:
-        "How would you re-design the Zomato Gold flow for tier-2 cities?",
-      transcript:
-        "I'd start by segmenting Gold users by frequency, then audit the funnel from search to checkout. The drop-off in tier-2 is at payment, not discovery",
-      score: "9.1",
-      bars: [
-        ["Framework", 95],
-        ["User empathy", 92],
-        ["Metrics", 86],
-        ["Tradeoffs", 78],
-      ] as Array<[string, number]>,
-      fix: "Strong frame. Add one cost tradeoff to push past a 9.5.",
-    },
-    {
-      company: "TCS Digital",
-      round: "HR Round",
-      question: "Why TCS Digital and not just TCS?",
-      transcript:
-        "Digital is where TCS bets on the next decade: cloud, data, the modernisation work. The codebase pace matches my pace; the regular stream felt like maintenance.",
-      score: "7.6",
-      bars: [
-        ["Honesty", 88],
-        ["Specificity", 74],
-        ["Brand fit", 82],
-        ["Confidence", 70],
-      ] as Array<[string, number]>,
-      fix: 'Add one concrete project. "I want to work on Aurora rollouts" beats brand talk.',
-    },
-  ];
-  const [idx, setIdx] = useState(0);
-  const scene = scenarios[idx];
-  const [phase, setPhase] = useState<Phase>("done");
-  const [typed, setTyped] = useState("");
-  const [displayScore, setDisplayScore] = useState(parseFloat(scenarios[0].score));
-  const reducedMotion = usePrefersReducedMotion();
-
-  useEffect(() => {
-    if (phase !== "listening") return;
-    /* Reduced-motion: skip the typewriter, jump straight to scored state */
-    if (reducedMotion) {
-      setTyped(scene.transcript);
-      setPhase("done");
-      return;
-    }
-    let i = 0;
-    const id = setInterval(() => {
-      i += 2;
-      setTyped(scene.transcript.slice(0, i));
-      if (i >= scene.transcript.length) {
-        clearInterval(id);
-        setTimeout(() => setPhase("scoring"), 350);
-        setTimeout(() => setPhase("done"), 1500);
-      }
-    }, 28);
-    return () => clearInterval(id);
-  }, [phase, scene.transcript, reducedMotion]);
-
-  /* Score count-up on each new scored answer */
-  useEffect(() => {
-    if (phase !== "done") return;
-    const target = parseFloat(scene.score);
-    /* Reduced-motion: set final value instantly, no rAF loop */
-    if (reducedMotion) {
-      setDisplayScore(target);
-      return;
-    }
-    const start = performance.now();
-    const dur = 700;
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / dur);
-      const eased = 1 - Math.pow(1 - p, 4);
-      setDisplayScore(Math.round(target * eased * 10) / 10);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    setDisplayScore(0);
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [phase, scene.score, idx, reducedMotion]);
-
-  /* Auto-cycle scenarios — bounded + pausable per critique.
-     - Bounded: stops after looping through every scenario once (autoLoops < scenarios.length).
-       The previous infinite cycle competed with the H1 for attention forever.
-     - Pausable: user can stop the rotation; survives until they tap "Try it" again.
-     - First cycle delayed (4.5s instead of 6.2s the first tick) so the user has
-       time to read the hero before the mock starts moving on its own. */
-  const [autoPaused, setAutoPaused] = useState(false);
-  const [autoLoops, setAutoLoops] = useState(0);
-  useEffect(() => {
-    if (phase !== "done" || reducedMotion || autoPaused) return;
-    if (autoLoops >= scenarios.length) return;
-    const delay = autoLoops === 0 ? 4500 : 6200;
-    const id = setTimeout(() => {
-      setIdx((i) => (i + 1) % scenarios.length);
-      setAutoLoops((n) => n + 1);
-      setPhase("done");
-    }, delay);
-    return () => clearTimeout(id);
-  }, [phase, idx, scenarios.length, reducedMotion, autoPaused, autoLoops]);
-
-  const start = () => {
-    if (phase === "done") setIdx((i) => (i + 1) % scenarios.length);
-    setTyped("");
-    setPhase("listening");
-    /* User-initiated → reset auto-cycle budget so they get fresh rotation */
-    setAutoLoops(0);
-    setAutoPaused(false);
-  };
-
-  const phaseLabel =
-    phase === "idle"
-      ? "Ready · tap Try it"
-      : phase === "listening"
-        ? "Live · 00:24"
-        : phase === "scoring"
-          ? "Scoring…"
-          : "Scored · 00:31";
-
-  const phaseColor =
-    phase === "scoring" ? t.copper : phase === "done" ? t.indigo : t.success;
-
-  /* Screen-reader narration for the silent visual phase machine */
-  const liveAnnounce =
-    phase === "listening"
-      ? `AI is listening to your answer for ${scene.company} ${scene.round}.`
-      : phase === "scoring"
-        ? "Scoring your answer."
-        : phase === "done"
-          ? `Scored ${scene.score} out of 10. ${scene.fix}`
-          : "Demo ready. Press Try it to start.";
-
-  return (
-    <div
-      className="mv2-mock-card"
-      role="region"
-      aria-label="Live mock interview demo"
-      style={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 980,
-        margin: "0 auto",
-        borderRadius: 20,
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        boxShadow: shadows.modal,
-        overflow: "hidden",
-      }}
-    >
-      {/* SR-only narration of the phase state machine (silent to sighted users) */}
-      <span
-        aria-live="polite"
-        aria-atomic="true"
-        style={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          padding: 0,
-          margin: -1,
-          overflow: "hidden",
-          clip: "rect(0,0,0,0)",
-          whiteSpace: "nowrap",
-          border: 0,
-        }}
-      >
-        {liveAnnounce}
-      </span>
-      {/* Window chrome */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "12px 18px",
-          borderBottom: `1px solid ${t.line}`,
-          background: t.creamSoft,
-        }}
-      >
-        {[t.error, t.warning, t.success].map((color, i) => (
-          <span
-            key={i}
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: color,
-              opacity: 0.85,
-            }}
-          />
-        ))}
-        <span
-          style={{
-            marginLeft: 14,
-            fontFamily: fonts.mono,
-            fontSize: 12,
-            color: t.inkFaint,
-          }}
-        >
-          hirestepx.com/interview · {scene.round} · {scene.company}
-        </span>
-        <span
-          style={{
-            marginLeft: "auto",
-            fontFamily: fonts.sans,
-            fontSize: 10,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: t.inkFaint,
-            fontWeight: 600,
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          Round {String(idx + 1).padStart(2, "0")} / {String(scenarios.length).padStart(2, "0")}
-        </span>
-      </div>
-
-      {/* Body */}
-      <div className="mv2-hero-mock-body" style={{ display: "grid", gridTemplateColumns: "1fr 280px" }}>
-        {/* Left: live transcript */}
-        <div
-          style={{
-            padding: 32,
-            borderRight: `1px solid ${t.line}`,
-            background: t.white,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 20,
-            }}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontFamily: fonts.sans,
-                fontSize: 11,
-                color: phaseColor,
-                fontWeight: 600,
-                padding: "4px 10px",
-                background:
-                  phase === "scoring"
-                    ? t.copperSoft
-                    : phase === "done"
-                      ? t.indigo100
-                      : t.success100,
-                borderRadius: 999,
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: phaseColor,
-                  animation:
-                    phase === "listening" ? "pulse 1s infinite" : undefined,
-                }}
-              />
-              {phaseLabel}
-              <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-            </span>
-            {phase === "listening" && <Waveform />}
-            <button
-              onClick={start}
-              disabled={phase === "listening" || phase === "scoring"}
-              style={{
-                marginLeft: "auto",
-                border: 0,
-                cursor: phase === "idle" || phase === "done" ? "pointer" : "default",
-                background: phase === "idle" || phase === "done" ? t.indigo : t.cream,
-                color: phase === "idle" || phase === "done" ? t.white : t.inkFaint,
-                fontFamily: fonts.sans,
-                fontSize: 12,
-                fontWeight: 600,
-                padding: "6px 12px",
-                borderRadius: 999,
-                minHeight: 44,
-                boxShadow:
-                  phase === "idle" || phase === "done" ? shadows.cta : "none",
-              }}
-            >
-              {phase === "done" ? "Replay" : phase === "idle" ? "Try it ▶" : "…"}
-            </button>
-            {/* Pause / Resume — only meaningful while auto-rotation is still
-                budgeted and the user hasn't asked for reduced motion. Keeps
-                the User Control & Freedom heuristic honest without adding
-                chrome that does nothing 90% of the time. */}
-            {!reducedMotion && phase === "done" && autoLoops < scenarios.length && (
-              <button
-                onClick={() => setAutoPaused((p) => !p)}
-                aria-pressed={autoPaused}
-                aria-label={autoPaused ? "Resume auto rotation" : "Pause auto rotation"}
-                style={{
-                  border: `1px solid ${t.lineStrong}`,
-                  cursor: "pointer",
-                  background: "transparent",
-                  color: t.inkSoft,
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  padding: "5px 10px",
-                  borderRadius: 999,
-                  minHeight: 44,
-                }}
-              >
-                {autoPaused ? "Resume" : "Pause"}
-              </button>
-            )}
-          </div>
-
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              color: t.inkFaint,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              margin: 0,
-              marginBottom: 6,
-              fontWeight: 600,
-            }}
-          >
-            Interviewer
-          </p>
-          <p
-            key={`question-${idx}`}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 18,
-              color: t.coal,
-              lineHeight: 1.55,
-              margin: 0,
-              marginBottom: 20,
-              animation: `mv2-fade-up 0.55s ${ease} both`,
-            }}
-          >
-            {scene.question}
-          </p>
-
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              color: t.copper,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              margin: 0,
-              marginBottom: 6,
-              fontWeight: 600,
-            }}
-          >
-            You
-          </p>
-          <p
-            key={`transcript-${idx}-${phase}`}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 18,
-              color: t.inkSoft,
-              lineHeight: 1.55,
-              margin: 0,
-              minHeight: 80,
-              animation:
-                phase === "done"
-                  ? `mv2-fade-up 0.6s ${ease} 80ms both`
-                  : undefined,
-            }}
-          >
-            {phase === "idle" ? (
-              <span style={{ color: t.inkFaint, fontStyle: "italic" }}>
-                Your answer appears here as you speak…
-              </span>
-            ) : (
-              <>
-                {phase === "done" ? scene.transcript : typed}
-                {(phase === "listening" || phase === "done") && (
-                  <span
-                    aria-hidden
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 18,
-                      background: t.copper,
-                      verticalAlign: "text-bottom",
-                      marginLeft: 2,
-                      opacity: phase === "done" ? 0.5 : 1,
-                      animation: "caret 1.1s steps(1) infinite",
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </p>
-          <style>{`@keyframes caret{50%{opacity:0}}`}</style>
-
-          {phase === "done" && (
-            <div style={{
-              marginTop: "auto",
-              paddingTop: 16,
-              borderTop: `1px solid ${t.line}`,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              animation: `mv2-fade-up 0.5s ${ease} 600ms both`,
-            }}>
-              <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                fontFamily: fonts.sans,
-                fontSize: 11,
-                color: t.indigo,
-                fontWeight: 600,
-                padding: "3px 10px",
-                background: t.indigo100,
-                borderRadius: 999,
-              }}>
-                3 follow-up questions ready
-              </span>
-              <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>
-                Answer one to keep the round going
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: scored answer */}
-        <div
-          className="mv2-hero-mock-side"
-          style={{
-            padding: 24,
-            background: t.cream,
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              color: t.inkFaint,
-              textTransform: "uppercase",
-              letterSpacing: "0.14em",
-              fontWeight: 600,
-              margin: 0,
-            }}
-          >
-            Last answer
-          </p>
-
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span
-              key={`score-${idx}-${phase}`}
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 56,
-                color: t.indigo,
-                lineHeight: 1,
-                opacity: phase === "done" ? 1 : 0.3,
-                animation:
-                  phase === "done"
-                    ? `mv2-fade-up 0.55s ${ease} 200ms both`
-                    : undefined,
-              }}
-            >
-              {phase === "done" ? displayScore.toFixed(1) : "—"}
-            </span>
-            <span
-              style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}
-            >
-              / 10
-            </span>
-          </div>
-
-          {scene.bars.map(([label, val], i) => (
-            <div key={label as string}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  color: t.coal,
-                  fontWeight: 500,
-                  marginBottom: 4,
-                }}
-              >
-                <span>{label}</span>
-                <span style={{ color: t.inkFaint }}>{val}</span>
-              </div>
-              <div
-                style={{
-                  height: 4,
-                  background: t.copper100,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  key={`bar-${idx}-${i}-${phase}`}
-                  style={{
-                    width: `${val}%`,
-                    height: "100%",
-                    background:
-                      (val as number) > 80
-                        ? t.success
-                        : (val as number) > 70
-                          ? t.indigo
-                          : t.copper,
-                    transformOrigin: "left center",
-                    animation:
-                      phase === "done"
-                        ? `mv2-bar-fill 0.9s ${ease} ${320 + i * 110}ms both`
-                        : undefined,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-
-          <div
-            style={{
-              marginTop: 4,
-              padding: "12px 14px",
-              background: t.copperSoft,
-              border: `1px solid rgba(180,83,9,0.18)`,
-              borderRadius: 10,
-              fontFamily: fonts.sans,
-              lineHeight: 1.5,
-            }}
-          >
-            <span style={{
-              fontFamily: fonts.mono,
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase" as const,
-              color: t.copperDark,
-              display: "block",
-              marginBottom: 5,
-            }}>Coach fix</span>
-            <span style={{ fontSize: 13, color: t.coal }}>{scene.fix}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* Editorial section masthead — numbered hairline that once headed each
    section. The design dropped the visible mastheads; the call sites stay
    (they document section order/labels) but the component renders nothing.
@@ -1347,174 +770,6 @@ function SectionMasthead(_props: {
   style?: CSSProperties;
 }): null {
   return null;
-}
-
-/* Aspirational micro-copy, not testimonials. We don't have customers
-   yet (founded 2026) — fabricating named quotes would burn credibility
-   the second any prospect googles the names. Rotated through the hero
-   as a "what this product is for" line. */
-export function HeroV2() {
-  return (
-    <section
-      aria-labelledby="hd-hero"
-      className="mv2-hero-section"
-      style={{
-        ...sectionBase,
-        paddingTop: 96,
-        paddingBottom: 40,
-        background: t.cream,
-        overflowX: "hidden",
-        position: "relative",
-      }}
-    >
-      {/* Copper wash — stronger and wider to anchor the headline */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse 90% 60% at 50% 8%, rgba(180,83,9,0.11) 0%, rgba(180,83,9,0.04) 45%, transparent 65%)",
-          pointerEvents: "none",
-          contain: "paint",
-        }}
-      />
-
-      {/* Centered text block */}
-      <div style={{ ...container, position: "relative", textAlign: "center" }}>
-
-        {/* Positioning eyebrow */}
-        <div
-          className="mv2-cascade mv2-cascade-1 mv2-hero-eyebrow"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            marginBottom: 28,
-            padding: "6px 16px",
-            background: t.copperSoft,
-            border: `1px solid rgba(180,83,9,0.18)`,
-            borderRadius: 999,
-            fontFamily: fonts.mono,
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.13em",
-            textTransform: "uppercase" as const,
-            color: t.copper,
-          }}
-        >
-          <span aria-hidden style={{ width: 5, height: 5, borderRadius: "50%", background: t.copper, display: "inline-block", flexShrink: 0 }} />
-          AI Interview Coach, Built for India
-        </div>
-
-        <h1
-          id="hd-hero"
-          className="mv2-hero-display mv2-cascade mv2-cascade-2"
-          style={{
-            fontFamily: fonts.serif,
-            fontSize: "clamp(48px, 6vw, 86px)",
-            lineHeight: 1.03,
-            letterSpacing: "-0.035em",
-            color: t.coal,
-            margin: "0 auto",
-            fontWeight: 400,
-            maxWidth: 760,
-            textWrap: "balance" as CSSProperties["textWrap"],
-          }}
-        >
-          Practice the interview.
-          <br />
-          <span style={{ fontStyle: "italic", color: t.copper }}>
-            Not the panic.
-          </span>
-        </h1>
-
-        <p
-          className="mv2-cascade mv2-cascade-3"
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 16,
-            lineHeight: 1.62,
-            color: t.inkSoft,
-            maxWidth: 620,
-            margin: "22px auto 0",
-          }}
-        >
-          AI mock interviews you actually speak to, scored against the
-          rubrics real Indian panels use. STAR breakdown back before your chai
-          cools.
-        </p>
-
-        {/* CTAs */}
-        <div
-          className="mv2-hero-cta-row mv2-cascade mv2-cascade-4"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 12,
-            marginTop: 40,
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
-          <a
-            href="/signup"
-            className="mv2-tap-44 mv2-cta-primary"
-            onClick={() => captureClientEvent("hero_cta_clicked", { cta: "start_free", surface: "hero" })}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 16,
-              fontWeight: 600,
-              color: t.cream,
-              background: t.indigo,
-              padding: "15px 28px",
-              borderRadius: 999,
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              whiteSpace: "nowrap",
-              boxShadow: "0 4px 20px rgba(49,46,129,0.28)",
-            }}
-          >
-            Start free session
-            <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 17 }}>→</span>
-          </a>
-        </div>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 12.5,
-            color: t.inkSoft,
-            textAlign: "center",
-            marginTop: 12,
-            letterSpacing: "0.01em",
-          }}
-        >
-          2 sessions free · no credit card required
-        </p>
-
-      </div>
-
-      {/* Product mock — wider, more breathing room above.
-          mask-image fades the bottom third to transparent so the card's
-          shadow and hard edge dissolve into the cream background instead
-          of cutting off abruptly. */}
-      <div
-        className="mv2-cascade mv2-cascade-6 mv2-hero-mock-outer"
-        style={{
-          maxWidth: 1160,
-          margin: "48px auto 0",
-          padding: "0 32px",
-          position: "relative",
-          maskImage: "linear-gradient(to bottom, black 0%, black 62%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 62%, transparent 100%)",
-        }}
-      >
-        <ProductMockHero />
-      </div>
-    </section>
-  );
 }
 
 /* ─────────────────────────── 3.5. INTERVIEW FOCUS ─────────────────────────── */
@@ -2672,7 +1927,7 @@ export function ComparisonV2() {
               color: "rgba(254,252,248,0.4)", letterSpacing: "0.08em",
               textTransform: "uppercase" as const, display: "block", marginBottom: 16,
             }}>
-              Q3 — Behaviour question
+              Q3: Behaviour question
             </span>
 
             {/* Score row */}
@@ -3529,7 +2784,7 @@ export function FAQV2() {
     },
     {
       q: "How is this different from just asking ChatGPT?",
-      a: "ChatGPT agrees with you. HireStepX disagrees — constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions.",
+      a: "ChatGPT agrees with you. HireStepX disagrees, constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions.",
     },
   ];
   return (
@@ -3653,15 +2908,18 @@ export function FAQV2() {
 
 /* ─────────────────────────── STRUCTURED DATA (JSON-LD) ─────────────────────────── */
 function StructuredData() {
+  /* Mirrors FAQV2's `qs` array verbatim (below in this file) — keep the two
+     in sync so the structured data matches the visible accordion exactly. */
   const faqs = [
-    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no account needed, no card required. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions that renews monthly. Cancel any time before the next cycle."],
+    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions that renews monthly. Cancel the Sprint Pack any time before the next cycle."],
     ["Will the AI understand my Indian English accent?", "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
-    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, renews monthly, cancel any time before the next cycle. No hidden charges either way."],
+    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, renews monthly, cancel any time before the next cycle. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
     ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
-    ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after."],
+    ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones."],
     ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],
-    ["What if I cancel? Do I lose my reports?", "Your reports are yours for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning."],
+    ["What if I cancel? Do I lose my reports?", "Your reports are yours. We keep them for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning."],
     ["Do you share my data with my employer or target company?", "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant."],
+    ["How is this different from just asking ChatGPT?", "ChatGPT agrees with you. HireStepX disagrees, constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions."],
   ];
   const org = {
     "@context": "https://schema.org",
@@ -3769,7 +3027,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI INTERVIEW VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage — then you're ready for the bar-raiser.</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage, then you're ready for the bar-raiser.</div>
           <div style={{ fontSize: 7.5, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: t.inkSoft }}>
             Calibrated to Senior · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
           </div>
@@ -3801,7 +3059,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
         <div style={{ fontSize: 8, fontWeight: 700, color: t.copper, letterSpacing: 0.4, marginBottom: 6 }}>✦ MODEL ANSWER EXCERPT</div>
         <div style={{ fontSize: 9, color: "#4A4540", lineHeight: 1.6, background: "#F3EFE5", borderRadius: 5, padding: "8px 10px", borderLeft: `2px solid ${t.copper}` }}>
           {"Instead of 'we reduced latency,' say: "}
-          <span style={{ fontStyle: "italic", color: t.coal }}>{"I led the caching rewrite — my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
+          <span style={{ fontStyle: "italic", color: t.coal }}>{"I led the caching rewrite: my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
         </div>
       </div>
     </div>
@@ -3861,7 +3119,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 8.5, fontWeight: 700, color: t.copper, letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: t.coal, marginTop: 4, lineHeight: 1.35, fontFamily: rptF.serif }}>
-            Landed ₹48L — ₹10L above opening. 71% gap closure in 3 rounds.
+            Landed ₹48L, ₹10L above opening. 71% gap closure in 3 rounds.
           </div>
           <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 8.5, color: t.inkSoft }}>How far you got in the negotiation</span>
@@ -3935,9 +3193,9 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI CAMPUS VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we" — distinguish your individual contribution.</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we": distinguish your individual contribution.</div>
           <div style={{ fontSize: 8, background: t.error100, padding: "4px 8px", borderRadius: 3, color: t.error, fontWeight: 600 }}>
-            ⚠ RED FLAG: "we built the backend" — vague project role
+            ⚠ RED FLAG: "we built the backend" (vague project role)
           </div>
         </div>
       </div>

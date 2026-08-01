@@ -185,7 +185,7 @@ export default async function OpengraphImage({
               display: "flex",
             }}
           >
-            2 sessions free →
+            2 sessions free {'>'}
           </div>
         </div>
       </div>

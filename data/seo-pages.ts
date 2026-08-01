@@ -9531,6 +9531,241 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 4 (45 min): behavioural and hiring-manager round.",
     ],
   },
+  {
+    slug: "cred-product-designer-interview-questions",
+    searchPhrase: "CRED product designer interview questions",
+    company: "cred",
+    roleFamily: "design",
+    focus: "case-study",
+    intro:
+      "CRED's product-design bar is famous for craft. Interviews lean hard on your portfolio: expect to walk through two or three projects in depth, defend every decision, and show that you can hold a premium, distinctive visual identity without breaking usability or accessibility. The teams that grill you care as much about how you think and communicate as about the pixels.",
+    framework: {
+      name: "Craft + Rationale",
+      summary:
+        "For each portfolio project, structure the story as problem, constraints, options you weighed, the decision and why, and how you knew it worked. Pair visible craft with a clear rationale so a distinctive aesthetic never reads as decoration.",
+    },
+    metaKeywords: [
+      "CRED product designer interview",
+      "CRED design interview questions",
+      "CRED portfolio review",
+      "product design interview India",
+    ],
+    sitemapPriority: 0.6,
+    recruitmentSteps: [
+      "Portfolio submission and shortlist.",
+      "Portfolio deep-dive with design team.",
+      "Design craft / take-home or exercise.",
+      "Cross-functional and culture rounds.",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): portfolio walkthrough of two or three projects.",
+      "Round 2 (60 min): design exercise or take-home critique.",
+      "Round 3 (45 min): craft, visual, and interaction-detail discussion.",
+      "Round 4 (45 min): cross-functional and values round.",
+    ],
+    faqExtra: [
+      {
+        q: "How many projects should I prepare to present?",
+        a: "Prepare two or three you can go deep on. CRED interviewers dig into decisions and trade-offs, so depth beats a broad reel of screens.",
+      },
+      {
+        q: "Does CRED care about visual polish or product thinking more?",
+        a: "Both. The distinctive visual craft is what CRED is known for, but every interviewer also probes the reasoning and usability behind it. Show you can hold both.",
+      },
+      {
+        q: "Should I address accessibility?",
+        a: "Yes. A common probe is how you keep a bold, brand-led aesthetic accessible. Being ready to talk contrast, tap targets, and legibility signals maturity.",
+      },
+    ],
+  },
+  {
+    slug: "flipkart-product-designer-interview-questions",
+    searchPhrase: "Flipkart product designer interview questions",
+    company: "flipkart",
+    roleFamily: "design",
+    focus: "case-study",
+    intro:
+      "Flipkart designs for the whole of India, including first-time online shoppers in tier-2 and tier-3 towns on slow connections. Its product-design interviews reflect that: expect a whiteboard product-design exercise, an app critique, and portfolio deep-dives, all pushing on India-first, mobile-first, low-trust, low-connectivity thinking and on how you design consistently at scale.",
+    framework: {
+      name: "India-First Product Design",
+      summary:
+        "Anchor every design decision in a real user, context, and constraint (device, connection, literacy, trust). State the goal, sketch the flow, call out edge and error cases, and name how you'd validate it.",
+    },
+    metaKeywords: [
+      "Flipkart product designer interview",
+      "Flipkart UX designer interview questions",
+      "Flipkart design exercise",
+      "mobile-first design interview India",
+    ],
+    sitemapPriority: 0.6,
+    recruitmentSteps: [
+      "Portfolio screen and shortlist.",
+      "Whiteboard / product-design exercise.",
+      "App critique and craft round.",
+      "Hiring-manager and cross-functional rounds.",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): portfolio deep-dive.",
+      "Round 2 (60 min): whiteboard product-design exercise.",
+      "Round 3 (45 min): app critique and interaction craft.",
+      "Round 4 (45 min): hiring-manager and collaboration round.",
+    ],
+    faqExtra: [
+      {
+        q: "What kind of design exercise does Flipkart give?",
+        a: "Commonly an open product-design prompt (design or redesign a flow) solved live on a whiteboard or in a doc. Interviewers watch how you scope, sketch, and reason about edge cases, not just the final screen.",
+      },
+      {
+        q: "How important is designing for tier-2 and tier-3 users?",
+        a: "Very. Flipkart's growth is in non-metro India, so first-time-shopper, low-connectivity, low-trust scenarios come up often. Show you can design forgiving, clear, lightweight flows.",
+      },
+      {
+        q: "Do they ask about design systems?",
+        a: "Yes, at Flipkart's scale consistency across many teams matters. Be ready to discuss componentisation, governance, and where a design system helps versus constrains.",
+      },
+    ],
+  },
+  {
+    slug: "swiggy-product-designer-interview-questions",
+    searchPhrase: "Swiggy product designer interview questions",
+    company: "swiggy",
+    roleFamily: "design",
+    focus: "case-study",
+    intro:
+      "Swiggy's product designers work on live, time-sensitive experiences: ordering, discovery, and real-time delivery tracking. Interviews test lifecycle-aware information design (what a user needs at each stage), decision-support for a hungry, undecided user, and how you collaborate when product or engineering contests a call. Portfolio depth and craft round it out.",
+    framework: {
+      name: "Lifecycle Information Design",
+      summary:
+        "Map the user's journey stage by stage and design the right information and affordances for each moment. Reduce choice overload up front, and reduce anxiety once an order is live.",
+    },
+    metaKeywords: [
+      "Swiggy product designer interview",
+      "Swiggy UX designer interview questions",
+      "Swiggy design exercise",
+      "food delivery UX interview India",
+    ],
+    sitemapPriority: 0.6,
+    recruitmentSteps: [
+      "Portfolio screen and shortlist.",
+      "Product-design exercise round.",
+      "Craft and interaction round.",
+      "Cross-functional and hiring-manager rounds.",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): portfolio walkthrough.",
+      "Round 2 (60 min): product-design exercise (discovery, ordering, or tracking).",
+      "Round 3 (45 min): interaction craft and visual detail.",
+      "Round 4 (45 min): cross-functional collaboration round.",
+    ],
+    faqExtra: [
+      {
+        q: "What product areas come up in Swiggy design interviews?",
+        a: "Discovery (helping an undecided user choose), the ordering flow, and live order tracking are common. Each rewards designing for the user's state at that moment.",
+      },
+      {
+        q: "How do they test collaboration?",
+        a: "Often by asking about a time a design decision was contested by product or engineering and how you resolved it. Show you argue with data and empathy without digging in.",
+      },
+      {
+        q: "Is speed of decision important in the design itself?",
+        a: "Yes. Swiggy users are high-intent and often hungry, so reducing choice overload and speeding decisions without overwhelming them is a frequent theme.",
+      },
+    ],
+  },
+  {
+    slug: "razorpay-product-designer-interview-questions",
+    searchPhrase: "Razorpay product designer interview questions",
+    company: "razorpay",
+    roleFamily: "design",
+    focus: "case-study",
+    intro:
+      "Razorpay designs B2B fintech products for merchants, from solo sellers to large businesses. Its product-design interviews probe onboarding that gets a merchant to their first payment fast, dense dashboard design (payments, refunds, settlements, disputes) made legible to non-technical users, and error and edge-case design in flows where failures affect trust and money.",
+    framework: {
+      name: "Trust-Critical B2B Design",
+      summary:
+        "Design for time-to-value and clarity. Reduce onboarding friction (including unavoidable KYC), make dense financial data scannable through hierarchy and progressive disclosure, and treat error states as first-class, since money is on the line.",
+    },
+    metaKeywords: [
+      "Razorpay product designer interview",
+      "Razorpay UX designer interview questions",
+      "fintech design interview India",
+      "B2B dashboard design interview",
+    ],
+    sitemapPriority: 0.6,
+    recruitmentSteps: [
+      "Portfolio screen and shortlist.",
+      "Product-design exercise round.",
+      "Craft and systems round.",
+      "Cross-functional and hiring-manager rounds.",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): portfolio deep-dive.",
+      "Round 2 (60 min): B2B product-design exercise (onboarding or dashboard).",
+      "Round 3 (45 min): information design and interaction craft.",
+      "Round 4 (45 min): cross-functional and hiring-manager round.",
+    ],
+    faqExtra: [
+      {
+        q: "How is designing for fintech different in these interviews?",
+        a: "The stakes are higher: errors involve money and trust, and flows carry compliance steps like KYC. Interviewers want to see you design clear recovery, reassurance, and edge cases, not just the happy path.",
+      },
+      {
+        q: "Do they test dashboard and data-heavy design?",
+        a: "Yes. A common prompt is making a dense merchant dashboard understandable at a glance. Be ready to talk hierarchy, progressive disclosure, and clarity for non-technical users.",
+      },
+      {
+        q: "How much does onboarding come up?",
+        a: "Frequently. Getting a small business from sign-up to first payment fast, while handling compliance friction, is a core Razorpay design problem.",
+      },
+    ],
+  },
+  {
+    slug: "phonepe-product-designer-interview-questions",
+    searchPhrase: "PhonePe product designer interview questions",
+    company: "phonepe",
+    roleFamily: "design",
+    focus: "case-study",
+    intro:
+      "PhonePe designs payments for the next billion users: first-time smartphone owners, regional-language speakers, and people nervous about digital money. Its product-design interviews probe inclusive, vernacular, low-literacy-friendly design, the friction-versus-safety trade-off specific to UPI, and how you tie design work to measured outcomes. Portfolio depth and honest reflection matter.",
+    framework: {
+      name: "Inclusive Payments Design",
+      summary:
+        "Design for the least-confident user first: clear language, forgiving flows, and trust-building at every step. On UPI specifically, cut steps without weakening the confirmation and safety the user relies on.",
+    },
+    metaKeywords: [
+      "PhonePe product designer interview",
+      "PhonePe UX designer interview questions",
+      "UPI payments design interview",
+      "inclusive design interview India",
+    ],
+    sitemapPriority: 0.6,
+    recruitmentSteps: [
+      "Portfolio screen and shortlist.",
+      "Product-design exercise round.",
+      "Craft and critique round.",
+      "Cross-functional and hiring-manager rounds.",
+    ],
+    interviewRounds: [
+      "Round 1 (45-60 min): portfolio walkthrough with outcomes.",
+      "Round 2 (60 min): payments product-design exercise.",
+      "Round 3 (45 min): UPI-flow critique and interaction craft.",
+      "Round 4 (45 min): cross-functional and hiring-manager round.",
+    ],
+    faqExtra: [
+      {
+        q: "What makes PhonePe design interviews distinctive?",
+        a: "The focus on next-billion users: first-time smartphone owners, regional languages, and low digital-money confidence. Designing inclusively and building trust are recurring themes.",
+      },
+      {
+        q: "How do they probe UPI design?",
+        a: "Often through a critique: where is the friction in a UPI flow, and how would you reduce steps without reducing safety. The trade-off between fewer taps and clear confirmation is the crux.",
+      },
+      {
+        q: "Do they expect metrics in portfolio stories?",
+        a: "Yes. Be ready to tie design work to how you measured success and to reflect honestly on what you'd do differently with hindsight.",
+      },
+    ],
+  },
 ];
 
 /** Last significant content update, bump whenever SEO_PAGES entries are added

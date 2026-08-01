@@ -19,12 +19,13 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { BLOG_META } from "@/blog-meta";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { humanizeSalarySource } from "../../../../data/_salary-source-helpers";
 
 /* /salary/[company] — company-specific salary guide pages.
  *
  * All salary figures are read from COMPANY_SALARY_OVERRIDES which
- * cites its sources (AmbitionBox, Glassdoor, Levels.fyi, DRHP filings)
- * per entry. No figures are invented here.
+ * cites its source (predominantly AmbitionBox, with Glassdoor as a
+ * secondary cross-check) per entry. No figures are invented here.
  */
 
 /* ─── Salary page groupings for cross-linking ────────────────────────────── */
@@ -145,7 +146,8 @@ function buildRoleSections(
           equityMin: band.equityMin,
           equityMax: band.equityMax,
           notes: band.notes,
-          source: band.source,
+          source: humanizeSalarySource(band.source, band.dataConfidenceTier),
+          dataConfidenceTier: band.dataConfidenceTier,
           lastVerified: band.lastVerified,
         } satisfies SalaryBandRow,
       ];
@@ -215,12 +217,8 @@ export default async function SalaryCompanySlugPage({
     "@type": "Article",
     headline: `${label} Salary Guide India 2026`,
     description: page.metaDescription,
-    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    publisher: {
-      "@type": "Organization",
-      name: "HireStepX",
-      logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
-    },
+    author: { "@id": "https://hirestepx.com/#organization" },
+    publisher: { "@id": "https://hirestepx.com/#organization" },
     datePublished: "2026-06-01",
     dateModified: `${CALIBRATION_DATE}-01`,
     inLanguage: "en-IN",

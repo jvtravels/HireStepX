@@ -715,7 +715,6 @@ export default function Signup() {
                 gap: 12,
                 boxShadow: shadows.card,
                 opacity: googleInFlight || loading ? 0.7 : 1,
-                whiteSpace: "nowrap",
               }}
             >
               <GoogleIcon />

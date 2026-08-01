@@ -37,7 +37,7 @@ export async function generateMetadata({
   const page = getCityPageBySlug(slug);
   if (!page) return { title: "Not Found" };
 
-  const title = `Interview Preparation in ${page.displayName} 2026 — AI Mock Interviews | HireStepX`;
+  const title = `Interview Preparation in ${page.displayName} 2026: AI Mock Interviews | HireStepX`;
   const description = `Prepare for interviews at companies hiring in ${page.city}. Role- and company-specific AI mock interviews, scored feedback, 2 free sessions.`;
 
   return {
@@ -89,7 +89,7 @@ export default async function CityInterviewPrepPage({
     },
     {
       q: `How should I prepare differently for a ${page.city} interview versus another Indian city?`,
-      a: `The company mix matters more than the city itself. ${page.city}'s hiring is concentrated in specific sectors (see above), so target your prep at the actual employer and role rather than generic "city interview tips" — the format, rubric, and difficulty are set by the company, not the location.`,
+      a: `The company mix matters more than the city itself. ${page.city}'s hiring is concentrated in specific sectors (see above), so target your prep at the actual employer and role rather than generic "city interview tips": the format, rubric, and difficulty are set by the company, not the location.`,
     },
     {
       q: `Can I practice interviews for ${page.city} companies with HireStepX?`,
@@ -168,7 +168,7 @@ export default async function CityInterviewPrepPage({
               Companies hiring in {page.city}
             </h2>
             <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 20px", lineHeight: 1.6 }}>
-              Practice the exact interview format for each company below — question banks are built per company and role, not generic.
+              Practice the exact interview format for each company below: question banks are built per company and role, not generic.
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
               {companyLinks.map((c) => (

@@ -62,5 +62,5 @@ export function classifyDrift(d: DriftInput): { rec: Recommendation; why: string
   if (tier === "bfsi-global" && NON_ENTRY_LEVELS.has(lvl)) {
     return { rec: "keep-curator", why: "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator." };
   }
-  return { rec: "manual-review", why: "No clear heuristic match — eyeball the cell." };
+  return { rec: "manual-review", why: "No clear heuristic match, eyeball the cell." };
 }

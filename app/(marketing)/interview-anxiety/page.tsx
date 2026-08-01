@@ -26,7 +26,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "How to Overcome Interview Anxiety — Practice-Based Tips | HireStepX",
+  title: "How to Overcome Interview Anxiety: Practice-Based Tips | HireStepX",
   description:
     "Interview nerves come from facing the unknown too few times. Practical techniques to calm interview anxiety, plus how repeated AI mock interview practice builds real confidence before the day that counts.",
   keywords: [
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/interview-anxiety" },
   openGraph: {
     type: "article",
-    title: "How to Overcome Interview Anxiety — Practice-Based Tips | HireStepX",
+    title: "How to Overcome Interview Anxiety: Practice-Based Tips | HireStepX",
     description:
       "Why interview anxiety happens, techniques that actually reduce it, and how repeated AI mock interview practice builds real confidence before the real one.",
     url: "https://hirestepx.com/interview-anxiety",
@@ -63,7 +63,7 @@ const serif = { fontFamily: fonts.serif };
 const CAUSES = [
   {
     title: "The format is unfamiliar",
-    desc: "Most candidates last spoke under interview conditions months or years ago. Your brain treats an unfamiliar, evaluative situation as a threat — that's the biology behind the racing heart, not a character flaw.",
+    desc: "Most candidates last spoke under interview conditions months or years ago. Your brain treats an unfamiliar, evaluative situation as a threat: that's the biology behind the racing heart, not a character flaw.",
   },
   {
     title: "The stakes feel binary",
@@ -78,7 +78,7 @@ const CAUSES = [
 const TECHNIQUES = [
   {
     title: "Rehearse out loud, not in your head",
-    desc: "Silently reviewing your STAR stories feels like preparation but doesn't train the actual skill: speaking fluently under mild pressure. Say your answers out loud, every time — to a mirror, a friend, or an AI interviewer.",
+    desc: "Silently reviewing your STAR stories feels like preparation but doesn't train the actual skill: speaking fluently under mild pressure. Say your answers out loud every time, to a mirror, a friend, or an AI interviewer.",
   },
   {
     title: "Slow your breathing before you start",
@@ -90,11 +90,11 @@ const TECHNIQUES = [
   },
   {
     title: "Normalize the follow-up question",
-    desc: "A follow-up isn't a sign you got it wrong — interviewers probe good answers too. Expecting it in advance stops it from reading as a warning sign mid-interview.",
+    desc: "A follow-up isn't a sign you got it wrong: interviewers probe good answers too. Expecting it in advance stops it from reading as a warning sign mid-interview.",
   },
   {
     title: "Practice at the volume that removes surprise",
-    desc: "Anxiety fades with exposure, not willpower. Ten real practice rounds against unpredictable questions do more for calm than any single relaxation technique, because uncertainty — the actual driver — goes down with repetition.",
+    desc: "Anxiety fades with exposure, not willpower. Ten real practice rounds against unpredictable questions do more for calm than any single relaxation technique, because uncertainty (the actual driver) goes down with repetition.",
   },
 ];
 
@@ -111,7 +111,7 @@ export default async function InterviewAnxietyPage() {
         name: "Why do I get so nervous before interviews?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Interview anxiety is your nervous system responding to three things at once: an unfamiliar format, high perceived stakes, and genuine uncertainty about what's coming next. It is a normal physiological response, not a sign you are unprepared or unsuited for the role. The uncertainty component is the one most within your control — it drops sharply with repeated, realistic practice.",
+          text: "Interview anxiety is your nervous system responding to three things at once: an unfamiliar format, high perceived stakes, and genuine uncertainty about what's coming next. It is a normal physiological response, not a sign you are unprepared or unsuited for the role. The uncertainty component is the one most within your control: it drops sharply with repeated, realistic practice.",
         },
       },
       {
@@ -127,7 +127,7 @@ export default async function InterviewAnxietyPage() {
         name: "Does mock interview practice actually reduce anxiety?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — anxiety driven by uncertainty fades with exposure. Practicing out loud against realistic, unpredictable questions repeatedly is what actually lowers the uncertainty component of interview anxiety, unlike silently reviewing notes. AI mock interviews let you get that repetition — including live follow-up questions — without scheduling a person each time, at 2am the night before if needed.",
+          text: "Yes: anxiety driven by uncertainty fades with exposure. Practicing out loud against realistic, unpredictable questions repeatedly is what actually lowers the uncertainty component of interview anxiety, unlike silently reviewing notes. AI mock interviews let you get that repetition, including live follow-up questions, without scheduling a person each time, at 2am the night before if needed.",
         },
       },
       {
@@ -135,7 +135,7 @@ export default async function InterviewAnxietyPage() {
         name: "Is it normal to blank out during an interview?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, and it happens most often on questions you haven't said out loud before. It's rarely about not knowing the answer — it's the gap between having an idea and having rehearsed saying it under pressure. Practicing your key stories out loud in advance, several times, closes that gap.",
+          text: "Yes, and it happens most often on questions you haven't said out loud before. It's rarely about not knowing the answer; it's the gap between having an idea and having rehearsed saying it under pressure. Practicing your key stories out loud in advance, several times, closes that gap.",
         },
       },
       {
@@ -143,7 +143,7 @@ export default async function InterviewAnxietyPage() {
         name: "How many mock interviews should I do before a real one?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "There's no fixed number, but the anxiety-reduction effect compounds with repetition — most candidates notice a real drop in nervousness by their third or fourth full practice session, particularly once they've been asked unexpected follow-up questions and recovered from them at least once.",
+          text: "There's no fixed number, but the anxiety-reduction effect compounds with repetition: most candidates notice a real drop in nervousness by their third or fourth full practice session, particularly once they've been asked unexpected follow-up questions and recovered from them at least once.",
         },
       },
     ],
@@ -190,7 +190,7 @@ export default async function InterviewAnxietyPage() {
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free: 2 sessions
             </Link>
             <Link
               href="/ai-mock-interview"
@@ -207,7 +207,7 @@ export default async function InterviewAnxietyPage() {
             Why interview anxiety happens
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 32 }}>
-            Interview anxiety isn't a sign you're underprepared on paper — it's your nervous system reacting to an unfamiliar, high-stakes, uncertain situation. Understanding the three drivers makes them easier to address individually.
+            Interview anxiety isn't a sign you're underprepared on paper; it's your nervous system reacting to an unfamiliar, high-stakes, uncertain situation. Understanding the three drivers makes them easier to address individually.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {CAUSES.map((c) => (
@@ -226,7 +226,7 @@ export default async function InterviewAnxietyPage() {
               Techniques that actually reduce interview anxiety
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              In order of impact — the last one does the most, but it's also the one candidates skip.
+              In order of impact: the last one does the most, but it's also the one candidates skip.
             </p>
             <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 24 }}>
               {TECHNIQUES.map((item, i) => (
@@ -250,10 +250,10 @@ export default async function InterviewAnxietyPage() {
             Why practice beats willpower
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            Breathing exercises and reframing help in the moment, but the underlying driver — not knowing what's coming — only goes down with repetition. Every mock interview you do out loud, especially one with unpredictable follow-up questions, is a rehearsal for the uncertainty itself, not just the content.
+            Breathing exercises and reframing help in the moment, but the underlying driver (not knowing what's coming) only goes down with repetition. Every mock interview you do out loud, especially one with unpredictable follow-up questions, is a rehearsal for the uncertainty itself, not just the content.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX's AI interviewer asks company-specific questions by voice and follows up in real time, the way a real interviewer would — so you can get that repetition at 2am before tomorrow's interview, without scheduling a person or feeling judged for stumbling. Each session ends with a scored report so you can see the anxiety-driving gaps (long pauses, filler words, incomplete answers) shrink session over session.
+            HireStepX's AI interviewer asks company-specific questions by voice and follows up in real time, the way a real interviewer would, so you can get that repetition at 2am before tomorrow's interview, without scheduling a person or feeling judged for stumbling. Each session ends with a scored report so you can see the anxiety-driving gaps (long pauses, filler words, incomplete answers) shrink session over session.
           </p>
         </section>
 
@@ -261,7 +261,7 @@ export default async function InterviewAnxietyPage() {
         <section aria-labelledby="ia-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="ia-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              Interview anxiety — common questions
+              Interview anxiety: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -280,13 +280,13 @@ export default async function InterviewAnxietyPage() {
             Build confidence with real practice
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete AI mock interview sessions, free. No credit card, no scheduling — practice the moment the nerves show up.
+            2 complete AI mock interview sessions, free. No credit card, no scheduling: practice the moment the nerves show up.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free: 2 sessions included
           </Link>
         </section>
 
@@ -305,7 +305,7 @@ export default async function InterviewAnxietyPage() {
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

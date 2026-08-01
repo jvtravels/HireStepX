@@ -221,7 +221,7 @@ export const AUTH_STYLES = `
 
   /* Mobile (≤640px) — single column, shrunk paddings, lighter chrome */
   @media (max-width: 640px) {
-    .hsx-login-topbar { padding: 20px 20px !important; gap: 12px !important; }
+    .hsx-login-topbar { padding: 16px 18px !important; gap: 12px !important; }
     /* Vertically center the content block within main. The form +
        hero pair is shorter than the viewport, so this distributes
        empty space evenly above and below for a balanced layout. */

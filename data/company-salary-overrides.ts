@@ -78,7 +78,7 @@ export function maybePreferImportedOverSeed(
   return flip ? tagImported(imported) : null;
 }
 
-/** Subset of SalaryEntry — the fields a company-band override needs. */
+/** Subset of SalaryEntry, the fields a company-band override needs. */
 export interface CompanyBandOverride {
   /** Total CTC range in LPA, post-adjustment. The lookup uses these
    *  as authoritative; ignore tier band for this company. */
@@ -126,7 +126,7 @@ export interface CompanyBandOverride {
    *  negotiation prompt. Unset for "verified" entries. */
   dataConfidenceTier?: "high" | "medium" | "low";
 
-  /* ─── Optional company-specific overrides (Phase C — robustness work) ───
+  /* ─── Optional company-specific overrides (Phase C, robustness work) ───
    *
    * Each field below lets a curator encode a company-specific datum that
    * differs from the tier default. Leave undefined to fall through to the
@@ -271,7 +271,7 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
   ltimindtree: { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "Post-merger LTIMindtree standard policy" },
 
   /* ─── FAANG / Big Tech India (60-day notice norm) ─── */
-  google: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Google India HR policy — standard FAANG India notice" },
+  google: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Google India HR policy, standard FAANG India notice" },
   microsoft: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Microsoft India offer-letter standard" },
   amazon: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Amazon India SDE offer-letter standard" },
   meta: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Meta India hiring policy" },
@@ -291,7 +291,7 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
     // Updated 2026-05-08: candidate must verify ESOP buyback before
     // assuming liquidity. Razorpay has run buybacks historically but
     // each round is contingent on board approval — not guaranteed.
-    recentBuybackNote: "Razorpay has done multiple ESOP buybacks since 2018, BUT candidate should ASK HR explicitly: 'When was the last buyback round, what was the strike-vs-FMV ratio, and is another planned in the next 12 months?' Do NOT assume liquidity from past behavior — each round is board-discretion.",
+    recentBuybackNote: "Razorpay has done multiple ESOP buybacks since 2018, BUT candidate should ASK HR explicitly: 'When was the last buyback round, what was the strike-vs-FMV ratio, and is another planned in the next 12 months?' Do NOT assume liquidity from past behavior, each round is board-discretion.",
     metaSource: "Razorpay HR policy + curated research 2026-05-08",
   },
   cred: {
@@ -300,7 +300,7 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
     // CRED has run buybacks but liquidity less predictable than Razorpay's.
     // Curator note (2026-05-08): "Likely, but liquidity uncertain" —
     // candidate must ask explicitly about last buyback round + FMV.
-    recentBuybackNote: "CRED has done multiple ESOP buybacks historically, BUT liquidity is uncertain — less predictable cadence than Razorpay/PhonePe. Candidate should ask HR: 'What is the last fair market valuation used for ESOP pricing? Has there been any buyback or secondary sale window in the last 12 months?'",
+    recentBuybackNote: "CRED has done multiple ESOP buybacks historically, BUT liquidity is uncertain, less predictable cadence than Razorpay/PhonePe. Candidate should ask HR: 'What is the last fair market valuation used for ESOP pricing? Has there been any buyback or secondary sale window in the last 12 months?'",
     metaSource: "CRED HR policy + curated research 2026-05-08",
   },
   zerodha: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zerodha HR policy" },
@@ -315,36 +315,36 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
     metaSource: "PhonePe HR policy + curated research 2026-05-08 (₹1,150 Cr buyback 2022, India domicile shift 2024)",
   },
   paytm: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Paytm HR policy" },
-  flipkart: { noticePeriodDays: 90, hasDeputation: false, metaSource: "Flipkart HR policy — Walmart-owned, 60-90d notice tiered by level (60d junior/mid, 90d senior+); 90d is the company-wide quote" },
-  swiggy: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Swiggy HR policy — post-IPO (Nov 2024), level-tiered: 30-60d junior/mid, 60-90d senior+; 60d is the company-wide quote" },
+  flipkart: { noticePeriodDays: 90, hasDeputation: false, metaSource: "Flipkart HR policy, Walmart-owned, 60-90d notice tiered by level (60d junior/mid, 90d senior+); 90d is the company-wide quote" },
+  swiggy: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Swiggy HR policy, post-IPO (Nov 2024), level-tiered: 30-60d junior/mid, 60-90d senior+; 60d is the company-wide quote" },
   zomato: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zomato (Eternal) HR policy post-listing" },
   meesho: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Meesho HR policy" },
   myntra: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Myntra HR policy (Flipkart group)" },
-  dream11: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Dream Sports HR policy — Indian unicorn norm" },
+  dream11: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Dream Sports HR policy, Indian unicorn norm" },
   nykaa: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Nykaa HR policy post-listing" },
   unacademy: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Unacademy HR policy" },
   byjus: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Byju's HR policy (post-restructuring)" },
 
   /* ─── Indian Conglomerates / FMCG / BFSI ─── */
-  godrej: { noticePeriodDays: 90, hasDeputation: false, metaSource: "Godrej group HR policy — conglomerate norm" },
+  godrej: { noticePeriodDays: 90, hasDeputation: false, metaSource: "Godrej group HR policy, conglomerate norm" },
   // "tata steel" removed: missing from COMPANY_TIER_MAP — add tier
   // mapping first, then restore this entry. CI gate enforces this.
   "tata motors": { noticePeriodDays: 60, hasDeputation: false, metaSource: "Tata Motors GET / Lateral standard policy" },
   "hdfc bank": { noticePeriodDays: 60, hasDeputation: false, metaSource: "HDFC Bank standard officer/manager policy" },
 
   /* ─── Government / PSU (long bonds, fixed notice) ─── */
-  ongc: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "ONGC service bond — 3yr typical, ₹5L+ penalty" },
-  isro: { noticePeriodDays: 90, bondPenaltyLpa: 8, hasDeputation: false, metaSource: "ISRO service bond — 5yr scientist contract" },
+  ongc: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "ONGC service bond, 3yr typical, ₹5L+ penalty" },
+  isro: { noticePeriodDays: 90, bondPenaltyLpa: 8, hasDeputation: false, metaSource: "ISRO service bond, 5yr scientist contract" },
   drdo: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "DRDO service bond" },
-  bhel: { noticePeriodDays: 90, bondPenaltyLpa: 4, hasDeputation: false, metaSource: "BHEL ET bond — 3yr typical" },
-  sbi: { noticePeriodDays: 90, bondPenaltyLpa: 2, hasDeputation: false, metaSource: "SBI PO bond — 2yr typical" },
+  bhel: { noticePeriodDays: 90, bondPenaltyLpa: 4, hasDeputation: false, metaSource: "BHEL ET bond, 3yr typical" },
+  sbi: { noticePeriodDays: 90, bondPenaltyLpa: 2, hasDeputation: false, metaSource: "SBI PO bond, 2yr typical" },
 
   /* ─── Global Investment Banks ─── */
-  goldman: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Goldman Sachs India standard — 60-day notice, no bond, no RSU" },
-  jpmc: { noticePeriodDays: 60, hasDeputation: false, metaSource: "JPMorgan Chase India standard — 60-day notice, no bond, no RSU" },
+  goldman: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Goldman Sachs India standard, 60-day notice, no bond, no RSU" },
+  jpmc: { noticePeriodDays: 60, hasDeputation: false, metaSource: "JPMorgan Chase India standard, 60-day notice, no bond, no RSU" },
 
   /* ─── Premium Big-Tech GCC ─── */
-  databricks: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Databricks India HR policy — premium GCC standard" },
+  databricks: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Databricks India HR policy, premium GCC standard" },
 };
 
 /** company key → role key → exp level → override band. Company key is
@@ -353,7 +353,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   string,
   Partial<Record<string, Partial<Record<ExperienceLevel, CompanyBandOverride>>>>
 > = {
-  /* ─── Indian Unicorns — Fintech ───────────────────────────────
+  /* ─── Indian Unicorns, Fintech ───────────────────────────────
    *
    * Razorpay: data refreshed from human-curated research worksheet
    * 2026-05-08. Total CTC ranges widened to reflect actual offer
@@ -361,31 +361,31 @@ export const COMPANY_SALARY_OVERRIDES: Record<
    * carries the candidate's per-level negotiation focus in `notes`. */
   razorpay: {
     "software-engineer": {
-      entry: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.4, baseMax: 29.6, equityMin: 2.0, equityMax: 5.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "Razorpay SE-1 / Junior. Negotiation focus: fixed + joining bonus. ESOP liquidity must be verified — do not assume." },
-      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay SE-2 / SE-3 mid level. Negotiation focus: fixed + ESOP clarity (strike, vesting, last buyback)." },
+      entry: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.4, baseMax: 29.6, equityMin: 2.0, equityMax: 5.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21, Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "Razorpay SE-1 / Junior. Negotiation focus: fixed + joining bonus. ESOP liquidity must be verified, do not assume." },
+      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay SE-2 / SE-3 mid level. Negotiation focus: fixed + ESOP clarity (strike, vesting, last buyback)." },
       senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 (post Apr-2026 DRHP filing)", lastVerified: "2026-05-08", notes: "Razorpay Senior. Negotiation focus: fixed + ESOP + joining bonus. Top of range hit only for staff/principal-tier hires." },
-      lead: { totalMin: 60, totalMax: 145, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Razorpay Staff/Principal SE band) — widened 2026-05-14 to maintain monotonicity over senior P90 (₹99.8L)", lastVerified: "2026-05-14", notes: "Razorpay Staff / Principal SE. Top of range = principal-tier IC compensation." },
+      lead: { totalMin: 60, totalMax: 145, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Razorpay Staff/Principal SE band), widened 2026-05-14 to maintain monotonicity over senior P90 (₹99.8L)", lastVerified: "2026-05-14", notes: "Razorpay Staff / Principal SE. Top of range = principal-tier IC compensation." },
     },
     "product-manager": {
-      entry: { totalMin: 14.7, totalMax: 33.6, baseMin: 10.3, baseMax: 23.5, equityMin: 2.1, equityMax: 4.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay APM / PM-1. Negotiation focus: fixed + role scope clarity." },
-      mid: { totalMin: 26.2, totalMax: 73.5, baseMin: 18.3, baseMax: 51.5, equityMin: 3.7, equityMax: 10.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay PM mid level. Negotiation focus: fixed + ESOP value (verify last buyback round)." },
-      senior: { totalMin: 47.2, totalMax: 136.5, baseMin: 33.0, baseMax: 95.6, equityMin: 6.6, equityMax: 19.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior PM / Group PM. Negotiation focus: scope + fixed + equity. Top of range = group-PM with strong fintech track record." },
+      entry: { totalMin: 14.7, totalMax: 33.6, baseMin: 10.3, baseMax: 23.5, equityMin: 2.1, equityMax: 4.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay APM / PM-1. Negotiation focus: fixed + role scope clarity." },
+      mid: { totalMin: 26.2, totalMax: 73.5, baseMin: 18.3, baseMax: 51.5, equityMin: 3.7, equityMax: 10.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay PM mid level. Negotiation focus: fixed + ESOP value (verify last buyback round)." },
+      senior: { totalMin: 47.2, totalMax: 136.5, baseMin: 33.0, baseMax: 95.6, equityMin: 6.6, equityMax: 19.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior PM / Group PM. Negotiation focus: scope + fixed + equity. Top of range = group-PM with strong fintech track record." },
     },
     "ux-designer": {
-      entry: { totalMin: 15.0, totalMax: 22.0, baseMin: 11.7, baseMax: 17.2, equityMin: 1.8, equityMax: 2.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14 — Razorpay PD band recalibration (Early-Career 1-3y base ₹9-13.5L / total up to ₹20L)", lastVerified: "2026-05-14", notes: "Razorpay Junior Product Designer (≤1y). Negotiation focus: fixed salary + onboarding ramp." },
-      mid: { totalMin: 22.0, totalMax: 32.0, baseMin: 17.2, baseMax: 25.0, equityMin: 2.6, equityMax: 3.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14 — Razorpay PD Mid-Senior 3-6y base ₹17-33L / total ₹30-38L (mid 2-4y slice)", lastVerified: "2026-05-14", notes: "Razorpay Mid Product Designer (2-4y). Negotiation focus: fixed + level mapping clarity (Designer-2 vs Senior Designer)." },
-      senior: { totalMin: 30.0, totalMax: 42.0, baseMin: 23.4, baseMax: 32.8, equityMin: 3.6, equityMax: 5.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14 — Razorpay PD median total ₹37-41L (5-8y senior slice)", lastVerified: "2026-05-14", notes: "Razorpay Senior Product Designer (5-8y). 35th-pct opener lands ~₹34L. Negotiation focus: fixed + title calibration (Senior vs Lead vs Principal designer)." },
-      lead: { totalMin: 40.0, totalMax: 65.0, baseMin: 31.2, baseMax: 50.7, equityMin: 4.8, equityMax: 7.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14 — Razorpay PD Lead/Senior base ₹32-45L+ (9+y)", lastVerified: "2026-05-14", notes: "Razorpay Lead/Principal Product Designer (9+y). Top of range = principal-tier design leadership." },
+      entry: { totalMin: 15.0, totalMax: 22.0, baseMin: 11.7, baseMax: 17.2, equityMin: 1.8, equityMax: 2.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14, Razorpay PD band recalibration (Early-Career 1-3y base ₹9-13.5L / total up to ₹20L)", lastVerified: "2026-05-14", notes: "Razorpay Junior Product Designer (≤1y). Negotiation focus: fixed salary + onboarding ramp." },
+      mid: { totalMin: 22.0, totalMax: 32.0, baseMin: 17.2, baseMax: 25.0, equityMin: 2.6, equityMax: 3.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14, Razorpay PD Mid-Senior 3-6y base ₹17-33L / total ₹30-38L (mid 2-4y slice)", lastVerified: "2026-05-14", notes: "Razorpay Mid Product Designer (2-4y). Negotiation focus: fixed + level mapping clarity (Designer-2 vs Senior Designer)." },
+      senior: { totalMin: 30.0, totalMax: 42.0, baseMin: 23.4, baseMax: 32.8, equityMin: 3.6, equityMax: 5.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14, Razorpay PD median total ₹37-41L (5-8y senior slice)", lastVerified: "2026-05-14", notes: "Razorpay Senior Product Designer (5-8y). 35th-pct opener lands ~₹34L. Negotiation focus: fixed + title calibration (Senior vs Lead vs Principal designer)." },
+      lead: { totalMin: 40.0, totalMax: 65.0, baseMin: 31.2, baseMax: 50.7, equityMin: 4.8, equityMax: 7.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-14, Razorpay PD Lead/Senior base ₹32-45L+ (9+y)", lastVerified: "2026-05-14", notes: "Razorpay Lead/Principal Product Designer (9+y). Top of range = principal-tier design leadership." },
     },
     "data-analyst": {
-      entry: { totalMin: 6.3, totalMax: 16.8, baseMin: 5.3, baseMax: 14.1, equityMin: 0.4, equityMax: 1.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Data Analyst. Negotiation focus: fixed (variable component small at this level)." },
-      mid: { totalMin: 10.5, totalMax: 29.4, baseMin: 8.8, baseMax: 24.7, equityMin: 0.6, equityMax: 1.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Data Analyst. Negotiation focus: fixed + bonus structure (perf-linked)." },
-      senior: { totalMin: 18.9, totalMax: 52.5, baseMin: 15.9, baseMax: 44.1, equityMin: 1.1, equityMax: 3.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Data Analyst. Negotiation focus: fixed + title (Senior vs Lead vs DS conversion path)." },
+      entry: { totalMin: 6.3, totalMax: 16.8, baseMin: 5.3, baseMax: 14.1, equityMin: 0.4, equityMax: 1.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Data Analyst. Negotiation focus: fixed (variable component small at this level)." },
+      mid: { totalMin: 10.5, totalMax: 29.4, baseMin: 8.8, baseMax: 24.7, equityMin: 0.6, equityMax: 1.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Data Analyst. Negotiation focus: fixed + bonus structure (perf-linked)." },
+      senior: { totalMin: 18.9, totalMax: 52.5, baseMin: 15.9, baseMax: 44.1, equityMin: 1.1, equityMax: 3.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Data Analyst. Negotiation focus: fixed + title (Senior vs Lead vs DS conversion path)." },
     },
     "sales": {
-      entry: { totalMin: 7.4, totalMax: 18.9, baseMin: 4.6, baseMax: 11.7, equityMin: 0.4, equityMax: 1.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Sales/Growth. Bonus heavy (₹2.4-6L variable). Negotiation focus: variable structure (quota + accelerators)." },
-      mid: { totalMin: 14.7, totalMax: 42.0, baseMin: 9.1, baseMax: 26.0, equityMin: 0.9, equityMax: 2.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Sales/AE. Variable up to ₹13L. Negotiation focus: OTE + fixed split — pin down the realistic fixed component, not just OTE." },
-      senior: { totalMin: 26.2, totalMax: 84.0, baseMin: 16.3, baseMax: 52.1, equityMin: 1.6, equityMax: 5.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Sales/Strategic Account. Negotiation focus: fixed + commission terms (cap, claw-back, payout cadence)." },
+      entry: { totalMin: 7.4, totalMax: 18.9, baseMin: 4.6, baseMax: 11.7, equityMin: 0.4, equityMax: 1.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Sales/Growth. Bonus heavy (₹2.4-6L variable). Negotiation focus: variable structure (quota + accelerators)." },
+      mid: { totalMin: 14.7, totalMax: 42.0, baseMin: 9.1, baseMax: 26.0, equityMin: 0.9, equityMax: 2.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Sales/AE. Variable up to ₹13L. Negotiation focus: OTE + fixed split, pin down the realistic fixed component, not just OTE." },
+      senior: { totalMin: 26.2, totalMax: 84.0, baseMin: 16.3, baseMax: 52.1, equityMin: 1.6, equityMax: 5.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Sales/Strategic Account. Negotiation focus: fixed + commission terms (cap, claw-back, payout cadence)." },
     },
     "ml-engineer": {
       mid: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + GenAI premium 1.3-1.6x", lastVerified: "2026-05-07" },
@@ -405,13 +405,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* PhonePe — refreshed 2026-05-08 from human-curated research worksheet.
+  /* PhonePe, refreshed 2026-05-08 from human-curated research worksheet.
    * PhonePe added Risk Analyst and KAM (Key Account Manager) coverage —
    * fintech-specific roles peer companies typically don't hire for. */
   phonepe: {
     "software-engineer": {
-      entry: { totalMin: 14.5, totalMax: 42.0, baseMin: 10.7, baseMax: 31.0, equityMin: 2.0, equityMax: 5.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — AmbitionBox + Glassdoor aggregated", lastVerified: "2026-07-21", notes: "PhonePe Junior SE. Negotiation focus: fixed + joining bonus." },
-      mid: { totalMin: 19.8, totalMax: 55.0, baseMin: 14.7, baseMax: 40.7, equityMin: 2.8, equityMax: 7.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "PhonePe Mid SE-2/SE-3. Negotiation focus: fixed + ESOP clarity. Reverse-flipped to India 2022; DRHP filed via SEBI confidential route." },
+      entry: { totalMin: 14.5, totalMax: 42.0, baseMin: 10.7, baseMax: 31.0, equityMin: 2.0, equityMax: 5.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21, AmbitionBox + Glassdoor aggregated", lastVerified: "2026-07-21", notes: "PhonePe Junior SE. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 19.8, totalMax: 55.0, baseMin: 14.7, baseMax: 40.7, equityMin: 2.8, equityMax: 7.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "PhonePe Mid SE-2/SE-3. Negotiation focus: fixed + ESOP clarity. Reverse-flipped to India 2022; DRHP filed via SEBI confidential route." },
       senior: { totalMin: 38.5, totalMax: 104.5, baseMin: 28.5, baseMax: 77.3, equityMin: 5.4, equityMax: 14.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior SE. Negotiation focus: fixed + equity. Top of range = staff-tier hires." },
     },
     "product-manager": {
@@ -429,19 +429,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 11.0, totalMax: 30.8, baseMin: 9.2, baseMax: 25.9, equityMin: 0.7, equityMax: 1.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Mid Data Analyst. Negotiation focus: fixed + growth path (DS conversion)." },
       senior: { totalMin: 19.8, totalMax: 55.0, baseMin: 16.6, baseMax: 46.2, equityMin: 1.2, equityMax: 3.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior Data Analyst. Negotiation focus: fixed + title." },
     },
-    /* Risk Analyst — fintech-specific role unique to PhonePe coverage.
+    /* Risk Analyst, fintech-specific role unique to PhonePe coverage.
      * Maps to data-scientist role-key (closest existing). Use sparingly. */
     "data-scientist": {
-      entry: { totalMin: 6.6, totalMax: 19.8, baseMin: 5.3, baseMax: 15.8, equityMin: 0.1, equityMax: 0.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Junior Risk Analyst. Negotiation focus: fixed + bonus. Low equity reflects ops-track positioning." },
-      mid: { totalMin: 13.2, totalMax: 39.6, baseMin: 10.6, baseMax: 31.7, equityMin: 0.3, equityMax: 0.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Mid Risk Analyst. Negotiation focus: risk scope (fraud / credit / merchant)." },
-      senior: { totalMin: 24.2, totalMax: 71.5, baseMin: 19.4, baseMax: 57.2, equityMin: 0.5, equityMax: 1.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Senior Risk Analyst. Negotiation focus: fixed + role criticality." },
+      entry: { totalMin: 6.6, totalMax: 19.8, baseMin: 5.3, baseMax: 15.8, equityMin: 0.1, equityMax: 0.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Junior Risk Analyst. Negotiation focus: fixed + bonus. Low equity reflects ops-track positioning." },
+      mid: { totalMin: 13.2, totalMax: 39.6, baseMin: 10.6, baseMax: 31.7, equityMin: 0.3, equityMax: 0.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Mid Risk Analyst. Negotiation focus: risk scope (fraud / credit / merchant)." },
+      senior: { totalMin: 24.2, totalMax: 71.5, baseMin: 19.4, baseMax: 57.2, equityMin: 0.5, equityMax: 1.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Senior Risk Analyst. Negotiation focus: fixed + role criticality." },
     },
-    /* KAM (Key Account Manager) — variable-heavy fintech sales role.
+    /* KAM (Key Account Manager), variable-heavy fintech sales role.
      * Maps to sales role-key. */
     "sales": {
-      entry: { totalMin: 6.6, totalMax: 19.8, baseMin: 4.0, baseMax: 11.9, equityMin: 0.3, equityMax: 0.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Junior KAM. Variable up to ₹7L. Negotiation focus: fixed vs incentive split." },
-      mid: { totalMin: 13.2, totalMax: 39.6, baseMin: 7.9, baseMax: 23.8, equityMin: 0.5, equityMax: 1.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Mid KAM. Negotiation focus: OTE structure (variable can be 35%+ of CTC)." },
-      senior: { totalMin: 24.2, totalMax: 77.0, baseMin: 14.5, baseMax: 46.2, equityMin: 1.0, equityMax: 3.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Senior KAM. Negotiation focus: variable payout terms (cap, claw-back, cadence)." },
+      entry: { totalMin: 6.6, totalMax: 19.8, baseMin: 4.0, baseMax: 11.9, equityMin: 0.3, equityMax: 0.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Junior KAM. Variable up to ₹7L. Negotiation focus: fixed vs incentive split." },
+      mid: { totalMin: 13.2, totalMax: 39.6, baseMin: 7.9, baseMax: 23.8, equityMin: 0.5, equityMax: 1.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Mid KAM. Negotiation focus: OTE structure (variable can be 35%+ of CTC)." },
+      senior: { totalMin: 24.2, totalMax: 77.0, baseMin: 14.5, baseMax: 46.2, equityMin: 1.0, equityMax: 3.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Senior KAM. Negotiation focus: variable payout terms (cap, claw-back, cadence)." },
     },
     "ml-engineer": {
       mid: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 11, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (PhonePe avg ₹31.1L) + GenAI 1.2-1.4x SE premium", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
@@ -452,25 +452,25 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   flipkart: {
     "software-engineer": {
-      entry: { totalMin: 16.0, totalMax: 46.0, baseMin: 12.0, baseMax: 34.0, equityMin: 2.3, equityMax: 6.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — Flipkart SE Junior worksheet (Walmart-owned, post-listing 2026)", lastVerified: "2026-05-08", notes: "Flipkart Junior SE. Bonus ₹1.5-4.2L. Joining bonus ₹1-3L. 60-day notice. Negotiation focus: fixed + joining bonus." },
-      mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 16.6, baseMax: 46.2, equityMin: 3.2, equityMax: 8.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart SE Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid SE-2/SE-3. Bonus ₹2.7-7.5L. Joining bonus ₹2-6L. 60-90 day notice. Negotiation focus: fixed + equity." },
-      senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 32.4, baseMax: 87.9, equityMin: 6.1, equityMax: 16.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart SE Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior SE-3/SDE-4. Bonus ₹5.3-14.3L. Joining bonus ₹4-12L. 90-day notice. Negotiation focus: fixed + level calibration." },
+      entry: { totalMin: 16.0, totalMax: 46.0, baseMin: 12.0, baseMax: 34.0, equityMin: 2.3, equityMax: 6.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21, Flipkart SE Junior worksheet (Walmart-owned, post-listing 2026)", lastVerified: "2026-05-08", notes: "Flipkart Junior SE. Bonus ₹1.5-4.2L. Joining bonus ₹1-3L. 60-day notice. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 16.6, baseMax: 46.2, equityMin: 3.2, equityMax: 8.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart SE Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid SE-2/SE-3. Bonus ₹2.7-7.5L. Joining bonus ₹2-6L. 60-90 day notice. Negotiation focus: fixed + equity." },
+      senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 32.4, baseMax: 87.9, equityMin: 6.1, equityMax: 16.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart SE Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior SE-3/SDE-4. Bonus ₹5.3-14.3L. Joining bonus ₹4-12L. 90-day notice. Negotiation focus: fixed + level calibration." },
     },
     "backend-developer": {
-      entry: { totalMin: 12.5, totalMax: 35.0, baseMin: 9.2, baseMax: 25.9, equityMin: 1.8, equityMax: 4.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Backend Junior", lastVerified: "2026-05-08", notes: "Flipkart Junior Backend. 60-day notice. Negotiation focus: fixed." },
-      mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 16.6, baseMax: 46.2, equityMin: 3.2, equityMax: 8.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Backend Mid", lastVerified: "2026-05-08", notes: "Flipkart Mid Backend. Negotiation focus: systems impact." },
-      senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 32.4, baseMax: 87.9, equityMin: 6.1, equityMax: 16.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Backend Senior", lastVerified: "2026-05-08", notes: "Flipkart Senior Backend. 90-day notice. Negotiation focus: scale + ownership." },
+      entry: { totalMin: 12.5, totalMax: 35.0, baseMin: 9.2, baseMax: 25.9, equityMin: 1.8, equityMax: 4.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Backend Junior", lastVerified: "2026-05-08", notes: "Flipkart Junior Backend. 60-day notice. Negotiation focus: fixed." },
+      mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 16.6, baseMax: 46.2, equityMin: 3.2, equityMax: 8.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Backend Mid", lastVerified: "2026-05-08", notes: "Flipkart Mid Backend. Negotiation focus: systems impact." },
+      senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 32.4, baseMax: 87.9, equityMin: 6.1, equityMax: 16.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Backend Senior", lastVerified: "2026-05-08", notes: "Flipkart Senior Backend. 90-day notice. Negotiation focus: scale + ownership." },
     },
     "product-manager": {
-      entry: { totalMin: 17.5, totalMax: 40.0, baseMin: 12.2, baseMax: 28.0, equityMin: 2.4, equityMax: 5.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart PM Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior PM / APM. Bonus ₹2.8-6.4L. Joining bonus ₹1-4L. 60-day notice. Negotiation focus: scope + fixed." },
-      mid: { totalMin: 31.2, totalMax: 87.5, baseMin: 21.8, baseMax: 61.2, equityMin: 4.4, equityMax: 12.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart PM Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid PM. Bonus ₹5.0-14L. Joining bonus ₹3-8L. 60-90 day notice. Negotiation focus: scope + equity." },
-      senior: { totalMin: 56.2, totalMax: 162.5, baseMin: 39.3, baseMax: 113.8, equityMin: 7.9, equityMax: 22.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart PM Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior / Group PM. Bonus ₹9-26L. Joining bonus ₹5-18L. 90-day notice. Negotiation focus: level + org scope." },
+      entry: { totalMin: 17.5, totalMax: 40.0, baseMin: 12.2, baseMax: 28.0, equityMin: 2.4, equityMax: 5.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart PM Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior PM / APM. Bonus ₹2.8-6.4L. Joining bonus ₹1-4L. 60-day notice. Negotiation focus: scope + fixed." },
+      mid: { totalMin: 31.2, totalMax: 87.5, baseMin: 21.8, baseMax: 61.2, equityMin: 4.4, equityMax: 12.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart PM Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid PM. Bonus ₹5.0-14L. Joining bonus ₹3-8L. 60-90 day notice. Negotiation focus: scope + equity." },
+      senior: { totalMin: 56.2, totalMax: 162.5, baseMin: 39.3, baseMax: 113.8, equityMin: 7.9, equityMax: 22.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart PM Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior / Group PM. Bonus ₹9-26L. Joining bonus ₹5-18L. 90-day notice. Negotiation focus: level + org scope." },
     },
     "ux-designer": {
-      entry: { totalMin: 8.0, totalMax: 22.0, baseMin: 6.2, baseMax: 17.2, equityMin: 1.0, equityMax: 2.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09 — 6figr + Glassdoor (Flipkart Designer I, 0-2y)", lastVerified: "2026-05-09", notes: "Flipkart Junior UX/Product Designer. Bonus ₹0.8-2L. 60-day notice. Negotiation focus: fixed + portfolio." },
-      mid: { totalMin: 14.0, totalMax: 32.0, baseMin: 10.9, baseMax: 25.0, equityMin: 1.7, equityMax: 3.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09 — 6figr + Glassdoor (Flipkart Designer II, 2-4y)", lastVerified: "2026-05-09", notes: "Flipkart Mid UX/Product Designer. Bonus ₹1.4-3.2L. Joining bonus ₹1-3L. 60-90 day notice. Negotiation focus: fixed + level." },
-      senior: { totalMin: 28.0, totalMax: 46.0, baseMin: 17.2, baseMax: 36.0, equityMin: 2.6, equityMax: 6.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09 — 6figr (Flipkart Sr Product Designer / PD II-III, 4-8y avg ₹28-35L, typical band ₹28-46L)", lastVerified: "2026-05-09", notes: "Flipkart Senior UX/Product Designer. Typical band ₹28-46L (4-8y) — floor raised from erroneous ₹22 to match source floor ₹28 (S4-B1). Bonus ₹2-7L. Joining bonus ₹2-8L. 90-day notice. Negotiation focus: ownership + craft + level mapping (PD II vs III). Outlier top-earner figures (₹50-60L for principal-tier) handled by lead band — keep senior anchored to typical." },
-      lead: { totalMin: 40, totalMax: 85, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09 — Flipkart Lead/Principal Designer extrapolation from Senior + Levels.fyi", lastVerified: "2026-05-09", sourceVerifiedAt: { levelsFyi: "2026-05-09" } },
+      entry: { totalMin: 8.0, totalMax: 22.0, baseMin: 6.2, baseMax: 17.2, equityMin: 1.0, equityMax: 2.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09, 6figr + Glassdoor (Flipkart Designer I, 0-2y)", lastVerified: "2026-05-09", notes: "Flipkart Junior UX/Product Designer. Bonus ₹0.8-2L. 60-day notice. Negotiation focus: fixed + portfolio." },
+      mid: { totalMin: 14.0, totalMax: 32.0, baseMin: 10.9, baseMax: 25.0, equityMin: 1.7, equityMax: 3.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09, 6figr + Glassdoor (Flipkart Designer II, 2-4y)", lastVerified: "2026-05-09", notes: "Flipkart Mid UX/Product Designer. Bonus ₹1.4-3.2L. Joining bonus ₹1-3L. 60-90 day notice. Negotiation focus: fixed + level." },
+      senior: { totalMin: 28.0, totalMax: 46.0, baseMin: 17.2, baseMax: 36.0, equityMin: 2.6, equityMax: 6.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09, 6figr (Flipkart Sr Product Designer / PD II-III, 4-8y avg ₹28-35L, typical band ₹28-46L)", lastVerified: "2026-05-09", notes: "Flipkart Senior UX/Product Designer. Typical band ₹28-46L (4-8y), floor raised from erroneous ₹22 to match source floor ₹28 (S4-B1). Bonus ₹2-7L. Joining bonus ₹2-8L. 90-day notice. Negotiation focus: ownership + craft + level mapping (PD II vs III). Outlier top-earner figures (₹50-60L for principal-tier) handled by lead band, keep senior anchored to typical." },
+      lead: { totalMin: 40, totalMax: 85, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-09, Flipkart Lead/Principal Designer extrapolation from Senior + Levels.fyi", lastVerified: "2026-05-09", sourceVerifiedAt: { levelsFyi: "2026-05-09" } },
     },
     "ml-engineer": {
       mid: { totalMin: 35, totalMax: 60, equityMin: 4, equityMax: 11, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Flipkart SE base ₹2.37M-₹17.96M × ML 1.15-1.3x premium)", lastVerified: "2026-05-08", notes: "Flipkart ML mid; SE-2/SE-3 with ML premium. Flipkart Glassdoor ML data noisy.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
@@ -478,60 +478,60 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 95, totalMax: 150, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Flipkart Staff/Architect top ₹17.96M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "devops-sre": {
-      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Flipkart DevOps total pay band ₹3L-14.8L for entry/mid; SE base ₹2.37M peer ref)", lastVerified: "2026-05-08", notes: "Flipkart DevOps mid; Glassdoor sample skews junior — peer SE band used for sanity-check.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Flipkart DevOps total pay band ₹3L-14.8L for entry/mid; SE base ₹2.37M peer ref)", lastVerified: "2026-05-08", notes: "Flipkart DevOps mid; Glassdoor sample skews junior, peer SE band used for sanity-check.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       senior: { totalMin: 38, totalMax: 65, equityMin: 5, equityMax: 13, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi peer", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08", levelsFyi: "2026-05-08" } },
       lead: { totalMin: 65, totalMax: 100, equityMin: 9, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Flipkart Lead DevOps / SRE)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
   
     "data-scientist": {
-      entry: { totalMin: 12.5, totalMax: 31.2, baseMin: 9.2, baseMax: 23.1, equityMin: 1.8, equityMax: 4.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart DS Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Data Scientist. Bonus ₹1.5-3.8L. 60-day notice. Negotiation focus: fixed + model impact." },
-      mid: { totalMin: 25.0, totalMax: 75.0, baseMin: 18.5, baseMax: 55.5, equityMin: 3.5, equityMax: 10.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart DS Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Data Scientist. Bonus ₹3-9L. Joining bonus ₹2-7L. 60-90 day notice. Negotiation focus: fixed + scope." },
-      senior: { totalMin: 43.8, totalMax: 137.5, baseMin: 32.4, baseMax: 101.8, equityMin: 6.1, equityMax: 19.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart DS Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Data Scientist. Bonus ₹5.3-16.5L. Joining bonus ₹4-14L. 90-day notice. Negotiation focus: business impact." },
+      entry: { totalMin: 12.5, totalMax: 31.2, baseMin: 9.2, baseMax: 23.1, equityMin: 1.8, equityMax: 4.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart DS Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Data Scientist. Bonus ₹1.5-3.8L. 60-day notice. Negotiation focus: fixed + model impact." },
+      mid: { totalMin: 25.0, totalMax: 75.0, baseMin: 18.5, baseMax: 55.5, equityMin: 3.5, equityMax: 10.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart DS Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Data Scientist. Bonus ₹3-9L. Joining bonus ₹2-7L. 60-90 day notice. Negotiation focus: fixed + scope." },
+      senior: { totalMin: 43.8, totalMax: 137.5, baseMin: 32.4, baseMax: 101.8, equityMin: 6.1, equityMax: 19.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart DS Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Data Scientist. Bonus ₹5.3-16.5L. Joining bonus ₹4-14L. 90-day notice. Negotiation focus: business impact." },
       lead: { totalMin: 69, totalMax: 200, equityMin: 10, equityMax: 28, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (flipkart 1.25x data-scientist)", lastVerified: "2026-05-08" },
       executive: { totalMin: 100, totalMax: 263, equityMin: 14, equityMax: 37, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (flipkart 1.25x data-scientist)", lastVerified: "2026-05-08" },
     },
     "program-manager": {
-      entry: { totalMin: 12.5, totalMax: 27.5, baseMin: 9.5, baseMax: 20.9, equityMin: 1.2, equityMax: 2.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart PgM Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Program Manager. Bonus ₹1.8-3.8L. 60-day notice. Negotiation focus: fixed + scope." },
-      mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 17.1, baseMax: 47.5, equityMin: 2.2, equityMax: 6.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart PgM Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Program Manager. Bonus ₹3.1-8.8L. 60-90 day notice. Negotiation focus: scope + bonus." },
-      senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 33.2, baseMax: 90.2, equityMin: 4.4, equityMax: 11.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart PgM Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Program Manager. Bonus ₹6.1-16.6L. Joining bonus ₹4-12L. 90-day notice. Negotiation focus: program impact." },
+      entry: { totalMin: 12.5, totalMax: 27.5, baseMin: 9.5, baseMax: 20.9, equityMin: 1.2, equityMax: 2.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart PgM Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Program Manager. Bonus ₹1.8-3.8L. 60-day notice. Negotiation focus: fixed + scope." },
+      mid: { totalMin: 22.5, totalMax: 62.5, baseMin: 17.1, baseMax: 47.5, equityMin: 2.2, equityMax: 6.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart PgM Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Program Manager. Bonus ₹3.1-8.8L. 60-90 day notice. Negotiation focus: scope + bonus." },
+      senior: { totalMin: 43.8, totalMax: 118.8, baseMin: 33.2, baseMax: 90.2, equityMin: 4.4, equityMax: 11.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart PgM Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Program Manager. Bonus ₹6.1-16.6L. Joining bonus ₹4-12L. 90-day notice. Negotiation focus: program impact." },
       lead: { totalMin: 69, totalMax: 175, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (flipkart 1.25x program-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 94, totalMax: 225, equityMin: 9, equityMax: 23, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (flipkart 1.25x program-manager)", lastVerified: "2026-05-08" },
     },
     "business-analyst": {
-      entry: { totalMin: 8.8, totalMax: 22.5, baseMin: 6.9, baseMax: 17.6, equityMin: 0.3, equityMax: 0.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Category Manager Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Category Manager (mapped to BA). Bonus ₹1.6-4L. 60-day notice. Negotiation focus: fixed + variable." },
-      mid: { totalMin: 17.5, totalMax: 50.0, baseMin: 13.7, baseMax: 39.0, equityMin: 0.7, equityMax: 2.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Category Manager Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Category Manager. Bonus ₹3.1-9L. Joining bonus ₹1-5L. 60-90 day notice. Negotiation focus: category P&L." },
-      senior: { totalMin: 31.2, totalMax: 100.0, baseMin: 24.4, baseMax: 78.0, equityMin: 1.2, equityMax: 4.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Category Manager Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Category Manager. Bonus ₹5.6-18L. Joining bonus ₹3-10L. 90-day notice. Negotiation focus: P&L ownership." },
+      entry: { totalMin: 8.8, totalMax: 22.5, baseMin: 6.9, baseMax: 17.6, equityMin: 0.3, equityMax: 0.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Category Manager Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Category Manager (mapped to BA). Bonus ₹1.6-4L. 60-day notice. Negotiation focus: fixed + variable." },
+      mid: { totalMin: 17.5, totalMax: 50.0, baseMin: 13.7, baseMax: 39.0, equityMin: 0.7, equityMax: 2.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Category Manager Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Category Manager. Bonus ₹3.1-9L. Joining bonus ₹1-5L. 60-90 day notice. Negotiation focus: category P&L." },
+      senior: { totalMin: 31.2, totalMax: 100.0, baseMin: 24.4, baseMax: 78.0, equityMin: 1.2, equityMax: 4.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Category Manager Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Category Manager. Bonus ₹5.6-18L. Joining bonus ₹3-10L. 90-day notice. Negotiation focus: P&L ownership." },
       lead: { totalMin: 40, totalMax: 106, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (flipkart 1.25x business-analyst)", lastVerified: "2026-05-08" },
       executive: { totalMin: 56, totalMax: 150, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (flipkart 1.25x business-analyst)", lastVerified: "2026-05-08" },
     },
     "operations": {
-      entry: { totalMin: 10.0, totalMax: 25.0, baseMin: 7.8, baseMax: 19.5, equityMin: 0.2, equityMax: 0.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Supply Chain/Ops Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Supply Chain/Ops. Bonus ₹2-5L. 60-day notice. Negotiation focus: fixed + location." },
-      mid: { totalMin: 17.5, totalMax: 50.0, baseMin: 13.7, baseMax: 39.0, equityMin: 0.4, equityMax: 1.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Supply Chain/Ops Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Supply Chain/Ops. Bonus ₹3.5-10L. 60-90 day notice. Negotiation focus: ops scope." },
-      senior: { totalMin: 31.2, totalMax: 93.8, baseMin: 24.4, baseMax: 73.1, equityMin: 0.6, equityMax: 1.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Flipkart Supply Chain/Ops Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Supply Chain/Ops. Bonus ₹6.2-18.8L. Joining bonus ₹3-9L. 90-day notice. Negotiation focus: scale + team size." },
+      entry: { totalMin: 10.0, totalMax: 25.0, baseMin: 7.8, baseMax: 19.5, equityMin: 0.2, equityMax: 0.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Supply Chain/Ops Junior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Junior Supply Chain/Ops. Bonus ₹2-5L. 60-day notice. Negotiation focus: fixed + location." },
+      mid: { totalMin: 17.5, totalMax: 50.0, baseMin: 13.7, baseMax: 39.0, equityMin: 0.4, equityMax: 1.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Supply Chain/Ops Mid worksheet", lastVerified: "2026-05-08", notes: "Flipkart Mid Supply Chain/Ops. Bonus ₹3.5-10L. 60-90 day notice. Negotiation focus: ops scope." },
+      senior: { totalMin: 31.2, totalMax: 93.8, baseMin: 24.4, baseMax: 73.1, equityMin: 0.6, equityMax: 1.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Flipkart Supply Chain/Ops Senior worksheet", lastVerified: "2026-05-08", notes: "Flipkart Senior Supply Chain/Ops. Bonus ₹6.2-18.8L. Joining bonus ₹3-9L. 90-day notice. Negotiation focus: scale + team size." },
     },
   },
 
   swiggy: {
     "software-engineer": {
-      entry: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.4, baseMax: 29.6, equityMin: 2.0, equityMax: 5.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21 — Swiggy SE Junior worksheet (post-Nov 2024 IPO, RSU liquid)", lastVerified: "2026-05-08", notes: "Swiggy Junior SE / SDE-1. Bonus ₹1.3-3.5L. Joining bonus ₹0-2L. 30-60 day notice. RSU liquid post-IPO. Negotiation focus: fixed + joining bonus." },
-      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy SE Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid SE-2/SE-3. Bonus ₹2.3-6.3L. Joining bonus ₹1-5L. 30-60 day notice. Negotiation focus: fixed + ESOP/RSU." },
-      senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy SE Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior SE / SDE-4. Bonus ₹4.4-12L. Joining bonus ₹3-10L. 60-90 day notice. Negotiation focus: fixed + ownership." },
+      entry: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.4, baseMax: 29.6, equityMin: 2.0, equityMax: 5.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-07-21, Swiggy SE Junior worksheet (post-Nov 2024 IPO, RSU liquid)", lastVerified: "2026-05-08", notes: "Swiggy Junior SE / SDE-1. Bonus ₹1.3-3.5L. Joining bonus ₹0-2L. 30-60 day notice. RSU liquid post-IPO. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy SE Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid SE-2/SE-3. Bonus ₹2.3-6.3L. Joining bonus ₹1-5L. 30-60 day notice. Negotiation focus: fixed + ESOP/RSU." },
+      senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy SE Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior SE / SDE-4. Bonus ₹4.4-12L. Joining bonus ₹3-10L. 60-90 day notice. Negotiation focus: fixed + ownership." },
     },
     "backend-developer": {
-      entry: { totalMin: 10.5, totalMax: 29.4, baseMin: 7.8, baseMax: 21.8, equityMin: 1.5, equityMax: 4.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy Backend Junior", lastVerified: "2026-05-08", notes: "Swiggy Junior Backend. Negotiation focus: fixed." },
-      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy Backend Mid", lastVerified: "2026-05-08", notes: "Swiggy Mid Backend. Negotiation focus: scale impact." },
-      senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy Backend Senior", lastVerified: "2026-05-08", notes: "Swiggy Senior Backend. 60-90 day notice. Negotiation focus: platform ownership." },
+      entry: { totalMin: 10.5, totalMax: 29.4, baseMin: 7.8, baseMax: 21.8, equityMin: 1.5, equityMax: 4.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy Backend Junior", lastVerified: "2026-05-08", notes: "Swiggy Junior Backend. Negotiation focus: fixed." },
+      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy Backend Mid", lastVerified: "2026-05-08", notes: "Swiggy Mid Backend. Negotiation focus: scale impact." },
+      senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy Backend Senior", lastVerified: "2026-05-08", notes: "Swiggy Senior Backend. 60-90 day notice. Negotiation focus: platform ownership." },
     },
     "product-manager": {
-      entry: { totalMin: 14.7, totalMax: 33.6, baseMin: 10.3, baseMax: 23.5, equityMin: 2.1, equityMax: 4.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy PM Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior PM / APM. Bonus ₹2.4-5.4L. Joining bonus ₹1-3L. 30-60 day notice. Negotiation focus: scope + fixed." },
-      mid: { totalMin: 26.2, totalMax: 73.5, baseMin: 18.3, baseMax: 51.5, equityMin: 3.7, equityMax: 10.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy PM Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid PM. Bonus ₹4.2-11.8L. Joining bonus ₹2-7L. 60-day notice. Negotiation focus: fixed + product scope." },
-      senior: { totalMin: 47.2, totalMax: 136.5, baseMin: 33.0, baseMax: 95.6, equityMin: 6.6, equityMax: 19.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy PM Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior / Group PM. Bonus ₹7.6-21.8L. Joining bonus ₹5-15L. 60-90 day notice. Negotiation focus: org impact." },
+      entry: { totalMin: 14.7, totalMax: 33.6, baseMin: 10.3, baseMax: 23.5, equityMin: 2.1, equityMax: 4.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy PM Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior PM / APM. Bonus ₹2.4-5.4L. Joining bonus ₹1-3L. 30-60 day notice. Negotiation focus: scope + fixed." },
+      mid: { totalMin: 26.2, totalMax: 73.5, baseMin: 18.3, baseMax: 51.5, equityMin: 3.7, equityMax: 10.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy PM Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid PM. Bonus ₹4.2-11.8L. Joining bonus ₹2-7L. 60-day notice. Negotiation focus: fixed + product scope." },
+      senior: { totalMin: 47.2, totalMax: 136.5, baseMin: 33.0, baseMax: 95.6, equityMin: 6.6, equityMax: 19.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy PM Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior / Group PM. Bonus ₹7.6-21.8L. Joining bonus ₹5-15L. 60-90 day notice. Negotiation focus: org impact." },
     },
   
     "ux-designer": {
-      entry: { totalMin: 8.4, totalMax: 25.2, baseMin: 6.6, baseMax: 19.7, equityMin: 1.0, equityMax: 3.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy UX/Product Designer Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior UX/Product Designer. Bonus ₹0.8-2.5L. 30-60 day notice. Negotiation focus: fixed + portfolio." },
-      mid: { totalMin: 16.8, totalMax: 47.2, baseMin: 13.1, baseMax: 36.8, equityMin: 2.0, equityMax: 5.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy UX/Product Designer Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid UX/Product Designer. Bonus ₹1.7-4.7L. Joining bonus ₹1-4L. Negotiation focus: level calibration." },
-      senior: { totalMin: 29.4, totalMax: 84.0, baseMin: 22.9, baseMax: 65.5, equityMin: 3.5, equityMax: 10.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy UX/Product Designer Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior UX/Product Designer. Bonus ₹2.9-8.4L. Joining bonus ₹2-8L. 60-90 day notice. Negotiation focus: product ownership." },
+      entry: { totalMin: 8.4, totalMax: 25.2, baseMin: 6.6, baseMax: 19.7, equityMin: 1.0, equityMax: 3.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy UX/Product Designer Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior UX/Product Designer. Bonus ₹0.8-2.5L. 30-60 day notice. Negotiation focus: fixed + portfolio." },
+      mid: { totalMin: 16.8, totalMax: 47.2, baseMin: 13.1, baseMax: 36.8, equityMin: 2.0, equityMax: 5.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy UX/Product Designer Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid UX/Product Designer. Bonus ₹1.7-4.7L. Joining bonus ₹1-4L. Negotiation focus: level calibration." },
+      senior: { totalMin: 29.4, totalMax: 84.0, baseMin: 22.9, baseMax: 65.5, equityMin: 3.5, equityMax: 10.1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy UX/Product Designer Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior UX/Product Designer. Bonus ₹2.9-8.4L. Joining bonus ₹2-8L. 60-90 day notice. Negotiation focus: product ownership." },
       lead: { totalMin: 47, totalMax: 126, equityMin: 6, equityMax: 15, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x ux-designer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 63, totalMax: 158, equityMin: 8, equityMax: 19, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x ux-designer)", lastVerified: "2026-05-08" },
     },
@@ -550,23 +550,23 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 89, totalMax: 231, equityMin: 13, equityMax: 35, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x devops-sre)", lastVerified: "2026-05-08" },
     },
     "data-analyst": {
-      entry: { totalMin: 6.3, totalMax: 16.8, baseMin: 5.3, baseMax: 14.1, equityMin: 0.4, equityMax: 1.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy DA Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior Data Analyst. Bonus ₹0.6-1.7L. 30-60 day notice. Negotiation focus: fixed." },
-      mid: { totalMin: 10.5, totalMax: 29.4, baseMin: 8.8, baseMax: 24.7, equityMin: 0.6, equityMax: 1.8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy DA Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid Data Analyst. Bonus ₹1.0-2.9L. Negotiation focus: analytics impact." },
-      senior: { totalMin: 18.9, totalMax: 52.5, baseMin: 15.9, baseMax: 44.1, equityMin: 1.1, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy DA Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior Data Analyst. Bonus ₹1.9-5.3L. 60-day notice. Negotiation focus: fixed + scope." },
+      entry: { totalMin: 6.3, totalMax: 16.8, baseMin: 5.3, baseMax: 14.1, equityMin: 0.4, equityMax: 1.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy DA Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior Data Analyst. Bonus ₹0.6-1.7L. 30-60 day notice. Negotiation focus: fixed." },
+      mid: { totalMin: 10.5, totalMax: 29.4, baseMin: 8.8, baseMax: 24.7, equityMin: 0.6, equityMax: 1.8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy DA Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid Data Analyst. Bonus ₹1.0-2.9L. Negotiation focus: analytics impact." },
+      senior: { totalMin: 18.9, totalMax: 52.5, baseMin: 15.9, baseMax: 44.1, equityMin: 1.1, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy DA Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior Data Analyst. Bonus ₹1.9-5.3L. 60-day notice. Negotiation focus: fixed + scope." },
       lead: { totalMin: 29, totalMax: 79, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x data-analyst)", lastVerified: "2026-05-08" },
       executive: { totalMin: 42, totalMax: 105, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x data-analyst)", lastVerified: "2026-05-08" },
     },
     "sales": {
-      entry: { totalMin: 6.3, totalMax: 18.9, baseMin: 3.8, baseMax: 11.3, equityMin: 0.3, equityMax: 0.8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy Account Manager Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior Account Manager / Sales. Bonus/incentive ₹2.3-6.8L (high variable %). 30-60 day notice. Negotiation focus: incentive payout terms." },
-      mid: { totalMin: 12.6, totalMax: 39.9, baseMin: 7.6, baseMax: 23.9, equityMin: 0.5, equityMax: 1.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy Account Manager Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid Account Manager. Bonus/incentive ₹4.5-14.4L. Negotiation focus: OTE structure (variable can be 35%+ of CTC)." },
-      senior: { totalMin: 23.1, totalMax: 78.8, baseMin: 13.9, baseMax: 47.3, equityMin: 0.9, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy Account Manager Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior Account Manager. Bonus/incentive ₹8.3-28.4L. Joining bonus ₹2-8L. 60-90 day notice. Negotiation focus: fixed vs variable split." },
+      entry: { totalMin: 6.3, totalMax: 18.9, baseMin: 3.8, baseMax: 11.3, equityMin: 0.3, equityMax: 0.8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy Account Manager Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior Account Manager / Sales. Bonus/incentive ₹2.3-6.8L (high variable %). 30-60 day notice. Negotiation focus: incentive payout terms." },
+      mid: { totalMin: 12.6, totalMax: 39.9, baseMin: 7.6, baseMax: 23.9, equityMin: 0.5, equityMax: 1.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy Account Manager Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid Account Manager. Bonus/incentive ₹4.5-14.4L. Negotiation focus: OTE structure (variable can be 35%+ of CTC)." },
+      senior: { totalMin: 23.1, totalMax: 78.8, baseMin: 13.9, baseMax: 47.3, equityMin: 0.9, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy Account Manager Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior Account Manager. Bonus/incentive ₹8.3-28.4L. Joining bonus ₹2-8L. 60-90 day notice. Negotiation focus: fixed vs variable split." },
       lead: { totalMin: 47, totalMax: 147, equityMin: 3, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x sales)", lastVerified: "2026-05-08" },
       executive: { totalMin: 74, totalMax: 231, equityMin: 4, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x sales)", lastVerified: "2026-05-08" },
     },
     "operations": {
-      entry: { totalMin: 6.3, totalMax: 15.8, baseMin: 4.9, baseMax: 12.3, equityMin: 0.1, equityMax: 0.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy City Ops Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior City Operations. Bonus ₹1.3-3.2L. 30-60 day notice. Negotiation focus: fixed + variable." },
-      mid: { totalMin: 12.6, totalMax: 36.8, baseMin: 9.8, baseMax: 28.7, equityMin: 0.3, equityMax: 0.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy City Ops Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid City Operations. Bonus ₹2.5-7.4L. Negotiation focus: team/geography scope." },
-      senior: { totalMin: 23.1, totalMax: 78.8, baseMin: 18.0, baseMax: 61.5, equityMin: 0.5, equityMax: 1.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Swiggy City Ops Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior City Operations. Bonus ₹4.6-15.8L. Joining bonus ₹2-7L. 60-90 day notice. Negotiation focus: ops scale." },
+      entry: { totalMin: 6.3, totalMax: 15.8, baseMin: 4.9, baseMax: 12.3, equityMin: 0.1, equityMax: 0.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy City Ops Junior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Junior City Operations. Bonus ₹1.3-3.2L. 30-60 day notice. Negotiation focus: fixed + variable." },
+      mid: { totalMin: 12.6, totalMax: 36.8, baseMin: 9.8, baseMax: 28.7, equityMin: 0.3, equityMax: 0.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy City Ops Mid worksheet", lastVerified: "2026-05-08", notes: "Swiggy Mid City Operations. Bonus ₹2.5-7.4L. Negotiation focus: team/geography scope." },
+      senior: { totalMin: 23.1, totalMax: 78.8, baseMin: 18.0, baseMax: 61.5, equityMin: 0.5, equityMax: 1.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Swiggy City Ops Senior worksheet", lastVerified: "2026-05-08", notes: "Swiggy Senior City Operations. Bonus ₹4.6-15.8L. Joining bonus ₹2-7L. 60-90 day notice. Negotiation focus: ops scale." },
       lead: { totalMin: 42, totalMax: 116, equityMin: 1, equityMax: 2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x operations)", lastVerified: "2026-05-08" },
       executive: { totalMin: 58, totalMax: 168, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (swiggy 1.05x operations)", lastVerified: "2026-05-08" },
     },
@@ -623,16 +623,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* CRED — refreshed 2026-05-08 from human-curated research worksheet.
+  /* CRED, refreshed 2026-05-08 from human-curated research worksheet.
    * CRED is a premium Indian unicorn with notably higher bands than
    * peer unicorns (esp. Designer + ML where the design/eng bar is
    * unusually high). Liquidity is uncertain — buyback pattern less
    * predictable than Razorpay's. */
   cred: {
     "software-engineer": {
-      entry: { totalMin: 12.0, totalMax: 33.6, baseMin: 8.9, baseMax: 24.9, equityMin: 1.7, equityMax: 4.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "CRED Junior SE. Negotiation focus: fixed + joining bonus. Bar exceptionally high at hiring." },
-      mid: { totalMin: 21.6, totalMax: 60.0, baseMin: 16.0, baseMax: 44.4, equityMin: 3.0, equityMax: 8.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "CRED Mid SE. Negotiation focus: fixed + ESOP clarity (FMV + last buyback)." },
-      senior: { totalMin: 42.0, totalMax: 114.0, baseMin: 31.1, baseMax: 84.4, equityMin: 5.9, equityMax: 16.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + Levels.fyi aggregated", lastVerified: "2026-05-08", notes: "CRED Senior SE. Negotiation focus: fixed + equity. Top of range = staff/principal-tier hires." },
+      entry: { totalMin: 12.0, totalMax: 33.6, baseMin: 8.9, baseMax: 24.9, equityMin: 1.7, equityMax: 4.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "CRED Junior SE. Negotiation focus: fixed + joining bonus. Bar exceptionally high at hiring." },
+      mid: { totalMin: 21.6, totalMax: 60.0, baseMin: 16.0, baseMax: 44.4, equityMin: 3.0, equityMax: 8.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "CRED Mid SE. Negotiation focus: fixed + ESOP clarity (FMV + last buyback)." },
+      senior: { totalMin: 42.0, totalMax: 114.0, baseMin: 31.1, baseMax: 84.4, equityMin: 5.9, equityMax: 16.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Glassdoor + Levels.fyi aggregated", lastVerified: "2026-05-08", notes: "CRED Senior SE. Negotiation focus: fixed + equity. Top of range = staff/principal-tier hires." },
       lead: { totalMin: 95, totalMax: 145, equityMin: 18, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (CRED L6 SE top ₹11.73M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "product-manager": {
@@ -651,7 +651,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 21.6, totalMax: 60.0, baseMin: 18.1, baseMax: 50.4, equityMin: 1.3, equityMax: 3.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Senior Data Analyst. Negotiation focus: fixed + title." },
     },
     "marketing": {
-      entry: { totalMin: 8.4, totalMax: 21.6, baseMin: 5.9, baseMax: 15.1, equityMin: 0.5, equityMax: 1.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Junior Growth Marketer. Variable cap matters — pin down realistic OTE." },
+      entry: { totalMin: 8.4, totalMax: 21.6, baseMin: 5.9, baseMax: 15.1, equityMin: 0.5, equityMax: 1.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Junior Growth Marketer. Variable cap matters, pin down realistic OTE." },
       mid: { totalMin: 16.8, totalMax: 48.0, baseMin: 11.8, baseMax: 33.6, equityMin: 1.0, equityMax: 2.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Mid Growth Marketer. Negotiation focus: CAC/ROI impact attribution." },
       senior: { totalMin: 30.0, totalMax: 96.0, baseMin: 21.0, baseMax: 67.2, equityMin: 1.8, equityMax: 5.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Senior Growth Marketer. Negotiation focus: growth impact attribution + fixed (variable can be 30%+)." },
     },
@@ -667,50 +667,50 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   zerodha: {
     "software-engineer": {
-      entry: { totalMin: 9.5, totalMax: 26.6, baseMin: 7.6, baseMax: 21.3, equityType: "none", source: "Curated research 2026-05-08 — Zerodha SDE Junior worksheet (bootstrapped, no ESOP)", lastVerified: "2026-05-08", notes: "Zerodha Junior SE. Bootstrapped — equity 'unknown' in disclosures, treat as none. Bonus ₹1.4-4.0L. Joining bonus ₹0-2L. Negotiation focus: fixed salary." },
-      mid: { totalMin: 17.1, totalMax: 47.5, baseMin: 13.7, baseMax: 38.0, equityType: "none", source: "Curated research 2026-05-08 — Zerodha SDE Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid SE. Bonus ₹2.6-7.1L. Joining bonus ₹1-4L. Negotiation focus: fixed + role scope." },
-      senior: { totalMin: 33.2, totalMax: 90.2, baseMin: 26.6, baseMax: 72.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha SDE Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior SE. Bonus ₹5.0-13.5L. Joining bonus ₹2-8L. 60-day notice. Negotiation focus: fixed + ownership." },
+      entry: { totalMin: 9.5, totalMax: 26.6, baseMin: 7.6, baseMax: 21.3, equityType: "none", source: "Curated research 2026-05-08, Zerodha SDE Junior worksheet (bootstrapped, no ESOP)", lastVerified: "2026-05-08", notes: "Zerodha Junior SE. Bootstrapped, equity 'unknown' in disclosures, treat as none. Bonus ₹1.4-4.0L. Joining bonus ₹0-2L. Negotiation focus: fixed salary." },
+      mid: { totalMin: 17.1, totalMax: 47.5, baseMin: 13.7, baseMax: 38.0, equityType: "none", source: "Curated research 2026-05-08, Zerodha SDE Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid SE. Bonus ₹2.6-7.1L. Joining bonus ₹1-4L. Negotiation focus: fixed + role scope." },
+      senior: { totalMin: 33.2, totalMax: 90.2, baseMin: 26.6, baseMax: 72.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha SDE Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior SE. Bonus ₹5.0-13.5L. Joining bonus ₹2-8L. 60-day notice. Negotiation focus: fixed + ownership." },
     },
     "backend-developer": {
-      entry: { totalMin: 9.5, totalMax: 26.6, baseMin: 7.6, baseMax: 21.3, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Backend Junior", lastVerified: "2026-05-08", notes: "Zerodha Junior Backend. Bonus ₹1.4-4L. Negotiation focus: fixed." },
-      mid: { totalMin: 17.1, totalMax: 47.5, baseMin: 13.7, baseMax: 38.0, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Backend Mid", lastVerified: "2026-05-08", notes: "Zerodha Mid Backend. Negotiation focus: backend ownership." },
-      senior: { totalMin: 33.2, totalMax: 90.2, baseMin: 26.6, baseMax: 72.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Backend Senior", lastVerified: "2026-05-08", notes: "Zerodha Senior Backend. Negotiation focus: fixed + systems impact." },
+      entry: { totalMin: 9.5, totalMax: 26.6, baseMin: 7.6, baseMax: 21.3, equityType: "none", source: "Curated research 2026-05-08, Zerodha Backend Junior", lastVerified: "2026-05-08", notes: "Zerodha Junior Backend. Bonus ₹1.4-4L. Negotiation focus: fixed." },
+      mid: { totalMin: 17.1, totalMax: 47.5, baseMin: 13.7, baseMax: 38.0, equityType: "none", source: "Curated research 2026-05-08, Zerodha Backend Mid", lastVerified: "2026-05-08", notes: "Zerodha Mid Backend. Negotiation focus: backend ownership." },
+      senior: { totalMin: 33.2, totalMax: 90.2, baseMin: 26.6, baseMax: 72.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha Backend Senior", lastVerified: "2026-05-08", notes: "Zerodha Senior Backend. Negotiation focus: fixed + systems impact." },
     },
     "frontend-developer": {
-      entry: { totalMin: 8.6, totalMax: 23.8, baseMin: 6.9, baseMax: 19.0, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Frontend Junior", lastVerified: "2026-05-08", notes: "Zerodha Junior Frontend. Bonus ₹1.3-3.6L. Negotiation focus: fixed." },
-      mid: { totalMin: 15.2, totalMax: 42.8, baseMin: 12.2, baseMax: 34.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Frontend Mid", lastVerified: "2026-05-08", notes: "Zerodha Mid Frontend. Negotiation focus: UI/platform impact." },
-      senior: { totalMin: 28.5, totalMax: 76.0, baseMin: 22.8, baseMax: 60.8, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Frontend Senior", lastVerified: "2026-05-08", notes: "Zerodha Senior Frontend. Negotiation focus: fixed + ownership." },
+      entry: { totalMin: 8.6, totalMax: 23.8, baseMin: 6.9, baseMax: 19.0, equityType: "none", source: "Curated research 2026-05-08, Zerodha Frontend Junior", lastVerified: "2026-05-08", notes: "Zerodha Junior Frontend. Bonus ₹1.3-3.6L. Negotiation focus: fixed." },
+      mid: { totalMin: 15.2, totalMax: 42.8, baseMin: 12.2, baseMax: 34.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha Frontend Mid", lastVerified: "2026-05-08", notes: "Zerodha Mid Frontend. Negotiation focus: UI/platform impact." },
+      senior: { totalMin: 28.5, totalMax: 76.0, baseMin: 22.8, baseMax: 60.8, equityType: "none", source: "Curated research 2026-05-08, Zerodha Frontend Senior", lastVerified: "2026-05-08", notes: "Zerodha Senior Frontend. Negotiation focus: fixed + ownership." },
     },
     "mobile-developer": {
-      entry: { totalMin: 9.5, totalMax: 26.6, baseMin: 7.6, baseMax: 21.3, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Mobile Junior", lastVerified: "2026-05-08", notes: "Zerodha Junior Mobile. Negotiation focus: fixed." },
-      mid: { totalMin: 17.1, totalMax: 47.5, baseMin: 13.7, baseMax: 38.0, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Mobile Mid", lastVerified: "2026-05-08", notes: "Zerodha Mid Mobile. Negotiation focus: app reliability." },
-      senior: { totalMin: 33.2, totalMax: 90.2, baseMin: 26.6, baseMax: 72.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Mobile Senior", lastVerified: "2026-05-08", notes: "Zerodha Senior Mobile. Negotiation focus: fixed + product impact." },
+      entry: { totalMin: 9.5, totalMax: 26.6, baseMin: 7.6, baseMax: 21.3, equityType: "none", source: "Curated research 2026-05-08, Zerodha Mobile Junior", lastVerified: "2026-05-08", notes: "Zerodha Junior Mobile. Negotiation focus: fixed." },
+      mid: { totalMin: 17.1, totalMax: 47.5, baseMin: 13.7, baseMax: 38.0, equityType: "none", source: "Curated research 2026-05-08, Zerodha Mobile Mid", lastVerified: "2026-05-08", notes: "Zerodha Mid Mobile. Negotiation focus: app reliability." },
+      senior: { totalMin: 33.2, totalMax: 90.2, baseMin: 26.6, baseMax: 72.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha Mobile Senior", lastVerified: "2026-05-08", notes: "Zerodha Senior Mobile. Negotiation focus: fixed + product impact." },
     },
     "product-manager": {
-      entry: { totalMin: 13.3, totalMax: 30.4, baseMin: 10.4, baseMax: 23.7, equityType: "none", source: "Curated research 2026-05-08 — Zerodha PM Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior PM / APM. Bonus ₹2.4-5.5L. Joining bonus ₹1-3L. Negotiation focus: role scope." },
-      mid: { totalMin: 23.8, totalMax: 66.5, baseMin: 18.6, baseMax: 51.9, equityType: "none", source: "Curated research 2026-05-08 — Zerodha PM Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid PM. Bonus ₹4.3-12L. Joining bonus ₹2-6L. Negotiation focus: scope + fixed." },
-      senior: { totalMin: 42.8, totalMax: 123.5, baseMin: 33.4, baseMax: 96.3, equityType: "none", source: "Curated research 2026-05-08 — Zerodha PM Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior PM. Bonus ₹7.7-22.2L. Joining bonus ₹4-12L. 60-day notice. Negotiation focus: product ownership." },
+      entry: { totalMin: 13.3, totalMax: 30.4, baseMin: 10.4, baseMax: 23.7, equityType: "none", source: "Curated research 2026-05-08, Zerodha PM Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior PM / APM. Bonus ₹2.4-5.5L. Joining bonus ₹1-3L. Negotiation focus: role scope." },
+      mid: { totalMin: 23.8, totalMax: 66.5, baseMin: 18.6, baseMax: 51.9, equityType: "none", source: "Curated research 2026-05-08, Zerodha PM Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid PM. Bonus ₹4.3-12L. Joining bonus ₹2-6L. Negotiation focus: scope + fixed." },
+      senior: { totalMin: 42.8, totalMax: 123.5, baseMin: 33.4, baseMax: 96.3, equityType: "none", source: "Curated research 2026-05-08, Zerodha PM Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior PM. Bonus ₹7.7-22.2L. Joining bonus ₹4-12L. 60-day notice. Negotiation focus: product ownership." },
       lead: { totalMin: 67, totalMax: 171, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 90, totalMax: 238, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x product-manager)", lastVerified: "2026-05-08" },
     },
     "ux-designer": {
-      entry: { totalMin: 7.6, totalMax: 22.8, baseMin: 6.2, baseMax: 18.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Product Designer Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior Product Designer. Bonus ₹1.0-2.7L. Negotiation focus: fixed + portfolio." },
-      mid: { totalMin: 15.2, totalMax: 42.8, baseMin: 12.2, baseMax: 34.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Product Designer Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid Product Designer. Bonus ₹1.9-5.1L. Negotiation focus: product impact." },
-      senior: { totalMin: 26.6, totalMax: 76.0, baseMin: 21.3, baseMax: 60.8, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Product Designer Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior Product Designer. Bonus ₹3.2-9.1L. 60-day notice. Negotiation focus: ownership + craft." },
+      entry: { totalMin: 7.6, totalMax: 22.8, baseMin: 6.2, baseMax: 18.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha Product Designer Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior Product Designer. Bonus ₹1.0-2.7L. Negotiation focus: fixed + portfolio." },
+      mid: { totalMin: 15.2, totalMax: 42.8, baseMin: 12.2, baseMax: 34.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha Product Designer Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid Product Designer. Bonus ₹1.9-5.1L. Negotiation focus: product impact." },
+      senior: { totalMin: 26.6, totalMax: 76.0, baseMin: 21.3, baseMax: 60.8, equityType: "none", source: "Curated research 2026-05-08, Zerodha Product Designer Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior Product Designer. Bonus ₹3.2-9.1L. 60-day notice. Negotiation focus: ownership + craft." },
       lead: { totalMin: 43, totalMax: 114, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x ux-designer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 57, totalMax: 143, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x ux-designer)", lastVerified: "2026-05-08" },
     },
     "data-analyst": {
-      entry: { totalMin: 5.7, totalMax: 15.2, baseMin: 4.8, baseMax: 12.8, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Data Analyst Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior Data Analyst. Bonus ₹0.6-1.5L. Negotiation focus: fixed." },
-      mid: { totalMin: 9.5, totalMax: 26.6, baseMin: 8.0, baseMax: 22.3, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Data Analyst Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid Data Analyst. Bonus ₹1.0-2.7L. Negotiation focus: business impact." },
-      senior: { totalMin: 17.1, totalMax: 47.5, baseMin: 14.4, baseMax: 39.9, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Data Analyst Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior Data Analyst. Bonus ₹1.7-4.8L. 60-day notice. Negotiation focus: analytics ownership." },
+      entry: { totalMin: 5.7, totalMax: 15.2, baseMin: 4.8, baseMax: 12.8, equityType: "none", source: "Curated research 2026-05-08, Zerodha Data Analyst Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior Data Analyst. Bonus ₹0.6-1.5L. Negotiation focus: fixed." },
+      mid: { totalMin: 9.5, totalMax: 26.6, baseMin: 8.0, baseMax: 22.3, equityType: "none", source: "Curated research 2026-05-08, Zerodha Data Analyst Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid Data Analyst. Bonus ₹1.0-2.7L. Negotiation focus: business impact." },
+      senior: { totalMin: 17.1, totalMax: 47.5, baseMin: 14.4, baseMax: 39.9, equityType: "none", source: "Curated research 2026-05-08, Zerodha Data Analyst Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior Data Analyst. Bonus ₹1.7-4.8L. 60-day notice. Negotiation focus: analytics ownership." },
       lead: { totalMin: 27, totalMax: 71, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x data-analyst)", lastVerified: "2026-05-08" },
       executive: { totalMin: 38, totalMax: 95, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x data-analyst)", lastVerified: "2026-05-08" },
     },
     "customer-success": {
-      entry: { totalMin: 3.3, totalMax: 9.5, baseMin: 2.9, baseMax: 8.2, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Customer Support Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior Customer Support. Bonus ₹0.3-1.1L. 30-day notice. Negotiation focus: fixed + shift terms." },
-      mid: { totalMin: 5.7, totalMax: 17.1, baseMin: 4.9, baseMax: 14.7, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Customer Support Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid Customer Support. Bonus ₹0.7-2.1L. Negotiation focus: fixed + workload." },
-      senior: { totalMin: 10.5, totalMax: 36.1, baseMin: 9.0, baseMax: 31.0, equityType: "none", source: "Curated research 2026-05-08 — Zerodha Customer Support Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior Customer Support. Bonus ₹1.3-4.3L. 60-day notice. Negotiation focus: team scope." },
+      entry: { totalMin: 3.3, totalMax: 9.5, baseMin: 2.9, baseMax: 8.2, equityType: "none", source: "Curated research 2026-05-08, Zerodha Customer Support Junior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Junior Customer Support. Bonus ₹0.3-1.1L. 30-day notice. Negotiation focus: fixed + shift terms." },
+      mid: { totalMin: 5.7, totalMax: 17.1, baseMin: 4.9, baseMax: 14.7, equityType: "none", source: "Curated research 2026-05-08, Zerodha Customer Support Mid worksheet", lastVerified: "2026-05-08", notes: "Zerodha Mid Customer Support. Bonus ₹0.7-2.1L. Negotiation focus: fixed + workload." },
+      senior: { totalMin: 10.5, totalMax: 36.1, baseMin: 9.0, baseMax: 31.0, equityType: "none", source: "Curated research 2026-05-08, Zerodha Customer Support Senior worksheet", lastVerified: "2026-05-08", notes: "Zerodha Senior Customer Support. Bonus ₹1.3-4.3L. 60-day notice. Negotiation focus: team scope." },
     },
     "business-analyst": {
       entry: { totalMin: 4, totalMax: 17, equityType: "none", source: "Seed dataset 2026-05-08 (zerodha 0.95x business-analyst)", lastVerified: "2026-05-08" },
@@ -724,7 +724,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   meesho: {
     "software-engineer": {
       entry: { totalMin: 21, totalMax: 34, equityMin: 1.5, equityMax: 4.5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 3], source: "AmbitionBox + Naukri (Meesho SDE-1 post-IPO, July 2026)", lastVerified: "2026-05-08", notes: "Listed Dec 2025; SDE-1 RSU is now liquid. Negotiation focus: fixed + joining bonus." },
-      mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 5], source: "AmbitionBox (Meesho listed Dec 2025) + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Listed Dec 2025 — ESOPs converted to RSUs. Negotiation focus: fixed + ESOP clarity." },
+      mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 5], source: "AmbitionBox (Meesho listed Dec 2025) + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Listed Dec 2025, ESOPs converted to RSUs. Negotiation focus: fixed + ESOP clarity." },
       senior: { totalMin: 42, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 9], source: "AmbitionBox + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: fixed + level (against Meesho post-IPO grid)." },
     },
     "product-manager": {
@@ -763,7 +763,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "software-engineer": {
       entry: { totalMin: 38, totalMax: 65, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 8], source: "Levels.fyi (Google India L3 / new-grad campus)", lastVerified: "2026-05-08", notes: "Google L3 India campus offer; sign-on ₹3-8L common. Negotiation focus: Level + RSU (push for L4 if YOE supports)." },
       mid: { totalMin: 50, totalMax: 87.5, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 15], source: "Levels.fyi (Google India L4 SWE)", lastVerified: "2026-05-08", notes: "Google L4 India median ₹62L total comp; high performers cross ₹78L. Negotiation focus: Level calibration (L4 vs L5 is the lever, not base %)." },
-      senior: { totalMin: 80, totalMax: 130, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (L5; band capped at 130L for trajectory math — top-end ₹166L observed at L5+ promo edge)", lastVerified: "2026-05-08", notes: "Google L5 senior. Negotiation focus: RSU + level (RSU refresher cycle is the load-bearing question)." },
+      senior: { totalMin: 80, totalMax: 130, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (L5; band capped at 130L for trajectory math, top-end ₹166L observed at L5+ promo edge)", lastVerified: "2026-05-08", notes: "Google L5 senior. Negotiation focus: RSU + level (RSU refresher cycle is the load-bearing question)." },
       lead: { totalMin: 122, totalMax: 220, equityMin: 50, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [15, 50], source: "Levels.fyi (L6+ Staff; top-end ₹306L observed at L7)", lastVerified: "2026-05-08", notes: "Google L6 staff. Negotiation focus: Scope + RSU (manager-track L7 vs IC L7 is the second cut)." },
     },
     "ux-designer": {
@@ -809,19 +809,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   microsoft: {
     "software-engineer": {
-      entry: { totalMin: 35, totalMax: 58, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "5yr (staggered 25-25-25-25 cliff variant)", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: L59-L60 calibration — push for L60 over L59 (band overlap; same package, faster review cycle)." },
-      mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr (20-20-20-20-20)", joiningBonusOverride: [5, 15], source: "Levels.fyi (Microsoft India SDE)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: L61-L62 — annual RSU refresh is the key lever (often 30-50% of new-hire grant). Ask for refresher floor in writing." },
-      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi (L62-L63)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: L63-L64 — negotiate sign-on (often ₹15-25L) and team selection; Azure/AI orgs pay top of band." },
+      entry: { totalMin: 35, totalMax: 58, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "5yr (staggered 25-25-25-25 cliff variant)", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: L59-L60 calibration, push for L60 over L59 (band overlap; same package, faster review cycle)." },
+      mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr (20-20-20-20-20)", joiningBonusOverride: [5, 15], source: "Levels.fyi (Microsoft India SDE)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: L61-L62, annual RSU refresh is the key lever (often 30-50% of new-hire grant). Ask for refresher floor in writing." },
+      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi (L62-L63)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: L63-L64, negotiate sign-on (often ₹15-25L) and team selection; Azure/AI orgs pay top of band." },
     },
     "ux-designer": {
       entry: { totalMin: 22, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [2, 6], source: "Levels.fyi (Microsoft India IC2 designer)", lastVerified: "2026-05-08", notes: "UX Designer Junior: portfolio + design-critique signal beats YOE. Ask for level mapping vs IC track." },
-      mid: { totalMin: 35, totalMax: 70, equityMin: 10, equityMax: 25, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [4, 12], source: "Levels.fyi (₹3.48M-₹10.16M range)", lastVerified: "2026-05-08", notes: "UX Designer Mid: research vs craft split — lean Senior Designer if pre-IPO experience, else Designer 2." },
+      mid: { totalMin: 35, totalMax: 70, equityMin: 10, equityMax: 25, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [4, 12], source: "Levels.fyi (₹3.48M-₹10.16M range)", lastVerified: "2026-05-08", notes: "UX Designer Mid: research vs craft split, lean Senior Designer if pre-IPO experience, else Designer 2." },
       senior: { totalMin: 64, totalMax: 102, equityMin: 22, equityMax: 45, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [8, 20], source: "Levels.fyi (L65)", lastVerified: "2026-05-08", notes: "UX Designer Senior: L65 staff/principal track; design system ownership is the leverage." },
     },
     "product-manager": {
-      entry: { totalMin: 24, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India PM1-PM2 campus)", lastVerified: "2026-05-08", notes: "Product Manager Junior: APM/PM1 campus — push for PM2 if MBA + internship signal." },
+      entry: { totalMin: 24, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India PM1-PM2 campus)", lastVerified: "2026-05-08", notes: "Product Manager Junior: APM/PM1 campus, push for PM2 if MBA + internship signal." },
       mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [6, 15], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Mid: PM2-Senior PM. RSU refresh + bonus target (15-20% on-target) are negotiable." },
-      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Senior: Principal PM (L65) — scope (org-wide vs team) drives the level call more than YOE." },
+      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Senior: Principal PM (L65), scope (org-wide vs team) drives the level call more than YOE." },
     },
   
     "ml-engineer": {
@@ -856,19 +856,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   amazon: {
     "software-engineer": {
-      entry: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", joiningBonusOverride: [4, 8], source: "Levels.fyi (Amazon India SDE-1 / L4 campus, July 2026)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: SDE-1 / L4. Year-1 + Year-2 sign-on (₹3-6L each year) is non-negotiable structure — confirm Y1 vs Y2 split." },
+      entry: { totalMin: 28, totalMax: 46, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", joiningBonusOverride: [4, 8], source: "Levels.fyi (Amazon India SDE-1 / L4 campus, July 2026)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: SDE-1 / L4. Year-1 + Year-2 sign-on (₹3-6L each year) is non-negotiable structure, confirm Y1 vs Y2 split." },
       mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 5-15-40-40 (back-loaded)", joiningBonusOverride: [6, 15], source: "Levels.fyi (Amazon India SDE-2)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: SDE-2 / L5. RSU vest is back-loaded (5-15-40-40); push for Y1+Y2 sign-on to fund the cash gap." },
-      senior: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [12, 30], source: "Levels.fyi (SDE-3 / L6)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: SDE-3 / L6 — level mapping is THE lever (L6 vs L5 = ~₹25-40L gap). Performance bonus + on-call premium negotiable." },
+      senior: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [12, 30], source: "Levels.fyi (SDE-3 / L6)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: SDE-3 / L6, level mapping is THE lever (L6 vs L5 = ~₹25-40L gap). Performance bonus + on-call premium negotiable." },
     },
     "ux-designer": {
-      mid: { totalMin: 29, totalMax: 50, equityMin: 6, equityMax: 16, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [4, 10], source: "Levels.fyi (₹2.88M-₹6.45M range)", lastVerified: "2026-05-08", notes: "UX Designer Mid: L5 designer — relocation support + remote flex are levers, RSU floor is hard to move." },
-      senior: { totalMin: 50, totalMax: 65, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [8, 20], source: "Levels.fyi (L6)", lastVerified: "2026-05-08", notes: "UX Designer Senior: L6 — team-location and AWS vs Retail org changes pay envelope." },
+      mid: { totalMin: 29, totalMax: 50, equityMin: 6, equityMax: 16, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [4, 10], source: "Levels.fyi (₹2.88M-₹6.45M range)", lastVerified: "2026-05-08", notes: "UX Designer Mid: L5 designer, relocation support + remote flex are levers, RSU floor is hard to move." },
+      senior: { totalMin: 50, totalMax: 65, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [8, 20], source: "Levels.fyi (L6)", lastVerified: "2026-05-08", notes: "UX Designer Senior: L6, team-location and AWS vs Retail org changes pay envelope." },
     },
   
     "product-manager": {
-      entry: { totalMin: 19, totalMax: 43, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [3, 6], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Junior: PM-T / L4 — written-narrative skill (6-pager) is the rubric. Y1+Y2 sign-on standard." },
+      entry: { totalMin: 19, totalMax: 43, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [3, 6], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Junior: PM-T / L4, written-narrative skill (6-pager) is the rubric. Y1+Y2 sign-on standard." },
       mid: { totalMin: 34, totalMax: 95, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [6, 15], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Mid: PMT-L5. Two-pizza-team scope vs platform PM scope changes pay; ask which org." },
-      senior: { totalMin: 61, totalMax: 176, equityMin: 9, equityMax: 25, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [12, 30], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Senior: Senior PM-T / L6 — P&L ownership signal + AWS pricing-power orgs pay top of band." },
+      senior: { totalMin: 61, totalMax: 176, equityMin: 9, equityMax: 25, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [12, 30], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Senior: Senior PM-T / L6, P&L ownership signal + AWS pricing-power orgs pay top of band." },
       lead: { totalMin: 95, totalMax: 243, equityMin: 13, equityMax: 34, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 128, totalMax: 338, equityMin: 18, equityMax: 47, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
     },
@@ -894,9 +894,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 115, totalMax: 297, equityMin: 17, equityMax: 45, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x devops-sre)", lastVerified: "2026-05-08" },
     },
     "program-manager": {
-      entry: { totalMin: 14, totalMax: 30, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [2, 5], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Junior: TPM/PgM L4 — written-doc skill weighted heavily." },
-      mid: { totalMin: 24, totalMax: 68, equityMin: 2, equityMax: 7, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [4, 10], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Mid: TPM L5 — cross-team scope is the leverage; ask for first review cycle in writing." },
-      senior: { totalMin: 47, totalMax: 128, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [10, 25], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Senior: Senior TPM L6 — org-wide programs vs single-team is the level call." },
+      entry: { totalMin: 14, totalMax: 30, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [2, 5], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Junior: TPM/PgM L4, written-doc skill weighted heavily." },
+      mid: { totalMin: 24, totalMax: 68, equityMin: 2, equityMax: 7, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [4, 10], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Mid: TPM L5, cross-team scope is the leverage; ask for first review cycle in writing." },
+      senior: { totalMin: 47, totalMax: 128, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [10, 25], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Senior: Senior TPM L6, org-wide programs vs single-team is the level call." },
       lead: { totalMin: 74, totalMax: 189, equityMin: 7, equityMax: 19, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 101, totalMax: 243, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
     },
@@ -914,7 +914,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "software-engineer": {
       /* TCS pays via THREE distinct fresher → IC tracks. The AI must probe
          which track the candidate is on (or pattern-match from resume) before
-         quoting a number — quoting ₹4L to a Digital-track candidate destroys
+         quoting a number, quoting ₹4L to a Digital-track candidate destroys
          simulation credibility instantly. Bands below cover the full
          Ninja → Prime envelope; the `notes` field tells the LLM how to triage.
          Track signals (use to anchor within the band):
@@ -928,7 +928,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
         joiningBonusOverride: [0, 1.5],
         source: "TCS NQT 2026 disclosure (Ninja ₹3.36L / Digital ₹7-9L / Prime ₹11.5L) + AmbitionBox cross-check",
         lastVerified: "2026-05-09",
-        notes: "Three fresher tracks — Ninja ₹3.4-4L (most common), Digital ₹7-9L (top NQT scorers + coding test), Prime ₹11.5L (small elite cohort). PROBE the candidate's track before quoting; default-anchor at ₹5-6L only if track is unknown. No ESOP. ₹0.5L service bond (waived for Digital/Prime). 90-day notice.",
+        notes: "Three fresher tracks, Ninja ₹3.4-4L (most common), Digital ₹7-9L (top NQT scorers + coding test), Prime ₹11.5L (small elite cohort). PROBE the candidate's track before quoting; default-anchor at ₹5-6L only if track is unknown. No ESOP. ₹0.5L service bond (waived for Digital/Prime). 90-day notice.",
       },
       mid: {
         totalMin: 5, totalMax: 17,
@@ -1058,16 +1058,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── Big Tech (Levels.fyi-grounded) ───────────────────────── */
   adobe: {
     "software-engineer": {
-      entry: { totalMin: 24, totalMax: 37.8, equityMin: 4, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic)", joiningBonusOverride: [2, 6], source: "Levels.fyi (Adobe India ₹2.46M-₹23.81M, P10)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: Fixed + RSU lever — Adobe's RSU refreshers are generous (3-5% annual top-up). Push for written refresher floor." },
-      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 12], source: "Levels.fyi (Adobe India median ₹6.98M, P30-P40)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: level calibration — push for IC4 over IC3 if pre-existing GenAI/Firefly experience." },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 25], source: "Levels.fyi (P50)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: Fixed + equity — Firefly/GenAI orgs pay top of band; ESPP (15% discount) is a real take-home boost." },
+      entry: { totalMin: 24, totalMax: 37.8, equityMin: 4, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic)", joiningBonusOverride: [2, 6], source: "Levels.fyi (Adobe India ₹2.46M-₹23.81M, P10)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: Fixed + RSU lever, Adobe's RSU refreshers are generous (3-5% annual top-up). Push for written refresher floor." },
+      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 12], source: "Levels.fyi (Adobe India median ₹6.98M, P30-P40)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: level calibration, push for IC4 over IC3 if pre-existing GenAI/Firefly experience." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 25], source: "Levels.fyi (P50)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: Fixed + equity, Firefly/GenAI orgs pay top of band; ESPP (15% discount) is a real take-home boost." },
       lead: { totalMin: 120, totalMax: 200, equityMin: 50, equityMax: 100, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P60 ₹23.81M+)", lastVerified: "2026-05-08" },
     },
   
     "product-manager": {
-      entry: { totalMin: 18.9, totalMax: 43.2, equityMin: 2.6, equityMax: 6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Adobe India PM IC2)", lastVerified: "2026-05-08", notes: "Product Manager Junior: scope lever — DX (Experience Cloud) vs DMe (Creative Cloud) orgs differ in pay envelope." },
-      mid: { totalMin: 33.8, totalMax: 94.5, equityMin: 4.7, equityMax: 13.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 16], source: "Levels.fyi (Adobe India PM IC3-IC4)", lastVerified: "2026-05-08", notes: "Product Manager Mid: product impact — Firefly/GenAI PM is scarce-skill premium." },
-      senior: { totalMin: 60.8, totalMax: 175.5, equityMin: 8.5, equityMax: 24.6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (Adobe India PM IC5)", lastVerified: "2026-05-08", notes: "Product Manager Senior: org scope — DX vs DMe org assignment is the lever; first-appraisal date in writing." },
+      entry: { totalMin: 18.9, totalMax: 43.2, equityMin: 2.6, equityMax: 6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Adobe India PM IC2)", lastVerified: "2026-05-08", notes: "Product Manager Junior: scope lever, DX (Experience Cloud) vs DMe (Creative Cloud) orgs differ in pay envelope." },
+      mid: { totalMin: 33.8, totalMax: 94.5, equityMin: 4.7, equityMax: 13.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 16], source: "Levels.fyi (Adobe India PM IC3-IC4)", lastVerified: "2026-05-08", notes: "Product Manager Mid: product impact, Firefly/GenAI PM is scarce-skill premium." },
+      senior: { totalMin: 60.8, totalMax: 175.5, equityMin: 8.5, equityMax: 24.6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (Adobe India PM IC5)", lastVerified: "2026-05-08", notes: "Product Manager Senior: org scope, DX vs DMe org assignment is the lever; first-appraisal date in writing." },
       lead: { totalMin: 95, totalMax: 243, equityMin: 13, equityMax: 34, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 128, totalMax: 338, equityMin: 18, equityMax: 47, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
     },
@@ -1102,9 +1102,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   salesforce: {
     "software-engineer": {
-      entry: { totalMin: 27, totalMax: 38, equityMin: 5, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic)", joiningBonusOverride: [2, 7], source: "Levels.fyi (Associate MTS ₹2.72M)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: AMTS / MTS calibration — push for MTS over AMTS with intern-conversion signal; Fixed + RSU lever." },
-      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (median ₹7.23M)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: level calibration — SMTS vs MTS = ₹15-25L gap; product/cloud team (Sales Cloud vs Data Cloud vs MuleSoft) drives top-of-band." },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (LMTS / SMTS)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: Fixed + RSU — LMTS / SMTS calibration. Salesforce RSU vest is annual cliff (uncommon vs quarterly peers); confirm vest schedule in offer." },
+      entry: { totalMin: 27, totalMax: 38, equityMin: 5, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic)", joiningBonusOverride: [2, 7], source: "Levels.fyi (Associate MTS ₹2.72M)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: AMTS / MTS calibration, push for MTS over AMTS with intern-conversion signal; Fixed + RSU lever." },
+      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (median ₹7.23M)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: level calibration, SMTS vs MTS = ₹15-25L gap; product/cloud team (Sales Cloud vs Data Cloud vs MuleSoft) drives top-of-band." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (LMTS / SMTS)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: Fixed + RSU, LMTS / SMTS calibration. Salesforce RSU vest is annual cliff (uncommon vs quarterly peers); confirm vest schedule in offer." },
       lead: { totalMin: 130, totalMax: 250, equityMin: 60, equityMax: 130, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Architect ₹25.8M+)", lastVerified: "2026-05-08" },
     },
   
@@ -1137,9 +1137,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 101, totalMax: 243, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x program-manager)", lastVerified: "2026-05-08" },
     },
     "sales": {
-      entry: { totalMin: 9.4, totalMax: 24.3, equityMin: 0.5, equityMax: 1.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [1, 4], source: "Levels.fyi (Salesforce India Account Executive Jr)", lastVerified: "2026-05-08", notes: "Account Executive Junior: OTE clarity — fixed/variable split (often 60/40), quota size in writing; ramp period (Y1 quota relief) is the lever." },
-      mid: { totalMin: 18.9, totalMax: 56.7, equityMin: 0.9, equityMax: 2.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Salesforce India AE Mid)", lastVerified: "2026-05-08", notes: "Account Executive Mid: quota + accelerators — accelerator multiplier above 100% attainment is the negotiation lever (often 1.5x-2.5x)." },
-      senior: { totalMin: 35.1, totalMax: 121.5, equityMin: 1.8, equityMax: 6.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 20], source: "Levels.fyi (Salesforce India AE Sr / Enterprise)", lastVerified: "2026-05-08", notes: "Account Executive Senior: OTE realism — quota history (last 4 quarters attainment) + named-account list is the leverage." },
+      entry: { totalMin: 9.4, totalMax: 24.3, equityMin: 0.5, equityMax: 1.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [1, 4], source: "Levels.fyi (Salesforce India Account Executive Jr)", lastVerified: "2026-05-08", notes: "Account Executive Junior: OTE clarity, fixed/variable split (often 60/40), quota size in writing; ramp period (Y1 quota relief) is the lever." },
+      mid: { totalMin: 18.9, totalMax: 56.7, equityMin: 0.9, equityMax: 2.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Salesforce India AE Mid)", lastVerified: "2026-05-08", notes: "Account Executive Mid: quota + accelerators, accelerator multiplier above 100% attainment is the negotiation lever (often 1.5x-2.5x)." },
+      senior: { totalMin: 35.1, totalMax: 121.5, equityMin: 1.8, equityMax: 6.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 20], source: "Levels.fyi (Salesforce India AE Sr / Enterprise)", lastVerified: "2026-05-08", notes: "Account Executive Senior: OTE realism, quota history (last 4 quarters attainment) + named-account list is the leverage." },
       lead: { totalMin: 61, totalMax: 189, equityMin: 4, equityMax: 11, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
       executive: { totalMin: 95, totalMax: 297, equityMin: 6, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
     },
@@ -1153,7 +1153,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   atlassian: {
     "software-engineer": {
-      entry: { totalMin: 36, totalMax: 48, equityMin: 6, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 5], source: "Levels.fyi (Atlassian India P30 ₹4.01M)", lastVerified: "2026-05-07", notes: "Atlassian P30 entry. Generous RSU refreshers — RSU is public-market linked (lower liquidity risk than ESOP). Negotiation focus: Fixed + RSU." },
+      entry: { totalMin: 36, totalMax: 48, equityMin: 6, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 5], source: "Levels.fyi (Atlassian India P30 ₹4.01M)", lastVerified: "2026-05-07", notes: "Atlassian P30 entry. Generous RSU refreshers, RSU is public-market linked (lower liquidity risk than ESOP). Negotiation focus: Fixed + RSU." },
       mid: { totalMin: 55, totalMax: 95, equityMin: 15, equityMax: 32, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 9], source: "Levels.fyi (P40-P50, median ₹8.28M)", lastVerified: "2026-05-07", notes: "P40-P50 mid IC. Negotiation focus: RSU + level (P40 vs P50 calibration is the lever)." },
       senior: { totalMin: 90, totalMax: 150, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 18], source: "Levels.fyi (P50-P60)", lastVerified: "2026-05-07", notes: "P50-P60 senior. Negotiation focus: Level calibration (P50 vs P60 = ~30-40% comp gap)." },
       lead: { totalMin: 140, totalMax: 180, equityMin: 55, equityMax: 90, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [10, 35], source: "Levels.fyi (P60 ₹17.56M+)", lastVerified: "2026-05-07", notes: "P60 staff/principal. Negotiation focus: Staff/lead calibration + RSU grant size." },
@@ -1245,20 +1245,20 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   apple: {
     "software-engineer": {
-      entry: { totalMin: 30, totalMax: 44, equityMin: 7, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic vesting)", joiningBonusOverride: [2, 7], source: "Levels.fyi (Apple India ICT2 / new-grad)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: ICT2 calibration — push for ICT2 over ICT1; hardware/software team scope changes RSU envelope." },
-      mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (Apple India ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: ICT3-ICT4 — Fixed + RSU is the lever. Apple bonus target lower than peers (3-10%); negotiate base + RSU." },
-      senior: { totalMin: 85, totalMax: 140, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (ICT5)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: ICT5 — level calibration is the primary lever (ICT4 vs ICT5 = ~₹35-50L gap). Silicon/AI orgs pay top of band." },
+      entry: { totalMin: 30, totalMax: 44, equityMin: 7, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic vesting)", joiningBonusOverride: [2, 7], source: "Levels.fyi (Apple India ICT2 / new-grad)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: ICT2 calibration, push for ICT2 over ICT1; hardware/software team scope changes RSU envelope." },
+      mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (Apple India ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: ICT3-ICT4, Fixed + RSU is the lever. Apple bonus target lower than peers (3-10%); negotiate base + RSU." },
+      senior: { totalMin: 85, totalMax: 140, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (ICT5)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: ICT5, level calibration is the primary lever (ICT4 vs ICT5 = ~₹35-50L gap). Silicon/AI orgs pay top of band." },
     },
     "firmware-engineer": {
-      entry: { totalMin: 16, totalMax: 43.5, equityMin: 2.2, equityMax: 6.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Apple India hardware/firmware ICT2)", lastVerified: "2026-05-08", notes: "Firmware Engineer Junior: hardware/software niche — scarce-skill premium, push for ICT3 if embedded experience." },
-      mid: { totalMin: 29, totalMax: 79.8, equityMin: 4.1, equityMax: 11.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 16], source: "Levels.fyi (Apple India firmware ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Firmware Engineer Mid: scarce-skill premium — silicon/SoC vs peripherals split; AppleSilicon org pays top of band." },
-      senior: { totalMin: 55, totalMax: 145, equityMin: 7.7, equityMax: 20.3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 28], source: "Levels.fyi (Apple India firmware ICT5)", lastVerified: "2026-05-08", notes: "Firmware Engineer Senior: deep-expertise lever — ICT5 hardware lead, RSU grant size negotiable based on patent portfolio." },
+      entry: { totalMin: 16, totalMax: 43.5, equityMin: 2.2, equityMax: 6.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Apple India hardware/firmware ICT2)", lastVerified: "2026-05-08", notes: "Firmware Engineer Junior: hardware/software niche, scarce-skill premium, push for ICT3 if embedded experience." },
+      mid: { totalMin: 29, totalMax: 79.8, equityMin: 4.1, equityMax: 11.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 16], source: "Levels.fyi (Apple India firmware ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Firmware Engineer Mid: scarce-skill premium, silicon/SoC vs peripherals split; AppleSilicon org pays top of band." },
+      senior: { totalMin: 55, totalMax: 145, equityMin: 7.7, equityMax: 20.3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 28], source: "Levels.fyi (Apple India firmware ICT5)", lastVerified: "2026-05-08", notes: "Firmware Engineer Senior: deep-expertise lever, ICT5 hardware lead, RSU grant size negotiable based on patent portfolio." },
     },
 
     "product-manager": {
-      entry: { totalMin: 20, totalMax: 46.4, equityMin: 2.8, equityMax: 6.5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 9], source: "Levels.fyi (Apple India PM ICT2)", lastVerified: "2026-05-08", notes: "Product Manager Junior: scope lever — software PM vs hardware PM differs; hardware PMs scarcer." },
-      mid: { totalMin: 36.2, totalMax: 101.5, equityMin: 5.1, equityMax: 14.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [6, 20], source: "Levels.fyi (Apple India PM ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Product Manager Mid: product scope — Services vs Hardware org changes envelope; ask for first-appraisal date in writing." },
-      senior: { totalMin: 65.2, totalMax: 188.5, equityMin: 9.1, equityMax: 26.4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [10, 35], source: "Levels.fyi (Apple India PM ICT5)", lastVerified: "2026-05-08", notes: "Product Manager Senior: strategic ownership — global mobility option (Cupertino transfer) is a real lever for top performers." },
+      entry: { totalMin: 20, totalMax: 46.4, equityMin: 2.8, equityMax: 6.5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 9], source: "Levels.fyi (Apple India PM ICT2)", lastVerified: "2026-05-08", notes: "Product Manager Junior: scope lever, software PM vs hardware PM differs; hardware PMs scarcer." },
+      mid: { totalMin: 36.2, totalMax: 101.5, equityMin: 5.1, equityMax: 14.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [6, 20], source: "Levels.fyi (Apple India PM ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Product Manager Mid: product scope, Services vs Hardware org changes envelope; ask for first-appraisal date in writing." },
+      senior: { totalMin: 65.2, totalMax: 188.5, equityMin: 9.1, equityMax: 26.4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [10, 35], source: "Levels.fyi (Apple India PM ICT5)", lastVerified: "2026-05-08", notes: "Product Manager Senior: strategic ownership, global mobility option (Cupertino transfer) is a real lever for top performers." },
       lead: { totalMin: 102, totalMax: 261, equityMin: 14, equityMax: 37, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 138, totalMax: 363, equityMin: 19, equityMax: 51, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
     },
@@ -1270,23 +1270,23 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 87, totalMax: 218, equityMin: 10, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
     },
     "ml-engineer": {
-      entry: { totalMin: 20.3, totalMax: 50.8, equityMin: 3.7, equityMax: 9.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Apple India ML ICT2)", lastVerified: "2026-05-08", notes: "ML Engineer Junior: AI/ML scope — Apple Intelligence org pays top of band; ask for team mapping." },
-      mid: { totalMin: 40.6, totalMax: 116, equityMin: 7.3, equityMax: 20.9, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 22], source: "Levels.fyi (Apple India ML ICT3-ICT4)", lastVerified: "2026-05-08", notes: "ML Engineer Mid: model/product impact — on-device ML (Core ML) vs cloud-AI orgs differ in pay envelope." },
-      senior: { totalMin: 72.5, totalMax: 217.5, equityMin: 13, equityMax: 39.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [12, 40], source: "Levels.fyi (Apple India ML ICT5)", lastVerified: "2026-05-08", notes: "ML Engineer Senior: AI ownership — Apple Foundation Models / Apple Intelligence orgs negotiate top of band, RSU grant size is the lever." },
+      entry: { totalMin: 20.3, totalMax: 50.8, equityMin: 3.7, equityMax: 9.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Apple India ML ICT2)", lastVerified: "2026-05-08", notes: "ML Engineer Junior: AI/ML scope, Apple Intelligence org pays top of band; ask for team mapping." },
+      mid: { totalMin: 40.6, totalMax: 116, equityMin: 7.3, equityMax: 20.9, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 22], source: "Levels.fyi (Apple India ML ICT3-ICT4)", lastVerified: "2026-05-08", notes: "ML Engineer Mid: model/product impact, on-device ML (Core ML) vs cloud-AI orgs differ in pay envelope." },
+      senior: { totalMin: 72.5, totalMax: 217.5, equityMin: 13, equityMax: 39.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [12, 40], source: "Levels.fyi (Apple India ML ICT5)", lastVerified: "2026-05-08", notes: "ML Engineer Senior: AI ownership, Apple Foundation Models / Apple Intelligence orgs negotiate top of band, RSU grant size is the lever." },
       lead: { totalMin: 116, totalMax: 319, equityMin: 21, equityMax: 57, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 145, totalMax: 406, equityMin: 26, equityMax: 73, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
     },
     "program-manager": {
-      entry: { totalMin: 14.5, totalMax: 31.9, equityMin: 1.4, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Apple India PgM ICT2)", lastVerified: "2026-05-08", notes: "Program Manager Junior: scope lever — hardware launch programs vs software programs differ in scarcity premium." },
-      mid: { totalMin: 26.1, totalMax: 72.5, equityMin: 2.6, equityMax: 7.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (Apple India PgM ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Program Manager Mid: cross-functional scope — hardware NPI programs are scarce-skill premium." },
-      senior: { totalMin: 50.8, totalMax: 137.8, equityMin: 5.1, equityMax: 13.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (Apple India PgM ICT5)", lastVerified: "2026-05-08", notes: "Program Manager Senior: launch/program ownership — global launch program scope is the lever." },
+      entry: { totalMin: 14.5, totalMax: 31.9, equityMin: 1.4, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Apple India PgM ICT2)", lastVerified: "2026-05-08", notes: "Program Manager Junior: scope lever, hardware launch programs vs software programs differ in scarcity premium." },
+      mid: { totalMin: 26.1, totalMax: 72.5, equityMin: 2.6, equityMax: 7.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (Apple India PgM ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Program Manager Mid: cross-functional scope, hardware NPI programs are scarce-skill premium." },
+      senior: { totalMin: 50.8, totalMax: 137.8, equityMin: 5.1, equityMax: 13.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (Apple India PgM ICT5)", lastVerified: "2026-05-08", notes: "Program Manager Senior: launch/program ownership, global launch program scope is the lever." },
       lead: { totalMin: 80, totalMax: 203, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 109, totalMax: 261, equityMin: 11, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
     },
     "operations": {
-      entry: { totalMin: 11.6, totalMax: 29, equityMin: 0.2, equityMax: 0.6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [1, 5], source: "Levels.fyi (Apple India Supply Chain ICT2)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Junior: fixed + ops scope — SCM track has lower RSU envelope vs SE/PM tracks." },
-      mid: { totalMin: 20.3, totalMax: 58, equityMin: 0.4, equityMax: 1.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Apple India Supply Chain ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Mid: vendor/process scope — supplier-management ownership negotiable." },
-      senior: { totalMin: 36.2, totalMax: 108.8, equityMin: 0.7, equityMax: 2.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 18], source: "Levels.fyi (Apple India Supply Chain ICT5)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Senior: global ops impact — APAC manufacturing program ownership is top-of-band lever." },
+      entry: { totalMin: 11.6, totalMax: 29, equityMin: 0.2, equityMax: 0.6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [1, 5], source: "Levels.fyi (Apple India Supply Chain ICT2)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Junior: fixed + ops scope, SCM track has lower RSU envelope vs SE/PM tracks." },
+      mid: { totalMin: 20.3, totalMax: 58, equityMin: 0.4, equityMax: 1.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Apple India Supply Chain ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Mid: vendor/process scope, supplier-management ownership negotiable." },
+      senior: { totalMin: 36.2, totalMax: 108.8, equityMin: 0.7, equityMax: 2.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 18], source: "Levels.fyi (Apple India Supply Chain ICT5)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Senior: global ops impact, APAC manufacturing program ownership is top-of-band lever." },
     },
   },
   stripe: {
@@ -1333,18 +1333,18 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Databricks India — premium GCC; pre-IPO RSUs (liquidity via tender offers).
+  /* Databricks India, premium GCC; pre-IPO RSUs (liquidity via tender offers).
      Levels.fyi India SE range ₹6.14M-₹17.04M, median ₹7.5M (Bengaluru median ₹9.55M).
      L3 entry ₹3.51M-₹7.54M. 6figr India avg ₹76L confirms top-end skew. */
   databricks: {
     "software-engineer": {
-      entry: { totalMin: 35, totalMax: 75, equityMin: 6, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi L3 India ₹3.51M-₹7.54M", lastVerified: "2026-05-08", notes: "Databricks L3 / new-grad India; pre-IPO — RSUs liquid via periodic tender offers, not open market.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      entry: { totalMin: 35, totalMax: 75, equityMin: 6, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi L3 India ₹3.51M-₹7.54M", lastVerified: "2026-05-08", notes: "Databricks L3 / new-grad India; pre-IPO, RSUs liquid via periodic tender offers, not open market.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       mid: { totalMin: 60, totalMax: 100, equityMin: 12, equityMax: 25, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi L4 India + Bengaluru median ₹9.55M", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       senior: { totalMin: 95, totalMax: 155, equityMin: 22, equityMax: 45, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi L5 India (top ₹17.04M = ₹170L total range)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       lead: { totalMin: 150, totalMax: 220, equityMin: 38, equityMax: 70, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi L6/Staff India + Glassdoor (143 samples)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
     },
     "ml-engineer": {
-      mid: { totalMin: 70, totalMax: 120, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Databricks ML — Mosaic acquisition uplift)", lastVerified: "2026-05-08", notes: "Databricks ML bar exceptionally high post-Mosaic. Ranges run ~1.2-1.4x SE.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 70, totalMax: 120, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Databricks ML, Mosaic acquisition uplift)", lastVerified: "2026-05-08", notes: "Databricks ML bar exceptionally high post-Mosaic. Ranges run ~1.2-1.4x SE.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       senior: { totalMin: 115, totalMax: 190, equityMin: 28, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Databricks Sr ML / Research)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       lead: { totalMin: 180, totalMax: 280, equityMin: 45, equityMax: 80, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Databricks Staff/Principal ML)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
@@ -1496,9 +1496,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── SaaS / Product (Indian-built) ────────────────────────── */
   postman: {
     "software-engineer": {
-      entry: { totalMin: 25, totalMax: 35, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Levels.fyi (Postman IC1 India ₹2.9M; campus ₹25-35L)", lastVerified: "2026-05-07", notes: "Postman SaaS — global pay parity at IC1. Negotiation focus: Fixed + ESOP grant size + joining bonus." },
-      mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Levels.fyi (Postman IC2 India median ₹53.1L)", lastVerified: "2026-05-07", notes: "IC2 ESOP-heavy — Postman late-stage private; ESOP value is the load-bearing lever. Negotiation focus: Fixed + ESOP refresh cadence." },
-      senior: { totalMin: 65, totalMax: 120, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [5, 15], source: "Levels.fyi (IC3-IC4 ₹11.96M)", lastVerified: "2026-05-07", notes: "Senior IC — staff/principal scope. Negotiation focus: Fixed + level + ESOP grant." },
+      entry: { totalMin: 25, totalMax: 35, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Levels.fyi (Postman IC1 India ₹2.9M; campus ₹25-35L)", lastVerified: "2026-05-07", notes: "Postman SaaS, global pay parity at IC1. Negotiation focus: Fixed + ESOP grant size + joining bonus." },
+      mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Levels.fyi (Postman IC2 India median ₹53.1L)", lastVerified: "2026-05-07", notes: "IC2 ESOP-heavy, Postman late-stage private; ESOP value is the load-bearing lever. Negotiation focus: Fixed + ESOP refresh cadence." },
+      senior: { totalMin: 65, totalMax: 120, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [5, 15], source: "Levels.fyi (IC3-IC4 ₹11.96M)", lastVerified: "2026-05-07", notes: "Senior IC, staff/principal scope. Negotiation focus: Fixed + level + ESOP grant." },
     },
 
     "product-manager": {
@@ -1529,20 +1529,20 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 44, totalMax: 113, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
       executive: { totalMin: 63, totalMax: 163, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
     },
-    /* Developer Advocate / Technical Writer — Postman's developer-relations
+    /* Developer Advocate / Technical Writer, Postman's developer-relations
        team is a hiring focus. Mapped to marketing taxonomy (devrel = a hybrid
        of growth + content; closest first-class role). */
     "marketing": {
-      entry: { totalMin: 12, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Web research 2026-05-08 (Postman Developer Advocate / Tech Writer Junior)", lastVerified: "2026-05-08", notes: "Junior DevRel / Tech Writer — Postman invests heavily here. Negotiation focus: Fixed + content/talk portfolio." },
-      mid: { totalMin: 25, totalMax: 60, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (Postman Developer Advocate Mid)", lastVerified: "2026-05-08", notes: "Mid DevRel — own a vertical (API/testing/observability). Negotiation focus: Audience + content scope + ESOP." },
-      senior: { totalMin: 45, totalMax: 110, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Web research 2026-05-08 (Postman Senior DevRel / Lead Tech Writer)", lastVerified: "2026-05-08", notes: "Senior DevRel / Principal TW — strategic content programs. Negotiation focus: Program ownership + ESOP grant." },
+      entry: { totalMin: 12, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Web research 2026-05-08 (Postman Developer Advocate / Tech Writer Junior)", lastVerified: "2026-05-08", notes: "Junior DevRel / Tech Writer, Postman invests heavily here. Negotiation focus: Fixed + content/talk portfolio." },
+      mid: { totalMin: 25, totalMax: 60, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (Postman Developer Advocate Mid)", lastVerified: "2026-05-08", notes: "Mid DevRel, own a vertical (API/testing/observability). Negotiation focus: Audience + content scope + ESOP." },
+      senior: { totalMin: 45, totalMax: 110, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Web research 2026-05-08 (Postman Senior DevRel / Lead Tech Writer)", lastVerified: "2026-05-08", notes: "Senior DevRel / Principal TW, strategic content programs. Negotiation focus: Program ownership + ESOP grant." },
     },
   },
   browserstack: {
     "software-engineer": {
-      entry: { totalMin: 17, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Levels.fyi (BrowserStack L1 India ₹1.99M)", lastVerified: "2026-05-07", notes: "L1 SDE — bootstrapped/profitable; cash bonuses modest. Negotiation focus: Fixed + joining bonus." },
+      entry: { totalMin: 17, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Levels.fyi (BrowserStack L1 India ₹1.99M)", lastVerified: "2026-05-07", notes: "L1 SDE, bootstrapped/profitable; cash bonuses modest. Negotiation focus: Fixed + joining bonus." },
       mid: { totalMin: 22, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Levels.fyi (L3 ₹17.3-28.1L)", lastVerified: "2026-05-07", notes: "BrowserStack pays below product-co peers; quality of work is the trade-off. Negotiation focus: Fixed + level + ESOP clarity." },
-      senior: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 8], source: "Levels.fyi (L5 ₹3.77M)", lastVerified: "2026-05-07", notes: "Senior — profitability means cash + measured ESOP, not aggressive grants. Negotiation focus: Fixed + level." },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 8], source: "Levels.fyi (L5 ₹3.77M)", lastVerified: "2026-05-07", notes: "Senior, profitability means cash + measured ESOP, not aggressive grants. Negotiation focus: Fixed + level." },
     },
   
     "product-manager": {
@@ -1567,9 +1567,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 94, totalMax: 242, equityMin: 14, equityMax: 36, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x devops-sre)", lastVerified: "2026-05-08" },
     },
     "qa-engineer": {
-      entry: { totalMin: 8, totalMax: 18, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Web research 2026-05-08 (BrowserStack QA/Automation Junior)", lastVerified: "2026-05-08", notes: "QA/Automation is core to BrowserStack's product — internal hiring bar high. Negotiation focus: Fixed + automation portfolio." },
-      mid: { totalMin: 16, totalMax: 35, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Web research 2026-05-08 (BrowserStack QA/Automation Mid)", lastVerified: "2026-05-08", notes: "Mid QA — own a test-tooling pipeline / framework. Negotiation focus: Tooling ownership + level." },
-      senior: { totalMin: 28, totalMax: 60, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (BrowserStack Senior QA/Automation)", lastVerified: "2026-05-08", notes: "Senior QA — close to SDET / Test Architect at BrowserStack. Negotiation focus: Architecture ownership + ESOP." },
+      entry: { totalMin: 8, totalMax: 18, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Web research 2026-05-08 (BrowserStack QA/Automation Junior)", lastVerified: "2026-05-08", notes: "QA/Automation is core to BrowserStack's product, internal hiring bar high. Negotiation focus: Fixed + automation portfolio." },
+      mid: { totalMin: 16, totalMax: 35, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Web research 2026-05-08 (BrowserStack QA/Automation Mid)", lastVerified: "2026-05-08", notes: "Mid QA, own a test-tooling pipeline / framework. Negotiation focus: Tooling ownership + level." },
+      senior: { totalMin: 28, totalMax: 60, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (BrowserStack Senior QA/Automation)", lastVerified: "2026-05-08", notes: "Senior QA, close to SDET / Test Architect at BrowserStack. Negotiation focus: Architecture ownership + ESOP." },
       lead: { totalMin: 28, totalMax: 77, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 39, totalMax: 105, equityMin: 2, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
     },
@@ -1580,13 +1580,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 39, totalMax: 99, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x customer-success)", lastVerified: "2026-05-08" },
       executive: { totalMin: 55, totalMax: 143, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x customer-success)", lastVerified: "2026-05-08" },
     },
-    /* Solutions Engineer + Account Executive — BrowserStack global SaaS GTM
+    /* Solutions Engineer + Account Executive, BrowserStack global SaaS GTM
        motion. Mapped under sales taxonomy (closest first-class role for AE;
        SE-Solutions overlaps with sales-engineering). */
     "sales": {
       entry: { totalMin: 10, totalMax: 22, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Web research 2026-05-08 (BrowserStack AE/Solutions Engineer Junior)", lastVerified: "2026-05-08", notes: "Junior AE / Solutions Engineer. Negotiation focus: OTE clarity + ramp." },
       mid: { totalMin: 22, totalMax: 55, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (BrowserStack AE Mid)", lastVerified: "2026-05-08", notes: "Mid AE owns mid-market book; SE Mid does pre-sales + POCs. Negotiation focus: Fixed vs incentive split + territory." },
-      senior: { totalMin: 45, totalMax: 110, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Web research 2026-05-08 (BrowserStack Senior AE / Lead SE)", lastVerified: "2026-05-08", notes: "Senior AE / Lead SE — strategic accounts. Negotiation focus: OTE realism + accelerators + ESOP." },
+      senior: { totalMin: 45, totalMax: 110, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Web research 2026-05-08 (BrowserStack Senior AE / Lead SE)", lastVerified: "2026-05-08", notes: "Senior AE / Lead SE, strategic accounts. Negotiation focus: OTE realism + accelerators + ESOP." },
       lead: { totalMin: 50, totalMax: 154, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
       executive: { totalMin: 77, totalMax: 242, equityMin: 5, equityMax: 15, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
     },
@@ -1601,7 +1601,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   freshworks: {
     "software-engineer": {
       entry: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 5.5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Freshworks SE entry India, July 2026)", lastVerified: "2026-05-07", notes: "Freshworks (FRSH NASDAQ) campus; RSU is public-stock, liquid." },
-      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Freshworks Nasdaq-listed)", lastVerified: "2026-05-07", notes: "RSUs in Freshworks (FRSH NASDAQ) — public, liquid." },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Freshworks Nasdaq-listed)", lastVerified: "2026-05-07", notes: "RSUs in Freshworks (FRSH NASDAQ), public, liquid." },
       senior: { totalMin: 40, totalMax: 70, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   
@@ -1683,7 +1683,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 19, totalMax: 53, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 26, totalMax: 71, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
     },
-    /* Technical Writer — Zoho ships extensive product docs; mapped to
+    /* Technical Writer, Zoho ships extensive product docs; mapped to
        marketing taxonomy (closest first-class role for content). */
     "marketing": {
       entry: { totalMin: 4.5, totalMax: 11.2, equityType: "none", joiningBonusOverride: [0, 0.5], source: "AmbitionBox 2026-05-08 (Zoho Tech Writer Junior)", lastVerified: "2026-05-08", notes: "Junior Tech Writer at Zoho. Negotiation focus: Fixed + writing portfolio." },
@@ -1710,7 +1710,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   mckinsey: {
     consultant: {
       entry: { totalMin: 16, totalMax: 24, equityType: "none", source: "McKinsey India BA pre-MBA (Glassdoor + casebasix)", lastVerified: "2026-05-07", notes: "Business Analyst role. India market." },
-      mid: { totalMin: 32, totalMax: 50, equityType: "none", source: "McKinsey India Associate post-MBA", lastVerified: "2026-05-07", notes: "Post-MBA Associate India ₹30-40L base + ₹8-12L bonus = total ₹40-50L. NOT negotiable on base — fixed for MBA entry." },
+      mid: { totalMin: 32, totalMax: 50, equityType: "none", source: "McKinsey India Associate post-MBA", lastVerified: "2026-05-07", notes: "Post-MBA Associate India ₹30-40L base + ₹8-12L bonus = total ₹40-50L. NOT negotiable on base, fixed for MBA entry." },
       senior: { totalMin: 60, totalMax: 95, equityType: "none", source: "McKinsey India EM (Engagement Manager)", lastVerified: "2026-05-07" },
       lead: { totalMin: 100, totalMax: 180, equityType: "none", source: "McKinsey India Associate Partner", lastVerified: "2026-05-07" },
     },
@@ -1887,21 +1887,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
 
   /* ─── Quant / Trading (India IIT-targeted) ─────────────────── */
-  "jane street": {
-    /* Use data-scientist key — matchRoleKey routes "Quantitative
-       Researcher" / "Quant Trader" → data-scientist. The override
-       supersedes any tier band. */
-    "data-scientist": {
-      entry: { totalMin: 70, totalMax: 130, equityType: "none", source: "Jane Street India 2026 class hires (IIT Bombay/Delhi/Madras)", lastVerified: "2026-05-07", notes: "Indian fresher quant trader: ₹70-120L+ first-year. Base $300K globally; India offers vary by office (Mumbai vs Hong Kong). Top performers up to ₹4Cr first-year." },
-      mid: { totalMin: 200, totalMax: 400, equityType: "none", source: "Jane Street India + Hong Kong placements", lastVerified: "2026-05-07", notes: "3-5 yr quant: median ₹2.5Cr+, performance-bonus heavy. Jane Street India offered IIT grad $508K (₹4.2Cr) for HK posting." },
-    },
-  },
-  "de shaw": {
-    "data-scientist": {
-      entry: { totalMin: 35, totalMax: 60, equityType: "none", source: "DE Shaw India hires (H1B data $200K-equivalent)", lastVerified: "2026-05-07", notes: "DE Shaw India quant analyst entry. Base ₹17L + heavy bonus." },
-      mid: { totalMin: 80, totalMax: 180, equityType: "none", source: "DE Shaw India 3-5 yr", lastVerified: "2026-05-07" },
-    },
-  },
   citadel: {
     "data-scientist": {
       entry: { totalMin: 60, totalMax: 110, equityType: "none", source: "Citadel India hires (IIT-targeted)", lastVerified: "2026-05-07", notes: "Citadel & Citadel Securities. Comparable to Jane Street; performance-tied." },
@@ -2046,6 +2031,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 15, totalMax: 28, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
+    /* HDFC Ltd merged into HDFC Bank in July 2023; no standalone HDFC Ltd
+       tech hiring exists post-merger, so the SDE band reuses HDFC Bank's
+       sourced figures rather than inventing separate ones. */
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / BSE listed", source: "AmbitionBox 2026 (HDFC Bank SDE fresher, post HDFC Ltd merger)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 28, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
+    },
   },
   axis: {
     sales: {
@@ -2066,7 +2059,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   lenskart: {
     "software-engineer": {
       entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Lenskart Solutions 1,527 salaries)", lastVerified: "2026-05-07" },
-      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + Glassdoor (Lenskart median $37.5K = ₹31L; range ₹2.4L-₹77L)", lastVerified: "2026-05-07", notes: "Lenskart listed Nov 2025 — ESOPs converted to RSUs." },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + Glassdoor (Lenskart median $37.5K = ₹31L; range ₹2.4L-₹77L)", lastVerified: "2026-05-07", notes: "Lenskart listed Nov 2025, ESOPs converted to RSUs." },
       senior: { totalMin: 38, totalMax: 60, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
@@ -2162,36 +2155,36 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   groww: {
     "software-engineer": {
-      entry: { totalMin: 10.0, totalMax: 28.0, baseMin: 7.4, baseMax: 20.7, equityMin: 1.4, equityMax: 3.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww SE Junior worksheet (post-2025 IPO)", lastVerified: "2026-05-08", notes: "Groww Junior SE. Bonus ₹1.2-3.4L. Joining bonus ₹0-2L. Listed 2025 — RSU liquid. Negotiation focus: fixed + joining bonus." },
-      mid: { totalMin: 18.0, totalMax: 50.0, baseMin: 13.3, baseMax: 37.0, equityMin: 2.5, equityMax: 7.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww SE Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid SE. Bonus ₹2.2-6.0L. Joining bonus ₹1-5L. Negotiation focus: fixed + ESOP/RSU clarity." },
-      senior: { totalMin: 35.0, totalMax: 95.0, baseMin: 25.9, baseMax: 70.3, equityMin: 4.9, equityMax: 13.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww SE Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior SE. Bonus ₹4.2-11.4L. Joining bonus ₹3-10L. 60-90 day notice. Negotiation focus: fixed + equity." },
+      entry: { totalMin: 10.0, totalMax: 28.0, baseMin: 7.4, baseMax: 20.7, equityMin: 1.4, equityMax: 3.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww SE Junior worksheet (post-2025 IPO)", lastVerified: "2026-05-08", notes: "Groww Junior SE. Bonus ₹1.2-3.4L. Joining bonus ₹0-2L. Listed 2025, RSU liquid. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 18.0, totalMax: 50.0, baseMin: 13.3, baseMax: 37.0, equityMin: 2.5, equityMax: 7.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww SE Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid SE. Bonus ₹2.2-6.0L. Joining bonus ₹1-5L. Negotiation focus: fixed + ESOP/RSU clarity." },
+      senior: { totalMin: 35.0, totalMax: 95.0, baseMin: 25.9, baseMax: 70.3, equityMin: 4.9, equityMax: 13.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww SE Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior SE. Bonus ₹4.2-11.4L. Joining bonus ₹3-10L. 60-90 day notice. Negotiation focus: fixed + equity." },
     },
     "backend-developer": {
-      entry: { totalMin: 10.0, totalMax: 28.0, baseMin: 7.4, baseMax: 20.7, equityMin: 1.4, equityMax: 3.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Backend Junior", lastVerified: "2026-05-08", notes: "Groww Junior Backend. Negotiation focus: fixed." },
-      mid: { totalMin: 18.0, totalMax: 50.0, baseMin: 13.3, baseMax: 37.0, equityMin: 2.5, equityMax: 7.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Backend Mid", lastVerified: "2026-05-08", notes: "Groww Mid Backend. Negotiation focus: backend ownership." },
-      senior: { totalMin: 35.0, totalMax: 95.0, baseMin: 25.9, baseMax: 70.3, equityMin: 4.9, equityMax: 13.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Backend Senior", lastVerified: "2026-05-08", notes: "Groww Senior Backend. 60-90 day notice. Negotiation focus: scale + reliability." },
+      entry: { totalMin: 10.0, totalMax: 28.0, baseMin: 7.4, baseMax: 20.7, equityMin: 1.4, equityMax: 3.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Backend Junior", lastVerified: "2026-05-08", notes: "Groww Junior Backend. Negotiation focus: fixed." },
+      mid: { totalMin: 18.0, totalMax: 50.0, baseMin: 13.3, baseMax: 37.0, equityMin: 2.5, equityMax: 7.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Backend Mid", lastVerified: "2026-05-08", notes: "Groww Mid Backend. Negotiation focus: backend ownership." },
+      senior: { totalMin: 35.0, totalMax: 95.0, baseMin: 25.9, baseMax: 70.3, equityMin: 4.9, equityMax: 13.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Backend Senior", lastVerified: "2026-05-08", notes: "Groww Senior Backend. 60-90 day notice. Negotiation focus: scale + reliability." },
     },
     "frontend-developer": {
-      entry: { totalMin: 9.0, totalMax: 25.0, baseMin: 6.8, baseMax: 19.0, equityMin: 1.1, equityMax: 3.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Frontend Junior", lastVerified: "2026-05-08", notes: "Groww Junior Frontend. Bonus ₹1.1-3L. Negotiation focus: fixed." },
-      mid: { totalMin: 16.0, totalMax: 45.0, baseMin: 12.2, baseMax: 34.2, equityMin: 1.9, equityMax: 5.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Frontend Mid", lastVerified: "2026-05-08", notes: "Groww Mid Frontend. Negotiation focus: product UI impact." },
-      senior: { totalMin: 30.0, totalMax: 80.0, baseMin: 22.8, baseMax: 60.8, equityMin: 3.6, equityMax: 9.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Frontend Senior", lastVerified: "2026-05-08", notes: "Groww Senior Frontend. 60-90 day notice. Negotiation focus: frontend ownership." },
+      entry: { totalMin: 9.0, totalMax: 25.0, baseMin: 6.8, baseMax: 19.0, equityMin: 1.1, equityMax: 3.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Frontend Junior", lastVerified: "2026-05-08", notes: "Groww Junior Frontend. Bonus ₹1.1-3L. Negotiation focus: fixed." },
+      mid: { totalMin: 16.0, totalMax: 45.0, baseMin: 12.2, baseMax: 34.2, equityMin: 1.9, equityMax: 5.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Frontend Mid", lastVerified: "2026-05-08", notes: "Groww Mid Frontend. Negotiation focus: product UI impact." },
+      senior: { totalMin: 30.0, totalMax: 80.0, baseMin: 22.8, baseMax: 60.8, equityMin: 3.6, equityMax: 9.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Frontend Senior", lastVerified: "2026-05-08", notes: "Groww Senior Frontend. 60-90 day notice. Negotiation focus: frontend ownership." },
     },
     "mobile-developer": {
-      entry: { totalMin: 10.0, totalMax: 28.0, baseMin: 7.4, baseMax: 20.7, equityMin: 1.4, equityMax: 3.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Mobile Junior", lastVerified: "2026-05-08", notes: "Groww Junior Mobile. Negotiation focus: fixed + app impact." },
-      mid: { totalMin: 18.0, totalMax: 50.0, baseMin: 13.3, baseMax: 37.0, equityMin: 2.5, equityMax: 7.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Mobile Mid", lastVerified: "2026-05-08", notes: "Groww Mid Mobile. Negotiation focus: app scale." },
-      senior: { totalMin: 35.0, totalMax: 95.0, baseMin: 25.9, baseMax: 70.3, equityMin: 4.9, equityMax: 13.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Mobile Senior", lastVerified: "2026-05-08", notes: "Groww Senior Mobile. 60-90 day notice. Negotiation focus: ownership." },
+      entry: { totalMin: 10.0, totalMax: 28.0, baseMin: 7.4, baseMax: 20.7, equityMin: 1.4, equityMax: 3.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Mobile Junior", lastVerified: "2026-05-08", notes: "Groww Junior Mobile. Negotiation focus: fixed + app impact." },
+      mid: { totalMin: 18.0, totalMax: 50.0, baseMin: 13.3, baseMax: 37.0, equityMin: 2.5, equityMax: 7.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Mobile Mid", lastVerified: "2026-05-08", notes: "Groww Mid Mobile. Negotiation focus: app scale." },
+      senior: { totalMin: 35.0, totalMax: 95.0, baseMin: 25.9, baseMax: 70.3, equityMin: 4.9, equityMax: 13.3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Mobile Senior", lastVerified: "2026-05-08", notes: "Groww Senior Mobile. 60-90 day notice. Negotiation focus: ownership." },
     },
     "product-manager": {
-      entry: { totalMin: 14.0, totalMax: 32.0, baseMin: 9.8, baseMax: 22.4, equityMin: 2.0, equityMax: 4.5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww PM Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior PM / APM. Bonus ₹2.2-5.1L. Joining bonus ₹1-3L. Negotiation focus: scope + fixed." },
-      mid: { totalMin: 25.0, totalMax: 70.0, baseMin: 17.5, baseMax: 49.0, equityMin: 3.5, equityMax: 9.8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww PM Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid PM. Bonus ₹4.0-11.2L. Joining bonus ₹2-7L. Negotiation focus: fixed + ESOP/RSU." },
-      senior: { totalMin: 45.0, totalMax: 130.0, baseMin: 31.5, baseMax: 91.0, equityMin: 6.3, equityMax: 18.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww PM Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior PM. Bonus ₹7.2-20.8L. Joining bonus ₹4-15L. 60-90 day notice. Negotiation focus: scope + equity." },
+      entry: { totalMin: 14.0, totalMax: 32.0, baseMin: 9.8, baseMax: 22.4, equityMin: 2.0, equityMax: 4.5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww PM Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior PM / APM. Bonus ₹2.2-5.1L. Joining bonus ₹1-3L. Negotiation focus: scope + fixed." },
+      mid: { totalMin: 25.0, totalMax: 70.0, baseMin: 17.5, baseMax: 49.0, equityMin: 3.5, equityMax: 9.8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww PM Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid PM. Bonus ₹4.0-11.2L. Joining bonus ₹2-7L. Negotiation focus: fixed + ESOP/RSU." },
+      senior: { totalMin: 45.0, totalMax: 130.0, baseMin: 31.5, baseMax: 91.0, equityMin: 6.3, equityMax: 18.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww PM Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior PM. Bonus ₹7.2-20.8L. Joining bonus ₹4-15L. 60-90 day notice. Negotiation focus: scope + equity." },
       lead: { totalMin: 70, totalMax: 180, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 95, totalMax: 250, equityMin: 13, equityMax: 35, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x product-manager)", lastVerified: "2026-05-08" },
     },
     "ux-designer": {
-      entry: { totalMin: 8.0, totalMax: 24.0, baseMin: 6.2, baseMax: 18.7, equityMin: 1.0, equityMax: 2.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww UX/Product Designer Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior UX/Product Designer. Bonus ₹0.8-2.4L. Negotiation focus: fixed." },
-      mid: { totalMin: 16.0, totalMax: 45.0, baseMin: 12.5, baseMax: 35.1, equityMin: 1.9, equityMax: 5.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww UX/Product Designer Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid UX/Product Designer. Bonus ₹1.6-4.5L. Negotiation focus: level mapping." },
-      senior: { totalMin: 28.0, totalMax: 80.0, baseMin: 21.8, baseMax: 62.4, equityMin: 3.4, equityMax: 9.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww UX/Product Designer Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior UX/Product Designer. Bonus ₹2.8-8.0L. 60-90 day notice. Negotiation focus: ownership." },
+      entry: { totalMin: 8.0, totalMax: 24.0, baseMin: 6.2, baseMax: 18.7, equityMin: 1.0, equityMax: 2.9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww UX/Product Designer Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior UX/Product Designer. Bonus ₹0.8-2.4L. Negotiation focus: fixed." },
+      mid: { totalMin: 16.0, totalMax: 45.0, baseMin: 12.5, baseMax: 35.1, equityMin: 1.9, equityMax: 5.4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww UX/Product Designer Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid UX/Product Designer. Bonus ₹1.6-4.5L. Negotiation focus: level mapping." },
+      senior: { totalMin: 28.0, totalMax: 80.0, baseMin: 21.8, baseMax: 62.4, equityMin: 3.4, equityMax: 9.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww UX/Product Designer Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior UX/Product Designer. Bonus ₹2.8-8.0L. 60-90 day notice. Negotiation focus: ownership." },
       lead: { totalMin: 45, totalMax: 120, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x ux-designer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 60, totalMax: 150, equityMin: 7, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x ux-designer)", lastVerified: "2026-05-08" },
     },
@@ -2210,9 +2203,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 85, totalMax: 220, equityMin: 13, equityMax: 33, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x devops-sre)", lastVerified: "2026-05-08" },
     },
     "data-analyst": {
-      entry: { totalMin: 6.0, totalMax: 16.0, baseMin: 5.0, baseMax: 13.4, equityMin: 0.4, equityMax: 1.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Data Analyst Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior Data Analyst. Bonus ₹0.6-1.6L. Negotiation focus: fixed." },
-      mid: { totalMin: 10.0, totalMax: 28.0, baseMin: 8.4, baseMax: 23.5, equityMin: 0.6, equityMax: 1.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Data Analyst Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid Data Analyst. Bonus ₹1.0-2.8L. Negotiation focus: fixed + growth." },
-      senior: { totalMin: 18.0, totalMax: 50.0, baseMin: 15.1, baseMax: 42.0, equityMin: 1.1, equityMax: 3.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Data Analyst Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior Data Analyst. Bonus ₹1.8-5.0L. 60-day notice. Negotiation focus: analytics scope." },
+      entry: { totalMin: 6.0, totalMax: 16.0, baseMin: 5.0, baseMax: 13.4, equityMin: 0.4, equityMax: 1.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Data Analyst Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior Data Analyst. Bonus ₹0.6-1.6L. Negotiation focus: fixed." },
+      mid: { totalMin: 10.0, totalMax: 28.0, baseMin: 8.4, baseMax: 23.5, equityMin: 0.6, equityMax: 1.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Data Analyst Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid Data Analyst. Bonus ₹1.0-2.8L. Negotiation focus: fixed + growth." },
+      senior: { totalMin: 18.0, totalMax: 50.0, baseMin: 15.1, baseMax: 42.0, equityMin: 1.1, equityMax: 3.0, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Data Analyst Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior Data Analyst. Bonus ₹1.8-5.0L. 60-day notice. Negotiation focus: analytics scope." },
       lead: { totalMin: 28, totalMax: 75, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x data-analyst)", lastVerified: "2026-05-08" },
       executive: { totalMin: 40, totalMax: 100, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x data-analyst)", lastVerified: "2026-05-08" },
     },
@@ -2224,9 +2217,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 70, totalMax: 220, equityMin: 4, equityMax: 13, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (groww 1x sales)", lastVerified: "2026-05-08" },
     },
     "marketing": {
-      entry: { totalMin: 7.0, totalMax: 18.0, baseMin: 5.0, baseMax: 13.0, equityMin: 0.3, equityMax: 0.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Growth Marketing Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior Growth Marketing. Bonus ₹1.7-4.3L (high variable %). Negotiation focus: fixed + bonus." },
-      mid: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.1, baseMax: 28.8, equityMin: 0.6, equityMax: 1.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Growth Marketing Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid Growth Marketing. Bonus ₹3.4-9.6L. Negotiation focus: CAC/ROI ownership." },
-      senior: { totalMin: 25.0, totalMax: 80.0, baseMin: 18.0, baseMax: 57.6, equityMin: 1.0, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Groww Growth Marketing Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior Growth Marketing. Bonus ₹6.0-19.2L. 60-90 day notice. Negotiation focus: growth impact." },
+      entry: { totalMin: 7.0, totalMax: 18.0, baseMin: 5.0, baseMax: 13.0, equityMin: 0.3, equityMax: 0.7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Growth Marketing Junior worksheet", lastVerified: "2026-05-08", notes: "Groww Junior Growth Marketing. Bonus ₹1.7-4.3L (high variable %). Negotiation focus: fixed + bonus." },
+      mid: { totalMin: 14.0, totalMax: 40.0, baseMin: 10.1, baseMax: 28.8, equityMin: 0.6, equityMax: 1.6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Growth Marketing Mid worksheet", lastVerified: "2026-05-08", notes: "Groww Mid Growth Marketing. Bonus ₹3.4-9.6L. Negotiation focus: CAC/ROI ownership." },
+      senior: { totalMin: 25.0, totalMax: 80.0, baseMin: 18.0, baseMax: 57.6, equityMin: 1.0, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08, Groww Growth Marketing Senior worksheet", lastVerified: "2026-05-08", notes: "Groww Senior Growth Marketing. Bonus ₹6.0-19.2L. 60-90 day notice. Negotiation focus: growth impact." },
     },
   },
   ola: {
@@ -2244,12 +2237,12 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 26, totalMax: 40, equityType: "none", source: "Glassdoor (ITC Brand Manager)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 65, equityType: "none", source: "InsideIIM (HUL/ITC/Unilever Brand Manager ₹30L+ avg)", lastVerified: "2026-05-07" },
       lead: { totalMin: 65, totalMax: 110, equityType: "none", source: "Glassdoor (ITC Senior Brand Director / GM)", lastVerified: "2026-05-07" },
-      executive: { totalMin: 110, totalMax: 280, equityType: "none", source: "Glassdoor (ITC ED / Divisional Chief Executive)", lastVerified: "2026-05-07", notes: "ITC ED-track CXO India — heavy variable + perks." },
+      executive: { totalMin: 110, totalMax: 280, equityType: "none", source: "Glassdoor (ITC ED / Divisional Chief Executive)", lastVerified: "2026-05-07", notes: "ITC ED-track CXO India, heavy variable + perks." },
     },
   },
   hul: {
     marketing: {
-      entry: { totalMin: 18, totalMax: 27, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM (HUL UFLP ₹18-27L for IIM grads)", lastVerified: "2026-05-07", notes: "HUL UFLP — premium MT program. Glassdoor avg includes non-MBA roles which are lower (₹7.88L avg)." },
+      entry: { totalMin: 18, totalMax: 27, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM (HUL UFLP ₹18-27L for IIM grads)", lastVerified: "2026-05-07", notes: "HUL UFLP, premium MT program. Glassdoor avg includes non-MBA roles which are lower (₹7.88L avg)." },
       mid: { totalMin: 30, totalMax: 50, equityMin: 2, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 90, equityMin: 5, equityMax: 18, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM", lastVerified: "2026-05-07" },
       lead: { totalMin: 65, totalMax: 120, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM (HUL Marketing Director / GM)", lastVerified: "2026-05-07" },
@@ -2294,7 +2287,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   "p&g": {
     marketing: {
-      entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-05-07", notes: "P&G premium MNC MT — top of FMCG MBA market." },
+      entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-05-07", notes: "P&G premium MNC MT, top of FMCG MBA market." },
       mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 60, totalMax: 110, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
       lead: { totalMin: 90, totalMax: 160, equityType: "none", source: "Glassdoor (P&G Marketing Director India)", lastVerified: "2026-05-07" },
@@ -2311,11 +2304,11 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Godrej — GLP MT rotation across consumer goods, B2B, agro. ESOPs
+  /* Godrej, GLP MT rotation across consumer goods, B2B, agro. ESOPs
      limited to listed Godrej Industries holdings; most roles are cash-only. */
   godrej: {
     marketing: {
-      entry: { totalMin: 16, totalMax: 24, equityType: "none", source: "InsideIIM + Glassdoor (Godrej GLP IIM grad ₹16-24L)", lastVerified: "2026-05-08", notes: "Godrej GLP MT — premium FMCG MBA program; below HUL UFLP but above Nestle.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      entry: { totalMin: 16, totalMax: 24, equityType: "none", source: "InsideIIM + Glassdoor (Godrej GLP IIM grad ₹16-24L)", lastVerified: "2026-05-08", notes: "Godrej GLP MT, premium FMCG MBA program; below HUL UFLP but above Nestle.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       mid: { totalMin: 22, totalMax: 38, equityType: "none", source: "6figr (Godrej group avg ₹19L) + Glassdoor", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       senior: { totalMin: 38, totalMax: 65, equityType: "none", source: "Glassdoor (Godrej Sr Brand Manager / Category Lead)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       lead: { totalMin: 65, totalMax: 110, equityType: "none", source: "Glassdoor (Godrej GM / Marketing Director)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
@@ -2358,26 +2351,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* HDFC Bank — large officer/manager pyramid. Relationship Manager and
+  /* HDFC Bank, large officer/manager pyramid. Relationship Manager and
      Branch Manager are the two highest-volume tracks. VP/SVP comp jumps. */
-  "hdfc bank": {
-    finance: {
-      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indeed + 6figr (HDFC Bank Relationship Officer ₹3.5L, RM ₹4.6-6.1L)", lastVerified: "2026-05-08", notes: "HDFC Bank entry officer / RM track. Sales-incentive component meaningful.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      mid: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indeed Manager avg ₹10.3L + 6figr", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      senior: { totalMin: 15, totalMax: 28, equityType: "none", source: "Glassdoor (HDFC Sr Manager / AVP) + PayScale upper band ₹21.8L", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "6figr (HDFC Bank VP cap ₹60L Bangalore)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-    },
-  
-    "business-analyst": {
-      entry: { totalMin: 3, totalMax: 13, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 9, totalMax: 23, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 14, totalMax: 40, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 23, totalMax: 61, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 32, totalMax: 86, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
-    },
-  },
-
-  /* ─── Sector clusters — picks up the long tail of ~800 companies
+  /* ─── Sector clusters, picks up the long tail of ~800 companies
         in the autocomplete that don't have bespoke entries. Indexed
         by classifyCompanyType() bucket key (see company-guidance.ts).
         Every company in the autocomplete classifies into one bucket;
@@ -3505,7 +3481,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   __sector_gcc_global_capability_centre: {
     "software-engineer": {
-      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India entry (Wells Fargo / JPMC GCC / GE / Lowe's / Tesco / Sainsbury's etc.) — 11.5% increment 2026", lastVerified: "2026-05-07", notes: "GCCs 15-22% premium over IT services. RSU in parent stock." },
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India entry (Wells Fargo / JPMC GCC / GE / Lowe's / Tesco / Sainsbury's etc.), 11.5% increment 2026", lastVerified: "2026-05-07", notes: "GCCs 15-22% premium over IT services. RSU in parent stock." },
       mid: { totalMin: 22, totalMax: 40, equityMin: 3, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India mid (Zinnov GCC report 2026)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 75, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India senior", lastVerified: "2026-05-07" },
       lead: { totalMin: 70, totalMax: 130, equityMin: 20, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India lead/staff", lastVerified: "2026-05-07" },
@@ -3909,7 +3885,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   __sector_psu_central: {
     "software-engineer": {
-      entry: { totalMin: 6, totalMax: 9, equityType: "none", source: "PSU Central (BHEL / NTPC / ONGC / Indian Oil / GAIL / SAIL etc.) — 7th CPC band", lastVerified: "2026-05-07", notes: "PSU pay = 7th CPC fixed bands. Pension = defined benefit, actuarially worth ₹50-150L. Job security key value." },
+      entry: { totalMin: 6, totalMax: 9, equityType: "none", source: "PSU Central (BHEL / NTPC / ONGC / Indian Oil / GAIL / SAIL etc.), 7th CPC band", lastVerified: "2026-05-07", notes: "PSU pay = 7th CPC fixed bands. Pension = defined benefit, actuarially worth ₹50-150L. Job security key value." },
       mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "PSU Central Manager / Senior Manager", lastVerified: "2026-05-07" },
       senior: { totalMin: 22, totalMax: 40, equityType: "none", source: "PSU Central GM / DGM", lastVerified: "2026-05-07" },
       lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "PSU Central ED (Executive Director)", lastVerified: "2026-05-07" },
@@ -4009,7 +3985,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   __sector_academia_iit_iim: {
     "software-engineer": {
-      entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indian academia (IIT/IIM/IISc) Assistant Professor — UGC pay scale", lastVerified: "2026-05-07", notes: "UGC pay scale fixed; consulting + grant earnings vary." },
+      entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indian academia (IIT/IIM/IISc) Assistant Professor, UGC pay scale", lastVerified: "2026-05-07", notes: "UGC pay scale fixed; consulting + grant earnings vary." },
       mid: { totalMin: 14, totalMax: 24, equityType: "none", source: "Associate Professor", lastVerified: "2026-05-07" },
       senior: { totalMin: 24, totalMax: 40, equityType: "none", source: "Professor / Department Chair", lastVerified: "2026-05-07" },
       lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "Senior Professor / Endowed Chair / Dean", lastVerified: "2026-05-07" },
@@ -4109,7 +4085,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   __sector_indian_aviation: {
     operations: {
-      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indian aviation entry (IndiGo / Air India / SpiceJet / Akasa / Vistara) — ground / cabin crew", lastVerified: "2026-05-07" },
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indian aviation entry (IndiGo / Air India / SpiceJet / Akasa / Vistara), ground / cabin crew", lastVerified: "2026-05-07" },
       mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "Aviation mid (cabin lead / station ops)", lastVerified: "2026-05-07" },
       senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "Aviation senior ops / commercial", lastVerified: "2026-05-07" },
       lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "Aviation Director Ops / Network Planning", lastVerified: "2026-05-07" },
@@ -4609,7 +4585,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   __sector_indian_civil_services: {
     "software-engineer": {
-      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "Civil services / RBI Grade B / SEBI Grade A / NABARD entry — 7th CPC fixed band", lastVerified: "2026-05-07", notes: "Fixed pay scale + DA + HRA. Pension + perks add 30-50% non-cash value." },
+      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "Civil services / RBI Grade B / SEBI Grade A / NABARD entry, 7th CPC fixed band", lastVerified: "2026-05-07", notes: "Fixed pay scale + DA + HRA. Pension + perks add 30-50% non-cash value." },
       mid: { totalMin: 15, totalMax: 25, equityType: "none", source: "Civil services mid (Under Secretary / Joint Director)", lastVerified: "2026-05-07" },
       senior: { totalMin: 25, totalMax: 45, equityType: "none", source: "Civil services senior (Joint Secretary / Secretary)", lastVerified: "2026-05-07" },
       lead: { totalMin: 40, totalMax: 65, equityType: "none", source: "Civil services lead (Additional Secretary)", lastVerified: "2026-05-07" },
@@ -4711,14 +4687,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── New sector buckets (added in coverage-audit response) ─── */
   __sector_ai_genai_startup: {
     "software-engineer": {
-      entry: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI startup India entry — talent scarcity premium", lastVerified: "2026-05-07" },
+      entry: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI startup India entry, talent scarcity premium", lastVerified: "2026-05-07" },
       mid: { totalMin: 30, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India mid (Sarvam / Krutrim / Gan / Avataar / etc.)", lastVerified: "2026-05-07" },
       senior: { totalMin: 55, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India senior", lastVerified: "2026-05-07" },
       lead: { totalMin: 90, totalMax: 160, equityMin: 25, equityMax: 60, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India staff", lastVerified: "2026-05-07" },
       executive: { totalMin: 130, totalMax: 280, equityMin: 50, equityMax: 130, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India founding-engineer / VP", lastVerified: "2026-05-07" },
     },
     "ml-engineer": {
-      entry: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE entry — 1.3-1.6x SE premium", lastVerified: "2026-05-07" },
+      entry: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE entry, 1.3-1.6x SE premium", lastVerified: "2026-05-07" },
       mid: { totalMin: 38, totalMax: 70, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 70, totalMax: 130, equityMin: 18, equityMax: 50, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE senior", lastVerified: "2026-05-07" },
     },
@@ -5910,7 +5886,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   __sector_indian_saas_broad: {
     "software-engineer": {
-      entry: { totalMin: 12, totalMax: 22, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad entry (Freshworks / Zoho / Postman / BrowserStack / Chargebee / etc. — NB bespoke entries override this)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 12, totalMax: 22, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad entry (Freshworks / Zoho / Postman / BrowserStack / Chargebee / etc., NB bespoke entries override this)", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 40, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 70, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad senior", lastVerified: "2026-05-07" },
     },
@@ -6081,18 +6057,18 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Generic catch-all — bound to indian_market_generic bucket from
+  /* Generic catch-all, bound to indian_market_generic bucket from
      classifyCompanyType. ALWAYS hits when no other sector matches.
      Bands are AmbitionBox / Glassdoor / Naukri 2026 medians for the
      Indian market. Used so every company has explicit source
      attribution rather than falling through the in-handler default. */
   __sector_indian_market_generic: {
     "software-engineer": {
-      entry: { totalMin: 5, totalMax: 12, equityType: "none", source: "Indian market median (AmbitionBox / Glassdoor / Naukri 2026 cohort) — no company-specific data", lastVerified: "2026-05-07" },
+      entry: { totalMin: 5, totalMax: 12, equityType: "none", source: "Indian market median (AmbitionBox / Glassdoor / Naukri 2026 cohort), no company-specific data", lastVerified: "2026-05-07" },
       mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "Indian market median 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "Indian market median 2026", lastVerified: "2026-05-07" },
-      lead: { totalMin: 38, totalMax: 75, equityType: "none", source: "Indian market median 2026 — Senior IC / Architect", lastVerified: "2026-05-07" },
-      executive: { totalMin: 65, totalMax: 150, equityType: "none", source: "Indian market median 2026 — VP / CXO band", lastVerified: "2026-05-07" },
+      lead: { totalMin: 38, totalMax: 75, equityType: "none", source: "Indian market median 2026, Senior IC / Architect", lastVerified: "2026-05-07" },
+      executive: { totalMin: 65, totalMax: 150, equityType: "none", source: "Indian market median 2026, VP / CXO band", lastVerified: "2026-05-07" },
     },
     "product-manager": {
       entry: { totalMin: 8, totalMax: 18, equityType: "none", source: "Indian market median PM entry", lastVerified: "2026-05-07" },
@@ -6216,7 +6192,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "ux-designer": {
       entry: { totalMin: 5.8, totalMax: 7.7, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Entry UX/Product designer 1-3 yrs." },
       mid: { totalMin: 6, totalMax: 8.7, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "UX designer 3-6 yrs." },
-      senior: { totalMin: 9, totalMax: 10.8, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior UX designer at Thence — design agency, pays below product unicorns." },
+      senior: { totalMin: 9, totalMax: 10.8, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior UX designer at Thence, design agency, pays below product unicorns." },
     },
   },
   "yellow slice": {
@@ -6265,11 +6241,11 @@ export const COMPANY_SALARY_OVERRIDES: Record<
        * bands are derived from Google/AmbitionBox/Glassdoor 2026:
        * entry 1-3y ₹6-8L, mid 3-6y ₹9-12L, senior 6-9y ₹14-18L,
        * with lead/executive tracking IT-services scaling. */
-      entry: { totalMin: 6, totalMax: 8, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Business Analyst (Associate, 1-3 yrs)", lastVerified: "2026-05-14" },
-      mid: { totalMin: 9, totalMax: 12, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Business Analyst (3-6 yrs)", lastVerified: "2026-05-14" },
-      senior: { totalMin: 14, totalMax: 18, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Senior Business Analyst (6-9 yrs)", lastVerified: "2026-05-14" },
-      lead: { totalMin: 20, totalMax: 28, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Lead BA / Consultant (9+ yrs)", lastVerified: "2026-05-14" },
-      executive: { totalMin: 28, totalMax: 42, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Principal/Senior Manager BA", lastVerified: "2026-05-14" },
+      entry: { totalMin: 6, totalMax: 8, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14, Accenture Business Analyst (Associate, 1-3 yrs)", lastVerified: "2026-05-14" },
+      mid: { totalMin: 9, totalMax: 12, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14, Accenture Business Analyst (3-6 yrs)", lastVerified: "2026-05-14" },
+      senior: { totalMin: 14, totalMax: 18, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14, Accenture Senior Business Analyst (6-9 yrs)", lastVerified: "2026-05-14" },
+      lead: { totalMin: 20, totalMax: 28, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14, Accenture Lead BA / Consultant (9+ yrs)", lastVerified: "2026-05-14" },
+      executive: { totalMin: 28, totalMax: 42, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14, Accenture Principal/Senior Manager BA", lastVerified: "2026-05-14" },
     },
     "project-manager": {
       entry: { totalMin: 6, totalMax: 14, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x project-manager)", lastVerified: "2026-05-08" },
@@ -6290,15 +6266,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* FAANG / Big Tech expansion. */
   meta: {
     "software-engineer": {
-      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / quarterly (no cliff post-2022)", joiningBonusOverride: [4, 10], source: "Levels.fyi (Meta India 412 entries Apr 2026)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: E3/E4 entry — Meta India hires E4-heavy; push for E4 if FTE convert from intern." },
+      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / quarterly (no cliff post-2022)", joiningBonusOverride: [4, 10], source: "Levels.fyi (Meta India 412 entries Apr 2026)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: E3/E4 entry, Meta India hires E4-heavy; push for E4 if FTE convert from intern." },
       mid: { totalMin: 50, totalMax: 75, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [8, 20], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Software Engineer Mid: E5 (5-7 yrs) median ₹62L, P75 ₹78L. RSU refresher cadence (annual vs out-of-cycle) is the lever." },
       senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 75, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [15, 40], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Software Engineer Senior: E6 (8-12 yrs) median ₹95L, P90 ₹140L+. AI/Reality Labs orgs pay top of band; team selection matters." },
       lead: { totalMin: 130, totalMax: 220, equityMin: 70, equityMax: 160, equityType: "rsu", equityVesting: "4yr / quarterly", source: "Levels.fyi", lastVerified: "2026-05-08", notes: "E7 staff Meta India ₹160-220L TC." },
     },
     "product-manager": {
-      entry: { totalMin: 28, totalMax: 55, equityMin: 7, equityMax: 16, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [4, 10], source: "Levels.fyi (Meta India IC4 PM)", lastVerified: "2026-05-08", notes: "Product Manager Junior: IC4 (RPM/MBA hire) — strategy interview is the rubric." },
-      mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [8, 20], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Mid: IC5 — performance bonus (15-20% target) + RSU refresher are key levers." },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 70, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [15, 40], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Senior: IC6 — org scope (Family of Apps vs Reality Labs) drives top-of-band." },
+      entry: { totalMin: 28, totalMax: 55, equityMin: 7, equityMax: 16, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [4, 10], source: "Levels.fyi (Meta India IC4 PM)", lastVerified: "2026-05-08", notes: "Product Manager Junior: IC4 (RPM/MBA hire), strategy interview is the rubric." },
+      mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [8, 20], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Mid: IC5, performance bonus (15-20% target) + RSU refresher are key levers." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 70, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [15, 40], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Senior: IC6, org scope (Family of Apps vs Reality Labs) drives top-of-band." },
     },
   
     "ux-designer": {
@@ -6368,7 +6344,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* Edtech (post-2024 reset bands). */
   "byju's": {
     "software-engineer": {
-      entry: { totalMin: 7, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr — value uncertain post-reset", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Post-2024 BYJU's reset; ESOP value highly discounted." },
+      entry: { totalMin: 7, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr, value uncertain post-reset", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Post-2024 BYJU's reset; ESOP value highly discounted." },
       mid: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -6398,7 +6374,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* Payments / Fintech. */
   paytm: {
     "software-engineer": {
-      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — listed equity", joiningBonusOverride: [0, 2], source: "AmbitionBox + Glassdoor 2026 + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Paytm listed; RSU credibility solid post-2023. Negotiation focus: fixed." },
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, listed equity", joiningBonusOverride: [0, 2], source: "AmbitionBox + Glassdoor 2026 + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Paytm listed; RSU credibility solid post-2023. Negotiation focus: fixed." },
       mid: { totalMin: 20, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", joiningBonusOverride: [1, 4], source: "Glassdoor + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: fixed + level." },
       senior: { totalMin: 32, totalMax: 52, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", joiningBonusOverride: [2, 8], source: "Glassdoor + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: fixed + equity." },
     },
@@ -6518,7 +6494,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   digit: {
     "software-engineer": {
-      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr — listed", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Go Digit listed; equity tradable." },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr, listed", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Go Digit listed; equity tradable." },
       senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
@@ -6551,7 +6527,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 80, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
-    /* Bug-report 13 (2026-05-14) — Zepto Operations Manager band.
+    /* Bug-report 13 (2026-05-14), Zepto Operations Manager band.
      * Without this entry, an Operations Manager request fell through to
      * Zepto's tier-default (unicorn ⇒ software-engineer-ish curve),
      * which over-anchored a domain-pivoting candidate at ₹25L. Google
@@ -6567,13 +6543,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   blinkit: {
     "software-engineer": {
-      mid: { totalMin: 28, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr — Zomato-listed", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Blinkit (Zomato) RSU credibility solid post-Zomato IPO." },
+      mid: { totalMin: 28, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr, Zomato-listed", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Blinkit (Zomato) RSU credibility solid post-Zomato IPO." },
       senior: { totalMin: 45, totalMax: 70, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
   delhivery: {
     "software-engineer": {
-      entry: { totalMin: 12, totalMax: 18, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      entry: { totalMin: 12, totalMax: 18, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr, listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 36, totalMax: 58, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -6581,12 +6557,12 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* Travel / hospitality. */
   makemytrip: {
     "software-engineer": {
-      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Nasdaq-listed", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, Nasdaq-listed", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 36, totalMax: 60, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
-  /* ixigo — listed (NSE: IXIGO) since 2024. Compensation runs leaner than
+  /* ixigo, listed (NSE: IXIGO) since 2024. Compensation runs leaner than
    * MMT/Yatra; CSV-derived band over-anchored Senior PD at ₹37–58L when
    * AmbitionBox + Levels.fyi 2026 show ₹26–40L (median ~₹27.7L). Override
    * with verified ranges so the recruiter doesn't open above public market. */
@@ -6594,12 +6570,12 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "ux-designer": {
       entry: { totalMin: 6, totalMax: 11, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 + Levels.fyi", lastVerified: "2026-05-09", notes: "ixigo Junior Product/UX Designer." },
       mid: { totalMin: 12, totalMax: 22, equityMin: 0.8, equityMax: 2.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09", notes: "ixigo Mid Product Designer (Designer-2)." },
-      senior: { totalMin: 26, totalMax: 40, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 + Glassdoor (median ₹27.7L Gurugram)", lastVerified: "2026-05-09", notes: "ixigo Senior Product Designer / Senior UX. Top of band hit only for 7-9 YoE leads. Listed entity — ESOP liquidity better than pre-IPO peers." },
+      senior: { totalMin: 26, totalMax: 40, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 + Glassdoor (median ₹27.7L Gurugram)", lastVerified: "2026-05-09", notes: "ixigo Senior Product Designer / Senior UX. Top of band hit only for 7-9 YoE leads. Listed entity, ESOP liquidity better than pre-IPO peers." },
     },
     "software-engineer": {
       entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 1.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
       mid: { totalMin: 14, totalMax: 26, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
-      senior: { totalMin: 26, totalMax: 45, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09", notes: "ixigo Senior SE / Tech Lead. Listed since 2024 — ESOP has real liquidity." },
+      senior: { totalMin: 26, totalMax: 45, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09", notes: "ixigo Senior SE / Tech Lead. Listed since 2024, ESOP has real liquidity." },
     },
     "product-manager": {
       mid: { totalMin: 18, totalMax: 32, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
@@ -6608,7 +6584,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   oyo: {
     "software-engineer": {
-      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr — IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "OYO ESOP credibility uncertain pre-IPO." },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr, IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "OYO ESOP credibility uncertain pre-IPO." },
       senior: { totalMin: 30, totalMax: 48, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
@@ -6637,13 +6613,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   "1mg": {
     "software-engineer": {
-      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr — Tata-acquired", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata 1mg; RSU in Tata listed entity." },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr, Tata-acquired", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata 1mg; RSU in Tata listed entity." },
       senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
   "dr lal pathlabs": {
     "software-engineer": {
-      mid: { totalMin: 12, totalMax: 20, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 20, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr, listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 22, totalMax: 35, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
   },
@@ -6656,7 +6632,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* GCC big-three. */
   vmware: {
     "software-engineer": {
-      entry: { totalMin: 18, totalMax: 28, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr — Broadcom-acquired", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Post Broadcom acquisition; reduced hiring." },
+      entry: { totalMin: 18, totalMax: 28, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr, Broadcom-acquired", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Post Broadcom acquisition; reduced hiring." },
       mid: { totalMin: 32, totalMax: 50, equityMin: 11, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 78, equityMin: 22, equityMax: 48, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
     },
@@ -6669,12 +6645,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
   /* AI/GenAI labs (top of market 2026). */
-  "sarvam ai": {
-    "ai-engineer": {
-      mid: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + recruiter signal", lastVerified: "2026-05-07", notes: "Sarvam AI pays AI-research-premium 1.5-2x SE. ₹50-80L mid; ₹100L+ senior." },
-      senior: { totalMin: 90, totalMax: 150, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },
-    },
-  },
   krutrim: {
     "ai-engineer": {
       mid: { totalMin: 45, totalMax: 75, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Recruiter signal + Ola Krutrim spinoff valuation", lastVerified: "2026-05-07" },
@@ -6694,13 +6664,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
   /* Quant / HFT additions (Jane Street + DE Shaw already exist). */
-  "tower research": {
-    "data-scientist": {
-      entry: { totalMin: 50, totalMax: 80, equityType: "none", source: "Levels.fyi 2026 + Glassdoor", lastVerified: "2026-05-07" },
-      mid: { totalMin: 80, totalMax: 140, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
-      senior: { totalMin: 140, totalMax: 240, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
-    },
-  },
   optiver: {
     "data-scientist": {
       entry: { totalMin: 55, totalMax: 90, equityType: "none", source: "Glassdoor + recruiter signal 2026", lastVerified: "2026-05-07" },
@@ -6722,7 +6685,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 55, totalMax: 90, equityMin: 14, equityMax: 32, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
     },
     "finance": {
-      entry: { totalMin: 18, totalMax: 25, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-05-07", notes: "MS IB analyst — base ₹18-25L + 30-50% bonus." },
+      entry: { totalMin: 18, totalMax: 25, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-05-07", notes: "MS IB analyst, base ₹18-25L + 30-50% bonus." },
       mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 75, totalMax: 130, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -6783,7 +6746,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* D2C consumer brands. */
   mamaearth: {
     "software-engineer": {
-      mid: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Honasa listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Honasa Consumer (Mamaearth) listed; RSU credibility lifted." },
+      mid: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, Honasa listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Honasa Consumer (Mamaearth) listed; RSU credibility lifted." },
       senior: { totalMin: 30, totalMax: 50, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
     "marketing": {
@@ -6793,7 +6756,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   boat: {
     "software-engineer": {
-      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr — IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr, IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 24, totalMax: 40, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
   },
@@ -6806,7 +6769,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* EV / mobility. */
   "ola electric": {
     "software-engineer": {
-      mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr, listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 36, totalMax: 58, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
     "hardware-engineer": {
@@ -6814,17 +6777,10 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
   },
-  "ather energy": {
-    "hardware-engineer": {
-      entry: { totalMin: 8, totalMax: 14, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr — IPO filing 2025", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
-      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
-      senior: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
-    },
-  },
   /* Stockbroker / wealth. */
   "angel one": {
     "software-engineer": {
-      mid: { totalMin: 22, totalMax: 36, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 38, totalMax: 60, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
   },
@@ -6837,7 +6793,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* Tata Group expansion. */
   "tata motors": {
     "software-engineer": {
-      mid: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr — Tata Sons", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr, Tata Sons", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 28, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
     "mechanical-engineer": {
@@ -6988,18 +6944,18 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   bigbasket: {
     "software-engineer": {
-      mid: { totalMin: 22, totalMax: 36, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Tata", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, Tata", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 36, totalMax: 58, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
   },
   /* Big Indian PSU banks. */
   sbi: {
     "software-engineer": {
-      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "SBI 2026 recruitment notification", lastVerified: "2026-05-07", notes: "SBI Specialist Officer (IT) — 7th CPC pay structure." },
+      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "SBI 2026 recruitment notification", lastVerified: "2026-05-07", notes: "SBI Specialist Officer (IT), 7th CPC pay structure." },
       mid: { totalMin: 14, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
     "finance": {
-      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "SBI PO 2026 notification", lastVerified: "2026-05-07", notes: "SBI PO trainee — Junior Management Grade Scale-I." },
+      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "SBI PO 2026 notification", lastVerified: "2026-05-07", notes: "SBI PO trainee, Junior Management Grade Scale-I." },
       mid: { totalMin: 14, totalMax: 24, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 25, totalMax: 42, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
@@ -7015,7 +6971,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   techmahindra: {
     "software-engineer": {
       entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tech Mahindra ELP / Digital Transformation trainee." },
-      mid: { totalMin: 8, totalMax: 16, equityMin: 0.3, equityMax: 1, equityType: "rsu", equityVesting: "3yr — Mahindra Sons", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 8, totalMax: 16, equityMin: 0.3, equityMax: 1, equityType: "rsu", equityVesting: "3yr, Mahindra Sons", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 16, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
   
@@ -7056,10 +7012,10 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Myntra — Flipkart group; ESOP buybacks ride the Flipkart cycle. */
+  /* Myntra, Flipkart group; ESOP buybacks ride the Flipkart cycle. */
   myntra: {
     "software-engineer": {
-      entry: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Levels.fyi (₹1.83M-₹2.84M SDE-1 India) + Glassdoor (290 samples) + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Myntra SDE-1 fresher; Flipkart group ESOP — liquidity tied to Flipkart buybacks. Negotiation focus: fixed + joining bonus.", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
+      entry: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Levels.fyi (₹1.83M-₹2.84M SDE-1 India) + Glassdoor (290 samples) + research backlog 2026-05-08", lastVerified: "2026-05-08", notes: "Myntra SDE-1 fresher; Flipkart group ESOP, liquidity tied to Flipkart buybacks. Negotiation focus: fixed + joining bonus.", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
       mid: { totalMin: 28, totalMax: 50, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 5], source: "Levels.fyi (median ₹3.65M India) + Glassdoor SDE-2 (avg ₹27L, p90 ₹49.6L) + research backlog 2026-05-08", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" }, notes: "Negotiation focus: fixed + level." },
       senior: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 10], source: "Levels.fyi (₹2.12M-₹9.35M India range, Associate Architect top) + research backlog 2026-05-08", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" }, notes: "Negotiation focus: level calibration vs Flipkart group grid." },
     },
@@ -7106,12 +7062,12 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Dream11 — high-margin sports gaming; pays a premium over peer Indian
+  /* Dream11, high-margin sports gaming; pays a premium over peer Indian
      unicorns at SDE-2/3 (Levels.fyi median ₹53L for SDE-2 vs ~₹35L peer). */
   dream11: {
     "software-engineer": {
-      entry: { totalMin: 20, totalMax: 32, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Levels.fyi SDE-1 India ₹2.01M-₹3.13M (median ₹25.4L)", lastVerified: "2026-05-08", notes: "Dream11 SDE-1 campus / 0-2 yr; Dream Sports privately held — ESOP liquidity via periodic buybacks. Negotiation focus: Fixed + joining bonus.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      mid: { totalMin: 42, totalMax: 65, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi SDE-2 India ₹4.27M-₹6.52M (median ₹53.4L)", lastVerified: "2026-05-08", notes: "Premium over peer unicorns at SDE-2 — Dream11 SDE-2 median (₹53L) ~30% above Razorpay/Swiggy. Negotiation focus: Fixed + ESOP clarity (buyback cadence).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      entry: { totalMin: 20, totalMax: 32, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Levels.fyi SDE-1 India ₹2.01M-₹3.13M (median ₹25.4L)", lastVerified: "2026-05-08", notes: "Dream11 SDE-1 campus / 0-2 yr; Dream Sports privately held, ESOP liquidity via periodic buybacks. Negotiation focus: Fixed + joining bonus.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 42, totalMax: 65, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi SDE-2 India ₹4.27M-₹6.52M (median ₹53.4L)", lastVerified: "2026-05-08", notes: "Premium over peer unicorns at SDE-2, Dream11 SDE-2 median (₹53L) ~30% above Razorpay/Swiggy. Negotiation focus: Fixed + ESOP clarity (buyback cadence).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       senior: { totalMin: 65, totalMax: 95, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 10], source: "Levels.fyi SDE-3 India (top ₹7.53M) + Glassdoor (618 samples)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + level + ESOP. Senior-level liquidity history is the load-bearing question.", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
       lead: { totalMin: 70, totalMax: 110, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi Engineering Manager India ₹5.45M-₹7.48M", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
@@ -7120,7 +7076,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 55, totalMax: 85, equityMin: 12, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 10], source: "Levels.fyi PM3 India (₹53.7L+)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product ownership + ESOP grant size.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "data-scientist": {
-      mid: { totalMin: 30, totalMax: 55, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi DS India ₹2.91M-₹16.5M (median ₹69.2L blended)", lastVerified: "2026-05-08", notes: "Dream11 ML/DS bar high — fantasy-sports modelling is core IP. Negotiation focus: ML/business impact (modelling team scope).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 30, totalMax: 55, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi DS India ₹2.91M-₹16.5M (median ₹69.2L blended)", lastVerified: "2026-05-08", notes: "Dream11 ML/DS bar high, fantasy-sports modelling is core IP. Negotiation focus: ML/business impact (modelling team scope).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       senior: { totalMin: 55, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Levels.fyi DS top + Data Science Manager ₹5.12M-₹7.27M", lastVerified: "2026-05-08", notes: "Negotiation focus: Ownership + scope (own a vertical / line of models).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "ux-designer": {
@@ -7143,24 +7099,24 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 13, totalMax: 35, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08", lastVerified: "2026-05-08" },
       senior: { totalMin: 22, totalMax: 60, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08", lastVerified: "2026-05-08" },
     },
-    /* Risk/Compliance — fantasy-sports legality + payments fraud team. Mapped
+    /* Risk/Compliance, fantasy-sports legality + payments fraud team. Mapped
        under data-analyst taxonomy (no first-class "risk-analyst" role key). */
     "data-analyst": {
-      entry: { totalMin: 6, totalMax: 16, equityMin: 0, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 1], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Junior)", lastVerified: "2026-05-08", notes: "Risk/Compliance Junior at Dream11 — fixed + comp-knowledge bonus. Negotiation focus: Fixed + bonus." },
-      mid: { totalMin: 16, totalMax: 38, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Mid)", lastVerified: "2026-05-08", notes: "Risk/Compliance Mid — own a fraud surface or compliance lane. Negotiation focus: Risk scope + criticality." },
-      senior: { totalMin: 30, totalMax: 65, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Senior)", lastVerified: "2026-05-08", notes: "Risk/Compliance Senior — regulator-facing criticality drives premium. Negotiation focus: Criticality + ownership." },
+      entry: { totalMin: 6, totalMax: 16, equityMin: 0, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 1], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Junior)", lastVerified: "2026-05-08", notes: "Risk/Compliance Junior at Dream11, fixed + comp-knowledge bonus. Negotiation focus: Fixed + bonus." },
+      mid: { totalMin: 16, totalMax: 38, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Mid)", lastVerified: "2026-05-08", notes: "Risk/Compliance Mid, own a fraud surface or compliance lane. Negotiation focus: Risk scope + criticality." },
+      senior: { totalMin: 30, totalMax: 65, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Senior)", lastVerified: "2026-05-08", notes: "Risk/Compliance Senior, regulator-facing criticality drives premium. Negotiation focus: Criticality + ownership." },
     },
-    /* Brand / Growth Marketing — IPL/cricket-window media buying + brand. */
+    /* Brand / Growth Marketing, IPL/cricket-window media buying + brand. */
     "marketing": {
-      entry: { totalMin: 6, totalMax: 16, equityMin: 0, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 1], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Junior)", lastVerified: "2026-05-08", notes: "Junior brand/growth — campaign ownership during IPL window. Negotiation focus: Campaign impact + bonus." },
-      mid: { totalMin: 18, totalMax: 42, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Mid)", lastVerified: "2026-05-08", notes: "Mid brand/growth — CAC/ROI ownership on paid + influencer mix. Negotiation focus: CAC/ROI impact." },
-      senior: { totalMin: 35, totalMax: 75, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Senior)", lastVerified: "2026-05-08", notes: "Senior brand/growth — own the IPL P&L. Negotiation focus: Brand/growth ownership + ESOP." },
+      entry: { totalMin: 6, totalMax: 16, equityMin: 0, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 1], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Junior)", lastVerified: "2026-05-08", notes: "Junior brand/growth, campaign ownership during IPL window. Negotiation focus: Campaign impact + bonus." },
+      mid: { totalMin: 18, totalMax: 42, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Mid)", lastVerified: "2026-05-08", notes: "Mid brand/growth, CAC/ROI ownership on paid + influencer mix. Negotiation focus: CAC/ROI impact." },
+      senior: { totalMin: 35, totalMax: 75, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Senior)", lastVerified: "2026-05-08", notes: "Senior brand/growth, own the IPL P&L. Negotiation focus: Brand/growth ownership + ESOP." },
     },
   },
 
   /* ─── 2026 Wave-3 expansion: 10 new salary pages July 2026 ─── */
 
-  /* Intuit India (Bengaluru) — Quickbooks/TurboTax, strong eng culture */
+  /* Intuit India (Bengaluru), Quickbooks/TurboTax, strong eng culture */
   intuit: {
     "software-engineer": {
       entry: { totalMin: 22, totalMax: 38, baseMin: 17, baseMax: 28, equityMin: 5, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Intuit Junior SWE. INTU RSU vest 4yr / 1yr cliff. Negotiation focus: fixed + joining bonus." },
@@ -7179,7 +7135,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Walmart Global Tech (Bengaluru) — WMT-listed RSU, US retail tech.
+  /* Walmart Global Tech (Bengaluru), WMT-listed RSU, US retail tech.
    * Note: "walmart global tech" (with spaces) is an older seed-dataset key.
    * This entry uses the kebab-case slug that matches the salary page URL. */
   "walmart-global-tech": {
@@ -7200,11 +7156,11 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Persistent Systems (Pune/Nagpur) — mid-tier IT services/product,
+  /* Persistent Systems (Pune/Nagpur), mid-tier IT services/product,
    * healthcare IT and BFS specialist. No equity for non-senior levels. */
   persistent: {
     "software-engineer": {
-      entry: { totalMin: 5.5, totalMax: 11, baseMin: 5.5, baseMax: 11, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Junior SWE / fresher. No equity — pure cash comp. Negotiation focus: fixed + variable structure." },
+      entry: { totalMin: 5.5, totalMax: 11, baseMin: 5.5, baseMax: 11, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Junior SWE / fresher. No equity, pure cash comp. Negotiation focus: fixed + variable structure." },
       mid: { totalMin: 11, totalMax: 22, baseMin: 10, baseMax: 20, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Mid SWE. Healthcare IT / BFS expertise commands premium. Negotiation focus: fixed + skill-band upgrade." },
       senior: { totalMin: 22, totalMax: 40, baseMin: 20, baseMax: 36, equityType: "none", source: "AmbitionBox + Glassdoor + Levels.fyi research July 2026", lastVerified: "2026-07-21", notes: "Persistent Senior SWE. Top of band = architects with domain expertise. Negotiation focus: fixed + onsite probability." },
     },
@@ -7220,12 +7176,12 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
-  /* Slug aliases — resolveOverrides() does slug → slug.replace(/-/g," ") but
+  /* Slug aliases, resolveOverrides() does slug → slug.replace(/-/g," ") but
      cannot handle special chars (apostrophes, dots, ampersands, numeric prefix).
      These aliases map the URL slug to the correct override data. */
   "procter-gamble": {
     marketing: {
-      entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-07-21", notes: "P&G premium MNC MT — top of FMCG MBA market." },
+      entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-07-21", notes: "P&G premium MNC MT, top of FMCG MBA market." },
       mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 60, totalMax: 110, equityType: "none", source: "Glassdoor", lastVerified: "2026-07-21" },
       lead: { totalMin: 90, totalMax: 160, equityType: "none", source: "Glassdoor (P&G Marketing Director India)", lastVerified: "2026-07-21" },
@@ -7234,7 +7190,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   byjus: {
     "software-engineer": {
-      entry: { totalMin: 7, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr — value uncertain post-reset", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-07-21", notes: "Post-2024 BYJU's reset; ESOP value highly discounted." },
+      entry: { totalMin: 7, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr, value uncertain post-reset", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-07-21", notes: "Post-2024 BYJU's reset; ESOP value highly discounted." },
       mid: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7247,7 +7203,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   "tata-1mg": {
     "software-engineer": {
-      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr — Tata-acquired", source: "AmbitionBox 2026", lastVerified: "2026-07-21", notes: "Tata 1mg; RSU in Tata listed entity." },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr, Tata-acquired", source: "AmbitionBox 2026", lastVerified: "2026-07-21", notes: "Tata 1mg; RSU in Tata listed entity." },
       senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
@@ -7299,7 +7255,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "software-engineer": {
       entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "AmbitionBox (Thoughtworks India Application Developer 2026)", lastVerified: "2026-07-21" },
       mid: { totalMin: 16, totalMax: 28, equityType: "none", source: "Glassdoor (Thoughtworks India Consultant)", lastVerified: "2026-07-21" },
-      senior: { totalMin: 30, totalMax: 52, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — TWKS Nasdaq", source: "Glassdoor (Thoughtworks India Lead Consultant)", lastVerified: "2026-07-21", notes: "RSU available at senior/lead levels." },
+      senior: { totalMin: 30, totalMax: 52, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, TWKS Nasdaq", source: "Glassdoor (Thoughtworks India Lead Consultant)", lastVerified: "2026-07-21", notes: "RSU available at senior/lead levels." },
     },
   },
   "samsung-india": {
@@ -7332,7 +7288,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   globallogic: {
     "software-engineer": {
-      entry: { totalMin: 8, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — Hitachi-owned", source: "AmbitionBox (GlobalLogic India Software Engineer entry)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 8, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr, Hitachi-owned", source: "AmbitionBox (GlobalLogic India Software Engineer entry)", lastVerified: "2026-07-21" },
       mid: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor (GlobalLogic India Senior Engineer)", lastVerified: "2026-07-21" },
       senior: { totalMin: 26, totalMax: 44, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7369,7 +7325,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   policybazaar: {
     "software-engineer": {
-      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — PB Fintech listed", source: "AmbitionBox + Glassdoor 2026 (PB Fintech Gurugram)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, PB Fintech listed", source: "AmbitionBox + Glassdoor 2026 (PB Fintech Gurugram)", lastVerified: "2026-07-21" },
       mid: { totalMin: 24, totalMax: 40, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 42, totalMax: 68, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7481,7 +7437,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   truecaller: {
     "software-engineer": {
-      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 — TRUE Nasdaq Stockholm", source: "AmbitionBox + Glassdoor 2026 (Truecaller Bengaluru)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25, TRUE Nasdaq Stockholm", source: "AmbitionBox + Glassdoor 2026 (Truecaller Bengaluru)", lastVerified: "2026-07-21" },
       mid: { totalMin: 28, totalMax: 46, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 48, totalMax: 80, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7495,7 +7451,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   naukri: {
     "software-engineer": {
-      entry: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Info Edge listed", source: "AmbitionBox + Glassdoor 2026 (Info Edge Noida)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, Info Edge listed", source: "AmbitionBox + Glassdoor 2026 (Info Edge Noida)", lastVerified: "2026-07-21" },
       mid: { totalMin: 20, totalMax: 34, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 36, totalMax: 58, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7567,7 +7523,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   blackbuck: {
     "software-engineer": {
-      entry: { totalMin: 10, totalMax: 16, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — NSE ZINKA listed", source: "AmbitionBox + Glassdoor 2026 (Zinka Logistics Bengaluru)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 10, totalMax: 16, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, NSE ZINKA listed", source: "AmbitionBox + Glassdoor 2026 (Zinka Logistics Bengaluru)", lastVerified: "2026-07-21" },
       mid: { totalMin: 18, totalMax: 30, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 32, totalMax: 52, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7637,14 +7593,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   "apollo-247": {
     "software-engineer": {
-      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Apollo Hospitals listed", source: "AmbitionBox + Glassdoor 2026 (Apollo Hospitals Digital Hyderabad)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, Apollo Hospitals listed", source: "AmbitionBox + Glassdoor 2026 (Apollo Hospitals Digital Hyderabad)", lastVerified: "2026-07-21" },
       mid: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 32, totalMax: 52, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
   "ecom-express": {
     "software-engineer": {
-      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — NSE listed", source: "AmbitionBox + Glassdoor 2026 (Ecom Express Delhi)", lastVerified: "2026-07-21" },
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr, NSE listed", source: "AmbitionBox + Glassdoor 2026 (Ecom Express Delhi)", lastVerified: "2026-07-21" },
       mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 28, totalMax: 44, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
@@ -7678,7 +7634,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   tracxn: {
     "software-engineer": {
-      mid: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — NSE TRACXN listed", source: "AmbitionBox + Glassdoor 2026 (Tracxn Bengaluru)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr, NSE TRACXN listed", source: "AmbitionBox + Glassdoor 2026 (Tracxn Bengaluru)", lastVerified: "2026-07-21" },
       senior: { totalMin: 20, totalMax: 34, equityMin: 2.5, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
@@ -7724,6 +7680,26 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
+    "hardware-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr, IPO filing 2025", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Space-form mirror: getCompanyBandOverride() normalizes all separators
+     to a single space before lookup, so it never reaches the hyphenated
+     key above. Kept in sync manually — same data, both spellings. */
+  "ather energy": {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 (Ather Energy SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+    },
+    "hardware-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr, IPO filing 2025", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
   },
   "bajaj-finance": {
     "software-engineer": {
@@ -7741,9 +7717,27 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   "de-shaw": {
     "software-engineer": {
-      entry: { totalMin: 30, totalMax: 52, equityType: "none", source: "AmbitionBox + Glassdoor 2026 (DESI Hyderabad SDE-1 — cash only)", lastVerified: "2026-07-21", notes: "Pure cash + large performance bonus at DESI; no equity." },
+      entry: { totalMin: 30, totalMax: 52, equityType: "none", source: "AmbitionBox + Glassdoor 2026 (DESI Hyderabad SDE-1, cash only)", lastVerified: "2026-07-21", notes: "Pure cash + large performance bonus at DESI; no equity." },
       mid: { totalMin: 55, totalMax: 90, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-07-21" },
       senior: { totalMin: 90, totalMax: 140, equityType: "none", source: "Glassdoor / insider data", lastVerified: "2026-07-21" },
+    },
+    "data-scientist": {
+      entry: { totalMin: 35, totalMax: 60, equityType: "none", source: "DE Shaw India hires (H1B data $200K-equivalent)", lastVerified: "2026-05-07", notes: "DE Shaw India quant analyst entry. Base ₹17L + heavy bonus." },
+      mid: { totalMin: 80, totalMax: 180, equityType: "none", source: "DE Shaw India 3-5 yr", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Space-form mirror: getCompanyBandOverride() normalizes all separators
+     to a single space before lookup, so it never reaches the hyphenated
+     key above. Kept in sync manually — same data, both spellings. */
+  "de shaw": {
+    "software-engineer": {
+      entry: { totalMin: 30, totalMax: 52, equityType: "none", source: "AmbitionBox + Glassdoor 2026 (DESI Hyderabad SDE-1, cash only)", lastVerified: "2026-07-21", notes: "Pure cash + large performance bonus at DESI; no equity." },
+      mid: { totalMin: 55, totalMax: 90, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-07-21" },
+      senior: { totalMin: 90, totalMax: 140, equityType: "none", source: "Glassdoor / insider data", lastVerified: "2026-07-21" },
+    },
+    "data-scientist": {
+      entry: { totalMin: 35, totalMax: 60, equityType: "none", source: "DE Shaw India hires (H1B data $200K-equivalent)", lastVerified: "2026-05-07", notes: "DE Shaw India quant analyst entry. Base ₹17L + heavy bonus." },
+      mid: { totalMin: 80, totalMax: 180, equityType: "none", source: "DE Shaw India 3-5 yr", lastVerified: "2026-05-07" },
     },
   },
   "deutsche-bank": {
@@ -7772,6 +7766,42 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 16, totalMax: 28, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
     },
+    finance: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indeed + 6figr (HDFC Bank Relationship Officer ₹3.5L, RM ₹4.6-6.1L)", lastVerified: "2026-05-08", notes: "HDFC Bank entry officer / RM track. Sales-incentive component meaningful.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indeed Manager avg ₹10.3L + 6figr", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      senior: { totalMin: 15, totalMax: 28, equityType: "none", source: "Glassdoor (HDFC Sr Manager / AVP) + PayScale upper band ₹21.8L", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "6figr (HDFC Bank VP cap ₹60L Bangalore)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+    },
+    "business-analyst": {
+      entry: { totalMin: 3, totalMax: 13, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      mid: { totalMin: 9, totalMax: 23, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      senior: { totalMin: 14, totalMax: 40, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      lead: { totalMin: 23, totalMax: 61, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      executive: { totalMin: 32, totalMax: 86, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+    },
+  },
+  /* Space-form mirror: getCompanyBandOverride() normalizes all separators
+     to a single space before lookup, so it never reaches the hyphenated
+     key above. Kept in sync manually — same data, both spellings. */
+  "hdfc bank": {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr / BSE listed", source: "AmbitionBox 2026 (HDFC Bank SDE fresher)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 16, totalMax: 28, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox", lastVerified: "2026-07-21" },
+    },
+    finance: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indeed + 6figr (HDFC Bank Relationship Officer ₹3.5L, RM ₹4.6-6.1L)", lastVerified: "2026-05-08", notes: "HDFC Bank entry officer / RM track. Sales-incentive component meaningful.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indeed Manager avg ₹10.3L + 6figr", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      senior: { totalMin: 15, totalMax: 28, equityType: "none", source: "Glassdoor (HDFC Sr Manager / AVP) + PayScale upper band ₹21.8L", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "6figr (HDFC Bank VP cap ₹60L Bangalore)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+    },
+    "business-analyst": {
+      entry: { totalMin: 3, totalMax: 13, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      mid: { totalMin: 9, totalMax: 23, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      senior: { totalMin: 14, totalMax: 40, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      lead: { totalMin: 23, totalMax: 61, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+      executive: { totalMin: 32, totalMax: 86, equityType: "none", source: "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)", lastVerified: "2026-05-08" },
+    },
   },
   "icici-lombard": {
     "software-engineer": {
@@ -7784,6 +7814,25 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 60, totalMax: 100, equityType: "none", source: "Jane Street India offer data 2026 (cash + large annual bonus)", lastVerified: "2026-07-21", notes: "Pure cash + large discretionary bonus; no equity. One of the highest-paying SDE entry roles in India." },
       mid: { totalMin: 110, totalMax: 180, equityType: "none", source: "Glassdoor / insider data", lastVerified: "2026-07-21" },
       senior: { totalMin: 180, totalMax: 280, equityType: "none", source: "Insider data", lastVerified: "2026-07-21" },
+    },
+    /* matchRoleKey routes "Quantitative Researcher" / "Quant Trader" → data-scientist. */
+    "data-scientist": {
+      entry: { totalMin: 70, totalMax: 130, equityType: "none", source: "Jane Street India 2026 class hires (IIT Bombay/Delhi/Madras)", lastVerified: "2026-05-07", notes: "Indian fresher quant trader: ₹70-120L+ first-year. Base $300K globally; India offers vary by office (Mumbai vs Hong Kong). Top performers up to ₹4Cr first-year." },
+      mid: { totalMin: 200, totalMax: 400, equityType: "none", source: "Jane Street India + Hong Kong placements", lastVerified: "2026-05-07", notes: "3-5 yr quant: median ₹2.5Cr+, performance-bonus heavy. Jane Street India offered IIT grad $508K (₹4.2Cr) for HK posting." },
+    },
+  },
+  /* Space-form mirror: getCompanyBandOverride() normalizes all separators
+     to a single space before lookup, so it never reaches the hyphenated
+     key above. Scoped to data-scientist only (not software-engineer) —
+     this is the pre-existing shape: getCompanyTier() only tiers this
+     space-form key (see company-tiers.ts), and adding software-engineer
+     here trips the tier-plausibility and AB-parity gates against real
+     but statistically-outlying HFT comp. Kept in sync manually. */
+  "jane street": {
+    /* matchRoleKey routes "Quantitative Researcher" / "Quant Trader" → data-scientist. */
+    "data-scientist": {
+      entry: { totalMin: 70, totalMax: 130, equityType: "none", source: "Jane Street India 2026 class hires (IIT Bombay/Delhi/Madras)", lastVerified: "2026-05-07", notes: "Indian fresher quant trader: ₹70-120L+ first-year. Base $300K globally; India offers vary by office (Mumbai vs Hong Kong). Top performers up to ₹4Cr first-year." },
+      mid: { totalMin: 200, totalMax: 400, equityType: "none", source: "Jane Street India + Hong Kong placements", lastVerified: "2026-05-07", notes: "3-5 yr quant: median ₹2.5Cr+, performance-bonus heavy. Jane Street India offered IIT grad $508K (₹4.2Cr) for HK posting." },
     },
   },
   "lowes-india": {
@@ -7834,6 +7883,24 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
       senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
     },
+    "ai-engineer": {
+      mid: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + recruiter signal", lastVerified: "2026-05-07", notes: "Sarvam AI pays AI-research-premium 1.5-2x SE. ₹50-80L mid; ₹100L+ senior." },
+      senior: { totalMin: 90, totalMax: 150, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Space-form mirror: getCompanyBandOverride() normalizes all separators
+     to a single space before lookup, so it never reaches the hyphenated
+     key above. Kept in sync manually — same data, both spellings. */
+  "sarvam ai": {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
+      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
+      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
+    },
+    "ai-engineer": {
+      mid: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + recruiter signal", lastVerified: "2026-05-07", notes: "Sarvam AI pays AI-research-premium 1.5-2x SE. ₹50-80L mid; ₹100L+ senior." },
+      senior: { totalMin: 90, totalMax: 150, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },
+    },
   },
   "standard-chartered": {
     "software-engineer": {
@@ -7867,6 +7934,25 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 35, totalMax: 65, equityType: "none", source: "Glassdoor / insider 2026 (Tower Research Capital Gurgaon SDE)", lastVerified: "2026-07-21", notes: "HFT: pure cash + large annual bonus. No equity. Very high bar for quant/algo SDE roles." },
       mid: { totalMin: 70, totalMax: 120, equityType: "none", source: "Insider data", lastVerified: "2026-07-21" },
       senior: { totalMin: 120, totalMax: 200, equityType: "none", source: "Insider data", lastVerified: "2026-07-21" },
+    },
+    "data-scientist": {
+      entry: { totalMin: 50, totalMax: 80, equityType: "none", source: "Levels.fyi 2026 + Glassdoor", lastVerified: "2026-05-07" },
+      mid: { totalMin: 80, totalMax: 140, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 140, totalMax: 240, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Space-form mirror: getCompanyBandOverride() normalizes all separators
+     to a single space before lookup, so it never reaches the hyphenated
+     key above. Scoped to data-scientist only (not software-engineer) —
+     this is the pre-existing shape: getCompanyTier() only tiers this
+     space-form key (see company-tiers.ts), and adding software-engineer
+     here trips the tier-plausibility gate against real but
+     statistically-outlying HFT comp. Kept in sync manually. */
+  "tower research": {
+    "data-scientist": {
+      entry: { totalMin: 50, totalMax: 80, equityType: "none", source: "Levels.fyi 2026 + Glassdoor", lastVerified: "2026-05-07" },
+      mid: { totalMin: 80, totalMax: 140, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 140, totalMax: 240, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
     },
   },
   "visa-india": {
@@ -7904,7 +7990,7 @@ const EXP_FALLBACK_WITHIN_OVERRIDE: Record<ExperienceLevel, ExperienceLevel[]> =
      through to a lower tier-band. The trade-off: a 15-yr candidate
      at a company with only entry/mid bands (e.g. early Jane Street
      override) plateaus at mid until a senior band is added. The
-     alternative — falling through to tier — silently downgrades. */
+     alternative, falling through to tier, silently downgrades. */
   lead: ["lead", "executive", "senior", "mid"],
   executive: ["executive", "lead", "senior", "mid"],
 };

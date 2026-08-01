@@ -2284,9 +2284,9 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam",
-    searchPhrase: "Sarvam AI Salary India 2026: Software Engineer CTC ₹18–95 LPA by Level",
+    searchPhrase: "Sarvam AI Salary India 2026: SDE CTC ₹16–90 LPA by Level",
     metaDescription:
-      "Sarvam AI salary in India 2026: Software Engineer CTC ₹18–95 LPA by level (SDE-1 to staff), plus ESOP at India's AI unicorn. Full pay breakdown for freshers to senior. Bengaluru, Series B ($1.5B).",
+      "Sarvam AI salary in India 2026: Software Engineer CTC ₹16–90 LPA, entry to senior, plus ESOP at India's AI unicorn (Series B, $1.5B). Full SDE-1 to senior pay breakdown, Bengaluru.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "sarvam-swe-interview-questions",
     hubNote: "India-native LLM lab Bengaluru; Series B unicorn ($1.5B); ESOP; 10 Indian languages AI",
@@ -2296,7 +2296,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     slug: "hdfc",
     searchPhrase: "HDFC Ltd Software Engineer Salary India 2026",
     metaDescription:
-      "HDFC Ltd salary India 2026: SWE entry ₹10–17 LPA, mid ₹17–30 LPA, senior ₹30–52 LPA. Mumbai-headquartered financial services conglomerate; tech roles in mortgages, wealth management, and digital banking platforms.",
+      "HDFC Ltd salary India 2026: SWE entry ₹8–14 LPA, mid ₹16–28 LPA, senior ₹30–50 LPA. Merged into HDFC Bank in 2023; tech roles in mortgages, wealth management, and digital banking platforms.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
     questionSlug: "hdfc-swe-interview-questions",
     hubNote: "Financial services conglomerate Mumbai; BSE/NSE; mortgage + wealth management tech",

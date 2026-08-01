@@ -3179,4 +3179,98 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
     styleNote: "Meesho data-scientist rounds probe off-policy evaluation and selection bias in logged recommendation data.",
   },
+
+  /* ── CRED — product designer ───────────────────────────────── */
+  {
+    text: "Walk me through a project in your portfolio end to end: the problem, your process, the trade-offs you made, and how you measured whether the design worked.",
+    company: "cred", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "CRED design rounds centre on portfolio depth and craft. Strong answers show process, trade-offs, and outcome metrics, not just polished screens.",
+  },
+  {
+    text: "CRED is known for a premium, distinctive aesthetic. How do you balance a strong brand-led visual identity against usability and accessibility?",
+    company: "cred", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "CRED probes the craft-versus-usability tension. Address when brand expression is worth friction and how you keep it accessible.",
+  },
+
+  /* ── Flipkart — product designer ───────────────────────────── */
+  {
+    text: "Design the returns-and-refund flow for a first-time online shopper in a tier-3 town on a slow connection. Walk me through your key decisions.",
+    company: "flipkart", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Flipkart design rounds test India-first, mobile-first thinking: low-connectivity, low-trust, first-time users, and clear, forgiving flows.",
+  },
+  {
+    text: "Critique the checkout experience of any e-commerce app you use. What would you change first, and how would you validate it?",
+    company: "flipkart", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart app-critique rounds test evaluative judgement: spot real friction, prioritise, and propose a testable change.",
+  },
+  {
+    text: "How do you design consistently across dozens of teams shipping in parallel? What's your view on design systems and their limits?",
+    company: "flipkart", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Flipkart probes systems thinking at scale: componentisation, governance, and when a design system helps versus constrains.",
+  },
+
+  /* ── Swiggy — product designer ─────────────────────────────── */
+  {
+    text: "Design the live order-tracking experience after a user places a food order. What information matters most, and how does it change over the delivery lifecycle?",
+    company: "swiggy", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Swiggy design rounds test lifecycle-aware information design: what a user needs at each stage of a live delivery, and reducing anxiety.",
+  },
+  {
+    text: "How would you redesign the restaurant-discovery experience to help an undecided, hungry user choose faster without overwhelming them?",
+    company: "swiggy", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Swiggy probes decision-support design: reducing choice overload, personalisation, and speed-to-decision for a high-intent user.",
+  },
+  {
+    text: "Walk me through a portfolio project where a design decision was contested by product or engineering. How did you resolve it?",
+    company: "swiggy", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Swiggy tests cross-functional collaboration: how you argue for a design decision with data and empathy without digging in.",
+  },
+
+  /* ── Razorpay — product designer ───────────────────────────── */
+  {
+    text: "Design an onboarding flow that gets a small-business owner from sign-up to accepting their first payment as fast as possible. What do you cut, and what do you keep?",
+    company: "razorpay", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "Razorpay design rounds test B2B/fintech onboarding: reducing time-to-value, compliance friction (KYC), and trust for SMB users.",
+  },
+  {
+    text: "How do you design a complex dashboard (payments, refunds, settlements, disputes) so a non-technical merchant can understand it at a glance?",
+    company: "razorpay", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Razorpay probes information design for dense financial data: hierarchy, progressive disclosure, and clarity for non-experts.",
+  },
+  {
+    text: "Walk me through how you'd approach designing for error and edge cases in a payment flow, where failures directly affect trust and money.",
+    company: "razorpay", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "Razorpay tests error-state and edge-case design in a high-stakes money context: clear recovery, reassurance, and never losing the user.",
+  },
+
+  /* ── PhonePe — product designer ────────────────────────────── */
+  {
+    text: "Design a payments experience that works for a first-time smartphone user in a regional language who is nervous about digital money. What guides your choices?",
+    company: "phonepe", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "intense", confidence: "inferred",
+    styleNote: "PhonePe design rounds test inclusive, vernacular, low-literacy-friendly design for next-billion users and building trust in digital payments.",
+  },
+  {
+    text: "Critique the UPI payment flow in any app. Where is the friction, and how would you reduce steps without reducing safety?",
+    company: "phonepe", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "PhonePe app-critique rounds test the friction-versus-safety trade-off specific to UPI: fewer taps without weakening confirmation.",
+  },
+  {
+    text: "Walk me through a portfolio project and how you measured its success. What would you do differently with hindsight?",
+    company: "phonepe", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q3", difficulty: "standard", confidence: "inferred",
+    styleNote: "PhonePe tests outcome-orientation and reflection: tying design work to metrics and showing honest hindsight.",
+  },
 ];

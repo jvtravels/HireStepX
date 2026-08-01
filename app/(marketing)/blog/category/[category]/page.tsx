@@ -38,7 +38,7 @@ export async function generateMetadata({
   const bucket = bucketFromSlug(slug);
   if (!bucket) return { title: "Not Found" };
 
-  const title = `${bucket} Interview Guides — HireStepX Blog`;
+  const title = `${bucket} Interview Guides: HireStepX Blog`;
   const description = bucketDescription(bucket);
 
   return {
@@ -88,7 +88,7 @@ export default async function BlogCategoryPage({
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `${bucket} Interview Guides — HireStepX Blog`,
+    name: `${bucket} Interview Guides: HireStepX Blog`,
     description: bucketDescription(bucket),
     url: `https://hirestepx.com/blog/category/${slug}`,
     numberOfItems: posts.length,

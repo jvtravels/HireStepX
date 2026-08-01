@@ -43,7 +43,7 @@ import { liftPeopleManagerBand } from "../server-handlers/_company-band-tiers";
  *  helpers. Listed-detection nuance (Swiggy/Zomato/Meesho post-IPO are
  *  listed unicorns) is left to the per-company override; this is the
  *  conservative default mapping. */
-/* ─── P35 opener clamp (Session B — Area 8) ──────────────────────────
+/* ─── P35 opener clamp (Session B, Area 8) ──────────────────────────
  *
  * Single source of truth for the opening-offer percentile. Two band
  * construction paths used to inline the same `totalMin + 0.35 * span`
@@ -131,7 +131,7 @@ export interface NegotiationBand {
   minOffer: number;
   /** Maximum stretch the manager can go to */
   maxStretch: number;
-  /** Walk-away point — if candidate demands above this, manager must decline */
+  /** Walk-away point, if candidate demands above this, manager must decline */
   walkAway: number;
   /** Joining bonus range */
   joiningBonusRange: [number, number];
@@ -174,11 +174,11 @@ export type NegotiationStyle = "cooperative" | "aggressive" | "defensive";
 /** Industry-specific package flavor text for LLM */
 export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
   fintech: `INDUSTRY: Fintech/Payments. Comp structure leans heavily on variable pay (15-25% of CTC). ESOPs are common at growth-stage. Compliance bonuses exist. Expect candidates to benchmark against Razorpay, PhonePe, CRED, Zerodha. Perks: wealth management tools, financial literacy budget, stock trading accounts.`,
-  faang: `INDUSTRY: FAANG/Big Tech. RSUs are a major component (20-40% of total comp). Annual refreshers common. L4-L7 leveling matters — one level up = 30-50% more. Perks: relocation packages, immigration support, sabbaticals, mental health budget. Candidates benchmark against Google, Microsoft, Amazon, Meta India.`,
+  faang: `INDUSTRY: FAANG/Big Tech. RSUs are a major component (20-40% of total comp). Annual refreshers common. L4-L7 leveling matters, one level up = 30-50% more. Perks: relocation packages, immigration support, sabbaticals, mental health budget. Candidates benchmark against Google, Microsoft, Amazon, Meta India.`,
   startup: `INDUSTRY: Early/Growth-Stage Startup. Cash-heavy comp with aggressive ESOPs (0.01-0.5% for IC, 0.1-2% for leadership). Joining bonus common to offset ESOP illiquidity. Fast promotion cycles. Perks: unlimited PTO, learning budget, co-working spaces. Candidates benchmark against YC/Sequoia portfolio companies.`,
   ecommerce: `INDUSTRY: E-commerce/D2C. Mix of base + performance bonus tied to GMV/revenue targets. ESOPs at growth stage. Seasonal pressure (festive sales = crunch). Perks: employee discounts, wellness budgets. Candidates benchmark against Flipkart, Meesho, Myntra, Nykaa.`,
   consulting: `INDUSTRY: Consulting/IT Services. Lower base but strong variable (20-30% of CTC). Overseas deputation = 2-3x salary. Limited equity. Notice periods are long (60-90 days). Perks: client-site allowances, certification budgets, travel perks. Candidates benchmark against TCS, Infosys, Wipro (services) or McKinsey, BCG (strategy).`,
-  government: `INDUSTRY: Government/PSU. Pay fixed by 7th CPC bands. No negotiation on base. Negotiate: grade level, posting city (HRA varies 8-24%), housing, deputation allowance, training budget. Pension is the real wealth — defined benefit worth ₹50-150 LPA actuarially. Job security is the key selling point.`,
+  government: `INDUSTRY: Government/PSU. Pay fixed by 7th CPC bands. No negotiation on base. Negotiate: grade level, posting city (HRA varies 8-24%), housing, deputation allowance, training budget. Pension is the real wealth, defined benefit worth ₹50-150 LPA actuarially. Job security is the key selling point.`,
 };
 
 /** Tier-specific variable-bonus percentage of CTC. Indian-market grounded:
@@ -215,9 +215,9 @@ function describeBandConfidence(
   if (!Number.isFinite(n) || n <= 0) return "";
   const tierLabel =
     tier === "high" ? "high-confidence (n ≥ 1000)"
-    : tier === "low" ? "low-confidence (n < 250 — directional)"
+    : tier === "low" ? "low-confidence (n < 250, directional)"
     : "medium-confidence";
-  return `Sample: ${n.toLocaleString("en-IN")} self-reports — ${tierLabel}`;
+  return `Sample: ${n.toLocaleString("en-IN")} self-reports, ${tierLabel}`;
 }
 
 function getVariablePct(companyTier: string | undefined): number {
@@ -278,7 +278,7 @@ function getInHandRange(totalCtc: number, cityTier: string | undefined): {
   const text = `IN-HAND TAKE-HOME (when candidate asks "kitna in-hand?"):
 - New regime (default FY25-26): ${fmtRange(newRegime[0], newRegime[1])} per year (${Math.round(newPctLo*100)}-${Math.round(newPctHi*100)}% of CTC)
 - Old regime (with HRA + 80C + home loan): ${fmtRange(oldRegime[0], oldRegime[1])} per year (${Math.round(oldPctLo*100)}-${Math.round(oldPctHi*100)}% of CTC)
-- Note: ${cityNote}; exact in-hand depends on candidate's exemptions and rent. Don't promise a precise number — give the range.`;
+- Note: ${cityNote}; exact in-hand depends on candidate's exemptions and rent. Don't promise a precise number, give the range.`;
 
   return { newRegime, oldRegime, text };
 }
@@ -318,18 +318,18 @@ function getNoticeBuyoutContext(companyTier: string | undefined, totalCtc: numbe
   const round1 = (x: number) => Math.round(x * 10) / 10;
   switch (companyTier) {
     case "it-services":
-      return `NOTICE-PERIOD BUYOUT (services-firm reality): ${docNotice}TCS / Infosys / Wipro candidates have 60-90 day notice. Actual buyout authority for the new employer: flat ₹1.5-2.5 LPA regardless of candidate's monthly base. Don't quote (notice_days × monthly_base × 1.5) — that's 2-3x over-quote and exposes you as scripted. If candidate is currently at TCS / Infosys / Wipro, offer ₹2 LPA as a notice-buyout sweetener if you've conceded base.`;
+      return `NOTICE-PERIOD BUYOUT (services-firm reality): ${docNotice}TCS / Infosys / Wipro candidates have 60-90 day notice. Actual buyout authority for the new employer: flat ₹1.5-2.5 LPA regardless of candidate's monthly base. Don't quote (notice_days × monthly_base × 1.5), that's 2-3x over-quote and exposes you as scripted. If candidate is currently at TCS / Infosys / Wipro, offer ₹2 LPA as a notice-buyout sweetener if you've conceded base.`;
     case "faang":
     case "big-tech":
     case "gcc":
-      return `NOTICE-PERIOD BUYOUT: ${docNotice}FAANG / GCC India typically waives notice with a release letter — no cash buyout needed. If the candidate's current employer demands buyout, offer to absorb up to ₹${round1(totalCtc * 0.05)} LPA as a one-time signing bonus instead of a "buyout" line item. Cleaner accounting.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}FAANG / GCC India typically waives notice with a release letter, no cash buyout needed. If the candidate's current employer demands buyout, offer to absorb up to ₹${round1(totalCtc * 0.05)} LPA as a one-time signing bonus instead of a "buyout" line item. Cleaner accounting.`;
     case "government-psu":
-      return `NOTICE-PERIOD BUYOUT: ${docNotice}Government / PSU — no buyout. The candidate must serve the full notice or pay it themselves. If they're transferring from another PSU, joining is governed by their parent department's release order, not money.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}Government / PSU, no buyout. The candidate must serve the full notice or pay it themselves. If they're transferring from another PSU, joining is governed by their parent department's release order, not money.`;
     case "startup-early":
     case "startup-growth":
-      return `NOTICE-PERIOD BUYOUT: ${docNotice}Indian startups expect candidates to negotiate notice down to 30 days with their current employer. If buyout is needed, offer ₹0.5-1 LPA as joining bonus — frame it as helping, not as buying out.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}Indian startups expect candidates to negotiate notice down to 30 days with their current employer. If buyout is needed, offer ₹0.5-1 LPA as joining bonus, frame it as helping, not as buying out.`;
     default:
-      return `NOTICE-PERIOD BUYOUT: ${docNotice}Authority up to ₹${round1(totalCtc * 0.04)} LPA as one-time signing bonus, only if candidate is currently employed with a real notice obligation. Don't volunteer this — only offer if it bridges a gap.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}Authority up to ₹${round1(totalCtc * 0.04)} LPA as one-time signing bonus, only if candidate is currently employed with a real notice obligation. Don't volunteer this, only offer if it bridges a gap.`;
   }
 }
 
@@ -339,12 +339,12 @@ function detectCampusHire(role: string | undefined): string {
   if (!role) return "";
   const r = role.toLowerCase();
   if (/\b(get|graduate engineer trainee|management trainee|gat|sat|associate engineer trainee|campus|campus hire|campus placement|fresher|new grad|0\s*yoe|trainee program|leadership development program)\b/.test(r)) {
-    return `CAMPUS / FRESHER OFFER — NEGOTIATION-RESISTANT: This is a campus / trainee offer. Indian campus offers (TCS GET, Infosys SE, Wipro PAT, Cognizant GenC, HCL Tech Bee) are FIXED BY POLICY — there is NO negotiation room. The offer is signed during placement; reopening it after acceptance is rare. If the candidate tries to negotiate, respond honestly: "Campus offers are fixed by company policy across the cohort. I genuinely don't have authority to revise this — not for you, not for anyone. The negotiation lever is which TRACK you choose (e.g., TCS Digital vs Ninja, Infosys Power Programmer vs SE), not the number itself." Do NOT pretend you can stretch — that's the most common simulator failure mode for campus interviews.`;
+    return `CAMPUS / FRESHER OFFER, NEGOTIATION-RESISTANT: This is a campus / trainee offer. Indian campus offers (TCS GET, Infosys SE, Wipro PAT, Cognizant GenC, HCL Tech Bee) are FIXED BY POLICY, there is NO negotiation room. The offer is signed during placement; reopening it after acceptance is rare. If the candidate tries to negotiate, respond honestly: "Campus offers are fixed by company policy across the cohort. I genuinely don't have authority to revise this, not for you, not for anyone. The negotiation lever is which TRACK you choose (e.g., TCS Digital vs Ninja, Infosys Power Programmer vs SE), not the number itself." Do NOT pretend you can stretch, that's the most common simulator failure mode for campus interviews.`;
   }
   return "";
 }
 
-/** Equity liquidity classifier — tells the LLM whether ESOPs are real
+/** Equity liquidity classifier, tells the LLM whether ESOPs are real
  * money (listed) or speculative (illiquid). The naive "ESOPs are
  * speculative until exit" framing under-prices listed-company equity. */
 function getEquityLiquidityNote(company: string | undefined, companyTier: string | undefined, hasEquity: boolean): string {
@@ -357,11 +357,11 @@ function getEquityLiquidityNote(company: string | undefined, companyTier: string
   // Pre-IPO with active secondary markets (real liquidity, just not public)
   const secondary = /\b(razorpay|cred|phonepe|zerodha|groww|meesho|dream11|udaan|byjus|unacademy|acko|pine labs|browserstack|postman|zepto)\b/.test(c);
 
-  if (listedUs) return `EQUITY LIQUIDITY: RSUs at ${company || "this company"} are LISTED — liquid on US public markets (Nasdaq/NYSE). Vested RSUs convert to cash you can sell instantly minus a brokerage delay. This is real money, not speculation. Counter any "but ESOPs are uncertain" framing with: "These are listed RSUs, not ESOPs — at vest you get the public-market value."`;
-  if (listedIndian) return `EQUITY LIQUIDITY: ${company || "This company"} is publicly listed on NSE/BSE — your ESOPs/RSUs convert to cash you can sell. Treat as real value at face value; not speculation.`;
-  if (secondary) return `EQUITY LIQUIDITY: ${company || "This company"} is pre-IPO but runs regular ESOP buybacks (Razorpay/CRED/PhonePe/Zerodha pattern) at marked-up valuations. Last 2-3 buybacks have been at 1.5-2.5x earlier strike — ESOPs here are NOT illiquid speculation.`;
-  if (companyTier === "startup-early") return `EQUITY LIQUIDITY: Early-stage startup — ESOPs are illiquid until acquisition or IPO (3-7 yrs typically, often 50%+ companies fail to exit at all). Be honest with the candidate: "Treat ESOPs as a long-shot bonus; negotiate hard on cash."`;
-  return `EQUITY LIQUIDITY: Mid-stage startup — ESOPs may liquefy via buyback rounds (typical at series C+) or eventual IPO. Expect 3-5 yr timeline. Not pure speculation but not cash either.`;
+  if (listedUs) return `EQUITY LIQUIDITY: RSUs at ${company || "this company"} are LISTED, liquid on US public markets (Nasdaq/NYSE). Vested RSUs convert to cash you can sell instantly minus a brokerage delay. This is real money, not speculation. Counter any "but ESOPs are uncertain" framing with: "These are listed RSUs, not ESOPs, at vest you get the public-market value."`;
+  if (listedIndian) return `EQUITY LIQUIDITY: ${company || "This company"} is publicly listed on NSE/BSE, your ESOPs/RSUs convert to cash you can sell. Treat as real value at face value; not speculation.`;
+  if (secondary) return `EQUITY LIQUIDITY: ${company || "This company"} is pre-IPO but runs regular ESOP buybacks (Razorpay/CRED/PhonePe/Zerodha pattern) at marked-up valuations. Last 2-3 buybacks have been at 1.5-2.5x earlier strike, ESOPs here are NOT illiquid speculation.`;
+  if (companyTier === "startup-early") return `EQUITY LIQUIDITY: Early-stage startup, ESOPs are illiquid until acquisition or IPO (3-7 yrs typically, often 50%+ companies fail to exit at all). Be honest with the candidate: "Treat ESOPs as a long-shot bonus; negotiate hard on cash."`;
+  return `EQUITY LIQUIDITY: Mid-stage startup, ESOPs may liquefy via buyback rounds (typical at series C+) or eventual IPO. Expect 3-5 yr timeline. Not pure speculation but not cash either.`;
 }
 
 /** Deputation/onsite premium context for IT services. The biggest
@@ -379,7 +379,7 @@ function getDeputationContext(companyTier: string | undefined, companyMeta?: Com
   return `DEPUTATION LEVER${companyTier === "it-services" ? " (services-firm specific)" : " (this company has an onsite track)"}: ${companyTier === "it-services" ? "TCS / Infosys / Wipro / HCL roles" : "This company"} often have${companyTier === "it-services" ? "" : "s"} an onsite-deputation track. Onsite to US / UK / Singapore / EU pays 1.5-3x the domestic base (USD/GBP/SGD allowance + housing + per diem). If the candidate is willing to relocate, offer the onsite track explicitly: "If you're open to onsite within the first 12-18 months, our typical deputation pays USD 5-8K/month plus housing on top of your domestic base. That's effectively ₹50-90 LPA equivalent for the deputation period."`;
 }
 
-/** 13th-month / festive bonus — prevalent at FMCG, conglomerates,
+/** 13th-month / festive bonus, prevalent at FMCG, conglomerates,
  * some banks. Equals roughly 1 month of basic. Company-level override
  * (hasFestiveBonus on COMPANY_META) takes precedence — e.g. CRED
  * started Diwali bonus in 2023 (overrides indian-unicorn default of
@@ -394,11 +394,11 @@ function getFestiveBonus(companyTier: string | undefined, basicLpa: number, comp
   const tierLabel = companyTier === "fmcg-mnc" ? "FMCG / consumer-goods" : companyTier === "bfsi-domestic" ? "Indian banking" : companyTier === "government-psu" ? "PSU / government" : "this company";
   return {
     amount,
-    text: `13TH-MONTH / FESTIVE BONUS (${tierLabel} norm${companyMeta?.hasFestiveBonus !== undefined ? ' — verified per company HR policy' : ''}): ${fmtLPA(amount)} paid annually around Diwali / financial-year-end as a 13th salary. NOT part of CTC headline; this is on top of the listed total. Mention it if the candidate hasn't accounted for it.`,
+    text: `13TH-MONTH / FESTIVE BONUS (${tierLabel} norm${companyMeta?.hasFestiveBonus !== undefined ? ', verified per company HR policy' : ''}): ${fmtLPA(amount)} paid annually around Diwali / financial-year-end as a 13th salary. NOT part of CTC headline; this is on top of the listed total. Mention it if the candidate hasn't accounted for it.`,
   };
 }
 
-/** Retention bonus / clawback authority — common for senior-and-above
+/** Retention bonus / clawback authority, common for senior-and-above
  * at unicorns / FAANG. Locks the candidate in for 12-24 months. */
 function getRetentionBonusContext(companyTier: string | undefined, exp: ExperienceLevel, totalCtc: number): string {
   const round1 = (x: number) => Math.round(x * 10) / 10;
@@ -407,7 +407,7 @@ function getRetentionBonusContext(companyTier: string | undefined, exp: Experien
   if (exp !== "senior" && exp !== "lead" && exp !== "executive") return "";
   const retention1yr = round1(totalCtc * 0.10);
   const retention2yr = round1(totalCtc * 0.15);
-  return `RETENTION BONUS AUTHORITY (senior+ at top tiers): You can structure a retention bonus for senior hires: ₹${retention1yr} LPA paid at 1-yr mark + ₹${retention2yr} LPA at 2-yr mark, both contingent on continued employment. Clawback if candidate leaves earlier. Don't volunteer this in turn 1 — use it as a closer when candidate is on the fence and you're already at maxStretch on base.`;
+  return `RETENTION BONUS AUTHORITY (senior+ at top tiers): You can structure a retention bonus for senior hires: ₹${retention1yr} LPA paid at 1-yr mark + ₹${retention2yr} LPA at 2-yr mark, both contingent on continued employment. Clawback if candidate leaves earlier. Don't volunteer this in turn 1, use it as a closer when candidate is on the fence and you're already at maxStretch on base.`;
 }
 
 /** Bond / service-agreement warning for tiers that enforce them.
@@ -418,10 +418,10 @@ function getBondWarning(companyTier: string | undefined, companyMeta?: CompanyMe
     ? ` This company's documented bond: ₹${companyMeta.bondPenaltyLpa} LPA penalty for early exit.`
     : "";
   if (companyTier === "it-services") {
-    return `BOND CULTURE (services firms): TCS imposes a 2-yr bond (₹50K penalty for early exit), Infosys ₹1L, Cognizant ₹0.75L, Wipro varies.${docBond} Real cost the candidate must factor in. If the candidate is currently bonded and joining, they OWE the previous employer if they leave before serving — don't pretend otherwise.`;
+    return `BOND CULTURE (services firms): TCS imposes a 2-yr bond (₹50K penalty for early exit), Infosys ₹1L, Cognizant ₹0.75L, Wipro varies.${docBond} Real cost the candidate must factor in. If the candidate is currently bonded and joining, they OWE the previous employer if they leave before serving, don't pretend otherwise.`;
   }
   if (companyTier === "government-psu") {
-    return `BOND CULTURE (PSUs): 3-5 year service bond is standard; penalty ranges from refunding training cost to ₹5-10 LPA.${docBond} Bond enforcement is real — PSU candidates can't job-hop without paying out.`;
+    return `BOND CULTURE (PSUs): 3-5 year service bond is standard; penalty ranges from refunding training cost to ₹5-10 LPA.${docBond} Bond enforcement is real, PSU candidates can't job-hop without paying out.`;
   }
   return "";
 }
@@ -440,43 +440,43 @@ function getCounterOfferPlaybook(companyTier: CompanyTier | null | undefined): s
   switch (companyTier) {
     case "faang":
     case "big-tech":
-      return `COUNTER-OFFER PLAYBOOK: With a verified written competing offer, FAANG / Big Tech can typically stretch 8-15% over the initial offer (mostly via RSU sign-on top-up + small base bump). Beyond 15% requires committee re-approval and rarely lands. Frame any stretch as "let me see what I can do with the comp committee" — gives leverage without over-committing.`;
+      return `COUNTER-OFFER PLAYBOOK: With a verified written competing offer, FAANG / Big Tech can typically stretch 8-15% over the initial offer (mostly via RSU sign-on top-up + small base bump). Beyond 15% requires committee re-approval and rarely lands. Frame any stretch as "let me see what I can do with the comp committee", gives leverage without over-committing.`;
     case "gcc":
-      return `COUNTER-OFFER PLAYBOOK: GCC India arms typically have 6-12% stretch room with a verified written counter (mostly base + joining bonus, equity-equivalent RSUs only at senior+). Approval chain is shorter than FAANG but slower than unicorns — quote 5-7 working days for a final answer.`;
+      return `COUNTER-OFFER PLAYBOOK: GCC India arms typically have 6-12% stretch room with a verified written counter (mostly base + joining bonus, equity-equivalent RSUs only at senior+). Approval chain is shorter than FAANG but slower than unicorns, quote 5-7 working days for a final answer.`;
     case "indian-unicorn":
     case "saas-product":
-      return `COUNTER-OFFER PLAYBOOK: Indian unicorns / late-stage SaaS typically stretch 10-25% on a verified written counter — they're still building out senior bench and lose deals over comp far more than FAANG do. Stretch usually splits across base (60%) + joining bonus (25%) + ESOP top-up (15%). Founders / VPs can sign off in 24-48 hrs.`;
+      return `COUNTER-OFFER PLAYBOOK: Indian unicorns / late-stage SaaS typically stretch 10-25% on a verified written counter, they're still building out senior bench and lose deals over comp far more than FAANG do. Stretch usually splits across base (60%) + joining bonus (25%) + ESOP top-up (15%). Founders / VPs can sign off in 24-48 hrs.`;
     case "startup-growth":
-      return `COUNTER-OFFER PLAYBOOK: Growth-stage startups (Series B/C) typically stretch 10-20% on counter, but most of the headroom is in ESOP top-up rather than cash — cash runway is tight. Be honest: "We can match cash within ~10%, the bigger lift will come via additional ESOPs vesting over 4 years."`;
+      return `COUNTER-OFFER PLAYBOOK: Growth-stage startups (Series B/C) typically stretch 10-20% on counter, but most of the headroom is in ESOP top-up rather than cash, cash runway is tight. Be honest: "We can match cash within ~10%, the bigger lift will come via additional ESOPs vesting over 4 years."`;
     case "startup-early":
-      return `COUNTER-OFFER PLAYBOOK: Early-stage (pre-Series-B) typically stretch 5-15% on cash, plus meaningful ESOP top-ups (an extra 0.05-0.25% can be approved by founders directly). Cash ceiling is hard — runway-bound. Lead with equity story.`;
+      return `COUNTER-OFFER PLAYBOOK: Early-stage (pre-Series-B) typically stretch 5-15% on cash, plus meaningful ESOP top-ups (an extra 0.05-0.25% can be approved by founders directly). Cash ceiling is hard, runway-bound. Lead with equity story.`;
     case "it-services":
-      return `COUNTER-OFFER PLAYBOOK: IT-services firms (TCS / Infosys / Wipro / HCL / Tech Mahindra) typically stretch only 3-5% on counter — bands are tightly grade-gated and HR Comp & Ben rarely approves out-of-band. Frame realistically: "I can take this back, but our grade-band exception process gives ~5% headroom at most. The bigger lever for you is the onsite track or skill-premium grade."`;
+      return `COUNTER-OFFER PLAYBOOK: IT-services firms (TCS / Infosys / Wipro / HCL / Tech Mahindra) typically stretch only 3-5% on counter, bands are tightly grade-gated and HR Comp & Ben rarely approves out-of-band. Frame realistically: "I can take this back, but our grade-band exception process gives ~5% headroom at most. The bigger lever for you is the onsite track or skill-premium grade."`;
     case "consulting-mbb":
-      return `COUNTER-OFFER PLAYBOOK: MBB (McKinsey / BCG / Bain) bands are rigidly cohort-based — at the same level, EVERYONE gets the same number. Stretch is effectively 0% on base. The lever is signing bonus (5-10L cash) and external-hire premium (one level up). Frame: "Base is fixed for the cohort, but I have room on the joining bonus / level placement."`;
+      return `COUNTER-OFFER PLAYBOOK: MBB (McKinsey / BCG / Bain) bands are rigidly cohort-based, at the same level, EVERYONE gets the same number. Stretch is effectively 0% on base. The lever is signing bonus (5-10L cash) and external-hire premium (one level up). Frame: "Base is fixed for the cohort, but I have room on the joining bonus / level placement."`;
     case "consulting-big4":
       return `COUNTER-OFFER PLAYBOOK: Big 4 consulting (Deloitte / EY / KPMG / PwC) typically stretch 5-10% on counter, with most flex in joining bonus and grade placement (Senior Consultant vs Manager). Hot specialisations (Risk / Cyber / GenAI advisory) can land 10-15%.`;
     case "bfsi-global":
-      return `COUNTER-OFFER PLAYBOOK: Global BFSI (Goldman / JPM / Morgan Stanley / Citi / Barclays / DB / UBS) stretch 8-15% on verified counter, with strong flex in deferred bonus / RSU lots (vest over 3 yrs). Cash base is harder to move — most lift comes via the variable / sign-on package.`;
+      return `COUNTER-OFFER PLAYBOOK: Global BFSI (Goldman / JPM / Morgan Stanley / Citi / Barclays / DB / UBS) stretch 8-15% on verified counter, with strong flex in deferred bonus / RSU lots (vest over 3 yrs). Cash base is harder to move, most lift comes via the variable / sign-on package.`;
     case "bfsi-domestic":
       return `COUNTER-OFFER PLAYBOOK: Indian banks (HDFC / ICICI / Axis / SBI / Kotak) stretch 5-10% on verified counter, mostly base + joining bonus. Variable pay is fixed by the role grade, not negotiable. ESOPs only at AVP+ levels.`;
     case "government-psu":
-      return `COUNTER-OFFER PLAYBOOK: PSU / government roles have ZERO counter-offer flex — pay is set by Pay Commission grade, period. Frame any private-sector counter as "respectfully, our pay is determined by Government of India grade norms — but we also offer pension / housing / job security that the private offer doesn't include." Pivot to non-cash levers.`;
+      return `COUNTER-OFFER PLAYBOOK: PSU / government roles have ZERO counter-offer flex, pay is set by Pay Commission grade, period. Frame any private-sector counter as "respectfully, our pay is determined by Government of India grade norms, but we also offer pension / housing / job security that the private offer doesn't include." Pivot to non-cash levers.`;
     case "fmcg-mnc":
       return `COUNTER-OFFER PLAYBOOK: FMCG MNC (HUL / P&G / Nestle / Colgate / Marico / Britannia) stretch 5-12% on counter, with most flex in performance bonus % (raise from 15% → 20% target) and joining bonus rather than base. Strong non-cash levers (premium health, family insurance, festive bonus). Ground in those when cash room is tight.`;
     case "edtech":
-      return `COUNTER-OFFER PLAYBOOK: Edtech post-2023 reset (BYJU'S / Vedantu / Unacademy / PhysicsWallah / upGrad) — cash stretch only 5-10% (sector under margin pressure), but ESOP top-ups generous (0.1-0.5%) since equity is illiquid anyway. Be honest about ESOP value; don't quote unicorn-era valuations.`;
+      return `COUNTER-OFFER PLAYBOOK: Edtech post-2023 reset (BYJU'S / Vedantu / Unacademy / PhysicsWallah / upGrad), cash stretch only 5-10% (sector under margin pressure), but ESOP top-ups generous (0.1-0.5%) since equity is illiquid anyway. Be honest about ESOP value; don't quote unicorn-era valuations.`;
     default:
-      return `COUNTER-OFFER PLAYBOOK: Typical Indian-market counter stretch with a verified written offer is 8-15% — split across base, joining bonus, and (where applicable) ESOP top-up. Approval chain runs 3-7 working days. Stretch beyond 15% is rare and almost always requires escalation to leadership.`;
+      return `COUNTER-OFFER PLAYBOOK: Typical Indian-market counter stretch with a verified written offer is 8-15%, split across base, joining bonus, and (where applicable) ESOP top-up. Approval chain runs 3-7 working days. Stretch beyond 15% is rare and almost always requires escalation to leadership.`;
   }
 }
 
-/** Bluff-check rule for unverified counter-offers — distinct from the
+/** Bluff-check rule for unverified counter-offers, distinct from the
  * existing Indian-context guidance because it specifies what the LLM
  * should DO when a counter is mentioned without a written letter. */
 const COUNTER_OFFER_BLUFF_CHECK = `COUNTER-OFFER BLUFF CHECK (Indian-market reality): When the candidate claims a competing offer, ASK FOR THE WRITTEN LETTER before stretching your offer. Phrases like "my current company will counter", "I have an offer at ₹X" without a letter are bluffs ~50-60% of the time. Respond professionally: "That's helpful context. Could you share the written offer (you can redact the company name) so I can see exactly what you're weighing? Once I see it I can figure out where I can land." Do NOT stretch maxStretch on a verbal claim alone. If the candidate refuses to share even a redacted letter, treat it as no-leverage and stay at your current offer.`;
 
-/** WFH / internet / equipment allowance — post-COVID standard for
+/** WFH / internet / equipment allowance, post-COVID standard for
  * product-tech and GCC tiers. Services firms generally don't offer
  * (employees expected to work from office or client site). */
 function getWfhAllowanceContext(companyTier: string | undefined): string {
@@ -486,7 +486,7 @@ function getWfhAllowanceContext(companyTier: string | undefined): string {
     "consulting-mbb", "consulting-big4",
   ]);
   if (!offers.has(companyTier ?? "")) return "";
-  return `WFH / WORK-FROM-HOME ALLOWANCE: Standard for product-tech roles post-COVID — typically ₹2-5K/month for internet + electricity, plus a ₹40-80K one-time setup allowance (laptop, monitor, chair). Mention if candidate raises remote/hybrid concerns. Negotiable lever for senior roles asking for fully-remote arrangements.`;
+  return `WFH / WORK-FROM-HOME ALLOWANCE: Standard for product-tech roles post-COVID, typically ₹2-5K/month for internet + electricity, plus a ₹40-80K one-time setup allowance (laptop, monitor, chair). Mention if candidate raises remote/hybrid concerns. Negotiable lever for senior roles asking for fully-remote arrangements.`;
 }
 
 /** Family health-insurance value (self / spouse / kids / parents).
@@ -503,19 +503,19 @@ function getFamilyInsuranceContext(companyTier: string | undefined, exp: Experie
   ]);
   if (!offers.has(companyTier ?? "")) return "";
   const corporateLimit = exp === "senior" || exp === "lead" || exp === "executive" ? "₹10L" : "₹5-7L";
-  return `HEALTH INSURANCE (corporate group): Self + spouse + 2 kids + parents covered up to ${corporateLimit} per year (no individual underwriting; pre-existing conditions covered from day 1). Equivalent retail premium would be ₹40-60K/yr for self+spouse+kids and another ₹30-50K/yr for parents (parents above 60 are otherwise hard to insure). When candidate compares CTC, point this out — it's a real ₹70K-1L value not in the headline number.`;
+  return `HEALTH INSURANCE (corporate group): Self + spouse + 2 kids + parents covered up to ${corporateLimit} per year (no individual underwriting; pre-existing conditions covered from day 1). Equivalent retail premium would be ₹40-60K/yr for self+spouse+kids and another ₹30-50K/yr for parents (parents above 60 are otherwise hard to insure). When candidate compares CTC, point this out, it's a real ₹70K-1L value not in the headline number.`;
 }
 
-/** ESOP refresh-grant cadence — FAANG India does annual refreshes
+/** ESOP refresh-grant cadence, FAANG India does annual refreshes
  * (~30% of initial grant), Indian unicorns do biennial. Candidates
  * miss this in initial-offer math. */
 function getEsopRefreshContext(companyTier: string | undefined, hasEquity: boolean): string {
   if (!hasEquity) return "";
   if (companyTier === "faang" || companyTier === "big-tech" || companyTier === "gcc") {
-    return `RSU REFRESH CADENCE: Annual refresh grants at ${companyTier === "faang" ? "FAANG" : companyTier === "gcc" ? "GCC" : "big-tech"} India — typically ~30% of initial grant value granted each year, vesting on the same 4-yr/1-yr-cliff schedule. Effective Year-2 onwards comp is meaningfully higher than the initial offer suggests. If the candidate stays 3+ yrs the equity stack compounds: Y1 = initial grant, Y2 = initial + refresh1, Y3 = initial + refresh1 + refresh2, etc.`;
+    return `RSU REFRESH CADENCE: Annual refresh grants at ${companyTier === "faang" ? "FAANG" : companyTier === "gcc" ? "GCC" : "big-tech"} India, typically ~30% of initial grant value granted each year, vesting on the same 4-yr/1-yr-cliff schedule. Effective Year-2 onwards comp is meaningfully higher than the initial offer suggests. If the candidate stays 3+ yrs the equity stack compounds: Y1 = initial grant, Y2 = initial + refresh1, Y3 = initial + refresh1 + refresh2, etc.`;
   }
   if (companyTier === "indian-unicorn" || companyTier === "saas-product") {
-    return `ESOP REFRESH CADENCE: Top Indian unicorns (CRED, Razorpay, PhonePe, Zerodha) do refresh grants every 18-24 months for retained senior talent — usually ₹20-30L of additional ESOPs at then-current FMV. Less predictable than FAANG annual refreshes; tied to performance + retention.`;
+    return `ESOP REFRESH CADENCE: Top Indian unicorns (CRED, Razorpay, PhonePe, Zerodha) do refresh grants every 18-24 months for retained senior talent, usually ₹20-30L of additional ESOPs at then-current FMV. Less predictable than FAANG annual refreshes; tied to performance + retention.`;
   }
   return "";
 }
@@ -525,7 +525,7 @@ function getEsopRefreshContext(companyTier: string | undefined, hasEquity: boole
  * but this is a real career signal candidates worry about. */
 function getBenchContext(companyTier: string | undefined): string {
   if (companyTier !== "it-services") return "";
-  return `BENCH PERIOD (services-firm reality): New joiners at TCS / Infosys / Wipro typically spend 4-12 weeks on bench before allocation to a client project. Pay continues at full base, but no client-facing work, no skill growth, no onsite eligibility. If candidate asks "when will I be allocated?", be honest: "Allocation depends on demand — typically 4-8 weeks for someone with your profile, longer for niche skills."`;
+  return `BENCH PERIOD (services-firm reality): New joiners at TCS / Infosys / Wipro typically spend 4-12 weeks on bench before allocation to a client project. Pay continues at full base, but no client-facing work, no skill growth, no onsite eligibility. If candidate asks "when will I be allocated?", be honest: "Allocation depends on demand, typically 4-8 weeks for someone with your profile, longer for niche skills."`;
 }
 
 /** Tax-saving allowances rolled into Indian salary structures. Most
@@ -534,14 +534,14 @@ function getBenchContext(companyTier: string | undefined): string {
 function getTaxSavingAllowances(companyTier: string | undefined): string {
   const structured = new Set(["it-services", "bfsi-global", "bfsi-domestic", "fmcg-mnc", "consulting-big4", "government-psu"]);
   if (!structured.has(companyTier ?? "")) return "";
-  return `TAX-SAVING ALLOWANCES (structured-comp norm): Salary slip likely includes (a) LTA — Leave Travel Allowance, ₹0.6-1L/yr tax-exempt twice in 4 yrs against domestic travel bills, (b) Sodexo / Zeta meal vouchers, ₹26,400/yr tax-free, (c) Conveyance / fuel reimbursement against bills, ₹19,200-30K/yr (only old-regime), (d) NPS — National Pension System employer contribution up to 10% of basic, deductible. These are visible on the slip but not part of the cash-in-hand headline — when candidate asks for "all components", list them.`;
+  return `TAX-SAVING ALLOWANCES (structured-comp norm): Salary slip likely includes (a) LTA, Leave Travel Allowance, ₹0.6-1L/yr tax-exempt twice in 4 yrs against domestic travel bills, (b) Sodexo / Zeta meal vouchers, ₹26,400/yr tax-free, (c) Conveyance / fuel reimbursement against bills, ₹19,200-30K/yr (only old-regime), (d) NPS, National Pension System employer contribution up to 10% of basic, deductible. These are visible on the slip but not part of the cash-in-hand headline, when candidate asks for "all components", list them.`;
 }
 
-/** Indian DA (Dearness Allowance) only for PSUs / govt — pegged to
+/** Indian DA (Dearness Allowance) only for PSUs / govt, pegged to
  * the Consumer Price Index, revised twice yearly. */
 function getDearnessAllowanceContext(companyTier: string | undefined): string {
   if (companyTier !== "government-psu") return "";
-  return `DEARNESS ALLOWANCE (PSU/govt only): DA is pegged to CPI-IW and revised every Jan + July. Currently at ~50% of basic for central PSUs. This compounds the basic over time — a 7th CPC ₹1L basic today becomes ₹1.5L+ in DA-adjusted in-hand. PSU candidates should account for DA growth when comparing against private offers.`;
+  return `DEARNESS ALLOWANCE (PSU/govt only): DA is pegged to CPI-IW and revised every Jan + July. Currently at ~50% of basic for central PSUs. This compounds the basic over time, a 7th CPC ₹1L basic today becomes ₹1.5L+ in DA-adjusted in-hand. PSU candidates should account for DA growth when comparing against private offers.`;
 }
 
 /** Strict-IT-Act metro list per Section 10(13A) for the 50% HRA exemption.
@@ -560,7 +560,7 @@ function isLegal50PctMetro(jobCity: string | undefined): boolean {
   return false;
 }
 
-/** HRA exemption math walkthrough — Income Tax Act Section 10(13A).
+/** HRA exemption math walkthrough, Income Tax Act Section 10(13A).
  * Exemption = MIN of (actual HRA received, X% of basic, rent paid - 10% of basic),
  * where X = 50% only for the four IT-Act metros (Mumbai, Delhi, Kolkata,
  * Chennai) and 40% for ALL other cities including Bangalore, Hyderabad,
@@ -575,24 +575,24 @@ function getHraExemptionWalkthrough(cityTier: string | undefined, basicLpa: numb
   const pctOfBasic = isLegalMetro ? 0.50 : 0.40;
   const pctCap = round1(basicLpa * pctOfBasic);
   const cityLabel = isLegalMetro
-    ? "IT-Act metro (50% of basic — Mumbai/Delhi/Kolkata/Chennai only)"
+    ? "IT-Act metro (50% of basic, Mumbai/Delhi/Kolkata/Chennai only)"
     : (cityTier === "tier1"
-        ? "tier-1 city but NOT IT-Act metro — 40% cap applies (Bangalore/Hyderabad/Pune are legally non-metro for HRA)"
+        ? "tier-1 city but NOT IT-Act metro, 40% cap applies (Bangalore/Hyderabad/Pune are legally non-metro for HRA)"
         : "non-metro (40% of basic)");
   // Example: assume rent = 50% of HRA (typical in metros)
   const exampleRent = round1(hraLpa * 0.6);
   const rentMinusTenPct = round1(exampleRent - basicLpa * 0.10);
   const exemption = round1(Math.min(hraLpa, pctCap, Math.max(0, rentMinusTenPct)));
-  return `HRA EXEMPTION MATH (old-regime only — Section 10(13A)):
+  return `HRA EXEMPTION MATH (old-regime only, Section 10(13A)):
 - Actual HRA received: ${fmtLPA(hraLpa)}
 - Cap based on city: ${fmtLPA(pctCap)} (${cityLabel})
-- Rent paid minus 10% of basic: ${fmtLPA(rentMinusTenPct)} (assumes rent ≈ ${fmtLPA(exampleRent)} — adjust for candidate's actual rent)
+- Rent paid minus 10% of basic: ${fmtLPA(rentMinusTenPct)} (assumes rent ≈ ${fmtLPA(exampleRent)}, adjust for candidate's actual rent)
 - TAX-EXEMPT HRA: ${fmtLPA(exemption)} (the MINIMUM of the three above)
 
-If the candidate asks "how much HRA tax-free?", walk through THIS calculation with their actual rent. Don't quote a generic "HRA is tax-exempt" — that's the kind of vagueness candidates remember when comparing offers later.`;
+If the candidate asks "how much HRA tax-free?", walk through THIS calculation with their actual rent. Don't quote a generic "HRA is tax-exempt", that's the kind of vagueness candidates remember when comparing offers later.`;
 }
 
-/** ESOP dilution timeline — every funding round dilutes existing ESOPs.
+/** ESOP dilution timeline, every funding round dilutes existing ESOPs.
  * After 3 rounds (Series B → C → D → IPO) a Series-A grant is worth
  * ~50-60% of its face value at vest. Real cost candidates miss. */
 function getEsopDilutionContext(companyTier: string | undefined, hasEquity: boolean): string {
@@ -601,7 +601,7 @@ function getEsopDilutionContext(companyTier: string | undefined, hasEquity: bool
     return `ESOP DILUTION REALITY (startup founder math):
 - Each funding round dilutes existing equity holders by 15-25%.
 - Typical path: Series A (today) → B (12-18 mo, ~20% dilution) → C (12-18 mo, ~15%) → D (~12%) → IPO (~10% additional).
-- A grant of, say, 0.1% at Series A is worth 0.1% × (1-0.20) × (1-0.15) × (1-0.12) × (1-0.10) ≈ 0.054% at IPO — roughly HALF the face value.
+- A grant of, say, 0.1% at Series A is worth 0.1% × (1-0.20) × (1-0.15) × (1-0.12) × (1-0.10) ≈ 0.054% at IPO, roughly HALF the face value.
 - This isn't a bug; it's how venture funding works. Frame ESOPs as "1.5-2x growth potential offsetting dilution", NOT "guaranteed X LPA".
 - Anti-dilution clauses (full ratchet / weighted-average) protect investors, NOT employees. Employee ESOPs almost never have anti-dilution protection.`;
   }
@@ -625,15 +625,15 @@ function getRecentBuybackContext(company: string | undefined, overrideNote?: str
   const c = (company || "").toLowerCase().trim();
   // Each entry is { match: substring, context: string }
   const buybacks: Record<string, string> = {
-    "razorpay": "Razorpay has run 6 ESOP buybacks since 2018 (latest mid-2024 at ~$12B implied valuation). Vested ESOPs have liquefied multiple times — treat as real money, not paper.",
-    "phonepe": "PhonePe ran a ₹1,150 Cr ESOP buyback in 2022 (one of India's largest), and another in 2024 around its India domicile shift. Liquidity has been consistent — vested ESOPs are bankable.",
+    "razorpay": "Razorpay has run 6 ESOP buybacks since 2018 (latest mid-2024 at ~$12B implied valuation). Vested ESOPs have liquefied multiple times, treat as real money, not paper.",
+    "phonepe": "PhonePe ran a ₹1,150 Cr ESOP buyback in 2022 (one of India's largest), and another in 2024 around its India domicile shift. Liquidity has been consistent, vested ESOPs are bankable.",
     "cred": "CRED has done 3+ buyback events; latest around its 2022-23 round. ESOPs at CRED have appreciated meaningfully but cycle is irregular.",
-    "zerodha": "Zerodha is profitable + bootstrapped — no traditional buyback rounds, but distributes performance bonuses + occasional ESOP cash-out for senior team. Liquidity is high but informal.",
+    "zerodha": "Zerodha is profitable + bootstrapped, no traditional buyback rounds, but distributes performance bonuses + occasional ESOP cash-out for senior team. Liquidity is high but informal.",
     "groww": "Groww ran an ESOP buyback in 2024 covering tenured employees. Pre-IPO trajectory.",
     "meesho": "Meesho ran a ₹250 Cr ESOP buyback in 2024 covering vested grants for current and former employees.",
     "udaan": "Udaan has had limited buyback activity; ESOPs largely paper until exit.",
     "swiggy": "Swiggy IPO'd Nov 2024; ESOPs that vested pre-IPO are now liquid via NSE/BSE.",
-    "zomato": "Zomato is publicly listed (Eternal Ltd post-rebrand) — RSUs and existing ESOPs liquid via NSE/BSE.",
+    "zomato": "Zomato is publicly listed (Eternal Ltd post-rebrand), RSUs and existing ESOPs liquid via NSE/BSE.",
   };
   for (const [key, ctx] of Object.entries(buybacks)) {
     if (c.includes(key)) {
@@ -643,7 +643,7 @@ function getRecentBuybackContext(company: string | undefined, overrideNote?: str
   return "";
 }
 
-/** Regional role × city variation — same role pays differently across
+/** Regional role × city variation, same role pays differently across
  * Indian cities even within the same tier. Bangalore is the design /
  * tech premium hub; Chennai pays ~25% less for design but matches for
  * core engineering; Pune sits in between. */
@@ -655,13 +655,13 @@ function getRegionalRoleVariation(roleKey: string | undefined, cityTier: string 
   const isDesignRole = roleKey === "ux-designer" || roleKey === "design-engineer";
   const isProductRole = roleKey === "product-manager";
   if (isDesignRole) {
-    if (city.includes("chennai")) return `REGIONAL ROLE VARIATION: Chennai design roles run 20-25% below Bangalore for the same band — design talent density is lower so companies don't pay the Bangalore premium. Don't over-correct: tier-2 multiplier already partially accounts for this.`;
-    if (city.includes("hyderabad")) return `REGIONAL ROLE VARIATION: Hyderabad design pays ~10-15% below Bangalore — closing the gap as more product cos open Hyderabad campuses but still trailing.`;
-    if (city.includes("pune")) return `REGIONAL ROLE VARIATION: Pune design pays ~10% below Bangalore for the same band — strong startup base but Bangalore still sets the price for senior design.`;
+    if (city.includes("chennai")) return `REGIONAL ROLE VARIATION: Chennai design roles run 20-25% below Bangalore for the same band, design talent density is lower so companies don't pay the Bangalore premium. Don't over-correct: tier-2 multiplier already partially accounts for this.`;
+    if (city.includes("hyderabad")) return `REGIONAL ROLE VARIATION: Hyderabad design pays ~10-15% below Bangalore, closing the gap as more product cos open Hyderabad campuses but still trailing.`;
+    if (city.includes("pune")) return `REGIONAL ROLE VARIATION: Pune design pays ~10% below Bangalore for the same band, strong startup base but Bangalore still sets the price for senior design.`;
   }
   if (isProductRole) {
-    if (city.includes("hyderabad")) return `REGIONAL ROLE VARIATION: Hyderabad PM roles run ~10% below Bangalore — Microsoft / Google / Salesforce hubs help but Bangalore PM market is deeper.`;
-    if (city.includes("chennai")) return `REGIONAL ROLE VARIATION: Chennai PM market is thin — pays ~20% below Bangalore for the same band.`;
+    if (city.includes("hyderabad")) return `REGIONAL ROLE VARIATION: Hyderabad PM roles run ~10% below Bangalore, Microsoft / Google / Salesforce hubs help but Bangalore PM market is deeper.`;
+    if (city.includes("chennai")) return `REGIONAL ROLE VARIATION: Chennai PM market is thin, pays ~20% below Bangalore for the same band.`;
   }
   return "";
 }
@@ -682,7 +682,7 @@ function buildIndianMarketContext(p: {
   hraLpa?: number;
   jobCity?: string;
   roleKey?: string;
-  /** Per-role-override field forwarded from the override entry — lets
+  /** Per-role-override field forwarded from the override entry, lets
    * a curator override the hardcoded buyback note without editing the
    * helpers. */
   recentBuybackNote?: string;
@@ -736,7 +736,7 @@ function buildIndianMarketContext(p: {
   ].filter(Boolean);
   return {
     campusWarning,
-    fullContextBlock: `INDIAN-MARKET CONTEXT (use these blocks when relevant — quote numbers verbatim, don't invent):\n\n${blocks.join("\n\n")}`,
+    fullContextBlock: `INDIAN-MARKET CONTEXT (use these blocks when relevant, quote numbers verbatim, don't invent):\n\n${blocks.join("\n\n")}`,
   };
 }
 
@@ -897,7 +897,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     let initialOffer = clampOpenerToP35(totalMin, totalMax);
     let minOffer = Math.round(totalMin * 0.95 * 10) / 10;
     let maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
-    /* `walkAway` is the kernel's CANDIDATE-FLOOR — the offer below which
+    /* `walkAway` is the kernel's CANDIDATE-FLOOR, the offer below which
        the recruiter would rather walk than entertain. Must satisfy
        walkAway < initialOffer < maxStretch (kernel invariant). We compute
        it from the band floor, not the band ceiling. Historical bug: this
@@ -907,7 +907,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     let walkAway = Math.round(Math.min(minOffer, initialOffer * 0.9) * 10) / 10;
     if (walkAway >= initialOffer) walkAway = Math.round((initialOffer - 0.5) * 10) / 10;
     if (walkAway < 0.5) walkAway = 0.5;
-    /* People-manager band floor (#115) — applied BEFORE the component
+    /* People-manager band floor (#115), applied BEFORE the component
        breakdown + bandContext prose below so BOTH the numbers and the
        LLM-facing prose reflect the lifted manager band (no contradiction
        between a ₹19 base breakdown and a ₹32.7 opener). Single source of
@@ -983,7 +983,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
       ? tier === "high"
         ? "high-confidence research-aggregated (n ≥ 1000)"
         : tier === "low"
-          ? "low-confidence research-aggregated (n < 250 — directional)"
+          ? "low-confidence research-aggregated (n < 250, directional)"
           : "research-aggregated"
       : "verified";
     const bandHeader = isAggregated
@@ -1001,10 +1001,10 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
       : tier === "high"
         ? `\nCALIBRATION: These numbers come from a high-volume public-source aggregate (n ≥ 1000 self-reports). Treat the band as a reliable market signal. Anchor the candidate's first-offer expectation near the median; the lower end is realistic for slow-market years, the upper end requires strong leverage.`
         : tier === "low"
-          ? `\nCALIBRATION: These numbers are aggregated from a SMALL public-source sample (n < 250). Treat them as DIRECTIONAL ONLY — the actual offer range may shift ±25% from what's shown. When coaching the candidate, frame the band as a "starting hypothesis" and recommend they validate against a recent hire at the company or a recruiter screen before locking in expectations. Do not commit to specific numbers as if they're authoritative.`
+          ? `\nCALIBRATION: These numbers are aggregated from a SMALL public-source sample (n < 250). Treat them as DIRECTIONAL ONLY, the actual offer range may shift ±25% from what's shown. When coaching the candidate, frame the band as a "starting hypothesis" and recommend they validate against a recent hire at the company or a recruiter screen before locking in expectations. Do not commit to specific numbers as if they're authoritative.`
           : `\nCALIBRATION: These numbers are aggregated from public scrapes (Levels.fyi / AmbitionBox / Glassdoor) and lean toward the upper-decile of reported offers. When coaching the candidate's first-offer expectation, anchor on the LOWER half of the band (close to ${fmtLPA(minOffer)}–${fmtLPA(initialOffer)}); reserve the upper end for stretch scenarios with strong leverage. If the candidate quotes a number above the median, validate it but don't reinforce it as "typical".`;
     const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}${bandHeader}
-- Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
+- Initial offer: ${fmtLPA(initialOffer)} CTC, this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
 - Walk-away ceiling: ${fmtLPA(recruiterCeiling)}
@@ -1033,7 +1033,7 @@ SOURCE: ${override.source}.${calibrationNote}
 
 ${indianContext.fullContextBlock}
 
-INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
+INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard, quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
 ${components.text}
 
 These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from a different tier (e.g. unicorn bands for a small design studio) breaks the simulation. Stay anchored.`;
@@ -1080,7 +1080,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       executive: { initial: 50, min: 40,  max: 90,  walk: 38 },
     };
     const f = fallbackByExp[exp] ?? fallbackByExp.mid;
-    /* People-manager band floor (#115) — a genuine people-management title
+    /* People-manager band floor (#115), a genuine people-management title
        that fell all the way to the data-less fallback (no override, no
        salary entry) still must not anchor below the tier manager band. */
     const fb = liftPeopleManagerBand(
@@ -1120,7 +1120,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   let walkAway = Math.round(Math.min(minOffer, initialOffer * 0.9) * 10) / 10;
   if (walkAway >= initialOffer) walkAway = Math.round((initialOffer - 0.5) * 10) / 10;
   if (walkAway < 0.5) walkAway = 0.5;
-  /* People-manager band floor (#115) — see override-path comment above.
+  /* People-manager band floor (#115), see override-path comment above.
      Applied before the component breakdown + bandContext prose so numbers
      and prose stay consistent. Single source shared with resolveServerBand. */
   {
@@ -1184,40 +1184,40 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
     roleKey,
   });
   const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
-- Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
+- Initial offer: ${fmtLPA(initialOffer)} CTC, this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
-- Walk-away ceiling: ${fmtLPA(recruiterCeiling)} — if candidate demands above this, politely decline: "That's beyond our band for this level. I'd need to explore a senior/staff position instead."
+- Walk-away ceiling: ${fmtLPA(recruiterCeiling)}, if candidate demands above this, politely decline: "That's beyond our band for this level. I'd need to explore a senior/staff position instead."
 - Walk-away floor (sub-market offers below this): ${fmtLPA(walkAway)}
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
 ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${entry.equity_vesting})` : "- No equity at this level"}
 
-INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
+INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard, quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
 ${components.text}
 
 ${indianContext.fullContextBlock}
 
 ABSOLUTE NUMBER RULES (violations destroy realism):
-1. ALWAYS use a SINGLE precise figure. NEVER quote a range like "₹28-45 LPA" or "between X and Y" — real hiring managers state ONE number and defend it. The band above is YOUR internal authority, not a public range to share.
+1. ALWAYS use a SINGLE precise figure. NEVER quote a range like "₹28-45 LPA" or "between X and Y", real hiring managers state ONE number and defend it. The band above is YOUR internal authority, not a public range to share.
 2. NEVER write a placeholder like "₹X" / "₹X LPA" / "TBD" / "[amount]". Every figure you say MUST be a real LPA number derived from the band above. If you don't know, don't quote.
-3. NEVER quote a number ABOVE ${fmtLPA(recruiterCeiling)} — that's outside your authority for this role and level.
-4. NEVER quote a number that conflicts with this band's CTC tier. The band is calibrated to the candidate's role, company tier, experience, and city — overriding it with bigger numbers (e.g. unicorn-tier figures for a services-firm role) breaks the simulation.
+3. NEVER quote a number ABOVE ${fmtLPA(recruiterCeiling)}, that's outside your authority for this role and level.
+4. NEVER quote a number that conflicts with this band's CTC tier. The band is calibrated to the candidate's role, company tier, experience, and city, overriding it with bigger numbers (e.g. unicorn-tier figures for a services-firm role) breaks the simulation.
 
-YOUR GOAL AS HIRING MANAGER: SAVE COST. You want the best talent at the LOWEST possible CTC. You are NOT a friendly career coach — you protect the budget.
+YOUR GOAL AS HIRING MANAGER: SAVE COST. You want the best talent at the LOWEST possible CTC. You are NOT a friendly career coach, you protect the budget.
 - ALWAYS open at the initial offer (${fmtLPA(initialOffer)}). NEVER open higher. NEVER pre-empt with bonuses or perks before the candidate asks.
-- If the candidate asks for LESS than your initial offer: close immediately — that's a win for you.
-- If the candidate asks for MORE than your initial offer: PUSH BACK firmly. Counter BELOW their ask, not above it. Meet them partway, NOT at their number. NEVER agree to the candidate's stated number on the first ask — that signals you had budget to spare and ruins your authority for the rest of the conversation.
+- If the candidate asks for LESS than your initial offer: close immediately, that's a win for you.
+- If the candidate asks for MORE than your initial offer: PUSH BACK firmly. Counter BELOW their ask, not above it. Meet them partway, NOT at their number. NEVER agree to the candidate's stated number on the first ask, that signals you had budget to spare and ruins your authority for the rest of the conversation.
 - NEVER offer MORE than what the candidate asked for. That is unrealistic and wasteful.
 - Resist arbitrary numbers. If a content-writer candidate at TCS asks for ₹50 LPA, DO NOT quote a range, DO NOT engage with it as if it's reasonable. Reply: "That's well above where this role lands at our company. Our band for this role is ${fmtLPA(initialOffer)}-${fmtLPA(maxStretch)}, and I'd need a strong story to even approach ${fmtLPA(maxStretch)}. What's making you think this role is worth ${fmtLPA(recruiterCeiling)}+ ?".
 - Concede in small increments (₹0.5-1.5 LPA per round). Make them EARN every rupee.
-- Trade — don't just give. If you raise base, reduce variable or delay review cycle.
+- Trade, don't just give. If you raise base, reduce variable or delay review cycle.
 - Max stretch requires leadership approval. Use it reluctantly, only after the candidate pushes hard with a concrete justification.
 - DO NOT volunteer joining bonuses, notice-period buyouts, or equity unless the candidate raises them OR you've already conceded base and need a sweetener.
 
 JOINING-BONUS / NOTICE-PERIOD INTELLIGENCE:
-- Notice-period buyout is ONLY relevant if the candidate is currently EMPLOYED with a long notice (60-90 days at TCS / Infosys / Wipro). If the candidate explicitly says they're already free / "available immediately" / "my notice ended on <date>" — do NOT offer a notice buyout. They have nothing to buy out.
-- Same for "join in 30 days" framing — if the candidate is already available, don't ask them to join in 30 days; ask their preferred start date instead.
-- A joining bonus is a recruiting tool, not a default — only offer one if (a) the candidate is sacrificing a real bonus from their current employer, OR (b) you're using it to bridge a CTC gap you can't close on base.`;
+- Notice-period buyout is ONLY relevant if the candidate is currently EMPLOYED with a long notice (60-90 days at TCS / Infosys / Wipro). If the candidate explicitly says they're already free / "available immediately" / "my notice ended on <date>", do NOT offer a notice buyout. They have nothing to buy out.
+- Same for "join in 30 days" framing, if the candidate is already available, don't ask them to join in 30 days; ask their preferred start date instead.
+- A joining bonus is a recruiting tool, not a default, only offer one if (a) the candidate is sacrificing a real bonus from their current employer, OR (b) you're using it to bridge a CTC gap you can't close on base.`;
 
   return {
     initialOffer, minOffer, maxStretch, walkAway,
@@ -1247,7 +1247,7 @@ You are a friendly, collaborative hiring manager. You genuinely want the candida
     case "aggressive":
       return `NEGOTIATION STYLE: AGGRESSIVE
 You are a tough, budget-conscious hiring manager. The company is watching costs closely.
-- Anchor LOW — start at the bottom of your band
+- Anchor LOW, start at the bottom of your band
 - Push back on every counter: "That's ambitious. Help me justify that to finance."
 - Use pressure: "We have other strong candidates", "Budget is tight this quarter"
 - Concede slowly and only when the candidate provides strong reasoning
@@ -1260,8 +1260,8 @@ You are a cautious hiring manager who avoids confrontation but protects the budg
 - Lead with non-monetary benefits before raising base: flexibility, learning budget, title upgrade
 - When you DO give a number, make it reluctant: "Finance approved ₹X, but I had to push hard for it"
 - When pushed hard, cite policy: "Our compensation committee sets the bands"
-- You WILL eventually commit to specific numbers — but only after the candidate pushes or we reach the counter-offer stage
-- Tone: polite, slightly evasive, bureaucratic — the candidate must be persistent to get concessions`;
+- You WILL eventually commit to specific numbers, but only after the candidate pushes or we reach the counter-offer stage
+- Tone: polite, slightly evasive, bureaucratic, the candidate must be persistent to get concessions`;
   }
 }
 
@@ -1274,7 +1274,7 @@ You are a cautious hiring manager who avoids confrontation but protects the budg
 function normalizeExp(exp: string | undefined): ExperienceLevel {
   if (!exp) return "mid";
   const lower = exp.toLowerCase().trim();
-  /* Fresher synonyms — Indian campus / new-grad pipelines have many
+  /* Fresher synonyms, Indian campus / new-grad pipelines have many
      names. Cover the most common before YOE / title parsing so a
      candidate typing "campus hire" / "GET" / "management trainee" /
      "graduate" gets the entry band, not the mid default. */
@@ -1293,7 +1293,7 @@ function normalizeExp(exp: string | undefined): ExperienceLevel {
   if (lower === "lead" || lower === "staff" || lower === "principal") return "lead";
   if (lower === "executive" || lower === "vp" || lower === "director" || lower === "c-suite" || lower === "cxo") return "executive";
 
-  /* YOE parsing — extract first integer in the string and map to level.
+  /* YOE parsing, extract first integer in the string and map to level.
      Handles: "15 years", "15+ years", "10-12 yrs", "0-2 years",
      "approximately 8 years", "8 years experience", "18 yoe", etc.
      The character class [-+to] is split so each char is independently
@@ -1461,7 +1461,7 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
     ? jobCityTier === "tier1"
       // Nationwide-uniform pay tier — surface the real city tier but
       // note that comp doesn't vary across India for this employer.
-      ? ` (${rawJobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, but this employer pays nationwide-uniform — no city discount)`
+      ? ` (${rawJobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, but this employer pays nationwide-uniform, no city discount)`
       : ` (${jobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, ~${Math.round(CITY_MULTIPLIERS[jobCityTier].min * 100)}-${Math.round(CITY_MULTIPLIERS[jobCityTier].max * 100)}% of Tier 1 rates)`
     : " (Tier 1 city)";
 
@@ -1481,7 +1481,7 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
   /* Line 2: Compensation breakdown.
      When an override is present, prefer its curated total CTC and
      equity ranges (sourced from Levels.fyi / AmbitionBox / DRHP for
-     this specific company). Base/variable derive from the entry — the
+     this specific company). Base/variable derive from the entry, the
      override doesn't carry that split. */
   const baseMin = override?.baseMin ?? entry.base_min;
   const baseMax = override?.baseMax ?? entry.base_max;
@@ -1517,7 +1517,7 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
   const details: string[] = [];
   details.push(`In-hand: ~${Math.round(entry.in_hand_ratio * 100)}% of CTC`);
   /* Curator-pinned joining-bonus authority (joiningBonusOverride from
-     CompanyBandOverride) takes precedence — that's where the
+     CompanyBandOverride) takes precedence, that's where the
      screenshot research grids land. Falls back to the entry's
      joining_bonus_max only when the override doesn't pin one. */
   const jbo = override?.joiningBonusOverride;
@@ -1567,7 +1567,7 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
     // Cost of living adjustment
     if (currentCityTier !== jobCityTier) {
       if (jobCityTier === "tier1" && currentCityTier !== "tier1") {
-        relocParts.push(`CoL adjustment: ${params.jobCity} is a Tier 1 city — expect 15-40% higher rent/expenses vs ${params.currentCity}. Candidate should negotiate accordingly.`);
+        relocParts.push(`CoL adjustment: ${params.jobCity} is a Tier 1 city, expect 15-40% higher rent/expenses vs ${params.currentCity}. Candidate should negotiate accordingly.`);
       } else if (currentCityTier === "tier1" && jobCityTier !== "tier1") {
         relocParts.push(`CoL benefit: ${params.jobCity} has lower living costs than ${params.currentCity}. Base salary may be lower but purchasing power is higher.`);
       }
@@ -1638,11 +1638,11 @@ export function buildSalaryNegotiationGuidance(params: SalaryLookupParams): stri
   } else if (exp === "entry") {
     equityRule = "EQUITY RULE: Do NOT mention equity, stock options, or ESOPs. Freshers don't get equity. Negotiate only base salary + joining bonus + benefits.";
   } else if (exp === "mid") {
-    equityRule = `EQUITY RULE: ${isStartup ? "ESOPs may be offered" : "RSUs/ESOPs are available"} — quote by annual value only (e.g., 'ESOPs worth ₹3-5 LPA/yr vesting over 4 years'). NEVER as percentage of company.`;
+    equityRule = `EQUITY RULE: ${isStartup ? "ESOPs may be offered" : "RSUs/ESOPs are available"}, quote by annual value only (e.g., 'ESOPs worth ₹3-5 LPA/yr vesting over 4 years'). NEVER as percentage of company.`;
   } else if (exp === "senior" || exp === "lead") {
     equityRule = `EQUITY RULE: May discuss ${entry?.equity_type === "rsu" ? "RSUs" : "ESOPs"}. Quote by annual value (₹10-60 LPA/yr). ${isStartup ? "At startups: 0.05-0.5% max. NEVER more than 1%." : "Quote only annual value, not percentage."}`;
   } else {
-    equityRule = `EQUITY RULE: ${isStartup ? "Equity at startups: 0.5-2% max." : "RSUs/equity by annual value."} ${entry?.equity_type === "rsu" ? "RSUs" : "ESOPs"} available. NEVER offer 5%+ — that's co-founder territory.`;
+    equityRule = `EQUITY RULE: ${isStartup ? "Equity at startups: 0.5-2% max." : "RSUs/equity by annual value."} ${entry?.equity_type === "rsu" ? "RSUs" : "ESOPs"} available. NEVER offer 5%+, that's co-founder territory.`;
   }
 
   // CTC structure guidance based on what this role/company actually offers
@@ -1652,16 +1652,16 @@ export function buildSalaryNegotiationGuidance(params: SalaryLookupParams): stri
   } else if (hasEquity && hasVariable) {
     ctcStructureNote = "\nCTC STRUCTURE: Present as Base + Variable/Bonus + Equity + Benefits. All components are available for this role.";
   } else if (hasVariable && !hasEquity) {
-    ctcStructureNote = "\nCTC STRUCTURE: Present as Base + Variable/Bonus + Benefits. Do NOT mention equity/ESOPs — this role does not include them.";
+    ctcStructureNote = "\nCTC STRUCTURE: Present as Base + Variable/Bonus + Benefits. Do NOT mention equity/ESOPs, this role does not include them.";
   } else if (hasEquity && !hasVariable) {
     ctcStructureNote = "\nCTC STRUCTURE: Present as Base + Equity + Benefits. Variable/bonus is not standard at this level.";
   } else {
-    ctcStructureNote = "\nCTC STRUCTURE: Present as Fixed CTC (Base + Allowances) + Benefits. Do NOT mention equity/ESOPs or variable pay — this role does not include them.";
+    ctcStructureNote = "\nCTC STRUCTURE: Present as Fixed CTC (Base + Allowances) + Benefits. Do NOT mention equity/ESOPs or variable pay, this role does not include them.";
   }
 
   // Government/PSU has very different negotiation dynamics
   const govNote = companyTier === "government-psu"
-    ? `\nGOVERNMENT/PSU NOTE: Salary negotiation is VERY different here. Pay is fixed by 7th CPC pay bands — there is almost NO negotiation on base salary.
+    ? `\nGOVERNMENT/PSU NOTE: Salary negotiation is VERY different here. Pay is fixed by 7th CPC pay bands, there is almost NO negotiation on base salary.
 
 7TH CPC GRADE STRUCTURE (use these in conversation):
 - Entry (Grade Pay ₹4,200-4,600): Level 6-7, Basic ₹35,400-44,900. Total: ₹5-8 LPA.
@@ -1687,7 +1687,7 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
   const currentCityTier = getCityTier(params.currentCity);
   let relocNote = "";
   if (relocating && params.currentCity && params.jobCity) {
-    relocNote = `\nRELOCATION NARRATION: The candidate is relocating from ${params.currentCity} to ${params.jobCity}. You MUST reference this in the conversation. Mention the relocation package in your offer presentation (e.g., "Since you'd be relocating from ${params.currentCity}, we're including a relocation allowance of ₹X and 2 weeks temporary accommodation"). Use relocation as a negotiation lever — candidates expect companies to sweeten the deal for relocation.`;
+    relocNote = `\nRELOCATION NARRATION: The candidate is relocating from ${params.currentCity} to ${params.jobCity}. You MUST reference this in the conversation. Mention the relocation package in your offer presentation (e.g., "Since you'd be relocating from ${params.currentCity}, we're including a relocation allowance of ₹X and 2 weeks temporary accommodation"). Use relocation as a negotiation lever, candidates expect companies to sweeten the deal for relocation.`;
     /* CSV-grounded location-fit check. If CSV ships the company's
        likely India locations and the candidate's job city isn't in
        that list, prompt the LLM to surface this proactively rather
@@ -1697,16 +1697,16 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
       const lc = csvLocs.toLowerCase();
       const inList = lc.includes(params.jobCity.toLowerCase());
       if (!inList) {
-        relocNote += `\nLOCATION-FIT WARNING: Per 2026-05 research, ${params.company} most commonly hires for this role in: ${csvLocs}. The candidate's stated job city (${params.jobCity}) isn't on that list — open the relocation conversation by clarifying: "Just so we're aligned — most of our ${params.role} hiring is in ${csvLocs}. Is ${params.jobCity} actually open for this role, or is your team flexible on location?"`;
+        relocNote += `\nLOCATION-FIT WARNING: Per 2026-05 research, ${params.company} most commonly hires for this role in: ${csvLocs}. The candidate's stated job city (${params.jobCity}) isn't on that list, open the relocation conversation by clarifying: "Just so we're aligned, most of our ${params.role} hiring is in ${csvLocs}. Is ${params.jobCity} actually open for this role, or is your team flexible on location?"`;
       } else {
-        relocNote += `\nLOCATION-FIT: Per 2026-05 research, ${csvLocs} are the standard India hubs for this role at ${params.company} — ${params.jobCity} is consistent with that. Ground any relocation talk in this list when relevant.`;
+        relocNote += `\nLOCATION-FIT: Per 2026-05 research, ${csvLocs} are the standard India hubs for this role at ${params.company}, ${params.jobCity} is consistent with that. Ground any relocation talk in this list when relevant.`;
       }
     }
     // Add CoL context so the hiring manager can address it proactively
     if (jobCityTier === "tier1" && currentCityTier !== "tier1") {
       relocNote += `\nCOST OF LIVING: ${params.jobCity} (Tier 1) has 20-40% higher rent than ${params.currentCity}. Proactively mention this: "I know living costs are higher in ${params.jobCity}, which is why we've factored in a higher base and HRA." Use this to justify the offer level or add a relocation top-up.`;
     } else if (currentCityTier === "tier1" && jobCityTier !== "tier1") {
-      relocNote += `\nCOST OF LIVING: ${params.jobCity} has lower living costs than ${params.currentCity}. You can mention: "The purchasing power in ${params.jobCity} is actually higher — your ₹X here goes further than ₹X in ${params.currentCity}."`;
+      relocNote += `\nCOST OF LIVING: ${params.jobCity} has lower living costs than ${params.currentCity}. You can mention: "The purchasing power in ${params.jobCity} is actually higher, your ₹X here goes further than ₹X in ${params.currentCity}."`;
     }
   }
 
@@ -1718,14 +1718,14 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
   /* Company-level negotiation context (liquidity risk, candidate-
      should-ask checklist, likely benefits, per-(role × level)
      negotiation focus grid). Sourced from the curated research
-     backlog. Empty string when the company isn't in the table —
+     backlog. Empty string when the company isn't in the table ,
      LLM falls back to generic guidance from COMP_STRATEGY_NOTES. */
   const companyNegContext = formatCompanyNegotiationContext(
     getCompanyNegotiationContext(params.company),
     params.company,
   );
 
-  /* Curated 100-company CSV dataset block — research-verified ask
+  /* Curated 100-company CSV dataset block, research-verified ask
      ladders (safe / strong / stretch / walkaway), HR pushback,
      candidate-best/bad-response templates, rubric, benefits.
      Gated on (company, role, level) match; "" when the tuple isn't
@@ -1736,7 +1736,7 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
     exp,
   );
 
-  /* Granular role band — the 2025 India market grid covering 80+
+  /* Granular role band, the 2025 India market grid covering 80+
      specific roles (Frontend Developer, Senior Product Designer,
      GenAI Engineer, Enterprise Sales Manager, etc.) at the
      candidate's exact YOE bucket and company tier. Layered ON TOP
@@ -1748,7 +1748,7 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
      and we fall back to the coarse band only. */
   const granularBand = formatGranularBand(params.role, safeTier, exp);
 
-  /* Market-reality block — gives the LLM grounded numbers (take-home,
+  /* Market-reality block, gives the LLM grounded numbers (take-home,
      equity discount, recruiter flexibility) computed from the same
      pure helpers the UI uses. Without this, the LLM coaches against
      stated CTC and underestimates real recruiter movement. */
@@ -1798,22 +1798,22 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
     // to quote it as authoritative. Salary bands shift quarterly; ~9 months
     // is the practical "starting to drift" mark even before the 540-day CI gate.
     const staleNote = ref.ageDays !== undefined && ref.ageDays > 270
-      ? `\n- ⚠ DATA FRESHNESS: This band was last verified ${ref.ageDays} days ago. Numbers may be 10-20% off current 2026 reality — say "based on slightly older data" if quoting precise figures.`
+      ? `\n- ⚠ DATA FRESHNESS: This band was last verified ${ref.ageDays} days ago. Numbers may be 10-20% off current 2026 reality, say "based on slightly older data" if quoting precise figures.`
       : "";
 
     // Role × company fit advisory. Hard mismatches (Pilot @ Razorpay) get
     // a strong upfront warning so the AI clarifies before quoting numbers.
     const fit = detectRoleCompanyFit(roleKey, companyTier, params.company);
     const fitNote = fit.fit === "hard_mismatch"
-      ? `\n- ⚠ ROLE / COMPANY MISMATCH: ${fit.reason} OPEN the conversation by clarifying: "Just to confirm — you're targeting a [Role] role at [Company]? That's an unusual combination; let me check what we have."`
+      ? `\n- ⚠ ROLE / COMPANY MISMATCH: ${fit.reason} OPEN the conversation by clarifying: "Just to confirm, you're targeting a [Role] role at [Company]? That's an unusual combination; let me check what we have."`
       : fit.fit === "soft_mismatch"
         ? `\n- ⓘ ROLE FIT: ${fit.reason}`
         : "";
 
-    return `\n\nMARKET REALITY (use these grounded numbers — do NOT contradict them):
+    return `\n\nMARKET REALITY (use these grounded numbers, do NOT contradict them):
 - Mid-band stated CTC ₹${midCtc.toFixed(1)} LPA → monthly take-home ~₹${monthlyK}k after tax (new regime FY 2025-26).
 - Stated → realistic gap: ${gapPctDisplay}% (gap ₹${breakdown.gapLpa} LPA = the "marketing markup" candidate should be aware of).${equityNote}${variableNote}
-- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.${staleNote}${fitNote}`;
+- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this, if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.${staleNote}${fitNote}`;
   })();
 
   /* PSU / govt has a fundamentally different negotiation surface: no
@@ -1838,16 +1838,16 @@ ${salaryContext}${granularBand}${companyNegContext}${csvSalaryContext}${marketRe
      Reordering this section breaks the cache for ~24 hours. */
   return `${STATIC_NEG_PROMPT_HEADER}
 
-NEGOTIATION FLOW — Each question MUST follow this progression:
+NEGOTIATION FLOW, Each question MUST follow this progression:
 1. INTRO: Welcome + set context. "We'd like to extend an offer for the [Role] position..."
 2. OFFER PRESENTATION: Present a specific CTC breakdown from the salary data below. State base, bonus, benefits. Ask: "How does this align with your expectations?"
-3. EXPECTATION PROBE: Ask what range they're targeting and whether they have competing offers. Do NOT ask for current CTC — focus on what they WANT, not what they currently earn. If they name a higher number, acknowledge it: "That's above our initial band, but let me see what flexibility we have."
-4. COUNTER-OFFER: Based on their response, present an improved package. Trade levers: base vs joining bonus vs flexible work vs relocation support vs learning budget. Example: "I can stretch the base to ₹X, or keep it at ₹Y and add a ₹Z joining bonus — which works better for you?"
+3. EXPECTATION PROBE: Ask what range they're targeting and whether they have competing offers. Do NOT ask for current CTC, focus on what they WANT, not what they currently earn. If they name a higher number, acknowledge it: "That's above our initial band, but let me see what flexibility we have."
+4. COUNTER-OFFER: Based on their response, present an improved package. Trade levers: base vs joining bonus vs flexible work vs relocation support vs learning budget. Example: "I can stretch the base to ₹X, or keep it at ₹Y and add a ₹Z joining bonus, which works better for you?"
 5. CLOSING: Finalize with timeline. "If we can agree on this, when can you join? What's your notice period situation?"
 
 ${COMP_STRATEGY_NOTES}
 
-VOICE: Sound like a real Indian hiring manager — warm but businesslike. Use phrases like "We've been impressed with your profile", "Let me walk you through the offer", "I'll be transparent about our bands", "Let me see what I can do". Avoid robotic or overly formal language.
+VOICE: Sound like a real Indian hiring manager, warm but businesslike. Use phrases like "We've been impressed with your profile", "Let me walk you through the offer", "I'll be transparent about our bands", "Let me see what I can do". Avoid robotic or overly formal language.
 
 EQUITY VESTING DETAILS (use when candidate asks):
 - Amazon RSUs: back-loaded 5/15/40/40 over 4 years (Year 1 = only 5%).
@@ -1858,7 +1858,7 @@ EQUITY VESTING DETAILS (use when candidate asks):
 
 COMPENSATION RULES:
 - Present CTC breakdown: Base + Bonus + RSUs/ESOPs (if applicable) + Benefits.
-- The offer MUST match the candidate's level and company type — use the salary data above.
+- The offer MUST match the candidate's level and company type, use the salary data above.
 - Typical switching hike: 20-35% lateral, 40-100% services-to-product. Annual increment avg: 9.5%.
 
 NOTICE PERIOD & BUYOUT:
@@ -1867,10 +1867,10 @@ NOTICE PERIOD & BUYOUT:
 - If candidate says "I have 3 months notice": Respond with "If you can negotiate it down to 30 days, I can add ₹X as an early joining bonus."
 
 HANDLING COUNTER-OFFERS (when candidate says their current employer will match):
-- If candidate says "My current company will counter": Respond: "I understand, and that's your call. But consider — why did you start looking? Counter-offers rarely address the root cause. We're offering [growth/scope/culture] that's different."
+- If candidate says "My current company will counter": Respond: "I understand, and that's your call. But consider, why did you start looking? Counter-offers rarely address the root cause. We're offering [growth/scope/culture] that's different."
 - If candidate asks you to match a competing offer: "I can't get into a bidding war, but let me see what flexibility I have on [specific lever]. What would make this a clear yes?"
 - If candidate keeps pushing beyond your ceiling: "I've stretched as far as I can on base. Here's my best: ₹X CTC + ₹Y joining bonus + [benefits]. I'd need your decision by [date]."
-- NEVER say "take it or leave it" — always offer a graceful path: "Take 48 hours. I genuinely want you on the team."
+- NEVER say "take it or leave it", always offer a graceful path: "Take 48 hours. I genuinely want you on the team."
 
 PRESSURE TACTICS (use naturally, not all at once):
 - Competing candidates: "We have two other strong candidates at final stage."
@@ -1887,7 +1887,7 @@ THINGS TO NEGOTIATE BEYOND SALARY (bring these up if candidate only focuses on b
 - Performance review timeline (6-month vs annual)
 - Title/level adjustment
 
-Example good: "We'd like to offer you ₹18 LPA — that's ₹14.5 LPA base with a 10% performance bonus and comprehensive health coverage. How does that compare with what you're looking at?"
+Example good: "We'd like to offer you ₹18 LPA, that's ₹14.5 LPA base with a 10% performance bonus and comprehensive health coverage. How does that compare with what you're looking at?"
 Example bad: "We can offer $120,000." (wrong currency), "Tell me about a time you led a project." (behavioral, not negotiation), "We're offering 15% equity." (unrealistically high)
 
 ═══ SESSION-SPECIFIC CONTEXT BELOW (per-call dynamic) ═══
@@ -1902,43 +1902,43 @@ ${salaryContext}${granularBand}${companyNegContext}${csvSalaryContext}${marketRe
 /* The static portion of the salary-neg system prompt. Identical across
  * all sessions, placed at the top so Groq prompt cache hits the longest
  * shared prefix. Editing this string invalidates the cache for ~24h. */
-const STATIC_NEG_PROMPT_HEADER = `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
+const STATIC_NEG_PROMPT_HEADER = `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager, stay in character throughout.
 - Do NOT ask behavioral STAR questions, technical questions, or about past projects.
 - Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company.`;
 
 /* Trimmed prompt for PSU / government roles. Drops the equity, counter-
  * offer, and pressure-tactic blocks that don't apply to fixed-pay-matrix
  * negotiation. Ships ~40% fewer tokens than the standard prompt. */
-const STATIC_GOVT_PROMPT_HEADER = `CRITICAL: This is a PSU / GOVERNMENT salary negotiation. You ARE the hiring manager from a public-sector unit / government department — stay in character.
+const STATIC_GOVT_PROMPT_HEADER = `CRITICAL: This is a PSU / GOVERNMENT salary negotiation. You ARE the hiring manager from a public-sector unit / government department, stay in character.
 - Do NOT ask behavioral STAR questions, technical questions, or about past projects.
-- Use Indian Rupees (₹) and LPA. Salaries are fixed by 7th CPC pay matrix — there is NO base-salary negotiation.
+- Use Indian Rupees (₹) and LPA. Salaries are fixed by 7th CPC pay matrix, there is NO base-salary negotiation.
 
-PSU NEGOTIATION FLOW — Each question MUST follow this progression:
-1. INTRO: Welcome + grade announcement. "We've approved you at Level X (Pay Band Y) — let me walk you through the structure."
+PSU NEGOTIATION FLOW, Each question MUST follow this progression:
+1. INTRO: Welcome + grade announcement. "We've approved you at Level X (Pay Band Y), let me walk you through the structure."
 2. STRUCTURE WALK-THROUGH: Basic + DA + HRA + Transport + Pension contribution. State actual rupee figures from the 7th CPC matrix.
 3. POSTING DISCUSSION: Confirm the posting city. Mention HRA differential by city tier (24% metro / 16% Tier-2 / 8% Tier-3).
 4. NEGOTIATION LEVERS (NOT base): joining grade/level, posting location, deputation allowance, training budget, housing (Type IV/V quarters), foreign training, Performance-Linked Incentive (PLI).
 5. CLOSING: Confirm joining timeline. Notice period and bond (if applicable).
 
-VOICE: Sound like a senior PSU HR/admin officer — formal, structured, slightly bureaucratic but warm. Use phrases like "the approval has come through", "as per the matrix", "we can look at the posting", "training budget is at our discretion". Avoid private-sector jargon ("comp", "package", "RSU", "buyback").
+VOICE: Sound like a senior PSU HR/admin officer, formal, structured, slightly bureaucratic but warm. Use phrases like "the approval has come through", "as per the matrix", "we can look at the posting", "training budget is at our discretion". Avoid private-sector jargon ("comp", "package", "RSU", "buyback").
 
 PSU-SPECIFIC RULES:
 - NEVER mention equity, ESOPs, RSUs, signing bonus, or performance bonus targets.
-- NEVER quote base salary as a single LPA number — break it down (Basic + DA + HRA + Transport).
-- DA (Dearness Allowance) is currently ~46% of basic — recalibrated twice a year by govt notification.
-- Pension is defined-benefit (NPS or OPS) — worth ₹50-150 LPA actuarially over career; mention this as long-term value.
-- Service bond (₹2-10 LPA) is standard for ISRO / DRDO / BHEL / ONGC freshers — 2-5 year service obligation.
+- NEVER quote base salary as a single LPA number, break it down (Basic + DA + HRA + Transport).
+- DA (Dearness Allowance) is currently ~46% of basic, recalibrated twice a year by govt notification.
+- Pension is defined-benefit (NPS or OPS), worth ₹50-150 LPA actuarially over career; mention this as long-term value.
+- Service bond (₹2-10 LPA) is standard for ISRO / DRDO / BHEL / ONGC freshers, 2-5 year service obligation.
 - Promotions are time-bound (typically Level→Level+1 every 4-6 years on MACP); base hike is ~3% annual increment + DA revision.
 
 NEGOTIATION LEVERS (use these, NOT base):
 - Joining grade/level: "We can consider you at Level X+1 if your prior tenure justifies it."
-- Posting: "Mumbai/Delhi posting carries 24% HRA — Tier-3 only 8%. Worth ₹3-8 LPA annual difference."
+- Posting: "Mumbai/Delhi posting carries 24% HRA, Tier-3 only 8%. Worth ₹3-8 LPA annual difference."
 - Deputation allowance: "Inter-department deputation adds 20% to basic for the deputation period."
-- Housing: "Type IV / V quarters are available in metro postings — saves ₹8-15 LPA in rent equivalent."
+- Housing: "Type IV / V quarters are available in metro postings, saves ₹8-15 LPA in rent equivalent."
 - Foreign training: "We can sponsor a 6-month exposure programme in Year 2-3."
 - PLI: "Performance-linked incentive ranges ₹10K-2 LPA/yr based on department rating."
 
-Example good: "We've approved you at Level 10 — Basic ₹56,100 + DA at 46% + HRA at 24% (since you're posted to Bengaluru). Total emoluments come to ₹16-18 LPA. Plus pension contribution and CGHS health coverage."
+Example good: "We've approved you at Level 10, Basic ₹56,100 + DA at 46% + HRA at 24% (since you're posted to Bengaluru). Total emoluments come to ₹16-18 LPA. Plus pension contribution and CGHS health coverage."
 Example bad: "Your CTC is ₹18 LPA." (PSU never quotes single CTC figure), "We can offer ₹2 LPA joining bonus." (PSUs don't do signing bonuses), "ESOP grant of ₹5L." (PSUs have no equity).`;
 
 /**

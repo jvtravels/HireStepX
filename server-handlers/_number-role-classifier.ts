@@ -140,7 +140,14 @@ interface CueTable {
 const CURRENT_CUES: CueTable = {
   left: [
     /\bcurrent(?:ly)?\b/i,
-    /\bmy\s+(?:current\s+)?(?:[a-z]+\s+){0,3}(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total)\b/i,
+    /\bmy\s+(?:current\s+)?(?:[a-z]+\s+){0,3}(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total|gross)\b/i,
+    /* S148 (2026-07-31): "gross" is an unambiguous present-compensation cue —
+     * candidates disclose current pay as "annual gross of 32 lakhs" or "gross
+     * salary is 32L". The possessive `my ... gross` shape is covered above;
+     * these two frames cover the non-possessive "annual gross of N" and the
+     * "gross salary/pay/ctc" collocations, neither of which a target ask uses. */
+    /\bannual\s+gross\b/i,
+    /\bgross\s+(?:salary|pay|ctc|package|comp(?:ensation)?)\b/i,
     /\bi\s+(?:make|earn|get|draw)\b/i,
     /* S48-B1/S49-B1/S50-B1 (2026-07-24): "I am at N" / "I am on N" — the legacy
      * `\bi.?m\s+at\b` pattern uses `.?` (one optional char between 'i' and 'm'),

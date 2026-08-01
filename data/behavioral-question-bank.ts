@@ -1,4 +1,4 @@
-/* HireStepX — Canonical behavioural question bank (the 50)
+/* HireStepX, Canonical behavioural question bank (the 50)
  *
  * Anyone who's run 5+ real behavioural loops at Indian product cos
  * (Razorpay, Flipkart, Swiggy, Atlassian-India, Microsoft IDC, etc.)
@@ -49,7 +49,7 @@ export const BEHAVIORAL_COMPETENCIES = [
      original 12-set folded into others (adaptability got bucketed under
      ambiguity; execution-rigor under ownership). Splitting them out so
      blindSpots in the report can say "your loop missed adaptability"
-     instead of conflating it with "ambiguity" — different coaching tip,
+     instead of conflating it with "ambiguity", different coaching tip,
      different probe bank. */
   "adaptability",
   "execution-rigor",
@@ -77,7 +77,7 @@ export const COMPETENCY_LABELS: Record<BehavioralCompetency, string> = {
   "execution-rigor": "Execution rigor",
 };
 
-/** Which STAR slot the question is biased toward — used by the
+/** Which STAR slot the question is biased toward, used by the
  *  evaluator's gap detector to know what to score most strictly. */
 export type StarFocus = "action" | "result" | "situation-task" | "action+result";
 
@@ -86,7 +86,7 @@ export type StarFocus = "action" | "result" | "situation-task" | "action+result"
  *  scenarios where ambiguity or conflict is high. */
 export type BehavioralDifficulty = "warmup" | "standard" | "hard";
 
-/** Role families used for tilt — keep deliberately coarse so tagging
+/** Role families used for tilt, keep deliberately coarse so tagging
  *  stays cheap and the sampler's role match doesn't over-fit. */
 export type BehavioralRole = "pm" | "engineer" | "designer" | "manager" | "data" | "ops" | "marketing" | "sales";
 
@@ -105,7 +105,7 @@ export const BEHAVIORAL_ROLES: ReadonlyArray<BehavioralRole> = [
 // from other-discipline-locked probes AND toward their own craft.
 
 export interface BehavioralQuestion {
-  /** Stable id — used for analytics + dedupe across sessions. */
+  /** Stable id, used for analytics + dedupe across sessions. */
   id: string;
   text: string;
   competency: BehavioralCompetency;
@@ -159,7 +159,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   /* Designer-affinity additions (Phase 6.6, 2026-05).
      Senior Product Designer loops grade influence + judgement + leadership
      alongside execution. Pre-Phase-6.6 the bank had zero designer-affinity
-     entries — designers fell through to universal questions and missed the
+     entries, designers fell through to universal questions and missed the
      SPD-specific shape: disagreement on design decisions with cross-functional
      partners, UX-vs-business trade-offs, changing direction after critique/data,
      raising team design quality. Each entry below maps 1:1 to a real loop
@@ -205,7 +205,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60, roleAffinity: ["manager", "pm", "designer"] },
   { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45, seniorityFloor: 3, roleAffinity: ["engineer"] },
   { id: "mnt-04", text: "Tell me about a time you delegated something you would normally do yourself.",                        competency: "mentorship-team",    starFocus: "action",          difficulty: "hard",     frequencyPct: 40, seniorityFloor: 5 },
-  { id: "mnt-05", text: "Tell me about a time you raised the design quality of your team — through mentoring juniors, running design crits, or building a system.", competency: "mentorship-team", starFocus: "action+result", difficulty: "hard", frequencyPct: 65, roleAffinity: ["designer"], seniorityFloor: 5 },
+  { id: "mnt-05", text: "Tell me about a time you raised the design quality of your team, through mentoring juniors, running design crits, or building a system.", competency: "mentorship-team", starFocus: "action+result", difficulty: "hard", frequencyPct: 65, roleAffinity: ["designer"], seniorityFloor: 5 },
 
   // ── communication (4)
   { id: "cmm-01", text: "Tell me about a time you had to explain something technical to a non-technical audience.",            competency: "communication",      starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 80 },
@@ -229,7 +229,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "exr-02", text: "Tell me about a time a missed detail came back to bite you.",                                         competency: "execution-rigor",    starFocus: "result",          difficulty: "standard", frequencyPct: 55 },
   { id: "exr-03", text: "Tell me about a time you traded thoroughness for speed and had to defend the call later.",            competency: "execution-rigor",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 48, seniorityFloor: 3 },
 
-  /* Discipline-affinity additions (W4, 2026-06) — data / ops / marketing / sales.
+  /* Discipline-affinity additions (W4, 2026-06), data / ops / marketing / sales.
      Pre-W4 these four roles had ZERO affinity-tagged questions: the sampler
      could only STEER them away from engineer/designer-locked probes into the
      universal pool, never toward a question that exercises their own craft.
@@ -266,7 +266,7 @@ export const BEHAVIORAL_BANK = BEHAVIORAL_50;
 
 /* ─────────── Deterministic sampler ─────────── */
 
-/** Tiny LCG — same seed in, same sequence out, no entropy from
+/** Tiny LCG, same seed in, same sequence out, no entropy from
  *  Math.random. Numbers chosen are Numerical Recipes constants. */
 function lcg(seed: number): () => number {
   let s = seed >>> 0;
@@ -309,17 +309,17 @@ function weightedShuffle<T extends { frequencyPct: number }>(
 export interface SampleOpts {
   count: number;
   seed: number;
-  /** When set, exclude `hard` (warmup) or `warmup` (hard) — gives the
+  /** When set, exclude `hard` (warmup) or `warmup` (hard), gives the
    *  early-loop / late-loop tuning. `standard` returns everything. */
   difficulty?: BehavioralDifficulty;
-  /** Competencies the caller wants prioritised — the sampler fills
+  /** Competencies the caller wants prioritised, the sampler fills
    *  these first, then dedupes the remainder by competency. */
   prioritise?: ReadonlyArray<BehavioralCompetency>;
-  /** Candidate's role family — questions whose roleAffinity doesn't
+  /** Candidate's role family, questions whose roleAffinity doesn't
    *  include this role are downweighted (not eliminated, since most
    *  questions are universal). */
   role?: BehavioralRole;
-  /** Candidate's years of experience — questions with seniorityFloor
+  /** Candidate's years of experience, questions with seniorityFloor
    *  > yoe are hard-filtered (would be inappropriate to ask). */
   yoe?: number;
   /** When true, the deterministic shuffle is replaced with a

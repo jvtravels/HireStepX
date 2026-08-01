@@ -63,25 +63,25 @@ const serif = { fontFamily: fonts.serif };
 const ROUNDS = [
   {
     title: "Voice & accent round",
-    desc: "You'll be asked to read a short passage or speak spontaneously so the recruiter can assess clarity, pace, and neutral pronunciation. This isn't about sounding foreign — it's about being consistently understood on a call with background noise and no visual cues to fall back on.",
+    desc: "You'll be asked to read a short passage or speak spontaneously so the recruiter can assess clarity, pace, and neutral pronunciation. This isn't about sounding foreign: it's about being consistently understood on a call with background noise and no visual cues to fall back on.",
   },
   {
     title: "HR / personal interview",
-    desc: "Standard fit questions — why BPO, availability for shifts (including night shifts for international voice processes), and how you handle repetitive or high-pressure work.",
+    desc: "Standard fit questions: why BPO, availability for shifts (including night shifts for international voice processes), and how you handle repetitive or high-pressure work.",
   },
   {
     title: "Situational / customer-handling round",
-    desc: "You'll be given a scenario — an angry customer, a billing dispute, a request outside policy — and asked how you'd respond. Recruiters are listening for calm tone and structured thinking under pressure, not the 'correct' resolution.",
+    desc: "You'll be given a scenario (an angry customer, a billing dispute, a request outside policy) and asked how you'd respond. Recruiters are listening for calm tone and structured thinking under pressure, not the 'correct' resolution.",
   },
 ];
 
 const QUESTIONS = [
-  { q: "Tell me about yourself.", tip: "Keep it under 90 seconds, in clear spoken English — this doubles as your voice & accent assessment even when it's framed as a general question." },
-  { q: "Why do you want to work in a BPO / call center?", tip: "Avoid \"it's the only option available\" — talk about communication skills, structured work, or specific interest in customer service." },
+  { q: "Tell me about yourself.", tip: "Keep it under 90 seconds, in clear spoken English: this doubles as your voice & accent assessment even when it's framed as a general question." },
+  { q: "Why do you want to work in a BPO / call center?", tip: "Avoid \"it's the only option available\"; talk about communication skills, structured work, or specific interest in customer service." },
   { q: "Are you comfortable working night shifts / rotational shifts?", tip: "Answer directly. Hesitation here is one of the fastest ways to be screened out for international voice processes." },
   { q: "How would you handle an angry customer?", tip: "Structure your answer: acknowledge, stay calm, focus on resolution within policy. Recruiters are scoring your tone as much as your content." },
-  { q: "Describe a time you had to explain something complicated simply.", tip: "This is testing the actual skill of the job — clarity under time pressure — so answer it with a real, specific example." },
-  { q: "What are your salary expectations?", tip: "Know the going rate for the specific process (voice, international voice, or non-voice) before the interview — ranges vary widely." },
+  { q: "Describe a time you had to explain something complicated simply.", tip: "This is testing the actual skill of the job, clarity under time pressure, so answer it with a real, specific example." },
+  { q: "What are your salary expectations?", tip: "Know the going rate for the specific process (voice, international voice, or non-voice) before the interview: ranges vary widely." },
 ];
 
 export default async function BpoInterviewPage() {
@@ -97,7 +97,7 @@ export default async function BpoInterviewPage() {
         name: "What questions are asked in a BPO interview?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "BPO interviews typically include a voice & accent check, general HR questions (why BPO, shift availability, salary expectations), and a situational round testing how you'd handle a difficult customer. The voice & accent portion evaluates clarity and pace, not a specific accent — being consistently understood matters more than sounding a particular way.",
+          text: "BPO interviews typically include a voice & accent check, general HR questions (why BPO, shift availability, salary expectations), and a situational round testing how you'd handle a difficult customer. The voice & accent portion evaluates clarity and pace, not a specific accent: being consistently understood matters more than sounding a particular way.",
         },
       },
       {
@@ -113,7 +113,7 @@ export default async function BpoInterviewPage() {
         name: "How can I prepare my English for a BPO interview?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Practice speaking out loud, not reading silently — the skill being tested is spontaneous spoken clarity, not vocabulary. Record yourself answering common questions and listen for pace and filler words, or practice with an AI voice interviewer that gives you unlimited repetition without judgment, since most candidates don't have a patient listener available on demand.",
+          text: "Practice speaking out loud, not reading silently: the skill being tested is spontaneous spoken clarity, not vocabulary. Record yourself answering common questions and listen for pace and filler words, or practice with an AI voice interviewer that gives you unlimited repetition without judgment, since most candidates don't have a patient listener available on demand.",
         },
       },
       {
@@ -121,7 +121,7 @@ export default async function BpoInterviewPage() {
         name: "Is a BPO interview different from a corporate interview?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — delivery is weighted more heavily than in most corporate interviews, since the job itself is entirely voice-based. Content still matters in the situational round, but clarity, tone, and calm pacing under a customer-handling scenario are evaluated as directly as the answer itself.",
+          text: "Yes, delivery is weighted more heavily than in most corporate interviews, since the job itself is entirely voice-based. Content still matters in the situational round, but clarity, tone, and calm pacing under a customer-handling scenario are evaluated as directly as the answer itself.",
         },
       },
     ],
@@ -161,14 +161,14 @@ export default async function BpoInterviewPage() {
             <span style={{ fontStyle: "italic", color: t.copper }}>Questions & Answers.</span>
           </h1>
           <p style={{ ...s, fontSize: 17, lineHeight: 1.65, color: t.inkSoft, maxWidth: 580, margin: "0 auto 36px" }}>
-            The voice & accent round, HR round, and customer-handling scenario — what each one actually checks for, common questions, and how to practice spoken answers before the interview.
+            The voice & accent round, HR round, and customer-handling scenario: what each one actually checks for, common questions, and how to practice spoken answers before the interview.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free, 2 sessions
             </Link>
             <Link
               href="/english-interview-practice"
@@ -204,7 +204,7 @@ export default async function BpoInterviewPage() {
               Common BPO interview questions
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              Delivery is weighted as heavily as content here — how you answer is part of what's being scored.
+              Delivery is weighted as heavily as content here: how you answer is part of what's being scored.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {QUESTIONS.map((item) => (
@@ -223,10 +223,10 @@ export default async function BpoInterviewPage() {
             Practice the thing that's actually being scored
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            Reading BPO interview questions silently doesn't prepare you for a voice & accent round — the round exists specifically to hear you speak spontaneously under mild pressure, which reading can't rehearse.
+            Reading BPO interview questions silently doesn't prepare you for a voice & accent round: the round exists specifically to hear you speak spontaneously under mild pressure, which reading can't rehearse.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX's AI interviewer asks these questions out loud and lets you answer by voice, the same as the real round, then scores clarity, pace, and structure so you know exactly what to tighten before the interview — as many times as you need, without waiting on a person to listen each time.
+            HireStepX's AI interviewer asks these questions out loud and lets you answer by voice, the same as the real round, then scores clarity, pace, and structure so you know exactly what to tighten before the interview, as many times as you need, without waiting on a person to listen each time.
           </p>
         </section>
 
@@ -234,7 +234,7 @@ export default async function BpoInterviewPage() {
         <section aria-labelledby="bpo-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="bpo-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              BPO interviews — common questions
+              BPO interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -253,13 +253,13 @@ export default async function BpoInterviewPage() {
             Rehearse your voice & accent round
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete AI mock interview sessions, free. No credit card, no scheduling — practice speaking clearly before the real call.
+            2 complete AI mock interview sessions, free. No credit card, no scheduling: practice speaking clearly before the real call.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free, 2 sessions included
           </Link>
         </section>
 
@@ -276,7 +276,7 @@ export default async function BpoInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                 { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

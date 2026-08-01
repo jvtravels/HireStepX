@@ -589,6 +589,28 @@ const ROWS: Row[] = [
   { label: "S74-B1 guard: 'currently earning 55 LPA for the company' — compensation NOT blocked by right-ctx 'for the company'", text: "I am currently earning 55 LPA for the company", expect: { currentCtc: 55 } },
   { label: "S74-B1 guard: normal target after period (separate sentence) still binds", text: "I saved the company 2 crore. I am expecting 70 LPA.", expect: { target: 70 } },
   { label: "S74-B1 guard: plain CTC disclosure with no impact verb still binds", text: "my current CTC is 55 LPA", expect: { currentCtc: 55 } },
+
+  /* ── S139–S148 format-parsing wave (2026-07-31) ──────────────────
+   * Backlog scenarios covering the numeric formats candidates actually
+   * type: K-suffix thousands, per-month/crore/thousands scales, ranges,
+   * "gross" framing, competing offers, mixed current+target. */
+  // S143 — abbreviated "K"/"k" thousands suffix (was binding null).
+  { label: "S143: '950K per annum' → 9.5 LPA current", text: "my current CTC is 950K per annum", expect: { currentCtc: 9.5 } },
+  { label: "S143: bare '950k' → 9.5 LPA current", text: "my current CTC is 950k", expect: { currentCtc: 9.5 } },
+  { label: "S143 guard: 'OK, I accept' does not bind a K-scale figure", text: "Okay, that works. I accept.", expect: { currentCtc: null, target: null, competing: null } },
+  { label: "S143 guard: '5k steps' with no salary cue binds nothing", text: "I have 3 kids and do 5k steps daily", expect: { currentCtc: null, target: null, competing: null } },
+  // S148 — "gross" current-compensation cue (was binding null).
+  { label: "S148: 'my annual gross is 32 lakhs' → 32 current", text: "my annual gross is 32 lakhs", expect: { currentCtc: 32 } },
+  { label: "S148: 'annual gross of 32 lakhs' → 32 current", text: "annual gross of 32 lakhs", expect: { currentCtc: 32 } },
+  { label: "S148: 'my gross is 32 lakhs' → 32 current", text: "my gross is 32 lakhs", expect: { currentCtc: 32 } },
+  { label: "S148: 'gross salary is 28 lakhs' → 28 current", text: "gross salary is 28 lakhs", expect: { currentCtc: 28 } },
+  { label: "S148 guard: 'targeting a gross of 50 lakhs' stays TARGET (verb wins)", text: "I'm targeting a gross of 50 lakhs", expect: { target: 50, currentCtc: null } },
+  // S139 / S140 / S144 / S145 / S146 — already-supported formats, locked here.
+  { label: "S139: '1.2 crore' current → 120 LPA", text: "my current CTC is 1.2 crore", expect: { currentCtc: 120 } },
+  { label: "S140: '3.5 lakhs per month' current → 42 LPA", text: "my current is 3.5 lakhs per month", expect: { currentCtc: 42 } },
+  { label: "S144: 'around 65 lakhs' target", text: "I'm looking for around 65 lakhs", ctx: { phase: "probe-expectations" }, expect: { target: 65 } },
+  { label: "S145: competing 'offer from Flipkart for 72 lakhs'", text: "I have an offer from Flipkart for 72 lakhs", expect: { competing: 72 } },
+  { label: "S146: mixed 'CTC is 42 LPA, looking at 68 LPA'", text: "my CTC is 42 LPA, I'm looking at 68 LPA", expect: { currentCtc: 42, target: 68 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {

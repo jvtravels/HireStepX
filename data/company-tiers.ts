@@ -20,7 +20,7 @@ export type CompanyTier =
   | "fmcg-mnc"
   | "edtech"
   | "saas-product"
-  /* Global Capability Centers — Indian arms of US/EU enterprises that
+  /* Global Capability Centers, Indian arms of US/EU enterprises that
      run their own engineering / product / data orgs locally (NOT
      services delivery to a parent). Pay above IT-services, below
      Big Tech. Strong benefits + senior roles available. */
@@ -239,12 +239,12 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   hike: "indian-unicorn",
   koo: "indian-unicorn",
 
-  /* GCCs — Global Capability Centers in India (engineering /
+  /* GCCs, Global Capability Centers in India (engineering /
      product / data orgs, NOT delivery-partner setups). Pay above
      IT-services, below Big Tech. RSUs in parent stock common.
      Note: companies that ALSO have a strong investment-banking arm
      (Goldman, JPMorgan, Morgan Stanley, HSBC, etc.) stay in
-     bfsi-global below — their salary bands are dominated by IB
+     bfsi-global below, their salary bands are dominated by IB
      comp, which is closer to GCC pay anyway. */
   "walmart global tech": "gcc",
   "walmart labs": "gcc",
@@ -1129,7 +1129,7 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
   /* Substring match (both directions). Minimum-length guard prevents
      1- and 2-letter keys ("x" → big-tech, "ge" → gcc, "bp" → gcc,
      "hp" → big-tech) from false-matching company names that just
-     happen to contain those characters. 3+ char keys are kept — those
+     happen to contain those characters. 3+ char keys are kept, those
      genuinely identify a company even as a substring. */
   for (const [k, tier] of Object.entries(COMPANY_TIER_MAP)) {
     if (k.length < 3) continue;
@@ -1144,13 +1144,13 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
   if (key.includes("consult")) return "consulting-big4";
   if (key.includes("edtech") || key.includes("education") || key.includes("learning")) return "edtech";
   if (key.includes("saas") || key.includes("software") || key.includes("tech")) return "saas-product";
-  /* Design firms — multi-word phrases AND single-word "design"
+  /* Design firms, multi-word phrases AND single-word "design"
      anchored against the right neighbouring tokens. The previous
      phrase-only check missed "Bombay Design Centre" / "Bombay Design
      Company" / "Foo Design Lab" because those don't contain "design
      studio" verbatim. We now also catch the standalone pattern
      "<word> design <centre|company|lab|works|labs|partners|consultancy
-     |house|collective>" — the most common Indian design-firm naming
+     |house|collective>", the most common Indian design-firm naming
      convention. CRITICAL: do NOT match "Design Manager" / "Design
      Engineer" / "Design Director" (IC titles, not company suffixes). */
   if (
@@ -1168,7 +1168,7 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
   if (key.includes("automotive") || key.includes("auto")) return "fmcg-mnc";
   if (key.includes("telecom") || key.includes("media")) return "indian-unicorn";
 
-  return null; // unknown company — caller defaults to indian-unicorn
+  return null; // unknown company, caller defaults to indian-unicorn
 }
 
 /**

@@ -119,7 +119,7 @@ function findBandWithFallback(
 }
 
 function fmtRange(min: number, max: number, unit = "LPA"): string {
-  if (!min && !max) return "—";
+  if (!min && !max) return ",";
   if (min === max) return `₹${min} ${unit}`;
   return `₹${min}–${max} ${unit}`;
 }
@@ -162,7 +162,7 @@ export function formatCsvSalaryNegContext(
   );
   if (nonEmpty(b.equityType) || nonEmpty(b.vestingSchedule) || nonEmpty(b.equityLiquidityRisk)) {
     lines.push(
-      `- Equity: ${b.equityType || "—"}${b.vestingSchedule ? ` · vest ${b.vestingSchedule}` : ""}${
+      `- Equity: ${b.equityType || ","}${b.vestingSchedule ? ` · vest ${b.vestingSchedule}` : ""}${
         b.equityLiquidityRisk ? ` · liquidity risk: ${b.equityLiquidityRisk}` : ""
       }.`,
     );
@@ -278,7 +278,7 @@ export function formatCsvFocusContext(
   );
   if (nonEmpty(b.companyType) || nonEmpty(b.roleFamily)) {
     lines.push(
-      `- Company type: ${b.companyType || "—"}. Role family: ${b.roleFamily || "—"}${
+      `- Company type: ${b.companyType || ","}. Role family: ${b.roleFamily || ","}${
         nonEmpty(b.roleSubfamily) ? ` · ${b.roleSubfamily}` : ""
       }.`,
     );

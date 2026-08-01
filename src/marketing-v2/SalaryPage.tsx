@@ -632,7 +632,7 @@ export function SalaryCompanyPage({
                             <td style={tdMono} className="sal-hide-sm">
                               {band.baseMin != null && band.baseMax != null
                                 ? `${fmt(band.baseMin)} – ${fmt(band.baseMax)}`
-                                : "—"}
+                                : "N/A"}
                             </td>
                             <td style={tdFaint}>
                               {band.equityType && band.equityType !== "none" ? (

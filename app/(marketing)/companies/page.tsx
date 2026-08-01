@@ -27,9 +27,9 @@ import {
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Company Interview Questions — All Companies India 2026 | HireStepX",
+  title: "Company Interview Questions: All Companies India 2026 | HireStepX",
   description:
-    "Interview questions for 200+ companies in India — TCS, Infosys, Google, Amazon, Flipkart, Razorpay, and more. Practice with AI voice mock interviews.",
+    "Interview questions for 200+ companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.",
   keywords: [
     "company interview questions India",
     "TCS interview questions 2026",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 200+ companies — AI voice mock interviews available free.",
+    description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
     url: "https://hirestepx.com/companies",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 200+ companies — AI voice mock interviews available free.",
+    description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -147,7 +147,7 @@ const GROUPS: GroupDef[] = [
   {
     id: "saas",
     label: "B2B SaaS & Dev Tools",
-    description: "Global-from-day-one product companies built out of India — high engineering culture and strong product sense.",
+    description: "Global-from-day-one product companies built out of India, with high engineering culture and strong product sense.",
     companies: ["hasura", "gupshup", "exotel", "plivo", "intuit", "mindtickle", "sigmoid", "tracxn", "khatabook", "krutrim", "sarvam"],
   },
   {
@@ -159,7 +159,7 @@ const GROUPS: GroupDef[] = [
   {
     id: "campus-freshers",
     label: "Campus & Freshers",
-    description: "HR round questions that appear in 95%+ of Indian campus drives — with structured answer frameworks for freshers.",
+    description: "HR round questions that appear in 95%+ of Indian campus drives, with structured answer frameworks for freshers.",
     companies: ["campus"],
   },
 ];
@@ -215,7 +215,7 @@ export default async function CompaniesIndexPage({
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Company Interview Questions — India 2026",
+    name: "Company Interview Questions: India 2026",
     description: "Curated interview preparation guides for 200+ companies hiring in India",
     numberOfItems: SEO_PAGES.length,
     itemListElement: GROUPS.map((g, gi) => ({
@@ -231,11 +231,11 @@ export default async function CompaniesIndexPage({
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: [
-      { "@type": "Question", name: "Which companies hire the most freshers in India?", acceptedAnswer: { "@type": "Answer", text: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds — less on competitive coding than product companies like Flipkart or Razorpay." } },
+      { "@type": "Question", name: "Which companies hire the most freshers in India?", acceptedAnswer: { "@type": "Answer", text: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds, with less emphasis on competitive coding than product companies like Flipkart or Razorpay." } },
       { "@type": "Question", name: "How different is a FAANG interview from a Service IT interview?", acceptedAnswer: { "@type": "Answer", text: "Service IT interviews (TCS, Infosys) are primarily aptitude tests, verbal ability, and one or two HR rounds. FAANG interviews (Google, Amazon, Microsoft) require 3–5 rounds of competitive DSA, system design, and behavioral interviews. Most candidates need 3–6 months of dedicated preparation for FAANG." } },
       { "@type": "Question", name: "What is the typical interview process at Indian product companies like Razorpay or Zerodha?", acceptedAnswer: { "@type": "Answer", text: "Indian product companies typically have 4–6 rounds: an online coding assessment, 1–2 DSA rounds, a system design round, an engineering manager round, and an HR round. Behavioral questions follow the STAR method. Preparation time is 6–12 weeks." } },
-      { "@type": "Question", name: "How do consulting interviews (McKinsey, BCG, Deloitte) differ from tech interviews?", acceptedAnswer: { "@type": "Answer", text: "Consulting interviews have two main components: fit questions (leadership, teamwork) and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech — verbal fluency and structured reasoning matter most." } },
-      { "@type": "Question", name: "Can I use HireStepX to practice for multiple companies?", acceptedAnswer: { "@type": "Answer", text: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style — TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time." } },
+      { "@type": "Question", name: "How do consulting interviews (McKinsey, BCG, Deloitte) differ from tech interviews?", acceptedAnswer: { "@type": "Answer", text: "Consulting interviews have two main components: fit questions (leadership, teamwork) and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech: verbal fluency and structured reasoning matter most." } },
+      { "@type": "Question", name: "Can I use HireStepX to practice for multiple companies?", acceptedAnswer: { "@type": "Answer", text: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style: TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time." } },
     ],
   };
 
@@ -476,7 +476,7 @@ export default async function CompaniesIndexPage({
               {[
                 {
                   q: "Which companies hire the most freshers in India?",
-                  a: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds — less on competitive coding than product companies like Flipkart or Razorpay.",
+                  a: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds, with less emphasis on competitive coding than product companies like Flipkart or Razorpay.",
                 },
                 {
                   q: "How different is a FAANG interview from a Service IT interview?",
@@ -488,11 +488,11 @@ export default async function CompaniesIndexPage({
                 },
                 {
                   q: "How do consulting interviews (McKinsey, BCG, Deloitte) differ from tech interviews?",
-                  a: "Consulting interviews have two main components: fit questions (leadership, teamwork, 'tell me about yourself') and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech — verbal fluency and structured reasoning matter most.",
+                  a: "Consulting interviews have two main components: fit questions (leadership, teamwork, 'tell me about yourself') and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech: verbal fluency and structured reasoning matter most.",
                 },
                 {
                   q: "Can I use HireStepX to practice for multiple companies?",
-                  a: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style — TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time.",
+                  a: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style: TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time.",
                 },
               ].map(({ q, a }, i) => (
                 <div key={i} style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 20 }}>
@@ -515,7 +515,7 @@ export default async function CompaniesIndexPage({
             The AI interviews you in that company&apos;s exact question style, listens to your voice, and scores your answer in two minutes.
           </p>
           <Link href="/signup?source=companies-index-cta" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-            Start free — 2 mock interviews <span className="ed-cta-arrow" aria-hidden>→</span>
+            Start free: 2 mock interviews <span className="ed-cta-arrow" aria-hidden>→</span>
           </Link>
         </DarkBand>
 
