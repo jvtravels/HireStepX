@@ -698,34 +698,46 @@ export default async function handler(req: Request): Promise<Response> {
       const patchBody: Record<string, unknown> = { practice_timestamps: next, has_completed_onboarding: true };
       if (refundedStartedIds !== null) patchBody.started_session_ids = refundedStartedIds;
 
+      // Compare-and-swap on the previously-read practice_timestamps value so
+      // two concurrent save-session calls (e.g. distinct session ids racing)
+      // can't both observe the same pre-grant streak length and both trigger
+      // computeStreakReward's milestone bonus — only the request that wins
+      // the race actually updates the row; the loser's PATCH matches zero
+      // rows and is treated as a no-op rather than double-granting credits.
       const patchRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&practice_timestamps=eq.${encodeURIComponent(JSON.stringify(existing))}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             apikey: SUPABASE_SERVICE_KEY,
             Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            Prefer: "return=minimal",
+            Prefer: "return=representation",
           },
           body: JSON.stringify(patchBody),
         },
       );
       if (patchRes.ok) {
-        practiceAppended = !isGhostSession;
-        // Capture the user's new total for milestone email routing.
-        // Only set when this was a genuine new session (not a replay / ghost).
-        if (!alreadyCounted && !isGhostSession && questionsAnswered) {
-          completedCountAfter = existing.length + 1;
-        }
-        if (!alreadyCounted && questionsAnswered) {
-          const bonus = computeStreakReward(existing, nowIso);
-          if (bonus > 0) {
-            const milestone = existing.length + 1;
-            void grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, bonus, fetch, 2)
-              .then(() => captureServerEvent("streak_milestone_reward", auth.userId, { milestone, bonus }))
-              .catch((e: unknown) => console.warn("[save-session] streak reward grant failed:", (e as Error).message));
+        const updatedRows = await patchRes.json().catch(() => []);
+        const wonRace = Array.isArray(updatedRows) && updatedRows.length > 0;
+        if (wonRace) {
+          practiceAppended = !isGhostSession;
+          // Capture the user's new total for milestone email routing.
+          // Only set when this was a genuine new session (not a replay / ghost).
+          if (!alreadyCounted && !isGhostSession && questionsAnswered) {
+            completedCountAfter = existing.length + 1;
           }
+          if (!alreadyCounted && questionsAnswered) {
+            const bonus = computeStreakReward(existing, nowIso);
+            if (bonus > 0) {
+              const milestone = existing.length + 1;
+              void grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, bonus, fetch, 2)
+                .then(() => captureServerEvent("streak_milestone_reward", auth.userId, { milestone, bonus }))
+                .catch((e: unknown) => console.warn("[save-session] streak reward grant failed:", (e as Error).message));
+            }
+          }
+        } else {
+          console.warn(`[save-session] practice_timestamps CAS lost for user=${auth.userId.slice(0, 8)} — concurrent write already applied, skipping`);
         }
       } else {
         const t = await patchRes.text().catch(() => "");
