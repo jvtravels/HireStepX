@@ -25065,6 +25065,84 @@ export const BLOG_POSTS: BlogPost[] = [
       { href: "/questions/godrej-software-engineer-interview-questions", label: "Godrej Interview Questions: Technical Round Practice" },
     ],
   },
+  {
+    slug: "hul-uflp-interview-experience-2026",
+    title: "HUL UFLP Interview Experience 2026: Process, Case Study, and What to Expect",
+    metaDescription: "HUL interview experience guide India 2026. Hindustan Unilever's hiring process, the UFLP management-trainee track, case study and leadership rounds, what interviewers look for, salary ranges, and how to prepare.",
+    company: "HUL",
+    category: "Experience",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
+    heroAlt: "FMCG retail shelf representing an interview guide for Hindustan Unilever",
+    heroBg: "#0F1A12",
+    datePublished: "2026-08-02",
+    intro: "Hindustan Unilever Limited (HUL) is India's largest FMCG company and the single most sought-after employer for top B-school graduates, largely because of the Unilever Future Leaders Programme (UFLP): India's most competitive MBA management-trainee track. HUL is NSE/BSE-listed, present in roughly 90% of Indian households through brands like Surf Excel, Dove, Lifebuoy, and Knorr, and runs an interview process that is unusually structured for its size: every round is scored explicitly against a published leadership framework rather than left to interviewer discretion. This guide covers what to expect in an HUL interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The HUL interview process: what to expect",
+        content: "HUL's UFLP hiring process runs 3–4 rounds over several weeks:\n\n1. Group Discussion or Written Case:\nAn initial filter testing structured thinking and communication under time pressure, typically on a business or current-affairs topic.\n\n2. Case Study Round:\nYou're given a real or near-real HUL brand or market problem (pricing, distribution, market entry, brand repositioning) with roughly 30 minutes to prepare, followed by a panel presentation. This is HUL's signature round: commercial judgment matters as much as analytical structure.\n\n3. Leadership Interview:\nA structured behavioural round scored explicitly against HUL's Standards of Leadership: ownership, consumer obsession, bias for action, and growth mindset. Unlike a freeform HR chat, interviewers here are trained assessors following a scoring rubric, and they expect STAR-format answers that close with a business or consumer impact stated in rupees, units, or market-share points, not just a soft outcome.\n\nFor non-MBA roles (business analyst, supply chain, and other functional hires), the process is similar but lighter: typically a resume screen, one or two functional interviews, and a shorter HR round, without the full case-study weight of UFLP.",
+      },
+      {
+        heading: "What HUL interviewers look for",
+        content: "A few qualities consistently separate strong HUL candidates:\n\n1. Commercial judgment, not just frameworks:\nHUL's case study round penalises candidates who recite a generic consulting framework without landing on a clear, defensible recommendation. Interviewers want to see you reason like a brand or category owner, weighing trade-offs a real HUL manager would face.\n\n2. STAR answers with a commercial punchline:\nFor the leadership round, every behavioural answer should close with quantified business or consumer impact, not just \"the team was happy\" or \"it went well\". HUL interviewers are trained to probe for this specifically.\n\n3. Genuine interest in FMCG, not just prestige:\nHUL recruiters can tell when a candidate is chasing the UFLP brand name versus genuinely interested in brand management, distribution, or consumer insight work. Candidates who can speak concretely about an HUL brand or category tend to stand out.\n\n4. Composure under panel pressure:\nThe case-study presentation is done live to a panel, often with pointed follow-up questions designed to test whether you can defend your reasoning under scrutiny, not just deliver a rehearsed pitch.",
+      },
+      {
+        heading: "How to prepare for an HUL interview",
+        content: "1. Practise structured case cracking with a commercial lens:\nWork through FMCG-specific case types: market sizing for a new product launch, channel/distribution economics, pricing elasticity, and brand repositioning. Practise landing on one clear recommendation within your prep window rather than presenting multiple options with no conclusion.\n\n2. Prepare 6–8 STAR stories mapped to HUL's Standards of Leadership:\nCover ownership, consumer obsession, bias for action, and growth mindset specifically, each closing with a quantified outcome. Generic stories that could apply to any company tend to score lower here.\n\n3. Study HUL's brand portfolio and recent business moves:\nBe able to discuss at least two or three HUL brands (Surf Excel, Dove, Lifebuoy, Knorr) at a business level: recent campaigns, pricing moves, or competitive pressure from Marico, Dabur, ITC, or Godrej Consumer Products. This signals genuine interest over generic MBA polish.\n\n4. Set expectations on compensation and competitiveness going in:\nUFLP entry-level offers for IIM/FMS/XLRI graduates run roughly ₹18–27 LPA, highly variable by B-school tier and self-reported data. HUL visits a small number of top campuses and shortlists are narrow, so budget real preparation time rather than treating this as one of several parallel applications.",
+      },
+    ],
+    faqs: [
+      { question: "What is the HUL UFLP interview process like?", answer: "HUL UFLP (Unilever Future Leaders Programme), India's most competitive FMCG management-trainee track, runs 3–4 rounds: (1) A group discussion or written case round filtering on structured thinking and communication. (2) A case-study round: a real or near-real HUL brand or market problem, roughly 30 minutes to prepare, then a panel presentation. (3) A leadership interview: a structured behavioural round scored explicitly against HUL's Standards of Leadership (ownership, consumer obsession, bias for action, growth mindset)." },
+      { question: "What is HUL's case study round actually testing?", answer: "HUL's case study round tests commercial judgment as much as analytical rigor. You're given a brand, pricing, or distribution problem and expected to structure your reasoning (market sizing, channel economics, consumer segment) and land on a clear recommendation, not just show a framework. Presentation clarity to a panel matters as much as the analysis itself." },
+      { question: "What salary does HUL pay UFLP hires in India in 2026?", answer: "HUL UFLP salary India 2026: entry-level Management Trainee offers for IIM/FMS/XLRI graduates run roughly ₹18–27 LPA (self-reported, highly variable by B-school tier). Mid-level (post-MT, Brand Manager or equivalent) runs roughly ₹30–50 LPA. Senior roles (Marketing Manager, General Manager) run roughly ₹50–90 LPA, with apex roles (VP, President, CMO) reaching ₹1.1Cr+. See the full HUL salary page for a level-by-level breakdown." },
+      { question: "How is HUL different from other FMCG or conglomerate interviews like Godrej or P&G?", answer: "HUL's interview is unusually structured for its size: every round is scored explicitly against a published leadership framework rather than left to interviewer discretion, and its case study round is considered the toughest of the major FMCG recruiters. Compared to Godrej (a broader, more diversified conglomerate) or P&G (similarly structured but with a different leadership framework), HUL's process weighs commercial punchline and case fluency the most heavily of the three." },
+    ],
+    relatedSlugs: ["godrej-interview-experience-2026", "startup-vs-mnc-india-2026", "salary-negotiation-tips-india"],
+    cta: "Practice HUL's case study and leadership rounds with scored feedback: structured case cracking, STAR answers with a commercial punchline, and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/hul", label: "HUL Salary Guide India 2026: UFLP and Marketing CTC Breakdown" },
+      { href: "/questions/hul-behavioral-interview-questions", label: "HUL Interview Questions: Case Study and Leadership Round Practice" },
+    ],
+  },
+  {
+    slug: "globallogic-interview-experience-2026",
+    title: "GlobalLogic Interview Experience 2026: Process, Rounds, and What to Expect",
+    metaDescription: "GlobalLogic interview experience guide India 2026. Hitachi-owned product engineering services company's hiring process for software engineers, technical and client-interview rounds, domain-specific questions, salary ranges, and how to prepare.",
+    company: "GlobalLogic",
+    category: "Experience",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&q=80",
+    heroAlt: "Engineers collaborating on a laptop representing a GlobalLogic interview guide",
+    heroBg: "#0C1420",
+    datePublished: "2026-08-02",
+    intro: "GlobalLogic, acquired by Hitachi in 2021, is a product engineering services company with major India centres in Noida, Bengaluru, Hyderabad, and Pune, employing roughly 30,000+ people globally with the majority based in India. Unlike traditional IT services firms, GlobalLogic builds software products for global clients in automotive, media, healthcare, and semiconductor industries, positioning itself as product engineering rather than staff-augmentation IT services. This guide covers what to expect in a GlobalLogic interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The GlobalLogic interview process: what to expect",
+        content: "A typical GlobalLogic India interview runs 3–4 rounds:\n\n1. HR Phone Screen (20–30 min):\nBackground, notice period, current CTC, and salary expectations. Standard for most Indian services-style hiring.\n\n2. Technical Round(s):\nOne or two rounds covering coding and DSA fundamentals plus system design or architecture questions specific to the client vertical you're being considered for. As a Hitachi Group company, GlobalLogic increasingly asks about IoT and edge-computing contexts alongside traditional enterprise software engineering.\n\n3. Client Interview (for named accounts):\nFor mid-to-senior roles on a named client account, a client-side engineer joins a final round to assess communication skills and domain fit. This step is less common for junior or bench roles.\n\nGlobalLogic's coding rounds test your primary language of choice (commonly Java, C++, or Python depending on the account) plus system design relevant to the client's domain: automotive (connected vehicle software), media (streaming platforms), healthcare, or semiconductor.",
+      },
+      {
+        heading: "What GlobalLogic interviewers look for",
+        content: "1. Client-delivery readiness:\nUnlike a pure product company, GlobalLogic interviewers explicitly weigh whether you can represent the company well in front of a client: clear communication, professionalism, and the ability to translate technical work into terms a client stakeholder understands.\n\n2. Domain-specific technical depth:\nIf you're interviewing for an automotive account, expect scenario questions on CAN bus or AUTOSAR; for healthcare, expect integration concepts like HL7/FHIR. GlobalLogic probes whether you can reason about the client's actual domain, not just write generically correct code.\n\n3. STAR-format answers with a Result that ties to business or client impact:\nGlobalLogic managers weight the Result step of behavioural answers heavily, specifically looking for how your action affected the client or business outcome, not just the team dynamic.\n\n4. Comfort with a services-model pace:\nInterviewers screen for candidates who understand and accept a client-delivery cadence (sprint commitments, client SLAs, handoffs across time zones for global accounts) as a genuine fit, not a fallback from product-company ambitions.",
+      },
+      {
+        heading: "How to prepare for a GlobalLogic interview",
+        content: "1. Sharpen core DSA and be ready for the client's likely domain:\nReview arrays, trees, and basic system design, then research which vertical (automotive, healthcare, media, semiconductor) your target role/account is likely in and brush up on the relevant domain vocabulary (CAN bus and AUTOSAR for automotive; HL7/FHIR for healthcare; adaptive bitrate streaming for media).\n\n2. Prepare a STAR story with a business-impact Result:\nHave one or two examples ready where your technical decision measurably helped a client or business outcome (reduced latency, fewer defects, faster delivery), not just \"the team shipped on time\".\n\n3. Practise explaining technical decisions to a non-technical audience:\nSince GlobalLogic explicitly evaluates client-facing communication, rehearse a two-minute explanation of a technical project you worked on, aimed at someone without an engineering background.\n\n4. Understand the Hitachi-ownership context:\nBe ready to discuss why product engineering services (versus a pure product company or traditional IT services) appeals to you, and mention GlobalLogic's Hitachi-owned RSU component and multi-year, multi-account exposure as a genuine positive rather than downplaying it.",
+      },
+    ],
+    faqs: [
+      { question: "What is the GlobalLogic interview process like for software engineers?", answer: "GlobalLogic India (Noida, Bengaluru, Hyderabad, Pune) interviews typically run 3–4 rounds: (1) An HR phone screen on background, notice period, and salary expectation (20–30 min). (2) One or two technical rounds covering coding, DSA, and system design relevant to the client vertical (automotive, healthcare, media, fintech). (3) A client interview for roles on named accounts, where a client-side engineer assesses communication and domain fit; this is more common for mid-to-senior roles." },
+      { question: "Does GlobalLogic test domain-specific knowledge in interviews?", answer: "Yes, more than most IT services companies. If you're interviewing for an automotive account, expect scenario questions on CAN bus or AUTOSAR; for healthcare, expect questions on HL7/FHIR-style integration concepts. GlobalLogic frames itself as product engineering rather than generic IT services, and interviewers probe whether you can reason about the client's actual domain, not just write correct code." },
+      { question: "What salary does GlobalLogic pay software engineers in India in 2026?", answer: "GlobalLogic salary India 2026 (Hitachi RSU-eligible since the 2021 acquisition): Software Engineer entry roughly ₹8–12 LPA. Mid-level (Senior Engineer) roughly ₹14–24 LPA. Senior roles roughly ₹26–44 LPA. All levels carry a modest RSU component post-Hitachi-acquisition on top of the cash figures above. See the full GlobalLogic salary page for a level-by-level breakdown." },
+      { question: "How is GlobalLogic different from traditional IT services companies like TCS or Infosys?", answer: "GlobalLogic positions itself as product engineering services rather than generic IT services: it builds embedded, connected-vehicle, and media-streaming software for named global clients rather than running large staff-augmentation pools. Interviews reflect this with more domain-specific technical depth and fewer generic aptitude-style rounds, and the engineering culture is generally considered stronger than traditional IT services, though the client-delivery model still shapes how autonomous day-to-day work feels compared to a product-first company." },
+    ],
+    relatedSlugs: ["it-service-to-product-company-switch-india-2026", "startup-vs-mnc-india-2026", "data-structures-algorithms-interview-india-2026"],
+    cta: "Practice GlobalLogic's technical and client-facing rounds with scored feedback: domain-specific DSA and system design, STAR answers with business impact, and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/globallogic", label: "GlobalLogic Salary Guide India 2026: Software Engineer CTC Breakdown" },
+      { href: "/questions/globallogic-india-software-engineer-interview-questions", label: "GlobalLogic Interview Questions: Technical Round Practice" },
+    ],
+  },
 ];
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
