@@ -1,18 +1,18 @@
 import { ImageResponse } from "next/og";
-import { getSeoPageBySlug, getAllSeoSlugs } from "../../../../data/seo-pages";
+import { getSeoPageBySlug } from "../../../../data/seo-pages";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 
 // Not edge runtime — seo-pages.ts bundle exceeds 1 MB edge limit.
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const revalidate = 86400; /* 24h, mirrors sibling page.tsx */
 
-/* Metadata image routes under a dynamic segment don't inherit the sibling
-   page.tsx's generateStaticParams — without their own, Next can't resolve
-   slugs for this route and 404s even though /questions/[slug] itself is a
-   live 200. Confirmed on prod via GSC + curl. */
-export async function generateStaticParams() {
-  return getAllSeoSlugs().map((slug) => ({ slug }));
-}
+/* generateStaticParams here forces Next to satori-render all 300+ slugs
+   at build time, which starved a Vercel build of disk/CPU and left a
+   resource-dependent subset of slugs 404ing in prod (confirmed via GSC +
+   curl — failures weren't tied to recency, e.g. long-established slugs
+   404ed too). Rendering on-demand with revalidate keeps every slug
+   resolvable without gambling the whole build on one giant image batch. */
 
 const COAL = "#0E0C08";
 const CREAM = "#FAF7F0";

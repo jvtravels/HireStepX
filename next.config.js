@@ -85,6 +85,13 @@ const nextConfig = {
       { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
       { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
       { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      // kubernetes-docker-devops-interview-questions-india-2026 (2026-01-01) and
+      // kubernetes-docker-interview-india-2026 (2026-04-06) covered the identical
+      // Docker/Kubernetes/Helm/CI-CD topic for the same query, and GSC "Crawled -
+      // not indexed" flagged one as a duplicate. Removed the older, weaker-linked
+      // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
+      // more heavily cross-linked survivor.
+      { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense
