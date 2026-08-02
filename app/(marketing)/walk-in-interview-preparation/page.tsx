@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     type: "article",
     title: "Walk-in Interview Preparation & Tips (India) | HireStepX",
     description:
-      "How to get ready for a walk-in interview drive with almost no notice — what to carry, what to expect, and the questions that come up most.",
+      "How to get ready for a walk-in interview drive with almost no notice: what to carry, what to expect, and the questions that come up most.",
     url: "https://hirestepx.com/walk-in-interview-preparation",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -62,7 +62,7 @@ const PREP_STEPS = [
   },
   {
     title: "Research in the queue, not after",
-    desc: "You often have 30-60 minutes of waiting before your turn. Use it: read the company's about page, note two things about the role, and skim recent news — this is real prep time most candidates waste scrolling their phone.",
+    desc: "You often have 30-60 minutes of waiting before your turn. Use it: read the company's about page, note two things about the role, and skim recent news. This is real prep time most candidates waste scrolling their phone.",
   },
   {
     title: "Rehearse your opening answer specifically",
@@ -120,7 +120,7 @@ export default async function WalkInInterviewPage() {
         name: "Can I practice for a walk-in interview in advance if I don't know when it will happen?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — because walk-in interviews rely on the same core questions across most companies (tell me about yourself, why this role, expected salary, availability), practicing those answers out loud ahead of time pays off regardless of which specific drive you attend. AI mock interview practice lets you rehearse the exact opening questions that decide the first minute of a walk-in round.",
+          text: "Yes, because walk-in interviews rely on the same core questions across most companies (tell me about yourself, why this role, expected salary, availability), practicing those answers out loud ahead of time pays off regardless of which specific drive you attend. AI mock interview practice lets you rehearse the exact opening questions that decide the first minute of a walk-in round.",
         },
       },
     ],
@@ -160,14 +160,14 @@ export default async function WalkInInterviewPage() {
             <span style={{ fontStyle: "italic", color: t.copper }}>Preparation.</span>
           </h1>
           <p style={{ ...s, fontSize: 17, lineHeight: 1.65, color: t.inkSoft, maxWidth: 580, margin: "0 auto 36px" }}>
-            No appointment, no scheduled slot — you're interviewed the moment your turn comes. What to carry, how to use the wait, and the questions that decide most walk-in rounds.
+            No appointment, no scheduled slot: you're interviewed the moment your turn comes. What to carry, how to use the wait, and the questions that decide most walk-in rounds.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free, 2 sessions
             </Link>
             <Link
               href="/ai-mock-interview"
@@ -203,7 +203,7 @@ export default async function WalkInInterviewPage() {
               Questions that come up most in walk-in rounds
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              Walk-in interviews are usually shorter than scheduled ones — these six decide most of them.
+              Walk-in interviews are usually shorter than scheduled ones: these six decide most of them.
             </p>
             <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 16 }}>
               {QUESTIONS.map((q, i) => (
@@ -224,10 +224,10 @@ export default async function WalkInInterviewPage() {
             The prep you can do before you even know the date
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            Because most walk-in interviews lean on the same handful of opening questions across companies, rehearsing them out loud in advance pays off regardless of which drive you end up attending — even one you only heard about that morning.
+            Because most walk-in interviews lean on the same handful of opening questions across companies, rehearsing them out loud in advance pays off regardless of which drive you end up attending, even one you only heard about that morning.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX's AI interviewer runs full mock sessions on the exact opening questions — tell me about yourself, why this role, expected salary — with follow-up questions in real time, so your answers are rehearsed and confident before you're ever called in.
+            HireStepX's AI interviewer runs full mock sessions on the exact opening questions (tell me about yourself, why this role, expected salary) with follow-up questions in real time, so your answers are rehearsed and confident before you're ever called in.
           </p>
         </section>
 
@@ -235,7 +235,7 @@ export default async function WalkInInterviewPage() {
         <section aria-labelledby="wi-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="wi-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              Walk-in interviews — common questions
+              Walk-in interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -254,13 +254,13 @@ export default async function WalkInInterviewPage() {
             Rehearse the questions before the drive
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete AI mock interview sessions, free. No credit card, no scheduling — practice the night before, or the morning of.
+            2 complete AI mock interview sessions, free. No credit card, no scheduling: practice the night before, or the morning of.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free, 2 sessions included
           </Link>
         </section>
 
@@ -277,7 +277,7 @@ export default async function WalkInInterviewPage() {
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

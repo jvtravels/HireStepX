@@ -108,7 +108,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     faang: {
       // 2026-05 refresh: levels.fyi Razorpay+Flipkart cross-check shows L3/L4 entry
       // at top FAANG India clears ₹40L+ TC; raised entry total upper to 45.
-      entry: s([22, 32], [1, 3], RSU(4, 10, "quarterly after 1-year cliff"), [28, 45], { joining_bonus_min: 0, joining_bonus_max: 5, notice_period_days: 30, negotiation_leverage: "low", hot_skills: ["System Design", "DSA", "GenAI/LLM"], notes: "L3/E3 level. RSUs are modest at entry — bulk of comp is base. 2026 verified: Razorpay/top-tier opens at ₹24L+ for new grads with strong GenAI exposure." }),
+      entry: s([22, 32], [1, 3], RSU(4, 10, "quarterly after 1-year cliff"), [28, 45], { joining_bonus_min: 0, joining_bonus_max: 5, notice_period_days: 30, negotiation_leverage: "low", hot_skills: ["System Design", "DSA", "GenAI/LLM"], notes: "L3/E3 level. RSUs are modest at entry, bulk of comp is base. 2026 verified: Razorpay/top-tier opens at ₹24L+ for new grads with strong GenAI exposure." }),
       mid: s([40, 55], [3, 6], RSU(15, 35), [60, 90], { joining_bonus_min: 5, joining_bonus_max: 15, negotiation_leverage: "medium", hot_skills: ["System Design", "Distributed Systems", "GenAI"] }),
       // 2026-05 refresh: levels.fyi Flipkart SDE-4 senior P75 ₹85L, P90 ₹112L total comp; FAANG India aligns. Total upper 150 → 160.
       senior: s([55, 75], [5, 12], RSU(35, 75), [85, 160], { joining_bonus_min: 5, joining_bonus_max: 15, notice_period_days: 60, negotiation_leverage: "high", hot_skills: ["ML Systems", "Platform Engineering", "Staff-level scope"] }),
@@ -180,7 +180,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([45, 70], [6, 14], RSU(15, 35), [55, 100], { notice_period_days: 60, negotiation_leverage: "high" }),
       lead: s([70, 100], [10, 22], RSU(30, 75), [95, 200], { notice_period_days: 60, negotiation_leverage: "high", notes: "Walmart Global Tech P5 staff: ₹90L median; max ₹201L." }),
     },
-    /* Consulting MBB digital practice — McKinsey QuantumBlack, BCG
+    /* Consulting MBB digital practice, McKinsey QuantumBlack, BCG
        X / GAMMA, Bain Vector. Hire SWE/Data alongside generalist
        consultants; below FAANG cash but premium-on-prestige. */
     "consulting-mbb": {
@@ -189,7 +189,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([55, 80], [10, 20], NO_EQ, [65, 100], { notice_period_days: 60, negotiation_leverage: "medium" }),
     },
     /* EdTech (Byju's / Unacademy / upGrad / Vedantu / Physics Wallah
-       — post-2023 reset bands, compressed 30-40% from peak). */
+      , post-2023 reset bands, compressed 30-40% from peak). */
     edtech: {
       entry: s([6, 12], [0.5, 1.5], ESOP(0.5, 2), [8, 16], { notice_period_days: 30, negotiation_leverage: "low", notes: "Post-2023 reset; ESOP value uncertain at most names." }),
       mid: s([12, 22], [1, 3], ESOP(1, 4), [14, 28], { negotiation_leverage: "medium" }),
@@ -202,7 +202,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([12, 22], [1.5, 3], NO_EQ, [14, 26], { negotiation_leverage: "medium" }),
       senior: s([22, 40], [3, 6], NO_EQ, [25, 48], { notice_period_days: 90, negotiation_leverage: "medium" }),
     },
-    /* FMCG MNC (HUL / ITC / Nestle / P&G — for SE / IT roles
+    /* FMCG MNC (HUL / ITC / Nestle / P&G, for SE / IT roles
        within FMCG, not brand-track). */
     "fmcg-mnc": {
       entry: s([6, 11], [0.5, 1.5], NO_EQ, [7, 13], { negotiation_leverage: "low" }),
@@ -531,7 +531,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([24, 38], [2.5, 6], ESOP(4, 10), [30, 52], { negotiation_leverage: "high" }),
     },
   },
-  /* AI engineer — distinct from ml-engineer in 2026. GenAI / LLM /
+  /* AI engineer, distinct from ml-engineer in 2026. GenAI / LLM /
      RAG / agentic specialists command 1.3-1.6x ML-engineer pay at
      same YOE. The override map (Razorpay / OpenAI / Anthropic /
      Sarvam) refines per-company; these tier bands are the fallback. */
@@ -698,7 +698,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([42, 60], [6, 12], RSU(20, 42), [60, 105], { negotiation_leverage: "high" }),
     },
   },
-  /* Cloud engineer — closely tracks devops-sre but with AWS/Azure/GCP
+  /* Cloud engineer, closely tracks devops-sre but with AWS/Azure/GCP
      cert premium (CKA / AWS-SA / GCP-PCA add 15-25%). Multi-cloud +
      FinOps specialists command top-band at GCC and SaaS-product. */
   "cloud-engineer": {
@@ -746,14 +746,14 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     faang: {
       entry: s([20, 28], [1, 3], RSU(6, 12), [27, 43], { hot_skills: ["Figma", "User Research", "Design Systems"] }),
       mid: s([32, 48], [3, 6], RSU(12, 24), [47, 78], {}),
-      senior: s([48, 68], [6, 12], RSU(20, 40), [74, 120], { negotiation_leverage: "high", notes: "Microsoft/Google/Meta India senior PD median ₹85-95 LPA total comp; high performers cross ₹110 LPA. The previous band floor of ₹61 LPA was off — Microsoft alone offers ₹70+ as the standard floor for senior product designers in 2024-25." }),
+      senior: s([48, 68], [6, 12], RSU(20, 40), [74, 120], { negotiation_leverage: "high", notes: "Microsoft/Google/Meta India senior PD median ₹85-95 LPA total comp; high performers cross ₹110 LPA. The previous band floor of ₹61 LPA was off, Microsoft alone offers ₹70+ as the standard floor for senior product designers in 2024-25." }),
       lead: s([60, 85], [10, 18], RSU(28, 55), [98, 158], { negotiation_leverage: "high", notes: "Lead/Principal/Staff PD at top FAANG India routinely lands ₹120-150 LPA total comp." }),
     },
     "indian-unicorn": {
       entry: s([6, 10], [0.5, 1], ESOP(0.5, 2), [7, 13], { hot_skills: ["Figma", "Product thinking", "0-to-1 design"] }),
       mid: s([14, 22], [1.5, 3], ESOP(2, 5), [17, 30], {}),
       senior: s([24, 36], [3, 6], ESOP(4, 10), [31, 52], { negotiation_leverage: "high", notes: "Top-tier unicorns (Razorpay/CRED/Zerodha/Zepto) hit ₹40-55 LPA at senior. Standard tier (Flipkart/Swiggy/Meesho) lands ₹30-42 LPA." }),
-      lead: s([35, 50], [5, 10], ESOP(8, 18), [48, 78], { negotiation_leverage: "high", notes: "Lead/Principal PD or Design Manager. Often a leveling-arbitrage opportunity — IC ladder caps lower than EM ladder at most unicorns." }),
+      lead: s([35, 50], [5, 10], ESOP(8, 18), [48, 78], { negotiation_leverage: "high", notes: "Lead/Principal PD or Design Manager. Often a leveling-arbitrage opportunity, IC ladder caps lower than EM ladder at most unicorns." }),
     },
     "it-services": {
       // 2025 AmbitionBox / Glassdoor for TCS / Infosys / Wipro UX designers:
@@ -765,14 +765,14 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       //   simulator (user-reported, contradicted by AmbitionBox snippet
       //   showing ₹6.5-7.7 avg).
       entry: s([3.5, 5.5], [0.1, 0.4], NO_EQ, [3.5, 6], { negotiation_leverage: "low", notes: "TCS / Infosys / Wipro UX/UI Designer fresher band. AmbitionBox 2025 avg: ₹4-6 LPA." }),
-      mid: s([5, 8], [0.3, 0.7], NO_EQ, [5.5, 9], { negotiation_leverage: "low", notes: "Mid-level (3-5 yrs) at services firms. Compensation 30-40% below product-company benchmarks — consider switching after 2-3 yrs." }),
+      mid: s([5, 8], [0.3, 0.7], NO_EQ, [5.5, 9], { negotiation_leverage: "low", notes: "Mid-level (3-5 yrs) at services firms. Compensation 30-40% below product-company benchmarks, consider switching after 2-3 yrs." }),
       senior: s([8, 11], [0.5, 1.5], NO_EQ, [9, 13], { negotiation_leverage: "low", notes: "Senior UX (6-9 yrs) at TCS Interactive / Infosys Wongdoody. Caps around ₹12.9 LPA per AmbitionBox 2025." }),
-      lead: s([12, 17], [1, 2], NO_EQ, [13, 19], { negotiation_leverage: "medium", notes: "Lead/Principal UX at services firms — 10+ yrs. Higher-end roles cross into Design Manager titles which can hit ₹18-22 LPA but those are exception, not norm." }),
+      lead: s([12, 17], [1, 2], NO_EQ, [13, 19], { negotiation_leverage: "medium", notes: "Lead/Principal UX at services firms, 10+ yrs. Higher-end roles cross into Design Manager titles which can hit ₹18-22 LPA but those are exception, not norm." }),
     },
     "startup-growth": {
-      entry: s([5, 8], [0.3, 0.6], ESOP(0.5, 2), [6, 11], { notes: "Pre-Series-B startups: prefer higher base over higher ESOP — most early-stage equity expires worthless." }),
+      entry: s([5, 8], [0.3, 0.6], ESOP(0.5, 2), [6, 11], { notes: "Pre-Series-B startups: prefer higher base over higher ESOP, most early-stage equity expires worthless." }),
       mid: s([10, 18], [0.8, 2], ESOP(1.5, 4), [12, 24], {}),
-      senior: s([18, 30], [2.5, 5], ESOP(3, 8), [24, 43], { negotiation_leverage: "high", notes: "Senior at Series B/C — push for cash + cash-out clauses on ESOPs (90-day exercise window, full acceleration on liquidity)." }),
+      senior: s([18, 30], [2.5, 5], ESOP(3, 8), [24, 43], { negotiation_leverage: "high", notes: "Senior at Series B/C, push for cash + cash-out clauses on ESOPs (90-day exercise window, full acceleration on liquidity)." }),
       lead: s([25, 42], [4, 8], ESOP(6, 15), [35, 65], { negotiation_leverage: "high" }),
     },
     /* Big Tech UX Designer (Adobe / Salesforce / Atlassian / Microsoft) */
@@ -806,7 +806,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([10, 18], [1, 2], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
       senior: s([18, 30], [2, 4], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
     },
-    /* Consulting (MBB design ops / digital design — McKinsey LUNAR,
+    /* Consulting (MBB design ops / digital design, McKinsey LUNAR,
        BCG Digital Design). */
     "consulting-mbb": {
       entry: s([18, 28], [3, 6], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
@@ -866,7 +866,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], {}),
       senior: s([14, 22], [1.5, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
     },
-    /* Big Tech / GCC QA — leaner than SE bands. */
+    /* Big Tech / GCC QA, leaner than SE bands. */
     "big-tech": {
       entry: s([14, 22], [1, 3], RSU(2, 5), [16, 28], { negotiation_leverage: "medium" }),
       mid: s([24, 38], [3, 6], RSU(7, 16), [32, 55], { negotiation_leverage: "medium" }),
@@ -1079,7 +1079,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([10, 18], [1, 2.5], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
       senior: s([18, 32], [2, 5], NO_EQ, [20, 36], { negotiation_leverage: "medium" }),
     },
-    /* Consulting MBB Marketing (rare — internal brand / GTM). */
+    /* Consulting MBB Marketing (rare, internal brand / GTM). */
     "consulting-mbb": {
       entry: s([12, 18], [2, 4], NO_EQ, [14, 22], { negotiation_leverage: "medium" }),
       mid: s([22, 35], [4, 8], NO_EQ, [26, 45], { negotiation_leverage: "medium" }),
@@ -1257,7 +1257,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([12, 22], [1, 3], ESOP(2, 5), [14, 28], {}),
       senior: s([22, 38], [3, 6], ESOP(4, 10), [28, 50], {}),
     },
-    /* Big Tech Finance (FP&A / Treasury / Strategic Finance — at
+    /* Big Tech Finance (FP&A / Treasury / Strategic Finance, at
        Adobe / Salesforce / Atlassian / Microsoft non-FAANG India). */
     "big-tech": {
       entry: s([12, 18], [1.5, 3], RSU(3, 7), [14, 24], { negotiation_leverage: "medium" }),
@@ -1724,7 +1724,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([14, 24], [1.5, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
       senior: s([26, 42], [3, 7], NO_EQ, [30, 50], { negotiation_leverage: "high" }),
     },
-    /* Govt / PSU legal (Govt Counsel / regulatory) — 7th CPC. */
+    /* Govt / PSU legal (Govt Counsel / regulatory), 7th CPC. */
     "government-psu": {
       entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
       mid: s([10, 18], [0.5, 1], NO_EQ, [11, 19], { negotiation_leverage: "low" }),
@@ -1913,7 +1913,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
   },
 
-  /* Frontend developer — tracks SE bands closely; React/Next/Vue
+  /* Frontend developer, tracks SE bands closely; React/Next/Vue
      specialists at top product cos earn 5-10% premium for design-system
      + perf work. Senior FE at unicorns often shifts to design-engineer. */
   // ─── FRONTEND DEVELOPER ───────────────────────────────────────
@@ -1985,7 +1985,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
   },
 
-  /* Backend developer — same shape as SE but distributed-systems /
+  /* Backend developer, same shape as SE but distributed-systems /
      performance / DB-internals specialists at top tier earn 10-15%
      premium. Backend at IT services often the bulk of tech hires. */
   // ─── BACKEND DEVELOPER ────────────────────────────────────────
@@ -2057,7 +2057,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
   },
 
-  /* Mobile developer — iOS specialists at FAANG earn 10-20% premium
+  /* Mobile developer, iOS specialists at FAANG earn 10-20% premium
      over Android/web; React Native / Flutter cross-platform tracks
      closer to SE base. Strong demand at fintech / consumer unicorns. */
   // ─── MOBILE DEVELOPER ─────────────────────────────────────────
@@ -2443,7 +2443,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   },
 
   // ─── ELECTRICAL ENGINEER (alias to mechanical-engineer) ───────
-  /* Electrical engineer — VLSI / chip design (NVIDIA / Qualcomm / Intel /
+  /* Electrical engineer, VLSI / chip design (NVIDIA / Qualcomm / Intel /
      AMD India) commands 1.5-2x mechanical-engineer pay; power systems
      and instrumentation track closer to mechanical at L&T / BHEL / NTPC. */
   "electrical-engineer": {
@@ -2475,7 +2475,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   },
 
   // ─── CIVIL ENGINEER (alias to mechanical-engineer) ────────────
-  /* Civil engineer — distinct market (L&T / Tata Projects / GMR / Adani
+  /* Civil engineer, distinct market (L&T / Tata Projects / GMR / Adani
      Infra / Shapoorji); construction / infra heavy. PSU pay-bands at
      CPWD / NHAI / DMRC / IRCON. Tier-1 IIT graduates: ₹12-18L at L&T. */
   "civil-engineer": {
@@ -2597,7 +2597,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
 
   // ─── DESIGN ENGINEER (alias — premium 10-15% over ux-designer at top
   //     product cos; for now resolves via ROLE_ALIASES → ux-designer) ──
-  /* Design Engineer — engineering-coded designers (Vercel/Linear-
+  /* Design Engineer, engineering-coded designers (Vercel/Linear-
      style hybrid role). 10-15% premium over generic UX at top
      product cos. */
   "design-engineer": {
@@ -2630,7 +2630,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
 
   // ─── PRODUCT MARKETING MANAGER (alias — 20-30% above generic marketing
   //     at SaaS / unicorns; for now resolves via ROLE_ALIASES → marketing) ──
-  /* Product Marketing Manager — distinct ladder. PMM at SaaS / B2B
+  /* Product Marketing Manager, distinct ladder. PMM at SaaS / B2B
      companies commands 20-30% premium over generic marketing key. */
   "product-marketing-manager": {
     faang: {
@@ -2714,7 +2714,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       executive: s([55, 80], [3, 6], NO_EQ, [60, 90], { in_hand_ratio: 0.78, notes: "Secretary to Govt of India / DGP / CS. Level 17-18 (cabinet secretary equivalent)." }),
     },
     "it-services": {
-      entry: s([5, 9], [0.3, 0.6], NO_EQ, [5, 10], { negotiation_leverage: "low", notes: "State PCS officers (MPSC/KPSC/TNPSC etc.) — junior cadre." }),
+      entry: s([5, 9], [0.3, 0.6], NO_EQ, [5, 10], { negotiation_leverage: "low", notes: "State PCS officers (MPSC/KPSC/TNPSC etc.), junior cadre." }),
       mid: s([10, 16], [0.5, 1], NO_EQ, [11, 18], { negotiation_leverage: "low" }),
       senior: s([18, 30], [1, 2], NO_EQ, [20, 32], { negotiation_leverage: "low" }),
     },
@@ -2723,7 +2723,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([14, 22], [1, 2], NO_EQ, [15, 24], { negotiation_leverage: "low" }),
       senior: s([22, 35], [2, 4], NO_EQ, [24, 38], { negotiation_leverage: "low" }),
     },
-    /* Consulting MBB lateral (rare — McKinsey/BCG public sector practice
+    /* Consulting MBB lateral (rare, McKinsey/BCG public sector practice
        ex-IAS/IPS officers who lateral out at Director level). */
     "consulting-mbb": {
       mid: s([28, 45], [5, 12], NO_EQ, [33, 55], { notes: "Ex-civil-services lateral (3-5 years) → MBB public sector practice." }),
@@ -2736,7 +2736,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([15, 25], [2.5, 5], NO_EQ, [17, 30], { negotiation_leverage: "medium" }),
       senior: s([26, 42], [5, 10], NO_EQ, [30, 52], { negotiation_leverage: "medium" }),
     },
-    /* SaaS-product (govtech / civictech — Bharat Cloud / SETU / DigiYatra). */
+    /* SaaS-product (govtech / civictech, Bharat Cloud / SETU / DigiYatra). */
     "saas-product": {
       entry: s([10, 15], [1, 2], ESOP(1, 3), [11, 17], { notes: "GovTech / public-digital-infrastructure roles." }),
       mid: s([16, 26], [2, 4], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
@@ -2748,7 +2748,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([20, 32], [2, 5], RSU(5, 12), [24, 42], { negotiation_leverage: "medium" }),
       senior: s([32, 50], [4, 9], RSU(10, 22), [40, 70], { negotiation_leverage: "high" }),
     },
-    /* FMCG MNC govt-relations (HUL / ITC / Marico — regulatory & public affairs). */
+    /* FMCG MNC govt-relations (HUL / ITC / Marico, regulatory & public affairs). */
     "fmcg-mnc": {
       entry: s([10, 16], [1, 3], NO_EQ, [11, 20], { notes: "Govt relations / regulatory affairs at FMCG MNCs." }),
       mid: s([18, 28], [2, 5], NO_EQ, [22, 35], { negotiation_leverage: "medium" }),
@@ -2759,7 +2759,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   // ─── PERFORMING ARTS (classical / instrumental / contemporary) ─
   /* Indian classical artists earn primarily via concert circuits +
      guru-shishya teaching + festival fees + grants. Steep
-     experience curve — top-bracket artists (Sangeet Natak Akademi
+     experience curve, top-bracket artists (Sangeet Natak Akademi
      awardees) earn ₹20-50L+ via concert circuits while mid-level
      artists earn modestly. */
   "performing-arts": {
@@ -2767,7 +2767,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([2, 4], [0.2, 0.5], NO_EQ, [2, 5], { negotiation_leverage: "low", notes: "Junior artist / accompanist track. Concert + teaching combo; income lumpy." }),
       mid: s([5, 10], [0.5, 1.5], NO_EQ, [5, 12], { negotiation_leverage: "medium", notes: "Mid-career artist with regular concert circuit. Spotify/JioSaavn royalties added." }),
       senior: s([12, 25], [1, 4], NO_EQ, [14, 30], { negotiation_leverage: "high", notes: "Established artist with concert tours + teaching academy + recording contracts." }),
-      lead: s([25, 60], [3, 10], NO_EQ, [30, 75], { negotiation_leverage: "high", notes: "Top-tier (Padma / Sangeet Natak Akademi / Filmfare) — international tours + Bollywood playback." }),
+      lead: s([25, 60], [3, 10], NO_EQ, [30, 75], { negotiation_leverage: "high", notes: "Top-tier (Padma / Sangeet Natak Akademi / Filmfare), international tours + Bollywood playback." }),
     },
     edtech: {
       entry: s([3, 6], [0.2, 0.5], ESOP(0.3, 1), [3.5, 7], { notes: "Music-edtech (Splice/Indian Tutor) instructor track." }),
@@ -2786,7 +2786,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
     /* IT-services L&D / corporate trainer / jingle artist contracts. */
     "it-services": {
-      entry: s([3, 5], [0.2, 0.5], NO_EQ, [3, 6], { negotiation_leverage: "low", notes: "Corporate L&D trainer track — soft-skills/voice modulation." }),
+      entry: s([3, 5], [0.2, 0.5], NO_EQ, [3, 6], { negotiation_leverage: "low", notes: "Corporate L&D trainer track, soft-skills/voice modulation." }),
       mid: s([5, 9], [0.4, 1], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
       senior: s([10, 18], [0.8, 2], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
     },
@@ -2797,7 +2797,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([10, 18], [0.8, 2], ESOP(1, 3), [11, 21], { negotiation_leverage: "medium" }),
       senior: s([18, 32], [2, 5], ESOP(2, 6), [22, 38], { negotiation_leverage: "high" }),
     },
-    /* Startup early — creator-led music/dance startups, Carnatic-tech. */
+    /* Startup early, creator-led music/dance startups, Carnatic-tech. */
     "startup-early": {
       entry: s([3, 5], [0.2, 0.5], ESOP(0.5, 2), [3.5, 7], { notice_period_days: 15, negotiation_leverage: "low", notes: "Creator-tech / Indian classical-music edtech startup founder team." }),
       mid: s([5, 9], [0.3, 1], ESOP(1.5, 4), [6, 12], { notice_period_days: 30, negotiation_leverage: "medium" }),
@@ -2814,7 +2814,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([16, 26], [2, 4], RSU(5, 12), [20, 35], { negotiation_leverage: "medium" }),
       senior: s([26, 42], [3, 7], RSU(10, 22), [32, 55], { negotiation_leverage: "high" }),
     },
-    /* FAANG (very rare — entertainment partnerships / cultural advisory). */
+    /* FAANG (very rare, entertainment partnerships / cultural advisory). */
     faang: {
       mid: s([22, 38], [3, 7], RSU(8, 18), [28, 55], { notes: "FAANG India entertainment partnerships / artist relations." }),
       senior: s([38, 60], [6, 12], RSU(18, 40), [55, 100], { negotiation_leverage: "high" }),
@@ -2834,10 +2834,10 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
      20-30% higher at senior levels. */
   "nursing": {
     "government-psu": {
-      entry: s([3.5, 6], [0, 0.3], NO_EQ, [3.5, 7], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "Staff Nurse Grade II — 7th CPC Level 7 (₹44,900 basic). DA + HRA = ₹6.5-8L total." }),
-      mid: s([6, 10], [0.3, 0.6], NO_EQ, [6.5, 11], { notes: "Staff Nurse Grade I / Senior Sister — Level 8-9 pay matrix." }),
-      senior: s([10, 18], [0.5, 1], NO_EQ, [11, 20], { notes: "Asst Nursing Superintendent / Nursing Officer — Level 11-12." }),
-      lead: s([18, 28], [1, 2], NO_EQ, [19, 30], { notes: "Director Nursing / Nursing Superintendent — Level 13." }),
+      entry: s([3.5, 6], [0, 0.3], NO_EQ, [3.5, 7], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "Staff Nurse Grade II, 7th CPC Level 7 (₹44,900 basic). DA + HRA = ₹6.5-8L total." }),
+      mid: s([6, 10], [0.3, 0.6], NO_EQ, [6.5, 11], { notes: "Staff Nurse Grade I / Senior Sister, Level 8-9 pay matrix." }),
+      senior: s([10, 18], [0.5, 1], NO_EQ, [11, 20], { notes: "Asst Nursing Superintendent / Nursing Officer, Level 11-12." }),
+      lead: s([18, 28], [1, 2], NO_EQ, [19, 30], { notes: "Director Nursing / Nursing Superintendent, Level 13." }),
     },
     "indian-unicorn": {
       entry: s([3, 5], [0.2, 0.5], NO_EQ, [3, 5.5], { notes: "Apollo / Fortis / Max staff nurse, ICU/OT specialty." }),
@@ -2872,7 +2872,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([5, 9], [0.3, 0.8], NO_EQ, [5, 10], { notice_period_days: 90 }),
       senior: s([9, 16], [0.8, 1.5], NO_EQ, [10, 18], { notice_period_days: 90 }),
     },
-    /* Startup growth (healthtech — Practo / 1mg / PharmEasy). */
+    /* Startup growth (healthtech, Practo / 1mg / PharmEasy). */
     "startup-growth": {
       entry: s([4, 7], [0.3, 0.6], ESOP(0.5, 1.5), [4.5, 8], { notes: "Healthtech (Practo/1mg/PharmEasy) staff nurse / telehealth." }),
       mid: s([7, 13], [0.5, 1.5], ESOP(1, 3), [8, 15], { negotiation_leverage: "medium" }),
@@ -2977,13 +2977,13 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([38, 60], [6, 15], RSU(15, 32), [50, 95], { negotiation_leverage: "high" }),
       senior: s([60, 95], [12, 25], RSU(30, 65), [90, 165], { negotiation_leverage: "high" }),
     },
-    /* BFSI domestic (rare — banking infra hardware). */
+    /* BFSI domestic (rare, banking infra hardware). */
     "bfsi-domestic": {
       entry: s([6, 10], [0.5, 1.2], NO_EQ, [7, 12], { notes: "HDFC / ICICI / Axis trading-floor hardware / data-center engineer." }),
       mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
       senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
     },
-    /* Edtech (semiconductor edtech — Newton/Skill-Lync/Maven Silicon). */
+    /* Edtech (semiconductor edtech, Newton/Skill-Lync/Maven Silicon). */
     edtech: {
       entry: s([5, 9], [0.3, 0.8], ESOP(0.5, 1.5), [6, 10], { notes: "Maven Silicon / Skill-Lync / Newton VLSI track instructor." }),
       mid: s([10, 16], [0.5, 1.5], ESOP(1, 3), [11, 18], { negotiation_leverage: "medium" }),
@@ -3024,7 +3024,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
     "government-psu": {
       entry: s([12, 18], [0, 0.5], NO_EQ, [12, 19], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "Air India / Indian Air Force pilot officer. AI lateral pilots get DGCA pay scale." }),
-      mid: s([22, 40], [1, 3], NO_EQ, [24, 44], { negotiation_leverage: "low", notes: "IAF Squadron Leader / Wing Commander — 7th CPC pay matrix." }),
+      mid: s([22, 40], [1, 3], NO_EQ, [24, 44], { negotiation_leverage: "low", notes: "IAF Squadron Leader / Wing Commander, 7th CPC pay matrix." }),
       senior: s([40, 65], [2, 5], NO_EQ, [44, 70], { negotiation_leverage: "low", notes: "IAF Group Captain / Air Commodore." }),
       lead: s([60, 90], [3, 7], NO_EQ, [65, 100], { notes: "Air Vice Marshal / Air Marshal." }),
     },
@@ -3040,7 +3040,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   },
 
   // ─── INVESTMENT BANKER (Analyst → MD ladder; bulge bracket) ───
-  /* Distinct from generic 'finance' — IB has a unique progression
+  /* Distinct from generic 'finance', IB has a unique progression
      (Analyst → Associate → VP → Director → MD) with steep cash +
      bonus curve. Bulge bracket at GS/MS/JPMC pays 1.5-2x boutique. */
   "investment-banker": {
@@ -3155,7 +3155,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   },
 };
 
-/** Role key aliases — when a role key has no data, fall back to this key */
+/** Role key aliases, when a role key has no data, fall back to this key */
 export const ROLE_ALIASES: Partial<Record<RoleKey, RoleKey>> = {
   "ai-engineer": "ml-engineer",
   "cloud-engineer": "devops-sre",
@@ -3204,7 +3204,7 @@ const _EXP_NEIGHBORS: Record<ExperienceLevel, ExperienceLevel[]> = {
   lead:      ["lead", "senior", "executive", "mid", "entry"],
   executive: ["executive", "lead", "senior", "mid", "entry"],
 };
-/* Inline mini-fallback for tier — mirrors getSalaryTierFallback in
+/* Inline mini-fallback for tier, mirrors getSalaryTierFallback in
    company-tiers.ts. Kept in-file to avoid a circular import. */
 const _TIER_FALLBACK: Partial<Record<CompanyTier, CompanyTier>> = {
   "big-tech": "faang",
@@ -3220,7 +3220,7 @@ const _TIER_FALLBACK: Partial<Record<CompanyTier, CompanyTier>> = {
 
 interface _SiblingHit {
   band: SalaryEntry;
-  /* Provenance string — which (role, tier, exp) the band came from. */
+  /* Provenance string, which (role, tier, exp) the band came from. */
   source: string;
 }
 
@@ -3365,7 +3365,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     chro: "hr",
     cmo: "marketing",
     cro: "sales",
-    /* Session A audit (2026-05-14) — acronyms that previously fell to
+    /* Session A audit (2026-05-14), acronyms that previously fell to
      * software-engineer default. */
     tpm: "program-manager",
     pmm: "product-marketing-manager",
@@ -3377,9 +3377,9 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
   // Ordered from most specific to least specific to avoid false matches
   const patterns: [string[], RoleKey][] = [
     /* ─── 2026 niche-routing patterns (must come BEFORE generic
-       patterns — these handle the long tail of specialised titles
+       patterns, these handle the long tail of specialised titles
        that previously routed to software-engineer default). ─── */
-    /* Civil Services — IAS / IPS / state cadre / SDM / collector etc. */
+    /* Civil Services, IAS / IPS / state cadre / SDM / collector etc. */
     [["ias officer", "ips officer", "ifs officer", "irs officer", "iaas officer", "iis officer",
       "indian administrative service", "indian police service", "indian foreign service",
       "indian revenue service", "indian forest service", "indian audit", "indian information service",
@@ -3394,14 +3394,14 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "city magistrate", "revenue officer", "land records officer", "conservator of forest",
       "chief conservator of forest", "forest range officer", "range officer", "deputy range officer",
       "ifoss officer", "ifs officer (forest)"], "civil-services"],
-    /* Police hierarchy explicit — DSP / SP / DGP etc. (separate from
+    /* Police hierarchy explicit, DSP / SP / DGP etc. (separate from
        civil-services because some users target police specifically). */
     [["sub-inspector", "sub inspector", "inspector (police)", "police inspector", "dsp",
       "additional sp", "sp (police)", "senior sp", "dig (police)", "ig (police)", "additional dgp",
       "dgp", "special dgp", "police constable", "head constable", "asi", "assistant sub-inspector",
       "deputy commissioner of police", "dcp", "acp", "assistant commissioner of police",
       "commissioner of police"], "civil-services"],
-    /* Defence ranks — route to civil-services tier (govt-psu band).
+    /* Defence ranks, route to civil-services tier (govt-psu band).
        More specific than the generic "officer" pattern below. */
     [["sepoy", "lance naik", "havildar", "subedar major", "junior commissioned officer",
       "honorary lieutenant", "honorary captain", "lieutenant colonel", "field marshal",
@@ -3411,7 +3411,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "crpf officer", "cisf officer", "ssb officer", "assam rifles officer", "nsg officer",
       "spg officer", "raf officer", "indian army", "indian navy", "indian air force",
       "indian coast guard", "ndc officer"], "civil-services"],
-    /* Performing Arts — classical dance / vocals / instruments / Bollywood. */
+    /* Performing Arts, classical dance / vocals / instruments / Bollywood. */
     [["bharatanatyam", "kathak", "kathakali", "kuchipudi", "mohiniyattam", "odissi", "manipuri",
       "sattriya", "hindustani vocalist", "carnatic vocalist", "playback singer", "music director",
       "sitar player", "sitar guru", "tabla player", "tabla guru", "sarod player", "veena player",
@@ -3422,7 +3422,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "lyricist (bollywood)", "songwriter", "theatre actor", "stand-up comedian", "stand up comedian",
       "improv performer", "mime artist", "magician", "illusionist", "puppeteer", "storyteller",
       "sutradhar", "performing artist", "cultural artist", "akademi awardee", "padma awardee"], "performing-arts"],
-    /* Religious / spiritual roles — route to performing-arts band
+    /* Religious / spiritual roles, route to performing-arts band
        (closest analog: lumpy income, teaching + festival circuit). */
     [["pandit", "purohit", "brahmin priest", "vedic scholar", "acharya", "mahant", "swami",
       "shankaracharya", "imam", "mufti", "maulana", "maulvi", "qari", "hafiz", "granthi",
@@ -3431,7 +3431,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "rinpoche", "bhikkhu", "bhikkhuni", "jain monk", "sadhu", "sadhvi", "astrologer",
       "vedic astrologer", "numerologist", "palmist", "vastu consultant", "feng shui consultant",
       "tarot reader", "religious scholar", "theology professor"], "performing-arts"],
-    /* Nursing — split from doctor. ICU / OT / ward / ANM etc. */
+    /* Nursing, split from doctor. ICU / OT / ward / ANM etc. */
     [["staff nurse", "registered nurse", "nurse practitioner", "nursing officer", "icu nurse",
       "operation theatre nurse", "ot nurse", "er nurse", "pediatric nurse", "oncology nurse",
       "ward sister", "charge nurse", "nursing sister", "nursing superintendent",
@@ -3439,7 +3439,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "director of nursing", "school nurse", "public health nurse", "anm", "auxiliary nurse midwife",
       "asha worker", "anganwadi worker", "multi-purpose health worker",
       "nursing trainee", "nursing intern", "nursing", "nurse"], "nursing"],
-    /* Hardware Engineer — VLSI / RTL / Verification / Physical Design / ASIC / FPGA / Analog. */
+    /* Hardware Engineer, VLSI / RTL / Verification / Physical Design / ASIC / FPGA / Analog. */
     [["vlsi", "rtl design", "rtl engineer", "physical design engineer", "pd engineer",
       "verification engineer", "dv engineer", "uvm verification", "formal verification",
       "asic design", "asic engineer", "fpga engineer", "fpga design", "dsp engineer",
@@ -3448,7 +3448,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "post-silicon validation", "pre-silicon validation", "chip design", "soc design",
       "soc engineer", "hardware design engineer", "ic design", "semiconductor design",
       "wafer process engineer", "photonics engineer"], "hardware-engineer"],
-    /* Hospital granular staff — route to nursing (closest band match
+    /* Hospital granular staff, route to nursing (closest band match
        for OT/ward/lab-tech roles). */
     [["ot assistant", "ot technologist", "ot technician", "ward boy", "ward helper",
       "health inspector", "sanitary inspector", "physiotherapy assistant",
@@ -3457,7 +3457,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "x-ray technician", "mri technician", "ct scan technician", "sonographer",
       "cath lab technician", "dialysis technician", "anesthesia technician", "ecg technician",
       "lab technician", "medical technologist"], "nursing"],
-    /* Niche legal specializations explicit — Senior Counsel / Disputes etc. */
+    /* Niche legal specializations explicit, Senior Counsel / Disputes etc. */
     [["senior counsel", "principal associate (law)", "general counsel", "deputy general counsel",
       "in-house counsel", "company secretary", "head of legal", "managing partner (law)",
       "litigation lawyer", "litigation counsel", "disputes lawyer", "arbitration specialist",
@@ -3468,25 +3468,25 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "ai/tech lawyer", "anti-bribery officer", "fcpa specialist", "sanctions officer",
       "trade compliance specialist", "legal operations manager", "legal ops lead",
       "legal tech manager", "paralegal"], "legal"],
-    /* Quant niche — route to data-scientist (override for "Risk Quant"
+    /* Quant niche, route to data-scientist (override for "Risk Quant"
        and similar that previously went to SE). */
     [["risk quant", "quant risk", "quant risk manager", "quant strategist",
       "quant developer", "systematic strategist"], "data-scientist"],
-    /* Marketing analytics niche — route to data-analyst. */
+    /* Marketing analytics niche, route to data-analyst. */
     [["attribution analyst", "mix modeling analyst", "mmm analyst", "marketing data analyst",
       "marketing analyst", "digital analytics manager", "adobe analytics specialist",
       "ga4 specialist", "web analyst"], "data-analyst"],
-    /* Compensation / payroll / HRIS niche — route to hr. */
+    /* Compensation / payroll / HRIS niche, route to hr. */
     [["compensation analyst", "comp analyst", "compensation & benefits", "c&b manager",
       "total rewards manager", "benefits manager", "payroll manager", "payroll specialist",
       "hris manager", "workday specialist", "successfactors specialist", "peoplesoft specialist",
       "oracle hcm specialist", "people analytics manager", "people analytics lead"], "hr"],
-    /* Procurement niche — route to operations. */
+    /* Procurement niche, route to operations. */
     [["procurement executive", "procurement manager", "procurement director", "vp procurement",
       "chief procurement officer", "strategic sourcing manager", "senior sourcing manager",
       "category manager (procurement)", "indirect buyer", "direct buyer", "vendor manager",
       "vendor development manager", "demand planner", "supply planner", "s&op manager"], "operations"],
-    /* Accounts ladder explicit — route to finance. */
+    /* Accounts ladder explicit, route to finance. */
     [["accounts payable", "ap manager", "ap lead", "p2p analyst", "accounts receivable",
       "ar manager", "ar lead", "o2c analyst", "gl accountant", "gl manager", "r2r analyst",
       "forensic accountant", "forensic auditor", "fraud examiner", "internal auditor",
@@ -3498,17 +3498,17 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "corporate finance analyst", "fp&a analyst", "fp&a manager", "fp&a director",
       "business finance partner", "commercial finance manager", "pricing analyst",
       "pricing manager", "pricing director"], "finance"],
-    /* Insurance underwriter / actuary niche — route to finance. */
+    /* Insurance underwriter / actuary niche, route to finance. */
     [["insurance underwriter", "underwriter", "insurance sales officer", "insurance advisor",
       "insurance surveyor", "loss adjuster", "actuary", "pricing actuary", "reserving actuary",
       "reinsurance analyst", "claims manager", "claims adjuster"], "finance"],
-    /* Fintech / payments / cards niche — route to product-manager. */
+    /* Fintech / payments / cards niche, route to product-manager. */
     [["payments engineer", "payments architect", "payments operations", "merchant acquiring manager",
       "card issuing manager", "upi engineer", "card network engineer", "reconciliation engineer",
       "settlement engineer", "chargeback specialist", "fintech product manager", "lending product manager",
       "cards product manager", "payments product manager", "insurance product manager",
       "wealth tech pm", "wealthtech product manager"], "product-manager"],
-    /* AI niche specialist titles — route to ai-engineer. */
+    /* AI niche specialist titles, route to ai-engineer. */
     [["llm engineer", "rag engineer", "ai agents engineer", "agentic systems", "prompt engineer",
       "prompt ops engineer", "ai solutions architect", "ai platform engineer", "ai infrastructure engineer",
       "ai research scientist", "ai research engineer", "ai product manager", "head of ai",
@@ -3522,7 +3522,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "tool-use engineer", "multimodal ai", "generative vision engineer", "diffusion models engineer",
       "ai red teamer", "ai penetration tester", "ai audit specialist", "ai bias auditor",
       "ai model governance", "ai risk & compliance", "synthetic media detection", "deepfake forensics"], "ai-engineer"],
-    /* Cybersecurity niche — incident response, AppSec, IAM, etc. */
+    /* Cybersecurity niche, incident response, AppSec, IAM, etc. */
     [["soc analyst", "soc l1", "soc l2", "soc l3", "threat hunter", "threat intelligence analyst",
       "incident response engineer", "incident response specialist", "incident responder",
       "appsec engineer", "appsec architect", "cloud security engineer", "cloud security architect",
@@ -3580,31 +3580,31 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "property sales manager", "real estate investment analyst", "reit analyst", "reit manager",
       "property manager", "facility manager", "soft services manager", "hard services manager",
       "mall manager", "retail property manager"], "operations"],
-    /* Architecture & urban design — route to design-engineer (closest
-       structurally — both are senior-IC creative ladders). */
+    /* Architecture & urban design, route to design-engineer (closest
+       structurally, both are senior-IC creative ladders). */
     [["architect", "design architect", "project architect", "lead architect", "architectural designer",
       "interior architect", "interior designer", "interior decorator", "interior stylist",
       "set designer", "urban designer", "urban planner", "town planner", "master planner",
       "transport planner", "landscape architect", "landscape designer", "bim manager",
       "bim coordinator", "bim modeler", "revit specialist"], "design-engineer"],
-    /* PSU engineer ladder — route to mechanical (broad PSU comp). */
+    /* PSU engineer ladder, route to mechanical (broad PSU comp). */
     [["junior engineer (psu)", "assistant engineer (psu)", "executive engineer (psu)",
       "superintending engineer", "chief engineer (psu)", "agm (psu)", "dgm (psu)", "gm (psu)",
       "ed (psu)", "director (psu)", "isro scientist", "drdo scientist", "barc scientist",
       "bhel engineer", "ntpc engineer", "ongc engineer", "gail engineer", "iocl engineer",
       "bpcl engineer", "hpcl engineer", "coal india engineer", "nmdc engineer", "sail engineer",
       "rvnl engineer", "dmrc engineer"], "mechanical-engineer"],
-    /* Fashion / apparel / jewelry — route to design-engineer. */
+    /* Fashion / apparel / jewelry, route to design-engineer. */
     [["fashion designer", "pattern maker", "textile designer", "apparel merchandiser",
       "apparel quality inspector", "jewelry designer", "diamond grader", "gemologist",
       "cad jewelry designer", "fashion stylist"], "design-engineer"],
-    /* Cleantech / EV / battery — route to electrical-engineer. */
+    /* Cleantech / EV / battery, route to electrical-engineer. */
     [["sustainability engineer", "carbon accounting specialist", "esg reporting specialist",
       "climate tech engineer", "cleantech product manager", "hydrogen engineer", "carbon capture engineer",
       "electrolyzer engineer", "battery engineer", "battery pack designer", "cell engineer",
       "ev powertrain engineer", "motor controller engineer", "power electronics engineer",
       "bms engineer", "renewable energy engineer", "solar energy engineer", "wind energy engineer"], "electrical-engineer"],
-    /* Aerospace specialist titles — route to mechanical-engineer. */
+    /* Aerospace specialist titles, route to mechanical-engineer. */
     [["aerospace engineer", "aircraft maintenance engineer", "ame", "aircraft design engineer",
       "avionics engineer", "flight test engineer", "aerodynamics engineer", "propulsion engineer",
       "stress engineer", "aircraft structural engineer", "composite engineer (aero)",
@@ -3640,13 +3640,13 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["robotics software engineer", "robotics hardware engineer", "robot perception engineer",
       "robot motion planning engineer", "cobot engineer", "robotic process automation developer",
       "robotics researcher"], "embedded-engineer"],
-    /* Pilots — dedicated RoleKey (distinct comp curve from operations). */
+    /* Pilots, dedicated RoleKey (distinct comp curve from operations). */
     [["pilot", "trainee pilot", "cadet pilot", "co-pilot", "first officer", "type-rated first officer",
       "type-rated captain", "line check captain", "designated examiner", "chief pilot",
       "director of flight operations", "vp flight operations", "captain (pilot)", "second officer",
       "commercial pilot", "airline pilot", "helicopter pilot", "private pilot", "charter pilot",
       "business jet pilot"], "pilot"],
-    /* Aviation cabin crew / ATC / AME — route to operations. */
+    /* Aviation cabin crew / ATC / AME, route to operations. */
     [["cabin crew", "lead cabin crew", "cabin manager", "inflight service manager", "purser",
       "aircraft mechanic", "avionics mechanic", "engine mechanic",
       "ame (airframe)", "ame (engine)", "ame (avionics)", "ame (electrical)",
@@ -3654,7 +3654,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "air traffic controller", "atco", "watch supervisor (atc)", "atc manager",
       "ground staff", "ground operations manager", "airport operations manager", "airport manager",
       "station manager", "ramp agent", "airline customer service agent", "airline reservations agent"], "operations"],
-    /* Investment Banker — dedicated RoleKey (distinct from finance). */
+    /* Investment Banker, dedicated RoleKey (distinct from finance). */
     [["investment banking analyst", "ib analyst", "investment banking associate", "ib associate",
       "ib vp", "ib director", "ib managing director", "ib senior managing director",
       "m&a analyst", "m&a associate", "m&a vp", "ecm analyst", "dcm analyst",
@@ -3664,18 +3664,18 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "venture partner", "investment partner", "principal (vc)", "senior associate (vc)",
       "associate (vc)", "analyst (vc)", "investment director", "managing director (vc)",
       "investment manager", "portfolio manager (vc)"], "investment-banker"],
-    /* Architect (building / urban / interior — distinct from design-engineer). */
+    /* Architect (building / urban / interior, distinct from design-engineer). */
     [["architect", "junior architect", "design architect", "senior design architect",
       "lead architect", "project architect", "principal architect", "architectural designer",
       "architect trainee", "interior architect", "landscape architect", "urban architect",
       "architectural visualizer", "studio principal architect"], "architect"],
-    /* Chef / F&B kitchen ladder — dedicated RoleKey. */
+    /* Chef / F&B kitchen ladder, dedicated RoleKey. */
     [["chef", "executive chef", "senior sous chef", "sous chef", "chef de partie",
       "demi chef de partie", "commis chef", "pastry chef", "senior pastry chef", "bakery chef",
       "banquet chef", "continental chef", "indian chef", "tandoor chef", "chinese chef",
       "asian chef", "celebrity chef", "consultant chef", "corporate chef",
       "head chef", "saucier", "garde manger", "patissier"], "chef"],
-    /* Hospitality F&B / kitchen ladder — route to operations. */
+    /* Hospitality F&B / kitchen ladder, route to operations. */
     [["hotel general manager", "hotel manager", "resident manager", "front office manager",
       "reception manager", "reservations manager", "concierge", "f&b manager", "f and b manager",
       "banquet manager", "restaurant manager", "bar manager", "mixologist", "bartender", "sommelier",
@@ -3694,7 +3694,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "e-commerce manager", "catalog manager", "listing specialist", "pricing manager (retail)",
       "discount strategy manager", "cashier", "floor associate", "sales associate",
       "customer service associate (retail)", "loss prevention officer"], "operations"],
-    /* Trades / skilled labour — route to operations (PSU/services). */
+    /* Trades / skilled labour, route to operations (PSU/services). */
     [["electrician", "plumber", "carpenter", "welder", "tig welder", "mig welder", "pipe welder",
       "structural welder", "mason", "construction worker", "tile layer", "painter (construction)",
       "auto mechanic", "diesel mechanic", "heavy equipment mechanic", "two-wheeler mechanic",
@@ -3705,7 +3705,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
       "heavy vehicle driver", "jcb operator", "earthmover operator", "lineman", "cable joiner",
       "tower lineman", "survey engineer", "total station operator", "gis surveyor", "dgps surveyor",
       "gis analyst", "geographic information system analyst"], "operations"],
-    /* Government clerical / Group C/D ladder — route to operations
+    /* Government clerical / Group C/D ladder, route to operations
        (closest comp curve via it-services tier). */
     [["multi-tasking staff", "mts", "group d employee", "group c employee", "lower division clerk",
       "ldc", "upper division clerk", "udc", "stenographer", "section officer (govt)",
@@ -3796,41 +3796,41 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["data scientist", "research scientist"], "data-scientist"],
     [["data analyst", "business intelligence", "bi analyst", "bi developer"], "data-analyst"],
     [["data engineer", "data architect"], "data-engineer"],
-    /* Consulting (was missing — "Management Consultant" was falling
+    /* Consulting (was missing, "Management Consultant" was falling
        through to software-engineer fallback). Match BEFORE engineering-
        manager since "Engagement Manager" contains "manager". */
     [["management consultant", "strategy consultant", "associate consultant", "engagement manager", "principal consultant", "consulting analyst"], "consultant"],
-    /* Quant — there's no RoleKey "quant", so route to data-scientist
+    /* Quant, there's no RoleKey "quant", so route to data-scientist
        (closest tier-comp profile in our taxonomy). The override map
        layers the actual quant numbers on top per firm (Jane Street,
        DE Shaw, Citadel). */
     [["quantitative researcher", "quantitative trader", "quantitative developer", "quant trader", "quant researcher", "quant developer", "systematic trader"], "data-scientist"],
-    /* Sales / Banking RM / Realty / Pharma MR — was falling to
+    /* Sales / Banking RM / Realty / Pharma MR, was falling to
        software-engineer default. */
     [["relationship manager", "bank po", "ibps po", "sbi po", "sales executive", "sales manager", "account executive", "key account manager", "business development manager", "channel manager", "territory manager", "area sales manager", "regional sales manager", "branch manager", "wealth manager", "loan officer", "financial advisor", "medical representative", "real estate agent", "property consultant"], "sales"],
-    /* Marketing / Brand — needed for FMCG MT track. */
+    /* Marketing / Brand, needed for FMCG MT track. */
     [["brand manager", "marketing manager", "digital marketing", "growth manager", "performance marketing", "product marketing manager", "marketing executive", "management trainee", "category manager", "shopper marketing"], "marketing"],
-    /* Operations — aviation / hotels / hospital / general ops.
+    /* Operations, aviation / hotels / hospital / general ops.
      * Session A audit (2026-05-14): added "operations lead", "ops lead",
      * "mgr operations", "manager operations" so abbreviations + reversed
      * word-order ("Mgr. Operations") classify correctly. */
     [["operations lead", "ops lead", "head of operations", "head of ops",
       "mgr operations", "manager operations", "asst manager operations",
       "operations manager", "operations executive", "ops manager", "supply chain", "logistics manager", "warehouse manager", "fleet manager", "front office", "f&b manager", "f and b manager", "housekeeping manager", "ground staff", "cabin crew", "flight attendant", "airport operations", "ground operations", "operations analyst", "production manager", "delivery manager", "shift manager", "site engineer", "site manager", "plant manager", "plant head", "category buyer", "store manager", "retail manager", "buyer", "merchandiser", "visual merchandiser", "marketplace manager", "ecommerce manager", "catalog manager", "listing specialist", "pricing analyst", "pricing manager", "import-export", "trade compliance", "custom broker", "process engineer", "quality engineer", "quality manager", "industrial engineer", "ehs manager", "safety officer", "lean manager", "continuous improvement manager", "kaizen manager", "maintenance engineer", "reliability engineer", "estimation engineer", "tender manager", "planning engineer", "quantity surveyor", "tour operator", "travel consultant", "travel manager", "hotel manager", "chef", "sous chef", "head chef", "executive chef", "pastry chef", "bartender", "sommelier"], "operations"],
-    /* Sound / audio engineering — domain "operations" rather than SWE. */
+    /* Sound / audio engineering, domain "operations" rather than SWE. */
     [["sound engineer", "audio engineer", "music producer", "dj", "composer"], "operations"],
-    /* Writing / editorial / journalism / content design — was silently
+    /* Writing / editorial / journalism / content design, was silently
        falling to software-engineer for all 100+ writer roles in
        ROLE_SUGGESTIONS. Routes to content-writer key. */
     [["technical writer", "content writer", "copywriter", "editor", "editor-in-chief", "managing editor", "executive editor", "associate editor", "assistant editor", "senior editor", "copy editor", "line editor", "developmental editor", "substantive editor", "proofreader", "fact-checker", "content strategist", "ux writer", "content designer", "conversation designer", "microcopy", "voice & tone", "localization writer", "localization specialist", "screenwriter", "scriptwriter", "script editor", "story editor", "showrunner", "head writer", "dialogue writer", "tv writer", "film writer", "web series writer", "lyricist", "songwriter", "voiceover", "youtube scriptwriter", "video script", "podcast writer", "audio drama", "comic book writer", "graphic novel", "narrative writer", "quest writer", "lore writer", "worldbuilder", "story designer", "branching narrative", "journalist", "reporter", "correspondent", "war correspondent", "crime reporter", "business journalist", "tech journalist", "political journalist", "entertainment journalist", "lifestyle writer", "travel writer", "food writer", "fashion writer", "columnist", "op-ed writer", "beat reporter", "stringer", "photojournalist", "multimedia journalist", "data journalist", "wire reporter", "bureau chief", "sports journalist", "sports editor", "cricket writer", "match reporter", "court reporter", "sub-editor", "speechwriter", "press release writer", "crisis communications writer", "annual report writer", "investor communications writer", "internal communications writer", "executive communications writer", "pr writer", "communications writer", "research writer", "academic writer", "academic editor", "thesis writer", "dissertation editor", "grant writer", "grant proposal", "white paper writer", "case study writer", "report writer", "policy writer", "rfp writer", "bid writer", "tender writer", "literature review writer", "book editor", "manuscript editor", "ghostwriter", "author", "novelist", "non-fiction author", "children's book writer", "poet", "poetry editor", "translator", "literary translator", "self-publishing", "substack", "newsletter author", "newsletter writer", "audiobook narrator", "indie author", "legal writer", "legal editor", "contract drafter", "compliance writer", "regulatory writer", "privacy policy writer", "medical writer", "scientific writer", "clinical writer", "pharma content writer", "cme writer", "financial writer", "investment research writer", "equity research writer", "fintech content writer", "crypto writer", "customer story writer", "sales enablement writer", "product marketing writer", "solution writer", "demo script writer", "interpreter", "subtitler", "closed captioning", "transcriptionist", "social media writer", "social media copywriter", "brand voice writer", "twitter copywriter", "linkedin ghostwriter", "instagram copywriter", "influencer content writer", "reel caption", "thread writer", "resume writer", "linkedin profile writer", "bio writer", "ai content editor", "ai prompt writer", "ai training writer", "synthetic data writer", "creative copywriter", "brand copywriter", "performance copywriter", "conversion copywriter", "direct response copywriter", "ad copywriter", "digital copywriter", "print copywriter", "landing page copywriter", "sales page copywriter", "aso writer", "blog writer", "article writer", "feature writer", "email copywriter", "lifecycle email writer", "long-form content writer", "short-form content writer", "b2b content writer", "b2c content writer", "saas content writer", "seo content writer", "seo content strategist", "seo editor", "documentation engineer", "documentation specialist", "knowledge base writer", "help center writer", "release notes writer", "sdk documentation writer", "api documentation writer", "developer documentation writer"], "content-writer"],
-    /* Finance / accounting / banking analyst sub-roles — were
+    /* Finance / accounting / banking analyst sub-roles, were
        silently routing to SWE. Many specific subtypes here. */
     [["statutory auditor", "internal auditor", "auditor", "audit manager", "tax consultant", "gst consultant", "accounts executive", "accounts manager", "accountant", "fp&a analyst", "fpa analyst", "treasury analyst", "risk analyst", "credit analyst", "credit risk analyst", "market risk analyst", "operational risk analyst", "model risk analyst", "compliance officer", "finance manager", "finance controller", "financial controller", "financial analyst", "investment analyst", "investment banking analyst", "equity research analyst", "equity research", "m&a analyst", "private equity analyst", "venture capital analyst", "investment associate", "principal", "quantitative analyst", "quant analyst", "equity trader", "fixed income analyst", "derivatives analyst", "cost accountant", "icwa", "forensic accountant", "management accountant", "aml analyst", "kyc analyst", "transaction monitoring analyst", "wealth management associate", "private banker", "family office analyst", "equity sales", "equity capital markets analyst", "debt capital markets analyst", "actuarial analyst", "underwriter", "claims manager", "fund accountant"], "finance"],
     /* Legal / IP / compliance / paralegal sub-roles. */
     [["legal counsel", "corporate lawyer", "legal associate", "company secretary", "compliance manager", "ip lawyer", "patent attorney", "trademark attorney", "ip analyst", "litigation associate", "arbitration specialist", "tax lawyer", "m&a lawyer", "real estate lawyer", "banking lawyer", "privacy counsel", "data protection officer", "paralegal", "legal operations manager", "contract manager"], "legal"],
-    /* Healthcare specialists — route to doctor. */
+    /* Healthcare specialists, route to doctor. */
     [["nurse", "staff nurse", "icu nurse", "ot nurse", "nursing superintendent", "physiotherapist", "occupational therapist", "speech therapist", "audiologist", "radiologist", "pathologist", "microbiologist", "biochemist", "dietician", "nutritionist", "clinical nutritionist", "anesthesiologist", "cardiologist", "oncologist", "neurologist", "psychiatrist", "pediatrician", "gynecologist", "orthopedic surgeon", "ent specialist", "dermatologist", "psychologist", "counselor", "therapist", "clinical psychologist", "resident doctor", "junior resident", "senior resident", "clinical research manager", "regulatory affairs manager", "bioinformatics analyst", "health informatics manager", "clinical data manager", "pharmacovigilance officer", "drug safety associate", "medical coder", "medical officer", "hospital administrator", "healthcare manager", "dentist"], "doctor"],
-    /* Marketing sub-roles — Product Marketing Manager etc. */
+    /* Marketing sub-roles, Product Marketing Manager etc. */
     [["product marketing manager", "senior product marketing manager", "director of product marketing", "email marketing manager", "marketing operations manager", "martech manager", "lifecycle marketing manager", "retention marketing manager", "abm manager", "field marketing manager", "influencer marketing manager", "affiliate manager", "partnerships manager", "strategic partnerships manager", "alliance manager", "community manager", "customer marketing manager", "marketing analyst", "growth analyst", "brand strategist", "brand director", "brand executive", "brand solutions manager", "pr executive", "pr manager", "communications specialist", "events manager", "trade marketing manager", "newsletter manager", "performance marketing manager", "growth manager", "head of growth", "vp of marketing", "chief marketing officer", "cmo"], "marketing"],
     /* HR specialisations beyond generic. */
     [["hr generalist", "payroll manager", "hris analyst", "hr operations manager", "diversity & inclusion manager", "dei lead", "employee relations manager", "hr analyst", "people analytics manager", "workforce planning manager", "sourcer", "recruiting coordinator", "campus recruiter", "executive search consultant", "employer branding manager", "org design consultant", "training manager", "l&d manager", "learning and development", "compensation & benefits manager", "people operations manager", "head of hr", "vp of people", "chro"], "hr"],
@@ -3855,7 +3855,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["dba", "database administrator", "database admin", "database engineer", "database architect", "sql developer", "etl developer", "power bi developer", "tableau developer", "looker developer", "qlik developer", "informatica developer", "oracle dba", "pl/sql developer", "mainframe developer", "cobol developer", "as400 developer"], "database-administrator"],
     [["network engineer", "network admin", "ccna", "ccnp", "ccie", "network architect", "linux administrator", "windows administrator", "noc engineer", "network operations engineer"], "network-engineer"],
     [["tech support engineer", "application support engineer", "l1 support", "l2 support", "l3 support", "production support engineer", "it support specialist", "helpdesk engineer", "support engineer"], "customer-success"],
-    /* Firmware engineer — distinct from embedded (closer-to-hardware
+    /* Firmware engineer, distinct from embedded (closer-to-hardware
        silicon/SoC/peripheral firmware, vs embedded which spans embedded
        application software). Must be matched BEFORE the embedded
        patterns to win precedence. Session B (2026-05-14): RoleKey added
@@ -3865,7 +3865,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["embedded software engineer", "rtos", "iot engineer", "iot architect", "edge computing engineer", "hardware engineer"], "embedded-engineer"],
     /* Solutions architect. */
     [["solutions architect", "solution architect", "enterprise architect", "domain architect", "integration architect", "salesforce solutions architect"], "solutions-architect"],
-    /* Design / creative — was defaulting to SWE for ~50 roles. */
+    /* Design / creative, was defaulting to SWE for ~50 roles. */
     [["motion designer", "graphic designer", "industrial designer", "furniture designer", "footwear designer", "apparel designer", "fashion designer", "textile designer", "jewellery designer", "jewelry designer", "accessory designer", "interior designer", "landscape architect", "urban planner", "set designer", "exhibition designer", "service designer", "strategic designer", "design strategist", "design researcher", "brand designer", "identity designer", "packaging designer", "print designer", "type designer", "typography designer", "3d designer", "3d artist", "vfx artist", "compositor", "rotoscope artist", "animator", "character animator", "motion graphics artist", "storyboard artist", "concept artist", "illustrator", "layout artist", "lighting artist", "texture artist", "game designer", "level designer", "narrative designer", "photographer", "cinematographer", "dop", "director of photography", "creative director", "art director", "associate creative director", "executive creative director", "ux researcher", "voice & tone specialist", "information architect"], "ux-designer"],
     /* Marketing / advertising sub-roles missed earlier. */
     [["seo specialist", "sem specialist", "social media manager", "social media specialist", "social media executive", "public relations manager", "pr manager", "corporate communications manager", "communications manager", "internal communications manager", "content creator", "social media influencer", "influencer", "youtuber", "podcaster", "streamer", "voice artist", "dubbing artist", "rj", "radio jockey", "vj"], "marketing"],
@@ -3879,15 +3879,15 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["procurement manager", "planning manager", "six sigma black belt", "mis executive", "ops analyst", "operations analyst"], "operations"],
     /* Finance / banking subtypes (not already caught). */
     [["ca\\b", "cfo", "bank clerk", "credit manager", "insurance agent", "loan officer", "branch manager"], "finance"],
-    /* Company Secretary (CS) — legal-adjacent. */
+    /* Company Secretary (CS), legal-adjacent. */
     [["company secretary", "cs\\b"], "legal"],
-    /* MD (medical Degree) — distinguish from MD (Managing Director).
+    /* MD (medical Degree), distinguish from MD (Managing Director).
        Single token "md" alone is too ambiguous; use "md doctor" / "md medical". */
     [["mbbs", "physician", "surgeon", "specialist doctor", "junior doctor", "senior doctor"], "doctor"],
-    /* Civil services / govt — route to "consultant" since closest
+    /* Civil services / govt, route to "consultant" since closest
        comp profile (advisory, fixed pay, prestige-driven). */
     [["ias officer", "ips officer", "ifs officer", "irs officer", "irts officer", "irps officer", "indian foreign service", "indian police service", "indian revenue service", "indian forest service", "upsc aspirant", "state public service commission", "pcs officer", "ssc cgl", "ssc chsl", "ibps po", "sbi po", "rbi grade b", "sebi grade a", "nabard grade a", "sidbi grade a", "isro scientist", "drdo scientist", "barc scientist", "government scientist", "defence scientist", "forensic scientist", "cyber crime investigator", "psu engineer", "gate qualified engineer", "indian army officer", "indian navy officer", "indian air force officer", "nda cadet", "cds officer", "afcat officer"], "consultant"],
-    /* Sports / fitness — operations bucket (closest match in salary
+    /* Sports / fitness, operations bucket (closest match in salary
        data). */
     [["athlete", "sports coach", "sports trainer", "fitness trainer", "personal trainer", "yoga instructor", "sports analyst", "sports marketing manager", "sports agent"], "operations"],
     /* Real estate sub-roles (not already in sales). */
@@ -3898,7 +3898,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["software engineer intern", "data science intern", "product intern", "design intern", "marketing intern", "intern", "fresher", "campus hire", "apprentice", "trainee engineer", "graduate engineer trainee", "management trainee", "associate software engineer", "junior developer"], "software-engineer"],
     /* Freelance variants. */
     [["freelance developer", "freelance designer", "independent consultant", "contract engineer", "freelance writer", "freelance marketer"], "consultant"],
-    /* Acronyms — must come AFTER longer-pattern matches to avoid
+    /* Acronyms, must come AFTER longer-pattern matches to avoid
        false positives. CA / CS / MD as standalone tokens. */
     [["^ca$", "^cs$", "^md$"], "chartered-accountant"],
     /* Specific intern variants. */
@@ -3913,7 +3913,7 @@ export function matchRoleKeyResolved(role: string): { key: RoleKey; matched: boo
     [["forex trader", "trader", "systematic trader"], "finance"],
     /* Retail / e-commerce / cluster mgmt. */
     [["customs broker", "cluster manager", "e-commerce manager", "ecommerce manager", "marketplace manager"], "operations"],
-    /* Aviation crew (pilot tier — not in operations). */
+    /* Aviation crew (pilot tier, not in operations). */
     [["pilot", "first officer", "captain aviation", "aircraft maintenance engineer", "ame", "tourism manager"], "operations"],
     /* Media production. */
     [["producer", "line producer", "director", "assistant director", "production manager", "news anchor"], "marketing"],

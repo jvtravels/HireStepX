@@ -43,11 +43,11 @@
 /* ─── Types ───────────────────────────────────────────────────────── */
 
 export interface CompanyBenefits {
-  /** Health insurance — coverage amount and dependents covered. */
+  /** Health insurance, coverage amount and dependents covered. */
   healthInsurance: string;
-  /** Provident Fund — usually statutory 12% but some startups top up. */
+  /** Provident Fund, usually statutory 12% but some startups top up. */
   providentFund: string;
-  /** Gratuity policy — 5-year vesting is statutory in India. */
+  /** Gratuity policy, 5-year vesting is statutory in India. */
   gratuity: string;
   /** Paid time off (annual leave + sick + holidays). */
   paidTimeOff: string;
@@ -76,7 +76,7 @@ export interface CompanyCompensationStructure {
   /** RSU/ESOP vesting shape, e.g. "4-year, 1-year cliff". "n/a" when
    *  the company doesn't offer equity for standard hires. */
   vestingSchedule: string;
-  /** Optional context — refresh cycle, sign-on offset, etc. */
+  /** Optional context, refresh cycle, sign-on offset, etc. */
   notes: string;
 }
 
@@ -105,10 +105,10 @@ export interface CompanyFacts {
  *  Numbers are the statutory / typical floor — never a commitment. */
 export const GENERIC_INDIA_BENEFITS: CompanyBenefits = {
   healthInsurance: "Group health insurance covering employee + family (spouse, children, optionally parents), typical sum insured ₹5-10 lakh",
-  providentFund: "Provident Fund — statutory 12% employer contribution on basic, matched by employee",
-  gratuity: "Gratuity per Payment of Gratuity Act — vests at 5 years of continuous service",
+  providentFund: "Provident Fund, statutory 12% employer contribution on basic, matched by employee",
+  gratuity: "Gratuity per Payment of Gratuity Act, vests at 5 years of continuous service",
   paidTimeOff: "15-20 days annual leave + sick leave + national/state public holidays",
-  performanceBonus: "Annual performance bonus — variable component, typically 10-20% of CTC depending on role and rating",
+  performanceBonus: "Annual performance bonus, variable component, typically 10-20% of CTC depending on role and rating",
   learningBudget: "Annual learning and development allowance for certifications, conferences, and courses",
   workMode: "Hybrid work policy (typically 2-3 days in office)",
 };
@@ -127,7 +127,7 @@ export const GENERIC_INDIA_COMP: CompanyCompensationStructure = {
 export const GENERIC_INDIA_NOTICE: CompanyNoticeNorm = {
   expectedJoiningWindowDays: "Standard joining window is 60-90 days from offer letter",
   buyoutPolicy: "Notice-period buyout is negotiable case-by-case (typically up to 30-60 days)",
-  flexibility: "If you can join earlier, we can flex the start date — let us know your no-earlier-than date",
+  flexibility: "If you can join earlier, we can flex the start date, let us know your no-earlier-than date",
 };
 
 /* ─── Per-company unified facts ──────────────────────────────────── */
@@ -146,7 +146,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "21 days annual leave + 10 sick leave + ~12 public holidays",
       performanceBonus: "Annual variable pay, typically 10-15% of CTC tied to individual + business performance",
       learningBudget: "Access to Accenture Learning Hub + sponsored certifications (AWS, Azure, GCP, Salesforce, etc.)",
-      workMode: "Hybrid — typically 3 days in office, role-dependent",
+      workMode: "Hybrid, typically 3 days in office, role-dependent",
       signaturePerks: "Internal mobility, global project rotation, ESPP for eligible bands",
     },
     compStructure: { baseRatio: 0.85, variableRatio: 0.15, equityRatio: 0.0, bonusFrequency: "annual", vestingSchedule: "n/a", notes: "Performance bonus tied to annual ratings; no equity component for standard hires." },
@@ -163,7 +163,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "16-22 days annual leave (slab-based) + 8 sick + public holidays",
       performanceBonus: "Quarterly variable allowance + annual performance bonus, ~10% of CTC",
       learningBudget: "TCS iEvolve learning platform + role-based certifications sponsored",
-      workMode: "Hybrid — varies by project, mostly office-leaning",
+      workMode: "Hybrid, varies by project, mostly office-leaning",
     },
     compStructure: { baseRatio: 0.90, variableRatio: 0.10, equityRatio: 0.0, bonusFrequency: "quarterly", vestingSchedule: "n/a", notes: "Quarterly variable allowance based on QAVA." },
     noticeNorms: {
@@ -180,7 +180,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "15 days privilege leave + 12 sick + public holidays",
       performanceBonus: "Performance-linked variable, typically 8-12% of CTC",
       learningBudget: "Infosys Lex learning platform + paid certifications",
-      workMode: "Hybrid — typically 10 days/month in office",
+      workMode: "Hybrid, typically 10 days/month in office",
     },
     compStructure: { baseRatio: 0.88, variableRatio: 0.12, equityRatio: 0.0, bonusFrequency: "annual", vestingSchedule: "n/a", notes: "" },
     noticeNorms: {
@@ -212,7 +212,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "20+ days annual leave + 12 sick + bereavement + parental leave (24 weeks maternity, 12 weeks paternity)",
       performanceBonus: "Annual cash bonus (~15% of base, performance-linked) + GSU equity refresh cycle",
       learningBudget: "Generous learning stipend, conference attendance, internal Google University courses",
-      workMode: "Hybrid — 3 days in office (Bangalore / Gurgaon / Hyderabad)",
+      workMode: "Hybrid, 3 days in office (Bangalore / Gurgaon / Hyderabad)",
       signaturePerks: "Free meals, on-campus gym, wellness benefits, commute support, employee stock (GSU) refresh",
     },
     compStructure: { baseRatio: 0.55, variableRatio: 0.15, equityRatio: 0.30, bonusFrequency: "annual", vestingSchedule: "4-year, monthly after 1-year cliff", notes: "GSU equity grant; annual refreshers." },
@@ -230,7 +230,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "20 days annual leave + 10 sick + parental leave (26 weeks maternity, 6 weeks paternity)",
       performanceBonus: "Annual cash bonus (0-30% of base) + stock awards on hire + refresh",
       learningBudget: "LinkedIn Learning + Microsoft Learn + conference allowance",
-      workMode: "Hybrid — flexible, 2-3 days in office expected",
+      workMode: "Hybrid, flexible, 2-3 days in office expected",
       signaturePerks: "ESPP at 10% discount, wellness reimbursement, internet stipend",
     },
     compStructure: { baseRatio: 0.60, variableRatio: 0.15, equityRatio: 0.25, bonusFrequency: "annual", vestingSchedule: "4-year, 20/20/30/30 quarterly", notes: "Stock awards via Promote/Connect cycle." },
@@ -264,7 +264,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "24 days annual leave + 12 sick + parental leave (26 weeks maternity, 6 weeks paternity)",
       performanceBonus: "Annual performance bonus (10-20% of CTC) + ESOPs for select roles",
       learningBudget: "Internal Flipkart Learning Hub + external course sponsorship",
-      workMode: "Hybrid — typically 3 days in office",
+      workMode: "Hybrid, typically 3 days in office",
       signaturePerks: "ESOPs (RSU-style) for senior IC/manager roles, on-site cafeteria, wellness budget",
     },
     compStructure: { baseRatio: 0.70, variableRatio: 0.15, equityRatio: 0.15, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "ESOPs typical for senior roles." },
@@ -281,7 +281,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "Unlimited / flexible PTO (manager-approval), 26 weeks maternity, 4 weeks paternity",
       performanceBonus: "Performance bonus + ESOPs for eligible roles",
       learningBudget: "Annual learning stipend + internal courses",
-      workMode: "Hybrid — 3 days in office",
+      workMode: "Hybrid, 3 days in office",
       signaturePerks: "Free Swiggy One membership, food allowance, ESOPs for senior roles",
     },
     compStructure: { baseRatio: 0.70, variableRatio: 0.20, equityRatio: 0.10, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "" },
@@ -315,7 +315,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       paidTimeOff: "26 days annual leave (no separate sick leave) + 26 weeks maternity / 6 weeks paternity",
       performanceBonus: "Annual performance bonus + ESOPs (vest 4 years, 1-year cliff)",
       learningBudget: "Annual learning stipend (~₹50k) for courses/conferences",
-      workMode: "Hybrid — flexible, role-dependent",
+      workMode: "Hybrid, flexible, role-dependent",
       signaturePerks: "ESOPs at unicorn valuation, wellness reimbursement, internet allowance",
     },
     compStructure: { baseRatio: 0.75, variableRatio: 0.15, equityRatio: 0.10, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "ESOPs vested quarterly after cliff." },
@@ -325,14 +325,14 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       flexibility: "Early joining always welcome; flex on start date supported",
     },
   },
-  /* Zepto is intentionally notice-only — there's no curated benefits or
+  /* Zepto is intentionally notice-only, there's no curated benefits or
    * comp-structure data on file. Format helpers fall back to GENERIC_INDIA
    * for those domains. Do NOT fabricate the missing slices. */
   zepto: {
     noticeNorms: {
       expectedJoiningWindowDays: "30-day joining window preferred (early-stage pace)",
       buyoutPolicy: "Notice buyout up to 30 days supported",
-      flexibility: "We move fast — earliest possible start preferred",
+      flexibility: "We move fast, earliest possible start preferred",
     },
   },
 };

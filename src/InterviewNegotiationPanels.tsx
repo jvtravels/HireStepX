@@ -60,9 +60,17 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
     { icon: "5", title: "Close with next steps", desc: "Ask about timeline, offer letter, and start date. Don't leave it open-ended." },
   ];
 
+  // A target is valid when it parses to a positive LPA within a sane band.
+  // 200 LPA is a generous ceiling for Indian offers — beyond it the user
+  // almost certainly typed rupees or a typo, so we surface a hint rather
+  // than silently dropping the value.
+  const trimmedTarget = targetInput.trim();
+  const parsedTarget = parseFloat(trimmedTarget);
+  const targetValid = parsedTarget > 0 && parsedTarget <= 200;
+  const targetInvalid = trimmedTarget !== "" && !targetValid;
+
   const handleStart = () => {
-    const num = parseFloat(targetInput);
-    if (onSetTarget && num > 0) onSetTarget(num);
+    if (onSetTarget && targetValid) onSetTarget(parsedTarget);
     onDismiss();
   };
 
@@ -105,17 +113,20 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
             placeholder="e.g. 25"
             value={targetInput}
             onChange={e => setTargetInput(e.target.value)}
+            aria-invalid={targetInvalid}
             style={{
               flex: 1, fontFamily: ef.sans, fontSize: 13, padding: "8px 12px",
               borderRadius: 8, background: "rgba(20,17,10,0.04)",
-              border: "1px solid rgba(20,17,10,0.06)", color: e.coal,
-              outline: "none",
+              border: `1px solid ${targetInvalid ? e.error : "rgba(20,17,10,0.06)"}`,
+              color: e.coal, outline: "none",
             }}
           />
           <span style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft }}>LPA</span>
         </div>
-        <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0 }}>
-          Setting a target helps us coach you on whether you anchored high enough.
+        <p style={{ fontFamily: ef.sans, fontSize: 10, color: targetInvalid ? e.error : e.inkSoft, margin: 0 }}>
+          {targetInvalid
+            ? "Enter your target as annual LPA — a number between 1 and 200 (e.g. 25)."
+            : "Setting a target helps us coach you on whether you anchored high enough."}
         </p>
       </div>
 
@@ -936,7 +947,10 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
         if (offerMatch) {
           const offer = parseFloat(offerMatch[1]);
           if (negotiationBand) {
-            const bandPos = ((offer - negotiationBand.walkAway) / (negotiationBand.maxStretch - negotiationBand.walkAway)) * 100;
+            const range = negotiationBand.maxStretch - negotiationBand.walkAway;
+            const bandPos = range > 0
+              ? Math.max(0, Math.min(100, ((offer - negotiationBand.walkAway) / range) * 100))
+              : 50;
             annotations.push({ type: "neutral", text: `Offered ₹${offer} LPA (${Math.round(bandPos)}% of their range).` });
           }
         }

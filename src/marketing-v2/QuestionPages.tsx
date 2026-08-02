@@ -800,7 +800,7 @@ export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsI
               {[
                 {
                   q: "How do I prepare for a campus placement interview in India?",
-                  a: "Three layers: (1) Online test — aptitude speed, basic coding (arrays, linked lists, sorting), and verbal reasoning. (2) Technical interview — CS fundamentals (OOP, OS, DBMS, networking), one or two DSA problems, and a project you can defend. (3) HR round — clear answers on relocation and shifts, a specific answer to 'why this company', and a 60-second 'why should we hire you' with one measurable proof point. Practice speaking your answers aloud, not just writing them.",
+                  a: "Three layers: (1) Online test: aptitude speed, basic coding (arrays, linked lists, sorting), and verbal reasoning. (2) Technical interview: CS fundamentals (OOP, OS, DBMS, networking), one or two DSA problems, and a project you can defend. (3) HR round: clear answers on relocation and shifts, a specific answer to 'why this company', and a 60-second 'why should we hire you' with one measurable proof point. Practice speaking your answers aloud, not just writing them.",
                 },
                 {
                   q: "Which companies hire the most freshers in India in 2026?",
@@ -808,19 +808,19 @@ export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsI
                 },
                 {
                   q: "How do I answer 'tell me about yourself' in a fresher interview?",
-                  a: "Run in reverse-chronological order with a forward close: (1) Who you are now — major, graduation year, primary skill. (2) Your strongest proof point — one project, internship, or competition result with a measurable outcome. (3) Connection to the role — one sentence on why this company specifically. (4) Forward close — what you want to contribute or learn in year one. Target 60 to 90 seconds spoken. Never open with 'I was born in...' — begin with who you are today.",
+                  a: "Run in reverse-chronological order with a forward close: (1) Who you are now, major, graduation year, primary skill. (2) Your strongest proof point: one project, internship, or competition result with a measurable outcome. (3) Connection to the role: one sentence on why this company specifically. (4) Forward close: what you want to contribute or learn in year one. Target 60 to 90 seconds spoken. Never open with 'I was born in...'; begin with who you are today.",
                 },
                 {
                   q: "What DSA topics should freshers prepare for Indian campus placements?",
-                  a: "For TCS, Infosys, Wipro, Cognizant, and Accenture: arrays, linked lists, stacks, queues, basic trees (BST, traversals), and simple sorting. Basic DP (fibonacci, coin change) is tested at Wipro Turbo and Infosys SP/PP. For product companies (Razorpay, Flipkart, PhonePe): graphs (BFS/DFS, shortest path), advanced DP, and binary search on answer. For FAANG: medium-hard LeetCode level — graph traversal, DP with memoisation, sliding window, and two-pointer patterns.",
+                  a: "For TCS, Infosys, Wipro, Cognizant, and Accenture: arrays, linked lists, stacks, queues, basic trees (BST, traversals), and simple sorting. Basic DP (fibonacci, coin change) is tested at Wipro Turbo and Infosys SP/PP. For product companies (Razorpay, Flipkart, PhonePe): graphs (BFS/DFS, shortest path), advanced DP, and binary search on answer. For FAANG: medium-hard LeetCode level, graph traversal, DP with memoisation, sliding window, and two-pointer patterns.",
                 },
                 {
                   q: "How is AI voice interview practice different from practicing with friends?",
-                  a: "Three differences: (1) Speaking versus thinking — knowing an answer and saying it under pressure are different skills. AI voice interviews force you to articulate aloud, which is what live interviews test. (2) Consistent scoring — a friend can't reliably grade your STAR framework across 30 sessions. AI can. (3) Always available — the 72 hours before an interview is when practice matters most, and a partner isn't always free. HireStepX offers 2 free AI practice sessions with no credit card required.",
+                  a: "Three differences: (1) Speaking versus thinking: knowing an answer and saying it under pressure are different skills. AI voice interviews force you to articulate aloud, which is what live interviews test. (2) Consistent scoring: a friend can't reliably grade your STAR framework across 30 sessions. AI can. (3) Always available: the 72 hours before an interview is when practice matters most, and a partner isn't always free. HireStepX offers 2 free AI practice sessions with no credit card required.",
                 },
                 {
                   q: "What is the STAR method and how do I use it in behavioral interviews?",
-                  a: "STAR stands for Situation, Task, Action, Result. Situation: set the scene in one sentence (team, project, timeline). Task: state your specific responsibility. Action: describe the 2 to 3 concrete steps you personally took — this is the most important part and where most answers collapse. Result: give a measurable outcome (time saved, bugs fixed, score improved, money earned). Interviewers score answers on whether the Action paragraph is specific and personal, not generic. Practice each STAR story until you can tell it in under 2 minutes.",
+                  a: "STAR stands for Situation, Task, Action, Result. Situation: set the scene in one sentence (team, project, timeline). Task: state your specific responsibility. Action: describe the 2 to 3 concrete steps you personally took; this is the most important part and where most answers collapse. Result: give a measurable outcome (time saved, bugs fixed, score improved, money earned). Interviewers score answers on whether the Action paragraph is specific and personal, not generic. Practice each STAR story until you can tell it in under 2 minutes.",
                 },
               ].map(({ q, a }, i) => (
                 <div

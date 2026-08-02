@@ -21,6 +21,7 @@ import { experienceLevelFromYoe } from "./_candidate-profile";
 import type { CollegeTier } from "./_candidate-profile";
 import type { NegotiationBand } from "./_negotiation-kernel";
 import {
+  canonicalizeRoleTitle,
   classifyCompanyTier as classifyBandTier,
   getBandForRole as getBandTierRoleBand,
   liftPeopleManagerBand,
@@ -191,6 +192,12 @@ export function resolveServerBand(
   opts?: ResolveBandOptions,
 ): NegotiationBand {
   if (!role) return DEFAULT_BAND;
+  /* S172/S152/S164/S198/S206 (2026-07-31 band audit) — expand unambiguous role
+   * abbreviations ("EM" → "Engineering Manager", "APM", "SDM") up front so the
+   * legacy salary lookup, experience inference, PEOPLE_MANAGER_TITLE_RE lift, and
+   * tier-table path all see the spelled-out title. A bare "EM" @ Razorpay was
+   * resolving to a ₹16L junior-IC opener vs the ₹28-56L manager band. */
+  role = canonicalizeRoleTitle(role) || role;
   try {
     /* Phase 29 — when applicableYoe is known, derive the level from it
      * instead of trusting the onboarding-time experienceLevel. The

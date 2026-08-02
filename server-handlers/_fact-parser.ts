@@ -185,7 +185,17 @@ export function substituteEnglishNumbers(s: string): string {
  * so we suppress them rather than let the bare number bind wrong. At or above
  * ₹1 lakh it's a plausible annual figure — emit an explicit LPA token so both
  * parsers bind the true value. */
-const THOUSAND_SCALE_RE = /\b(\d+(?:\.\d+)?)\s*(?:thousand|grand)\b/gi;
+/* S143 (2026-07-31): the abbreviated `K`/`k` suffix ("950K per annum") is the
+ * numeric twin of the "thousand" scale word and just as common in written CTC
+ * disclosures. Without it "950K" bound as null (no LPA token emitted) and the
+ * engine saw no disclosure at all. Tight-bound to the digits (no letters after
+ * the K via `\b`) so "OK"/"kids"/"5k steps" never trip it, and the shared
+ * sub-₹1L suppression below still guards stray small values. The `(?<![$£€¥])`
+ * guard keeps a currency-symbol amount ("$180k", "€85k") out of the rupee-
+ * thousand path — those carry their own FX conversion (substituteForeignCurrency
+ * + the classifier's USD `$` path), and letting "k" fire here mangled "$180k"
+ * into "$1.8 LPA" (regressed the USD-k parse). Bare "950K" is unaffected. */
+const THOUSAND_SCALE_RE = /(?<![$£€¥])\b(\d+(?:\.\d+)?)\s*(?:thousand|grand|k)\b/gi;
 
 /** Normalise a trailing "thousand"/"grand" scale word into its true LPA value
  *  (or drop it when sub-lakh). Runs AFTER substituteEnglishNumbers so spelled

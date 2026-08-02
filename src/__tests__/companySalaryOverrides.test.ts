@@ -167,7 +167,7 @@ describe("override map data integrity", () => {
       // GCC
       "walmart global tech", "target india",
       // Quant
-      "jane street", "de shaw", "citadel",
+      "jane-street", "de-shaw", "citadel",
       // Design
       "bombay design centre",
     ];

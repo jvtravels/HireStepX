@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
 
 export const metadata: Metadata = {
-  title: "HireStepX — AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
+  title: "HireStepX: AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
   description:
     "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies. Voice AI scores answers in real time. 2 sessions free.",
   keywords: [
@@ -17,12 +17,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    title: "HireStepX — AI Mock Interview Practice India 2026",
+    title: "HireStepX: AI Mock Interview Practice India 2026",
     description: "Practice interviews for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers in real time. 2 sessions free.",
     url: "https://hirestepx.com",
     siteName: "HireStepX",
     locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX — AI Mock Interview Practice India 2026" }],
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX: AI Mock Interview Practice India 2026" }],
   },
   twitter: {
     card: "summary_large_image",

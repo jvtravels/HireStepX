@@ -100,7 +100,7 @@ const SOFTWARE_ENGINEERING: RoleFamilyEntry[] = [
 
 /* ════════════════════════════════════════════════════════════════
    B. AI / ML / Data & Analytics Roles
-   AI/ML/Data carry a 2025 SKILL PREMIUM — bands sit above generalist
+   AI/ML/Data carry a 2025 SKILL PREMIUM, bands sit above generalist
    tech for the same YOE.
    ════════════════════════════════════════════════════════════════ */
 const AI_ML_DATA: RoleFamilyEntry[] = [
@@ -108,7 +108,7 @@ const AI_ML_DATA: RoleFamilyEntry[] = [
   { family: "ai-ml-data", label: "Business Analyst", aliases: ["business analyst"], bands: { "0-2": b(4, 10), "3-5": b(10, 22), "6-9": b(20, 45), "10+": b(40, 80) } },
   { family: "ai-ml-data", label: "Data Engineer", aliases: ["data engineer", "data architect", "etl engineer"], bands: { "0-2": b(5, 14), "3-5": b(14, 35), "6-9": b(30, 75), "10+": b(60, 130) } },
   { family: "ai-ml-data", label: "Data Scientist", aliases: ["data scientist", "research scientist"], bands: { "0-2": b(6, 16), "3-5": b(16, 40), "6-9": b(35, 85), "10+": b(70, 150) } },
-  { family: "ai-ml-data", label: "ML Engineer", aliases: ["ml engineer", "machine learning engineer"], bands: { "0-2": b(8, 20), "3-5": b(20, 50), "6-9": b(45, 100), "10+": b(90, 200) }, note: "AI/ML SKILL PREMIUM applies — anchor at upper half of band, not median." },
+  { family: "ai-ml-data", label: "ML Engineer", aliases: ["ml engineer", "machine learning engineer"], bands: { "0-2": b(8, 20), "3-5": b(20, 50), "6-9": b(45, 100), "10+": b(90, 200) }, note: "AI/ML SKILL PREMIUM applies, anchor at upper half of band, not median." },
   { family: "ai-ml-data", label: "AI Engineer", aliases: ["ai engineer", "applied ai engineer"], bands: { "0-2": b(8, 22), "3-5": b(22, 55), "6-9": b(50, 120), "10+": b(100, 250) }, note: "AI/ML SKILL PREMIUM applies." },
   { family: "ai-ml-data", label: "GenAI Engineer", aliases: ["genai", "gen ai", "generative ai", "llm engineer", "prompt engineer"], bands: { "0-2": b(10, 25), "3-5": b(25, 60), "6-9": b(55, 140), "10+": b(100, 250) }, note: "GenAI commands the strongest premium of any tech role in 2025." },
   { family: "ai-ml-data", label: "MLOps Engineer", aliases: ["mlops", "ml platform", "ml infrastructure"], bands: { "0-2": b(8, 20), "3-5": b(20, 45), "6-9": b(45, 100), "10+": b(80, 180) } },
@@ -118,8 +118,8 @@ const AI_ML_DATA: RoleFamilyEntry[] = [
   { family: "ai-ml-data", label: "AI Product Specialist", aliases: ["ai product specialist", "ai specialist"], bands: { "0-2": b(8, 20), "3-5": b(20, 50), "6-9": b(45, 100), "10+": b(80, 180) } },
   { family: "ai-ml-data", label: "ML Scientist", aliases: ["ml scientist", "machine learning scientist"], bands: { "0-2": b(10, 25), "3-5": b(25, 60), "6-9": b(55, 130), "10+": b(110, 250) }, note: "Research-heavy ML role; often requires PhD or strong publications. AI/ML SKILL PREMIUM applies." },
   { family: "ai-ml-data", label: "Applied Scientist", aliases: ["applied scientist", "research scientist"], bands: { "0-2": b(10, 25), "3-5": b(25, 60), "6-9": b(55, 130), "10+": b(110, 250) }, note: "AI/ML SKILL PREMIUM applies." },
-  { family: "ai-ml-data", label: "Computer Vision Engineer", aliases: ["computer vision engineer", "cv engineer", "vision engineer"], bands: { "0-2": b(8, 22), "3-5": b(22, 55), "6-9": b(50, 120), "10+": b(95, 200) }, note: "Specialised ML — AI/ML SKILL PREMIUM applies." },
-  { family: "ai-ml-data", label: "NLP Engineer", aliases: ["nlp engineer", "natural language processing engineer"], bands: { "0-2": b(8, 22), "3-5": b(22, 55), "6-9": b(50, 120), "10+": b(95, 200) }, note: "Specialised ML — AI/ML SKILL PREMIUM applies." },
+  { family: "ai-ml-data", label: "Computer Vision Engineer", aliases: ["computer vision engineer", "cv engineer", "vision engineer"], bands: { "0-2": b(8, 22), "3-5": b(22, 55), "6-9": b(50, 120), "10+": b(95, 200) }, note: "Specialised ML, AI/ML SKILL PREMIUM applies." },
+  { family: "ai-ml-data", label: "NLP Engineer", aliases: ["nlp engineer", "natural language processing engineer"], bands: { "0-2": b(8, 22), "3-5": b(22, 55), "6-9": b(50, 120), "10+": b(95, 200) }, note: "Specialised ML, AI/ML SKILL PREMIUM applies." },
   { family: "ai-ml-data", label: "Decision Scientist", aliases: ["decision scientist"], bands: { "0-2": b(7, 18), "3-5": b(18, 42), "6-9": b(38, 90), "10+": b(75, 160) } },
   { family: "ai-ml-data", label: "Big Data Engineer", aliases: ["big data engineer", "spark engineer", "hadoop engineer"], bands: { "0-2": b(5, 14), "3-5": b(14, 35), "6-9": b(30, 75), "10+": b(60, 130) } },
   { family: "ai-ml-data", label: "Analytics Engineer", aliases: ["analytics engineer", "dbt engineer"], bands: { "0-2": b(5, 14), "3-5": b(14, 35), "6-9": b(30, 75), "10+": b(60, 130) } },
@@ -164,7 +164,7 @@ const PRODUCT_MANAGEMENT: RoleFamilyEntry[] = [
 /* ════════════════════════════════════════════════════════════════
    D. Design Roles
    Senior design pay reflects portfolio depth, business impact,
-   design-systems ownership, stakeholder management — NOT Figma
+   design-systems ownership, stakeholder management, NOT Figma
    skill.
    ════════════════════════════════════════════════════════════════ */
 const DESIGN: RoleFamilyEntry[] = [
@@ -357,7 +357,7 @@ const CUSTOMER_SUPPORT_BPO: RoleFamilyEntry[] = [
 
 /* ════════════════════════════════════════════════════════════════
    K. Consulting / Strategy / Business Roles
-   Distinct from "consultant" generic — encodes the MBB + Big-4 +
+   Distinct from "consultant" generic, encodes the MBB + Big-4 +
    in-house strategy ladder explicitly.
    ════════════════════════════════════════════════════════════════ */
 const CONSULTING_STRATEGY: RoleFamilyEntry[] = [
@@ -370,7 +370,7 @@ const CONSULTING_STRATEGY: RoleFamilyEntry[] = [
   { family: "consulting-strategy", label: "Business Strategy Manager", aliases: ["business strategy manager"], bands: { "0-2": NA, "3-5": b(20, 45), "6-9": b(40, 90), "10+": b(80, 180) } },
   { family: "consulting-strategy", label: "Business Transformation Consultant", aliases: ["business transformation consultant", "transformation consultant"], bands: { "0-2": NA, "3-5": b(20, 45), "6-9": b(40, 90), "10+": b(80, 180) } },
   { family: "consulting-strategy", label: "Digital Transformation Consultant", aliases: ["digital transformation consultant", "digital transformation"], bands: { "0-2": b(8, 22), "3-5": b(20, 50), "6-9": b(45, 100), "10+": b(85, 200) } },
-  { family: "consulting-strategy", label: "Engagement Manager", aliases: ["engagement manager"], bands: { "0-2": NA, "3-5": b(40, 90), "6-9": b(80, 170), "10+": b(150, 350) }, note: "MBB engagement manager — usually post-MBA, 4-6 YOE." },
+  { family: "consulting-strategy", label: "Engagement Manager", aliases: ["engagement manager"], bands: { "0-2": NA, "3-5": b(40, 90), "6-9": b(80, 170), "10+": b(150, 350) }, note: "MBB engagement manager, usually post-MBA, 4-6 YOE." },
   { family: "consulting-strategy", label: "Principal (Consulting)", aliases: ["consulting principal", "mbb principal"], bands: { "0-2": NA, "3-5": NA, "6-9": b(120, 250), "10+": b(220, 500) } },
   { family: "consulting-strategy", label: "Partner (Consulting)", aliases: ["consulting partner", "mbb partner"], bands: { "0-2": NA, "3-5": NA, "6-9": NA, "10+": b(300, 1500) } },
   { family: "consulting-strategy", label: "Strategy Head", aliases: ["strategy head", "head of strategy"], bands: { "0-2": NA, "3-5": NA, "6-9": b(80, 180), "10+": b(150, 400) } },
@@ -380,7 +380,7 @@ const CONSULTING_STRATEGY: RoleFamilyEntry[] = [
 /* ════════════════════════════════════════════════════════════════
    L. EV / Energy / Manufacturing / Infra Roles
    High-growth space (TeamLease 2025 reports). Especially relevant
-   for DynaChrg-class clients — explicit charging-network roles +
+   for DynaChrg-class clients, explicit charging-network roles +
    software-platform roles for EV companies.
    ════════════════════════════════════════════════════════════════ */
 const EV_ENERGY_MFG: RoleFamilyEntry[] = [
@@ -403,7 +403,7 @@ const EV_ENERGY_MFG: RoleFamilyEntry[] = [
 ];
 
 /* ════════════════════════════════════════════════════════════════
-   M. Vertical India Growth Roles — Healthcare, Education, Real
+   M. Vertical India Growth Roles, Healthcare, Education, Real
    Estate, Hospitality, Retail, Creator Economy
    These are non-tech roles where India hiring volumes are large.
    Bands skew lower-cash + higher-variable (real estate, retail) or
@@ -411,7 +411,7 @@ const EV_ENERGY_MFG: RoleFamilyEntry[] = [
    ════════════════════════════════════════════════════════════════ */
 const VERTICAL_INDIA: RoleFamilyEntry[] = [
   /* Healthcare */
-  { family: "vertical-india", label: "Medical Sales Representative", aliases: ["medical sales representative", "medical representative", "medical rep"], bands: { "0-2": b(2.5, 5), "3-5": b(5, 10), "6-9": b(9, 18), "10+": b(15, 30) }, note: "Heavy variable component — 30-40% of total OTE typical." },
+  { family: "vertical-india", label: "Medical Sales Representative", aliases: ["medical sales representative", "medical representative", "medical rep"], bands: { "0-2": b(2.5, 5), "3-5": b(5, 10), "6-9": b(9, 18), "10+": b(15, 30) }, note: "Heavy variable component, 30-40% of total OTE typical." },
   { family: "vertical-india", label: "Healthcare Operations Manager", aliases: ["healthcare operations manager", "hospital ops manager"], bands: { "0-2": NA, "3-5": b(8, 18), "6-9": b(18, 40), "10+": b(35, 80) } },
   { family: "vertical-india", label: "Hospital Administrator", aliases: ["hospital administrator", "hospital admin"], bands: { "0-2": b(3, 7), "3-5": b(7, 15), "6-9": b(15, 32), "10+": b(28, 65) } },
   { family: "vertical-india", label: "Clinical Data Analyst", aliases: ["clinical data analyst", "clinical research analyst"], bands: { "0-2": b(3.5, 8), "3-5": b(8, 18), "6-9": b(16, 35), "10+": b(30, 65) } },
@@ -421,7 +421,7 @@ const VERTICAL_INDIA: RoleFamilyEntry[] = [
   { family: "vertical-india", label: "Learning Experience Designer", aliases: ["learning experience designer", "lxd"], bands: { "0-2": b(4, 10), "3-5": b(10, 22), "6-9": b(20, 45), "10+": b(40, 80) } },
   { family: "vertical-india", label: "Admissions Counsellor", aliases: ["admissions counsellor", "admissions counselor"], bands: { "0-2": b(2.5, 5), "3-5": b(4, 9), "6-9": b(8, 18), "10+": b(15, 30) } },
   /* Real Estate */
-  { family: "vertical-india", label: "Real Estate Sales Manager", aliases: ["real estate sales manager", "real estate sales"], bands: { "0-2": b(3, 8), "3-5": b(8, 25), "6-9": b(20, 60), "10+": b(40, 150) }, note: "Highly variable comp — commission can 2-3x base in good years." },
+  { family: "vertical-india", label: "Real Estate Sales Manager", aliases: ["real estate sales manager", "real estate sales"], bands: { "0-2": b(3, 8), "3-5": b(8, 25), "6-9": b(20, 60), "10+": b(40, 150) }, note: "Highly variable comp, commission can 2-3x base in good years." },
   { family: "vertical-india", label: "Relationship Manager (Real Estate)", aliases: ["relationship manager real estate", "real estate relationship manager"], bands: { "0-2": b(3, 7), "3-5": b(7, 18), "6-9": b(15, 40), "10+": b(35, 90) }, note: "Variable + commission heavy." },
   { family: "vertical-india", label: "Property Consultant", aliases: ["property consultant"], bands: { "0-2": b(3, 7), "3-5": b(7, 18), "6-9": b(15, 40), "10+": b(35, 90) } },
   { family: "vertical-india", label: "Channel Partner Manager", aliases: ["channel partner manager"], bands: { "0-2": NA, "3-5": b(10, 22), "6-9": b(22, 50), "10+": b(45, 100) } },
@@ -435,13 +435,13 @@ const VERTICAL_INDIA: RoleFamilyEntry[] = [
   { family: "vertical-india", label: "Category Executive", aliases: ["category executive"], bands: { "0-2": b(3.5, 8), "3-5": b(8, 18), "6-9": b(16, 35), "10+": b(32, 65) } },
   { family: "vertical-india", label: "Merchandiser", aliases: ["merchandiser"], bands: { "0-2": b(3, 7), "3-5": b(7, 15), "6-9": b(13, 28), "10+": b(25, 55) } },
   /* Creator economy / media */
-  { family: "vertical-india", label: "Video Editor", aliases: ["video editor", "video editing"], bands: { "0-2": b(2.5, 7), "3-5": b(6, 16), "6-9": b(14, 35), "10+": b(28, 65) }, note: "Wide variance — agency rates lower, top creator-economy or OTT shops can pay 2-3x." },
-  { family: "vertical-india", label: "Content Creator", aliases: ["content creator", "creator"], bands: { "0-2": b(2, 8), "3-5": b(6, 20), "6-9": b(15, 50), "10+": b(30, 120) }, note: "Salary alone misleads — most income for established creators is brand deals + ad revenue." },
+  { family: "vertical-india", label: "Video Editor", aliases: ["video editor", "video editing"], bands: { "0-2": b(2.5, 7), "3-5": b(6, 16), "6-9": b(14, 35), "10+": b(28, 65) }, note: "Wide variance, agency rates lower, top creator-economy or OTT shops can pay 2-3x." },
+  { family: "vertical-india", label: "Content Creator", aliases: ["content creator", "creator"], bands: { "0-2": b(2, 8), "3-5": b(6, 20), "6-9": b(15, 50), "10+": b(30, 120) }, note: "Salary alone misleads, most income for established creators is brand deals + ad revenue." },
   { family: "vertical-india", label: "Creative Producer", aliases: ["creative producer"], bands: { "0-2": b(3, 8), "3-5": b(8, 20), "6-9": b(18, 45), "10+": b(35, 85) } },
   { family: "vertical-india", label: "Script Writer", aliases: ["script writer", "screenplay writer", "scriptwriter"], bands: { "0-2": b(2.5, 6), "3-5": b(6, 14), "6-9": b(12, 28), "10+": b(25, 60) }, note: "OTT / streaming script work pays 2-3x traditional TV." },
 ];
 
-/* All roles, flattened for matchRole(). Order matters — earlier
+/* All roles, flattened for matchRole(). Order matters, earlier
  * entries win on tie (more specific labels first). */
 export const ALL_ROLES: RoleFamilyEntry[] = [
   // Most specific first
@@ -502,7 +502,7 @@ export function matchGranularRole(role: string): RoleFamilyEntry | null {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   Tier multipliers — scale the market-wide bands to a given company
+   Tier multipliers, scale the market-wide bands to a given company
    tier. The base bands above represent the "indian-unicorn" /
    mid-tier-product-company posture. Other tiers scale relative to
    that.

@@ -216,6 +216,7 @@ const structuredData = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": "https://hirestepx.com/#organization",
     name: "HireStepX",
     legalName: "HireStepX",
     url: "https://hirestepx.com",

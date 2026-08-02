@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { BLOG_META } from "@/blog-meta";
 
 export const metadata: Metadata = {
-  title: "Interview Prep Blog India 2026 — TCS, Google & More | HireStepX",
+  title: "Interview Prep Blog India 2026: TCS, Google & More | HireStepX",
   description:
     "Company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.",
   keywords: [
@@ -40,7 +40,7 @@ const BLOG_ITEM_LIST_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: "HireStepX Interview Preparation Blog",
-  description: "Company-specific interview guides for Indian job seekers — TCS, Google, Flipkart, Amazon, and more.",
+  description: "Company-specific interview guides for Indian job seekers: TCS, Google, Flipkart, Amazon, and more.",
   url: "https://hirestepx.com/blog",
   numberOfItems: BLOG_META.length,
   itemListElement: BLOG_META.map((post, i) => ({

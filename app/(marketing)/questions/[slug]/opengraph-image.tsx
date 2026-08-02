@@ -1,18 +1,24 @@
 import { ImageResponse } from "next/og";
-import { getSeoPageBySlug, getAllSeoSlugs } from "../../../../data/seo-pages";
+import { getSeoPageBySlug } from "../../../../data/seo-pages";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 
 // Not edge runtime — seo-pages.ts bundle exceeds 1 MB edge limit.
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const revalidate = 86400; /* 24h, mirrors sibling page.tsx */
 
-/* Metadata image routes under a dynamic segment don't inherit the sibling
-   page.tsx's generateStaticParams — without their own, Next can't resolve
-   slugs for this route and 404s even though /questions/[slug] itself is a
-   live 200. Confirmed on prod via GSC + curl. */
-export async function generateStaticParams() {
-  return getAllSeoSlugs().map((slug) => ({ slug }));
-}
+/* No generateStaticParams: the 404s in prod were never a build-resource
+   problem. Root cause (confirmed via `vercel build` + inspecting
+   .vercel/output/config.json): this file collides with the root
+   app/opengraph-image.tsx on the "opengraph-image" metadata convention
+   name, so Next assigns this nested route a hash-suffixed internal name
+   (currently opengraph-image-15i2cs) to avoid an output collision. Vercel's
+   Next.js builder never emits a rewrite from the pretty URL that GSC/social
+   crawlers actually request (/questions/{slug}/opengraph-image) to that
+   hashed function — only the hashed path appears in config.json's routes.
+   The explicit rewrite in next.config.js's rewrites() covers the gap. The
+   hash is derived from this file's path, not its content (verified stable
+   across content-only edits) — it only changes if this file moves. */
 
 const COAL = "#0E0C08";
 const CREAM = "#FAF7F0";
@@ -185,7 +191,7 @@ export default async function OpengraphImage({
               display: "flex",
             }}
           >
-            2 sessions free →
+            2 sessions free {'>'}
           </div>
         </div>
       </div>

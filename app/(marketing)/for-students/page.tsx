@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     type: "article",
     title: "Campus Placement Interview Preparation Guide India 2026 | HireStepX",
     description:
-      "Complete campus placement guide for Indian freshers. AI mock interviews for TCS, Infosys, Wipro, Cognizant, Accenture, HCL, Capgemini — 2 sessions free.",
+      "Complete campus placement guide for Indian freshers. AI mock interviews for TCS, Infosys, Wipro, Cognizant, Accenture, HCL, Capgemini: 2 sessions free.",
     url: "https://hirestepx.com/for-students",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -82,7 +82,7 @@ const SERVICE_COMPANY_GUIDES = [
   {
     label: "Cognizant", focus: "Campus",
     slug: "cognizant-genc-interview-questions",
-    desc: "GenC, GenC Next, GenC Elevate — three fresher bands.",
+    desc: "GenC, GenC Next, GenC Elevate: three fresher bands.",
     salary: "/salary/cognizant",
   },
   {
@@ -100,7 +100,7 @@ const SERVICE_COMPANY_GUIDES = [
   {
     label: "Capgemini", focus: "Campus",
     slug: "capgemini-freshers-interview-questions",
-    desc: "InfraServices vs Insights & Data track — different tests.",
+    desc: "InfraServices vs Insights & Data track, different tests.",
     salary: "/salary/capgemini",
   },
   {
@@ -131,7 +131,7 @@ const HR_PREP = [
   },
   {
     title: "Common HR Questions for Freshers",
-    desc: "10 questions in 90%+ of fresher HR rounds — strength, weakness, 5-year goal, relocation, salary expectation.",
+    desc: "10 questions in 90%+ of fresher HR rounds: strength, weakness, 5-year goal, relocation, salary expectation.",
     href: "/questions/common-hr-interview-questions-freshers-india",
   },
 ];
@@ -165,7 +165,7 @@ export default async function ForStudentsPage() {
         name: "How early should I start preparing for campus placements in India?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Start 3–4 months before your placement season for service companies (TCS, Infosys, Wipro). For product companies (Flipkart, Swiggy, CRED), start 6–8 months early due to the higher DSA and system design bar. The aptitude round for service companies eliminates 60–80% of candidates — this is the highest-leverage area to prepare first.",
+          text: "Start 3–4 months before your placement season for service companies (TCS, Infosys, Wipro). For product companies (Flipkart, Swiggy, CRED), start 6–8 months early due to the higher DSA and system design bar. The aptitude round for service companies eliminates 60–80% of candidates, making it the highest-leverage area to prepare first.",
         },
       },
       {
@@ -173,7 +173,7 @@ export default async function ForStudentsPage() {
         name: "What CGPA is required for campus placements in India?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Most service companies have a 6.0 CGPA minimum; many have 6.5 or 7.0. TCS requires 60% throughout academics with no active backlogs. Some product companies don't have a CGPA filter at all — check each company's specific eligibility criteria on their careers page or official campus portal before assuming you're ineligible.",
+          text: "Most service companies have a 6.0 CGPA minimum; many have 6.5 or 7.0. TCS requires 60% throughout academics with no active backlogs. Some product companies don't have a CGPA filter at all, so check each company's specific eligibility criteria on their careers page or official campus portal before assuming you're ineligible.",
         },
       },
       {
@@ -181,7 +181,7 @@ export default async function ForStudentsPage() {
         name: "What rounds are in a typical campus placement process?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "A typical Indian campus placement process has 3–5 rounds: (1) Aptitude / Online Test — reasoning, quantitative, verbal, and basic coding questions that eliminate most applicants; (2) Technical Interview — CS fundamentals, data structures, and sometimes a coding problem; (3) Group Discussion (some companies); (4) HR Round — behavioral questions including 'tell me about yourself', 'why should we hire you', and salary expectation; (5) Offer roll-out.",
+          text: "A typical Indian campus placement process has 3–5 rounds: (1) Aptitude / Online Test: reasoning, quantitative, verbal, and basic coding questions that eliminate most applicants; (2) Technical Interview: CS fundamentals, data structures, and sometimes a coding problem; (3) Group Discussion (some companies); (4) HR Round: behavioral questions including 'tell me about yourself', 'why should we hire you', and salary expectation; (5) Offer roll-out.",
         },
       },
       {
@@ -251,7 +251,7 @@ export default async function ForStudentsPage() {
 
           <p style={{ ...serif, fontStyle: "italic", fontSize: 18, lineHeight: 1.55, color: sand, marginTop: 20, maxWidth: 680, textWrap: "balance" }}>
             TCS, Infosys, Wipro, Cognizant, Accenture, HCL, and Capgemini hire over 100,000 freshers
-            every year. Their interviews follow predictable patterns — and this guide covers each one.
+            every year. Their interviews follow predictable patterns, and this guide covers each one.
           </p>
 
           {/* Primary CTAs */}
@@ -284,7 +284,7 @@ export default async function ForStudentsPage() {
               {[
                 {
                   n: "01", title: "Aptitude / Online Test",
-                  body: "This eliminates 60–80% of applicants. It covers quantitative reasoning, logical reasoning, verbal ability, and basic coding questions. TCS uses the NQT, Wipro uses the NLTH assessment, Cognizant uses the GenC/GenC Next format. Each company's test has a different format — practice the specific format for your target company, not generic aptitude.",
+                  body: "This eliminates 60–80% of applicants. It covers quantitative reasoning, logical reasoning, verbal ability, and basic coding questions. TCS uses the NQT, Wipro uses the NLTH assessment, Cognizant uses the GenC/GenC Next format. Each company's test has a different format: practice the specific format for your target company, not generic aptitude.",
                 },
                 {
                   n: "02", title: "Technical Interview (45–60 min)",
@@ -296,7 +296,7 @@ export default async function ForStudentsPage() {
                 },
                 {
                   n: "04", title: "HR Interview (30 min)",
-                  body: "Every campus process ends here. Three questions appear in 95%+ of fresher HR rounds: 'Tell me about yourself', 'Why should we hire you?', and 'Where do you see yourself in 5 years?' Each has a specific structure that scores well — practice them aloud before the interview, not just in your head.",
+                  body: "Every campus process ends here. Three questions appear in 95%+ of fresher HR rounds: 'Tell me about yourself', 'Why should we hire you?', and 'Where do you see yourself in 5 years?' Each has a specific structure that scores well: practice them aloud before the interview, not just in your head.",
                 },
               ].map((step, i) => (
                 <div key={step.n} style={{
@@ -384,7 +384,7 @@ export default async function ForStudentsPage() {
               {[
                 { round: "Aptitude / Online Test", time: "3–4 weeks", note: "Daily practice sets: quantitative, reasoning, verbal. Use company-specific mock tests." },
                 { round: "Technical Interview", time: "2–3 weeks", note: "CS fundamentals: OS, DBMS, OOP, CN. One coding problem per day in your primary language." },
-                { round: "HR Interview", time: "3–5 days", note: "Prepare 5 structured answers, practice aloud. Time your 'tell me about yourself' — must be under 90 seconds." },
+                { round: "HR Interview", time: "3–5 days", note: "Prepare 5 structured answers, practice aloud. Time your 'tell me about yourself' (must be under 90 seconds)." },
               ].map((row) => (
                 <div key={row.round} style={{ ...card, padding: "16px 18px" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: coal, marginBottom: 4 }}>{row.round}</div>
@@ -449,7 +449,7 @@ export default async function ForStudentsPage() {
               Practice before placement season begins.
             </h2>
             <p style={{ fontSize: 14, color: sand, margin: "10px 0 20px", lineHeight: 1.5, maxWidth: 480, marginInline: "auto" }}>
-              The AI interviewer asks the same questions you'll face — aptitude, technical, and HR.
+              The AI interviewer asks the same questions you'll face: aptitude, technical, and HR.
               It scores your answers and gives you specific feedback. Two sessions free, no card required.
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>

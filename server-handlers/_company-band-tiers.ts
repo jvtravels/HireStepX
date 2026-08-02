@@ -75,6 +75,18 @@ const UNICORN = [
   /* Wave-8 — social/content/creator-economy unicorns. */
   "sharechat", "moj", "koo", "josh", "dailyhunt", "verse", "lokal",
   "inmobi", "glance", "roposo",
+  /* S181/S182 (2026-07-31 band audit) — Reliance Jio (decacorn-scale product/
+   * telecom-tech) and PayU (major Prosus-owned fintech-payments) were absent
+   * from every tier array and fell through to "sme", handing a Jio Senior
+   * Engineer a ₹14.5L opener and a PayU PM ₹12L — both severe lowballs vs the
+   * ₹30–45L these employers actually pay. `any()` matches whole tokens, so the
+   * bare "jio" token also covers "Reliance Jio" / "Jio Platforms". */
+  "jio", "payu",
+  /* S188 (2026-07-31 band audit) — Juspay, the SoftBank/Accel-backed payments-
+   * infra company (~$900M val) that powers UPI for HDFC/Amazon Pay, fell through
+   * to "sme" and anchored a Senior Engineer near ₹15L vs the ~₹30–45L it pays.
+   * Same fintech-payments class as PayU above. */
+  "juspay",
 ];
 const PRODUCT_INDIA = [
   "zoho", "freshworks", "postman", "hasura", "browserstack",
@@ -261,18 +273,39 @@ export type RoleFamily =
   | "data"
   | "ops";
 
+/** Expand unambiguous role-title abbreviations to their canonical spelled-out
+ *  form BEFORE any band / family / seniority classification. The legacy
+ *  salary-lookup and the seniority helpers (roleModifier / impliedYoeFromTitle)
+ *  key off the spelled-out words, so a bare "EM" was treated as a generic
+ *  junior IC — a Razorpay "EM" resolved to a ₹16L opener against the ₹28-56L an
+ *  "Engineering Manager" gets. Only abbreviations with a single dominant meaning
+ *  in Indian tech hiring are expanded; genuinely ambiguous ones (SM, TL, RM) are
+ *  left untouched. Whole-token, case-insensitive, idempotent. Pure. */
+export function canonicalizeRoleTitle(role: string | null | undefined): string {
+  const r = (role || "").trim();
+  if (!r) return "";
+  const EXPANSIONS: ReadonlyArray<[RegExp, string]> = [
+    [/\bE\.?M\.?\b/gi, "Engineering Manager"], // EM / E.M. → Engineering Manager
+    [/\bSDM\b/gi, "Engineering Manager"], // Software/Service Delivery Manager (people-manager level)
+    [/\bAPM\b/gi, "Associate Product Manager"],
+  ];
+  let out = r;
+  for (const [re, full] of EXPANSIONS) out = out.replace(re, full);
+  return out;
+}
+
 /** Classify a free-form role title into one of 8 families. Keyword-
  *  based; conservative; falls back to "engineering" for unknown
  *  technical titles. Pure. */
 export function classifyRoleFamily(role: string | null | undefined): RoleFamily {
-  const r = (role || "").toLowerCase().trim();
+  const r = canonicalizeRoleTitle(role).toLowerCase().trim();
   if (!r) return "engineering";
   if (/\b(customer\s+success|cs\s+manager|csm|customer\s+experience|account\s+management|account\s+manager|client\s+success|client\s+partner|support\s+manager|technical\s+account\s+manager|tam)\b/.test(r)) return "csm-cs";
   if (/\b(product\s+manager|product\s+owner|pm\b|po\b|product\s+lead|head\s+of\s+product|group\s+product|tpm\b|program\s+manager|technical\s+program|chief\s+product)\b/.test(r)) return "product";
   if (/\b(ux\s+designer|ui\s+designer|product\s+designer|interaction\s+designer|visual\s+designer|graphic\s+designer|design\s+lead|design\s+manager|head\s+of\s+design|brand\s+designer|motion\s+designer|illustrator|ux\s+researcher|design\s+researcher)\b/.test(r)) return "design";
   if (/\b(sales|account\s+executive|ae\b|bdr|sdr|bdm|business\s+development|inside\s+sales|enterprise\s+sales|relationship\s+manager|sales\s+manager|sales\s+lead|sales\s+director|head\s+of\s+sales|chief\s+revenue|cro\b|territory\s+manager|key\s+account)\b/.test(r)) return "sales";
   if (/\b(marketing|growth|seo|sem|content\s+marketing|digital\s+marketing|brand\s+manager|product\s+marketing|pmm|marketing\s+manager|head\s+of\s+marketing|cmo\b|chief\s+marketing|community\s+manager|social\s+media\s+manager|demand\s+gen|email\s+marketing)\b/.test(r)) return "marketing";
-  if (/\b(data\s+scientist|data\s+analyst|business\s+analyst|ba\b|analytics|machine\s+learning|ml\s+engineer|ai\s+engineer|data\s+engineer|nlp|research\s+scientist|quant|quantitative|statistician)\b/.test(r)) return "data";
+  if (/\b(data\s+scien(?:ce|tist)|data\s+analyst|business\s+analyst|ba\b|analytics|machine\s+learning|ml\s+engineer|ai\s+engineer|data\s+engineer|nlp|research\s+scientist|quant|quantitative|statistician)\b/.test(r)) return "data";
   if (/\b(operations\s+manager|ops\s+manager|operations\s+lead|coo\b|chief\s+operating|supply\s+chain|logistics|fulfilment|fulfillment|warehouse\s+manager|city\s+manager|category\s+manager|head\s+of\s+operations|business\s+operations|biz\s+ops|biz-ops)\b/.test(r)) return "ops";
   /* Default to engineering for software / dev / SDE / SWE / java / react /
    * etc — the historical reference family. */
@@ -396,8 +429,16 @@ function yoeScale(yoe: number | null | undefined): number {
 
 function roleModifier(role: string): number {
   const r = (role || "").toLowerCase();
+  /* Exec / director-level leadership sits ABOVE staff-IC: a VP or Head-of-
+   * function commands materially more than a principal IC. Without these,
+   * S193 (VP of Engineering) and S191 (Head of Data Science) collapsed to
+   * the 5-yr IC anchor — a VP resolved BELOW a plain SWE at the same firm.
+   * Ordered most-senior-first; the tier-ceiling overshoot ratchet in
+   * resolveServerBand compresses any over-lift back to the market ceiling. */
+  if (/\b(chief|cto|ceo|cfo|cpo|cmo|coo|cro|vp|vice\s+president|svp|evp)\b/.test(r)) return 1.6;
+  if (/\b(director|head\s+of)\b/.test(r)) return 1.45;
   if (/\b(staff|principal|architect)\b/.test(r)) return 1.3;
-  if (/\b(senior|sr\.|lead)\b/.test(r)) return 1.15;
+  if (/\b(senior|sr\.|lead|founding)\b/.test(r)) return 1.15;
   if (/\b(intern|trainee)\b/.test(r)) return 0.35;
   return 1.0;
 }
@@ -413,13 +454,37 @@ function roleModifier(role: string): number {
  * explicit-YoE caller and test is byte-identical; a supplied YoE always wins.
  * Ordered most-senior-first; representative Indian-market YoE per band. */
 const TITLE_IMPLIED_YOE: Array<{ re: RegExp; yoe: number }> = [
+  /* Exec / director titles imply a deep experience floor (S191/S193/S194):
+   * "VP of Engineering" / "Head of Data Science" / "Director" with no supplied
+   * YoE previously defaulted to the 5-yr mid anchor. "Founding" engineer is a
+   * senior-equivalent floor, so it rides the 8-yr bucket below. */
+  { re: /\b(chief|cto|ceo|cfo|cpo|cmo|coo|cro|vp|vice\s+president|svp|evp|director|head\s+of)\b/, yoe: 14 },
   { re: /\b(staff|principal|architect|distinguished|fellow)\b/, yoe: 12 },
-  { re: /\b(senior|sr\.?|lead)\b/, yoe: 8 },
+  { re: /\b(senior|sr\.?|lead|founding)\b/, yoe: 8 },
 ];
 
 function impliedYoeFromTitle(role: string): number | null {
   const r = (role || "").toLowerCase();
   for (const { re, yoe } of TITLE_IMPLIED_YOE) if (re.test(r)) return yoe;
+  return null;
+}
+
+/* S123 (2026-07-31 band audit) — the consulting-senior ladder (Partner /
+ * Associate Partner / Principal / Engagement Manager) carries none of the
+ * generic senior/staff/lead keywords, so a McKinsey Partner AND an Engagement
+ * Manager both resolved to the 5-yr IC Consultant anchor (₹20L). These are the
+ * highest-earning consulting roles. Returns the effective-YoE floor + title
+ * multiplier for the matched rank; the caller gates this to tier==="consulting"
+ * so sales/BD "Channel Partner" / "Partner Manager" titles elsewhere are never
+ * lifted. Ordered so the more-specific rank wins (Engagement Manager and
+ * Associate Partner are checked before the bare "partner"). */
+function consultingSeniorRank(role: string): { yoe: number; mod: number } | null {
+  const r = (role || "").toLowerCase();
+  if (/\b(engagement\s+manager|project\s+leader|case\s+team\s+lead)/.test(r)) return { yoe: 9, mod: 1.25 };
+  if (/\b(associate\s+partner|principal)\b/.test(r)) return { yoe: 13, mod: 1.5 };
+  if (/\bpartner\b/.test(r) && !/\b(channel|alliance|partnership|referral|partner\s+manager)\b/.test(r)) {
+    return { yoe: 16, mod: 1.9 };
+  }
   return null;
 }
 
@@ -430,13 +495,21 @@ export function getBandForRole(
   role: string,
   yoe: number | null | undefined,
 ): RoleBand {
+  role = canonicalizeRoleTitle(role); // expand "EM"/"APM"/… so seniority helpers below fire
   const family = classifyRoleFamily(role);
   const base = FAMILY_TIER_REFERENCE_5YR[family][tier];
   /* When YoE is unknown, let a seniority-bearing title floor the effective
    * YoE (see TITLE_IMPLIED_YOE) instead of silently defaulting to the 5-yr
    * mid anchor. Explicit YoE always passes through untouched. */
+  /* Consulting-senior ladder (Partner / Engagement Manager …) — gated to the
+   * consulting tier so the "partner" token can't lift sales titles elsewhere.
+   * The rank's YoE floor fires only on unknown YoE (byte-identical for explicit-
+   * YoE callers); its title multiplier replaces roleModifier where matched. */
+  const csr = tier === "consulting" ? consultingSeniorRank(role) : null;
   const effYoe =
-    yoe == null || !Number.isFinite(yoe) ? impliedYoeFromTitle(role) ?? yoe : yoe;
+    yoe == null || !Number.isFinite(yoe)
+      ? (csr?.yoe ?? impliedYoeFromTitle(role) ?? yoe)
+      : yoe;
   /* S54-B2 (2026-07-24) — IT-services companies (TCS/Infosys/Wipro/Cognizant/HCL)
    * have compressed, YoE-driven pay bands. Title premiums (Senior=1.15×,
    * Principal=1.3×) compound on top of yoeScale and inflate ceilings enough to
@@ -445,7 +518,7 @@ export function getBandForRole(
   const m =
     tier === "it-services"
       ? yoeScale(effYoe)
-      : yoeScale(effYoe) * roleModifier(role);
+      : yoeScale(effYoe) * (csr?.mod ?? roleModifier(role));
   return {
     floor: Math.round(base.floor * m * 10) / 10,
     ceil: Math.round(base.ceil * m * 10) / 10,

@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  canonicalizeRoleTitle,
   classifyCompanyTier,
+  classifyRoleFamily,
   getBandForRole,
 } from "../../server-handlers/_company-band-tiers";
 
@@ -52,6 +54,17 @@ describe("Bug 1: classifyCompanyTier (band-tier)", () => {
     expect(classifyCompanyTier("Blinkit")).toBe("unicorn");
     expect(classifyCompanyTier("Dunzo Daily")).toBe("unicorn");
     expect(classifyCompanyTier("Instamart")).toBe("unicorn");
+  });
+  it("classifies Reliance Jio and PayU as unicorn, not sme (S181/S182)", () => {
+    expect(classifyCompanyTier("Reliance Jio")).toBe("unicorn");
+    expect(classifyCompanyTier("Jio Platforms")).toBe("unicorn");
+    expect(classifyCompanyTier("Jio")).toBe("unicorn");
+    expect(classifyCompanyTier("PayU")).toBe("unicorn");
+    // S188: Juspay (payments-infra fintech) must not fall through to sme.
+    expect(classifyCompanyTier("Juspay")).toBe("unicorn");
+    expect(classifyCompanyTier("Juspay Technologies")).toBe("unicorn");
+    // Regression guard: the bare "jio" token must not swallow unrelated names.
+    expect(classifyCompanyTier("Religion Tech")).toBe("sme");
   });
   it("classifies product-india", () => {
     expect(classifyCompanyTier("Zoho")).toBe("product-india");
@@ -196,5 +209,106 @@ describe("N-1: title-implied YoE floor when YoE is unknown", () => {
     const unknown = getBandForRole("sme", "Product Designer", null);
     const fiveYr = getBandForRole("sme", "Product Designer", 5);
     expect(unknown).toEqual(fiveYr);
+  });
+});
+
+describe("S189-S198: exec / director / head / founding seniority lift (unknown YoE)", () => {
+  it("VP-level title resolves ABOVE a same-family 5-yr IC (S193)", () => {
+    const vp = getBandForRole("unicorn", "VP of Engineering", null);
+    const ic = getBandForRole("unicorn", "Software Engineer", 5);
+    // A VP must not collapse to (or below) the 5-yr IC anchor.
+    expect(vp.target).toBeGreaterThan(ic.target * 1.5);
+  });
+
+  it("Director resolves above a Staff IC (S192 vs director)", () => {
+    const dir = getBandForRole("unicorn", "Director of Engineering", null);
+    const staff = getBandForRole("unicorn", "Staff Software Engineer", null);
+    // Director sits at exec level — at least on par with staff, not below it.
+    expect(dir.target).toBeGreaterThanOrEqual(staff.target * 0.9);
+  });
+
+  it("Head-of-function lifts above the IC anchor and keeps its family (S191)", () => {
+    // "Head of Data Science" must route to the data family, not engineering...
+    expect(classifyRoleFamily("Head of Data Science")).toBe("data");
+    const head = getBandForRole("unicorn", "Head of Data Science", null);
+    const ic = getBandForRole("unicorn", "Data Scientist", 5);
+    expect(head.target).toBeGreaterThan(ic.target * 1.5);
+  });
+
+  it("Founding engineer gets a senior-equivalent lift (S194)", () => {
+    const founding = getBandForRole("startup", "Founding Engineer", null);
+    const junior = getBandForRole("startup", "Software Engineer", 2);
+    expect(founding.target).toBeGreaterThan(junior.target);
+  });
+
+  it("explicit YoE still wins for exec titles (byte-identical)", () => {
+    const a = getBandForRole("unicorn", "VP of Engineering", 6);
+    const b = getBandForRole("unicorn", "VP of Engineering", 6);
+    expect(a).toEqual(b);
+  });
+});
+
+describe("S172/S152/S164/S198/S206: role-abbreviation canonicalization", () => {
+  it("expands EM to Engineering Manager", () => {
+    expect(canonicalizeRoleTitle("EM")).toBe("Engineering Manager");
+    expect(canonicalizeRoleTitle("E.M.")).toMatch(/^Engineering Manager\.?$/);
+    expect(canonicalizeRoleTitle("EM II")).toBe("Engineering Manager II");
+  });
+  it("expands APM and SDM", () => {
+    expect(canonicalizeRoleTitle("APM")).toBe("Associate Product Manager");
+    expect(canonicalizeRoleTitle("SDM")).toBe("Engineering Manager");
+  });
+  it("does not mangle words that merely contain the abbreviation letters", () => {
+    // whole-token \b guards: OEM / System / Emma / REM must pass through intact
+    expect(canonicalizeRoleTitle("System Architect")).toBe("System Architect");
+    expect(canonicalizeRoleTitle("OEM Partnerships Manager")).toBe("OEM Partnerships Manager");
+    expect(canonicalizeRoleTitle("Emma Frost")).toBe("Emma Frost");
+    expect(canonicalizeRoleTitle("Senior Manager")).toBe("Senior Manager");
+  });
+  it("is idempotent", () => {
+    expect(canonicalizeRoleTitle("Engineering Manager")).toBe("Engineering Manager");
+    expect(canonicalizeRoleTitle(canonicalizeRoleTitle("EM"))).toBe("Engineering Manager");
+  });
+  it("a bare EM resolves to the same tier band as the spelled-out title", () => {
+    // getBandForRole canonicalizes internally, so "EM" and "Engineering Manager"
+    // are byte-identical here. (The manager band FLOOR lift itself is applied one
+    // layer up in resolveServerBand via liftPeopleManagerBand — covered there.)
+    const em = getBandForRole("unicorn", "EM", null);
+    const full = getBandForRole("unicorn", "Engineering Manager", null);
+    expect(em).toEqual(full);
+  });
+  it("APM routes to the product family (not engineering default)", () => {
+    expect(classifyRoleFamily("APM")).toBe("product");
+  });
+});
+
+describe("S123: consulting-senior ladder lifts above the IC Consultant anchor", () => {
+  const consultant = getBandForRole("consulting", "Consultant", null);
+  it("Partner resolves far above a base Consultant", () => {
+    const partner = getBandForRole("consulting", "Partner", null);
+    expect(partner.target).toBeGreaterThan(consultant.target * 2.5);
+  });
+  it("Associate Partner sits between Partner and Engagement Manager", () => {
+    const ap = getBandForRole("consulting", "Associate Partner", null);
+    const partner = getBandForRole("consulting", "Partner", null);
+    const em = getBandForRole("consulting", "Engagement Manager", null);
+    expect(ap.target).toBeLessThan(partner.target);
+    expect(ap.target).toBeGreaterThan(em.target);
+  });
+  it("Engagement Manager lifts above the IC Consultant", () => {
+    const em = getBandForRole("consulting", "Engagement Manager", null);
+    expect(em.target).toBeGreaterThan(consultant.target * 1.4);
+  });
+  it("the consulting-senior lift is gated to the consulting tier", () => {
+    // "Partner" outside consulting (e.g. a sales 'Partner' at a unicorn) must
+    // NOT get the equity-partner lift — it stays at the generic anchor.
+    const uniPartner = getBandForRole("unicorn", "Partner", null);
+    const uniBase = getBandForRole("unicorn", "Software Engineer", null);
+    expect(uniPartner.target).toBeLessThanOrEqual(uniBase.target * 1.1);
+  });
+  it("sales/BD 'Partner Manager' in consulting is not lifted as equity partner", () => {
+    const pm = getBandForRole("consulting", "Partner Manager", null);
+    const partner = getBandForRole("consulting", "Partner", null);
+    expect(pm.target).toBeLessThan(partner.target * 0.6);
   });
 });

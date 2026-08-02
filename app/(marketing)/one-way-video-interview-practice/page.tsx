@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     type: "article",
     title: "One-Way Video Interview Practice & Tips (India) | HireStepX",
     description:
-      "How to prepare for a one-way, asynchronous video interview — no live interviewer, often one take per question — and how to practice talking to a camera before the real one.",
+      "How to prepare for a one-way, asynchronous video interview (no live interviewer, often one take per question), and how to practice talking to a camera before the real one.",
     url: "https://hirestepx.com/one-way-video-interview-practice",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -62,7 +62,7 @@ const serif = { fontFamily: fonts.serif };
 const CHALLENGES = [
   {
     title: "No one to read the room for",
-    desc: "There's no nod, no follow-up, no reaction at all while you're answering — just a camera and a timer. Candidates who rely on interviewer feedback to pace themselves have nothing to adjust to.",
+    desc: "There's no nod, no follow-up, no reaction at all while you're answering: just a camera and a timer. Candidates who rely on interviewer feedback to pace themselves have nothing to adjust to.",
   },
   {
     title: "Usually one take, sometimes a hard time limit",
@@ -70,7 +70,7 @@ const CHALLENGES = [
   },
   {
     title: "You're being judged on delivery alone",
-    desc: "With no interviewer to build rapport with, tone, eye contact with the lens, and pacing carry more of the impression than they would in a live round — and it's the part candidates practice least, because they've never had to talk to a camera with a timer running.",
+    desc: "With no interviewer to build rapport with, tone, eye contact with the lens, and pacing carry more of the impression than they would in a live round, and it's the part candidates practice least, because they've never had to talk to a camera with a timer running.",
   },
 ];
 
@@ -89,7 +89,7 @@ const TIPS = [
   },
   {
     title: "Do a full technical check beforehand",
-    desc: "Lighting facing you, camera at eye level, mic tested, stable internet. A one-way interview gives you no interviewer to flag a technical issue mid-answer — it's on you to catch it first.",
+    desc: "Lighting facing you, camera at eye level, mic tested, stable internet. A one-way interview gives you no interviewer to flag a technical issue mid-answer: it's on you to catch it first.",
   },
 ];
 
@@ -177,7 +177,7 @@ export default async function OneWayVideoInterviewPage() {
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free: 2 sessions
             </Link>
             <Link
               href="/ai-mock-interview"
@@ -194,7 +194,7 @@ export default async function OneWayVideoInterviewPage() {
             Why one-way interviews feel harder than a live round
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 32 }}>
-            It's not the questions that trip candidates up — it's the format. Talking confidently to a silent camera on a countdown is a genuinely different skill from a live conversation, and almost nobody has practiced it before their first real one-way round.
+            It's not the questions that trip candidates up: it's the format. Talking confidently to a silent camera on a countdown is a genuinely different skill from a live conversation, and almost nobody has practiced it before their first real one-way round.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {CHALLENGES.map((c) => (
@@ -213,7 +213,7 @@ export default async function OneWayVideoInterviewPage() {
               How to prepare for a one-way video interview
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              None of this is about the answer content — it's about the delivery skill the format actually tests.
+              None of this is about the answer content: it's about the delivery skill the format actually tests.
             </p>
             <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 24 }}>
               {TIPS.map((item, i) => (
@@ -240,7 +240,7 @@ export default async function OneWayVideoInterviewPage() {
             A one-way interview's core challenge, answering out loud with no live person reacting, is exactly what AI mock interview practice already simulates. There's no camera feed to fixate on and no interviewer to read for cues, so the discomfort of "performing" to a silent recorder is one you can get used to beforehand instead of on the day it counts.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX asks a real question, gives you the same kind of time pressure, and scores your answer's structure and delivery afterward — so the first time you talk to a silent, unreacting interface isn't during the actual one-way round.
+            HireStepX asks a real question, gives you the same kind of time pressure, and scores your answer's structure and delivery afterward, so the first time you talk to a silent, unreacting interface isn't during the actual one-way round.
           </p>
         </section>
 
@@ -248,7 +248,7 @@ export default async function OneWayVideoInterviewPage() {
         <section aria-labelledby="ow-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="ow-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              One-way video interviews — common questions
+              One-way video interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -267,13 +267,13 @@ export default async function OneWayVideoInterviewPage() {
             Get comfortable talking to a camera first
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete AI mock interview sessions, free. No credit card, no scheduling — practice the delivery before the one-take round.
+            2 complete AI mock interview sessions, free. No credit card, no scheduling: practice the delivery before the one-take round.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free: 2 sessions included
           </Link>
         </section>
 
@@ -290,7 +290,7 @@ export default async function OneWayVideoInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

@@ -1,4 +1,4 @@
-/* Per-focus signature metrics — the three numbers that define quality in
+/* Per-focus signature metrics, the three numbers that define quality in
  * each interview focus. These are the instrument panel on the session card:
  * anchor delta for a negotiation, STAR coverage for a behavioral, capacity
  * math for a system design. A generic "did well / work on next" pair throws
@@ -31,7 +31,7 @@ export interface FocusMetric {
 export interface SignatureMetricSpec {
   /** Pinned, shown verbatim on the card. ≤ ~18 chars so the strip stays tidy. */
   label: string;
-  /** What to measure — one precise instruction, second person to the model. */
+  /** What to measure, one precise instruction, second person to the model. */
   measure: string;
   /** Example value FORMAT so the model emits a renderable string, not prose. */
   valueHint: string;
@@ -52,7 +52,7 @@ export const FOCUS_SIGNATURE_SPECS: Record<string, SignatureMetricSpec[]> = {
     },
     {
       label: "First-person",
-      measure: "Share of ownership statements told in 'I' rather than 'we' (Indian-register 'we' is not penalised — judge whether the personal slice was nameable).",
+      measure: "Share of ownership statements told in 'I' rather than 'we' (Indian-register 'we' is not penalised, judge whether the personal slice was nameable).",
       valueHint: '"71%"',
       toneRule: "good ≥65, watch 45-64, miss <45",
     },
@@ -280,16 +280,16 @@ export function formatSignatureMetricsPrompt(type: string | undefined): string {
   const lines = specs
     .map(
       (s, i) =>
-        `  ${i + 1}. label "${s.label}" — ${s.measure}\n` +
+        `  ${i + 1}. label "${s.label}", ${s.measure}\n` +
         `     value format: ${s.valueHint}; tone: ${s.toneRule}.`,
     )
     .join("\n");
   return (
-    `\n\nFOCUS SIGNATURE METRICS (focus=${type}) — populate the "focusMetrics" array with EXACTLY these ${specs.length} metrics, in this order, each grounded in the transcript. Echo the label verbatim. "value" must be a SHORT display string (the example format), never a sentence. "tone" is one of good|watch|miss|neutral — use "neutral" only when the metric genuinely had no good/bad signal in this round (e.g. the situation never came up).\n${lines}`
+    `\n\nFOCUS SIGNATURE METRICS (focus=${type}), populate the "focusMetrics" array with EXACTLY these ${specs.length} metrics, in this order, each grounded in the transcript. Echo the label verbatim. "value" must be a SHORT display string (the example format), never a sentence. "tone" is one of good|watch|miss|neutral, use "neutral" only when the metric genuinely had no good/bad signal in this round (e.g. the situation never came up).\n${lines}`
   );
 }
 
-/** The pinned label set for a focus — used by normalizeFocusMetrics to keep
+/** The pinned label set for a focus, used by normalizeFocusMetrics to keep
  *  only metrics whose label matches the spec (defends against drift). */
 export function signatureLabels(type: string | undefined): string[] {
   if (!type) return [];
@@ -314,7 +314,7 @@ export const PER_QUESTION_METRIC_SPECS: Record<string, PerQuestionMetricSpec[]> 
     { label: "Words",          measure: "Word count of the candidate's answer.",                                                                   valueHint: '"218"',    toneRule: "good 120-240, watch <80 or >300, miss extreme outliers" },
     { label: "First-person %", measure: "Share of ownership statements told as 'I' vs 'we'.",                                                      valueHint: '"64%"',    toneRule: "good ≥60, watch 40-59, miss <40" },
     { label: "Specifics",      measure: "Count of concrete specifics: named numbers, dates, company names, or outcomes.",                          valueHint: '"5"',      toneRule: "good ≥4, watch 2-3, miss ≤1" },
-    { label: "STAR coverage",  measure: "Percentage of STAR elements present (Situation, Task, Action, Result — L is bonus).",                     valueHint: '"100%"',   toneRule: "good 100, watch 75, miss ≤50" },
+    { label: "STAR coverage",  measure: "Percentage of STAR elements present (Situation, Task, Action, Result, L is bonus).",                     valueHint: '"100%"',   toneRule: "good 100, watch 75, miss ≤50" },
   ],
   technical: [
     { label: "Approaches",    measure: "Count of distinct solution approaches the candidate articulated (brute-force + optimal = 2).",              valueHint: '"2"',             toneRule: "good ≥2, watch 1 with reasoning, miss 1 with none" },
@@ -388,12 +388,12 @@ export function formatPerQuestionMetricsPrompt(type: string | undefined): string
   const lines = specs
     .map(
       (s, i) =>
-        `    ${i + 1}. label "${s.label}" — ${s.measure}\n` +
+        `    ${i + 1}. label "${s.label}", ${s.measure}\n` +
         `       value format: ${s.valueHint}; tone: ${s.toneRule}.`,
     )
     .join("\n");
   return (
-    `\n\nPER-QUESTION FOCUS METRICS (focus=${type}) — inside each perQuestion item, also emit:\n` +
+    `\n\nPER-QUESTION FOCUS METRICS (focus=${type}), inside each perQuestion item, also emit:\n` +
     `  "focusMetrics": [\n` +
     `    // Exactly these ${specs.length} metrics per question, in this order.\n` +
     `    // Echo labels verbatim. "value" is a SHORT display string (see format). "tone" is good|watch|miss|neutral.\n` +

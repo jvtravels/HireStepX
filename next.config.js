@@ -53,6 +53,26 @@ const nextConfig = {
     ],
   },
 
+  async rewrites() {
+    return [
+      // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
+      // root app/opengraph-image.tsx on the "opengraph-image" metadata
+      // convention name, so Next assigns the nested route a hash-suffixed
+      // internal name (opengraph-image-15i2cs) to avoid an output collision.
+      // Vercel's Next.js builder never registers a route for the pretty URL
+      // GSC/social crawlers actually request — only the hashed one shows up
+      // in .vercel/output/config.json — so every /questions/{slug}/opengraph-image
+      // request 404s in production despite working fine under `next start`.
+      // This rewrite covers the gap. The hash is derived from the file's
+      // path, not its content (verified stable across content-only edits);
+      // it only needs updating if this file moves or gains a filename sibling.
+      {
+        source: "/questions/:slug/opengraph-image",
+        destination: "/questions/:slug/opengraph-image-15i2cs",
+      },
+    ];
+  },
+
   async redirects() {
     return [
       // www → non-www 301. Vercel serves both by default; without this redirect
@@ -70,6 +90,28 @@ const nextConfig = {
         destination: "/blog/tcs-interview-questions-freshers-2026",
         permanent: true,
       },
+      // 10 blog post pairs were generated with byte-identical <title> values across
+      // two content batches (2026-07-21 and 2026-07-26), splitting Google ranking
+      // signal for the same query. The later/weaker-linked post in each pair was
+      // removed from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
+      // stronger post that keeps the content.
+      { source: "/blog/product-manager-interview-complete-guide-india-2026", destination: "/blog/product-manager-interview-guide-pm-india-2026", permanent: true },
+      { source: "/blog/oracle-india-software-engineer-bengaluru-hyderabad-2026", destination: "/blog/oracle-india-interview-questions-2026", permanent: true },
+      { source: "/blog/cisco-india-software-engineer-guide-bengaluru-2026", destination: "/blog/cisco-india-interview-questions-2026", permanent: true },
+      { source: "/blog/machine-learning-engineer-interview-mle-guide-india-2026", destination: "/blog/machine-learning-engineer-interview-questions-india-2026", permanent: true },
+      { source: "/blog/adobe-india-software-engineer-guide-noida-bengaluru-2026", destination: "/blog/adobe-india-interview-questions-2026", permanent: true },
+      { source: "/blog/atlassian-india-interview-questions-guide-bengaluru-2026", destination: "/blog/atlassian-india-software-engineer-guide-bengaluru-2026", permanent: true },
+      { source: "/blog/linkedin-india-software-engineer-guide-bengaluru-2026", destination: "/blog/linkedin-india-interview-questions-2026", permanent: true },
+      { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
+      { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
+      { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      // kubernetes-docker-devops-interview-questions-india-2026 (2026-01-01) and
+      // kubernetes-docker-interview-india-2026 (2026-04-06) covered the identical
+      // Docker/Kubernetes/Helm/CI-CD topic for the same query, and GSC "Crawled -
+      // not indexed" flagged one as a duplicate. Removed the older, weaker-linked
+      // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
+      // more heavily cross-linked survivor.
+      { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense
@@ -88,12 +130,15 @@ const nextConfig = {
       { source: "/page/:slug*", destination: "/", permanent: true },
       // Bare /companies/<company> URLs (e.g. /companies/flipkart), same
       // Suspense-streaming issue as /page/* above — moved to config so the
-      // redirect is a real 308 instead of a client-side meta-refresh. The
+      // redirect is a real 308 instead of a client-side meta-refresh. Points
+      // straight at /questions/<slug> (the canonical tree) rather than
+      // /companies/<slug> — that route itself now redirects to /questions,
+      // so going through it would cost crawlers and users an extra hop. The
       // in-page permanentRedirect() in companies/[slug]/page.tsx stays as a
       // fallback for any company added since this map was last generated.
       ...Object.entries(companyRedirectMap).map(([company, slug]) => ({
         source: `/companies/${company}`,
-        destination: `/companies/${slug}`,
+        destination: `/questions/${slug}`,
         permanent: true,
       })),
     ];

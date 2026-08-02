@@ -3,9 +3,9 @@ import { ReferralPageV2 } from "@/marketing-v2/MarketingPagesV2";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const metadata: Metadata = {
-  title: "Refer a Friend — Give a Session, Get a Session | HireStepX",
+  title: "Refer a Friend: Give a Session, Get a Session | HireStepX",
   description:
-    "Refer a friend to HireStepX — both of you get a free session credit. Share your link, they practise, you earn a free session. No codes, no hassle.",
+    "Refer a friend to HireStepX, and both of you get a free session credit. Share your link, they practise, you earn a free session. No codes, no hassle.",
   keywords: [
     "HireStepX referral program",
     "refer a friend interview prep India",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   ].join(", "),
   alternates: { canonical: "/referral" },
   openGraph: {
-    title: "Refer a Friend to HireStepX — Both of You Get a Session",
+    title: "Refer a Friend to HireStepX: Both of You Get a Session",
     description:
       "Share your referral link. Both of you get a free session credit. No limit on referrals.",
     url: "https://hirestepx.com/referral",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Refer a Friend to HireStepX — Give a Session, Get a Session",
+    title: "Refer a Friend to HireStepX: Give a Session, Get a Session",
     description:
       "Share your referral link. Both you and your friend earn a free AI mock interview session. No codes, no hassle.",
     images: ["https://hirestepx.com/opengraph-image"],

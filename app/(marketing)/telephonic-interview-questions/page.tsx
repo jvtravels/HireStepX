@@ -27,7 +27,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Telephonic Interview Questions & Prep Tips (India) | HireStepX",
   description:
-    "The telephonic round has no face, no body language, no screen — just your voice. Common telephonic interview questions, what recruiters actually screen for, and how to practice the format before the call.",
+    "The telephonic round has no face, no body language, no screen: just your voice. Common telephonic interview questions, what recruiters actually screen for, and how to practice the format before the call.",
   keywords: [
     "telephonic interview questions",
     "phone interview tips india",
@@ -65,7 +65,7 @@ const CHALLENGES = [
   },
   {
     title: "It's screening, not deciding",
-    desc: "A telephonic round is usually 10-20 minutes to confirm basic fit — role understanding, notice period, salary expectations, communication clarity — before anyone invests time in a video or in-person round. Short, sharp answers matter more here than depth.",
+    desc: "A telephonic round is usually 10-20 minutes to confirm basic fit (role understanding, notice period, salary expectations, communication clarity) before anyone invests time in a video or in-person round. Short, sharp answers matter more here than depth.",
   },
   {
     title: "Your voice is the entire signal",
@@ -74,11 +74,11 @@ const CHALLENGES = [
 ];
 
 const QUESTIONS = [
-  { q: "Tell me about yourself.", tip: "Keep it to 60-90 seconds on a call — recruiters have several of these back to back and reward brevity here more than in a video round." },
+  { q: "Tell me about yourself.", tip: "Keep it to 60-90 seconds on a call: recruiters have several of these back to back and reward brevity here more than in a video round." },
   { q: "Why are you looking to change / why this role?", tip: "Have one clean reason ready. Rambling reads worse on audio than it would on video, where your expression could still signal confidence." },
   { q: "What's your current notice period?", tip: "Know this number exactly. A vague answer on a screening call is an easy reason to deprioritize you." },
   { q: "What are your salary expectations?", tip: "Have a range ready before the call, not mid-sentence. Fumbling a number on a phone screen sounds worse than it looks in person." },
-  { q: "Walk me through your resume.", tip: "Practice saying your own timeline out loud — most candidates have never actually said it in one continuous pass before the call." },
+  { q: "Walk me through your resume.", tip: "Practice saying your own timeline out loud: most candidates have never actually said it in one continuous pass before the call." },
   { q: "Are you open to relocation / this location?", tip: "A firm, immediate answer here matters more than the reasoning behind it on a short screening call." },
 ];
 
@@ -95,7 +95,7 @@ export default async function TelephonicInterviewPage() {
         name: "What questions are asked in a telephonic interview?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Telephonic rounds are usually a quick screen: tell me about yourself, why you're looking to change roles, your current notice period, salary expectations, and a walkthrough of your resume. The goal is confirming basic fit fast, not evaluating depth — so short, clear answers matter more than they would in a later round.",
+          text: "Telephonic rounds are usually a quick screen: tell me about yourself, why you're looking to change roles, your current notice period, salary expectations, and a walkthrough of your resume. The goal is confirming basic fit fast, not evaluating depth, so short, clear answers matter more than they would in a later round.",
         },
       },
       {
@@ -103,7 +103,7 @@ export default async function TelephonicInterviewPage() {
         name: "How long does a telephonic interview usually last?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Most telephonic screening rounds run 10 to 20 minutes. Recruiters are moving through a shortlist and are listening for basic communication clarity and fit, not a full evaluation — that comes in the video or in-person round that follows.",
+          text: "Most telephonic screening rounds run 10 to 20 minutes. Recruiters are moving through a shortlist and are listening for basic communication clarity and fit, not a full evaluation: that comes in the video or in-person round that follows.",
         },
       },
       {
@@ -111,7 +111,7 @@ export default async function TelephonicInterviewPage() {
         name: "How is a telephonic interview different from a video interview?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "There's no body language, no face, no visual reassurance — your tone, pace, and clarity carry the entire impression. Pauses that would read as thoughtful on video can read as hesitation on a call. Practicing answers out loud, without relying on a screen or notes in front of the interviewer, closes that gap.",
+          text: "There's no body language, no face, no visual reassurance: your tone, pace, and clarity carry the entire impression. Pauses that would read as thoughtful on video can read as hesitation on a call. Practicing answers out loud, without relying on a screen or notes in front of the interviewer, closes that gap.",
         },
       },
       {
@@ -119,7 +119,7 @@ export default async function TelephonicInterviewPage() {
         name: "Can I practice for a telephonic interview with AI?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — voice-only AI mock interviews are a close match for the telephonic format specifically, since there's no camera in either case. Practicing your notice-period, salary, and 'tell me about yourself' answers out loud, at the pace and length a screening call actually rewards, is more useful preparation than reading through a question list silently.",
+          text: "Yes, voice-only AI mock interviews are a close match for the telephonic format specifically, since there's no camera in either case. Practicing your notice-period, salary, and 'tell me about yourself' answers out loud, at the pace and length a screening call actually rewards, is more useful preparation than reading through a question list silently.",
         },
       },
     ],
@@ -159,14 +159,14 @@ export default async function TelephonicInterviewPage() {
             <span style={{ fontStyle: "italic", color: t.copper }}>Questions & Prep.</span>
           </h1>
           <p style={{ ...s, fontSize: 17, lineHeight: 1.65, color: t.inkSoft, maxWidth: 580, margin: "0 auto 36px" }}>
-            No face, no screen, no body language — just your voice and 15 minutes to prove you're worth a second round. Here's what recruiters actually ask, and how to prepare for a format most candidates never rehearse out loud.
+            No face, no screen, no body language: just your voice and 15 minutes to prove you're worth a second round. Here's what recruiters actually ask, and how to prepare for a format most candidates never rehearse out loud.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free, 2 sessions
             </Link>
             <Link
               href="/ai-mock-interview"
@@ -183,7 +183,7 @@ export default async function TelephonicInterviewPage() {
             Why the telephonic round catches candidates off guard
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 32 }}>
-            Most interview prep assumes a face-to-face or video setting. A phone screen strips that away — and candidates who prepare answers silently, in their head, are usually saying them out loud for the very first time when the recruiter calls.
+            Most interview prep assumes a face-to-face or video setting. A phone screen strips that away, and candidates who prepare answers silently, in their head, are usually saying them out loud for the very first time when the recruiter calls.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {CHALLENGES.map((c) => (
@@ -202,7 +202,7 @@ export default async function TelephonicInterviewPage() {
               Common telephonic interview questions
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              The screening round rewards short, clear answers over depth — save the detail for the round that follows.
+              The screening round rewards short, clear answers over depth: save the detail for the round that follows.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {QUESTIONS.map((item) => (
@@ -224,7 +224,7 @@ export default async function TelephonicInterviewPage() {
             Reading through a list of telephonic questions doesn't train what a phone screen actually tests: saying your notice period, salary range, and resume walkthrough out loud, at a pace that sounds confident with zero visual cues to lean on.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX's AI interviewer is voice-only, the same as a real telephonic round — no camera, no visual prompts. It asks the questions, follows up in real time, and scores your answers on clarity and length so you know exactly how you'd sound on the actual call.
+            HireStepX's AI interviewer is voice-only, the same as a real telephonic round: no camera, no visual prompts. It asks the questions, follows up in real time, and scores your answers on clarity and length so you know exactly how you'd sound on the actual call.
           </p>
         </section>
 
@@ -232,7 +232,7 @@ export default async function TelephonicInterviewPage() {
         <section aria-labelledby="ti-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="ti-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              Telephonic interviews — common questions
+              Telephonic interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -251,13 +251,13 @@ export default async function TelephonicInterviewPage() {
             Rehearse your telephonic answers out loud
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete voice-only AI mock interview sessions, free. No credit card, no scheduling — practice before the recruiter calls.
+            2 complete voice-only AI mock interview sessions, free. No credit card, no scheduling: practice before the recruiter calls.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free, 2 sessions included
           </Link>
         </section>
 
@@ -275,7 +275,7 @@ export default async function TelephonicInterviewPage() {
                 { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

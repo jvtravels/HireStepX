@@ -1,4 +1,4 @@
-/* HireStepX — City-specific interview prep pages: /interview-prep/[city]
+/* HireStepX, City-specific interview prep pages: /interview-prep/[city]
  *
  * Targets "interview preparation Bangalore", "mock interview practice
  * Hyderabad" style queries — a gap the company × focus SEO tree
@@ -19,7 +19,7 @@ export interface CityPage {
   displayName: string;
   intro: string;
   hiringContext: string;
-  /* Company keys — must exist in data/seo-pages.ts SEO_PAGES. */
+  /* Company keys, must exist in data/seo-pages.ts SEO_PAGES. */
   companies: string[];
 }
 

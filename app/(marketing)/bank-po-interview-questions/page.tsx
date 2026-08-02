@@ -27,7 +27,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Bank PO Interview Questions — SBI & IBPS Prep (India) | HireStepX",
+  title: "Bank PO Interview Questions: SBI & IBPS Prep (India) | HireStepX",
   description:
     "The bank PO interview is a personality and banking-awareness round, not a resume screen. Common SBI and IBPS PO interview questions, what the panel evaluates, and how to practice answering out loud.",
   keywords: [
@@ -41,17 +41,17 @@ export const metadata: Metadata = {
   alternates: { canonical: "/bank-po-interview-questions" },
   openGraph: {
     type: "article",
-    title: "Bank PO Interview Questions — SBI & IBPS Prep (India) | HireStepX",
+    title: "Bank PO Interview Questions: SBI & IBPS Prep (India) | HireStepX",
     description:
       "Common SBI and IBPS PO interview questions, what the panel evaluates, and how to practice answering out loud before the final round.",
     url: "https://hirestepx.com/bank-po-interview-questions",
     siteName: "HireStepX",
     locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Bank PO Interview Questions — SBI & IBPS Prep | HireStepX" }],
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Bank PO Interview Questions: SBI & IBPS Prep | HireStepX" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bank PO Interview Questions — SBI & IBPS Prep | HireStepX",
+    title: "Bank PO Interview Questions: SBI & IBPS Prep | HireStepX",
     description: "Common bank PO interview questions and how to practice the final panel round.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
@@ -63,7 +63,7 @@ const serif = { fontFamily: fonts.serif };
 const PANEL_FOCUS = [
   {
     title: "Personality and communication",
-    desc: "The panel is assessing composure, clarity, and how you carry yourself under a multi-member interview — this round exists specifically because the written exam already tested your knowledge.",
+    desc: "The panel is assessing composure, clarity, and how you carry yourself under a multi-member interview; this round exists specifically because the written exam already tested your knowledge.",
   },
   {
     title: "Banking and financial awareness",
@@ -76,12 +76,12 @@ const PANEL_FOCUS = [
 ];
 
 const QUESTIONS = [
-  { q: "Tell us about yourself.", tip: "For a panel of 3-5 people, keep this structured and under 2 minutes — rambling reads as poor communication skill, which is explicitly part of what's being scored." },
-  { q: "Why do you want to join the banking sector?", tip: "Avoid \"stability\" as your only reason — panels hear it constantly. Tie it to something specific about the work itself." },
+  { q: "Tell us about yourself.", tip: "For a panel of 3-5 people, keep this structured and under 2 minutes: rambling reads as poor communication skill, which is explicitly part of what's being scored." },
+  { q: "Why do you want to join the banking sector?", tip: "Avoid \"stability\" as your only reason, panels hear it constantly. Tie it to something specific about the work itself." },
   { q: "What is the current repo rate, and what does it mean?", tip: "Know the current number before the interview and be able to explain the concept in one or two plain sentences, not a textbook definition." },
-  { q: "What are the key responsibilities of a Probationary Officer?", tip: "Research this specifically — customer service, credit appraisal, and branch operations exposure — rather than guessing generically." },
+  { q: "What are the key responsibilities of a Probationary Officer?", tip: "Research this specifically (customer service, credit appraisal, and branch operations exposure) rather than guessing generically." },
   { q: "Describe a situation where you handled pressure or a difficult decision.", tip: "Use a real, specific example. Panels probe vague answers here more than almost any other question." },
-  { q: "Do you have any questions for us?", tip: "Always have one ready — asking nothing reads as low genuine interest in a multi-member panel setting." },
+  { q: "Do you have any questions for us?", tip: "Always have one ready: asking nothing reads as low genuine interest in a multi-member panel setting." },
 ];
 
 export default async function BankPoInterviewPage() {
@@ -121,7 +121,7 @@ export default async function BankPoInterviewPage() {
         name: "Can I practice for a bank PO panel interview with AI?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — rehearsing your motivational and personality-round answers out loud (tell us about yourself, why banking, handling pressure) builds the composure a panel is directly evaluating, since most candidates have only reviewed these silently. AI mock interview practice lets you say your answers out loud and get a scored read on clarity and structure before facing a real multi-member panel.",
+          text: "Yes. Rehearsing your motivational and personality-round answers out loud (tell us about yourself, why banking, handling pressure) builds the composure a panel is directly evaluating, since most candidates have only reviewed these silently. AI mock interview practice lets you say your answers out loud and get a scored read on clarity and structure before facing a real multi-member panel.",
         },
       },
     ],
@@ -130,7 +130,7 @@ export default async function BankPoInterviewPage() {
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: "Bank PO Interview Questions — SBI & IBPS Prep",
+    headline: "Bank PO Interview Questions: SBI & IBPS Prep",
     description:
       "Common SBI and IBPS PO interview questions, what the panel evaluates, and how to practice answering out loud before the final round.",
     url: "https://hirestepx.com/bank-po-interview-questions",
@@ -161,14 +161,14 @@ export default async function BankPoInterviewPage() {
             <span style={{ fontStyle: "italic", color: t.copper }}>Questions & Prep.</span>
           </h1>
           <p style={{ ...s, fontSize: 17, lineHeight: 1.65, color: t.inkSoft, maxWidth: 580, margin: "0 auto 36px" }}>
-            The final panel round after prelims and mains — personality, banking awareness, and role motivation. What SBI and IBPS panels actually evaluate, and how to prepare answers you can say out loud with confidence.
+            The final panel round after prelims and mains: personality, banking awareness, and role motivation. What SBI and IBPS panels actually evaluate, and how to prepare answers you can say out loud with confidence.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free, 2 sessions
             </Link>
             <Link
               href="/ai-mock-interview"
@@ -185,7 +185,7 @@ export default async function BankPoInterviewPage() {
             What the interview panel actually evaluates
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 32 }}>
-            By the time you reach the interview, the written exam has already confirmed your aptitude. This round tests three different things — and candidates who prepare only banking facts, and never rehearse the personality questions out loud, are the ones who underperform relative to their written score.
+            By the time you reach the interview, the written exam has already confirmed your aptitude. This round tests three different things, and candidates who prepare only banking facts, and never rehearse the personality questions out loud, are the ones who underperform relative to their written score.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {PANEL_FOCUS.map((c) => (
@@ -204,7 +204,7 @@ export default async function BankPoInterviewPage() {
               Common bank PO interview questions
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              A mix of personality, motivation, and banking-awareness questions — panels move through all three in one sitting.
+              A mix of personality, motivation, and banking-awareness questions: panels move through all three in one sitting.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {QUESTIONS.map((item) => (
@@ -223,10 +223,10 @@ export default async function BankPoInterviewPage() {
             Rehearse the personality round, not just the facts
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            Most bank PO candidates over-index on memorizing banking awareness and under-practice saying their motivational answers out loud — which is exactly the part a multi-member panel is scoring hardest for composure and clarity.
+            Most bank PO candidates over-index on memorizing banking awareness and under-practice saying their motivational answers out loud, which is exactly the part a multi-member panel is scoring hardest for composure and clarity.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX's AI interviewer asks the same personality and motivation questions a bank PO panel would, follows up in real time, and scores your answers on structure and clarity — so your first time saying "why banking" out loud isn't in front of the actual panel.
+            HireStepX's AI interviewer asks the same personality and motivation questions a bank PO panel would, follows up in real time, and scores your answers on structure and clarity, so your first time saying "why banking" out loud isn't in front of the actual panel.
           </p>
         </section>
 
@@ -234,7 +234,7 @@ export default async function BankPoInterviewPage() {
         <section aria-labelledby="bpi-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="bpi-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              Bank PO interviews — common questions
+              Bank PO interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -253,13 +253,13 @@ export default async function BankPoInterviewPage() {
             Practice your panel round out loud
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete AI mock interview sessions, free. No credit card, no scheduling — practice before the SBI or IBPS panel.
+            2 complete AI mock interview sessions, free. No credit card, no scheduling, practice before the SBI or IBPS panel.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free, 2 sessions included
           </Link>
         </section>
 
@@ -276,7 +276,7 @@ export default async function BankPoInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

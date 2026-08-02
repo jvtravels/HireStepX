@@ -169,8 +169,8 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: respectfully, leverage",
-      "prose": "Basically, on the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?",
-      "actionKind": "reactive-followup",
+      "prose": "Hearing you out — let me see what I can structure. We can revise the fitment to ₹26.4L total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?",
+      "actionKind": "counter-offer",
       "keywords": [
         "respectfully",
         "leverage"
@@ -1030,7 +1030,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: challenges, evidence, politely",
-      "prose": "With the latest compliance review, noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "challenges",
@@ -1477,7 +1477,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/4 keywords present",
-      "prose": "After the down-round corrections, noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "clarifies",
@@ -1511,7 +1511,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: structure, handles, math",
-      "prose": "After the seed-to-A bottleneck, noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
       "actionKind": "discovery-probe",
       "keywords": [
         "structure",

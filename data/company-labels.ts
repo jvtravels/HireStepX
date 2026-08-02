@@ -1,4 +1,4 @@
-/* Canonical company display names — single source of truth.
+/* Canonical company display names, single source of truth.
  * Import { COMPANY_LABEL } wherever a human-readable name is needed.
  * When adding a new company to seo-pages, add it here too. */
 

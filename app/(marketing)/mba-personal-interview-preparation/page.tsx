@@ -27,7 +27,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "MBA Personal Interview (PI) Preparation — CAT, XAT, SNAP | HireStepX",
+  title: "MBA Personal Interview (PI) Preparation: CAT, XAT, SNAP | HireStepX",
   description:
     "The PI round carries 30-50% weightage at many IIMs. Common MBA personal interview questions, how the panel evaluates you differently from a job interview, and how to practice answering out loud.",
   keywords: [
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/mba-personal-interview-preparation" },
   openGraph: {
     type: "article",
-    title: "MBA Personal Interview (PI) Preparation — CAT, XAT, SNAP | HireStepX",
+    title: "MBA Personal Interview (PI) Preparation: CAT, XAT, SNAP | HireStepX",
     description:
       "Common MBA PI questions, what the panel is actually evaluating, and how to practice answering out loud before the round that decides your admit.",
     url: "https://hirestepx.com/mba-personal-interview-preparation",
@@ -63,7 +63,7 @@ const serif = { fontFamily: fonts.serif };
 const PANEL_FOCUS = [
   {
     title: "Clarity of thought, not just content",
-    desc: "PI panels weigh how you structure and deliver an answer as heavily as the answer itself — since CAT/XAT already tested your aptitude, this round exists specifically to hear you think and speak in real time.",
+    desc: "PI panels weigh how you structure and deliver an answer as heavily as the answer itself, since CAT/XAT already tested your aptitude, this round exists specifically to hear you think and speak in real time.",
   },
   {
     title: "Your \"why\" has to hold up under probing",
@@ -71,17 +71,17 @@ const PANEL_FOCUS = [
   },
   {
     title: "Academics and work experience, cross-examined",
-    desc: "Expect specific questions on your graduation subjects, final-year project, or current job responsibilities — vague or generic answers here are the most common reason strong CAT scorers underperform in PI.",
+    desc: "Expect specific questions on your graduation subjects, final-year project, or current job responsibilities: vague or generic answers here are the most common reason strong CAT scorers underperform in PI.",
   },
 ];
 
 const QUESTIONS = [
-  { q: "Tell me about yourself.", tip: "Panels hear this dozens of times a day — a generic, resume-recited answer blends in. Lead with something specific that sets up your \"why MBA\" answer." },
-  { q: "Why MBA, and why now?", tip: "Have a specific, personal answer ready, not a generic \"career growth\" line — panels probe this one hardest and follow up on vague answers." },
+  { q: "Tell me about yourself.", tip: "Panels hear this dozens of times a day: a generic, resume-recited answer blends in. Lead with something specific that sets up your \"why MBA\" answer." },
+  { q: "Why MBA, and why now?", tip: "Have a specific, personal answer ready, not a generic \"career growth\" line: panels probe this one hardest and follow up on vague answers." },
   { q: "Why this specific institute, over others you could apply to?", tip: "Research something concrete about the program (a specialization, a faculty area, an alumni outcome) rather than reciting rankings." },
-  { q: "Explain your final-year project or a key work responsibility.", tip: "Be ready to go two or three questions deep on this — panels often use it to test whether you truly understand your own work." },
+  { q: "Explain your final-year project or a key work responsibility.", tip: "Be ready to go two or three questions deep on this: panels often use it to test whether you truly understand your own work." },
   { q: "Where do you see yourself in 5 years?", tip: "Tie the answer back to your stated reason for the MBA so the two don't contradict each other under follow-up." },
-  { q: "Do you have any questions for the panel?", tip: "Always have one specific to the program ready — asking nothing reads as low genuine interest in a panel setting." },
+  { q: "Do you have any questions for the panel?", tip: "Always have one specific to the program ready: asking nothing reads as low genuine interest in a panel setting." },
 ];
 
 export default async function MbaPersonalInterviewPage() {
@@ -113,7 +113,7 @@ export default async function MbaPersonalInterviewPage() {
         name: "How do I answer \"Why MBA\" convincingly in a PI?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Give a specific, personal reason tied to your actual background rather than a generic 'career growth' or 'better opportunities' answer — panels hear the generic version constantly and probe it hardest. Be ready for two or three follow-up questions on the same point, since panels are testing whether the reasoning holds up, not just whether you have an answer prepared.",
+          text: "Give a specific, personal reason tied to your actual background rather than a generic 'career growth' or 'better opportunities' answer: panels hear the generic version constantly and probe it hardest. Be ready for two or three follow-up questions on the same point, since panels are testing whether the reasoning holds up, not just whether you have an answer prepared.",
         },
       },
       {
@@ -121,7 +121,7 @@ export default async function MbaPersonalInterviewPage() {
         name: "Can I practice for an MBA PI with AI mock interviews?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — rehearsing your 'why MBA', 'why this institute', and academic/work-experience answers out loud, including handling follow-up questions, builds the real-time clarity a PI panel is evaluating. Most candidates prepare these answers only in writing or silently, so the first time they say them out loud under any pressure is in the actual interview. AI mock interview practice closes that gap with unlimited repetition and follow-up questions.",
+          text: "Yes, rehearsing your 'why MBA', 'why this institute', and academic/work-experience answers out loud, including handling follow-up questions, builds the real-time clarity a PI panel is evaluating. Most candidates prepare these answers only in writing or silently, so the first time they say them out loud under any pressure is in the actual interview. AI mock interview practice closes that gap with unlimited repetition and follow-up questions.",
         },
       },
     ],
@@ -168,7 +168,7 @@ export default async function MbaPersonalInterviewPage() {
               href="/signup"
               style={{ ...s, background: t.copper, color: "#fff", padding: "13px 28px", borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: "none", display: "inline-block" }}
             >
-              Practice free — 2 sessions
+              Practice free, 2 sessions
             </Link>
             <Link
               href="/ai-mock-interview"
@@ -185,7 +185,7 @@ export default async function MbaPersonalInterviewPage() {
             What a PI panel is actually evaluating
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 32 }}>
-            CAT, XAT, or SNAP already confirmed your aptitude on paper. The PI exists to hear you reason and communicate in real time — which is why candidates with strong scores still underperform here if they've only ever prepared answers in writing.
+            CAT, XAT, or SNAP already confirmed your aptitude on paper. The PI exists to hear you reason and communicate in real time, which is why candidates with strong scores still underperform here if they've only ever prepared answers in writing.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {PANEL_FOCUS.map((c) => (
@@ -204,7 +204,7 @@ export default async function MbaPersonalInterviewPage() {
               Common MBA personal interview questions
             </h2>
             <p style={{ ...s, fontSize: 15, color: t.inkSoft, marginBottom: 32 }}>
-              Expect follow-up questions on nearly every one of these — panels are testing depth, not just recall.
+              Expect follow-up questions on nearly every one of these: panels are testing depth, not just recall.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {QUESTIONS.map((item) => (
@@ -223,10 +223,10 @@ export default async function MbaPersonalInterviewPage() {
             Say "why MBA" out loud before the panel does
           </h2>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal, marginBottom: 16 }}>
-            Most PI candidates write their "why MBA" answer, review it silently, and never actually say it out loud until the interview — which is exactly when a panel's follow-up question exposes how rehearsed-but-shallow it really was.
+            Most PI candidates write their "why MBA" answer, review it silently, and never actually say it out loud until the interview, which is exactly when a panel's follow-up question exposes how rehearsed-but-shallow it really was.
           </p>
           <p style={{ ...s, fontSize: 16, lineHeight: 1.7, color: t.coal }}>
-            HireStepX's AI interviewer asks your PI questions out loud, follows up in real time the way a panel would, and scores your answers on clarity and structure — so the first time your "why MBA" gets pressure-tested isn't in front of the actual admissions committee.
+            HireStepX's AI interviewer asks your PI questions out loud, follows up in real time the way a panel would, and scores your answers on clarity and structure, so the first time your "why MBA" gets pressure-tested isn't in front of the actual admissions committee.
           </p>
         </section>
 
@@ -234,7 +234,7 @@ export default async function MbaPersonalInterviewPage() {
         <section aria-labelledby="mba-faq" style={{ background: t.creamRaised, padding: "56px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
             <h2 id="mba-faq" style={{ ...serif, fontSize: 28, fontWeight: 400, color: t.coal, marginBottom: 36, letterSpacing: "-0.02em" }}>
-              MBA personal interviews — common questions
+              MBA personal interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {faqSchema.mainEntity.map((item) => (
@@ -253,13 +253,13 @@ export default async function MbaPersonalInterviewPage() {
             Rehearse your PI answers out loud
           </h2>
           <p style={{ ...s, fontSize: 16, color: t.inkSoft, marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            2 complete AI mock interview sessions, free. No credit card, no scheduling — practice before the panel that decides your admit.
+            2 complete AI mock interview sessions, free. No credit card, no scheduling: practice before the panel that decides your admit.
           </p>
           <Link
             href="/signup"
             style={{ ...s, background: t.copper, color: "#fff", padding: "15px 36px", borderRadius: 8, fontWeight: 600, fontSize: 16, textDecoration: "none", display: "inline-block" }}
           >
-            Practice free — 2 sessions included
+            Practice free, 2 sessions included
           </Link>
         </section>
 
@@ -273,10 +273,10 @@ export default async function MbaPersonalInterviewPage() {
               {[
                 { label: "AI Mock Interview Practice", href: "/ai-mock-interview" },
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
-                { label: "Bank PO Interview Questions — SBI & IBPS", href: "/bank-po-interview-questions" },
+                { label: "Bank PO Interview Questions: SBI & IBPS", href: "/bank-po-interview-questions" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
-                { label: "How It Works — 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

@@ -3,7 +3,7 @@ import { RefundPolicyV2 } from "@/marketing-v2/MarketingPagesV2";
 
 export const metadata: Metadata = {
   title: "Refund Policy | HireStepX",
-  description: "HireStepX Refund Policy — when session credits are refunded, how to request one, and what is non-refundable. Refunds processed within 5–7 business days.",
+  description: "HireStepX Refund Policy: when session credits are refunded, how to request one, and what is non-refundable. Refunds processed within 5–7 business days.",
   alternates: { canonical: "/refund" },
 };
 

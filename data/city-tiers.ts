@@ -1022,7 +1022,7 @@ export function getCityTier(city: string | undefined | null): CityTier {
   for (const [k, tier] of Object.entries(CITY_TIER_MAP)) {
     if (key.includes(k) || k.includes(key)) return tier;
   }
-  return "tier1"; // default — unknown cities assumed metro
+  return "tier1"; // default, unknown cities assumed metro
 }
 
 /** Apply city-tier multiplier to a salary value. Returns rounded to nearest 0.5 LPA. */

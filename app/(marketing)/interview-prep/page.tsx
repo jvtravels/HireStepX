@@ -30,7 +30,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Interview Preparation Guide India 2026 — AI Mock Interviews | HireStepX",
+  title: "Interview Preparation Guide India 2026: AI Mock Interviews | HireStepX",
   description:
     "Interview prep guide for India 2026. AI mock interviews for TCS, Infosys, Google, Amazon, Flipkart, and 200+ companies. All formats covered.",
   keywords: [
@@ -97,7 +97,7 @@ function pageGroup(companies: string[]) {
    the hub never renders more than GROUPS_PER_PAGE company cards at once —
    the same 30-per-page cap used on /questions. */
 const GROUPS = [
-  { slug: "service-it", heading: "Service IT — Campus & Fresher Guides", description: "The highest-volume hiring segment in India. These companies hire 100,000+ freshers per year combined.", companies: SERVICE_COMPANIES },
+  { slug: "service-it", heading: "Service IT: Campus & Fresher Guides", description: "The highest-volume hiring segment in India. These companies hire 100,000+ freshers per year combined.", companies: SERVICE_COMPANIES },
   { slug: "product", heading: "Indian Product Companies", description: "Unicorns and fast-scaling startups. Higher pay, harder interviews, more ownership.", companies: PRODUCT_COMPANIES },
   { slug: "faang", heading: "FAANG & Global Tech", description: "The most competitive hiring bar. Long preparation lead time, significant pay premium.", companies: FAANG_COMPANIES },
   { slug: "consulting", heading: "Consulting & Finance", description: "Case-driven hiring with a structured evaluation rubric. Completely different format from tech.", companies: CONSULTING_COMPANIES },
@@ -143,7 +143,7 @@ export default async function InterviewPrepPage({
         name: "How many mock interviews should I do before the real one?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "At minimum 3: one baseline session (to identify your weaknesses), one targeted practice session (acting on that feedback), and one full simulation close to the interview date. More is better — most candidates see measurable improvement within 5 practice sessions.",
+          text: "At minimum 3: one baseline session (to identify your weaknesses), one targeted practice session (acting on that feedback), and one full simulation close to the interview date. More is better; most candidates see measurable improvement within 5 practice sessions.",
         },
       },
       {
@@ -151,7 +151,7 @@ export default async function InterviewPrepPage({
         name: "What is the difference between technical and behavioral interview preparation?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Technical preparation focuses on data structures, algorithms, system design, and CS fundamentals — skills you demonstrate by solving problems. Behavioral preparation builds a story bank of 8–10 STAR (Situation, Task, Action, Result) examples from your experience, which you adapt across different questions. Both require practice out loud, not just note-taking.",
+          text: "Technical preparation focuses on data structures, algorithms, system design, and CS fundamentals: skills you demonstrate by solving problems. Behavioral preparation builds a story bank of 8–10 STAR (Situation, Task, Action, Result) examples from your experience, which you adapt across different questions. Both require practice out loud, not just note-taking.",
         },
       },
       {
@@ -159,7 +159,7 @@ export default async function InterviewPrepPage({
         name: "How long does it take to prepare for campus placements in India?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "For service companies (TCS, Infosys, Wipro): 3–4 weeks of focused aptitude + coding practice. For product companies (Flipkart, CRED, Razorpay): 2–3 months of DSA + system design + behavioral preparation. Start early — most candidates underestimate how much practice is needed to answer clearly under pressure.",
+          text: "For service companies (TCS, Infosys, Wipro): 3–4 weeks of focused aptitude + coding practice. For product companies (Flipkart, CRED, Razorpay): 2–3 months of DSA + system design + behavioral preparation. Start early: most candidates underestimate how much practice is needed to answer clearly under pressure.",
         },
       },
       {
@@ -167,7 +167,7 @@ export default async function InterviewPrepPage({
         name: "What is AI mock interview practice and does it actually help?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "AI mock interview practice (like HireStepX) simulates real interview conditions — the AI asks questions, listens to your voice answer, and grades your response on structure, specificity, and delivery. It's available 24/7, provides consistent scoring (unlike friends who may be too kind), and tracks improvement across sessions. Studies on deliberate practice consistently show that objective feedback loops accelerate skill acquisition compared to unstructured practice.",
+          text: "AI mock interview practice (like HireStepX) simulates real interview conditions: the AI asks questions, listens to your voice answer, and grades your response on structure, specificity, and delivery. It's available 24/7, provides consistent scoring (unlike friends who may be too kind), and tracks improvement across sessions. Studies on deliberate practice consistently show that objective feedback loops accelerate skill acquisition compared to unstructured practice.",
         },
       },
     ],
@@ -177,7 +177,7 @@ export default async function InterviewPrepPage({
     "@context": "https://schema.org",
     "@type": "Article",
     headline: "Complete Interview Preparation Guide for India 2026",
-    description: "Comprehensive guide covering how to prepare for job interviews at service companies, product startups, FAANG, and consulting firms in India — with AI mock interview practice.",
+    description: "Comprehensive guide covering how to prepare for job interviews at service companies, product startups, FAANG, and consulting firms in India, with AI mock interview practice.",
     image: "https://hirestepx.com/opengraph-image",
     author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     publisher: {
@@ -266,7 +266,7 @@ export default async function InterviewPrepPage({
 
               <p style={{ ...s, fontStyle: "italic", fontSize: 19, lineHeight: 1.55, color: sand, marginTop: 20, maxWidth: 680, textWrap: "balance" }}>
                 Not all Indian interviews are the same. TCS wants aptitude. Razorpay wants system design.
-                McKinsey wants case studies. This guide maps the terrain — and links you directly to practice
+                McKinsey wants case studies. This guide maps the terrain and links you directly to practice
                 for each company.
               </p>
 
@@ -343,14 +343,14 @@ export default async function InterviewPrepPage({
                   A preparation framework that works
                 </h2>
                 <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Most candidates fail at Step 1 — they study what they already know instead of what they don't.
+                  Most candidates fail at Step 1: they study what they already know instead of what they don't.
                 </p>
                 <ol style={{ padding: "0 0 0 0", margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 0 }}>
                   {[
-                    { n: "01", title: "Baseline mock interview first", body: "Do one practice interview before any studying. This is uncomfortable but essential — it shows you exactly where you are, not where you think you are. Most candidates discover their real gap is delivery and structure, not content." },
-                    { n: "02", title: "Know your company's format cold", body: "TCS Ninja has 3 NQT rounds. Amazon has 16 Leadership Principles. Google has a 'Googleyness' round. CRED has a take-home assignment. Each format rewards different preparation — don't use generic content." },
+                    { n: "01", title: "Baseline mock interview first", body: "Do one practice interview before any studying. This is uncomfortable but essential: it shows you exactly where you are, not where you think you are. Most candidates discover their real gap is delivery and structure, not content." },
+                    { n: "02", title: "Know your company's format cold", body: "TCS Ninja has 3 NQT rounds. Amazon has 16 Leadership Principles. Google has a 'Googleyness' round. CRED has a take-home assignment. Each format rewards different preparation, so don't use generic content." },
                     { n: "03", title: "Build a story bank (behavioral)", body: "Prepare 8–10 STAR (Situation, Task, Action, Result) stories covering: leadership, conflict, failure, initiative, teamwork, technical problem-solving, and learning something new. These same stories answer 90% of behavioral questions across all companies." },
-                    { n: "04", title: "Practice out loud, not on paper", body: "Reading answers and saying them are completely different skills. Record yourself. Count filler words. Time every answer — aim for 90 seconds to 2 minutes. The goal is naturally structured, not scripted." },
+                    { n: "04", title: "Practice out loud, not on paper", body: "Reading answers and saying them are completely different skills. Record yourself. Count filler words. Time every answer (aim for 90 seconds to 2 minutes). The goal is naturally structured, not scripted." },
                     { n: "05", title: "Company-specific deep dive (last 1 week)", body: "In the final week, simulate the exact interview format: same time limits, same question types, same pressure. Use company-specific question sets and frameworks, not generic prep materials." },
                   ].map((step, i) => (
                     <li key={step.n} style={{
@@ -526,10 +526,10 @@ export default async function InterviewPrepPage({
               {/* ── Freshers & Campus HR prep ─────────────────────────────── */}
               <section style={{ marginTop: 56 }}>
                 <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
-                  Freshers &amp; Campus Placement — HR Prep
+                  Freshers &amp; Campus Placement: HR Prep
                 </h2>
                 <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Every campus interview ends with an HR round. These guides cover the questions that appear in 90%+ of Indian campus drives — with structured answer frameworks you can practice out loud.
+                  Every campus interview ends with an HR round. These guides cover the questions that appear in 90%+ of Indian campus drives, with structured answer frameworks you can practice out loud.
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
                   {[
@@ -545,7 +545,7 @@ export default async function InterviewPrepPage({
                     },
                     {
                       title: "Common HR Interview Questions",
-                      desc: "10 questions that appear in 95%+ of fresher HR rounds — strength, weakness, 5-year goal, why this company, relocation, and more.",
+                      desc: "10 questions that appear in 95%+ of fresher HR rounds: strength, weakness, 5-year goal, why this company, relocation, and more.",
                       href: "/questions/common-hr-interview-questions-freshers-india",
                     },
                   ].map((item) => (
@@ -577,7 +577,7 @@ export default async function InterviewPrepPage({
                   Prepare by city
                 </h2>
                 <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Hiring mix differs by city — a Bengaluru loop skews GCC-heavy, Mumbai skews banking and consulting. See which companies are actually hiring where.
+                  Hiring mix differs by city: a Bengaluru loop skews GCC-heavy, Mumbai skews banking and consulting. See which companies are actually hiring where.
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   {CITY_PAGES.map((c) => (
@@ -619,14 +619,14 @@ export default async function InterviewPrepPage({
                   Company interview guides
                 </h2>
                 <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Each guide covers the full process for that company — rounds, format, what the interviewers evaluate, and what separates shortlisted candidates.
+                  Each guide covers the full process for that company: rounds, format, what the interviewers evaluate, and what separates shortlisted candidates.
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
                   {([
-                    ["AI Mock Interview Practice — Free, Voice-Based", "/ai-mock-interview"],
-                    ["Freshworks SDE Interview 2026 — B2B SaaS & Customer-Success Engineering", "/blog/freshworks-interview-questions-india-2026"],
-                    ["PhonePe Engineering Interview 2026 — Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
-                    ["Meesho Engineering Interview 2026 — Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
+                    ["AI Mock Interview Practice: Free, Voice-Based", "/ai-mock-interview"],
+                    ["Freshworks SDE Interview 2026: B2B SaaS & Customer-Success Engineering", "/blog/freshworks-interview-questions-india-2026"],
+                    ["PhonePe Engineering Interview 2026: Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
+                    ["Meesho Engineering Interview 2026: Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
                     ["FAANG Interview Preparation India 2026", "/blog/faang-interview-preparation-india-2026"],
                     ["System Design Interview Preparation India", "/blog/system-design-interview-preparation"],
                     ["DSA 60-Day Preparation Plan India 2026", "/blog/dsa-60-day-preparation-plan"],
@@ -666,7 +666,7 @@ export default async function InterviewPrepPage({
                   Know your worth before the interview
                 </h2>
                 <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
-                  Salary guides for top Indian employers — sourced from AmbitionBox, Glassdoor, and DRHP filings. Know the range before you negotiate.
+                  Salary guides for top Indian employers, sourced from AmbitionBox, Glassdoor, and DRHP filings. Know the range before you negotiate.
                 </p>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
                   {SALARY_SEO_PAGES.slice(0, 18).map((salaryPage) => (
@@ -705,7 +705,7 @@ export default async function InterviewPrepPage({
             </h2>
             <p style={{ fontSize: 14, color: sand, margin: "10px 0 20px", lineHeight: 1.5, maxWidth: 480, marginInline: "auto" }}>
               Reading interview tips is not the same as interview practice. The AI interviewer asks
-              questions, listens to your voice answer, and grades your structure and delivery — in 2 minutes.
+              questions, listens to your voice answer, and grades your structure and delivery, in 2 minutes.
             </p>
             <Link href="/signup?source=interview-prep-cta" style={{
               display: "inline-flex", alignItems: "center", gap: 8,

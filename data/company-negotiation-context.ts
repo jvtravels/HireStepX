@@ -46,7 +46,7 @@ export interface CompanyNegotiationContext {
    *  Engineer, Dealer Relations) are kept as-is — they're more
    *  useful as coaching prompts than as missed lookups. */
   negotiationFocusGrid: string[];
-  /** ISO date — pair with research-backlog timestamp. */
+  /** ISO date, pair with research-backlog timestamp. */
   lastVerified: string;
 }
 
@@ -226,9 +226,9 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
   acko: {
     liquidityRisk: "medium-high",
     candidateShouldAsk: [
-      "ESOP liquidity — last buyback / next window",
+      "ESOP liquidity, last buyback / next window",
       "Actuarial/risk bonus rules",
-      "Claims workload (if claims role) — daily case load",
+      "Claims workload (if claims role), daily case load",
       "Fixed vs variable split",
       "Insurance-related employee benefits",
       "Appraisal cycle",
@@ -326,7 +326,7 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
     likelyBenefits: [
       "health insurance (US-style coverage)",
       "PF + gratuity",
-      "ESOP — meaningful at IC2+",
+      "ESOP, meaningful at IC2+",
       "WFH stipend / remote-first culture",
       "device policy (top-tier hardware)",
       "learning budget",
@@ -364,7 +364,7 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
     candidateShouldAsk: [
       "ESOP grant size + last secondary / buyback (profitable, periodic liquidity)",
       "Why pay is below product-co peers (quality-of-work narrative is real)",
-      "Fixed vs variable for sales/SE roles — OTE realism",
+      "Fixed vs variable for sales/SE roles, OTE realism",
       "Territory + quota for AE",
       "Internal level mapping (L1-L7)",
       "Hybrid / remote policy",
@@ -542,7 +542,7 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
       "Internal level (ICT2 / ICT3 / ICT4 / ICT5) + step within level",
       "RSU vesting (4yr periodic, semi-annual vest in Apr/Oct)",
       "Sign-on bonus (₹2-25L by level; often single-year clawback)",
-      "Bonus target (Apple bonus is lower than peers — 3-10% typical)",
+      "Bonus target (Apple bonus is lower than peers, 3-10% typical)",
       "Hardware vs software team scope (Silicon / Apple Intelligence / Services orgs differ)",
       "First appraisal date + promo eligibility timeline",
       "Device / product benefits + global mobility (Cupertino transfer)",
@@ -585,9 +585,9 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
   adobe: {
     liquidityRisk: "low",
     candidateShouldAsk: [
-      "RSU vesting + annual refresher (Adobe refreshers are 3-5% top-up — get floor in writing)",
+      "RSU vesting + annual refresher (Adobe refreshers are 3-5% top-up, get floor in writing)",
       "Internal level (IC2 / IC3 / IC4 / IC5)",
-      "Bonus target (% of base, AIP — 8-15% typical)",
+      "Bonus target (% of base, AIP, 8-15% typical)",
       "Sign-on bonus (₹2-30L by level)",
       "Team / product (Creative Cloud / Document Cloud / Experience Cloud / Firefly GenAI)",
       "First appraisal date",
@@ -631,7 +631,7 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
   salesforce: {
     liquidityRisk: "low",
     candidateShouldAsk: [
-      "RSU vesting / refresher cadence (Salesforce RSU = annual cliff variant — uncommon)",
+      "RSU vesting / refresher cadence (Salesforce RSU = annual cliff variant, uncommon)",
       "Internal level (AMTS / MTS / SMTS / LMTS / Architect)",
       "Sales OTE attainment + quota history (last 4 quarters) for sales roles",
       "Bonus target (% of base, V2MOM-driven)",
@@ -699,9 +699,9 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
     ],
     negotiationFocusGrid: [
       "Software Engineer Junior: L59-L60 calibration (push for L60)",
-      "Software Engineer Mid: L61-L62 — RSU refresher floor in writing",
+      "Software Engineer Mid: L61-L62, RSU refresher floor in writing",
       "Software Engineer Senior: L63-L64 sign-on + team selection",
-      "Product Manager Junior: APM/PM1 — push for PM2 with MBA signal",
+      "Product Manager Junior: APM/PM1, push for PM2 with MBA signal",
       "Product Manager Mid: PM2-Senior PM RSU refresh + bonus target",
       "Product Manager Senior: Principal PM (L65) scope",
       "UX Designer Junior: Portfolio + IC level mapping",
@@ -744,9 +744,9 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
       "leadership-principle-driven culture",
     ],
     negotiationFocusGrid: [
-      "Software Engineer Junior: SDE-1 L4 — Y1+Y2 sign-on split",
-      "Software Engineer Mid: SDE-2 L5 — sign-on funds back-loaded vest",
-      "Software Engineer Senior: SDE-3 L6 — level mapping (L5 vs L6 = ₹25-40L gap)",
+      "Software Engineer Junior: SDE-1 L4, Y1+Y2 sign-on split",
+      "Software Engineer Mid: SDE-2 L5, sign-on funds back-loaded vest",
+      "Software Engineer Senior: SDE-3 L6, level mapping (L5 vs L6 = ₹25-40L gap)",
       "Product Manager Junior: PM-T L4 written-narrative (6-pager)",
       "Product Manager Mid: PMT L5 two-pizza vs platform org",
       "Product Manager Senior: Senior PM-T L6 P&L + AWS pricing-power",
@@ -792,7 +792,7 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
       "global mobility opportunities",
     ],
     negotiationFocusGrid: [
-      "Software Engineer Junior: E3/E4 — push for E4 with intern conversion",
+      "Software Engineer Junior: E3/E4, push for E4 with intern conversion",
       "Software Engineer Mid: E5 RSU refresher cadence",
       "Software Engineer Senior: E6 AI/RL org top-of-band",
       "Product Manager Junior: IC4 RPM strategy interview",
@@ -857,7 +857,7 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
   },
 };
 
-/** Same normalisation as getKnownFacts() — keep these in lockstep. */
+/** Same normalisation as getKnownFacts(), keep these in lockstep. */
 function normaliseCompany(rawCompany: string | undefined): string {
   if (!rawCompany) return "";
   return rawCompany
@@ -898,7 +898,7 @@ export function formatCompanyNegotiationContext(
   const lines: string[] = [];
   lines.push("");
   lines.push(`COMPANY-SPECIFIC NEGOTIATION CONTEXT for ${companyName}:`);
-  lines.push(`  • Equity liquidity risk: ${ctx.liquidityRisk} — discount face-value equity accordingly when coaching.`);
+  lines.push(`  • Equity liquidity risk: ${ctx.liquidityRisk}, discount face-value equity accordingly when coaching.`);
   lines.push(`  • Candidate should ask HR (use these as the "questions to clarify" coaching prompts):`);
   for (const ask of ctx.candidateShouldAsk) lines.push(`      - ${ask}`);
   lines.push(`  • Likely benefits beyond CTC (mention proactively when presenting the offer): ${ctx.likelyBenefits.join("; ")}.`);
