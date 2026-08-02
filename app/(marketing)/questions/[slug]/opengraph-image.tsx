@@ -7,12 +7,18 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const revalidate = 86400; /* 24h, mirrors sibling page.tsx */
 
-/* generateStaticParams here forces Next to satori-render all 300+ slugs
-   at build time, which starved a Vercel build of disk/CPU and left a
-   resource-dependent subset of slugs 404ing in prod (confirmed via GSC +
-   curl — failures weren't tied to recency, e.g. long-established slugs
-   404ed too). Rendering on-demand with revalidate keeps every slug
-   resolvable without gambling the whole build on one giant image batch. */
+/* No generateStaticParams: the 404s in prod were never a build-resource
+   problem. Root cause (confirmed via `vercel build` + inspecting
+   .vercel/output/config.json): this file collides with the root
+   app/opengraph-image.tsx on the "opengraph-image" metadata convention
+   name, so Next assigns this nested route a hash-suffixed internal name
+   (currently opengraph-image-15i2cs) to avoid an output collision. Vercel's
+   Next.js builder never emits a rewrite from the pretty URL that GSC/social
+   crawlers actually request (/questions/{slug}/opengraph-image) to that
+   hashed function — only the hashed path appears in config.json's routes.
+   The explicit rewrite in next.config.js's rewrites() covers the gap. The
+   hash is derived from this file's path, not its content (verified stable
+   across content-only edits) — it only changes if this file moves. */
 
 const COAL = "#0E0C08";
 const CREAM = "#FAF7F0";

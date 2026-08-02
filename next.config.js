@@ -53,6 +53,26 @@ const nextConfig = {
     ],
   },
 
+  async rewrites() {
+    return [
+      // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
+      // root app/opengraph-image.tsx on the "opengraph-image" metadata
+      // convention name, so Next assigns the nested route a hash-suffixed
+      // internal name (opengraph-image-15i2cs) to avoid an output collision.
+      // Vercel's Next.js builder never registers a route for the pretty URL
+      // GSC/social crawlers actually request — only the hashed one shows up
+      // in .vercel/output/config.json — so every /questions/{slug}/opengraph-image
+      // request 404s in production despite working fine under `next start`.
+      // This rewrite covers the gap. The hash is derived from the file's
+      // path, not its content (verified stable across content-only edits);
+      // it only needs updating if this file moves or gains a filename sibling.
+      {
+        source: "/questions/:slug/opengraph-image",
+        destination: "/questions/:slug/opengraph-image-15i2cs",
+      },
+    ];
+  },
+
   async redirects() {
     return [
       // www → non-www 301. Vercel serves both by default; without this redirect
