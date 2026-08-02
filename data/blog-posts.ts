@@ -16582,8 +16582,8 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     slug: "hcl-interview-questions-freshers-2026",
-    title: "HCL Tech Interview Questions for Freshers 2026: Selection Process and Preparation Guide",
-    metaDescription: "Complete HCL Technologies interview preparation guide for freshers 2026. HCL Tech selection process, aptitude test, technical interview questions (OOP, DBMS, OS), HR interview, and how to get selected.",
+    title: "HCL On-Campus Recruitment Process 2026: Rounds, Interview Questions & Freshers Guide",
+    metaDescription: "HCL on-campus recruitment process 2026 explained round by round: aptitude test, group discussion, technical interview questions (OOP, DBMS, OS), HR round, and how to clear each stage as a fresher.",
     company: "HCL",
     category: "Company Guides",
     readTime: "13 min read",
