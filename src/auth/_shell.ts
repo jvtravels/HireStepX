@@ -164,6 +164,13 @@ export function isSessionExpiredByPreference(): boolean {
   }
 }
 
+/* A same-origin relative path only: single leading slash, never "//" or
+ * "/\" (both of which browsers resolve as a scheme-relative URL to a
+ * different origin, e.g. "//evil.com" -> "https://evil.com"). */
+function isSafeRelativePath(path: string): boolean {
+  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/\\");
+}
+
 /* ─── Build a /signup or /login link that preserves both
        plan + next params (Login → Signup, Signup → Login). ─── */
 
@@ -176,7 +183,7 @@ export function buildAuthLink(
   const next = searchParams.get("next");
   const qs = new URLSearchParams();
   if (plan) qs.set("plan", plan);
-  if (next && next.startsWith("/")) qs.set("next", next);
+  if (next && isSafeRelativePath(next)) qs.set("next", next);
   const search = qs.toString();
   return search ? `${basePath}?${search}` : basePath;
 }
@@ -207,7 +214,7 @@ export function computeAuthRedirect({
   plan,
   hasCompletedOnboarding,
 }: ComputeRedirectArgs): string {
-  if (next && next.startsWith("/")) return next;
+  if (next && isSafeRelativePath(next)) return next;
   const base = hasCompletedOnboarding ? "/dashboard" : "/onboarding";
   if (!plan) return base;
   const resolvedPlan = PLAN_ALIASES[plan] ?? plan;

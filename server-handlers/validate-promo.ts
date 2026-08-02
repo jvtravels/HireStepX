@@ -3,14 +3,18 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, isRateLimited, rateLimitResponse, getClientIp } from "./_shared";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-const PLAN_AMOUNT: Record<string, number> = { weekly: 4900, monthly: 14900 };
+// Preview-only amounts — must match _payment-verification.ts's PLAN_AMOUNT
+// (the source of truth used when the charge actually happens). That file
+// pulls in node:crypto and is Node-serverless only, so it can't be imported
+// from this edge handler; keep this copy in sync by hand.
+const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900, monthly: 14900 };
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -23,7 +27,14 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const auth = await verifyAuth(req);
-  if (!auth.authenticated) return unauthorizedResponse(headers);
+  if (!auth.authenticated || !auth.userId) return unauthorizedResponse(headers);
+
+  // The response distinguishes valid/invalid codes, so an unrate-limited
+  // endpoint is an oracle for brute-forcing live promo codes. Limit both by
+  // IP and by user so an attacker can't just spread guesses across IPs.
+  const ip = getClientIp(req);
+  if (await isRateLimited(ip, "validate-promo-ip", 20, 60_000)) return rateLimitResponse(headers, 60);
+  if (await isRateLimited(auth.userId, "validate-promo-user", 10, 60_000)) return rateLimitResponse(headers, 60);
 
   const body = await req.json().catch(() => ({})) as { code?: string; plan?: string };
   const code = body.code?.trim().toUpperCase();
