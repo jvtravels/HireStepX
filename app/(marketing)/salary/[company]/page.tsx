@@ -138,12 +138,21 @@ function buildRoleSections(
   return roles.flatMap(({ roleKey, label }) => {
     const roleData = overrides?.[roleKey] ?? importedOverrides?.[roleKey];
 
+    // Levels sourced from different tiers (hand-curated for one level, a
+    // CSV-derived fallback for the next) can disagree on scale — a broader
+    // CSV aggregate landing lower than an already-curated lower level's
+    // figure. Rather than render a level that appears to pay less than the
+    // level below it, drop it: fewer trustworthy rows beat a confusing
+    // regression.
+    let runningMax = -Infinity;
     const bands: SalaryBandRow[] = LEVEL_KEYS.flatMap((lvl) => {
       // CSV-derived research dataset is the last-resort fallback per
       // level, for roles with no hand-curated or AmbitionBox-imported
       // band — otherwise these sections silently render empty.
       const band = roleData?.[lvl] ?? getCsvDerivedBandOverride(companySlug, roleKey, lvl);
       if (!band) return [];
+      if (band.totalMax < runningMax) return [];
+      runningMax = band.totalMax;
       return [
         {
           level: lvl,
