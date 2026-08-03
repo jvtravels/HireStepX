@@ -8,6 +8,7 @@ import {
 } from "../../../../data/salary-seo";
 import { COMPANY_SALARY_OVERRIDES, COMPANY_META } from "../../../../data/company-salary-overrides";
 import { IMPORTED_SALARY_OVERRIDES } from "../../../../data/_imported-salary-overrides.generated";
+import { getCsvDerivedBandOverride } from "../../../../data/csv-derived-fallbacks";
 import { COMPANY_KNOWN_FACTS } from "../../../../data/company-known-facts";
 import { CALIBRATION_DATE } from "../../../../data/salaries";
 import {
@@ -133,14 +134,15 @@ function buildRoleSections(
 ): SalaryRoleSection[] {
   const overrides = resolveOverrides(companySlug);
   const importedOverrides = resolveImportedOverrides(companySlug);
-  if (!overrides && !importedOverrides) return [];
 
   return roles.flatMap(({ roleKey, label }) => {
     const roleData = overrides?.[roleKey] ?? importedOverrides?.[roleKey];
-    if (!roleData) return [];
 
     const bands: SalaryBandRow[] = LEVEL_KEYS.flatMap((lvl) => {
-      const band = roleData[lvl];
+      // CSV-derived research dataset is the last-resort fallback per
+      // level, for roles with no hand-curated or AmbitionBox-imported
+      // band — otherwise these sections silently render empty.
+      const band = roleData?.[lvl] ?? getCsvDerivedBandOverride(companySlug, roleKey, lvl);
       if (!band) return [];
       return [
         {
