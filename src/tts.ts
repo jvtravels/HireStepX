@@ -1498,6 +1498,9 @@ export async function speak(
   };
 
   // Azure (3rd-tier) → Browser final fallback.
+  // Pass voiceId through so Azure's pickVoice() hashes the same interviewer
+  // identity, keeping the voice consistent across a session even when the
+  // provider tier changes mid-session.
   const azureFallback = async () => {
     console.warn("Trying Azure TTS fallback");
     recordTtsAttempt(attempt, "azure");
@@ -1507,7 +1510,7 @@ export async function speak(
       const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
       handle = browserHandle;
       setCancel(browserHandle.cancel);
-    }, gender, undefined, onDurationKnown, wrapStart("azure"));
+    }, gender, voiceId, onDurationKnown, wrapStart("azure"));
     setCancel(handle.cancel);
   };
 
@@ -1527,9 +1530,18 @@ export async function speak(
     let cartesiaVoice: string | null = null;
     try {
       const enInVoices = await fetchCartesiaVoices("en_IN");
-      const genderMatch = gender && enInVoices.find(v => v.gender === gender);
-      if (genderMatch?.id) {
-        cartesiaVoice = genderMatch.id;
+      const genderMatches = gender ? enInVoices.filter(v => v.gender === gender) : enInVoices;
+      if (genderMatches.length > 0) {
+        // Hash voiceId (the session's seeded Sarvam voice name) to a stable
+        // index into the gender-matched pool, so the same interviewer keeps
+        // the same Cartesia voice across the whole session instead of
+        // everyone landing on genderMatches[0].
+        if (voiceId) {
+          const hash = voiceId.split("").reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
+          cartesiaVoice = genderMatches[Math.abs(hash) % genderMatches.length].id;
+        } else {
+          cartesiaVoice = genderMatches[0].id;
+        }
       } else if (!gender) {
         cartesiaVoice = enInVoices[0]?.id || DEFAULT_VOICE_ID;
       }
