@@ -77,12 +77,29 @@ export async function generateMetadata({
   if (!page) return { title: "Not Found" };
 
   const label = salaryCompanyLabel(company);
-  const title = `${page.searchPhrase} | HireStepX`;
-  const hasData = buildRoleSections(company, page.roles).length > 0;
+  const roleSections = buildRoleSections(company, page.roles);
+  const hasData = roleSections.length > 0;
+
+  // Pages with a handful of roles keep their hand-tuned, single-keyword
+  // searchPhrase (e.g. "Razorpay Software Engineer Salary India 2026") —
+  // that title is deliberately optimized for the highest-search-volume
+  // query. Once the CSV-derived role expansion pushed a page well past
+  // that scope, an unchanged title/description misrepresents what's on
+  // the page to anyone landing via a different role's search query, and
+  // undersells the page's coverage in the SERP snippet.
+  const isBroadRoster = roleSections.length > 5;
+  const firstRole = roleSections[0]?.roleLabel;
+  const lastRole = roleSections[roleSections.length - 1]?.roleLabel;
+  const title = isBroadRoster
+    ? `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole}) | HireStepX`
+    : `${page.searchPhrase} | HireStepX`;
+  const description = isBroadRoster
+    ? `${page.metaDescription} Covers ${roleSections.length} roles at ${label}, from ${firstRole} to ${lastRole}.`
+    : page.metaDescription;
 
   return {
     title,
-    description: page.metaDescription,
+    description,
     keywords: [
       `${label} salary India 2026`,
       `${label} software engineer salary`,
@@ -97,7 +114,7 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
       title,
-      description: page.metaDescription,
+      description,
       url: `https://hirestepx.com/salary/${company}`,
       siteName: "HireStepX",
       locale: "en_IN",
@@ -106,7 +123,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title,
-      description: page.metaDescription,
+      description,
       images: ["https://hirestepx.com/opengraph-image"],
     },
   };
