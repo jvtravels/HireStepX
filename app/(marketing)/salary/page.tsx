@@ -146,45 +146,24 @@ export default async function SalaryIndexPage() {
         strategy="lazyOnload"
       />
       <NavV2 />
-      <div style={{ background: t.cream, padding: "18px 24px 0" }}>
+      <div style={{ background: t.copperWash, borderBottom: `1px solid ${t.copperBorder}` }}>
         <a
           href="/salary-report-2026"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            flexWrap: "wrap",
+            display: "block",
             maxWidth: 1080,
             margin: "0 auto",
-            background: t.creamRaised,
-            border: `1px solid ${t.copperBorder}`,
-            borderRadius: 14,
-            padding: "16px 20px",
+            padding: "10px 24px",
+            textAlign: "center",
             textDecoration: "none",
           }}
         >
-          <span
-            style={{
-              fontFamily: fonts.mono,
-              fontSize: 11,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: t.copper,
-              background: t.copperWash,
-              border: `1px solid ${t.copperBorder}`,
-              borderRadius: 6,
-              padding: "4px 9px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            New · 2026 Report
-          </span>
-          <span style={{ flex: "1 1 260px", fontFamily: fonts.sans, fontSize: 15, color: t.coal, lineHeight: 1.45 }}>
-            <strong>Indian Startup Engineer Salary Report 2026</strong> — median entry/mid/senior CTC across every
-            company below, including emerging AI startups (Sarvam, Moglix, Navi) no one else has data on.
-          </span>
-          <span style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.copper, whiteSpace: "nowrap" }}>
-            View the report →
+          <span style={{ fontFamily: fonts.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5 }}>
+            <strong style={{ color: t.copper }}>New for 2026 —</strong> the Indian Startup Engineer Salary Report,
+            covering AI startups like Sarvam, Moglix and Navi no one else has data on.
+          </span>{" "}
+          <span style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 600, color: t.copper, whiteSpace: "nowrap" }}>
+            Read it →
           </span>
         </a>
       </div>
