@@ -999,7 +999,7 @@ export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[
         <div
           className="sal-hub-header"
           style={{
-            paddingTop: ED_PADDING.heroTop,
+            paddingTop: 52,
             paddingBottom: 52,
             borderBottom: `1px solid ${t.line}`,
             background: t.creamRaised,
