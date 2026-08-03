@@ -550,6 +550,12 @@ export function SalaryCompanyPage({
                   {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
                   <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
                 </p>
+                {roles.length > 1 && (
+                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "10px 0 0" }}>
+                    Salary bands for {roles.length} roles at {companyLabel}, from {headlineRole.roleLabel} to{" "}
+                    {roles[roles.length - 1].roleLabel} — see all below.
+                  </p>
+                )}
               </div>
             )}
           </div>
