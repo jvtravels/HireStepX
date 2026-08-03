@@ -268,6 +268,30 @@ export const COMPANY_LABEL: Record<string, string> = {
   // Healthcare (hospitals)
   fortis: "Fortis Healthcare",
 
+  // Telecom
+  airtel: "Airtel",
+  "reliance-jio": "Reliance Jio",
+  "vodafone-idea": "Vodafone Idea",
+
+  // Global fintech / payments
+  paypal: "PayPal",
+  "american-express": "American Express",
+
+  // Indian fintech / consumer tech
+  pharmeasy: "PharmEasy",
+  mobikwik: "MobiKwik",
+  dailyhunt: "Dailyhunt",
+  glance: "Glance",
+  icertis: "Icertis",
+
+  // BFSI (NBFC)
+  "bajaj-finserv": "Bajaj Finserv",
+  "aditya-birla-capital": "Aditya Birla Capital",
+
+  // Global consumer tech (India GCC)
+  airbnb: "Airbnb",
+  "twitter-x": "X (Twitter)",
+
   // Government / PSU
   upsc: "UPSC",
   ssc: "SSC",

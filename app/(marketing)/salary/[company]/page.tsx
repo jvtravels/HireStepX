@@ -144,6 +144,13 @@ const COMPANY_KEY_ALIASES: Record<string, string> = {
   curefit: "cure.fit",
   "tata-1mg": "1mg",
   "procter-gamble": "p&g",
+  goldman: "goldman sachs",
+  jpmc: "jpmorgan",
+  kotak: "kotak mahindra bank",
+  paypal: "paypal india",
+  "american-express": "american express india",
+  airbnb: "airbnb india",
+  "twitter-x": "twitter/x india",
 };
 
 /* Some legacy override keys use spaces ("morgan stanley", "hdfc bank").
