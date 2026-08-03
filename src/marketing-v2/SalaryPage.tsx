@@ -541,19 +541,14 @@ export function SalaryCompanyPage({
 
             {/* Headline figure — the number, above the fold, before any table */}
             {headlineRole && headlineBand && (
-              <div className="ed-rise ed-d3" style={{ marginTop: 32, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                <div>
-                  <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
-                    {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
-                  </p>
-                  <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
-                    {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
-                    <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
-                  </p>
-                </div>
-                <a href={questionHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
-                  Practice {companyLabel} questions <span className="ed-cta-arrow" aria-hidden>→</span>
-                </a>
+              <div className="ed-rise ed-d3" style={{ marginTop: 32 }}>
+                <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
+                  {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
+                </p>
+                <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
+                  {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
+                  <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
+                </p>
               </div>
             )}
           </div>
