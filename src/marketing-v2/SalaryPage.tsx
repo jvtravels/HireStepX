@@ -415,18 +415,6 @@ function ConfidenceBadge({ tier }: { tier?: "high" | "medium" | "low" }) {
   );
 }
 
-const disclaimer: CSSProperties = {
-  fontFamily: fonts.sans,
-  fontSize: 12,
-  color: t.inkFaint,
-  lineHeight: 1.6,
-  padding: "12px 16px",
-  background: t.creamSoft,
-  borderRadius: 6,
-  border: `1px solid ${t.line}`,
-  marginTop: 24,
-};
-
 const chipStyle: CSSProperties = {
   display: "inline-block",
   padding: "2px 8px",
@@ -467,6 +455,7 @@ export function SalaryCompanyPage({
         .sal-table { width: 100%; border-collapse: collapse; }
         .sal-table tr:last-child td { border-bottom: none; }
         .sal-table tr:hover td { background: ${t.creamSoft}; }
+        .sal-h1::first-letter { text-transform: uppercase; }
 
         @media (max-width: 640px) {
           .sal-container { padding: 0 16px !important; }
@@ -490,7 +479,7 @@ export function SalaryCompanyPage({
             <p className="ed-rise" style={eyebrow}>
               Salary Guide · India 2026
             </p>
-            <h1 className="ed-rise ed-d1" style={h1Style}>
+            <h1 className="ed-rise ed-d1 sal-h1" style={h1Style}>
               {companyLabel} Salary Guide India 2026
             </h1>
             <p className="ed-rise ed-d2" style={leadStyle}>
@@ -553,19 +542,14 @@ export function SalaryCompanyPage({
 
             {/* Headline figure — the number, above the fold, before any table */}
             {headlineRole && headlineBand && (
-              <div className="ed-rise ed-d3" style={{ marginTop: 32, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                <div>
-                  <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
-                    {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
-                  </p>
-                  <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
-                    {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
-                    <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
-                  </p>
-                </div>
-                <a href={questionHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
-                  Practice {companyLabel} questions <span className="ed-cta-arrow" aria-hidden>→</span>
-                </a>
+              <div className="ed-rise ed-d3" style={{ marginTop: 32 }}>
+                <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
+                  {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
+                </p>
+                <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
+                  {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
+                  <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
+                </p>
               </div>
             )}
           </div>
@@ -707,16 +691,6 @@ export function SalaryCompanyPage({
               </a>
             </div>
           )}
-
-          {/* Disclaimer */}
-          <p style={disclaimer}>
-            <strong>Data sources:</strong> AmbitionBox (primary) and Glassdoor India
-            (secondary cross-check). Ranges represent the 25th–90th
-            percentile of reported total CTC (base + variable + annual equity value) in
-            Indian cities. Individual offers vary by negotiation, team, location, and
-            joining year. These figures are market reference data, not a guarantee of any
-            specific offer. Verify with current offer letters and recruiter disclosures.
-          </p>
 
           {/* Cross-links */}
           <div
