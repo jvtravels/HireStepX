@@ -111,12 +111,11 @@ function StatCard({ value, label }: { value: string; label: string }) {
     >
       <p
         style={{
-          fontFamily: fonts.serif,
-          fontSize: "clamp(24px, 3vw, 34px)",
+          fontFamily: fonts.mono,
+          fontSize: "clamp(20px, 2.4vw, 27px)",
           fontWeight: 700,
           color: t.coal,
           margin: "0 0 6px",
-          letterSpacing: "-0.02em",
         }}
       >
         {value}
