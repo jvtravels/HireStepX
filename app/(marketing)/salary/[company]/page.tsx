@@ -149,20 +149,25 @@ function buildRoleSections(
     // shallower than the app's (entry/mid/senior/lead/executive) — when a
     // role has no CSV "manager" tier, both `lead` and `executive` fall back
     // to the same CSV "lead" row (expToCsvLevels), producing two rows with
-    // identical figures. `source` embeds the exact CSV role/level it was
-    // read from, so an unchanged source between consecutive levels means
-    // we've re-read the same underlying row — drop the repeat.
-    let prevSource: string | undefined;
+    // identical figures. The CSV-derived source string embeds the exact
+    // role/level it was read from, so an unchanged CSV source between
+    // consecutive *CSV-fallback* levels means we've re-read the same row —
+    // drop the repeat. Curated/imported bands are excluded from this check:
+    // their `source` is a citation, not a row identity, and is routinely
+    // identical across genuinely-different levels (e.g. one research pass
+    // covering entry/mid/senior together).
+    let prevCsvFallbackSource: string | undefined;
     const bands: SalaryBandRow[] = LEVEL_KEYS.flatMap((lvl) => {
       // CSV-derived research dataset is the last-resort fallback per
       // level, for roles with no hand-curated or AmbitionBox-imported
       // band — otherwise these sections silently render empty.
-      const band = roleData?.[lvl] ?? getCsvDerivedBandOverride(companySlug, roleKey, lvl);
+      const direct = roleData?.[lvl];
+      const band = direct ?? getCsvDerivedBandOverride(companySlug, roleKey, lvl);
       if (!band) return [];
       if (band.totalMax < runningMax) return [];
-      if (band.source && band.source === prevSource) return [];
+      if (!direct && band.source && band.source === prevCsvFallbackSource) return [];
       runningMax = band.totalMax;
-      prevSource = band.source;
+      prevCsvFallbackSource = direct ? undefined : band.source;
       return [
         {
           level: lvl,
