@@ -558,7 +558,7 @@ export function SalaryCompanyPage({
         {/* ── Salary tables ── */}
         <div
           className="sal-container"
-          style={{ ...container, paddingTop: 48 }}
+          style={{ ...containerNarrow, paddingTop: 48 }}
         >
           {hasRoles ? (
             roles.map((role) => (
