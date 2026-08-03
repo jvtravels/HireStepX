@@ -25143,6 +25143,196 @@ export const BLOG_POSTS: BlogPost[] = [
       { href: "/questions/globallogic-india-software-engineer-interview-questions", label: "GlobalLogic Interview Questions: Technical Round Practice" },
     ],
   },
+  {
+    slug: "anthropic-interview-experience-2026",
+    title: "Anthropic Interview Experience 2026: Process, Rounds, and What to Expect",
+    metaDescription: "Anthropic interview experience guide India 2026. The AI safety company's hiring process for remote software engineers: take-home challenge, technical and values rounds, salary ranges, and how to prepare.",
+    company: "Anthropic",
+    category: "Experience",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&q=80",
+    heroAlt: "Abstract neural network visualization representing an Anthropic interview guide",
+    heroBg: "#161412",
+    datePublished: "2026-08-03",
+    intro: "Anthropic is an AI safety company that builds Claude, one of the world's leading safety-focused large language model families. Its India headcount is extremely small (fewer than 30 as of 2026) and every India hire is fully remote, working on SF-anchored teams. Anthropic's interview bar is research-grade: interviewers expect paper-quality discussions on alignment, RLHF, or interpretability alongside strong software engineering, and the process weighs a dedicated values interview as seriously as the technical rounds. This guide covers what to expect in an Anthropic interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The Anthropic interview process: what to expect",
+        content: "Anthropic's SWE loop typically runs 4-5 rounds over 3-5 weeks:\n\n1. Resume screen:\nAnthropic is small and highly selective. A referral from a current employee dramatically improves your odds of clearing this stage.\n\n2. Recruiter screen (30 min):\nA conversation on role fit, background, and genuine alignment with Anthropic's mission, not just interest in a well-known AI lab.\n\n3. Take-home coding challenge (2-4 hours):\nA problem closer to real engineering work than a LeetCode puzzle. Clean code, sensible tests, and clear reasoning about trade-offs matter more than raw speed.\n\n4. Two technical interviews:\nOne on algorithms and data structures, one on systems design. Expect follow-up questions that probe how you'd handle failure modes and adversarial inputs, not just the happy path.\n\n5. Values and culture interview:\nA dedicated round assessing mission alignment with AI safety, ethics, and long-term thinking. This is not a formality: Anthropic treats it as a hard filter and candidates who give generic answers here are regularly rejected.",
+      },
+      {
+        heading: "What Anthropic interviewers look for",
+        content: "A few qualities consistently separate strong candidates at Anthropic:\n\n1. Genuine mission alignment:\nAnthropic's values round exists specifically to filter out candidates chasing prestige over substance. Interviewers can tell the difference between someone who has thought seriously about AI safety and someone reciting talking points.\n\n2. Research-grade technical reasoning:\nEven for pure engineering roles, interviewers expect you to reason carefully about failure modes, edge cases, and adversarial inputs before optimising for performance. Published research (NeurIPS, ICLR, ICML) is a strong signal but not required.\n\n3. Comfort with ambiguity and long-horizon problems:\nAnthropic is a research-heavy organisation without a fixed playbook for many problems. Candidates who can reason from first principles, rather than pattern-matching to a known solution, tend to do better.\n\n4. Clean, tested code over clever code:\nThe take-home is scored on real engineering judgment: readable structure, sensible test coverage, and clear write-ups of trade-offs, not the shortest possible solution.",
+      },
+      {
+        heading: "How to prepare for an Anthropic interview",
+        content: "1. Get a referral if you can:\nWith India headcount under 30, a warm introduction from a current employee meaningfully improves your odds of clearing the resume screen.\n\n2. Practise explaining trade-offs, not just solutions:\nFor the take-home and technical rounds, rehearse narrating why you chose an approach and what you gave up, not just describing what the code does.\n\n3. Read up on AI safety fundamentals:\nYou don't need to be a researcher, but you should understand at a working level what RLHF, Constitutional AI, and interpretability research are trying to solve, and be able to discuss why they matter.\n\n4. Prepare a genuine answer for the values round:\nAvoid generic 'I'm passionate about AI' answers. Have a specific, honest point of view on why AI safety matters and how you'd want to contribute to it, grounded in your own background.\n\n5. Set expectations on compensation and remote work:\nAll India roles are remote with SF-anchored bands and RSU via a PPU vesting structure. Mid-level AI Engineer/Researcher roles run roughly ₹90–180 LPA, senior roughly ₹180–320 LPA. Confirm timezone overlap expectations with SF teams before the process goes too far.",
+      },
+    ],
+    faqs: [
+      { question: "What is the Anthropic interview process like for software engineers?", answer: "Anthropic's SWE interview typically runs 4-5 rounds over 3-5 weeks: (1) A recruiter screen on role fit, background, and mission alignment (30 min). (2) A take-home coding challenge (2-4 hours), closer to real engineering work than a LeetCode puzzle. (3) Two technical interviews: one on algorithms and data structures, one on systems design. (4) A dedicated values and culture interview on AI safety alignment, ethics, and long-term thinking. India hires are fully remote and SF-anchored." },
+      { question: "Does Anthropic give a take-home assignment?", answer: "Yes. Most candidates receive a take-home problem, typically 2-4 hours, that resembles real engineering work rather than an algorithmic puzzle. Clean code, good tests, and clear reasoning about trade-offs matter more than raw speed." },
+      { question: "What salary does Anthropic pay India-based engineers in 2026?", answer: "Anthropic salary India 2026 (remote, SF-anchored bands, RSU via PPU vesting structure): AI Engineer / Researcher mid-level roughly ₹90–180 LPA, senior roughly ₹180–320 LPA. Anthropic hires a very small India headcount (fewer than 30 as of 2026) and is extremely selective; referrals from current employees significantly improve resume-screen odds. See the full Anthropic salary page for a level-by-level breakdown." },
+    ],
+    relatedSlugs: ["fintech-system-design-interview-india-2026", "startup-vs-mnc-india-2026", "data-structures-algorithms-interview-india-2026"],
+    cta: "Practice Anthropic's technical and values rounds with scored feedback: algorithms and systems design, plus a coached model answer on mission-alignment questions after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/anthropic", label: "Anthropic Salary Guide India 2026: AI Engineer CTC Breakdown" },
+      { href: "/questions/anthropic-swe-interview-questions", label: "Anthropic Interview Questions: Technical Round Practice" },
+    ],
+  },
+  {
+    slug: "procter-gamble-interview-experience-2026",
+    title: "Procter & Gamble India Interview Experience 2026: CAR Framework, Rounds, and What to Expect",
+    metaDescription: "P&G India interview experience guide 2026. Procter & Gamble's structured CAR-framework interview process, case study and GD rounds, what interviewers look for, salary ranges, and how to prepare.",
+    company: "Procter & Gamble",
+    category: "Experience",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=1200&q=80",
+    heroAlt: "FMCG retail shelf representing a Procter and Gamble interview guide",
+    heroBg: "#1A1410",
+    datePublished: "2026-08-03",
+    intro: "Procter & Gamble India (P&G) is a subsidiary of the global FMCG leader, known for brands like Head & Shoulders, Ariel, Gillette, Pampers, and Olay. Its MBA Management Trainee program pays the highest entry salary in Indian FMCG, and its interview process is notoriously structured: every question is scored against the CAR framework (Challenge, Action, Result) with deep, specific follow-up probing. This guide covers what to expect in a P&G interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The P&G interview process: what to expect",
+        content: "P&G India's hiring process typically runs 3-4 rounds:\n\n1. Written test or group discussion:\nAt campus drives, an analytical or case-based written test, or a GD on a current business or social topic relevant to FMCG.\n\n2. Round 1, structured behavioural interview (45-60 min):\nA line manager probes 3-4 specific past situations using the CAR framework: what was the challenge, exactly what you did, and the quantified result.\n\n3. Round 2, deeper situational interview (45-60 min):\nA senior manager or director digs into innovation, collaboration, and how you handle conflict or failure, again with specific stories and heavy follow-up.\n\n4. Round 3, business case or strategic round (for final selection):\nA plant or country manager poses a business case or strategic question. There are no formal case studies at the standard-hire stage the way McKinsey or BCG runs them, but this final round tests business judgment directly.\n\nP&G tests 5 core competencies across these rounds: problem solving and analytical ability, leadership through people, innovation and creativity, execution and delivery, and collaboration.",
+      },
+      {
+        heading: "What P&G interviewers look for",
+        content: "1. Specificity, not polish:\nP&G's CAR framework exists to expose vague answers. Interviewers probe each story for 10-15 minutes, so a rehearsed but shallow answer collapses under follow-up while a genuinely specific one holds up.\n\n2. Quantified results, every time:\nEvery CAR answer should close with a measurable outcome: revenue impact, time saved, a process improvement percentage. \"It went well\" is not an acceptable Result.\n\n3. Structured thinking under real-topic pressure:\nThe group discussion round (for campus hires) rewards short, well-reasoned contributions that build on previous speakers over aggressive talk-time domination.\n\n4. Genuine interest in FMCG brand management:\nP&G recruiters can tell when a candidate is chasing the MBA prestige of the MT program versus genuinely interested in brand management or consumer insight work.",
+      },
+      {
+        heading: "How to prepare for a P&G interview",
+        content: "1. Prepare 5-8 CAR stories mapped to the 5 competencies:\nProblem solving, leadership through people, innovation, execution, and collaboration. Each story should name a specific challenge, your precise actions, and a quantified result.\n\n2. Practise handling deep follow-up:\nRehearse your stories with a friend who asks 'why' and 'what exactly did you do' repeatedly. P&G interviewers will do this for 10-15 minutes per story, and generic answers fall apart under this pressure.\n\n3. Read 'The Game-Changer' by A.G. Lafley:\nP&G explicitly references this book's thinking in its interview culture; understanding it signals genuine preparation.\n\n4. Prepare for the GD round if applying via campus:\nPractise structured, building-on-others contributions on current FMCG or business topics rather than aggressive point-scoring.\n\n5. Set compensation expectations going in:\nP&G MBA Management Trainee entry is roughly ₹22-32 LPA cash-only (no equity at any level), the highest FMCG entry salary in India, ahead of HUL's UFLP. Know this before your final round so you can negotiate with confidence.",
+      },
+    ],
+    faqs: [
+      { question: "What is the P&G India interview process like?", answer: "P&G India runs a structured behavioural interview process over 3-4 rounds using the CAR framework (Challenge, Action, Result): (1) A written test or group discussion at campus drives. (2) Round 1, a structured behavioural interview with a line manager probing 3-4 specific past situations. (3) Round 2, a deeper situational interview with a senior manager on innovation, collaboration, and handling conflict or failure. (4) A final business case or strategic round with a plant or country manager for select roles. Every round asks for specific stories with 10-15 minutes of follow-up probing per story." },
+      { question: "What is the CAR framework and why does P&G use it?", answer: "CAR stands for Challenge, Action, Result: every answer should name a specific challenge you faced, the precise actions you personally took, and a quantified result. P&G interviewers probe each story in increasing depth, so vague or generalized answers get exposed quickly. It is similar to STAR but P&G interviewers explicitly reference CAR by name in candidate prep materials." },
+      { question: "What salary does P&G pay in India in 2026?", answer: "P&G India salary 2026 (cash-only, no equity at any level): MBA Management Trainee entry roughly ₹22–32 LPA, the highest FMCG entry salary in India, ahead of HUL's UFLP. Mid-level (Brand Manager) roughly ₹35–60 LPA. Senior roles roughly ₹60–110 LPA, with Marketing Director-level roles reaching ₹90–160 LPA and VP/CMO-level roles ₹150–350 LPA. See the full P&G salary page for a level-by-level breakdown." },
+    ],
+    relatedSlugs: ["hul-uflp-interview-experience-2026", "godrej-interview-experience-2026", "salary-negotiation-tips-india"],
+    cta: "Practice P&G's CAR-framework rounds with scored feedback: structured story-building, quantified results, and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/procter-gamble", label: "P&G Salary Guide India 2026: Management Trainee CTC Breakdown" },
+      { href: "/questions/procter-gamble-india-interview-questions", label: "P&G Interview Questions: CAR Framework Practice" },
+    ],
+  },
+  {
+    slug: "tower-research-interview-experience-2026",
+    title: "Tower Research Capital Interview Experience 2026: Quant Rounds and What to Expect",
+    metaDescription: "Tower Research Capital interview experience guide India 2026. The HFT firm's Gurgaon quant hiring process: probability screens, C++/Python coding, market microstructure, salary ranges, and how to prepare.",
+    company: "Tower Research Capital",
+    category: "Experience",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
+    heroAlt: "Financial trading screens representing a Tower Research Capital interview guide",
+    heroBg: "#0E1420",
+    datePublished: "2026-08-03",
+    intro: "Tower Research Capital is a US-based high-frequency trading (HFT) firm with a large quantitative research and engineering office in Gurgaon, one of the highest-paying fresher employers in India according to IIT placement data. Its interviews are among the hardest in the industry, combining fast mental arithmetic, combinatorics and probability puzzles, coding in C++ or Python, and genuine market-microstructure intuition. This guide covers what to expect in a Tower Research interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The Tower Research interview process: what to expect",
+        content: "Tower Research's Gurgaon hiring process typically runs 3-5 rounds:\n\n1. Application or campus sourcing:\nMost hires come through top IIT/NIT campus drives or direct sourcing for experienced quants.\n\n2. Online quantitative screen (30-40 min):\nMental arithmetic at speed, probability puzzles, and combinatorics problems under real time pressure. This round alone eliminates most candidates.\n\n3. Technical round, probability and microstructure (45-60 min):\nExpected value, game theory, and market microstructure questions: bid-ask spread, adverse selection, inventory risk. A researcher or trader runs this round.\n\n4. Coding round (60 min):\nC++ or Python on data structures, algorithm efficiency, and a small quantitative implementation problem, not a LeetCode-style puzzle.\n\n5. Final round:\nA conversation with a senior researcher or trader on motivation and cultural fit for HFT's high-intensity, no-equity, pure-performance environment.",
+      },
+      {
+        heading: "What Tower Research interviewers look for",
+        content: "1. Speed and accuracy under pressure:\nThe initial quant screen is deliberately fast-paced. Interviewers want to see you stay accurate on mental arithmetic even as time pressure mounts, not just get the right answer with unlimited time.\n\n2. Genuine probabilistic reasoning, not memorised puzzles:\nTower Research's probability questions often have counter-intuitive answers. Interviewers watch for candidates who reason from first principles rather than pattern-matching to a puzzle they've seen before.\n\n3. Clean, efficient code:\nThe coding round rewards correct, efficient C++ or Python with clear complexity reasoning, since production HFT systems are measured in microseconds.\n\n4. Real market-microstructure intuition:\nCandidates who can discuss bid-ask spread, adverse selection, and inventory risk with genuine understanding, not textbook definitions, stand out clearly from those who cannot.",
+      },
+      {
+        heading: "How to prepare for a Tower Research interview",
+        content: "1. Drill mental arithmetic and probability under time pressure:\nPractise multiplication, percentages, and probability calculations without a calculator, timed. Speed matters as much as correctness here.\n\n2. Study combinatorics, expected value, and game theory:\nWork through classic probability paradoxes and game-theory problems, focusing on explaining your reasoning clearly, not just stating the answer.\n\n3. Practise C++ or Python on data structures and efficiency:\nReview arrays, hashmaps, trees, and sorting with a focus on time and space complexity, since interviewers grade efficiency reasoning explicitly.\n\n4. Learn market microstructure fundamentals:\nRead about bid-ask spread, adverse selection, and inventory risk so you can discuss them with genuine intuition rather than a memorised definition.\n\n5. Set compensation expectations going in:\nCompensation is pure cash plus performance bonus with no equity at any level. Freshers earn roughly ₹35–65 LPA, among the highest fresher packages in India. Know this so you can negotiate confidently once you clear the technical bar.",
+      },
+    ],
+    faqs: [
+      { question: "What is the Tower Research Capital interview process for India?", answer: "Tower Research's Gurgaon interviews typically run 3-5 rounds: (1) An online quantitative screen (30-40 min) with mental arithmetic, probability puzzles, and combinatorics under time pressure. (2) A technical round (45-60 min) on probability, expected value, game theory, and market microstructure. (3) A coding round (60 min) in C++ or Python on data structures, algorithm efficiency, and a small quantitative implementation problem. (4) A final round with a senior researcher or trader on motivation and cultural fit. The process is fast and highly selective." },
+      { question: "What quant topics does Tower Research test?", answer: "Mental arithmetic at speed, combinatorics, probability paradoxes, expected value and game theory, market microstructure (bid-ask spread, adverse selection, inventory risk), and C++ or Python data structure problems. There are no LeetCode-style questions here: this is pure quant reasoning combined with systems coding." },
+      { question: "What salary does Tower Research pay in India in 2026?", answer: "Tower Research Capital salary India 2026 (pure cash plus performance bonus, no equity): freshers earn roughly ₹35–65 LPA base, among the highest fresher packages in India per IIT placement data. Mid-level roughly ₹70–120 LPA. Senior roles roughly ₹120–200 LPA. Compensation is fully cash and performance-bonus driven with no equity component at any level." },
+    ],
+    relatedSlugs: ["fintech-system-design-interview-india-2026", "system-design-interview-questions-india-2026", "salary-negotiation-tips-india"],
+    cta: "Practice Tower Research's quant screen and coding rounds with scored feedback: timed probability reasoning, C++/Python efficiency, and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/tower-research", label: "Tower Research Capital Salary Guide India 2026: Quant CTC Breakdown" },
+      { href: "/questions/tower-research-quant-interview-questions", label: "Tower Research Interview Questions: Quant Round Practice" },
+    ],
+  },
+  {
+    slug: "boat-interview-experience-2026",
+    title: "boAt Interview Experience 2026: Process, Rounds, and What to Expect",
+    metaDescription: "boAt (Imagine Marketing) interview experience guide India 2026. India's #1 consumer electronics brand's software engineering hiring process, technical and culture rounds, salary ranges, and how to prepare.",
+    company: "boAt",
+    category: "Experience",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=1200&q=80",
+    heroAlt: "Wireless earbuds and wearable tech representing a boAt interview guide",
+    heroBg: "#1A1010",
+    datePublished: "2026-08-03",
+    intro: "boAt (Imagine Marketing) is India's #1 consumer electronics brand in audio, fitness, and accessories, with over 50% market share in earwear and a pending IPO. Its software engineering interviews lean practical over algorithm-heavy, reflecting the company's D2C commerce, IoT companion-app, and supply-chain focus rather than pure product-engineering depth. This guide covers what to expect in a boAt interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The boAt interview process: what to expect",
+        content: "boAt's software engineer hiring process typically runs 3-4 rounds:\n\n1. Online assessment (some tracks):\nA coding assessment covering basic DSA and, occasionally, product-sense multiple choice questions.\n\n2. DSA and fundamentals screen:\nArrays, strings, hashmaps, and basic trees. The bar is solid fundamentals, not competitive-programming depth.\n\n3. Hands-on coding or take-home round:\nTied to real web or app work: commonly a small feature build or bug-fix exercise in JavaScript/TypeScript with React or Node for web roles, or Android/iOS/React Native for the companion app.\n\n4. Hiring manager and culture round:\nA conversation on product sense, ownership, and comfort with a lean, fast-moving consumer brand's pace. Expect references to real problems like flash-sale traffic, order tracking, and wearable-app sync rather than abstract system design.",
+      },
+      {
+        heading: "What boAt interviewers look for",
+        content: "1. Practical coding over algorithmic depth:\nboAt weighs framework fluency and the ability to ship a working feature more heavily than deep algorithmic theory, unlike a pure product company.\n\n2. Product and shipping sense:\nInterviewers want to see you clarify a requirement, pick the simplest correct approach, and reason about edge cases and monitoring, not just produce correct code in isolation.\n\n3. Comfort with startup hustle culture:\nboAt has fewer formal processes than an established unicorn. Candidates who present this as a genuine preference for fast-moving, high-ownership work tend to interview better than those expecting big-company structure.\n\n4. Domain awareness for D2C and IoT:\nUnderstanding the practical challenges of flash-sale traffic spikes, order tracking at scale, and Bluetooth/BLE companion-app sync signals real engagement with what boAt's engineering team actually builds.",
+      },
+      {
+        heading: "How to prepare for a boAt interview",
+        content: "1. Sharpen practical DSA fundamentals:\nArrays, strings, hashmaps, and basic trees. You don't need competitive-programming depth, but you should be fast and correct on the fundamentals.\n\n2. Brush up on your framework of choice:\nReact or Node for web roles; Android, iOS, or React Native for the companion app. Be ready to build or debug a small real feature live.\n\n3. Prepare a 'ship it' story:\nHave one example ready where you clarified an ambiguous requirement, shipped the simplest correct solution, and then handled a real edge case or production issue that came up afterward.\n\n4. Learn boAt's actual product and business context:\nUnderstand what D2C commerce, flash sales, and wearable companion apps involve in practice; this differentiates you from candidates only familiar with generic e-commerce.\n\n5. Set compensation expectations going in:\nboAt's ESOP is pre-IPO, with credibility tied to the pending IPO outcome. Mid-level software engineers earn roughly ₹14–24 LPA, senior roughly ₹24–40 LPA. Confirm ESOP terms explicitly since the equity component's real value depends on how the IPO goes.",
+      },
+    ],
+    faqs: [
+      { question: "What is the boAt interview process like for software engineers?", answer: "boAt (Imagine Marketing) software engineer interviews typically run 3-4 rounds: (1) An online assessment for some tracks. (2) A DSA and fundamentals screen covering arrays, strings, hashmaps, and basic trees. (3) A hands-on coding or take-home round tied to real web or app work. (4) A hiring manager plus culture fit conversation. The loop leans practical over algorithm-heavy, reflecting boAt's D2C commerce and IoT companion-app focus." },
+      { question: "Is boAt's interview algorithm-heavy like a product company's?", answer: "Less than a pure product company. You should be solid on arrays, strings, hashmaps, and basic trees, but boAt weights practical coding, framework knowledge (React or Node for web; Android, iOS, or React Native for the companion app), and product sense for its D2C and IoT app work more heavily than deep algorithmic theory." },
+      { question: "What salary does boAt pay software engineers in India in 2026?", answer: "boAt salary India 2026 (pre-IPO ESOP, credibility tied to the pending IPO outcome): Software Engineer mid-level roughly ₹14–24 LPA, senior roughly ₹24–40 LPA. As a lean, fast-moving consumer brand, boAt's engineering team is smaller relative to its brand size, and interviewers weight product sense and shipping speed alongside code. See the full boAt salary page for a level-by-level breakdown." },
+    ],
+    relatedSlugs: ["top-startups-hiring-engineers-india-2026", "startup-vs-mnc-india-2026", "it-service-to-product-company-switch-india-2026"],
+    cta: "Practice boAt's practical coding and product-sense rounds with scored feedback: framework fluency, edge-case reasoning, and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/boat", label: "boAt Salary Guide India 2026: Software Engineer CTC Breakdown" },
+      { href: "/questions/boat-software-engineer-interview-questions", label: "boAt Interview Questions: Technical Round Practice" },
+    ],
+  },
+  {
+    slug: "policybazaar-interview-experience-2026",
+    title: "PolicyBazaar Interview Experience 2026: Process, Rounds, and What to Expect",
+    metaDescription: "PolicyBazaar (PB Fintech) interview experience guide India 2026. India's largest insurance marketplace's SDE hiring process, DSA and backend rounds, salary ranges, and how to prepare.",
+    company: "PolicyBazaar",
+    category: "Experience",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80",
+    heroAlt: "Insurance documents and laptop representing a PolicyBazaar interview guide",
+    heroBg: "#0F1620",
+    datePublished: "2026-08-03",
+    intro: "PolicyBazaar (PB Fintech) is India's largest insurance and lending marketplace, listed on NSE (POLICYBZR), aggregating health, motor, life, and investment products from 50+ insurers. Its SDE interview loop is weighted toward DSA fundamentals and hands-on backend or full-stack skills over abstract theory, reflecting the platform's real engineering challenge: keeping APIs fast during high-traffic insurance and lending campaigns. This guide covers what to expect in a PolicyBazaar interview, what interviewers look for, and how to prepare.",
+    sections: [
+      {
+        heading: "The PolicyBazaar interview process: what to expect",
+        content: "PolicyBazaar's SDE hiring process typically runs 3-4 rounds:\n\n1. Resume screen:\nRelevant backend or full-stack experience; referrals help.\n\n2. Online or written coding round (60-90 min):\nMedium DSA on arrays, strings, hashmaps, linked lists, and trees. The primary early filter.\n\n3. Technical round on stack:\nJava or Node, SQL, and REST API and schema design. Expect questions on how you'd design the data model for a policy-comparison or lead-funnel feature.\n\n4. Second technical round:\nProblem solving, database indexing, caching, and system reasoning, often framed around keeping APIs fast when insurance-comparison traffic spikes during campaigns.\n\n5. Hiring manager and HR round:\nFit, expectations, and compensation, including the listed-RSU component.",
+      },
+      {
+        heading: "What PolicyBazaar interviewers look for",
+        content: "1. Hands-on backend depth over theory:\nInterviewers probe real project decisions, schema and API design choices, and how you'd optimise queries and caching under high traffic, rather than testing abstract computer-science theory.\n\n2. Solid medium-DSA fundamentals:\nArrays, strings, hashmaps, linked lists, and trees at a comfortable, fast level; this is the first filter and a weak showing here rarely gets a second look.\n\n3. Traffic-spike and scale awareness:\nBecause the platform handles insurance quotes and lead funnels during high-traffic campaigns, candidates who can reason concretely about indexing, query optimisation, and caching for spikes stand out.\n\n4. Clarity over framework name-dropping:\nInterviewers reward candidates who can explain why they made a specific schema or API decision, not just list the frameworks and tools they've used.",
+      },
+      {
+        heading: "How to prepare for a PolicyBazaar interview",
+        content: "1. Sharpen medium DSA:\nArrays, strings, hashmaps, linked lists, and trees. Practise timed problems and be ready to state time and space complexity clearly.\n\n2. Get fluent in your stack, SQL, and REST API design:\nCommonly Java or Node. Practise designing a clean schema and API for a policy-comparison, lead-scoring, or quote-generation feature, including the classes and data model.\n\n3. Study indexing, query optimisation, and caching:\nBe ready to discuss how you'd keep an API fast when traffic spikes 5-10x during an insurance campaign: what you'd index, what you'd cache, and where you'd add a queue.\n\n4. Prepare a real project walkthrough:\nHave one or two projects ready where you made a specific schema or API decision, explain the trade-off, and describe the outcome under load.\n\n5. Set compensation expectations going in:\nPolicyBazaar's RSU is listed (NSE: POLICYBZR) and liquid rather than pre-IPO paper equity. Software Engineer entry runs roughly ₹14–22 LPA, mid-level roughly ₹24–40 LPA, senior roughly ₹42–68 LPA.",
+      },
+    ],
+    faqs: [
+      { question: "What is the PolicyBazaar interview process like for software engineers?", answer: "PolicyBazaar (PB Fintech) SDE interviews typically run 3-4 rounds: (1) A resume screen for relevant backend or full-stack experience. (2) An online or written coding round (60-90 min) on medium DSA: arrays, strings, hashmaps, linked lists, and trees. (3) A technical round on your primary stack (commonly Java or Node), SQL, and REST API and schema design. (4) A second technical round on problem solving, indexing, caching, and system reasoning. (5) A hiring manager and HR round on fit, expectations, and compensation." },
+      { question: "What technical topics does PolicyBazaar test?", answer: "Medium DSA (arrays, strings, hashmaps, linked lists, trees) and stack depth in Java or Node with SQL, plus REST API design, database indexing, query optimisation, and caching for traffic spikes. Because the platform handles insurance quotes and lead funnels during high-traffic campaigns, interviewers probe specifically on keeping APIs fast under load." },
+      { question: "What salary does PolicyBazaar pay software engineers in India in 2026?", answer: "PolicyBazaar (PB Fintech) salary India 2026 (listed RSU, NSE: POLICYBZR): Software Engineer entry roughly ₹14–22 LPA, mid-level roughly ₹24–40 LPA, senior roughly ₹42–68 LPA. As a listed company, RSU is liquid rather than pre-IPO paper equity. See the full PolicyBazaar salary page for a level-by-level breakdown." },
+    ],
+    relatedSlugs: ["fintech-system-design-interview-india-2026", "system-design-interview-questions-india-2026", "startup-vs-mnc-india-2026"],
+    cta: "Practice PolicyBazaar's DSA and backend design rounds with scored feedback: medium DSA, schema and API design, and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [
+      { href: "/salary/policybazaar", label: "PolicyBazaar Salary Guide India 2026: Software Engineer CTC Breakdown" },
+      { href: "/questions/policybazaar-software-engineer-interview-questions", label: "PolicyBazaar Interview Questions: Technical Round Practice" },
+    ],
+  },
 ];
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
