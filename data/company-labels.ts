@@ -259,6 +259,15 @@ export const COMPANY_LABEL: Record<string, string> = {
   sumologic: "Sumo Logic",
   clari: "Clari",
 
+  // Design agencies / studios
+  "bombay-design-centre": "Bombay Design Centre",
+  "lollypop-design-studio": "Lollypop Design Studio",
+  thence: "Thence",
+  "yellow-slice": "Yellow Slice",
+
+  // Healthcare (hospitals)
+  fortis: "Fortis Healthcare",
+
   // Government / PSU
   upsc: "UPSC",
   ssc: "SSC",

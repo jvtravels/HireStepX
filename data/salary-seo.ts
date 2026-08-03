@@ -689,6 +689,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "project-manager", label: "Project Manager" },
       { roleKey: "sales", label: "Sales / Account Executive" },
       { roleKey: "scrum-master", label: "Scrum Master" },
+      { roleKey: "program-manager", label: "Program Manager" },
     ],
     questionSlug: "accenture-behavioral-interview-questions",
     hubNote: "90-day notice period: plan your timeline early",
@@ -742,6 +743,8 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "consultant", label: "Consultant" },
       { roleKey: "data-engineer", label: "Data Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "devops-sre", label: "DevOps / SRE" },
+      { roleKey: "program-manager", label: "Program Manager" },
     ],
     questionSlug: "goldman-sachs-interview-questions-india",
     hubNote: "No RSU/equity at India offices: total comp is cash-only",
@@ -758,6 +761,8 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "business-analyst", label: "Business Analyst" },
       { roleKey: "finance", label: "Finance Analyst" },
       { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "devops-sre", label: "DevOps / SRE" },
+      { roleKey: "program-manager", label: "Program Manager" },
     ],
     questionSlug: "jpmorgan-interview-questions-india",
     hubNote: "No RSU at India offices: compensation is base + annual bonus",
@@ -771,6 +776,25 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+      { roleKey: "project-manager", label: "Project Manager" },
+      { roleKey: "devops-engineer", label: "Devops Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "data-analyst", label: "Data Analyst" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "sales", label: "Sales / Account Executive" },
+      { roleKey: "consultant", label: "Consultant" },
+      { roleKey: "devops-sre", label: "DevOps / SRE" },
+      { roleKey: "cloud-engineer", label: "Cloud Engineer" },
+      { roleKey: "hr", label: "HR Manager" },
+      { roleKey: "cybersecurity", label: "Cybersecurity" },
+      { roleKey: "customer-success", label: "Customer Success Manager" },
+      { roleKey: "mobile-developer", label: "Mobile Developer" },
+      { roleKey: "frontend-developer", label: "Frontend Developer" },
+      { roleKey: "backend-developer", label: "Backend Developer" },
+      { roleKey: "scrum-master", label: "Scrum Master" },
+      { roleKey: "network-engineer", label: "Network Engineer" },
     ],
     questionSlug: "techmahindra-swe-interview-questions",
     hubNote: "ELP (Entry Level Programme): 90-day notice, ₹50K bond penalty",
@@ -1453,6 +1477,8 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "program-manager", label: "Program Manager" },
       { roleKey: "qa-engineer", label: "QA Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
     ],
     questionSlug: "morgan-stanley-swe-interview-questions",
     hubNote: "No joining bonus at India offices: negotiate base + RSU cliff schedule",
@@ -1513,6 +1539,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     roles: [
       { roleKey: "data-scientist", label: "Quantitative Analyst" },
       { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
     ],
     questionSlug: "de-shaw-swe-interview-questions",
     hubNote: "Pure cash + heavy performance bonus: no equity at India offices; Hyderabad campus focus",
@@ -1845,6 +1872,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       "Angel One salary India 2026: SWE mid ₹22–36 LPA, senior ₹38–60 LPA. Listed RSU (NSE: ANGELONE). India's 3rd-largest stockbroker. Mumbai tech team CTC guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
     ],
     questionSlug: "angel-one-swe-interview-questions",
     hubNote: "Listed equity (ANGELONE): RSU credibility solid; fintech trading systems experience valued",
@@ -1869,6 +1897,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "operations", label: "Operations Manager" },
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "sales", label: "Sales / Account Executive" },
+      { roleKey: "program-manager", label: "Program Manager" },
     ],
     questionSlug: "ola-electric-software-engineer-interview-questions",
     hubNote: "Listed equity (OLAELECTRIC IPO Aug 2024): RSU credibility improving; volatile stock price",
@@ -1892,6 +1921,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "operations", label: "Operations Manager" },
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "sales", label: "Sales / Account Executive" },
+      { roleKey: "program-manager", label: "Program Manager" },
     ],
     questionSlug: "ather-energy-software-engineer-interview-questions",
     hubNote: "Pre-IPO ESOP (IPO filed 2025): Ather is the quality-focused EV brand vs Ola Electric",
@@ -2090,6 +2120,8 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       "Wells Fargo India salary 2026: SWE entry ₹16–26 LPA, mid ₹28–45 LPA, senior ₹45–70 LPA. RSU. Hyderabad and Chennai GCC. US retail and investment banking tech CTC guide.",
     roles: [
       { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
     ],
     questionSlug: "wells-fargo-software-engineer-interview-questions",
     hubNote: "Wells Fargo India GCC: RSU is WFC NYSE stock; Hyderabad campus is mid-tier banking GCC",
@@ -2831,7 +2863,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Cure.fit Software Engineer Salary India 2026",
     metaDescription:
       "Cure.fit salary India 2026: SWE mid ₹18–30 LPA, senior ₹32–52 LPA. Pre-IPO ESOP. Health and fitness platform (Cult.fit, EatFit, MindFit). Bengaluru CTC guide.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "program-manager", label: "Program Manager" },
+    ],
     questionSlug: "curefit-swe-interview-questions",
     hubNote: "Pre-IPO ESOP: Cure.fit / Cult.fit; fitness-tech; ESOP credibility moderate; mid starts at ₹18L",
     sitemapPriority: 0.70,
@@ -2906,6 +2941,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "qa-engineer", label: "QA Engineer" },
       { roleKey: "sales", label: "Sales / Account Executive" },
       { roleKey: "ux-designer", label: "UX Designer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
     ],
     questionSlug: "pine-labs-swe-interview-questions",
     hubNote: "Pre-IPO ESOP (IPO filed 2025): Pine Labs; strong payments and merchant tech focus; IPO lifts credibility",
@@ -2926,7 +2962,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "ICICI Lombard Software Engineer Salary India 2026",
     metaDescription:
       "ICICI Lombard salary India 2026: SWE mid ₹14–22 LPA, senior ₹24–38 LPA. ICICI Lombard RSU (NSE listed). India's leading private general insurer. Mumbai CTC guide.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "icici-lombard-software-engineer-interview-questions",
     hubNote: "NSE listed (ICICIGI): general insurance; part of ICICI group; listed RSU is liquid",
     sitemapPriority: 0.69,
@@ -2936,7 +2975,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Bajaj Finance Software Engineer Salary India 2026",
     metaDescription:
       "Bajaj Finance salary India 2026: SWE mid ₹16–26 LPA, senior ₹28–45 LPA. Bajaj Finance RSU (NSE listed). India's largest NBFC. Pune tech and digital team. CTC guide.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "bajaj-finance-software-engineer-interview-questions",
     hubNote: "NSE listed (BAJFINANCE): NBFC; listed RSU; strong digital banking and lending product team",
     sitemapPriority: 0.71,
@@ -3746,7 +3788,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Apollo 24/7 Software Engineer Salary India 2026",
     metaDescription:
       "Apollo 24/7 salary India 2026: SWE entry ₹12–18 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. Apollo RSU (NSE: APOLLOHOSP). Hyderabad health platform: telemedicine, pharmacy, diagnostics.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+    ],
     questionSlug: "apollo-247-software-engineer-interview-questions",
     hubNote: "Apollo Hospitals digital arm: parent listed (NSE: APOLLOHOSP); health-tech growing team",
     sitemapPriority: 0.69,
@@ -3868,7 +3913,13 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Target India TCI Software Engineer Salary 2026",
     metaDescription:
       "Target India salary 2026: SWE entry ₹16–26 LPA, mid ₹26–45 LPA, senior ₹45–78 LPA. RSU on NYSE (TGT). Bengaluru GCC (TCI) driving supply chain, data science, and full-stack engineering for a $110B US retailer.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "target-india-software-engineer-interview-questions",
     hubNote: "US retail GCC Bengaluru; NYSE; RSU; data science + supply chain engineering",
     sitemapPriority: 0.73,
@@ -3980,6 +4031,74 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "hdfc-swe-interview-questions",
     hubNote: "Financial services conglomerate Mumbai; BSE/NSE; mortgage + wealth management tech",
     sitemapPriority: 0.69,
+  },
+  /* ── Design Agencies / Studios ────────────────────────────────── */
+  {
+    slug: "bombay-design-centre",
+    searchPhrase: "Bombay Design Centre UX Designer Salary India 2026",
+    metaDescription:
+      "Bombay Design Centre salary India 2026: UX/Product Designer entry ₹3–5 LPA, mid ₹6–9 LPA, senior ₹9–14 LPA. Design centres pay 50-60% below product unicorns — know the band before you negotiate.",
+    roles: [{ roleKey: "ux-designer", label: "UX Designer" }],
+    hubNote: "Design studio, not a product company: pays well below product-unicorn UX bands",
+    sitemapPriority: 0.62,
+  },
+  {
+    slug: "lollypop-design-studio",
+    searchPhrase: "Lollypop Design Studio UX Designer Salary India 2026",
+    metaDescription:
+      "Lollypop Design Studio salary India 2026: UX Designer mid ₹8–14 LPA, senior ₹14–24 LPA. A top-tier Indian design studio that pays above the sector average for design agencies.",
+    roles: [{ roleKey: "ux-designer", label: "UX Designer" }],
+    hubNote: "Top-tier Indian design studio: pays above sector average for agency UX roles",
+    sitemapPriority: 0.62,
+  },
+  {
+    slug: "thence",
+    searchPhrase: "Thence UX Designer Salary India 2026",
+    metaDescription:
+      "Thence salary India 2026: UX Designer entry ₹5.8–7.7 LPA, mid ₹6–8.7 LPA, senior ₹9–10.8 LPA. Design agency comp — below product-unicorn UX bands.",
+    roles: [{ roleKey: "ux-designer", label: "UX Designer" }],
+    hubNote: "Design agency: UX bands trail product-company unicorns",
+    sitemapPriority: 0.62,
+  },
+  {
+    slug: "yellow-slice",
+    searchPhrase: "Yellow Slice UI Designer Salary India 2026",
+    metaDescription:
+      "Yellow Slice salary India 2026: UI Designer entry ₹3.2–4.3 LPA, mid ₹3.8–5.6 LPA, senior ₹6.5–8.7 LPA. Smaller design studio — realistic bands before you negotiate an offer.",
+    roles: [{ roleKey: "ux-designer", label: "UX Designer" }],
+    hubNote: "Boutique design studio: entry pay closer to services-sector than product-unicorn UX",
+    sitemapPriority: 0.60,
+  },
+  /* ── Healthcare (Hospitals) ────────────────────────────────────── */
+  {
+    slug: "fortis",
+    searchPhrase: "Fortis Healthcare Doctor & Nursing Salary India 2026",
+    metaDescription:
+      "Fortis Healthcare salary India 2026: Doctor entry ₹7–12 LPA, mid ₹16–28 LPA, senior ₹32–60 LPA. Nursing entry ₹3–5 LPA, mid ₹5–9 LPA. Multi-city private hospital chain CTC guide.",
+    roles: [
+      { roleKey: "doctor", label: "Doctor" },
+      { roleKey: "nursing", label: "Nursing" },
+    ],
+    hubNote: "Multi-city private hospital chain: consultant pay scales sharply with specialty",
+    sitemapPriority: 0.66,
+  },
+  /* ── Metals / Conglomerate ─────────────────────────────────────── */
+  {
+    slug: "tata-steel",
+    searchPhrase: "Tata Steel Salary India 2026",
+    metaDescription:
+      "Tata Steel salary India 2026: Mechanical Engineer entry ₹7–11 LPA, mid ₹12–22 LPA, senior ₹24–48 LPA. Software Engineer, Finance, HR, Marketing and Operations tracks. Jamshedpur core-engineering CTC guide.",
+    roles: [
+      { roleKey: "mechanical-engineer", label: "Mechanical Engineer" },
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "finance", label: "Finance Manager" },
+      { roleKey: "hr", label: "HR Manager" },
+      { roleKey: "marketing", label: "Marketing Manager" },
+      { roleKey: "operations", label: "Operations Manager" },
+    ],
+    hubNote: "Core-engineering conglomerate: AEP trainees start on a stipend before IL6 confirmation",
+    sitemapPriority: 0.68,
   },
 ];
 

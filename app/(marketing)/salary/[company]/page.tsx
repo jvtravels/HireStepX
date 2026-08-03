@@ -133,16 +133,39 @@ export async function generateMetadata({
 
 const LEVEL_KEYS = ["entry", "mid", "senior", "lead", "executive"] as const;
 
+/* Some data-source keys diverge from the salary-seo slug by more than a
+   hyphen/space swap (brand renames, punctuation, abbreviations). Without
+   this map, an entire company's imported/curated/CSV data is unreachable
+   even though it exists in the underlying dataset. */
+const COMPANY_KEY_ALIASES: Record<string, string> = {
+  techmahindra: "tech mahindra",
+  "wells-fargo": "wells fargo india",
+  "apollo-247": "apollo hospitals",
+  curefit: "cure.fit",
+  "tata-1mg": "1mg",
+  "procter-gamble": "p&g",
+};
+
 /* Some legacy override keys use spaces ("morgan stanley", "hdfc bank").
    Slugs in salary-seo use hyphens. Normalize so both resolve. */
 function resolveOverrides(slug: string) {
-  return COMPANY_SALARY_OVERRIDES[slug] ?? COMPANY_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
+  const alias = COMPANY_KEY_ALIASES[slug];
+  return (
+    COMPANY_SALARY_OVERRIDES[slug] ??
+    COMPANY_SALARY_OVERRIDES[slug.replace(/-/g, " ")] ??
+    (alias ? COMPANY_SALARY_OVERRIDES[alias] : undefined)
+  );
 }
 
 /* AmbitionBox-scraped roles that have no hand-curated COMPANY_SALARY_OVERRIDES
    entry still need to resolve here, or their section silently renders empty. */
 function resolveImportedOverrides(slug: string) {
-  return IMPORTED_SALARY_OVERRIDES[slug] ?? IMPORTED_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
+  const alias = COMPANY_KEY_ALIASES[slug];
+  return (
+    IMPORTED_SALARY_OVERRIDES[slug] ??
+    IMPORTED_SALARY_OVERRIDES[slug.replace(/-/g, " ")] ??
+    (alias ? IMPORTED_SALARY_OVERRIDES[alias] : undefined)
+  );
 }
 
 function buildRoleSections(
@@ -179,7 +202,11 @@ function buildRoleSections(
       // level, for roles with no hand-curated or AmbitionBox-imported
       // band — otherwise these sections silently render empty.
       const direct = roleData?.[lvl];
-      const band = direct ?? getCsvDerivedBandOverride(companySlug, roleKey, lvl);
+      // getCsvCompanyBand only strips trailing punctuation/" India" — it
+      // never bridges hyphen-vs-space, so pass the spaced form (or an
+      // explicit alias for bigger spelling divergences) here too.
+      const csvLookupKey = COMPANY_KEY_ALIASES[companySlug] ?? companySlug.replace(/-/g, " ");
+      const band = direct ?? getCsvDerivedBandOverride(csvLookupKey, roleKey, lvl);
       if (!band) return [];
       if (band.totalMax < runningMax) return [];
       if (!direct && band.source && band.source === prevCsvFallbackSource) return [];
