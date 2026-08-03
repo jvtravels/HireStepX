@@ -546,7 +546,7 @@ export function SalaryCompanyPage({
                 <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
                   {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
                 </p>
-                <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
+                <p style={{ fontFamily: fonts.mono, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
                   {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
                   <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
                 </p>
