@@ -5,11 +5,10 @@
  * A citable, chart-led aggregate of the per-company /salary/[company]
  * pages: headline median CTC, an emerging-startup highlight table (the
  * data no one else has — the digital-PR angle), the full company table
- * linking every salary page, a stated methodology, and a copy-paste
- * "cite this report" block. Built as a linkable reference asset, not a
- * product page. Data flows in from the server route via props.
+ * linking every salary page, and a stated methodology. Built as a
+ * linkable reference asset, not a product page. Data flows in from the
+ * server route via props.
  */
-import { useState } from "react";
 import type { CSSProperties } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { editorialCSS, ED_PADDING, DarkBand, ctaPrimaryStyle } from "./_editorial";
@@ -69,35 +68,6 @@ const lead: CSSProperties = {
 };
 
 /* ── small pieces ───────────────────────────────────────────────── */
-
-function CopyButton({ text, label }: { text: string; label: string }) {
-  const [done, setDone] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        void navigator.clipboard?.writeText(text).then(() => {
-          setDone(true);
-          setTimeout(() => setDone(false), 1800);
-        });
-      }}
-      style={{
-        fontFamily: fonts.sans,
-        fontSize: 13,
-        fontWeight: 600,
-        color: done ? t.successInk : t.copper,
-        background: done ? t.success100 : t.copperWash,
-        border: `1px solid ${done ? t.success100 : t.copperBorder}`,
-        borderRadius: 8,
-        padding: "8px 14px",
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {done ? "Copied ✓" : label}
-    </button>
-  );
-}
 
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
@@ -225,9 +195,6 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
   const sorted = [...rows].sort((a, b) => a.label.localeCompare(b.label));
   const scaleMax = stats.seniorMedian ? stats.seniorMedian.max * 1.1 : 100;
 
-  const citation = `HireStepX (2026). Indian Startup Engineer Salary Report 2026. Retrieved from https://hirestepx.com/salary-report-2026`;
-  const embed = `<a href="https://hirestepx.com/salary-report-2026">Indian Startup Engineer Salary Report 2026 — HireStepX</a>`;
-
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: editorialCSS }} />
@@ -352,48 +319,6 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
               quarterly; the most recent verification in this dataset is {updatedLabel}. Treat emerging-startup bands as
               directional — anchor negotiations to the lower half and validate with a recruiter.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Cite this */}
-      <section style={{ ...shell, paddingBottom: 64 }}>
-        <div style={wrap}>
-          <div
-            style={{
-              background: t.creamRaised,
-              border: `1px solid ${t.copperBorder}`,
-              borderRadius: 16,
-              padding: "28px 26px",
-            }}
-          >
-            <p style={eyebrow}>Cite this report</p>
-            <h2 style={{ ...h2, fontSize: "clamp(22px, 2.4vw, 28px)" }}>Journalists &amp; writers — use this data</h2>
-            <p style={{ ...lead, margin: "0 0 20px" }}>
-              This report is free to cite. Please credit HireStepX and link back. Writing about Indian tech pay or hiring?
-              We&rsquo;re glad to share the full per-level breakdown for any company —{" "}
-              <a href="/contact" style={{ color: t.copper, fontWeight: 600 }}>get in touch</a>.
-            </p>
-
-            <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 8px" }}>
-              Citation
-            </p>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 20 }}>
-              <code style={{ flex: "1 1 320px", fontFamily: fonts.mono, fontSize: 13, color: t.coal, background: t.creamSoft, borderRadius: 8, padding: "12px 14px", lineHeight: 1.5 }}>
-                {citation}
-              </code>
-              <CopyButton text={citation} label="Copy citation" />
-            </div>
-
-            <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 8px" }}>
-              Embed link
-            </p>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-              <code style={{ flex: "1 1 320px", fontFamily: fonts.mono, fontSize: 13, color: t.coal, background: t.creamSoft, borderRadius: 8, padding: "12px 14px", lineHeight: 1.5, wordBreak: "break-all" }}>
-                {embed}
-              </code>
-              <CopyButton text={embed} label="Copy embed" />
-            </div>
           </div>
         </div>
       </section>
