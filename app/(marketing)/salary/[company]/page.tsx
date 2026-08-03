@@ -145,6 +145,14 @@ function buildRoleSections(
     // level below it, drop it: fewer trustworthy rows beat a confusing
     // regression.
     let runningMax = -Infinity;
+    // The CSV's experience ladder (fresher/junior/mid/senior/lead) is
+    // shallower than the app's (entry/mid/senior/lead/executive) — when a
+    // role has no CSV "manager" tier, both `lead` and `executive` fall back
+    // to the same CSV "lead" row (expToCsvLevels), producing two rows with
+    // identical figures. `source` embeds the exact CSV role/level it was
+    // read from, so an unchanged source between consecutive levels means
+    // we've re-read the same underlying row — drop the repeat.
+    let prevSource: string | undefined;
     const bands: SalaryBandRow[] = LEVEL_KEYS.flatMap((lvl) => {
       // CSV-derived research dataset is the last-resort fallback per
       // level, for roles with no hand-curated or AmbitionBox-imported
@@ -152,7 +160,9 @@ function buildRoleSections(
       const band = roleData?.[lvl] ?? getCsvDerivedBandOverride(companySlug, roleKey, lvl);
       if (!band) return [];
       if (band.totalMax < runningMax) return [];
+      if (band.source && band.source === prevSource) return [];
       runningMax = band.totalMax;
+      prevSource = band.source;
       return [
         {
           level: lvl,
