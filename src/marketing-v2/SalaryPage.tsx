@@ -774,7 +774,8 @@ export function SalaryCompanyPage({
         <div style={{ marginTop: 64 }}>
           <DarkBand
             eyebrow="Practice rounds"
-            title={`Prepare for your ${companyLabel} interview`}
+            title="Prepare for your"
+            accent={`${companyLabel} interview`}
             videoSrc="/cta.mp4"
           >
             <p
