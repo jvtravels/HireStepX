@@ -97,32 +97,95 @@ function StatCard({ value, label }: { value: string; label: string }) {
   );
 }
 
-/* Pure-CSS horizontal bar — no chart library (CSP-safe, self-contained). */
+/* Shared grid so the axis, gridlines, and every bar line up in the same column. */
+const tierGridStyle: CSSProperties = { display: "grid", gridTemplateColumns: "84px 1fr", alignItems: "center", gap: 14 };
+
+/** Round a raw axis max down to a "nice" step (1/2/5/10 × a power of ten). */
+function niceTicks(scaleMax: number): number[] {
+  const rawStep = scaleMax / 4;
+  const pow10 = 10 ** Math.floor(Math.log10(rawStep));
+  const norm = rawStep / pow10;
+  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * pow10;
+  const ticks: number[] = [];
+  for (let v = 0; v <= scaleMax; v += step) ticks.push(Math.round(v));
+  return ticks;
+}
+
+/* Axis + gridlines shared by all three bars, so the reader can read an absolute
+ * LPA scale instead of guessing what an unlabeled floating bar means. */
+function TierAxis({ scaleMax }: { scaleMax: number }) {
+  const ticks = niceTicks(scaleMax);
+  return (
+    <div style={{ ...tierGridStyle, marginBottom: 6 }}>
+      <span />
+      <div style={{ position: "relative", height: 16 }}>
+        {ticks.map((tick) => (
+          <span
+            key={tick}
+            style={{
+              position: "absolute",
+              left: `${(tick / scaleMax) * 100}%`,
+              transform: tick === 0 ? "translateX(0)" : "translateX(-50%)",
+              fontFamily: fonts.mono,
+              fontSize: 11,
+              color: t.inkFaint,
+              whiteSpace: "nowrap",
+            }}
+          >
+            ₹{tick} LPA
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TierGridlines({ scaleMax }: { scaleMax: number }) {
+  const ticks = niceTicks(scaleMax);
+  return (
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+      {ticks.map((tick) => (
+        <div
+          key={tick}
+          style={{ position: "absolute", left: `${(tick / scaleMax) * 100}%`, top: 0, bottom: 0, width: 1, background: t.line }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* Pure-CSS horizontal bar — no chart library (CSP-safe, self-contained).
+ * The value label lives centered inside the filled bar (white-on-copper) so it
+ * always tracks the bar and can never overlap the track or get clipped at the
+ * edge the way a fixed-position overlay label would. */
 function TierBar({ level, m, scaleMax }: { level: string; m: BandMedian | null; scaleMax: number }) {
   const min = m?.min ?? 0;
   const max = m?.max ?? 0;
   const leftPct = (min / scaleMax) * 100;
   const widthPct = Math.max(((max - min) / scaleMax) * 100, 1.5);
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "84px 1fr", alignItems: "center", gap: 14, marginBottom: 14 }}>
+    <div style={{ ...tierGridStyle, marginBottom: 14 }}>
       <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{level}</span>
-      <div style={{ position: "relative" }}>
-        <div style={{ height: 30, background: t.creamSoft, borderRadius: 8, position: "relative", overflow: "hidden" }}>
-          <div
-            style={{
-              position: "absolute",
-              left: `${leftPct}%`,
-              width: `${widthPct}%`,
-              top: 0,
-              bottom: 0,
-              background: t.copper,
-              borderRadius: 8,
-            }}
-          />
+      <div style={{ height: 34, background: t.creamSoft, borderRadius: 8, position: "relative", overflow: "hidden" }}>
+        <TierGridlines scaleMax={scaleMax} />
+        <div
+          style={{
+            position: "absolute",
+            left: `${leftPct}%`,
+            width: `${widthPct}%`,
+            top: 0,
+            bottom: 0,
+            background: t.copper,
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <span style={{ fontFamily: fonts.mono, fontSize: 12.5, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", padding: "0 6px" }}>
+            {medianText(m)}
+          </span>
         </div>
-        <span style={{ fontFamily: fonts.mono, fontSize: 12.5, color: t.inkSoft, position: "absolute", right: 8, top: 6 }}>
-          {medianText(m)}
-        </span>
       </div>
     </div>
   );
@@ -262,6 +325,7 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
             bar means a wider spread between the 25th and 75th percentile offers at that level.
           </p>
           <div style={{ background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 14, padding: "26px 22px" }}>
+            <TierAxis scaleMax={scaleMax} />
             <TierBar level="Entry" m={stats.entryMedian} scaleMax={scaleMax} />
             <TierBar level="Mid" m={stats.midMedian} scaleMax={scaleMax} />
             <TierBar level="Senior" m={stats.seniorMedian} scaleMax={scaleMax} />
