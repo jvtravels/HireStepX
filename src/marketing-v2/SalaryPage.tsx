@@ -566,15 +566,54 @@ export function SalaryCompanyPage({
           className="sal-container"
           style={{ ...container, paddingTop: 48 }}
         >
+          {/* Jump-to-role nav — on a large roster, a visitor who searched for
+              one specific role (not "{companyLabel} salary") needs a way to
+              land on that role's table without scrolling past a dozen others.
+              The anchor list also gives Google concrete same-page targets for
+              each role + company + salary phrase, on top of the H1's generic
+              company-salary phrase above. */}
+          {hasRoles && roles.length > 3 && (
+            <nav
+              aria-label={`Jump to a role's salary at ${companyLabel}`}
+              style={{ marginBottom: 40 }}
+            >
+              <p style={eyebrow}>Jump to a role</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {roles.map((role) => (
+                  <a
+                    key={role.roleKey}
+                    href={`#role-${role.roleKey}`}
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 14px",
+                      background: t.creamSoft,
+                      border: `1px solid ${t.line}`,
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      color: t.coal,
+                      fontFamily: fonts.sans,
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {role.roleLabel}
+                  </a>
+                ))}
+              </div>
+            </nav>
+          )}
           {hasRoles ? (
             roles.map((role) => (
               <section
                 key={role.roleKey}
-                style={{ marginBottom: 48 }}
-                aria-label={`${role.roleLabel} salary`}
+                id={`role-${role.roleKey}`}
+                style={{ marginBottom: 48, scrollMarginTop: 24 }}
+                aria-label={`${role.roleLabel} salary at ${companyLabel}`}
               >
                 <p style={eyebrow}>Role</p>
-                <h2 style={sectionTitle}>{role.roleLabel}</h2>
+                <h2 style={sectionTitle}>
+                  {role.roleLabel} Salary at {companyLabel} (India, 2026)
+                </h2>
                 <p
                   style={{
                     fontFamily: fonts.sans,
