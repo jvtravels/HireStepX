@@ -285,20 +285,27 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
         </div>
       )}
       {phase === "speaking" && (
-        <button onClick={skipSpeaking} style={{
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-          background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-          // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
-          // before, too small for reliable tap on mobile.
-          borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
-        onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-          Continue · Enter
-        </button>
+        <>
+          <button onClick={skipSpeaking} style={{
+            fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
+            background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
+            // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
+            // before, too small for reliable tap on mobile.
+            borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
+          onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            Continue · Enter
+          </button>
+          {/* Real interviews let you jump in mid-sentence — most users don't
+              realize this UI supports it too until told. */}
+          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, marginTop: 2 }}>
+            No need to wait — jump in whenever you're ready
+          </span>
+        </>
       )}
     </div>
   );
@@ -434,6 +441,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
 
       {/* Skip button */}
       {phase === "speaking" && (
+        <>
         <button onClick={skipSpeaking} style={{
           fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
           background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
@@ -448,6 +456,10 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Continue · Enter
         </button>
+        <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, marginTop: 2 }}>
+          No need to wait — jump in whenever you're ready
+        </span>
+        </>
       )}
     </div>
   );

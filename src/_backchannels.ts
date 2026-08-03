@@ -39,11 +39,12 @@
  *   - If the user resumes typing/speaking within the 1.5s window,
  *     the timer resets — no firing.
  *
- * Default OFF behind a localStorage flag so production users don't
- * see this until we've validated it on real mics in real conditions.
- * To enable for testing:
+ * Default ON (2026-08-03) — live-tested for mic feedback, safe to
+ * ship broadly. Kept as a kill switch, not an opt-in, so a bad mic
+ * interaction discovered in the field can be turned off without a
+ * deploy:
  *
- *   localStorage.setItem("hsx-backchannels", "on")
+ *   localStorage.setItem("hsx-backchannels", "off")
  */
 
 import { useEffect, useRef } from "react";
@@ -71,9 +72,9 @@ const STILLNESS_MS = 1500;
 
 function isFeatureEnabled(): boolean {
   try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(FEATURE_FLAG_KEY) === "on";
+    return typeof localStorage === "undefined" || localStorage.getItem(FEATURE_FLAG_KEY) !== "off";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -134,10 +135,11 @@ export function useBackchannels(cfg: BackchannelHookConfig): void {
   }, [cfg.phase, cfg.aiVoiceEnabled, cfg.currentStep]);
 }
 
-/** Exported for tests / DevTools — manually flip the feature flag. */
+/** Exported for tests / DevTools — manually flip the feature flag.
+ *  Default is ON, so enabling just clears any prior opt-out. */
 export function setBackchannelsEnabled(enabled: boolean): void {
   try {
-    if (enabled) localStorage.setItem(FEATURE_FLAG_KEY, "on");
-    else localStorage.removeItem(FEATURE_FLAG_KEY);
+    if (enabled) localStorage.removeItem(FEATURE_FLAG_KEY);
+    else localStorage.setItem(FEATURE_FLAG_KEY, "off");
   } catch { /* expected: localStorage may be blocked */ }
 }
