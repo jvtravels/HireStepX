@@ -415,18 +415,6 @@ function ConfidenceBadge({ tier }: { tier?: "high" | "medium" | "low" }) {
   );
 }
 
-const disclaimer: CSSProperties = {
-  fontFamily: fonts.sans,
-  fontSize: 12,
-  color: t.inkFaint,
-  lineHeight: 1.6,
-  padding: "12px 16px",
-  background: t.creamSoft,
-  borderRadius: 6,
-  border: `1px solid ${t.line}`,
-  marginTop: 24,
-};
-
 const chipStyle: CSSProperties = {
   display: "inline-block",
   padding: "2px 8px",
@@ -708,16 +696,6 @@ export function SalaryCompanyPage({
             </div>
           )}
 
-          {/* Disclaimer */}
-          <p style={disclaimer}>
-            <strong>Data sources:</strong> AmbitionBox (primary) and Glassdoor India
-            (secondary cross-check). Ranges represent the 25th–90th
-            percentile of reported total CTC (base + variable + annual equity value) in
-            Indian cities. Individual offers vary by negotiation, team, location, and
-            joining year. These figures are market reference data, not a guarantee of any
-            specific offer. Verify with current offer letters and recruiter disclosures.
-          </p>
-
           {/* Cross-links */}
           <div
             style={{
@@ -774,7 +752,8 @@ export function SalaryCompanyPage({
         <div style={{ marginTop: 64 }}>
           <DarkBand
             eyebrow="Practice rounds"
-            title={`Prepare for your ${companyLabel} interview`}
+            title="Prepare for your"
+            accent={`${companyLabel} interview`}
             videoSrc="/cta.mp4"
           >
             <p
