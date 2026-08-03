@@ -455,6 +455,7 @@ export function SalaryCompanyPage({
         .sal-table { width: 100%; border-collapse: collapse; }
         .sal-table tr:last-child td { border-bottom: none; }
         .sal-table tr:hover td { background: ${t.creamSoft}; }
+        .sal-h1::first-letter { text-transform: uppercase; }
 
         @media (max-width: 640px) {
           .sal-container { padding: 0 16px !important; }
@@ -478,7 +479,7 @@ export function SalaryCompanyPage({
             <p className="ed-rise" style={eyebrow}>
               Salary Guide · India 2026
             </p>
-            <h1 className="ed-rise ed-d1" style={h1Style}>
+            <h1 className="ed-rise ed-d1 sal-h1" style={h1Style}>
               {companyLabel} Salary Guide India 2026
             </h1>
             <p className="ed-rise ed-d2" style={leadStyle}>
