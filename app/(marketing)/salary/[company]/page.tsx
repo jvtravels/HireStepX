@@ -8,6 +8,7 @@ import {
 } from "../../../../data/salary-seo";
 import { COMPANY_SALARY_OVERRIDES, COMPANY_META } from "../../../../data/company-salary-overrides";
 import { IMPORTED_SALARY_OVERRIDES } from "../../../../data/_imported-salary-overrides.generated";
+import { getCsvDerivedBandOverride } from "../../../../data/csv-derived-fallbacks";
 import { COMPANY_KNOWN_FACTS } from "../../../../data/company-known-facts";
 import { CALIBRATION_DATE } from "../../../../data/salaries";
 import {
@@ -76,12 +77,29 @@ export async function generateMetadata({
   if (!page) return { title: "Not Found" };
 
   const label = salaryCompanyLabel(company);
-  const title = `${page.searchPhrase} | HireStepX`;
-  const hasData = buildRoleSections(company, page.roles).length > 0;
+  const roleSections = buildRoleSections(company, page.roles);
+  const hasData = roleSections.length > 0;
+
+  // Pages with a handful of roles keep their hand-tuned, single-keyword
+  // searchPhrase (e.g. "Razorpay Software Engineer Salary India 2026") —
+  // that title is deliberately optimized for the highest-search-volume
+  // query. Once the CSV-derived role expansion pushed a page well past
+  // that scope, an unchanged title/description misrepresents what's on
+  // the page to anyone landing via a different role's search query, and
+  // undersells the page's coverage in the SERP snippet.
+  const isBroadRoster = roleSections.length > 5;
+  const firstRole = roleSections[0]?.roleLabel;
+  const lastRole = roleSections[roleSections.length - 1]?.roleLabel;
+  const title = isBroadRoster
+    ? `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole}) | HireStepX`
+    : `${page.searchPhrase} | HireStepX`;
+  const description = isBroadRoster
+    ? `${page.metaDescription} Covers ${roleSections.length} roles at ${label}, from ${firstRole} to ${lastRole}.`
+    : page.metaDescription;
 
   return {
     title,
-    description: page.metaDescription,
+    description,
     keywords: [
       `${label} salary India 2026`,
       `${label} software engineer salary`,
@@ -96,7 +114,7 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
       title,
-      description: page.metaDescription,
+      description,
       url: `https://hirestepx.com/salary/${company}`,
       siteName: "HireStepX",
       locale: "en_IN",
@@ -105,7 +123,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title,
-      description: page.metaDescription,
+      description,
       images: ["https://hirestepx.com/opengraph-image"],
     },
   };
@@ -115,16 +133,46 @@ export async function generateMetadata({
 
 const LEVEL_KEYS = ["entry", "mid", "senior", "lead", "executive"] as const;
 
+/* Some data-source keys diverge from the salary-seo slug by more than a
+   hyphen/space swap (brand renames, punctuation, abbreviations). Without
+   this map, an entire company's imported/curated/CSV data is unreachable
+   even though it exists in the underlying dataset. */
+const COMPANY_KEY_ALIASES: Record<string, string> = {
+  techmahindra: "tech mahindra",
+  "wells-fargo": "wells fargo india",
+  "apollo-247": "apollo hospitals",
+  curefit: "cure.fit",
+  "tata-1mg": "1mg",
+  "procter-gamble": "p&g",
+  goldman: "goldman sachs",
+  jpmc: "jpmorgan",
+  kotak: "kotak mahindra bank",
+  paypal: "paypal india",
+  "american-express": "american express india",
+  airbnb: "airbnb india",
+  "twitter-x": "twitter/x india",
+};
+
 /* Some legacy override keys use spaces ("morgan stanley", "hdfc bank").
    Slugs in salary-seo use hyphens. Normalize so both resolve. */
 function resolveOverrides(slug: string) {
-  return COMPANY_SALARY_OVERRIDES[slug] ?? COMPANY_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
+  const alias = COMPANY_KEY_ALIASES[slug];
+  return (
+    COMPANY_SALARY_OVERRIDES[slug] ??
+    COMPANY_SALARY_OVERRIDES[slug.replace(/-/g, " ")] ??
+    (alias ? COMPANY_SALARY_OVERRIDES[alias] : undefined)
+  );
 }
 
 /* AmbitionBox-scraped roles that have no hand-curated COMPANY_SALARY_OVERRIDES
    entry still need to resolve here, or their section silently renders empty. */
 function resolveImportedOverrides(slug: string) {
-  return IMPORTED_SALARY_OVERRIDES[slug] ?? IMPORTED_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
+  const alias = COMPANY_KEY_ALIASES[slug];
+  return (
+    IMPORTED_SALARY_OVERRIDES[slug] ??
+    IMPORTED_SALARY_OVERRIDES[slug.replace(/-/g, " ")] ??
+    (alias ? IMPORTED_SALARY_OVERRIDES[alias] : undefined)
+  );
 }
 
 function buildRoleSections(
@@ -133,15 +181,44 @@ function buildRoleSections(
 ): SalaryRoleSection[] {
   const overrides = resolveOverrides(companySlug);
   const importedOverrides = resolveImportedOverrides(companySlug);
-  if (!overrides && !importedOverrides) return [];
 
   return roles.flatMap(({ roleKey, label }) => {
     const roleData = overrides?.[roleKey] ?? importedOverrides?.[roleKey];
-    if (!roleData) return [];
 
+    // Levels sourced from different tiers (hand-curated for one level, a
+    // CSV-derived fallback for the next) can disagree on scale — a broader
+    // CSV aggregate landing lower than an already-curated lower level's
+    // figure. Rather than render a level that appears to pay less than the
+    // level below it, drop it: fewer trustworthy rows beat a confusing
+    // regression.
+    let runningMax = -Infinity;
+    // The CSV's experience ladder (fresher/junior/mid/senior/lead) is
+    // shallower than the app's (entry/mid/senior/lead/executive) — when a
+    // role has no CSV "manager" tier, both `lead` and `executive` fall back
+    // to the same CSV "lead" row (expToCsvLevels), producing two rows with
+    // identical figures. The CSV-derived source string embeds the exact
+    // role/level it was read from, so an unchanged CSV source between
+    // consecutive *CSV-fallback* levels means we've re-read the same row —
+    // drop the repeat. Curated/imported bands are excluded from this check:
+    // their `source` is a citation, not a row identity, and is routinely
+    // identical across genuinely-different levels (e.g. one research pass
+    // covering entry/mid/senior together).
+    let prevCsvFallbackSource: string | undefined;
     const bands: SalaryBandRow[] = LEVEL_KEYS.flatMap((lvl) => {
-      const band = roleData[lvl];
+      // CSV-derived research dataset is the last-resort fallback per
+      // level, for roles with no hand-curated or AmbitionBox-imported
+      // band — otherwise these sections silently render empty.
+      const direct = roleData?.[lvl];
+      // getCsvCompanyBand only strips trailing punctuation/" India" — it
+      // never bridges hyphen-vs-space, so pass the spaced form (or an
+      // explicit alias for bigger spelling divergences) here too.
+      const csvLookupKey = COMPANY_KEY_ALIASES[companySlug] ?? companySlug.replace(/-/g, " ");
+      const band = direct ?? getCsvDerivedBandOverride(csvLookupKey, roleKey, lvl);
       if (!band) return [];
+      if (band.totalMax < runningMax) return [];
+      if (!direct && band.source && band.source === prevCsvFallbackSource) return [];
+      runningMax = band.totalMax;
+      prevCsvFallbackSource = direct ? undefined : band.source;
       return [
         {
           level: lvl,

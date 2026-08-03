@@ -546,10 +546,16 @@ export function SalaryCompanyPage({
                 <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
                   {headlineRole.roleLabel} · {LEVEL_LABEL[headlineBand.level]}
                 </p>
-                <p style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
+                <p style={{ fontFamily: fonts.mono, fontSize: "clamp(30px, 3.6vw, 44px)", fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.02em" }}>
                   {fmt(headlineBand.totalMin)} – {fmt(headlineBand.totalMax)}
                   <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, color: t.inkSoft, marginLeft: 8 }}>total CTC</span>
                 </p>
+                {roles.length > 1 && (
+                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "10px 0 0" }}>
+                    Salary bands for {roles.length} roles at {companyLabel}, from {headlineRole.roleLabel} to{" "}
+                    {roles[roles.length - 1].roleLabel} — see all below.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -560,15 +566,54 @@ export function SalaryCompanyPage({
           className="sal-container"
           style={{ ...containerNarrow, paddingTop: 48 }}
         >
+          {/* Jump-to-role nav — on a large roster, a visitor who searched for
+              one specific role (not "{companyLabel} salary") needs a way to
+              land on that role's table without scrolling past a dozen others.
+              The anchor list also gives Google concrete same-page targets for
+              each role + company + salary phrase, on top of the H1's generic
+              company-salary phrase above. */}
+          {hasRoles && roles.length > 3 && (
+            <nav
+              aria-label={`Jump to a role's salary at ${companyLabel}`}
+              style={{ marginBottom: 40 }}
+            >
+              <p style={eyebrow}>Jump to a role</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {roles.map((role) => (
+                  <a
+                    key={role.roleKey}
+                    href={`#role-${role.roleKey}`}
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 14px",
+                      background: t.creamSoft,
+                      border: `1px solid ${t.line}`,
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      color: t.coal,
+                      fontFamily: fonts.sans,
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {role.roleLabel}
+                  </a>
+                ))}
+              </div>
+            </nav>
+          )}
           {hasRoles ? (
             roles.map((role) => (
               <section
                 key={role.roleKey}
-                style={{ marginBottom: 48 }}
-                aria-label={`${role.roleLabel} salary`}
+                id={`role-${role.roleKey}`}
+                style={{ marginBottom: 48, scrollMarginTop: 24 }}
+                aria-label={`${role.roleLabel} salary at ${companyLabel}`}
               >
                 <p style={eyebrow}>Role</p>
-                <h2 style={sectionTitle}>{role.roleLabel}</h2>
+                <h2 style={sectionTitle}>
+                  {role.roleLabel} Salary at {companyLabel} (India, 2026)
+                </h2>
                 <p
                   style={{
                     fontFamily: fonts.sans,
@@ -954,7 +999,7 @@ export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[
         <div
           className="sal-hub-header"
           style={{
-            paddingTop: ED_PADDING.heroTop,
+            paddingTop: 52,
             paddingBottom: 52,
             borderBottom: `1px solid ${t.line}`,
             background: t.creamRaised,
