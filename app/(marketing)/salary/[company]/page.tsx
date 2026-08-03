@@ -7,6 +7,7 @@ import {
   salaryCompanyLabel,
 } from "../../../../data/salary-seo";
 import { COMPANY_SALARY_OVERRIDES, COMPANY_META } from "../../../../data/company-salary-overrides";
+import { IMPORTED_SALARY_OVERRIDES } from "../../../../data/_imported-salary-overrides.generated";
 import { COMPANY_KNOWN_FACTS } from "../../../../data/company-known-facts";
 import { CALIBRATION_DATE } from "../../../../data/salaries";
 import {
@@ -120,15 +121,22 @@ function resolveOverrides(slug: string) {
   return COMPANY_SALARY_OVERRIDES[slug] ?? COMPANY_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
 }
 
+/* AmbitionBox-scraped roles that have no hand-curated COMPANY_SALARY_OVERRIDES
+   entry still need to resolve here, or their section silently renders empty. */
+function resolveImportedOverrides(slug: string) {
+  return IMPORTED_SALARY_OVERRIDES[slug] ?? IMPORTED_SALARY_OVERRIDES[slug.replace(/-/g, " ")];
+}
+
 function buildRoleSections(
   companySlug: string,
   roles: Array<{ roleKey: string; label: string }>,
 ): SalaryRoleSection[] {
   const overrides = resolveOverrides(companySlug);
-  if (!overrides) return [];
+  const importedOverrides = resolveImportedOverrides(companySlug);
+  if (!overrides && !importedOverrides) return [];
 
   return roles.flatMap(({ roleKey, label }) => {
-    const roleData = overrides[roleKey];
+    const roleData = overrides?.[roleKey] ?? importedOverrides?.[roleKey];
     if (!roleData) return [];
 
     const bands: SalaryBandRow[] = LEVEL_KEYS.flatMap((lvl) => {
