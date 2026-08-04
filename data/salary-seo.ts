@@ -1507,7 +1507,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "tower-research",
-    searchPhrase: "Tower Research Capital India Salary 2026",
+    searchPhrase: "Tower Research Capital India Salary 2026: ₹35–240 LPA",
     metaDescription:
       "Tower Research Capital India salary 2026: Quant Researcher entry ₹50–80 LPA, mid ₹80–140 LPA, senior ₹140–240 LPA. Pure cash, no equity. Gurgaon HFT firm CTC guide.",
     roles: [
@@ -1777,7 +1777,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   /* ── AI Wave 7 ──────────────────────────────────────────────── */
   {
     slug: "anthropic",
-    searchPhrase: "Anthropic India AI Engineer Salary 2026",
+    searchPhrase: "Anthropic India AI Engineer Salary 2026: ₹90–320 LPA",
     metaDescription:
       "Anthropic India salary 2026: AI Engineer mid ₹90–180 LPA, senior ₹180–320 LPA plus RSU. Remote India hires; SF-anchored bands. Claude team. Constitutional AI research CTC guide.",
     roles: [
@@ -1803,7 +1803,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   /* ── Quant / HFT Wave 7 ─────────────────────────────────────── */
   {
     slug: "optiver",
-    searchPhrase: "Optiver India Quant Researcher Salary 2026",
+    searchPhrase: "Optiver India Quant Researcher Salary 2026: ₹55–260 LPA",
     metaDescription:
       "Optiver India salary 2026: Quant Researcher entry ₹55–90 LPA, mid ₹90–150 LPA, senior ₹150–260 LPA. Pure cash HFT. Amsterdam-HQ market maker with Bengaluru office.",
     roles: [
@@ -3263,7 +3263,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "globallogic",
-    searchPhrase: "GlobalLogic Software Engineer Salary India 2026",
+    searchPhrase: "GlobalLogic Software Engineer Salary India 2026: ₹8–44 LPA",
     metaDescription:
       "GlobalLogic salary India 2026: SWE entry ₹8–12 LPA, mid ₹14–24 LPA, senior ₹26–44 LPA. Hitachi RSU. Noida, Bengaluru, Hyderabad. Product engineering services for global tech companies.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],

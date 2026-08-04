@@ -230,6 +230,16 @@ export default async function QuestionsSlugPage({
     mainEntity: faqEntries,
   };
 
+  /* Visible FAQ content — passed to QuestionSetPage so the on-page FAQ
+     section actually matches this page's FAQPage schema above, instead of
+     a generic block repeated identically across all /questions/[slug]
+     pages. Capped so the section doesn't run unreasonably long on pages
+     with a big question bank. */
+  const visibleFaqs = faqEntries.slice(0, 8).map((entry) => ({
+    q: entry.name,
+    a: entry.acceptedAnswer.text,
+  }));
+
   /* HowTo schema (preparation) — framework summary split on → separators. */
   const howToSteps = page.framework.summary
     .split(/\s*→\s*/)
@@ -369,6 +379,7 @@ export default async function QuestionsSlugPage({
         relatedPages={relatedPages}
         relatedBlogPosts={relatedBlogPosts}
         salaryPageSlug={salaryPage?.slug}
+        faqs={visibleFaqs}
       />
       <FooterDome />
       <MobileStickyCTA />
