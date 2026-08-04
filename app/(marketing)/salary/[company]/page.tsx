@@ -61,6 +61,21 @@ function relatedSalaryPages(currentSlug: string): Array<{ slug: string; label: s
     .map((s) => ({ slug: s, label: salaryCompanyLabel(s) }));
 }
 
+/* Level → the phrasing candidates actually type into search ("fresher
+   salary", "SDE salary", "levels fyi"), used to build FAQ questions that
+   match those queries instead of a generic "salary" head term. */
+const FAQ_LEVEL_PHRASE: Record<string, string> = {
+  entry: "fresher / entry-level (SDE-1)",
+  mid: "mid-level (SDE-2)",
+  senior: "senior (SDE-3+)",
+  lead: "lead",
+  executive: "manager",
+};
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
@@ -90,8 +105,20 @@ export async function generateMetadata({
   const isBroadRoster = roleSections.length > 5;
   const firstRole = roleSections[0]?.roleLabel;
   const lastRole = roleSections[roleSections.length - 1]?.roleLabel;
+  // GSC shows a consistent pattern: titles that lead with a real ₹ CTC
+  // number earn clicks at a given position; generic titles (company +
+  // "Salary Guide", no figure) sit at similar or better positions with
+  // zero clicks. The old broad-roster title never carried a number at
+  // all — pull the flagship role's headline range in so it does.
+  const headlineBands = roleSections[0]?.bands ?? [];
+  const headlineRange =
+    headlineBands.length > 0
+      ? `₹${Math.min(...headlineBands.map((b) => b.totalMin))}–${Math.max(...headlineBands.map((b) => b.totalMax))} LPA`
+      : undefined;
   const title = isBroadRoster
-    ? `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole}) | HireStepX`
+    ? headlineRange
+      ? `${label} Salary India 2026: ${firstRole} ${headlineRange} (+${roleSections.length - 1} More Roles) | HireStepX`
+      : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole}) | HireStepX`
     : `${page.searchPhrase} | HireStepX`;
   const description = isBroadRoster
     ? `${page.metaDescription} Covers ${roleSections.length} roles at ${label}, from ${firstRole} to ${lastRole}.`
@@ -276,23 +303,44 @@ export default async function SalaryCompanySlugPage({
       ? `${knownFacts.description} `
       : `${label} is a leading employer in India. `;
 
-  /* FAQ schema — targets "[Company] salary" head queries */
-  const faqEntries = roles.flatMap((role) =>
-    role.bands.slice(0, 2).map((band) => ({
-      "@type": "Question",
-      name: `What is the ${role.roleLabel} salary at ${label} India 2026?`,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `${role.roleLabel}s at ${label} in India earn between ₹${band.totalMin}L and ₹${band.totalMax}L total CTC at the ${band.level} level (2026, 25th–90th percentile). Source: ${band.source}.`,
-      },
-    })),
-  );
+  /* FAQ pairs — targets "[Company] salary" head queries plus level-specific
+     variants ("fresher salary", "SDE salary", "levels fyi") that GSC shows
+     ranking but not converting: the old version asked the same question
+     text for every level in a role (only the answer changed), so it never
+     matched how candidates actually phrase a level-specific search. Built
+     once and reused for both the visible FAQ section and the FAQPage
+     JSON-LD below, so structured data always matches what's actually on
+     the page. Capped at 12 total so a broad-roster page (many roles) can't
+     balloon into an unreadable wall of accordion items. */
+  const faqs = roles
+    .flatMap((role) => {
+      if (role.bands.length === 0) return [];
+      const allMin = Math.min(...role.bands.map((b) => b.totalMin));
+      const allMax = Math.max(...role.bands.map((b) => b.totalMax));
+      const headline = {
+        q: `What is the ${role.roleLabel} salary at ${label} India 2026?`,
+        a: `${role.roleLabel}s at ${label} in India earn between ₹${allMin}L and ₹${allMax}L total CTC (2026, ${role.bands[0].level} to ${role.bands[role.bands.length - 1].level}, 25th–90th percentile).`,
+      };
+      const perLevel = role.bands.map((band) => {
+        const phrase = FAQ_LEVEL_PHRASE[band.level] ?? band.level;
+        return {
+          q: `What is the ${phrase} ${role.roleLabel} salary at ${label}?`,
+          a: `${capitalize(phrase)} ${role.roleLabel}s at ${label} earn ₹${band.totalMin}L–₹${band.totalMax}L total CTC in India (2026). Source: ${band.source}.`,
+        };
+      });
+      return [headline, ...perLevel];
+    })
+    .slice(0, 12);
 
-  const faqSchema = faqEntries.length > 0
+  const faqSchema = faqs.length > 0
     ? {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: faqEntries,
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
       }
     : null;
 
@@ -349,6 +397,10 @@ export default async function SalaryCompanySlugPage({
         noticePeriodDays={meta?.noticePeriodDays}
         bondPenaltyLpa={meta?.bondPenaltyLpa}
         calibrationDate={CALIBRATION_DATE}
+        faqs={faqs}
+        scale={knownFacts?.scale}
+        products={knownFacts?.products}
+        interviewNotes={knownFacts?.notes}
       />
       {relatedSalary.length >= 2 && (
         <section
