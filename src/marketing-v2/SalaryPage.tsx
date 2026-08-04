@@ -54,6 +54,12 @@ export interface SalaryPageProps {
   /* Visible FAQ content — must mirror the FAQPage JSON-LD schema built in
      the route file so structured data matches what's actually shown. */
   faqs?: { q: string; a: string }[];
+  /* Company snapshot — grounded, verified facts (not LLM-invented) from
+     COMPANY_KNOWN_FACTS. Gives the page a substantive per-company section
+     beyond the salary table itself; only rendered when we have the data. */
+  scale?: string;
+  products?: string[];
+  interviewNotes?: string;
 }
 
 /* ─── Company logo domains (Clearbit) ───────────────────────────── */
@@ -437,7 +443,11 @@ export function SalaryCompanyPage({
   bondPenaltyLpa,
   calibrationDate,
   faqs = [],
+  scale,
+  products,
+  interviewNotes,
 }: SalaryPageProps) {
+  const hasSnapshot = Boolean(scale || interviewNotes || (products && products.length > 0));
   const hasRoles = roles.length > 0;
   const questionHref = questionPageSlug
     ? `/questions/${questionPageSlug}`
@@ -560,6 +570,46 @@ export function SalaryCompanyPage({
             )}
           </div>
         </div>
+
+        {/* ── Company snapshot — grounded facts, not templated boilerplate.
+              Gives each page real per-company substance beyond the table. ── */}
+        {hasSnapshot && (
+          <div className="sal-container" style={{ ...containerNarrow, paddingTop: 40 }}>
+            <p style={eyebrow}>Working at {companyLabel}</p>
+            {scale && (
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.7, color: t.coal, margin: "0 0 12px" }}>
+                {scale}
+              </p>
+            )}
+            {products && products.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 16px" }}>
+                {products.map((p) => (
+                  <span
+                    key={p}
+                    style={{
+                      ...chipStyle,
+                      background: t.creamSoft,
+                      color: t.inkSoft,
+                      border: `1px solid ${t.line}`,
+                    }}
+                  >
+                    {p}
+                  </span>
+                ))}
+              </div>
+            )}
+            {interviewNotes && (
+              <div style={{ borderLeft: `3px solid ${t.copper}`, paddingLeft: 16 }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 6px", fontWeight: 700 }}>
+                  What the interview actually tests
+                </p>
+                <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.7, color: t.inkSoft, margin: 0 }}>
+                  {interviewNotes}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Salary tables ── */}
         <div
