@@ -244,6 +244,9 @@ export interface QuestionSetPageProps {
   relatedPages: { slug: string; searchPhrase: string }[];
   relatedBlogPosts?: { slug: string; title: string }[];
   salaryPageSlug?: string;
+  /* Visible FAQ content — must mirror the FAQPage JSON-LD schema built in
+     the route file so structured data matches what's actually shown. */
+  faqs?: { q: string; a: string }[];
 }
 
 export function QuestionSetPage({
@@ -255,6 +258,7 @@ export function QuestionSetPage({
   relatedPages,
   relatedBlogPosts = [],
   salaryPageSlug,
+  faqs = [],
 }: QuestionSetPageProps) {
   const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
 
@@ -505,6 +509,35 @@ export function QuestionSetPage({
           </div>
 
         </div>
+
+        {/* FAQ — mirrors the FAQPage JSON-LD schema built in the route file
+            (recruitment steps, interview rounds, framework, top questions)
+            so the visible page matches what the structured data promises. */}
+        {faqs.length > 0 && (
+          <section className="ed-container" style={{ paddingTop: 8, paddingBottom: 64 }}>
+            <SectionHead
+              title={`${companyLabel} ${focusLabel.toLowerCase()} interview FAQ`}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {faqs.map(({ q, a }, i) => (
+                <div
+                  key={q}
+                  style={{ borderTop: `1px solid ${t.line}`, paddingTop: 22, paddingBottom: 22 }}
+                >
+                  <h3 style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: t.coal, margin: "0 0 8px" }}>
+                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper, fontSize: 17, marginRight: 8, opacity: 0.6 }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    {q}
+                  </h3>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.7, color: t.inkSoft, margin: 0, maxWidth: "68ch" }}>
+                    {a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Closing CTA */}
         <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering." videoSrc="/cta.mp4">
