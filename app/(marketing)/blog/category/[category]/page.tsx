@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BLOG_META } from "@/blog-meta";
-import { CATEGORY_BUCKETS, bucketToSlug, bucketDescription, categoryBucket } from "@/blog-categories";
+import { CATEGORY_BUCKETS, bucketToSlug, bucketDescription, bucketIntro, categoryBucket } from "@/blog-categories";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
@@ -122,8 +122,8 @@ export default async function BlogCategoryPage({
           <h1 style={{ fontFamily: fonts.serif, fontSize: 36, fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 12px", lineHeight: 1.2 }}>
             {bucket} Interview Guides
           </h1>
-          <p style={{ fontFamily: fonts.serif, fontSize: 16, color: t.inkSoft, margin: "0 0 48px", lineHeight: 1.7 }}>
-            {bucketDescription(bucket)}
+          <p style={{ fontFamily: fonts.serif, fontSize: 16, color: t.inkSoft, margin: "0 0 48px", lineHeight: 1.7, maxWidth: "68ch" }}>
+            {bucketIntro(bucket)}
           </p>
 
           <ul style={{ listStyle: "none", padding: 0, margin: "0 0 48px", display: "flex", flexDirection: "column", gap: 12 }}>
