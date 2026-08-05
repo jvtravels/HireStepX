@@ -37,7 +37,7 @@ export async function generateMetadata({
   const page = getCityPageBySlug(slug);
   if (!page) return { title: "Not Found" };
 
-  const title = `Interview Preparation in ${page.displayName} 2026: AI Mock Interviews | HireStepX`;
+  const title = `${page.displayName} Interview Prep 2026 | HireStepX`;
   const description = `Prepare for interviews at companies hiring in ${page.city}. Role- and company-specific AI mock interviews, scored feedback, 2 free sessions.`;
 
   return {
