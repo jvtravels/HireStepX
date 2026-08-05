@@ -92,6 +92,18 @@ export async function generateStaticParams() {
   return getAllSalarySlugs().map((company) => ({ company }));
 }
 
+/* Google truncates SERP titles/descriptions around ~60 and ~155 chars
+   respectively. The broad-roster title/description below are assembled
+   from variable-length parts (company label, role names, CTC ranges) that
+   can run well past both limits — this trims to the last full word that
+   still fits instead of cutting mid-word or blowing past the limit. */
+function truncateAtWord(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]$/, "");
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -125,14 +137,19 @@ export async function generateMetadata({
     headlineBands.length > 0
       ? `₹${Math.min(...headlineBands.map((b) => b.totalMin))}–${Math.max(...headlineBands.map((b) => b.totalMax))} LPA`
       : undefined;
-  const title = isBroadRoster
+  const baseTitle = isBroadRoster
     ? headlineRange
-      ? `${label} Salary India 2026: ${firstRole} ${headlineRange} (+${roleSections.length - 1} More Roles) | HireStepX`
-      : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole}) | HireStepX`
-    : `${page.searchPhrase} | HireStepX`;
-  const description = isBroadRoster
+      ? `${label} Salary India 2026: ${firstRole} ${headlineRange} (+${roleSections.length - 1} More Roles)`
+      : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole})`
+    : page.searchPhrase;
+  const titleWithSuffix = `${baseTitle} | HireStepX`;
+  const title =
+    titleWithSuffix.length <= 60 ? titleWithSuffix : truncateAtWord(baseTitle, 60);
+  const baseDescription = isBroadRoster
     ? `${page.metaDescription} Covers ${roleSections.length} roles at ${label}, from ${firstRole} to ${lastRole}.`
     : page.metaDescription;
+  const description =
+    baseDescription.length <= 155 ? baseDescription : `${truncateAtWord(baseDescription, 154)}.`;
 
   return {
     title,

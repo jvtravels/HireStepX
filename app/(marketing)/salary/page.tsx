@@ -16,7 +16,7 @@ export function generateMetadata(): Metadata {
   return {
     title: "Company Salary Guides India 2026 | HireStepX",
     description:
-      "Salary ranges for TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs, JP Morgan, and more in India 2026. CTC data sourced from AmbitionBox and Glassdoor.",
+      "Salary ranges for TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs, and more in India 2026. CTC data sourced from AmbitionBox and Glassdoor.",
     keywords: [
       "software engineer salary India 2026",
       "TCS salary freshers 2026",
