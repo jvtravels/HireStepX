@@ -139,12 +139,20 @@ import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
 import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
 import { RouteFocusManager } from "./RouteFocusManager";
+import { headers } from "next/headers";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // proxy.ts stamps a per-request CSP nonce onto x-nonce (see buildCsp there).
+  // With 'strict-dynamic' in the policy, host-based allowlisting (checkout.razorpay.com,
+  // googletagmanager.com, etc.) is ignored — every script tag must carry this nonce or
+  // it's silently blocked. Server Components can read it directly; the meta tag below
+  // is how Client Components (ConsentGatedAnalytics, the Razorpay loader in
+  // dashboardComponents.tsx) get the same value, since they can't call headers().
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <html
       lang="en"
@@ -161,6 +169,7 @@ export default function RootLayout({
         {/* Satoshi is self-hosted via next/font/local (public/fonts/satoshi-*.woff2).
             The CDN preconnects and stylesheet link are no longer needed. */}
         <meta name="google-adsense-account" content="ca-pub-7810403590527236" />
+        <meta name="csp-nonce" content={nonce} />
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
         {/* dns-prefetch (not preconnect) for LLM/TTS/STT origins — only
             /interview needs a live TCP connection. Prefetch cuts the first-lookup
@@ -191,7 +200,7 @@ export default function RootLayout({
 
         <ServiceWorkerRegistrar />
         <CookieConsent />
-        <ConsentGatedAnalytics />
+        <ConsentGatedAnalytics nonce={nonce} />
       </body>
     </html>
   );

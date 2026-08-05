@@ -59,6 +59,10 @@ export function useSEO({ title, description, canonical, ogImage, ogType, jsonLd 
         script = document.createElement("script");
         script.id = JSON_LD_ID;
         script.type = "application/ld+json";
+        // CSP's script-src-elem applies to <script> elements regardless of type —
+        // without a nonce this gets silently dropped under the strict-dynamic policy.
+        const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
+        if (nonce) script.nonce = nonce;
         document.head.appendChild(script);
       }
       script.textContent = JSON.stringify(jsonLd);

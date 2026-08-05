@@ -303,6 +303,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         const loadRzpScript = () => new Promise<void>((resolve, reject) => {
           const s = document.createElement("script");
           s.src = "https://checkout.razorpay.com/v1/checkout.js";
+          // CSP is 'strict-dynamic' + per-request nonce (see proxy.ts) — a script tag
+          // without this attribute is silently blocked, which is what made checkout
+          // hang until the 10s timeout below. The nonce is exposed via the <meta
+          // name="csp-nonce"> tag rendered server-side in app/layout.tsx.
+          const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
+          if (nonce) s.nonce = nonce;
           const timer = setTimeout(() => { s.remove(); reject(new Error("timeout")); }, 10_000);
           s.onload = () => { clearTimeout(timer); resolve(); };
           s.onerror = () => { clearTimeout(timer); s.remove(); reject(); };

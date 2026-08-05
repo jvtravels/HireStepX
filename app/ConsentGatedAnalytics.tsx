@@ -12,7 +12,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 const Analytics = dynamic(() => import("@vercel/analytics/next").then(m => m.Analytics), { ssr: false });
 const SpeedInsights = dynamic(() => import("@vercel/speed-insights/next").then(m => m.SpeedInsights), { ssr: false });
 
-export default function ConsentGatedAnalytics() {
+export default function ConsentGatedAnalytics({ nonce }: { nonce: string }) {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
@@ -49,8 +49,9 @@ export default function ConsentGatedAnalytics() {
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
             strategy="afterInteractive"
+            nonce={nonce}
           />
-          <Script id="ga4-init" strategy="afterInteractive">{`
+          <Script id="ga4-init" strategy="afterInteractive" nonce={nonce}>{`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
