@@ -133,149 +133,18 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-/* ── Structured Data (JSON-LD) ── */
-const structuredData = [
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "HireStepX",
-    url: "https://hirestepx.com",
-    description:
-      "AI-powered mock interview platform with real-time feedback and STAR analysis",
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "INR",
-      description: "2 free sessions, no credit card required",
-    },
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "HireStepX",
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Web",
-    description:
-      "AI-powered mock interview platform with voice interviews, STAR method scoring, speech analytics, and company-specific question banks for TCS, Infosys, Google, Amazon & more.",
-    url: "https://hirestepx.com",
-    offers: [
-      { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
-      { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
-      { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions, 30-day validity, renews monthly" },
-    ],
-    applicationSubCategory: "Interview Preparation",
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "Is HireStepX free to use?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. Start with 2 full AI mock interviews, complete with real-time feedback, scores, and detailed performance reports. No credit card required." },
-      },
-      {
-        "@type": "Question",
-        name: "How does the AI mock interview work?",
-        acceptedAnswer: { "@type": "Answer", text: "Upload your resume, pick your target company and role, and choose from 10 interview types. The AI interviewer asks role-specific questions via voice, listens to your answers, asks follow-up questions, and delivers scored feedback after each session." },
-      },
-      {
-        "@type": "Question",
-        name: "What types of interviews can I practice?",
-        acceptedAnswer: { "@type": "Answer", text: "10 types: Behavioral, Technical, Strategic, Case Study, Campus Placement, HR Round, Panel, Management, Salary Negotiation, and Government/PSU. Each with 3 difficulty levels and mini or full session options." },
-      },
-      {
-        "@type": "Question",
-        name: "Can I practice for specific companies like TCS, Infosys, or Google?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. We support 200+ target companies including Google, Amazon, TCS, Infosys, Flipkart, Razorpay, McKinsey, Deloitte, and more, each with distinct interview patterns." },
-      },
-      {
-        "@type": "Question",
-        name: "How is this different from ChatGPT or practicing with friends?",
-        acceptedAnswer: { "@type": "Answer", text: "ChatGPT is text-only with no voice, no scoring, no resume integration, and no progress tracking. HireStepX is a purpose-built interview simulator: voice-based, resume-personalized, with detailed analytics." },
-      },
-      {
-        "@type": "Question",
-        name: "Is my interview data private and secure?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. Data is encrypted via Supabase with row-level security. Recordings and transcripts are never shared with employers or third parties. Delete everything anytime from Settings." },
-      },
-      {
-        "@type": "Question",
-        name: "Does HireStepX work on mobile?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes, on any modern browser. For the best experience during mock interviews, use a laptop or desktop with a microphone." },
-      },
-      {
-        "@type": "Question",
-        name: "How much does it cost compared to a career coach?",
-        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session or \u20b939/month for 5 sessions (Sprint Pack) with full AI coaching and analytics, available 24/7." },
-      },
-    ],
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": "https://hirestepx.com/#organization",
-    name: "HireStepX",
-    legalName: "HireStepX",
-    url: "https://hirestepx.com",
-    logo: "https://hirestepx.com/wordmark.png",
-    description:
-      "AI-powered mock interview platform for job seekers in India. Practice for Google, TCS, Flipkart, and 200+ companies.",
-    foundingDate: "2024",
-    address: {
-      "@type": "PostalAddress",
-      addressCountry: "IN",
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      email: "hello@hirestepx.com",
-      availableLanguage: ["English"],
-    },
-    sameAs: [
-      "https://www.linkedin.com/company/hirestepx",
-      "https://twitter.com/hirestepx",
-    ],
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "HireStepX",
-    url: "https://hirestepx.com",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: "https://hirestepx.com/companies?q={search_term_string}",
-      },
-      "query-input": "required name=search_term_string",
-    },
-  },
-];
-
 /* ── Client helpers (extracted to keep layout a server component) ── */
 import { ServiceWorkerRegistrar } from "./ServiceWorkerRegistrar";
 import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
 import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
 import { RouteFocusManager } from "./RouteFocusManager";
-import { headers } from "next/headers";
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Read the nonce injected by proxy.ts so we can attach it to every
-  // <script> tag in this server component. This allows the per-request CSP
-  // (which includes 'nonce-{nonce}' in script-src) to greenlight these scripts
-  // in browsers that enforce CSP Level 2+, which ignores 'unsafe-inline' when
-  // a nonce is present. Falls back to empty string — the page still renders
-  // correctly; only the nonce-based enforcement degrades to 'unsafe-inline'.
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
   return (
     <html
       lang="en"
@@ -301,17 +170,6 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://api.sarvam.ai" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://us.i.posthog.com" />
-
-        {/* Structured Data — server-rendered so SEO crawlers see it immediately,
-            but moved AFTER preconnects so network scheduling doesn't stall on parsing JSON. */}
-        {structuredData.map((data, i) => (
-          <script
-            key={i}
-            type="application/ld+json"
-            nonce={nonce || undefined}
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-          />
-        ))}
       </head>
       <body className={`bg-[#FAF7F0] text-[#0E0C08] ${satoshi.variable}`}>
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
