@@ -43,8 +43,15 @@ export async function generateMetadata({
     `Read "${slugToTitle(slug)}" on the HireStepX blog: interview tips, career advice, and job search strategies for Indian candidates.`;
   const image = meta?.heroImage ?? "https://hirestepx.com/opengraph-image";
 
+  /* Google truncates SERP titles around ~60 chars. The raw post title is
+     already kept under that limit on its own, but appending " | HireStepX"
+     pushed most of them back over — only add the suffix when it still fits. */
+  const baseTitle = meta ? meta.title : slugToTitle(slug);
+  const withSuffix = `${baseTitle} | HireStepX`;
+  const pageTitle = withSuffix.length <= 60 ? withSuffix : baseTitle;
+
   return {
-    title: `${meta ? meta.title : slugToTitle(slug)} | HireStepX`,
+    title: pageTitle,
     description,
     alternates: { canonical: `/blog/${slug}` },
     openGraph: {
