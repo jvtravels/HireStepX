@@ -8852,7 +8852,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Walmart Global Tech — data engineer ───────────────────── */
   {
     slug: "walmart-data-engineer-interview-questions",
-    searchPhrase: "Walmart Global Tech Data Engineer Interview Questions India 2026",
+    searchPhrase: "Walmart Data Engineer Interview Questions India 2026",
     company: "walmart-global-tech", roleFamily: "data", focus: "technical",
     intro: "Walmart Global Tech's Bangalore and Chennai data-engineering rounds probe Spark internals, SQL, and data-lake architecture at retail scale. In 2026 expect a Spark round on joining a huge sales fact table against skewed dimensions (salting, broadcast joins, partition tuning), a SQL round on deduplicating inventory snapshots with window functions and making it incremental, and an architecture round on data-lake and warehouse layout for supply-chain analytics (partitioning, Parquet, serving layers). Walmart's data volumes are enormous, so interviewers reward engineers who reason precisely about shuffle cost, skew, incremental processing, and file layout rather than reaching for defaults. Concrete retail-scale reasoning wins.",
     framework: { name: "Scale-and-Skew", summary: "Reason about Spark shuffle and skew at retail scale, write incremental window-function SQL, and design partitioned lakehouse layouts with the right file formats" },

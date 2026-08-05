@@ -97,6 +97,18 @@ export async function generateStaticParams() {
 
 /* ─── generateMetadata ───────────────────────────────────────────────────── */
 
+/* Google truncates SERP titles/descriptions around ~60 and ~155 chars
+   respectively. The intro's "first sentence" (naive split on ".") can run
+   long when the intro itself contains abbreviations or is simply verbose,
+   so this trims to the last full word that still fits instead of cutting
+   mid-word or blowing past the limit. */
+function truncateAtWord(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]$/, "");
+}
+
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
@@ -104,10 +116,16 @@ export async function generateMetadata(
   const page = getSeoPageBySlug(slug);
   if (!page) return { title: "Not Found" };
 
-  /* Keep title under ~65 chars (Google's display window) by using a
-     minimal suffix — the searchPhrase itself carries the keyword signal. */
-  const title = `${page.searchPhrase} | HireStepX`;
-  const description = `${page.intro.split(".")[0]}. Practice with AI voice feedback. 2 free sessions, no credit card.`;
+  /* Keep the title under ~60 chars (Google's display window). The brand
+     suffix is only worth appending when it still fits — a truncated
+     "| HireStepX" is worse than no suffix at all. */
+  const withSuffix = `${page.searchPhrase} | HireStepX`;
+  const title = withSuffix.length <= 60 ? withSuffix : page.searchPhrase;
+
+  const descSuffix = " Practice with AI voice feedback. 2 free sessions, no credit card.";
+  const firstSentence = page.intro.split(". ")[0];
+  const body = truncateAtWord(firstSentence, 155 - descSuffix.length - 1);
+  const description = `${body}.${descSuffix}`;
 
   return {
     title,
