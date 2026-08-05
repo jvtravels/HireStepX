@@ -41,7 +41,7 @@ const SALARY_GROUPS: Record<string, string[]> = {
   "Indian Banking": ["hdfc-bank", "icici", "axis", "kotak", "sbi", "bajaj-finance", "star-health", "icici-lombard"],
   "Consulting": ["deloitte", "mckinsey", "bcg", "bain", "ey", "kpmg", "pwc"],
   "Semiconductor & Hardware": ["qualcomm", "intel-india", "arm-india", "texas-instruments", "nvidia", "cisco", "mediatek", "sap-labs", "siemens-india", "bosch-india"],
-  "Indian AI Startups": ["sarvam", "sarvam-ai"],
+  "Indian AI Startups": ["sarvam", "sarvam-ai", "krutrim", "perplexity", "glance"],
 };
 
 /* Reverse map: slug → group name */

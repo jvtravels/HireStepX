@@ -794,7 +794,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "zoho-interview-questions-freshers-2026",
     title: "Zoho Hiring Process 2026: All 5 Interview Rounds Explained for Freshers",
-    metaDescription: "Zoho's 5-round hiring process explained: aptitude, programming, advanced coding, technical, and HR. What to prepare and what salary to expect as a fresher in 2026.",
+    metaDescription: "Zoho's 5 rounds: aptitude, programming, advanced coding, technical, HR. What to prepare and what salary to expect as a fresher in 2026.",
     company: "Zoho",
     category: "Freshers",
     readTime: "8 min",
@@ -1856,7 +1856,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "phonepe-interview-questions-india-2026",
     title: "PhonePe Interview Questions India 2026: SDE, System Design, and UPI Payment Scale",
-    metaDescription: "PhonePe interview questions 2026 for SDE-1 and SDE-2: 4-round process, DSA, UPI payment system design, builder-mindset behavioral round, and PhonePe salary in India.",
+    metaDescription: "PhonePe SDE-1/SDE-2 interview: 4-round process, DSA, UPI payment system design, builder-mindset behavioral round, and PhonePe salary in India 2026.",
     company: "PhonePe",
     category: "Company Guides",
     readTime: "8 min",
@@ -8827,7 +8827,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "react-interview-questions-india-2026",
     title: "React Interview Questions for Indian Companies 2026",
-    metaDescription: "Top React.js interview questions for Indian product companies in 2026. Hooks, state management, performance, virtual DOM, and React 18 features asked at Flipkart, Razorpay, and Indian startups.",
+    metaDescription: "Top React.js interview questions asked at Flipkart, Razorpay, and Indian startups in 2026: hooks, state management, performance, virtual DOM, React 18.",
     company: "General",
     category: "Technical",
     readTime: "14 min",
@@ -8875,7 +8875,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "typescript-interview-questions-india-2026",
     title: "TypeScript Interview Questions for Indian Developers 2026",
-    metaDescription: "Top TypeScript interview questions for Indian product companies in 2026. Types vs interfaces, generics, utility types, strict mode, and TypeScript with React: asked at Razorpay, Flipkart, and Indian startups.",
+    metaDescription: "Types vs interfaces, generics, utility types, strict mode, and TypeScript with React: asked at Razorpay, Flipkart, and Indian startups in 2026.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -8919,7 +8919,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "git-interview-questions-india-2026",
     title: "Git Interview Questions for Indian Engineers 2026",
-    metaDescription: "Top Git interview questions for Indian software engineers in 2026. Branching, merging, rebase, cherry-pick, conflict resolution, and Git workflow questions asked at product companies and IT firms.",
+    metaDescription: "Git interview questions for Indian engineers: branching, merging, rebase, cherry-pick, conflict resolution, and workflows at product companies.",
     company: "General",
     category: "Technical",
     readTime: "11 min",
@@ -8959,7 +8959,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "docker-kubernetes-interview-questions-india-2026",
     title: "Docker and Kubernetes Interview Questions for India 2026",
-    metaDescription: "Top Docker and Kubernetes interview questions for Indian engineers in 2026. Containers vs VMs, Dockerfile, orchestration, pods, services, and DevOps questions asked at Indian product companies.",
+    metaDescription: "Containers vs VMs, Dockerfile, orchestration, pods, services, and DevOps questions asked at Indian product companies in 2026.",
     company: "General",
     category: "Technical",
     readTime: "13 min",
@@ -9001,7 +9001,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "aptitude-test-preparation-india-2026",
     title: "Aptitude Test Preparation Guide for Indian IT Companies 2026",
-    metaDescription: "Complete aptitude test preparation guide for TCS NQT, Infosys InfyTQ, Wipro NTSE, and Accenture assessments in 2026. Quantitative, logical reasoning, verbal ability, and coding round strategies.",
+    metaDescription: "Aptitude prep for TCS NQT, Infosys InfyTQ, Wipro NTSE, and Accenture 2026: quantitative, logical reasoning, verbal ability, and coding round strategies.",
     company: "General",
     category: "Freshers",
     readTime: "13 min",
@@ -9045,7 +9045,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "group-discussion-tips-india-2026",
     title: "Group Discussion Tips for Indian Job Seekers 2026",
-    metaDescription: "How to ace Group Discussions (GD) in Indian campus placements and job interviews in 2026. GD topics, dos and don'ts, how to initiate, how to handle dominating participants, and scoring criteria.",
+    metaDescription: "GD topics, dos and don'ts, how to initiate, handle dominating participants, and scoring criteria for Indian campus placements and job interviews 2026.",
     company: "General",
     category: "Freshers",
     readTime: "11 min",
@@ -9089,7 +9089,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "after-interview-rejection-india-2026",
     title: "What to Do After an Interview Rejection in India 2026",
-    metaDescription: "How to handle job interview rejection in India in 2026. Requesting feedback, reapplying timelines, improving systematically, and maintaining momentum through a long job search.",
+    metaDescription: "Handling job rejection in India 2026: requesting feedback, reapplying timelines, improving systematically, and maintaining momentum in a long search.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -9129,7 +9129,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "background-verification-india-2026",
     title: "Background Verification Process in India 2026: What to Expect",
-    metaDescription: "Complete guide to background verification (BGV) in Indian companies 2026. What is checked, how long it takes, what happens if discrepancies are found, and how to prepare your documents.",
+    metaDescription: "Background verification (BGV) in Indian companies 2026: what's checked, how long it takes, handling discrepancies, and preparing your documents.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -9169,7 +9169,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "offer-letter-red-flags-india-2026",
     title: "Offer Letter Red Flags to Watch for in India 2026",
-    metaDescription: "What to check in an Indian job offer letter before signing in 2026. Bond clauses, CTC vs take-home, variable pay traps, joining date risks, and questions to ask HR before accepting.",
+    metaDescription: "What to check in an Indian offer letter before signing: bond clauses, CTC vs take-home, variable pay traps, joining date risks, and questions for HR.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -9209,7 +9209,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "communication-skills-for-indian-engineers-2026",
     title: "Communication Skills for Indian Engineers: Interview and Workplace Guide 2026",
-    metaDescription: "How Indian software engineers can improve communication skills for interviews and the workplace in 2026. Clear technical explanations, removing filler words, structured answers, and email writing tips.",
+    metaDescription: "Communication skills for Indian engineers: clear technical explanations, removing filler words, structured answers, and email writing tips for 2026.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -9255,7 +9255,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-science-career-india-2026",
     title: "How to Build a Data Science Career in India 2026: Complete Roadmap",
-    metaDescription: "Complete data science career roadmap for India 2026. Skills, certifications, salary expectations, top hiring companies, and how to get your first data science job.",
+    metaDescription: "Data science career roadmap for India 2026: skills, certifications, salary expectations, top hiring companies, and how to land your first job.",
     company: "General",
     category: "Career",
     readTime: "14 min",
@@ -9295,7 +9295,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-get-referral-job-india-2026",
     title: "How to Get a Job Referral at Indian Tech Companies 2026",
-    metaDescription: "How to ask for and get job referrals at Indian tech companies in 2026. LinkedIn outreach templates, what referrers actually look for, and how to convert a referral into an interview.",
+    metaDescription: "How to ask for job referrals at Indian tech companies in 2026: LinkedIn templates, what referrers look for, and converting referrals into interviews.",
     company: "General",
     category: "Career",
     readTime: "11 min",
@@ -9335,7 +9335,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "programming-languages-india-job-market-2026",
     title: "Which Programming Language to Learn for Indian Jobs 2026",
-    metaDescription: "Which programming language should you learn for the Indian job market in 2026? Python vs Java vs JavaScript vs Go vs C++: comparison by job availability, salary, and career path.",
+    metaDescription: "Python vs Java vs JavaScript vs Go vs C++ for the Indian job market in 2026: comparison by job availability, salary, and career path.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -9375,7 +9375,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "acing-online-assessment-india-2026",
     title: "How to Ace Online Assessments at Indian Tech Companies 2026",
-    metaDescription: "How to crack online assessments (OA) at Indian product companies in 2026. HackerRank, HackerEarth, Codility strategies, time management, and what to do when you're stuck.",
+    metaDescription: "HackerRank, HackerEarth, and Codility strategies to crack online assessments at Indian product companies: time management and what to do when stuck.",
     company: "General",
     category: "Technical",
     readTime: "11 min",
@@ -9455,7 +9455,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "coding-bootcamp-india-2026",
     title: "Coding Bootcamps in India 2026: Which Ones Are Worth It?",
-    metaDescription: "Are coding bootcamps worth it in India in 2026? Comparison of Scaler, Masai School, Newton School, iNeuron, Kraftshala, and Learnbay: placement rates, costs, ISA terms, and what to look for.",
+    metaDescription: "Are coding bootcamps worth it? Scaler, Masai School, Newton School, iNeuron, Kraftshala, Learnbay compared: placement rates, costs, and ISA terms for 2026.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -9494,7 +9494,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "side-projects-portfolio-india-jobs-2026",
     title: "How Side Projects Get You Hired at Indian Tech Companies 2026",
-    metaDescription: "How to build a side project portfolio that gets you hired at Indian tech companies in 2026. What projects to build, how to document them, and how to present them in interviews.",
+    metaDescription: "Build a side project portfolio that gets you hired at Indian tech companies in 2026: what to build, how to document it, and present it in interviews.",
     company: "General",
     category: "Career",
     readTime: "11 min",
@@ -9530,7 +9530,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "negotiating-remote-work-india-2026",
     title: "Negotiating Remote Work and WFH in Indian Tech Jobs 2026",
-    metaDescription: "How to negotiate work from home and remote work arrangements at Indian tech companies in 2026. When to ask, how to ask, hybrid vs full-remote, and what companies are returning to office.",
+    metaDescription: "Negotiating WFH at Indian tech companies 2026: when and how to ask, hybrid vs full-remote, and which companies are returning to office.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -9566,7 +9566,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "engineering-manager-vs-staff-engineer-india-2026",
     title: "Engineering Manager vs Staff Engineer: Which Career Path in India 2026?",
-    metaDescription: "Engineering Manager vs Staff Engineer career path in India 2026. Salary comparison, what each role does, which path suits you, and how to make the transition from senior engineer.",
+    metaDescription: "Engineering Manager vs Staff Engineer in India 2026: salary comparison, role differences, which path suits you, and transitioning from senior engineer.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -9602,7 +9602,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "interview-preparation-timeline-india-2026",
     title: "Interview Preparation Timeline: 30-Day, 60-Day, and 90-Day Plans for India 2026",
-    metaDescription: "Structured 30, 60, and 90-day interview preparation plans for Indian software engineers in 2026. Daily study schedules for DSA, system design, behavioral, and company-specific preparation.",
+    metaDescription: "30, 60, and 90-day interview prep plans for Indian software engineers. Daily study schedules for DSA, system design, behavioral, and company research.",
     company: "General",
     category: "Technical",
     readTime: "13 min",
@@ -9639,7 +9639,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "esop-equity-india-tech-startups-2026",
     title: "ESOPs and Equity at Indian Tech Startups 2026: What You Need to Know",
-    metaDescription: "How ESOPs work at Indian tech startups in 2026. Vesting schedules, cliff periods, exercise price, liquidity events, tax implications, and whether startup equity is worth it.",
+    metaDescription: "How ESOPs work at Indian tech startups: vesting schedules, cliff periods, exercise price, liquidity events, and whether startup equity is worth it.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -9679,7 +9679,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "getting-promotion-india-tech-2026",
     title: "How to Get Promoted Faster in Indian Tech Companies 2026",
-    metaDescription: "How to get promoted faster in Indian tech companies in 2026. What promotion committees look for, how to build visibility, the promo document framework, and common mistakes that delay promotions.",
+    metaDescription: "How to get promoted faster in Indian tech companies: what promo committees look for, building visibility, the promo document framework, and mistakes.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -9719,7 +9719,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "angular-interview-questions-india-2026",
     title: "Angular Interview Questions for Indian Developers 2026",
-    metaDescription: "Top Angular interview questions for Indian companies in 2026. Components, directives, services, RxJS, Angular 17+ features, state management, and performance: asked at IT services and product companies.",
+    metaDescription: "Components, directives, services, RxJS, Angular 17+ features, state management, and performance: asked at IT services and product companies in 2026.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -9762,7 +9762,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "agile-scrum-interview-questions-india-2026",
     title: "Agile and Scrum Interview Questions for Indian Engineers 2026",
-    metaDescription: "Top Agile and Scrum interview questions for Indian software engineers in 2026. Sprint ceremonies, user stories, estimation, retrospectives, and how Agile actually works at Indian product companies.",
+    metaDescription: "Agile and Scrum interview questions for Indian engineers: sprint ceremonies, user stories, estimation, retrospectives, and how Agile works at Indian firms.",
     company: "General",
     category: "Technical",
     readTime: "11 min",
@@ -9802,7 +9802,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tech-layoff-india-2026-what-to-do",
     title: "What to Do After a Tech Layoff in India 2026",
-    metaDescription: "Practical guide for Indian tech professionals laid off in 2026. Immediate steps, severance negotiation, ESOP rights, tax implications, re-employment strategy, and mental health.",
+    metaDescription: "Immediate steps after a tech layoff in India: severance negotiation, ESOP rights, tax implications, re-employment strategy, and mental health.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -9842,7 +9842,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "testing-qa-interview-questions-india-2026",
     title: "Software Testing and QA Interview Questions for India 2026",
-    metaDescription: "Top software testing and QA interview questions for Indian IT companies in 2026. Manual testing, automation (Selenium, Cypress), SDLC, test design techniques, and ISTQB preparation.",
+    metaDescription: "Software testing and QA interview questions for Indian IT 2026: manual testing, automation (Selenium, Cypress), SDLC, test design, and ISTQB prep.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -9885,7 +9885,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tier-2-college-it-career-india-2026",
     title: "How to Build a Top IT Career from a Tier-2 College in India 2026",
-    metaDescription: "How to get into top Indian tech companies from a tier-2 or tier-3 college in 2026. Resume strategies, off-campus application tactics, skill development, and success stories.",
+    metaDescription: "Get into top Indian tech companies from a tier-2 or tier-3 college in 2026: resume strategies, off-campus tactics, skill building, and success stories.",
     company: "General",
     category: "Freshers",
     readTime: "12 min",
@@ -9925,7 +9925,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salary-structure-india-tech-2026",
     title: "Understanding Your Salary Structure at Indian Tech Companies 2026",
-    metaDescription: "How salary is structured at Indian tech companies in 2026. Fixed vs variable pay, HRA, PF deductions, take-home calculation, annual increments, and how to compare offer letters.",
+    metaDescription: "Salary structure at Indian tech companies 2026: fixed vs variable pay, HRA, PF deductions, take-home calculation, increments, and comparing offer letters.",
     company: "General",
     category: "Career",
     readTime: "11 min",
@@ -9965,7 +9965,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "interview-body-language-india-2026",
     title: "Interview Body Language Guide for Indian Candidates 2026",
-    metaDescription: "How to use body language effectively in Indian job interviews in 2026. Eye contact norms, posture, virtual interview adjustments, voice modulation, and cultural considerations.",
+    metaDescription: "Body language for Indian job interviews 2026: eye contact norms, posture, virtual interview adjustments, voice modulation, and cultural considerations.",
     company: "General",
     category: "Interview Tips",
     readTime: "10 min",
@@ -10007,7 +10007,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-engineer-interview-questions-india-2026",
     title: "Data Engineer Interview Questions for India 2026",
-    metaDescription: "Top data engineering interview questions for Indian companies in 2026. SQL, Apache Spark, Airflow, pipeline design, cloud data stacks, and what interviewers at product companies actually ask.",
+    metaDescription: "Top data engineering interview questions for Indian companies: SQL, Apache Spark, Airflow, pipeline design, and cloud data stacks interviewers ask.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10050,7 +10050,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "java-spring-boot-interview-questions-india-2026",
     title: "Java Spring Boot Interview Questions for India 2026",
-    metaDescription: "Top Java and Spring Boot interview questions for Indian IT companies in 2026. Core Java, Spring Boot annotations, REST APIs, JPA/Hibernate, microservices, and multithreading.",
+    metaDescription: "Java and Spring Boot interview questions for Indian IT companies: core Java, Spring annotations, REST APIs, JPA/Hibernate, microservices, multithreading.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10102,7 +10102,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hr-round-questions-india-2026",
     title: "HR Round Interview Questions in India 2026: What They're Really Asking",
-    metaDescription: "Complete guide to HR round interview questions in India 2026. What HR is really evaluating, how to answer salary, notice period, relocation, and culture-fit questions without disqualifying yourself.",
+    metaDescription: "HR round interview questions in India 2026: what HR really evaluates, and how to answer salary, notice period, relocation, and culture-fit questions.",
     company: "General",
     category: "HR",
     readTime: "11 min",
@@ -10142,7 +10142,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fresher-resume-india-2026",
     title: "How to Write a Fresher Resume for Indian IT Jobs 2026",
-    metaDescription: "How to write a fresher resume for Indian IT jobs in 2026. Structure, projects, skills section, ATS optimization, what to put when you have no experience, and common mistakes that get resumes rejected.",
+    metaDescription: "How to write a fresher resume for Indian IT jobs: structure, projects, skills section, ATS optimization, and mistakes that get resumes rejected in 2026.",
     company: "General",
     category: "Freshers",
     readTime: "11 min",
@@ -10182,7 +10182,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "machine-learning-interview-questions-india-2026",
     title: "Machine Learning Interview Questions for India 2026",
-    metaDescription: "Top machine learning interview questions for Indian companies in 2026. ML fundamentals, algorithms, evaluation metrics, feature engineering, deployment, and case study questions at product and AI companies.",
+    metaDescription: "ML interview questions for Indian companies: fundamentals, algorithms, evaluation metrics, feature engineering, deployment, and case studies at AI firms.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10234,7 +10234,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "devops-interview-questions-india-2026",
     title: "DevOps Interview Questions for Indian Engineers 2026",
-    metaDescription: "Top DevOps interview questions for Indian companies in 2026. CI/CD pipelines, Docker, Kubernetes, Jenkins, Terraform, monitoring, and cloud: what companies actually ask DevOps engineers.",
+    metaDescription: "CI/CD pipelines, Docker, Kubernetes, Jenkins, Terraform, and monitoring: what Indian companies actually ask DevOps engineers in 2026.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10286,7 +10286,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "campus-to-corporate-india-2026",
     title: "Campus to Corporate: Surviving Your First Job in India 2026",
-    metaDescription: "How to transition from college to your first IT job in India in 2026. First 90 days guide, corporate culture norms, email etiquette, performance reviews, and mistakes to avoid in your first year.",
+    metaDescription: "Transitioning from college to your first IT job in India 2026: first 90 days, corporate culture norms, email etiquette, reviews, and rookie mistakes.",
     company: "General",
     category: "Freshers",
     readTime: "10 min",
@@ -10326,7 +10326,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "remote-jobs-india-it-2026",
     title: "How to Find and Land Remote IT Jobs in India 2026",
-    metaDescription: "How to find and land remote IT jobs in India in 2026. Best platforms for remote work, interview tips for remote roles, how to work with international teams, and salary expectations for remote positions.",
+    metaDescription: "Find and land remote IT jobs in India in 2026: best platforms, interview tips for remote roles, working with international teams, and salary expectations.",
     company: "General",
     category: "Career",
     readTime: "11 min",
@@ -10366,7 +10366,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-thinking-interview-india-2026",
     title: "Product Thinking Interview Questions for Engineers in India 2026",
-    metaDescription: "Product thinking interview questions for software engineers in India 2026. How to think like a PM during engineering interviews, metrics questions, trade-off scenarios, and product sense frameworks.",
+    metaDescription: "Product thinking interview questions for engineers in India 2026: thinking like a PM, metrics questions, trade-off scenarios, and product sense frameworks.",
     company: "General",
     category: "Technical",
     readTime: "11 min",
@@ -10409,7 +10409,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sql-interview-questions-india-2026",
     title: "SQL Interview Questions for Indian Companies 2026",
-    metaDescription: "Top SQL interview questions for Indian IT and product companies in 2026. Window functions, joins, subqueries, query optimisation, and the tricky SQL scenarios that interviewers actually ask.",
+    metaDescription: "SQL interview questions for Indian IT and product companies 2026: window functions, joins, subqueries, query optimisation, and tricky SQL scenarios.",
     company: "General",
     category: "Technical",
     readTime: "11 min",
@@ -10463,7 +10463,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "linkedin-profile-tips-india-tech-2026",
     title: "LinkedIn Profile Optimization for Indian Tech Job Seekers 2026",
-    metaDescription: "How to optimize your LinkedIn profile for Indian tech job searches in 2026. Headline formula, About section, skills, recommendations, and how to get recruiters to find you.",
+    metaDescription: "Optimize your LinkedIn for Indian tech job searches: headline formula, About section, skills, recommendations, and how to get recruiters to find you.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -10503,7 +10503,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "networking-tips-india-tech-jobs-2026",
     title: "Professional Networking for Indian Tech Professionals 2026",
-    metaDescription: "How to build a professional network in Indian tech in 2026. LinkedIn outreach, alumni networks, community events, referrals, and how networking actually leads to job offers.",
+    metaDescription: "Building a professional network in Indian tech: LinkedIn outreach, alumni networks, community events, referrals, and how networking leads to job offers.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -10543,7 +10543,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "it-service-to-product-company-switch-india-2026",
     title: "How to Switch from IT Services to a Product Company in India 2026",
-    metaDescription: "How Indian engineers at TCS, Infosys, Wipro, Cognizant switch to product companies like Swiggy, Razorpay, Flipkart in 2026. Skills gap, resume strategy, interview prep, and timeline.",
+    metaDescription: "How engineers at TCS, Infosys, Wipro, Cognizant switch to product companies like Swiggy, Razorpay, Flipkart: skills gap, resume strategy, prep, timeline.",
     company: "General",
     category: "Career",
     readTime: "12 min",
@@ -10583,7 +10583,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "competitive-programming-india-placement-2026",
     title: "Competitive Programming for Indian Placements 2026: Complete Guide",
-    metaDescription: "How competitive programming helps in Indian campus placements and tech interviews in 2026. Codeforces, CodeChef, LeetCode strategy, what to practise, and how CP translates to job offers.",
+    metaDescription: "How competitive programming helps in Indian campus placements: Codeforces, CodeChef, LeetCode strategy, what to practise, and how CP lands job offers.",
     company: "General",
     category: "Technical",
     readTime: "11 min",
@@ -10626,7 +10626,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "github-portfolio-career-india-2026",
     title: "How to Use GitHub to Accelerate Your Tech Career in India 2026",
-    metaDescription: "How to use GitHub to boost your tech career in India in 2026. Profile optimization, open-source contributions, portfolio projects, and how GitHub signals are read by Indian recruiters.",
+    metaDescription: "How GitHub boosts your tech career in India: profile optimization, open-source contributions, portfolio projects, and how recruiters read GitHub signals.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -10666,7 +10666,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "android-kotlin-interview-questions-india-2026",
     title: "Android and Kotlin Interview Questions for India 2026",
-    metaDescription: "Top Android and Kotlin interview questions for Indian companies in 2026. Kotlin fundamentals, Android architecture, Jetpack Compose, coroutines, Retrofit, and Android interview preparation guide.",
+    metaDescription: "Kotlin fundamentals, Android architecture, Jetpack Compose, coroutines, and Retrofit interview questions for Android roles in India, 2026.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10708,7 +10708,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "relocation-tech-jobs-india-cities-2026",
     title: "Relocating for IT Jobs in India: Bengaluru vs Mumbai vs Pune vs Hyderabad 2026",
-    metaDescription: "Complete guide to relocating for IT jobs in India in 2026. Salary differences, cost of living, quality of life, company ecosystems, and how to choose between Bengaluru, Mumbai, Pune, Hyderabad, and Chennai.",
+    metaDescription: "Relocating for IT jobs in India 2026: salary differences, cost of living, and company ecosystems across Bengaluru, Mumbai, Pune, Hyderabad, and Chennai.",
     company: "General",
     category: "Career",
     readTime: "11 min",
@@ -10748,7 +10748,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "python-coding-interview-india-2026",
     title: "Python Coding Interview Questions for India 2026",
-    metaDescription: "Top Python coding interview questions for Indian companies in 2026. Core Python, OOP, decorators, generators, async programming, list comprehensions, and Python interview patterns asked at product companies.",
+    metaDescription: "Top Python interview questions for Indian companies 2026: core Python, OOP, decorators, generators, async programming, list comprehensions, and patterns.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10800,7 +10800,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "notice-period-negotiation-india-2026",
     title: "Notice Period Negotiation in India 2026: How to Leave Faster",
-    metaDescription: "How to negotiate your notice period in India in 2026. Early release strategies, notice period buyout, gardening leave, resignation letter tips, and how to handle a counter-offer.",
+    metaDescription: "Negotiating your notice period in India 2026: early release strategies, buyouts, gardening leave, resignation letters, and handling counter-offers.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -10840,7 +10840,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cloud-architecture-interview-india-2026",
     title: "Cloud Architecture Interview Questions for India 2026",
-    metaDescription: "Top cloud architecture interview questions for Indian companies in 2026. AWS, GCP, Azure design scenarios, serverless, microservices, cost optimisation, and cloud architect interview preparation.",
+    metaDescription: "Cloud architecture interview questions for Indian companies 2026: AWS, GCP, Azure design scenarios, serverless, microservices, and cost optimisation.",
     company: "General",
     category: "Technical",
     readTime: "12 min",
@@ -10884,7 +10884,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hdfc-bank-interview-questions-2026",
     title: "HDFC Bank Interview Questions 2026: SWE and Tech Roles Guide",
-    metaDescription: "Complete HDFC Bank software engineer interview guide 2026. BFSI tech stack, Java Spring Boot, banking APIs, behavioral rounds, and salary expectations for HDFC tech roles.",
+    metaDescription: "HDFC Bank SWE interview guide: BFSI tech stack, Java Spring Boot, banking APIs, behavioral rounds, and salary expectations for HDFC tech roles in 2026.",
     company: "HDFC Bank",
     category: "Company Guides",
     readTime: "10 min",
@@ -10928,7 +10928,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "icici-bank-interview-questions-2026",
     title: "ICICI Bank Interview Questions 2026: Tech and Digital Banking Roles",
-    metaDescription: "Complete ICICI Bank software engineer interview guide 2026. Digital banking stack, iMobile APIs, microservices, Java Spring Boot, behavioral rounds, and salary at ICICI tech teams.",
+    metaDescription: "ICICI Bank engineer interview guide: digital banking stack, iMobile APIs, microservices, Java Spring Boot, behavioral rounds, and tech team salaries.",
     company: "ICICI Bank",
     category: "Company Guides",
     readTime: "10 min",
@@ -10972,7 +10972,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "axis-bank-interview-questions-2026",
     title: "Axis Bank Interview Questions 2026: Software Engineer and Tech Roles",
-    metaDescription: "Complete Axis Bank software engineer interview guide 2026. BFSI tech stack, core banking APIs, Java, Python, behavioral rounds, and salary expectations for Axis Bank technology roles.",
+    metaDescription: "Axis Bank software engineer interview guide 2026: BFSI tech stack, core banking APIs, Java, Python, behavioral rounds, and salary expectations.",
     company: "Axis Bank",
     category: "Company Guides",
     readTime: "10 min",
@@ -11016,7 +11016,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "bajaj-finance-interview-questions-2026",
     title: "Bajaj Finance Interview Questions 2026: Software Engineer and Fintech Roles",
-    metaDescription: "Complete Bajaj Finance software engineer interview guide 2026. NBFC tech stack, lending platform APIs, Java, Python, real-time decisioning, and salary expectations for Bajaj Finance tech roles.",
+    metaDescription: "Bajaj Finance software engineer interview guide 2026: NBFC tech stack, lending platform APIs, Java, Python, real-time decisioning, and salary expectations.",
     company: "Bajaj Finance",
     category: "Company Guides",
     readTime: "10 min",
@@ -11060,7 +11060,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "upstox-interview-questions-2026",
     title: "Upstox Interview Questions 2026: SWE and Trading Platform Roles",
-    metaDescription: "Complete Upstox software engineer interview guide 2026. Stock broker tech stack, trading APIs, Python, Go, real-time market data processing, and salary expectations at Upstox.",
+    metaDescription: "Upstox SWE interview guide 2026: stock broker tech stack, trading APIs, Python, Go, real-time market data processing, and salary expectations at Upstox.",
     company: "Upstox",
     category: "Company Guides",
     readTime: "10 min",
@@ -11104,7 +11104,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "meta-india-interview-questions-2026",
     title: "Meta India Interview Questions 2026: L4 and L5 Software Engineer Guide",
-    metaDescription: "Complete Meta India software engineer interview guide 2026. L4 and L5 SWE process, 4-round structure, system design at Facebook scale, behavioral STAR method, and Meta India salary.",
+    metaDescription: "Meta India L4 and L5 SWE guide 2026: 4-round process, system design at Facebook scale, behavioral STAR method, and Meta India salary.",
     company: "Meta",
     category: "Company Guides",
     readTime: "12 min",
@@ -11146,7 +11146,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "scaler-interview-questions-2026",
     title: "Scaler Interview Questions 2026: Software Engineer and Platform Roles",
-    metaDescription: "Complete Scaler software engineer interview guide 2026. EdTech platform stack, React, Node.js, DSA-heavy interviews, live learning infrastructure, mission-driven culture, and Scaler SWE salary.",
+    metaDescription: "Scaler software engineer interview guide 2026: EdTech stack, React, Node.js, DSA-heavy rounds, live learning infrastructure, culture, and SWE salary.",
     company: "Scaler",
     category: "Company Guides",
     readTime: "10 min",
@@ -11190,7 +11190,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "vedantu-interview-questions-2026",
     title: "Vedantu Interview Questions 2026: Software Engineer and Platform Roles",
-    metaDescription: "Complete Vedantu software engineer interview guide 2026. Live tutoring platform tech stack, React, Node.js, WebRTC, video streaming infrastructure, and salary expectations at Vedantu.",
+    metaDescription: "Vedantu software engineer interview guide 2026: live tutoring platform tech stack, React, Node.js, WebRTC, video streaming infrastructure, and salaries.",
     company: "Vedantu",
     category: "Company Guides",
     readTime: "10 min",
@@ -11234,7 +11234,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "optiver-interview-questions-india-2026",
     title: "Optiver Interview Questions India 2026: Quant and Tech Roles Guide",
-    metaDescription: "Complete Optiver India interview guide 2026. Quantitative trading interview process, math and probability tests, mental math rounds, C++ and Python coding, and Optiver Pune salary.",
+    metaDescription: "Optiver India interview guide 2026: quant trading process, math and probability tests, mental math rounds, C++/Python coding, and Optiver Pune salary.",
     company: "Optiver",
     category: "Company Guides",
     readTime: "12 min",
@@ -11278,7 +11278,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "millennium-management-interview-india-2026",
     title: "Millennium Management Interview Questions India 2026: Quant and Tech Roles",
-    metaDescription: "Complete Millennium Management India interview guide 2026. Hedge fund quant interview process, statistics and probability tests, Python and C++ coding rounds, and Millennium India salary.",
+    metaDescription: "Millennium Management India interview guide 2026: hedge fund quant process, statistics and probability tests, Python and C++ rounds, and salary.",
     company: "Millennium",
     category: "Company Guides",
     readTime: "12 min",
@@ -11323,7 +11323,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "zepto-interview-questions-2026",
     title: "Zepto Interview Questions 2026: SWE and Product Roles Guide",
-    metaDescription: "Complete Zepto interview guide 2026. Quick commerce tech stack, Python, Go, dark store infrastructure, real-time inventory systems, and Zepto SWE salary expectations.",
+    metaDescription: "Zepto interview guide: quick commerce tech stack, Python, Go, dark store infrastructure, real-time inventory systems, and Zepto SWE salary expectations.",
     company: "Zepto",
     category: "Company Guides",
     readTime: "10 min",
@@ -11366,7 +11366,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "blinkit-interview-questions-2026",
     title: "Blinkit Interview Questions 2026: SWE and Data Roles Guide",
-    metaDescription: "Complete Blinkit interview guide 2026. Quick commerce tech stack, Python, Go, dark store technology, supply chain engineering, and Blinkit SWE salary at Zomato subsidiary.",
+    metaDescription: "Blinkit interview guide: quick commerce tech stack, Python, Go, dark store technology, supply chain engineering, and SWE salary at the Zomato subsidiary.",
     company: "Blinkit",
     category: "Company Guides",
     readTime: "10 min",
@@ -11409,7 +11409,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "browserstack-interview-questions-2026",
     title: "BrowserStack Interview Questions 2026: SWE and Platform Roles Guide",
-    metaDescription: "Complete BrowserStack interview guide 2026. Indian SaaS unicorn tech stack, Ruby, Python, Node.js, cloud browser infrastructure, and BrowserStack SWE salary in 2026.",
+    metaDescription: "BrowserStack interview guide 2026: Indian SaaS unicorn tech stack, Ruby, Python, Node.js, cloud browser infrastructure, and SWE salary.",
     company: "BrowserStack",
     category: "Company Guides",
     readTime: "10 min",
@@ -11497,7 +11497,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sharechat-interview-questions-2026",
     title: "ShareChat Interview Questions 2026: SWE and ML Roles Guide",
-    metaDescription: "Complete ShareChat interview guide 2026. Indian social media unicorn tech stack, Python, Go, recommendation algorithms, content moderation at scale, and ShareChat SWE salary.",
+    metaDescription: "ShareChat interview guide 2026: social media unicorn's tech stack, Python, Go, recommendation algorithms, content moderation at scale, and SWE salary.",
     company: "ShareChat",
     category: "Company Guides",
     readTime: "10 min",
@@ -11541,7 +11541,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "nvidia-india-interview-questions-2026",
     title: "Nvidia India Interview Questions 2026: SWE and AI/GPU Roles Guide",
-    metaDescription: "Complete Nvidia India interview guide 2026. Pune and Bengaluru GCC tech stack, CUDA, C++, GPU architecture, deep learning infrastructure, and Nvidia India SWE salary in 2026.",
+    metaDescription: "Nvidia India interview guide 2026: Pune and Bengaluru GCC tech stack, CUDA, C++, GPU architecture, deep learning infra, and Nvidia India SWE salary.",
     company: "Nvidia",
     category: "Company Guides",
     readTime: "11 min",
@@ -11584,7 +11584,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "qualcomm-india-interview-questions-2026",
     title: "Qualcomm India Interview Questions 2026: Embedded and SWE Roles Guide",
-    metaDescription: "Complete Qualcomm India interview guide 2026. Hyderabad GCC tech stack, C/C++, embedded systems, DSP, modem firmware, Android internals, and Qualcomm India SWE salary.",
+    metaDescription: "Qualcomm India guide 2026: Hyderabad GCC tech stack, C/C++, embedded systems, DSP, modem firmware, Android internals, and salary data.",
     company: "Qualcomm",
     category: "Company Guides",
     readTime: "11 min",
@@ -11627,7 +11627,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "apple-india-interview-questions-2026",
     title: "Apple India Interview Questions 2026: SWE and Platform Roles Guide",
-    metaDescription: "Complete Apple India interview guide 2026. Hyderabad and Bengaluru GCC roles, Swift and C++, iOS platform internals, distributed systems, and Apple India SWE salary in 2026.",
+    metaDescription: "Apple India interview guide 2026: Hyderabad and Bengaluru GCC roles, Swift and C++, iOS platform internals, distributed systems, and SWE salary.",
     company: "Apple",
     category: "Company Guides",
     readTime: "11 min",
@@ -11669,7 +11669,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "netflix-india-interview-questions-2026",
     title: "Netflix India Interview Questions 2026: SWE and Platform Roles Guide",
-    metaDescription: "Complete Netflix India interview guide 2026. Bengaluru engineering hub, Java, Python, Go, distributed systems, CDN engineering, Netflix Culture Memo, and Netflix India SWE salary.",
+    metaDescription: "Netflix India interview guide 2026: Bengaluru engineering hub, Java, Python, Go, distributed systems, CDN engineering, Culture Memo, and SWE salary.",
     company: "Netflix",
     category: "Company Guides",
     readTime: "11 min",
@@ -11711,7 +11711,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "barclays-india-interview-questions-2026",
     title: "Barclays India Interview Questions 2026: SWE and Capital Markets Tech",
-    metaDescription: "Complete Barclays India interview guide 2026. Pune technology centre tech stack, Java Spring Boot, Python, capital markets systems, investment banking domain knowledge, and Barclays India SWE salary.",
+    metaDescription: "Barclays India interview guide 2026: Pune tech centre stack, Java Spring Boot, Python, capital markets systems, IB domain knowledge, and SWE salary.",
     company: "Barclays",
     category: "Company Guides",
     readTime: "10 min",
@@ -11799,7 +11799,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "myntra-interview-questions-2026",
     title: "Myntra Interview Questions 2026: Software Engineer and Data Roles",
-    metaDescription: "Complete Myntra interview guide 2026. Fashion ecommerce tech stack, Python, Java, recommendation systems, ML for fashion, Flipkart subsidiary, and Myntra SWE salary.",
+    metaDescription: "Myntra interview guide 2026: fashion ecommerce tech stack, Python, Java, recommendation systems, ML for fashion, Flipkart subsidiary, and SWE salary.",
     company: "Myntra",
     category: "Company Guides",
     readTime: "9 min",
@@ -11839,7 +11839,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "makemytrip-interview-questions-2026",
     title: "MakeMyTrip Interview Questions 2026: SWE and Data Roles Guide",
-    metaDescription: "Complete MakeMyTrip interview guide 2026. Travel tech stack, Python, Java, real-time pricing, GDS integration, OTA platform engineering, and MakeMyTrip SWE salary.",
+    metaDescription: "MakeMyTrip interview guide: travel tech stack, Python, Java, real-time pricing, GDS integration, OTA platform engineering, and MakeMyTrip SWE salary.",
     company: "MakeMyTrip",
     category: "Company Guides",
     readTime: "9 min",
@@ -11879,7 +11879,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "nykaa-interview-questions-2026",
     title: "Nykaa Interview Questions 2026: SWE and Product Roles Guide",
-    metaDescription: "Complete Nykaa interview guide 2026. Beauty and fashion ecommerce tech stack, Python, Java, React, ML for beauty, and Nykaa SWE salary at India's leading beauty platform.",
+    metaDescription: "Nykaa interview guide: beauty and fashion ecommerce tech stack, Python, Java, React, ML for beauty, and SWE salary at India's leading beauty platform.",
     company: "Nykaa",
     category: "Company Guides",
     readTime: "9 min",
@@ -11919,7 +11919,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "bcg-india-interview-questions-2026",
     title: "BCG India Interview Questions 2026: Case Interview Preparation Guide",
-    metaDescription: "Complete BCG India case interview guide 2026. Case interview structure, profitability and market-sizing frameworks, BCG behavioural interviews, and BCG India consultant salary.",
+    metaDescription: "BCG India case interview guide 2026: case structure, profitability and market-sizing frameworks, behavioural interviews, and consultant salary.",
     company: "BCG",
     category: "Company Guides",
     readTime: "11 min",
@@ -12002,7 +12002,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "de-shaw-india-interview-questions-2026",
     title: "D.E. Shaw India Interview Questions 2026: Quant and SWE Roles Guide",
-    metaDescription: "Complete D.E. Shaw India interview guide 2026. Hyderabad tech hub, quant interview process, probability and math tests, C++ and Python coding, and D.E. Shaw salary in India.",
+    metaDescription: "D.E. Shaw India interview guide 2026: Hyderabad tech hub, quant interview process, probability and math tests, C++ and Python coding, and salary in India.",
     company: "D.E. Shaw",
     category: "Company Guides",
     readTime: "10 min",
@@ -12045,7 +12045,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "citadel-india-interview-questions-2026",
     title: "Citadel India Interview Questions 2026: Quant and SWE Roles Guide",
-    metaDescription: "Complete Citadel India interview guide 2026. Mumbai and Bengaluru offices, quant and software engineer interview process, probability tests, C++ coding, and Citadel India salary.",
+    metaDescription: "Citadel India interview guide 2026: Mumbai and Bengaluru offices, quant and SWE interview process, probability tests, C++ coding, and Citadel India salary.",
     company: "Citadel",
     category: "Company Guides",
     readTime: "10 min",
@@ -12088,7 +12088,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "angel-one-interview-questions-2026",
     title: "Angel One Interview Questions 2026: SWE and FinTech Roles Guide",
-    metaDescription: "Complete Angel One interview guide 2026. Stock brokerage tech stack, Python, Java, real-time trading APIs, ARQ AI platform, and Angel One software engineer salary in 2026.",
+    metaDescription: "Angel One SWE/FinTech guide 2026: stock brokerage tech stack, Python, Java, real-time trading APIs, ARQ AI platform, and salary.",
     company: "Angel One",
     category: "Company Guides",
     readTime: "9 min",
@@ -12128,7 +12128,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "atlassian-india-interview-questions-2026",
     title: "Atlassian India Interview Questions 2026: SWE and Platform Roles Guide",
-    metaDescription: "Complete Atlassian India interview guide 2026. Bengaluru GCC tech stack, Java, Python, Jira and Confluence platform engineering, distributed systems, and Atlassian India SWE salary.",
+    metaDescription: "Atlassian India interview guide 2026: Bengaluru GCC stack, Java, Python, Jira and Confluence platform engineering, distributed systems, and SWE salary.",
     company: "Atlassian",
     category: "Company Guides",
     readTime: "10 min",
@@ -12170,7 +12170,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-answer-tell-me-about-yourself-india",
     title: "How to Answer 'Tell Me About Yourself' in an Interview: India 2026 Guide",
-    metaDescription: "Master the 'Tell me about yourself' interview answer for India 2026. Templates, examples for freshers and experienced candidates, common mistakes, and what interviewers actually look for.",
+    metaDescription: "Master the 'Tell me about yourself' interview answer for India 2026: templates, examples for freshers and experienced hires, and common mistakes.",
     company: "Career Advice",
     category: "Interview Skills",
     readTime: "8 min",
@@ -12209,7 +12209,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-answer-greatest-weakness-interview-india",
     title: "How to Answer 'What Is Your Greatest Weakness?' in Indian Interviews",
-    metaDescription: "How to answer the weakness interview question in India 2026. Real examples that work, mistakes to avoid, and how to turn a weakness into a demonstration of self-awareness.",
+    metaDescription: "Answering the 'greatest weakness' question in Indian interviews 2026: real examples, mistakes to avoid, and turning it into self-awareness.",
     company: "Career Advice",
     category: "Interview Skills",
     readTime: "7 min",
@@ -12248,7 +12248,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "star-method-interview-examples-india-freshers",
     title: "STAR Method Interview Examples for Freshers India 2026",
-    metaDescription: "Complete STAR method guide for freshers in India 2026. What STAR means, 5 ready-to-use examples with college projects, internships, and extracurriculars, and how to use STAR for any behavioural question.",
+    metaDescription: "STAR method guide for Indian freshers 2026: what STAR means, 5 ready-to-use examples with college projects, internships, and extracurriculars.",
     company: "Career Advice",
     category: "Interview Skills",
     readTime: "10 min",
@@ -12287,7 +12287,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-answer-salary-expectations-india-2026",
     title: "How to Answer 'What Are Your Salary Expectations?' in India 2026",
-    metaDescription: "How to negotiate salary in Indian job interviews 2026. Scripts for freshers and experienced candidates, market benchmark research, how to avoid leaving money on the table, and what to say when asked CTC first.",
+    metaDescription: "Negotiate salary in Indian interviews: scripts for freshers and experienced candidates, market benchmarks, and what to say when asked CTC first.",
     company: "Career Advice",
     category: "Interview Skills",
     readTime: "9 min",
@@ -12326,7 +12326,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-answer-why-do-you-want-to-leave-current-company",
     title: "How to Answer 'Why Do You Want to Leave Your Current Company?' India 2026",
-    metaDescription: "How to answer why you are leaving your current job in Indian interviews 2026. Honest scripts that don't burn bridges, red flags to avoid, and how to reframe negative reasons positively.",
+    metaDescription: "How to answer why you're leaving your job in Indian interviews: honest scripts that don't burn bridges, red flags to avoid, and reframing negative reasons.",
     company: "Career Advice",
     category: "Interview Skills",
     readTime: "8 min",
@@ -12365,7 +12365,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "java-developer-interview-questions-india-2026",
     title: "Java Developer Interview Questions India 2026: Complete Preparation Guide",
-    metaDescription: "Complete Java developer interview guide for India 2026. Core Java, Spring Boot, collections, multithreading, design patterns, Java 17-21 features, and Java developer salary in India.",
+    metaDescription: "Java developer interview guide for India 2026: Core Java, Spring Boot, collections, multithreading, design patterns, Java 17-21, and salary.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -12404,7 +12404,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-analyst-interview-questions-sql-python-business-case-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Python and Business Case Guide",
-    metaDescription: "Complete data analyst interview guide for India 2026. SQL query questions, Python pandas, statistics, business case study, Excel, and data analyst salary at Flipkart, Amazon, Swiggy, and Indian banks.",
+    metaDescription: "Data analyst interview guide: SQL queries, Python pandas, statistics, business case study, Excel, and salary at Flipkart, Amazon, Swiggy, and Indian banks.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min",
@@ -12443,7 +12443,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-manager-interview-guide-pm-india-2026",
     title: "Product Manager Interview Questions India 2026: Complete PM Interview Guide",
-    metaDescription: "Complete Product Manager interview guide for India 2026. Product sense, metrics, estimation, design, strategy questions, PM interview at Google, Flipkart, Swiggy, Razorpay, and PM salary in India.",
+    metaDescription: "PM interview guide for India: product sense, metrics, estimation, design, strategy questions at Google, Flipkart, Swiggy, Razorpay, and PM salary in India.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min",
@@ -12482,7 +12482,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "frontend-developer-interview-react-javascript-css-india-2026",
     title: "Frontend Developer Interview Questions India 2026: React, JavaScript and CSS Guide",
-    metaDescription: "Complete frontend developer interview guide for India 2026. React hooks, JavaScript closures, CSS layout, performance optimisation, accessibility, and frontend developer salary at Indian product companies.",
+    metaDescription: "React hooks, JavaScript closures, CSS layout, performance optimisation, accessibility, and frontend salary at Indian product companies, 2026.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min",
@@ -12521,7 +12521,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "machine-learning-engineer-interview-questions-india-2026",
     title: "Machine Learning Engineer Interview Questions India 2026: Complete MLE Guide",
-    metaDescription: "Complete MLE interview guide for India 2026. ML fundamentals, system design for ML, Python coding, feature engineering, model deployment, and ML engineer salary at Indian AI and product companies.",
+    metaDescription: "MLE interview guide for India 2026: ML fundamentals, system design for ML, Python coding, feature engineering, deployment, and salary at AI companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -12601,7 +12601,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "best-fintech-companies-india-2026",
     title: "Best Fintech Companies to Work at in India 2026: Engineer's Guide",
-    metaDescription: "Top Indian fintech companies for software engineers in 2026. Razorpay, PhonePe, CRED, Groww, Zerodha, Paytm, Slice, and more: salaries, tech stacks, culture, and hiring process.",
+    metaDescription: "Top Indian fintech companies for engineers 2026: Razorpay, PhonePe, CRED, Groww, Zerodha, Paytm, Slice, and more, plus salaries, stacks, and culture.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min",
@@ -12640,7 +12640,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "software-engineer-salary-india-2026",
     title: "Software Engineer Salary in India 2026: Complete Guide by Company and Level",
-    metaDescription: "Complete software engineer salary guide for India 2026. Salaries at Google, Microsoft, Flipkart, Razorpay, TCS, Infosys by level. Freshers to senior engineers: what you should be earning.",
+    metaDescription: "Software engineer salaries in India 2026 at Google, Microsoft, Flipkart, Razorpay, TCS, and Infosys by level: what freshers to seniors should earn.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -12679,7 +12679,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "it-services-vs-product-companies-india-2026",
     title: "IT Services vs Product Companies in India 2026: Which Should You Join?",
-    metaDescription: "TCS vs Flipkart, Infosys vs Razorpay: complete comparison of IT services vs product companies in India 2026. Salary, growth, work culture, exit opportunities, and which is right for different career stages.",
+    metaDescription: "TCS vs Flipkart, Infosys vs Razorpay: IT services vs product companies in India 2026 compared on salary, growth, work culture, and exit opportunities.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min",
@@ -12718,7 +12718,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "campus-placement-guide-india-2026",
     title: "Campus Placement Guide India 2026: How to Get Your Dream Company Offer",
-    metaDescription: "Complete campus placement preparation guide for India 2026. When placements start, DSA roadmap, aptitude test prep, system design basics, CGPA requirements, and how to get FAANG, Flipkart, or Razorpay offers from college.",
+    metaDescription: "Campus placement prep: when placements start, DSA roadmap, aptitude test prep, CGPA requirements, and how to land FAANG, Flipkart, or Razorpay offers.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -12757,7 +12757,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "backend-developer-interview-questions-india-2026",
     title: "Backend Developer Interview Questions India 2026: Node.js, Go, Python and Java",
-    metaDescription: "Complete backend developer interview guide for India 2026. Node.js, Go, Python Django/FastAPI, Java Spring Boot, REST and GraphQL API design, databases, system design, and backend developer salary.",
+    metaDescription: "Backend developer interview guide: Node.js, Go, Python Django/FastAPI, Java Spring Boot, REST and GraphQL API design, databases, system design, and salary.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -12796,7 +12796,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "devops-sre-interview-questions-india-2026",
     title: "DevOps and SRE Interview Questions India 2026: Kubernetes, CI/CD and Cloud Guide",
-    metaDescription: "Complete DevOps and SRE interview guide for India 2026. Kubernetes, Docker, CI/CD pipelines, AWS, GCP, Terraform, monitoring, incident response, and DevOps salary in India.",
+    metaDescription: "DevOps and SRE interview guide for India 2026: Kubernetes, Docker, CI/CD, AWS, GCP, Terraform, monitoring, incident response, and salary.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min",
@@ -12835,7 +12835,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "android-developer-interview-kotlin-jetpack-compose-india-2026",
     title: "Android Developer Interview Questions India 2026: Kotlin, Jetpack Compose and Architecture",
-    metaDescription: "Complete Android developer interview guide for India 2026. Kotlin, Jetpack Compose, MVVM architecture, Coroutines, Android SDK, and Android developer salary in India.",
+    metaDescription: "Android developer interview guide: Kotlin, Jetpack Compose, MVVM architecture, Coroutines, Android SDK, and Android developer salary in India 2026.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min",
@@ -12874,7 +12874,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-engineer-interview-spark-kafka-dbt-india-2026",
     title: "Data Engineer Interview Questions India 2026: Spark, Kafka, dbt and Pipeline Design",
-    metaDescription: "Complete data engineer interview guide for India 2026. Apache Spark, Kafka, dbt, data warehouse design, pipeline orchestration, SQL at scale, and data engineer salary at Indian product companies.",
+    metaDescription: "Data engineer interview guide for India: Apache Spark, Kafka, dbt, warehouse design, pipeline orchestration, SQL at scale, and salary at product firms.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min",
@@ -12913,7 +12913,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "system-design-interview-how-to-prepare-ace-india-2026",
     title: "System Design Interview Questions India 2026: How to Prepare and Ace It",
-    metaDescription: "Complete system design interview guide for India 2026. URL shortener, design Twitter/Instagram, ride sharing, notification system, rate limiter: with frameworks, worked examples, and how to practise.",
+    metaDescription: "URL shortener, design Twitter/Instagram, ride sharing, notification system, rate limiter: frameworks and worked examples for India 2026.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -13032,7 +13032,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salesforce-india-interview-questions-2026",
     title: "Salesforce India Interview Questions 2026: Software Engineer Guide (Hyderabad)",
-    metaDescription: "Salesforce India interview questions for software engineers in 2026. Hyderabad GCC (the largest Salesforce office outside USA): coding, system design, culture, Salesforce salary India.",
+    metaDescription: "Salesforce India SWE interview questions 2026: Hyderabad GCC, the largest Salesforce office outside the USA, coding, system design, culture, salary.",
     company: "Salesforce",
     category: "Company Guides",
     readTime: "9 min",
@@ -13071,7 +13071,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "goldman-sachs-india-interview-questions-2026",
     title: "Goldman Sachs India CS Fundamentals Round 2026: OS, Networking, DB Internals",
-    metaDescription: "Goldman Sachs India tests CS fundamentals beyond DSA: OS (process/thread, deadlock), networking (TCP/DNS/HTTP), database internals (B-tree, ACID, WAL), and OOP design patterns.",
+    metaDescription: "Goldman Sachs India CS fundamentals round 2026: OS (process/thread, deadlock), networking (TCP/DNS/HTTP), DB internals (B-tree, ACID, WAL), OOP patterns.",
     company: "Goldman Sachs",
     category: "Company Guides",
     readTime: "10 min",
@@ -13110,7 +13110,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "jpmorgan-india-interview-questions-2026",
     title: "JPMorgan Chase India Interview Questions 2026: Software Engineer Guide",
-    metaDescription: "JPMorgan Chase India interview questions for software engineers in 2026. Bengaluru and Mumbai offices: coding test, technical rounds, JP Morgan salary India, and how to prepare.",
+    metaDescription: "JPMorgan Chase India interview guide 2026: Bengaluru and Mumbai offices, coding test, technical rounds, JPMorgan salary India, and how to prepare.",
     company: "JPMorgan",
     category: "Company Guides",
     readTime: "9 min",
@@ -13149,7 +13149,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-tech-companies-hyderabad-2026",
     title: "Top Tech Companies in Hyderabad 2026: Software Engineer's Complete Guide",
-    metaDescription: "Top tech companies to work at in Hyderabad in 2026. Microsoft, Amazon, Apple, Google, Capgemini, DXC, Salesforce, Oracle: salaries, work culture, interview process, and how to get hired.",
+    metaDescription: "Top tech companies in Hyderabad 2026: Microsoft, Amazon, Apple, Google, Capgemini, DXC, Salesforce, Oracle salaries, culture, and interview process.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min",
@@ -13188,7 +13188,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-crack-coding-interview-india-2026",
     title: "How to Crack the Coding Interview in India 2026: Complete Preparation Guide",
-    metaDescription: "Complete coding interview preparation guide for India 2026. DSA roadmap, LeetCode strategy, time management, mock interviews, and how to get offers from Flipkart, Google, and Amazon.",
+    metaDescription: "Crack the coding interview in India: DSA roadmap, LeetCode strategy, time management, mock interviews, and getting offers from Flipkart, Google, Amazon.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min",
@@ -13227,7 +13227,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salary-negotiation-tips-india-2026",
     title: "Salary Negotiation Tips India 2026: How to Negotiate Your Tech Job Offer",
-    metaDescription: "How to negotiate salary in India 2026. Scripts, counter-offer tactics, what to say and what not to say, how much to ask for, and how to negotiate RSUs and joining bonuses for software engineers.",
+    metaDescription: "How to negotiate salary in India: scripts, counter-offer tactics, what to say and avoid, how much to ask for, and negotiating RSUs and joining bonuses.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min",
@@ -13266,7 +13266,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fresher-resume-guide-india-2026",
     title: "Fresher Resume Guide India 2026: How to Write a Software Engineer Resume That Gets Interviews",
-    metaDescription: "Complete fresher resume writing guide for India 2026. What to include, what to leave out, ATS optimisation, project descriptions, how to write a resume with no work experience, and templates.",
+    metaDescription: "Fresher resume guide for India 2026: what to include, ATS optimisation, project descriptions, writing a resume with no experience, plus templates.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -13305,7 +13305,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-tech-companies-pune-2026",
     title: "Top Tech Companies in Pune 2026: Software Engineer's Guide",
-    metaDescription: "Top tech companies to work at in Pune 2026. Infosys, TCS, Persistent Systems, KPIT Technologies, ThoughtWorks, Deutsche Bank, Volkswagen Digital Solutions: salaries and work culture.",
+    metaDescription: "Top tech companies in Pune 2026: Infosys, TCS, Persistent, KPIT, ThoughtWorks, Deutsche Bank, Volkswagen Digital Solutions salaries and culture.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "9 min",
@@ -13346,7 +13346,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "adobe-india-interview-questions-2026",
     title: "Adobe India Interview Questions 2026: Software Engineer Guide (Noida and Bengaluru)",
-    metaDescription: "Adobe India interview questions for software engineers in 2026. Noida and Bengaluru offices: Creative Cloud, Document Cloud, Experience Cloud, Adobe India salary, interview process.",
+    metaDescription: "Adobe India SWE interview guide: Noida and Bengaluru offices, Creative Cloud, Document Cloud, Experience Cloud, Adobe India salary, and interview process.",
     company: "Adobe",
     category: "Company Guides",
     readTime: "12 min",
@@ -13387,7 +13387,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cisco-india-interview-questions-2026",
     title: "Cisco India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
-    metaDescription: "Cisco India interview questions for software engineers in 2026. Bengaluru office: networking, cloud and security tech, Cisco India salary, interview process, and how to prepare.",
+    metaDescription: "Cisco India Bengaluru SWE guide 2026: networking, cloud and security tech, salary data, interview process, and how to prepare.",
     company: "Cisco",
     category: "Company Guides",
     readTime: "11 min",
@@ -13428,7 +13428,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "oracle-india-interview-questions-2026",
     title: "Oracle India Interview Questions 2026: Software Engineer Guide (Bengaluru and Hyderabad)",
-    metaDescription: "Oracle India interview questions for software engineers in 2026. Bengaluru and Hyderabad offices: Oracle Database, Java, Oracle Cloud, OCI, salary guide, and interview preparation.",
+    metaDescription: "Oracle India SWE interview questions 2026: Bengaluru and Hyderabad offices, Oracle Database, Java, Oracle Cloud, OCI, salary guide, and prep tips.",
     company: "Oracle",
     category: "Company Guides",
     readTime: "12 min",
@@ -13470,7 +13470,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "thoughtworks-india-interview-questions-2026",
     title: "ThoughtWorks India Interview Questions 2026: Software Consultant Guide",
-    metaDescription: "ThoughtWorks India interview questions for software engineers in 2026. Bengaluru, Pune, Chennai offices: unique coding and pair programming process, XP values, ThoughtWorks salary India.",
+    metaDescription: "ThoughtWorks India interview guide 2026: Bengaluru, Pune, Chennai offices, unique coding and pair-programming process, XP values, and salary in India.",
     company: "ThoughtWorks",
     category: "Company Guides",
     readTime: "13 min",
@@ -13511,7 +13511,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-tech-companies-chennai-2026",
     title: "Top Tech Companies in Chennai 2026: Software Engineer's Guide",
-    metaDescription: "Top tech companies to work at in Chennai 2026. Zoho, Freshworks, TCS, Cognizant, Ford Technology, Hexaware, DBS Bank technology: salaries, work culture, and interview process.",
+    metaDescription: "Top Chennai tech employers 2026: Zoho, Freshworks, TCS, Cognizant, Ford Technology, Hexaware, and DBS Bank tech: salaries, culture, interview process.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -13550,7 +13550,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-tech-companies-ncr-delhi-2026",
     title: "Top Tech Companies in NCR and Delhi 2026: Software Engineer's Guide",
-    metaDescription: "Top tech companies in NCR and Delhi 2026. Gurugram: MakeMyTrip, PolicyBazaar, InMobi, Delhivery. Noida: Adobe, Samsung R&D, HCL. Salaries and hiring guide for NCR engineers.",
+    metaDescription: "Top tech companies in NCR and Delhi 2026. Gurugram: MakeMyTrip, PolicyBazaar, InMobi, Delhivery. Noida: Adobe, Samsung R&D, HCL. Salaries and hiring guide.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -13589,7 +13589,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ai-ml-jobs-india-2026",
     title: "AI and Machine Learning Jobs in India 2026: Complete Career Guide",
-    metaDescription: "Complete guide to AI and ML jobs in India 2026. Roles, salaries, skills required, top hiring companies, how to transition from software engineering to AI/ML, and what the job market looks like.",
+    metaDescription: "AI and ML jobs in India 2026: roles, salaries, required skills, top hiring companies, and how to transition from software engineering into AI/ML.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "13 min",
@@ -13628,7 +13628,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "group-discussion-tips-india-campus-placements",
     title: "Group Discussion Tips India 2026: How to Crack GD Rounds in Campus Placements",
-    metaDescription: "Complete group discussion guide for Indian campus placements 2026. How GDs are evaluated, common GD topics, what to say, what not to say, and how to stand out without being aggressive.",
+    metaDescription: "Group discussion guide for campus placements: how GDs are evaluated, common GD topics, what to say and avoid, and how to stand out without aggression.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -13667,7 +13667,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ios-developer-interview-questions-india-2026",
     title: "iOS Developer Interview Questions India 2026: Swift, SwiftUI and Architecture Guide",
-    metaDescription: "Complete iOS developer interview guide for India 2026. Swift, SwiftUI, UIKit, MVVM architecture, iOS interview questions, and iOS developer salary at Indian product companies.",
+    metaDescription: "iOS developer interview guide for India 2026: Swift, SwiftUI, UIKit, MVVM architecture, common questions, and salary at Indian product companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -13706,7 +13706,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-get-promoted-software-engineer-india-2026",
     title: "How to Get Promoted as a Software Engineer in India 2026: Complete Guide",
-    metaDescription: "How to get promoted from junior to senior software engineer in India 2026. Promotion criteria at product companies, how to navigate performance reviews, scope expansion, and what actually gets you promoted.",
+    metaDescription: "How to get promoted from junior to senior software engineer in India: promotion criteria at product companies, performance reviews, and scope expansion.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min",
@@ -13747,7 +13747,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sap-labs-india-interview-questions-2026",
     title: "SAP Labs India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
-    metaDescription: "SAP Labs India interview questions for software engineers in 2026. Bengaluru: SAP S/4HANA, SAP BTP, ABAP, SAP Fiori, interview process, and SAP India salary guide for engineers.",
+    metaDescription: "SAP Labs India SWE interview guide: Bengaluru office, SAP S/4HANA, SAP BTP, ABAP, SAP Fiori, interview process, and SAP India salary guide for engineers.",
     company: "SAP",
     category: "Company Guides",
     readTime: "11 min",
@@ -13788,7 +13788,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "atlassian-india-software-engineer-guide-bengaluru-2026",
     title: "Atlassian India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
-    metaDescription: "Atlassian India interview questions for software engineers in 2026. Bengaluru office: Jira, Confluence, Bitbucket, Loom, ITSM. Interview process, Atlassian values, and Atlassian India salary.",
+    metaDescription: "Atlassian India Bengaluru SWE guide 2026: Jira, Confluence, Bitbucket, Loom, ITSM, interview process, values, and salary data.",
     company: "Atlassian",
     category: "Company Guides",
     readTime: "11 min",
@@ -13827,7 +13827,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "paypal-india-interview-questions-2026",
     title: "PayPal India Interview Questions 2026: Software Engineer Guide (Chennai and Bengaluru)",
-    metaDescription: "PayPal India interview questions for software engineers in 2026. Chennai and Bengaluru offices: payments engineering, fraud detection, fintech system design, PayPal India salary guide.",
+    metaDescription: "PayPal India SWE interview questions 2026: Chennai and Bengaluru offices, payments engineering, fraud detection, fintech system design, and salary.",
     company: "PayPal",
     category: "Company Guides",
     readTime: "11 min",
@@ -13868,7 +13868,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-edtech-companies-india-2026",
     title: "Top EdTech Companies in India 2026: Software Engineer's Career Guide",
-    metaDescription: "Top EdTech companies to work at in India 2026. BYJU's, upGrad, Physics Wallah, Unacademy, Vedantu, Scaler: salaries, engineering culture, work stability, and how to get hired.",
+    metaDescription: "Top EdTech companies in India 2026: BYJU'S, upGrad, Physics Wallah, Unacademy, Vedantu, Scaler: salaries, engineering culture, stability, and hiring.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -13907,7 +13907,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-healthtech-companies-india-2026",
     title: "Top Health Tech Companies in India 2026: Software Engineer's Career Guide",
-    metaDescription: "Top health tech companies in India 2026. Practo, Tata 1mg, PharmEasy, Pristyn Care, MediBuddy, HealthKart: salaries, engineering work, and how to break into healthcare technology.",
+    metaDescription: "Top health tech companies in India 2026: Practo, Tata 1mg, PharmEasy, Pristyn Care, MediBuddy, HealthKart: salaries, engineering work, and how to break in.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -13946,7 +13946,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "remote-jobs-india-software-engineer-2026",
     title: "Remote Jobs for Software Engineers in India 2026: Complete Guide",
-    metaDescription: "Remote jobs for software engineers in India 2026. How to find remote roles, top remote-first companies hiring in India, salary benchmarks for remote work, and how to stand out as a remote candidate.",
+    metaDescription: "Remote jobs for software engineers in India 2026: how to find remote roles, top remote-first companies hiring, and salary benchmarks.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min",
@@ -13985,7 +13985,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "qa-sdet-interview-questions-india-2026",
     title: "QA and SDET Interview Questions India 2026: Test Automation Engineer Guide",
-    metaDescription: "Complete QA and SDET interview guide for India 2026. Selenium, Cypress, API testing, test automation frameworks, performance testing, and SDET salary at Indian product companies.",
+    metaDescription: "QA and SDET interview guide: Selenium, Cypress, API testing, test automation frameworks, performance testing, and SDET salary at Indian product companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -14024,7 +14024,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "full-stack-developer-interview-questions-india-2026",
     title: "Full-Stack Developer Interview Questions India 2026: Complete Guide",
-    metaDescription: "Complete full-stack developer interview guide for India 2026. React, Node.js, PostgreSQL, REST APIs, Docker, AWS. Full-stack developer salary, top companies hiring, and preparation strategy.",
+    metaDescription: "Full-stack developer interview guide: React, Node.js, PostgreSQL, REST APIs, Docker, AWS, plus salary, top hiring companies, and preparation strategy.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "12 min",
@@ -14063,7 +14063,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-answer-why-leaving-current-job",
     title: "How to Answer 'Why Are You Leaving Your Current Job?' India 2026 Guide",
-    metaDescription: "How to answer 'Why are you leaving your current job?' in Indian tech interviews. What to say, what not to say, example answers for different situations, and how to stay positive.",
+    metaDescription: "How to answer 'Why are you leaving your current job?' in Indian tech interviews: what to say, what to avoid, example answers, staying positive.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min",
@@ -14102,7 +14102,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "linkedin-profile-tips-india-software-engineer-2026",
     title: "LinkedIn Profile Tips India 2026: How to Get Noticed by Tech Recruiters",
-    metaDescription: "LinkedIn profile optimisation guide for software engineers in India 2026. Headline, summary, experience section, skills, Open to Work settings, how to get recruiter messages, and what works.",
+    metaDescription: "LinkedIn profile guide for software engineers in India 2026: headline, summary, experience, skills, Open to Work settings, and getting recruiter messages.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -14143,7 +14143,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "walmart-global-tech-india-interview-questions-2026",
     title: "Walmart Global Tech India Interview Questions 2026: Software Engineer Guide",
-    metaDescription: "Walmart Global Tech India interview questions for software engineers in 2026. Bengaluru office: retail technology, supply chain, e-commerce, interview process, and Walmart India salary guide.",
+    metaDescription: "Walmart Global Tech India SWE interview guide: Bengaluru office, retail technology, supply chain, e-commerce, interview process, and Walmart India salary.",
     company: "Walmart",
     category: "Company Guides",
     readTime: "9 min read",
@@ -14185,7 +14185,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "qualcomm-india-software-engineer-dsp-engineer-2026",
     title: "Qualcomm India Interview Questions 2026: Software Engineer and DSP Engineer Guide",
-    metaDescription: "Qualcomm India interview questions 2026. Hyderabad and Bengaluru offices: modem software, DSP, Android BSP, camera, audio, Snapdragon engineering, C++ interview questions, and Qualcomm India salary.",
+    metaDescription: "Qualcomm India 2026: Hyderabad and Bengaluru modem software, DSP, Android BSP, camera, audio, Snapdragon engineering, C++ Qs, and salary.",
     company: "Qualcomm",
     category: "Company Guides",
     readTime: "10 min read",
@@ -14224,7 +14224,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "vmware-india-interview-questions-2026",
     title: "VMware India Interview Questions 2026: Software Engineer Guide (Bengaluru and Pune)",
-    metaDescription: "VMware India interview questions for software engineers in 2026. Bengaluru and Pune offices: virtualisation, Kubernetes, vSphere, Tanzu, NSX, interview process, and VMware India salary guide.",
+    metaDescription: "VMware India SWE interview questions 2026: Bengaluru and Pune, virtualisation, Kubernetes, vSphere, Tanzu, NSX, interview process, and salary guide.",
     company: "VMware",
     category: "Company Guides",
     readTime: "9 min read",
@@ -14266,7 +14266,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-fintech-companies-india-2026",
     title: "Top Fintech Companies in India 2026: Software Engineer Career Guide",
-    metaDescription: "Top fintech companies to work at in India 2026. Razorpay, PhonePe, Paytm, BharatPe, Groww, Zerodha: salaries, engineering culture, interview process, and what makes each company unique.",
+    metaDescription: "Top fintech companies in India 2026: Razorpay, PhonePe, Paytm, BharatPe, Groww, Zerodha: salaries, engineering culture, interview process, and more.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -14305,7 +14305,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-gaming-companies-india-2026",
     title: "Top Gaming Companies in India 2026: Software Engineer Career Guide",
-    metaDescription: "Top gaming companies to work at in India 2026. Dream11, Mobile Premier League, Nazara, WinZO, nCore Games, Krafton India: salaries, engineering culture, and how to break into game development.",
+    metaDescription: "Top gaming companies in India 2026: Dream11, MPL, Nazara, WinZO, nCore Games, Krafton India: salaries, engineering culture, and breaking into gaming.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "9 min read",
@@ -14344,7 +14344,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-engineering-jobs-india-2026",
     title: "Data Engineering Jobs in India 2026: Complete Career Guide",
-    metaDescription: "Complete guide to data engineering jobs in India 2026. Data engineer roles, salaries, skills (Spark, Kafka, Airflow, dbt, Snowflake, BigQuery), top hiring companies, and how to transition from software engineering.",
+    metaDescription: "Data engineering jobs in India 2026: roles, salaries, skills (Spark, Kafka, Airflow, dbt, Snowflake, BigQuery), and top hiring companies.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -14383,7 +14383,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "devops-sre-interview-complete-engineer-guide-india-2026",
     title: "DevOps and SRE Interview Questions India 2026: Complete Engineer Guide",
-    metaDescription: "Complete DevOps and SRE interview guide for India 2026. Kubernetes, Docker, CI/CD, Terraform, AWS, monitoring, incident response, SLOs, and DevOps engineer salary at Indian product companies.",
+    metaDescription: "DevOps and SRE interview guide: Kubernetes, Docker, CI/CD, Terraform, AWS, monitoring, incident response, SLOs, and engineer salary in India.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min read",
@@ -14422,7 +14422,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "android-developer-interview-kotlin-architecture-guide-india-2026",
     title: "Android Developer Interview Questions India 2026: Kotlin, Jetpack Compose and Architecture Guide",
-    metaDescription: "Complete Android developer interview guide for India 2026. Kotlin, Jetpack Compose, MVVM, Room, Retrofit, Android architecture, and Android developer salary at Indian product companies.",
+    metaDescription: "Android developer interview guide: Kotlin, Jetpack Compose, MVVM, Room, Retrofit, architecture questions, and salary at Indian product companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "10 min read",
@@ -14461,7 +14461,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-negotiate-job-offer-india-software-engineer-2026",
     title: "How to Negotiate a Job Offer in India 2026: Software Engineer Salary Guide",
-    metaDescription: "How to negotiate a job offer as a software engineer in India 2026. What to say, when to negotiate, how to counter-offer, components of total comp, and how to evaluate competing offers.",
+    metaDescription: "How to negotiate a software engineer job offer in India 2026: when to negotiate, counter-offers, components of total comp, evaluating competing offers.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min read",
@@ -14500,7 +14500,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tell-me-about-yourself-answer-india-software-engineer-2026",
     title: "Tell Me About Yourself: Best Answers for Software Engineers in India 2026",
-    metaDescription: "How to answer 'Tell me about yourself' in Indian tech interviews in 2026. Best answer frameworks, example answers for freshers and experienced engineers, what to include and avoid.",
+    metaDescription: "How to answer 'Tell me about yourself' in Indian tech interviews 2026: answer frameworks, examples for freshers and experienced engineers, what to include.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "8 min read",
@@ -14541,7 +14541,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "uber-india-software-engineer-bengaluru-hyderabad-2026",
     title: "Uber India Interview Questions 2026: Software Engineer Guide (Bengaluru and Hyderabad)",
-    metaDescription: "Uber India interview questions for software engineers in 2026. Bengaluru and Hyderabad offices: ride-sharing platform, maps, payments, driver app, interview process, and Uber India salary guide.",
+    metaDescription: "Uber India SWE interview guide: Bengaluru and Hyderabad offices, ride-sharing platform, maps, payments, driver app, and Uber India salary guide.",
     company: "Uber",
     category: "Company Guides",
     readTime: "9 min read",
@@ -14580,7 +14580,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "airbnb-india-interview-questions-2026",
     title: "Airbnb India Interview Questions 2026: Software Engineer Guide (Bengaluru)",
-    metaDescription: "Airbnb India interview questions for software engineers in 2026. Bengaluru office: search, payments, host tools, trust and safety engineering. Interview process, Airbnb values, and Airbnb India salary.",
+    metaDescription: "Airbnb India Bengaluru SWE guide 2026: search, payments, host tools, trust and safety engineering, interview process, and salary.",
     company: "Airbnb",
     category: "Company Guides",
     readTime: "9 min read",
@@ -14621,7 +14621,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "stripe-india-interview-questions-2026",
     title: "Stripe India Interview Questions 2026: Software Engineer Guide",
-    metaDescription: "Stripe India interview questions for software engineers in 2026. Bengaluru office: payments API, financial infrastructure, developer tools, interview process, and Stripe India salary benchmarks.",
+    metaDescription: "Stripe India SWE interview questions 2026: Bengaluru office, payments API, financial infrastructure, developer tools, process, and salary benchmarks.",
     company: "Stripe",
     category: "Company Guides",
     readTime: "9 min read",
@@ -14662,7 +14662,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cloud-computing-jobs-india-2026",
     title: "Cloud Computing Jobs in India 2026: Complete Career Guide",
-    metaDescription: "Complete guide to cloud computing jobs in India 2026. AWS, GCP, and Azure roles, cloud architect and cloud engineer salaries, top hiring companies, certifications that matter, and how to transition from IT.",
+    metaDescription: "Cloud computing jobs in India 2026: AWS, GCP, Azure roles, cloud architect and engineer salaries, top hiring companies, certifications, and IT transition.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -14701,7 +14701,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cybersecurity-jobs-india-2026",
     title: "Cybersecurity Jobs in India 2026: Complete Career Guide for Engineers",
-    metaDescription: "Complete guide to cybersecurity jobs in India 2026. Security engineer, penetration tester, cloud security, AppSec roles, salaries, top companies hiring, certifications, and how to transition from software engineering.",
+    metaDescription: "Cybersecurity careers in India 2026: security engineer, pentester, cloud security, AppSec roles, salaries, top hirers, and certifications to pursue.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -14740,7 +14740,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "top-startups-hiring-engineers-india-2026",
     title: "Top Startups Hiring Software Engineers in India 2026: The Complete List",
-    metaDescription: "Best startups to work at as a software engineer in India 2026. Series B to pre-IPO: CRED, Zepto, Setu, Hyperface, Polygon, Slice, Moglix, Purplle, Meesho: salaries, ESOPs, and what to expect.",
+    metaDescription: "Top startups for engineers in India 2026, Series B to pre-IPO: CRED, Zepto, Setu, Hyperface, Polygon, Slice, Moglix, Purplle, Meesho: salaries, ESOPs.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -14779,7 +14779,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-scientist-interview-questions-india-2026",
     title: "Data Scientist Interview Questions India 2026: Complete DS Interview Guide",
-    metaDescription: "Complete data scientist interview guide for India 2026. Statistics, ML algorithms, Python, SQL, case study questions, and data scientist salary at Indian product companies and analytics firms.",
+    metaDescription: "Data scientist interview guide: statistics, ML algorithms, Python, SQL, case study questions, and salary at Indian product companies and analytics firms.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min read",
@@ -14818,7 +14818,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "where-do-you-see-yourself-in-5-years-india-tech-interview",
     title: "Where Do You See Yourself in 5 Years? Best Answers for Indian Tech Interviews 2026",
-    metaDescription: "How to answer 'Where do you see yourself in 5 years?' in Indian tech interviews 2026. What interviewers want to hear, frameworks, example answers for freshers and experienced engineers, and what to avoid.",
+    metaDescription: "How to answer 'Where do you see yourself in 5 years?' in Indian tech interviews: what interviewers want, frameworks, example answers, and what to avoid.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "7 min read",
@@ -14857,7 +14857,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "coding-interview-preparation-guide-india-2026",
     title: "Coding Interview Preparation Guide India 2026: Complete DSA Strategy",
-    metaDescription: "Complete coding interview preparation guide for Indian software engineers in 2026. DSA strategy, LeetCode plan, resources, timeline, and how to prepare for coding rounds at Indian product companies and FAANG.",
+    metaDescription: "Coding interview prep guide for Indian software engineers 2026: DSA strategy, LeetCode plan, resources, and timeline for product companies and FAANG.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min read",
@@ -14898,7 +14898,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "nvidia-india-software-engineer-pune-bengaluru-2026",
     title: "Nvidia India Interview Questions 2026: Software Engineer Guide (Pune and Bengaluru)",
-    metaDescription: "Nvidia India interview questions for software engineers in 2026. Pune and Bengaluru offices: GPU computing, CUDA, AI infrastructure, autonomous driving, interview process, and Nvidia India salary.",
+    metaDescription: "Nvidia India interview guide 2026: Pune and Bengaluru offices, GPU computing, CUDA, AI infrastructure, autonomous driving, interview process, and salary.",
     company: "Nvidia",
     category: "Company Guides",
     readTime: "9 min read",
@@ -14937,7 +14937,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "blockchain-web3-jobs-india-2026",
     title: "Blockchain and Web3 Jobs in India 2026: Complete Career Guide",
-    metaDescription: "Complete guide to blockchain and Web3 jobs in India 2026. Solidity developer, blockchain engineer, DeFi, Layer 2 roles, salaries at Polygon India, and how to transition from traditional software engineering.",
+    metaDescription: "Blockchain and Web3 jobs in India: Solidity developer, blockchain engineer, DeFi, Layer 2 roles, salaries at Polygon India, and transitioning from SWE.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -14976,7 +14976,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "healthtech-jobs-india-2026",
     title: "HealthTech Jobs in India 2026: Complete Career Guide for Engineers",
-    metaDescription: "Complete guide to healthtech jobs in India 2026. Health tech companies, roles, salaries at Practo, PharmEasy, 1mg, Niramai, Qure.ai, Tricog, and how to enter healthcare technology engineering.",
+    metaDescription: "HealthTech companies, roles, and salaries in India 2026 at Practo, PharmEasy, 1mg, Niramai, Qure.ai, Tricog, and how to enter the field.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -15015,7 +15015,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "frontend-engineer-interview-questions-india-2026",
     title: "Frontend Engineer Interview Questions India 2026: Complete React and JavaScript Guide",
-    metaDescription: "Complete frontend engineer interview guide for India 2026. React, JavaScript, TypeScript, CSS, system design, performance, and frontend salary at Indian tech companies.",
+    metaDescription: "Frontend engineer interview guide India 2026: React, JavaScript, TypeScript, CSS, system design, performance, and salary at Indian tech companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "11 min read",
@@ -15054,7 +15054,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "why-are-you-leaving-current-job-indian-tech-interviews-2026",
     title: "How to Answer 'Why Are You Leaving Your Current Job?' in Indian Tech Interviews 2026",
-    metaDescription: "How to answer 'Why are you leaving your current job?' in Indian software engineer interviews. Honest frameworks, example answers for different situations, and what to avoid.",
+    metaDescription: "How to answer 'Why are you leaving your current job?' in Indian tech interviews: honest frameworks, example answers, and what to avoid in 2026.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "7 min read",
@@ -15093,7 +15093,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "group-discussion-tips-campus-placements-india-2026",
     title: "Group Discussion Tips for Campus Placements in India 2026: Complete Guide",
-    metaDescription: "Complete guide to group discussions (GD) for campus placements in India 2026. GD structure, topics list, how to initiate, how to handle conflict, and what evaluators look for.",
+    metaDescription: "Group discussion guide for campus placements in India 2026: GD structure, topics list, how to initiate, handle conflict, and what evaluators look for.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "8 min read",
@@ -15132,7 +15132,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "resume-tips-software-engineer-india-2026",
     title: "Resume Writing Tips for Software Engineers in India 2026: Complete Guide",
-    metaDescription: "Complete resume writing guide for software engineers in India 2026. ATS optimisation, STAR bullet points, skills section, projects section, and the format that gets shortlisted at Indian tech companies.",
+    metaDescription: "Resume writing guide for software engineers in India 2026: ATS optimisation, STAR bullet points, skills section, and the format that gets shortlisted.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -15173,7 +15173,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salesforce-india-software-engineer-hyderabad-bengaluru-2026",
     title: "Salesforce India Interview Questions 2026: Software Engineer Guide (Hyderabad and Bengaluru)",
-    metaDescription: "Salesforce India interview questions for software engineers in 2026. Hyderabad and Bengaluru offices: CRM, Slack, MuleSoft, Tableau, interview process, and Salesforce India salary.",
+    metaDescription: "Salesforce India SWE interview guide for Hyderabad and Bengaluru: CRM, Slack, MuleSoft, Tableau, interview process, and Salesforce India salary.",
     company: "Salesforce",
     category: "Company Guides",
     readTime: "9 min read",
@@ -15212,7 +15212,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "devops-engineer-interview-questions-india-2026",
     title: "DevOps Engineer Interview Questions India 2026: Complete Guide (Kubernetes, CI/CD, Cloud)",
-    metaDescription: "Complete DevOps engineer interview guide for India 2026. Kubernetes, CI/CD, Terraform, Docker, AWS, monitoring, SRE practices, and DevOps salary at Indian tech companies.",
+    metaDescription: "DevOps engineer interview guide: Kubernetes, CI/CD, Terraform, Docker, AWS, monitoring, SRE practices, and DevOps salary at Indian tech companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "10 min read",
@@ -15251,7 +15251,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "platform-engineer-interview-questions-india-2026",
     title: "Platform Engineer Interview Questions India 2026: Complete Guide (Internal Developer Platforms)",
-    metaDescription: "Complete platform engineering interview guide for India 2026. Internal developer platforms, Kubernetes operators, service mesh, developer experience, Platform Engineering vs SRE vs DevOps, and salary.",
+    metaDescription: "Platform engineering interview guide for India 2026: internal developer platforms, Kubernetes operators, service mesh, dev experience, and salary.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "10 min read",
@@ -15290,7 +15290,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "edtech-jobs-india-2026",
     title: "EdTech Jobs in India 2026: Complete Career Guide for Engineers After the Byju's Collapse",
-    metaDescription: "Complete guide to edtech jobs in India 2026. Top edtech companies after Byju's, engineering roles, salaries at Unacademy, upGrad, PhysicsWallah, Vedantu, and how to evaluate edtech employers.",
+    metaDescription: "EdTech jobs in India 2026: top companies after Byju's collapse, engineering roles, salaries at Unacademy, upGrad, PhysicsWallah, and Vedantu.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "9 min read",
@@ -15329,7 +15329,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fintech-startup-jobs-india-2026",
     title: "Fintech Startup Jobs in India 2026: Complete Guide Beyond CRED and Razorpay",
-    metaDescription: "Complete guide to fintech startup jobs in India 2026. Beyond CRED and Razorpay: lending tech, insurtech, wealthtech, neo-banking, B2B payments, and which fintech startups are worth joining.",
+    metaDescription: "Fintech startup jobs in India beyond CRED and Razorpay: lending tech, insurtech, wealthtech, neo-banking, B2B payments, and which startups are worth it.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "10 min read",
@@ -15368,7 +15368,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salary-negotiation-tips-india-software-engineer-2026",
     title: "Salary Negotiation Tips for Software Engineers in India 2026: Complete Guide",
-    metaDescription: "Complete salary negotiation guide for software engineers in India 2026. When to negotiate, how to counter-offer, how to negotiate RSUs, handling multiple offers, and exact scripts to use.",
+    metaDescription: "When to negotiate, how to counter-offer, negotiate RSUs, handle multiple offers, and exact scripts for Indian software engineers in 2026.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "8 min read",
@@ -15407,7 +15407,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-ace-technical-interview-india-2026",
     title: "How to Ace a Technical Interview in India 2026: Complete Preparation Guide",
-    metaDescription: "Complete guide to acing technical interviews in India 2026. The 4-week preparation plan, LeetCode strategy, how to think aloud, communication during coding, and what top Indian tech companies actually look for.",
+    metaDescription: "Acing technical interviews in India 2026: the 4-week prep plan, LeetCode strategy, thinking aloud, coding communication, and what top companies want.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -15446,7 +15446,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "system-design-interview-preparation-india-2026",
     title: "System Design Interview Preparation India 2026: Complete Guide (6-Step Framework)",
-    metaDescription: "Complete system design interview guide for India 2026. The 6-step framework, how to estimate scale, which components to draw, common Indian company system design questions, and how to avoid the most common mistakes.",
+    metaDescription: "System design interview guide India 2026: the 6-step framework, scale estimation, components to draw, common Indian company questions, and mistakes.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min read",
@@ -15487,7 +15487,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "intel-india-interview-questions-2026",
     title: "Intel India Interview Questions 2026: Software Engineer Guide (Bengaluru and Hyderabad)",
-    metaDescription: "Intel India interview questions for software engineers in 2026. Bengaluru and Hyderabad offices: CPU architecture, compiler engineering, FPGA, autonomous driving, interview process, and Intel India salary.",
+    metaDescription: "Intel India interview guide 2026: Bengaluru/Hyderabad offices, CPU architecture, compiler engineering, FPGA, autonomous driving, and Intel India salary.",
     company: "Intel",
     category: "Company Guides",
     readTime: "12 min read",
@@ -15529,7 +15529,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "walmart-global-tech-india-software-engineer-bengaluru-chennai-2026",
     title: "Walmart Global Tech India Interview Questions 2026: Software Engineer Guide (Bengaluru and Chennai)",
-    metaDescription: "Walmart Global Tech India interview questions for software engineers in 2026. Bengaluru and Chennai offices: e-commerce, supply chain, Sam's Club, interview process, and Walmart Global Tech India salary.",
+    metaDescription: "Walmart Global Tech India interview questions 2026 (Bengaluru, Chennai): e-commerce, supply chain, Sam's Club, interview process, and salary.",
     company: "Walmart",
     category: "Company Guides",
     readTime: "12 min read",
@@ -15568,7 +15568,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "backend-engineer-interview-questions-india-2026",
     title: "Backend Engineer Interview Questions India 2026: Complete Guide (Java, Go, Python, Node.js)",
-    metaDescription: "Complete backend engineer interview guide for India 2026. Java, Go, Python, Node.js, distributed systems, database design, API design, concurrency, and backend salary at Indian tech companies.",
+    metaDescription: "Backend engineer interview guide: Java, Go, Python, Node.js, distributed systems, database design, API design, concurrency, and backend salary in India.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "14 min read",
@@ -15607,7 +15607,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "android-engineer-interview-questions-india-2026",
     title: "Android Engineer Interview Questions India 2026: Complete Guide (Kotlin, Jetpack, Architecture)",
-    metaDescription: "Complete Android engineer interview guide for India 2026. Kotlin, Jetpack Compose, MVVM/MVI, performance, accessibility, and Android engineer salary at Indian tech companies.",
+    metaDescription: "Android engineer interview guide: Kotlin, Jetpack Compose, MVVM/MVI, performance, accessibility, and Android engineer salary at Indian tech companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "13 min read",
@@ -15646,7 +15646,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "gaming-tech-jobs-india-2026",
     title: "Gaming Tech Jobs in India 2026: Complete Career Guide (Fantasy Sports, Mobile Gaming, Esports)",
-    metaDescription: "Complete guide to gaming tech jobs in India 2026. Fantasy sports (Dream11, MPL), mobile gaming, esports, game engine engineering, real-money gaming regulations, and gaming tech salary.",
+    metaDescription: "Gaming tech jobs in India 2026: fantasy sports (Dream11, MPL), mobile gaming, esports, game engine engineering, RMG regulations, and salary.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "12 min read",
@@ -15685,7 +15685,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "agritech-jobs-india-2026",
     title: "AgriTech Jobs in India 2026: Complete Career Guide for Engineers",
-    metaDescription: "Complete guide to agritech jobs in India 2026. Top agritech companies, engineering roles, salaries at AgroStar, DeHaat, Ninjacart, ITC Agri, and how to enter agricultural technology engineering.",
+    metaDescription: "AgriTech jobs in India 2026: engineering roles, salaries at AgroStar, DeHaat, Ninjacart, ITC Agri, and how to enter agricultural technology engineering.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "11 min read",
@@ -15724,7 +15724,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "behavioural-interview-questions-software-engineers-star-guide-india-2026",
     title: "Behavioural Interview Questions for Software Engineers in India 2026: Complete STAR Guide",
-    metaDescription: "Complete behavioural interview guide for software engineers in India 2026. STAR method, 20 most common questions, example answers for each, what Indian tech companies actually evaluate, and how to prepare.",
+    metaDescription: "Behavioural interview guide for Indian SWEs: STAR method, 20 common questions with example answers, and what Indian tech companies actually evaluate.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -15763,7 +15763,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-get-referral-india-tech-companies-2026",
     title: "How to Get a Referral at Top Tech Companies in India 2026: Complete Guide",
-    metaDescription: "Complete guide to getting a referral at top Indian tech companies in 2026. How to ask, who to ask, LinkedIn outreach scripts, what increases referral conversion, and which companies have the strongest referral programmes.",
+    metaDescription: "How to ask, who to ask, LinkedIn outreach scripts, what boosts referral conversion, and which Indian tech companies have the strongest programmes.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min read",
@@ -15802,7 +15802,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-crack-faang-india-2026",
     title: "How to Crack FAANG India Interviews in 2026: Complete Roadmap (Google, Meta, Amazon, Microsoft)",
-    metaDescription: "Complete guide to cracking FAANG India interviews in 2026. Preparation roadmap, what FAANG India interviews are really like, Google vs Amazon vs Meta vs Microsoft India differences, salary, and realistic timelines.",
+    metaDescription: "Cracking FAANG India interviews 2026: prep roadmap, what interviews are really like, Google vs Amazon vs Meta vs Microsoft differences, and salary.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "15 min read",
@@ -15843,7 +15843,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "microsoft-india-software-engineer-hyderabad-bengaluru-2026",
     title: "Microsoft India Interview Questions 2026: Software Engineer Guide (Hyderabad and Bengaluru)",
-    metaDescription: "Microsoft India interview questions for software engineers in 2026. Hyderabad and Bengaluru offices: GitHub, Azure, Teams, Xbox, interview process, and Microsoft India salary ranges.",
+    metaDescription: "Microsoft India SWE interview guide 2026: Hyderabad and Bengaluru offices, GitHub, Azure, Teams, Xbox, interview process, and salary ranges in India.",
     company: "Microsoft",
     category: "Company Guides",
     readTime: "12 min read",
@@ -15882,7 +15882,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "google-india-interview-questions-2026",
     title: "Google India Interview Questions 2026: Software Engineer Guide (Bengaluru and Hyderabad)",
-    metaDescription: "Google India interview questions for software engineers in 2026. Bengaluru and Hyderabad offices: Search, YouTube, Google Pay, infrastructure, interview process L3-L6, and Google India salary.",
+    metaDescription: "Google India interview guide 2026: Bengaluru/Hyderabad teams (Search, YouTube, Google Pay, infra), interview process L3-L6, and Google India salary.",
     company: "Google",
     category: "Company Guides",
     readTime: "13 min read",
@@ -15923,7 +15923,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "amazon-india-interview-questions-2026",
     title: "Amazon India Interview Questions 2026: Software Engineer Guide (Bengaluru, Hyderabad, Chennai)",
-    metaDescription: "Amazon India interview questions for software engineers in 2026. Bengaluru, Hyderabad, and Chennai offices: AWS, Alexa, Prime, retail, Leadership Principles, interview process, and Amazon India salary.",
+    metaDescription: "Amazon India interview questions 2026 (Bengaluru, Hyderabad, Chennai): AWS, Alexa, Prime, retail, Leadership Principles, and salary.",
     company: "Amazon",
     category: "Company Guides",
     readTime: "13 min read",
@@ -15965,7 +15965,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "full-stack-engineer-interview-questions-india-2026",
     title: "Full-Stack Engineer Interview Questions India 2026: Complete Guide (React, Node.js, Databases)",
-    metaDescription: "Complete full-stack engineer interview guide for India 2026. React, Node.js, PostgreSQL, system design, frontend-backend interface design, and full-stack engineer salary at Indian tech companies.",
+    metaDescription: "Full-stack interview guide: React, Node.js, PostgreSQL, system design, frontend-backend interface design, and full-stack engineer salary in India.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "13 min read",
@@ -16004,7 +16004,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-engineer-interview-sql-spark-kafka-dbt-guide-india-2026",
     title: "Data Engineer Interview Questions India 2026: Complete Guide (SQL, Spark, Kafka, dbt)",
-    metaDescription: "Complete data engineer interview guide for India 2026. SQL, Apache Spark, Kafka, dbt, data warehouse design, Airflow, and data engineer salary at Indian tech companies.",
+    metaDescription: "Data engineer interview guide: SQL, Apache Spark, Kafka, dbt, data warehouse design, Airflow, and data engineer salary at Indian tech companies.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "13 min read",
@@ -16043,7 +16043,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "startup-jobs-india-2026",
     title: "Startup Jobs in India 2026: Complete Guide to Joining Early-Stage Tech Companies",
-    metaDescription: "Complete guide to joining Indian startups in 2026. How to evaluate startups, equity, funding stages, best startup employers, salary expectations, and how to find and interview for startup jobs in India.",
+    metaDescription: "Guide to joining Indian startups in 2026: evaluating equity and funding stages, best startup employers, salary expectations, and how to interview.",
     company: "Industry Insights",
     category: "Industry Insights",
     readTime: "12 min read",
@@ -16082,7 +16082,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-manager-interview-guide-tech-pms-india-2026",
     title: "Product Manager Interview Questions India 2026: Complete Guide for Tech PMs",
-    metaDescription: "Complete product manager interview guide for India 2026. Product sense, analytical thinking, execution, leadership, PM salary at Indian tech companies, and how to crack PM interviews at Razorpay, Flipkart, and FAANG India.",
+    metaDescription: "PM interview guide India 2026: product sense, analytical thinking, execution, PM salary, and cracking interviews at Razorpay, Flipkart, and FAANG India.",
     company: "Role Guides",
     category: "Role Guides",
     readTime: "13 min read",
@@ -16121,7 +16121,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-negotiate-offer-india-2026",
     title: "How to Negotiate a Job Offer in India 2026: Complete Guide for Software Engineers",
-    metaDescription: "Complete guide to negotiating a job offer in India 2026. Salary negotiation scripts, how to negotiate equity, counter-offers, best time to negotiate, and what Indian tech companies will and will not move on.",
+    metaDescription: "Negotiating a job offer in India: salary negotiation scripts, negotiating equity, counter-offers, best timing, and what Indian tech firms will move on.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min read",
@@ -16160,7 +16160,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tier-2-college-to-tech-job-india-2026",
     title: "Tier-2 College to Tech Job India 2026: Complete Roadmap for Engineering Students",
-    metaDescription: "Complete guide for tier-2 college engineering students to get high-paying tech jobs in India 2026. DSA, projects, open-source, certifications, off-campus applications, and how to break into product companies from non-IIT colleges.",
+    metaDescription: "DSA, projects, open-source, certifications, and off-campus applications: how tier-2 college students break into product companies in 2026.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min read",
@@ -16199,7 +16199,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tell-me-about-yourself-freshers-india-2026",
     title: "Tell Me About Yourself: Best Answer for Freshers in India 2026",
-    metaDescription: "How to answer 'tell me about yourself' as a fresher in India 2026. Sample answers for software engineers, MBA freshers, and campus placement interviews at TCS, Infosys, and product companies.",
+    metaDescription: "How to answer 'tell me about yourself' as a fresher in India 2026: sample answers for SWEs, MBA freshers, and campus placements at TCS and Infosys.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min read",
@@ -16238,7 +16238,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hr-interview-questions-freshers-india-2026",
     title: "HR Interview Questions and Answers for Freshers India 2026",
-    metaDescription: "Top HR interview questions and best answers for freshers in India 2026. Sample answers for tell me about yourself, strengths, weaknesses, why should we hire you, and where do you see yourself in 5 years.",
+    metaDescription: "Top HR interview questions and answers for freshers in India 2026: tell me about yourself, strengths, weaknesses, why hire you, and 5-year plans.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min read",
@@ -16277,7 +16277,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "why-should-we-hire-you-answer-india-2026",
     title: "Why Should We Hire You: Best Answer for Freshers and Experienced Candidates India 2026",
-    metaDescription: "How to answer 'why should we hire you' in India 2026. Sample answers for freshers, software engineers, and experienced candidates with structure, examples, and what interviewers actually want to hear.",
+    metaDescription: "Answering 'why should we hire you' in India 2026: sample answers for freshers and experienced candidates, structure, and what interviewers want to hear.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "8 min read",
@@ -16316,7 +16316,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "strengths-and-weaknesses-interview-india-2026",
     title: "Strengths and Weaknesses Interview Answer India 2026: Best Examples",
-    metaDescription: "Best answers for strengths and weaknesses interview questions in India 2026. Sample strengths and weaknesses for software engineers, freshers, and experienced candidates with examples the interviewer will actually believe.",
+    metaDescription: "Strengths and weaknesses interview answers for India 2026: sample answers for engineers, freshers, and experienced candidates interviewers will believe.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min read",
@@ -16355,7 +16355,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "python-developer-interview-questions-india-2026",
     title: "Python Developer Interview Questions India 2026: Django, FastAPI, and Coding",
-    metaDescription: "Top Python developer interview questions in India 2026. Core Python, Django, FastAPI, data structures, and Python coding questions asked at product companies, startups, and data engineering roles.",
+    metaDescription: "Top Python developer questions: core Python, Django, FastAPI, data structures, and coding questions asked at product companies, startups, and data teams.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min read",
@@ -16394,7 +16394,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tcs-nqt-preparation-syllabus-pattern-tips-2026",
     title: "TCS NQT Preparation Guide 2026: Syllabus, Pattern, and Tips to Clear",
-    metaDescription: "Complete TCS NQT preparation guide for 2026. Exam pattern, syllabus (aptitude, verbal, programming logic), coding section tips, common mistakes, and the best resources to clear TCS National Qualifier Test.",
+    metaDescription: "TCS NQT prep guide: exam pattern, syllabus (aptitude, verbal, programming logic), coding section tips, common mistakes, and best resources to clear it.",
     company: "TCS",
     category: "Company Guides",
     readTime: "11 min read",
@@ -16433,7 +16433,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "infosys-interview-questions-freshers-2026",
     title: "Infosys Interview Questions for Freshers 2026: InfyTQ, Technical Round, and HR",
-    metaDescription: "Complete Infosys interview preparation guide for freshers in 2026. InfyTQ exam, Infosys aptitude test, technical interview questions, HR interview, and how to get selected for Infosys higher-salary tracks.",
+    metaDescription: "Infosys interview guide for freshers 2026: InfyTQ exam, aptitude test, technical interview questions, HR round, and how to land higher-salary tracks.",
     company: "Infosys",
     category: "Company Guides",
     readTime: "11 min read",
@@ -16475,7 +16475,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "wipro-interview-questions-freshers-2026",
     title: "Wipro Interview Questions for Freshers 2026: Elite, NTH, and Turbo Programs",
-    metaDescription: "Complete Wipro interview preparation guide for freshers in 2026. Wipro Elite NTH, Turbo, and WILP programs: aptitude test, coding section, technical interview, and HR round questions and answers.",
+    metaDescription: "Wipro interview guide for freshers 2026: Elite NTH, Turbo, and WILP programs, aptitude test, coding section, technical interview, and HR round questions.",
     company: "Wipro",
     category: "Company Guides",
     readTime: "11 min read",
@@ -16516,7 +16516,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "accenture-interview-freshers-cognitive-coding-hr-2026",
     title: "Accenture Interview Questions for Freshers 2026: Cognitive, Coding, and HR",
-    metaDescription: "Complete Accenture interview guide for freshers 2026. Accenture cognitive assessment, coding section, communication assessment, technical interview, HR round, and how to get selected for higher-paying Accenture specialist roles.",
+    metaDescription: "Accenture freshers interview guide: cognitive assessment, coding section, communication assessment, technical interview, HR round, and specialist tips.",
     company: "Accenture",
     category: "Company Guides",
     readTime: "11 min read",
@@ -16555,7 +16555,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cognizant-interview-freshers-genc-next-elevate-2026",
     title: "Cognizant Interview Questions for Freshers 2026: GenC, GenC Next, and GenC Elevate",
-    metaDescription: "Complete Cognizant interview preparation guide for freshers 2026. Cognizant GenC, GenC Next, and GenC Elevate program selection process, aptitude test, technical interview questions, and HR round answers.",
+    metaDescription: "Cognizant GenC, GenC Next, and GenC Elevate 2026: selection process, aptitude test, technical interview questions, and HR round answers.",
     company: "Cognizant",
     category: "Company Guides",
     readTime: "14 min read",
@@ -16583,7 +16583,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hcl-interview-questions-freshers-2026",
     title: "HCL On-Campus Recruitment Process 2026: Rounds, Interview Questions & Freshers Guide",
-    metaDescription: "HCL on-campus recruitment process 2026 explained round by round: aptitude test, group discussion, technical interview questions (OOP, DBMS, OS), HR round, and how to clear each stage as a fresher.",
+    metaDescription: "HCL on-campus recruitment 2026 round by round: aptitude test, group discussion, technical interview (OOP, DBMS, OS), HR round, and fresher tips.",
     company: "HCL",
     category: "Company Guides",
     readTime: "13 min read",
@@ -16610,7 +16610,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tell-me-about-a-challenge-you-overcame-india-2026",
     title: "Tell Me About a Challenge You Overcame: STAR Answer Guide for India 2026",
-    metaDescription: "How to answer 'tell me about a challenge you overcame' in India 2026. STAR method examples for freshers and experienced candidates, sample answers for software engineers, and common mistakes to avoid.",
+    metaDescription: "Answer 'Tell me about a challenge you overcame' in India 2026: STAR method examples for freshers and experienced engineers, plus common mistakes.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min read",
@@ -16637,7 +16637,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "why-do-you-want-to-leave-your-current-job-india-2026",
     title: "Why Do You Want to Leave Your Current Job: Best Answer for India 2026",
-    metaDescription: "How to answer 'why do you want to leave your current job' in India 2026. Honest and professional sample answers for software engineers, what to say and what never to say, and how to handle follow-up questions.",
+    metaDescription: "Answering 'why do you want to leave your job' in India 2026: honest sample answers for engineers, what to say, what to avoid, and follow-up handling.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -16664,7 +16664,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "biggest-failure-interview-answer-india-2026",
     title: "What Is Your Biggest Failure: Best Answer for India 2026",
-    metaDescription: "How to answer 'what is your biggest failure' in India 2026. Sample answers for freshers and experienced software engineers, the structure that works, and the mistakes that lose you the offer.",
+    metaDescription: "How to answer 'what is your biggest failure' in India 2026: sample answers for freshers and experienced engineers, plus the mistakes that cost offers.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -16691,7 +16691,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "react-developer-interview-hooks-state-management-india-2026",
     title: "React Developer Interview Questions India 2026: Hooks, State Management, and System Design",
-    metaDescription: "Top React developer interview questions in India 2026. React hooks, virtual DOM, state management (Redux, Zustand), component patterns, performance optimisation, and coding questions asked at Indian product companies and startups.",
+    metaDescription: "React interview questions: hooks, virtual DOM, state management (Redux, Zustand), component patterns, and performance optimisation asked in India.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "15 min read",
@@ -16719,7 +16719,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sql-interview-queries-joins-window-functions-india-2026",
     title: "SQL Interview Questions India 2026: Queries, Joins, Window Functions, and Optimisation",
-    metaDescription: "Top SQL interview questions in India 2026. SQL joins, subqueries, window functions (ROW_NUMBER, RANK, LAG/LEAD), aggregations, query optimisation, indexing, and the most common SQL problems asked at Indian tech companies.",
+    metaDescription: "SQL interview questions: joins, subqueries, window functions (ROW_NUMBER, RANK, LAG/LEAD), aggregations, optimisation, and indexing at Indian companies.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "16 min read",
@@ -16747,7 +16747,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-analyst-interview-sql-excel-python-case-studies-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Excel, Python, and Case Studies",
-    metaDescription: "Top data analyst interview questions in India 2026. SQL queries, Excel/Google Sheets skills, Python pandas, statistics, business case studies, and how to answer 'walk me through a data project you worked on' at Indian companies.",
+    metaDescription: "Data analyst interview questions in India 2026: SQL, Excel/Sheets, Python pandas, statistics, business case studies, and 'walk me through a project'.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "15 min read",
@@ -16774,7 +16774,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "internship-interview-tech-mba-consulting-india-2026",
     title: "Internship Interview Questions India 2026: Tech, MBA, and Consulting Internships",
-    metaDescription: "Top internship interview questions in India 2026 for tech, MBA, and consulting internships. Sample answers, what interviewers actually evaluate, and how to stand out at Google, Microsoft, McKinsey, and Indian startup internship interviews.",
+    metaDescription: "Internship interview questions India 2026: tech, MBA, and consulting internships, sample answers, and standing out at Google, Microsoft, McKinsey.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -16801,7 +16801,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-improve-communication-skills-for-interview-india-2026",
     title: "How to Improve Communication Skills for Interviews India 2026",
-    metaDescription: "How to improve communication skills for job interviews in India 2026. Practical exercises, common communication mistakes Indian candidates make, how to speak clearly under pressure, and tools to practise.",
+    metaDescription: "Improving communication skills for interviews in India: practical exercises, common mistakes Indian candidates make, and speaking clearly under pressure.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min read",
@@ -16828,7 +16828,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "python-developer-interview-django-system-design-india-2026",
     title: "Python Developer Interview Questions India 2026: Core Python, Django, and System Design",
-    metaDescription: "Top Python developer interview questions in India 2026. Core Python (OOP, generators, decorators, GIL), Django/Flask, data structures, coding problems, and system design questions asked at Indian product companies and FAANG India.",
+    metaDescription: "Core Python (OOP, generators, decorators, GIL), Django/Flask, DSA, and system design questions at Indian product companies and FAANG India.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "14 min read",
@@ -16855,7 +16855,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "java-developer-interview-spring-boot-microservices-india-2026",
     title: "Java Developer Interview Questions India 2026: Core Java, Spring Boot, and Microservices",
-    metaDescription: "Top Java developer interview questions in India 2026. Core Java (collections, concurrency, JVM, streams), Spring Boot, Spring MVC, microservices, REST API design, and coding questions asked at Indian IT companies and product startups.",
+    metaDescription: "Java developer interview questions India 2026: collections, concurrency, JVM, streams, Spring Boot, microservices, REST APIs, and coding rounds.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "15 min read",
@@ -16882,7 +16882,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "node-js-interview-questions-india-2026",
     title: "Node.js Interview Questions India 2026: Event Loop, Async, and API Design",
-    metaDescription: "Top Node.js interview questions in India 2026. Event loop, non-blocking I/O, async/await vs callbacks vs promises, Express.js, REST API design, and Node.js performance questions asked at Indian product companies and startups.",
+    metaDescription: "Top Node.js interview questions in India 2026: event loop, non-blocking I/O, async/await vs callbacks, Express.js, REST API design, and performance.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -16909,7 +16909,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "aws-interview-ec2-s3-lambda-cloud-architecture-india-2026",
     title: "AWS Interview Questions India 2026: EC2, S3, Lambda, and Cloud Architecture",
-    metaDescription: "Top AWS cloud interview questions in India 2026. AWS core services (EC2, S3, Lambda, RDS, VPC, IAM), serverless architecture, cloud design patterns, and AWS certification-level questions asked at Indian IT companies and cloud roles.",
+    metaDescription: "AWS interview questions India 2026: EC2, S3, Lambda, RDS, VPC, IAM, serverless architecture, cloud design patterns, and certification-level questions.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -16936,7 +16936,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-manager-interview-product-design-metrics-india-2026",
     title: "Product Manager Interview Questions India 2026: Product Design, Metrics, and Case Studies",
-    metaDescription: "Top product manager interview questions in India 2026. Product design ('design an app for X'), metrics and data (how would you measure success), case studies, and PM behavioral questions asked at Indian product companies and FAANG India.",
+    metaDescription: "PM interview questions in India 2026: product design ('design an app for X'), metrics case studies, and PM behavioral questions at FAANG India.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "14 min read",
@@ -16963,7 +16963,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-answer-tell-me-about-yourself-india-2026",
     title: "How to Answer 'Tell Me About Yourself' in India 2026: Sample Answers for Freshers and Experienced",
-    metaDescription: "How to answer 'tell me about yourself' in job interviews in India 2026. Sample answers for freshers and experienced software engineers, the exact structure that works, and common mistakes to avoid.",
+    metaDescription: "How to answer 'tell me about yourself': sample answers for freshers and experienced engineers, the exact structure that works, and mistakes to avoid.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -16990,7 +16990,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "strengths-and-weaknesses-interview-answer-india-2026",
     title: "What Are Your Strengths and Weaknesses: Best Answer for India 2026",
-    metaDescription: "How to answer 'what are your strengths and weaknesses' in India 2026. Sample answers for software engineers and freshers, the structure that works, and the specific mistakes that signal low self-awareness to interviewers.",
+    metaDescription: "How to answer 'strengths and weaknesses': sample answers for engineers and freshers, a working structure, and mistakes that signal low self-awareness.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -17017,7 +17017,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "where-do-you-see-yourself-in-5-years-india-2026",
     title: "Where Do You See Yourself in 5 Years: Best Answer for India 2026",
-    metaDescription: "How to answer 'where do you see yourself in 5 years' in India 2026. Sample answers for freshers and experienced software engineers, what the interviewer is really evaluating, and the specific mistakes to avoid.",
+    metaDescription: "How to answer 'where do you see yourself in 5 years' in India 2026: sample answers for freshers and experienced engineers, and mistakes to avoid.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min read",
@@ -17044,7 +17044,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fresher-resume-tips-what-recruiters-look-for-india-2026",
     title: "Fresher Resume Tips India 2026: What Indian Recruiters Actually Look For",
-    metaDescription: "Resume tips for freshers in India 2026. What Indian recruiters actually look for, how to structure a fresher resume with no work experience, ATS optimisation, common mistakes, and sample resume format for campus placement.",
+    metaDescription: "What Indian recruiters actually look for in fresher resumes 2026: structure with no work experience, ATS optimisation, mistakes, and sample resume format.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min read",
@@ -17071,7 +17071,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "wipro-interview-freshers-nlth-technical-hr-2026",
     title: "Wipro Interview Questions for Freshers 2026: NLTH, Technical, and HR Round",
-    metaDescription: "Complete Wipro interview preparation guide for freshers 2026. Wipro NLTH test pattern, technical interview questions (Java, Python, DBMS, OS), HR round questions, and tips to crack Wipro campus placement.",
+    metaDescription: "Wipro freshers interview guide: NLTH test pattern, technical questions (Java, Python, DBMS, OS), HR round, and tips to crack Wipro campus placement.",
     company: "Wipro",
     category: "Company Guides",
     readTime: "12 min read",
@@ -17098,7 +17098,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "capgemini-interview-freshers-game-based-assessment-2026",
     title: "Capgemini Interview Questions for Freshers 2026: Game-Based Assessment, Technical, and HR Round",
-    metaDescription: "Complete Capgemini interview preparation guide for freshers 2026. Capgemini's game-based assessment, pseudo-code test, technical interview questions, and HR round tips for campus placement.",
+    metaDescription: "Capgemini's game-based assessment, pseudo-code test, technical interview questions, and HR round tips for campus placement 2026.",
     company: "Capgemini",
     category: "Company Guides",
     readTime: "11 min read",
@@ -17125,7 +17125,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "full-stack-developer-interview-frontend-backend-india-2026",
     title: "Full Stack Developer Interview Questions India 2026: Frontend, Backend, and System Design",
-    metaDescription: "Top full stack developer interview questions in India 2026. Frontend (React, HTML/CSS), backend (Node.js/Java/Python), databases, REST API design, system design basics, and full stack questions asked at Indian product companies and startups.",
+    metaDescription: "Full stack developer interview questions India 2026: React, HTML/CSS, Node.js/Java/Python backend, databases, REST APIs, and system design basics.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "14 min read",
@@ -17152,7 +17152,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "group-discussion-topics-campus-placement-india-2026",
     title: "Group Discussion (GD) Topics for Campus Placement India 2026: Tips and Sample Arguments",
-    metaDescription: "Top group discussion (GD) topics for campus placement in India 2026. Technology, current affairs, and abstract GD topics with sample arguments, how to perform well in a GD round, and common GD mistakes to avoid.",
+    metaDescription: "Top GD topics for campus placement India 2026: technology, current affairs, and abstract topics with sample arguments, tips, and common mistakes.",
     company: "Interview Skills",
     category: "Freshers",
     readTime: "11 min read",
@@ -17179,7 +17179,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "system-design-for-freshers-india-2026",
     title: "System Design for Freshers India 2026: How to Start and What to Study",
-    metaDescription: "System design guide for freshers and junior engineers in India 2026. What topics to start with, how to approach your first system design question, common interview patterns, and a step-by-step learning path.",
+    metaDescription: "System design for freshers in India 2026: what topics to start with, approaching your first question, common interview patterns, and a learning path.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min read",
@@ -17206,7 +17206,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tcs-nqt-preparation-2026",
     title: "TCS NQT Preparation 2026: Complete Guide to Pattern, Syllabus, and Tips",
-    metaDescription: "Complete TCS NQT 2026 preparation guide. TCS National Qualifier Test pattern, syllabus (aptitude, verbal, programming logic), section-wise tips, and mock test strategy for TCS campus placement.",
+    metaDescription: "TCS NQT 2026 prep guide: National Qualifier Test pattern, syllabus (aptitude, verbal, programming logic), section-wise tips, and mock test strategy.",
     company: "TCS",
     category: "Company Guides",
     readTime: "13 min read",
@@ -17233,7 +17233,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "why-should-we-hire-you-interview-answer-india-2026",
     title: "Why Should We Hire You: Best Answer for India 2026 (With Sample Answers)",
-    metaDescription: "How to answer 'why should we hire you' in India 2026. The exact structure that works, sample answers for freshers and experienced engineers, what interviewers actually want to hear, and common mistakes to avoid.",
+    metaDescription: "How to answer 'why should we hire you': the exact structure, sample answers for freshers and experienced engineers, and what interviewers want to hear.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min read",
@@ -17260,7 +17260,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "campus-placement-preparation-strategy-india-2026",
     title: "Campus Placement Preparation Strategy India 2026: Complete Timeline and Checklist",
-    metaDescription: "Complete campus placement preparation strategy for Indian engineering students 2026. Month-by-month timeline, what to focus on for aptitude, coding, technical interviews, and HR rounds, and how to manage multiple company placements.",
+    metaDescription: "Campus placement strategy for engineering students: month-by-month timeline for aptitude, coding, technical interviews, HR rounds, and multiple offers.",
     company: "Interview Skills",
     category: "Freshers",
     readTime: "13 min read",
@@ -17287,7 +17287,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salary-negotiation-scripts-india-2026",
     title: "Salary Negotiation Scripts India 2026: Word-for-Word Scripts for Engineers and Freshers",
-    metaDescription: "Salary negotiation scripts for India 2026. Exact word-for-word scripts for negotiating a job offer, counter-offer techniques, what to say when asked 'what are your salary expectations', and negotiation tips for both freshers and experienced engineers.",
+    metaDescription: "Word-for-word salary negotiation scripts for India 2026: counter-offer techniques, answering 'what are your salary expectations', for freshers too.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min read",
@@ -17314,7 +17314,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "mba-interview-questions-india-2026",
     title: "MBA Interview Questions India 2026: IIM, ISB, and Top B-School Interviews",
-    metaDescription: "Top MBA interview questions in India 2026. IIM, ISB, XLRI, and FMS interview preparation, 'why MBA' answers, leadership questions, case interviews, and what top Indian b-schools actually evaluate.",
+    metaDescription: "MBA interview questions India 2026: IIM, ISB, XLRI, and FMS prep, 'why MBA' answers, leadership questions, case interviews, and what b-schools evaluate.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -17341,7 +17341,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "accenture-interview-freshers-cognitive-technical-hr-2026",
     title: "Accenture Interview Questions for Freshers 2026: Cognitive, Technical, and HR Round",
-    metaDescription: "Complete Accenture interview preparation guide for freshers 2026. Accenture's cognitive assessment, coding test, technical interview questions, and HR round tips for campus and off-campus placement.",
+    metaDescription: "Accenture freshers interview prep: cognitive assessment, coding test, technical interview questions, and HR round tips for campus and off-campus placement.",
     company: "Accenture",
     category: "Company Guides",
     readTime: "12 min read",
@@ -17368,7 +17368,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "infosys-interview-freshers-infytq-hackwithinfy-2026",
     title: "Infosys Interview Questions for Freshers 2026: InfyTQ, HackWithInfy, and Interview Rounds",
-    metaDescription: "Complete Infosys interview preparation guide for freshers 2026. InfyTQ platform, HackWithInfy coding competition, Infosys aptitude test, technical interview questions, and HR round tips for campus placement.",
+    metaDescription: "Infosys 2026: InfyTQ platform, HackWithInfy coding competition, aptitude test, technical interview questions, and HR round tips.",
     company: "Infosys",
     category: "Company Guides",
     readTime: "12 min read",
@@ -17395,7 +17395,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-structures-algorithms-interview-india-2026",
     title: "Data Structures and Algorithms Interview Questions India 2026: The Complete Guide",
-    metaDescription: "Top DSA interview questions in India 2026. Arrays, linked lists, trees, graphs, dynamic programming, and coding patterns asked at FAANG India, Indian product companies, and campus placements. With complexity analysis.",
+    metaDescription: "DSA interview questions India 2026: arrays, linked lists, trees, graphs, dynamic programming, and coding patterns at FAANG India and campus placements.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "15 min read",
@@ -17422,7 +17422,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "react-developer-interview-hooks-performance-india-2026",
     title: "React Developer Interview Questions India 2026: Hooks, State Management, and Performance",
-    metaDescription: "Top React developer interview questions in India 2026. React hooks (useState, useEffect, useCallback, useMemo, useRef), state management (Redux, Context, Zustand), performance optimisation, and system design for React interviews.",
+    metaDescription: "React interview questions India 2026: hooks (useState, useEffect, useCallback, useMemo), Redux, Context, Zustand, performance, and system design.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -17449,7 +17449,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hr-interview-freshers-answers-preparation-tips-india-2026",
     title: "HR Interview Questions for Freshers India 2026: Questions, Answers, and Preparation Tips",
-    metaDescription: "Most common HR interview questions for freshers in India 2026. Tell me about yourself, why should we hire you, strengths and weaknesses, where do you see yourself in 5 years: with sample answers and tips.",
+    metaDescription: "Common HR interview questions for freshers in India 2026: tell me about yourself, strengths/weaknesses, 5-year plans, with sample answers and tips.",
     company: "Interview Skills",
     category: "Freshers",
     readTime: "11 min read",
@@ -17476,7 +17476,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "introduce-yourself-interview-freshers-india-2026",
     title: "How to Introduce Yourself in an Interview: Freshers Guide India 2026 (With Scripts)",
-    metaDescription: "How to introduce yourself in a job interview as a fresher in India 2026. Word-for-word self-introduction scripts, what to include, common mistakes, and tips for technical, HR, and campus placement interviews.",
+    metaDescription: "How to introduce yourself as a fresher in India 2026: word-for-word scripts, what to include, common mistakes, for technical, HR, and campus interviews.",
     company: "Interview Skills",
     category: "Freshers",
     readTime: "10 min read",
@@ -17503,7 +17503,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-analyst-interview-sql-python-statistics-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Python, Statistics, and Case Studies",
-    metaDescription: "Top data analyst interview questions in India 2026. SQL queries, Python pandas, statistics and probability, data visualisation, and business case studies asked at Indian product companies and analytics firms.",
+    metaDescription: "Data analyst interview questions: SQL queries, Python pandas, statistics and probability, data visualisation, and business case studies asked in India.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -17530,7 +17530,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-manager-interview-frameworks-case-studies-india-2026",
     title: "Product Manager Interview Questions India 2026: Frameworks, Case Studies, and Answers",
-    metaDescription: "Top product manager interview questions in India 2026. PM frameworks (product sense, root cause analysis, estimation), technical PM questions, behavioural questions, and case studies asked at Flipkart, Swiggy, Razorpay, and FAANG India.",
+    metaDescription: "PM interview questions: frameworks (product sense, root cause, estimation), behavioural questions, and case studies from Flipkart, Swiggy, Razorpay, FAANG.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -17557,7 +17557,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "coding-interview-preparation-india-2026",
     title: "Coding Interview Preparation India 2026: 12-Week Plan, Resources, and Tips",
-    metaDescription: "Complete coding interview preparation plan for India 2026. Week-by-week schedule, best resources (LeetCode, NeetCode, Codeforces), problem-solving patterns, and strategies for software engineering roles at product companies and FAANG India.",
+    metaDescription: "Coding interview prep plan for India 2026: 12-week schedule, best resources (LeetCode, NeetCode, Codeforces), problem patterns, and FAANG strategies.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min read",
@@ -17584,7 +17584,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "startup-vs-mnc-india-2026",
     title: "Startup vs MNC India 2026: Which Should You Join as a Software Engineer?",
-    metaDescription: "Startup vs MNC comparison for software engineers in India 2026. Salary, career growth, learning, job security, work culture, and how to decide which is better for your career stage and goals.",
+    metaDescription: "Startup vs MNC for software engineers in India 2026: salary, career growth, learning, job security, work culture, and how to decide for your career stage.",
     company: "Interview Skills",
     category: "Career Advice",
     readTime: "11 min",
@@ -17625,7 +17625,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cognizant-interview-freshers-genc-technical-hr-2026",
     title: "Cognizant Interview Questions for Freshers 2026: GenC, Technical, and HR Round",
-    metaDescription: "Complete Cognizant interview preparation guide for freshers 2026. Cognizant GenC hiring process, aptitude test, technical interview questions, and HR round tips for campus and off-campus placement.",
+    metaDescription: "Cognizant freshers interview prep: GenC hiring process, aptitude test, technical interview questions, and HR round tips for campus and off-campus roles.",
     company: "Cognizant",
     category: "Company Guides",
     readTime: "10 min",
@@ -17666,7 +17666,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "devops-engineer-interview-cicd-docker-kubernetes-india-2026",
     title: "DevOps Engineer Interview Questions India 2026: CI/CD, Docker, Kubernetes, and AWS",
-    metaDescription: "Top DevOps engineer interview questions in India 2026. CI/CD pipelines, Docker and containers, Kubernetes orchestration, AWS (EC2, S3, EKS, Lambda), Linux, monitoring, and infrastructure as code (Terraform) questions.",
+    metaDescription: "CI/CD, Docker, Kubernetes, AWS (EC2, S3, EKS, Lambda), Linux, monitoring, and Terraform questions for DevOps engineers in India, 2026.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min",
@@ -17707,7 +17707,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sql-interview-basic-queries-window-functions-india-2026",
     title: "SQL Interview Questions India 2026: From Basic Queries to Window Functions",
-    metaDescription: "Top SQL interview questions in India 2026. Basic SELECT and JOIN queries, GROUP BY and HAVING, window functions, CTEs, subqueries, and advanced SQL concepts asked at data analyst, backend, and software engineer interviews.",
+    metaDescription: "SQL interview questions India 2026: SELECT and JOIN, GROUP BY and HAVING, window functions, CTEs, subqueries for analyst and engineer interviews.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min",
@@ -17748,7 +17748,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "backend-engineer-interview-apis-databases-india-2026",
     title: "Backend Engineer Interview Questions India 2026: APIs, Databases, and System Design",
-    metaDescription: "Top backend engineer interview questions in India 2026. REST API design, database design, authentication, system design, and language-specific questions (Java, Python, Node.js) asked at Indian product companies and FAANG India.",
+    metaDescription: "Backend engineer interview questions India 2026: REST API design, databases, authentication, system design, and Java/Python/Node.js at FAANG India.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min",
@@ -17789,7 +17789,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "job-search-strategy-india-2026",
     title: "Job Search Strategy India 2026: How to Find and Land a Software Engineering Job",
-    metaDescription: "Complete job search strategy for software engineers in India 2026. Where to find jobs (LinkedIn, Naukri, AngelList India), how to apply effectively, referral strategy, and timeline management for a successful job switch.",
+    metaDescription: "Job search strategy for engineers in India 2026: LinkedIn, Naukri, AngelList India, applying effectively, referral strategy, and timeline management.",
     company: "Interview Skills",
     category: "Career Advice",
     readTime: "10 min",
@@ -17830,7 +17830,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "notice-period-negotiation-reduce-buyout-india-2026",
     title: "Notice Period Negotiation India 2026: How to Reduce or Buy Out Your Notice Period",
-    metaDescription: "How to negotiate your notice period in India 2026. Legally required notice periods, how to negotiate a shorter notice period with your current employer, notice period buyout calculation, and how to manage the transition.",
+    metaDescription: "Notice period negotiation in India 2026: legally required periods, negotiating a shorter notice, buyout calculation, and managing the transition.",
     company: "Interview Skills",
     category: "Career Advice",
     readTime: "9 min",
@@ -17871,7 +17871,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "machine-learning-engineer-interview-fundamentals-coding-india-2026",
     title: "Machine Learning Engineer Interview Questions India 2026: ML Fundamentals, Coding, and System Design",
-    metaDescription: "Top machine learning engineer interview questions in India 2026. ML algorithms (regression, classification, clustering), model evaluation, deep learning basics, MLOps, and system design for ML platforms.",
+    metaDescription: "ML engineer interview questions: algorithms (regression, classification, clustering), model evaluation, deep learning basics, MLOps, and ML system design.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min",
@@ -17912,7 +17912,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "work-from-home-jobs-india-2026",
     title: "Work From Home Jobs India 2026: Remote Software Engineering Opportunities and How to Get Them",
-    metaDescription: "Work from home (WFH) software engineering jobs in India 2026. How to find legitimate remote jobs, best platforms, interview tips for remote roles, and how to negotiate a remote or hybrid arrangement.",
+    metaDescription: "Work-from-home software engineering jobs in India: finding legitimate remote roles, best platforms, interview tips, and negotiating hybrid arrangements.",
     company: "Interview Skills",
     category: "Career Advice",
     readTime: "10 min",
@@ -17953,7 +17953,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "communication-skills-interview-india-2026",
     title: "How to Improve Communication Skills for Interviews India 2026: Practical Tips and Exercises",
-    metaDescription: "How to improve communication skills for job interviews in India 2026. Why communication matters, common mistakes, spoken English exercises, STAR answer structure, and how to practise before your interview.",
+    metaDescription: "Improve communication skills for job interviews in India 2026: common mistakes, spoken English exercises, STAR answer structure, and practice tips.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -17994,7 +17994,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "java-developer-interview-core-java-system-design-india-2026",
     title: "Java Developer Interview Questions India 2026: Core Java, Spring Boot, and System Design",
-    metaDescription: "Top Java developer interview questions in India 2026. Core Java (OOP, collections, multithreading, JVM), Spring Boot, microservices, Hibernate/JPA, and system design questions asked at product companies and FAANG India.",
+    metaDescription: "Java developer interview India 2026: Core Java (OOP, collections, multithreading, JVM), Spring Boot, microservices, Hibernate/JPA, system design.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min",
@@ -18035,7 +18035,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "python-developer-interview-fastapi-data-questions-india-2026",
     title: "Python Developer Interview Questions India 2026: Core Python, Django, FastAPI, and Data Questions",
-    metaDescription: "Top Python developer interview questions in India 2026. Core Python (OOP, decorators, generators, async), Django, FastAPI, data structures, and Python for data engineering and ML pipelines.",
+    metaDescription: "Python developer interview questions for India: core Python (OOP, decorators, generators, async), Django, FastAPI, and data/ML pipeline questions.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min",
@@ -18076,7 +18076,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "amazon-india-leadership-principles-coding-2026",
     title: "Amazon India Interview Questions 2026: Leadership Principles, Coding, and System Design",
-    metaDescription: "Complete Amazon India interview preparation guide 2026. Amazon's Leadership Principles (LP) questions and answers, coding rounds, system design, and Bar Raiser round tips for SDE-1, SDE-2, and senior roles.",
+    metaDescription: "Amazon's Leadership Principles questions and answers, coding rounds, system design, and Bar Raiser tips for SDE-1, SDE-2, and senior roles.",
     company: "Amazon",
     category: "Company Guides",
     readTime: "12 min",
@@ -18117,7 +18117,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "microsoft-india-coding-system-design-behavioural-2026",
     title: "Microsoft India Interview Questions 2026: Coding, System Design, and Behavioural Rounds",
-    metaDescription: "Complete Microsoft India interview guide 2026. Microsoft interview process, coding round questions (LeetCode style), system design, behavioural (growth mindset) questions, and tips for SDE-1, SDE-2, and senior roles at Microsoft India.",
+    metaDescription: "Microsoft India interview guide 2026: process, LeetCode-style coding rounds, system design, growth-mindset behavioural questions, SDE-1 to senior.",
     company: "Microsoft",
     category: "Company Guides",
     readTime: "11 min",
@@ -18158,7 +18158,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "resume-writing-tips-india-2026",
     title: "Resume Writing Tips for Software Engineers India 2026: ATS-Optimised, 1-Page, Achievement-Focused",
-    metaDescription: "Resume writing guide for software engineers in India 2026. How to write a 1-page ATS-optimised resume, achievement-focused bullet points, projects section for freshers, and common resume mistakes to avoid.",
+    metaDescription: "Resume guide for software engineers India 2026: 1-page ATS-optimised format, achievement-focused bullets, projects section for freshers, and mistakes.",
     company: "Interview Skills",
     category: "Career Advice",
     readTime: "10 min",
@@ -18199,7 +18199,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "problem-solving-interview-india-2026",
     title: "Problem Solving Interview Questions India 2026: Aptitude, Logical Reasoning, and Case Studies",
-    metaDescription: "Problem solving interview questions for India 2026. Aptitude test preparation (time-work, percentages, number series), logical reasoning (syllogisms, seating arrangements), and case study/guesstimate questions for product roles.",
+    metaDescription: "Problem solving interview prep India 2026: aptitude (time-work, percentages, series), logical reasoning (syllogisms, seating), and case study questions.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -18240,7 +18240,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fresher-job-tips-india-2026",
     title: "Fresher Job Tips India 2026: How to Land Your First Software Engineering Job",
-    metaDescription: "Complete job hunting guide for freshers in India 2026. How to get your first software engineering job with no experience, resume tips for freshers, campus vs off-campus placement strategy, and building a portfolio.",
+    metaDescription: "Job hunting guide for freshers in India 2026: landing your first SWE job with no experience, resume tips, campus vs off-campus strategy, and portfolios.",
     company: "Interview Skills",
     category: "Freshers",
     readTime: "11 min",
@@ -18281,7 +18281,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "google-india-coding-system-design-googliness-2026",
     title: "Google India Interview Questions 2026: Coding, System Design, and Googliness",
-    metaDescription: "Complete Google India interview guide 2026. Google's interview process (coding rounds, system design, Googleyness), the most common LeetCode questions asked at Google India, and what the Google hiring committee looks for.",
+    metaDescription: "Google India interview guide: coding rounds, system design, Googleyness, the most common LeetCode questions asked, and what the hiring committee looks for.",
     company: "Google",
     category: "Company Guides",
     readTime: "12 min",
@@ -18322,7 +18322,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "flipkart-interview-sde-rounds-culture-fit-2026",
     title: "Flipkart Interview Questions 2026: SDE Rounds, System Design, and Culture Fit",
-    metaDescription: "Complete Flipkart interview preparation guide 2026. Flipkart SDE interview process, coding round questions, system design (e-commerce specific), machine coding round guide, and SDE-1/SDE-2 salary details.",
+    metaDescription: "Flipkart interview guide: SDE interview process, coding round questions, e-commerce-specific system design, machine coding round, and SDE-1/SDE-2 salary.",
     company: "Flipkart",
     category: "Company Guides",
     readTime: "11 min",
@@ -18363,7 +18363,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "zomato-swiggy-interview-questions-2026",
     title: "Zomato and Swiggy Interview Questions 2026: SDE Rounds, Data Questions, and Product Sense",
-    metaDescription: "Complete Zomato and Swiggy interview guide 2026. SDE coding rounds, data analyst interview questions (SQL, metrics), product sense questions, and system design specific to food delivery platforms.",
+    metaDescription: "Zomato and Swiggy interview guide 2026: SDE coding rounds, data analyst questions (SQL, metrics), product sense, and food-delivery system design.",
     company: "Swiggy",
     category: "Company Guides",
     readTime: "11 min",
@@ -18404,7 +18404,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-structures-algorithms-interview-dsa-guide-india-2026",
     title: "Data Structures and Algorithms Interview India 2026: Complete DSA Guide",
-    metaDescription: "Complete DSA interview preparation guide for India 2026. Arrays, linked lists, trees, graphs, dynamic programming, and sorting algorithms with code examples and complexity analysis for Indian tech company coding rounds.",
+    metaDescription: "DSA interview guide India 2026: arrays, linked lists, trees, graphs, dynamic programming, sorting algorithms with code examples and complexity analysis.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min",
@@ -18445,7 +18445,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "infosys-interview-infytq-elite-digital-specialist-2026",
     title: "Infosys Interview Questions 2026: InfyTQ, Elite, and Digital Specialist Track Preparation",
-    metaDescription: "Complete Infosys interview preparation guide 2026. Infosys InfyTQ assessment, Elite and Digital Specialist track requirements, technical interview questions (coding, OOP, DBMS), and HR round tips.",
+    metaDescription: "Infosys interview prep: InfyTQ assessment, Elite and Digital Specialist track requirements, technical questions (coding, OOP, DBMS), and HR round tips.",
     company: "Infosys",
     category: "Company Guides",
     readTime: "11 min",
@@ -18486,7 +18486,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "wipro-interview-elite-turbo-wilp-track-2026",
     title: "Wipro Interview Questions 2026: Elite, Turbo, and WILP Track Preparation Guide",
-    metaDescription: "Complete Wipro interview preparation guide 2026. Wipro Elite and Turbo track online assessment, coding questions, HR interview, WILP program details, and SDE salary for freshers at Wipro.",
+    metaDescription: "Wipro Elite and Turbo track online assessment, coding questions, HR interview, WILP program details, and SDE fresher salary, 2026.",
     company: "Interview Skills",
     category: "Company Guides",
     readTime: "10 min",
@@ -18527,7 +18527,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tcs-nqt-national-qualifier-test-guide-2026",
     title: "TCS NQT Preparation 2026: Complete Guide to Clear TCS National Qualifier Test",
-    metaDescription: "Complete TCS NQT preparation guide 2026. TCS NQT exam pattern (Foundation, Advanced, Expert), section-wise preparation strategy, coding questions, previous year papers, and TCS NQT salary bands.",
+    metaDescription: "TCS NQT prep guide 2026: exam pattern (Foundation, Advanced, Expert), section-wise strategy, coding questions, past papers, and salary bands.",
     company: "TCS",
     category: "Company Guides",
     readTime: "11 min",
@@ -18568,7 +18568,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "accenture-interview-cognitive-technical-assessment-2026",
     title: "Accenture Interview Questions 2026: Cognitive and Technical Assessment, Interview Guide",
-    metaDescription: "Complete Accenture interview preparation guide 2026. Accenture's hiring process (Cognitive Assessment, Technical and Communication Assessment), interview questions, and role and salary details for freshers.",
+    metaDescription: "Accenture interview guide 2026: Cognitive Assessment, Technical and Communication Assessment, interview questions, and roles/salary for freshers.",
     company: "Interview Skills",
     category: "Company Guides",
     readTime: "10 min",
@@ -18609,7 +18609,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cognizant-interview-genc-elevate-preparation-guide-2026",
     title: "Cognizant Interview Questions 2026: GenC, GenC Next, and GenC Elevate Preparation Guide",
-    metaDescription: "Complete Cognizant interview preparation guide 2026. Cognizant's GenC, GenC Next, and GenC Elevate tracks, online assessment, technical interview questions, HR interview tips, and Cognizant salary bands for freshers.",
+    metaDescription: "Cognizant interview guide 2026: GenC, GenC Next, and GenC Elevate tracks, online assessment, technical rounds, HR tips, and salary bands for freshers.",
     company: "Interview Skills",
     category: "Company Guides",
     readTime: "10 min",
@@ -18650,7 +18650,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "razorpay-interview-sde-data-roles-fintech-2026",
     title: "Razorpay Interview Questions 2026: SDE and Data Roles, Coding, and Fintech Domain Knowledge",
-    metaDescription: "Complete Razorpay interview guide 2026. Razorpay SDE and data engineering interview process, coding questions, fintech system design, and what Razorpay looks for in technical candidates.",
+    metaDescription: "Razorpay interview guide 2026: SDE and data engineering process, coding questions, fintech system design, and what Razorpay looks for.",
     company: "Razorpay",
     category: "Company Guides",
     readTime: "11 min",
@@ -18691,7 +18691,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cred-phonepe-interview-questions-2026",
     title: "CRED and PhonePe Interview Questions 2026: SDE Interview Process and Fintech Domain Guide",
-    metaDescription: "Complete CRED and PhonePe interview guide 2026. SDE interview process at CRED and PhonePe, coding round questions, system design for payments and credit, and what top Indian fintech companies look for.",
+    metaDescription: "CRED and PhonePe SDE interview guide: process, coding round questions, system design for payments and credit, and what top Indian fintechs look for.",
     company: "Interview Skills",
     category: "Company Guides",
     readTime: "11 min",
@@ -18732,7 +18732,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "meesho-zepto-blinkit-interview-2026",
     title: "Meesho, Zepto, and Blinkit Interview Questions 2026: Quick Commerce and Social Commerce SDE Guide",
-    metaDescription: "Interview preparation guide for Meesho, Zepto, and Blinkit 2026. SDE interview process, coding questions, system design for quick commerce (10-minute delivery), and social commerce platforms.",
+    metaDescription: "Meesho, Zepto, and Blinkit interview guide: SDE process, coding questions, and system design for 10-minute quick commerce and social commerce platforms.",
     company: "Interview Skills",
     category: "Company Guides",
     readTime: "11 min",
@@ -18773,7 +18773,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-analyst-interview-statistics-business-case-india-2026",
     title: "Data Analyst Interview Questions India 2026: SQL, Statistics, Python, and Business Case Questions",
-    metaDescription: "Top data analyst interview questions in India 2026. SQL (window functions, CTEs, joins), statistics (A/B testing, probability), Python for data analysis (pandas, numpy), and business case/metrics questions.",
+    metaDescription: "Data analyst interview questions in India 2026: SQL (window functions, CTEs, joins), statistics (A/B testing), Python pandas/numpy, and business cases.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min",
@@ -18814,7 +18814,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "go-developer-interview-questions-2026",
     title: "Go (Golang) Developer Interview Questions 2026: Concurrency, Goroutines, and Backend Systems",
-    metaDescription: "Complete Go developer interview guide 2026. Goroutines, channels, interfaces, error handling, Go concurrency patterns, and system design questions asked in Go backend developer interviews in India.",
+    metaDescription: "Go developer interview guide 2026: goroutines, channels, interfaces, error handling, concurrency patterns, and system design for Go backend roles in India.",
     company: "Interview Skills",
     category: "Role Guides",
     readTime: "11 min",
@@ -18847,7 +18847,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "devops-sre-interview-cicd-monitoring-incident-india-2026",
     title: "DevOps and SRE Interview Questions India 2026: CI/CD, Kubernetes, Monitoring, and Incident Management",
-    metaDescription: "Complete DevOps and SRE interview guide India 2026. CI/CD pipelines, Docker, Kubernetes, Terraform, monitoring and alerting, incident management, and SLO/SLI/SLA questions asked in Indian companies.",
+    metaDescription: "DevOps and SRE interview guide for India: CI/CD, Docker, Kubernetes, Terraform, monitoring and alerting, incident management, and SLO/SLI/SLA questions.",
     company: "Interview Skills",
     category: "Role Guides",
     readTime: "12 min",
@@ -18884,7 +18884,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-manager-interview-product-sense-execution-india-2026",
     title: "Product Manager Interview Questions India 2026: Product Sense, Metrics, Case Studies, and Execution",
-    metaDescription: "Complete product manager interview guide India 2026. Product sense questions, metrics framework, product case studies, prioritisation frameworks, and PM interview preparation for Flipkart, Swiggy, Razorpay, and FAANG India.",
+    metaDescription: "Product sense, metrics framework, case studies, and prioritisation frameworks for PM interviews at Flipkart, Swiggy, Razorpay, and FAANG India.",
     company: "Interview Skills",
     category: "Role Guides",
     readTime: "13 min",
@@ -18917,7 +18917,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "star-method-answers-behavioral-interview-2026",
     title: "STAR Method Answers 2026: How to Answer Behavioral Interview Questions with Real Examples",
-    metaDescription: "Master the STAR method for behavioral interviews 2026. Situation, Task, Action, Result framework with real answer examples for tell me about a challenge, leadership, conflict, failure, and teamwork questions.",
+    metaDescription: "Master the STAR method 2026: Situation, Task, Action, Result framework with real answers for challenge, leadership, conflict, and teamwork questions.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -18950,7 +18950,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "salary-negotiation-offer-letter-india-2026",
     title: "Salary Negotiation and Offer Letter Guide India 2026: How to Negotiate Your CTC and Counter-Offer",
-    metaDescription: "Complete salary negotiation guide India 2026. How to negotiate CTC, evaluate offer letters, counter-offer scripts, variable pay and stock options, and negotiating with TCS, Infosys, startups, and FAANG India.",
+    metaDescription: "Salary negotiation guide India 2026: negotiate CTC, evaluate offer letters, counter-offer scripts, stock options, and negotiating with TCS, Infosys, FAANG.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min",
@@ -18983,7 +18983,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "linkedin-profile-optimization-india-2026",
     title: "LinkedIn Profile Optimization India 2026: How to Get Noticed by Recruiters and Land More Interviews",
-    metaDescription: "Complete LinkedIn profile optimization guide for Indian professionals 2026. Headline, summary, experience, skills, recommendations, and how to make your profile attractive to Indian and global recruiters.",
+    metaDescription: "LinkedIn optimization for Indian professionals 2026: headline, summary, experience, skills, recommendations, and getting noticed by recruiters.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "10 min",
@@ -19016,7 +19016,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "interview-day-preparation-tips-india-2026",
     title: "Interview Day Preparation Guide India 2026: What to Do the Night Before, During, and After Your Interview",
-    metaDescription: "Complete interview day preparation guide India 2026. What to prepare the night before, how to manage nerves, online interview setup checklist, in-person interview etiquette, and what to do after the interview.",
+    metaDescription: "Interview day prep for India 2026: night-before checklist, managing nerves, online interview setup, in-person etiquette, and post-interview steps.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min",
@@ -19049,7 +19049,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "swiggy-zomato-engineering-interview-2026",
     title: "Swiggy and Zomato Engineering Interview Questions 2026: Hyperlocal Tech, System Design, and Food-Tech Domain",
-    metaDescription: "Complete Swiggy and Zomato engineering interview guide 2026. SDE interview process, system design for hyperlocal delivery, food-tech domain knowledge, coding questions, and what India's top food-tech companies look for.",
+    metaDescription: "Swiggy and Zomato engineering interview guide: SDE process, hyperlocal delivery system design, food-tech domain knowledge, and coding questions.",
     company: "Interview Skills",
     category: "Company Guides",
     readTime: "12 min",
@@ -19082,7 +19082,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "aws-cloud-computing-interview-india-2026",
     title: "AWS and Cloud Computing Interview Questions India 2026: EC2, S3, Lambda, and Cloud Architecture",
-    metaDescription: "Complete AWS and cloud computing interview guide India 2026. EC2, S3, Lambda, RDS, VPC, IAM, and cloud architecture questions for software engineer and DevOps roles at Indian companies and MNCs.",
+    metaDescription: "AWS and cloud computing interview guide: EC2, S3, Lambda, RDS, VPC, IAM, and cloud architecture questions for SWE and DevOps roles in India, MNCs.",
     company: "Interview Skills",
     category: "Role Guides",
     readTime: "12 min",
@@ -19115,7 +19115,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "competitive-programming-interview-preparation-india-2026",
     title: "Competitive Programming for Interviews India 2026: LeetCode Strategy, DSA Roadmap, and Contest Tips",
-    metaDescription: "Complete competitive programming and LeetCode guide for Indian engineering interviews 2026. DSA topics by priority, LeetCode problem patterns, Codeforces strategy, and interview coding round tips for FAANG and top Indian companies.",
+    metaDescription: "Competitive programming guide for Indian interviews 2026: DSA topics by priority, LeetCode patterns, Codeforces strategy, for FAANG and top companies.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "13 min",
@@ -19152,7 +19152,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "react-developer-interview-hooks-performance-state-india-2026",
     title: "React Developer Interview Questions India 2026: Hooks, Performance, and State Management",
-    metaDescription: "Complete React developer interview guide India 2026. React hooks, component lifecycle, state management, performance optimisation, and React interview questions at Indian product companies and startups.",
+    metaDescription: "React developer interview India 2026: hooks, component lifecycle, state management, performance optimisation at Indian product companies and startups.",
     company: "Interview Skills",
     category: "Technical",
     readTime: "11 min",
@@ -19181,7 +19181,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "nodejs-developer-interview-questions-india-2026",
     title: "Node.js Developer Interview Questions India 2026: Event Loop, Express.js, and Production Architecture",
-    metaDescription: "Complete Node.js developer interview guide India 2026. Event loop, async programming, Express.js, REST API design, production architecture, and Node.js interview questions at Indian product companies and startups.",
+    metaDescription: "Node.js developer interview guide for India: event loop, async programming, Express.js, REST API design, production architecture, and startup questions.",
     company: "Interview Skills",
     category: "Technical",
     readTime: "11 min",
@@ -19210,7 +19210,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tell-me-about-yourself-answer-formula-india-2026",
     title: "Tell Me About Yourself: Best Answer Formula for Indian Interviews 2026 (Fresher and Experienced)",
-    metaDescription: "Best answers to 'tell me about yourself' for Indian job interviews 2026. Step-by-step formula, sample answers for freshers and experienced candidates, common mistakes, and how to customise for different company types.",
+    metaDescription: "Step-by-step formula and sample answers for freshers and experienced candidates, common mistakes, and how to customise per company type.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min",
@@ -19239,7 +19239,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "why-should-we-hire-you-examples-freshers-india-2026",
     title: "Why Should We Hire You: Best Answer for Indian Interviews 2026 (With Examples for Freshers and Experienced)",
-    metaDescription: "Best answers to 'why should we hire you' for Indian job interviews 2026. A 3-part answer structure, fresher script, experienced professional script, and company-specific examples for TCS, Infosys, Razorpay, and Google India.",
+    metaDescription: "Best answers to 'why should we hire you' 2026: a 3-part structure, fresher and experienced scripts, with examples for TCS, Infosys, Razorpay, Google.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min",
@@ -19268,7 +19268,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "strengths-weaknesses-interview-answer-india-2026",
     title: "Strengths and Weaknesses Interview Answer India 2026: Credible Examples for Engineers and Freshers",
-    metaDescription: "Best answers for strengths and weaknesses questions in Indian interviews 2026. Credible strength examples, how to frame a weakness without self-sabotage, fresher-specific answers, and role-specific examples for software engineers, product managers, and freshers.",
+    metaDescription: "Strengths and weaknesses interview answers India 2026: credible strengths, framing weaknesses without self-sabotage, and role-specific examples.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "9 min",
@@ -19297,7 +19297,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-engineer-interview-questions-india-2026-advanced",
     title: "Data Engineer Interview Questions India 2026: Spark, Kafka, Airflow, Data Pipelines, and SQL at Scale",
-    metaDescription: "Complete data engineer interview guide India 2026. Apache Spark, Kafka, Airflow, data pipeline design, SQL at scale, data warehouse concepts, and data engineering interview questions at Indian product companies and MNCs.",
+    metaDescription: "Data engineer interview guide India 2026: Apache Spark, Kafka, Airflow, pipeline design, SQL at scale, and data warehouse concepts at product companies.",
     company: "Interview Skills",
     category: "Role Guides",
     readTime: "12 min",
@@ -19326,7 +19326,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "campus-placement-strategy-india-2026",
     title: "Campus Placement Strategy India 2026: Complete Guide for Engineering Students at IIT, NIT, and Private Colleges",
-    metaDescription: "Complete campus placement guide India 2026. How to prepare for on-campus placements at IIT, NIT, BITS, and tier-2 engineering colleges. Aptitude, coding, GD, and HR rounds with company-specific strategies for TCS, Infosys, Google, and Amazon.",
+    metaDescription: "Campus placement guide for IIT, NIT, BITS, and tier-2 colleges 2026: aptitude, coding, GD, HR rounds, with strategies for TCS, Infosys, Google, Amazon.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min",
@@ -19355,7 +19355,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "machine-learning-engineer-interview-india-2026",
     title: "Machine Learning Engineer Interview Questions India 2026: ML Algorithms, System Design, and Coding",
-    metaDescription: "Complete ML engineer interview guide India 2026. Machine learning algorithms, model evaluation, ML system design, Python coding, and what companies like Google, Amazon, Flipkart, and Indian AI startups look for in MLE candidates.",
+    metaDescription: "ML engineer interview guide: algorithms, model evaluation, ML system design, Python coding, and what Google, Amazon, Flipkart, and AI startups look for.",
     company: "Interview Skills",
     category: "Role Guides",
     readTime: "13 min",
@@ -19384,7 +19384,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ibps-banking-it-officer-interview-india-2026",
     title: "IBPS and Banking IT Officer Interview Questions India 2026: Computer Knowledge, Banking Domain, and Interview Prep",
-    metaDescription: "Complete IBPS IT Officer and banking tech interview guide India 2026. Computer knowledge, banking domain awareness, IBPS SO IT officer exam pattern, and interview prep for SBI, PNB, Bank of Baroda technology roles.",
+    metaDescription: "IBPS IT Officer and banking tech interview guide: computer knowledge, banking domain awareness, exam pattern, and prep for SBI, PNB, Bank of Baroda.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "11 min",
@@ -19413,7 +19413,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "iim-mba-interview-preparation-2026",
     title: "IIM MBA Interview Preparation 2026: PI Questions, WAT, GD, and What IIMs Look For in Candidates",
-    metaDescription: "Complete IIM MBA interview preparation guide 2026. Personal Interview (PI) questions at IIM A, B, C, L, K, and I, WAT (Written Ability Test), Group Discussion, academic background questions, and what IIMs look for.",
+    metaDescription: "IIM MBA interview prep 2026: Personal Interview questions at IIM A, B, C, L, K, I, WAT, Group Discussion, academic questions, and what IIMs look for.",
     company: "Interview Skills",
     category: "Interview Skills",
     readTime: "12 min",
@@ -19442,7 +19442,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "flutter-dart-interview-questions-india-2026",
     title: "Flutter and Dart Interview Questions India 2026: Mobile Development, Widgets, and State Management",
-    metaDescription: "Complete Flutter and Dart interview guide India 2026. Flutter widget tree, state management (Provider, Riverpod, BLoC), Dart async programming, animations, and Flutter interview questions at Indian startups and product companies.",
+    metaDescription: "Flutter and Dart interview guide India 2026: widget tree, state management (Provider, Riverpod, BLoC), Dart async programming, and animations questions.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "13 min",
@@ -19483,7 +19483,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "aws-solutions-architect-interview-india-2026",
     title: "AWS Solutions Architect Interview Questions India 2026: SAA-C03 Exam and Cloud Architecture",
-    metaDescription: "Complete AWS Solutions Architect interview guide India 2026. SAA-C03 exam preparation, AWS services (EC2, S3, RDS, Lambda, VPC), cloud architecture patterns, and AWS interview questions at Indian companies and MNCs.",
+    metaDescription: "AWS Solutions Architect interview guide for India: SAA-C03 exam prep, EC2, S3, RDS, Lambda, VPC, cloud architecture patterns, and questions at Indian MNCs.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "14 min",
@@ -19520,7 +19520,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "career-switch-to-software-engineering-india-2026",
     title: "Career Switch to Software Engineering India 2026: Non-CS to Tech Complete Guide",
-    metaDescription: "Complete guide to switching careers to software engineering in India 2026. How non-CS graduates (mechanical, electrical, civil, commerce) can transition to tech, what to learn, how long it takes, and realistic salary expectations.",
+    metaDescription: "How non-CS graduates (mechanical, electrical, civil, commerce) can switch to software engineering: what to learn, timeline, and realistic salary.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "12 min",
@@ -19557,7 +19557,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "returning-to-work-after-career-break-india-2026",
     title: "Returning to Work After a Career Break in India 2026: Tech and Non-Tech Guide",
-    metaDescription: "Complete guide to returning to work after a career break in India 2026. How to explain a gap in resume, upskill in 3-6 months, return-to-work programs at Indian companies, and strategies for women returning after maternity leave.",
+    metaDescription: "Returning to work after a career break in India 2026: explaining resume gaps, upskilling in 3-6 months, return-to-work programs, and maternity returns.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "11 min",
@@ -19594,7 +19594,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "technical-architect-interview-questions-india-2026",
     title: "Technical Architect and Solutions Architect Interview Questions India 2026: System Design, Leadership, and Architecture Patterns",
-    metaDescription: "Complete technical architect interview guide India 2026. System design for architect roles, architecture patterns (microservices, event-driven, CQRS), technology selection trade-offs, and leadership questions for principal engineer and architect roles.",
+    metaDescription: "Technical architect interview guide India 2026: system design, architecture patterns (microservices, event-driven, CQRS), trade-offs, and leadership.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "14 min",
@@ -19631,7 +19631,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-design-ux-interview-india-2026",
     title: "Product Design and UX Interview Questions India 2026: Portfolio, Design Process, and Case Studies",
-    metaDescription: "Complete product design and UX interview guide India 2026. Portfolio presentation tips, design process questions, product thinking, UX case studies, and what companies like Flipkart, Swiggy, PhonePe, and CRED look for in designers.",
+    metaDescription: "Product design and UX interview guide India 2026: portfolio tips, design process, product thinking, case studies, and what Flipkart, Swiggy, and CRED seek.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -19668,7 +19668,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cloud-engineer-interview-questions-india-2026",
     title: "Cloud Engineer Interview Questions India 2026: AWS, Azure, GCP, and Cloud Architecture",
-    metaDescription: "Complete cloud engineer interview guide India 2026. AWS, Azure, GCP services comparison, cloud networking, IAM, cost optimisation, Infrastructure as Code (Terraform, CloudFormation), and cloud engineering interview questions at Indian IT and product companies.",
+    metaDescription: "Cloud engineer interview guide India 2026: AWS, Azure, GCP compared, networking, IAM, cost optimisation, and Terraform/CloudFormation IaC questions.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "13 min",
@@ -19705,7 +19705,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "contract-freelance-tech-jobs-india-2026",
     title: "Contract and Freelance Tech Jobs India 2026: How to Find Clients, Set Rates, and Manage Taxes",
-    metaDescription: "Complete guide to contract and freelance software engineering in India 2026. Finding clients (Upwork, Toptal, direct), setting rates in INR and USD, managing GST and income tax as a freelancer, and transitioning from full-time to freelance.",
+    metaDescription: "Freelance software engineering in India: finding clients (Upwork, Toptal, direct), setting rates in INR/USD, GST and income tax, and going full-time.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "12 min",
@@ -19742,7 +19742,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "mobile-app-developer-interview-india-2026",
     title: "Mobile App Developer Interview Questions India 2026: Android, iOS, and React Native",
-    metaDescription: "Complete mobile app developer interview guide India 2026. Android development (Kotlin, Jetpack Compose), iOS (Swift, SwiftUI), React Native, mobile system design, and what Indian companies look for in mobile engineers.",
+    metaDescription: "Mobile app developer interview guide: Android (Kotlin, Jetpack Compose), iOS (Swift, SwiftUI), React Native, mobile system design, and hiring expectations.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "13 min",
@@ -19779,7 +19779,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "java-developer-interview-questions-advanced-india-2026",
     title: "Advanced Java Interview Questions India 2026: JVM Internals, Concurrency, and Spring Boot",
-    metaDescription: "Advanced Java interview guide India 2026. JVM internals (garbage collection, memory model), Java concurrency (threads, locks, executors), Spring Boot advanced topics, and what senior Java developer interviews at Indian BFSI and product companies look for.",
+    metaDescription: "Advanced Java interview guide India 2026: JVM internals, garbage collection, concurrency (threads, locks), Spring Boot, for BFSI and product companies.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "14 min",
@@ -19816,7 +19816,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "rust-developer-interview-india-2026",
     title: "Rust Developer Interview Questions India 2026: Ownership, Concurrency, and Systems Programming",
-    metaDescription: "Complete Rust developer interview guide India 2026. Rust ownership model, borrow checker, lifetimes, concurrency, async programming, and Rust interview questions at Indian product companies and global MNCs.",
+    metaDescription: "Rust developer interview India 2026: ownership model, borrow checker, lifetimes, concurrency, async programming at product companies and global MNCs.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "13 min",
@@ -19853,7 +19853,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "graphql-api-interview-india-2026",
     title: "GraphQL API Interview Questions India 2026: Schema Design, Resolvers, and Performance",
-    metaDescription: "Complete GraphQL interview guide India 2026. GraphQL vs REST comparison, schema design, resolvers, N+1 problem, subscriptions, Apollo Server, and GraphQL interview questions at Indian product companies.",
+    metaDescription: "GraphQL interview guide for India: GraphQL vs REST, schema design, resolvers, N+1 problem, subscriptions, Apollo Server, and product company questions.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -19890,7 +19890,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "qa-automation-testing-interview-india-2026",
     title: "QA Automation Testing Interview Questions India 2026: Selenium, Cypress, Playwright, and Test Strategy",
-    metaDescription: "Complete QA automation testing interview guide India 2026. Selenium, Cypress, Playwright, API testing (Postman, RestAssured), test strategy, and QA engineer interview questions at Indian IT and product companies.",
+    metaDescription: "Selenium, Cypress, Playwright, API testing (Postman, RestAssured), test strategy, and QA questions at Indian IT and product companies, 2026.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -19927,7 +19927,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "react-native-developer-interview-india-2026",
     title: "React Native Developer Interview Questions India 2026: Components, Navigation, and Performance",
-    metaDescription: "Complete React Native developer interview guide India 2026. React Native bridge vs new architecture, navigation (React Navigation), state management, performance optimisation, and React Native interview questions at Indian startups and product companies.",
+    metaDescription: "React Native interview guide India 2026: bridge vs new architecture, React Navigation, state management, performance optimisation, and questions.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -19964,7 +19964,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "power-bi-data-analyst-interview-india-2026",
     title: "Power BI and Data Analyst Interview Questions India 2026: DAX, Data Modelling, and Business Intelligence",
-    metaDescription: "Complete Power BI and data analyst interview guide India 2026. DAX formulas, data modelling (star schema, snowflake), Power Query, business intelligence interview questions, and what Indian companies look for in BI analysts.",
+    metaDescription: "Power BI and data analyst interview guide India 2026: DAX formulas, star/snowflake data modelling, Power Query, and what Indian companies look for.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20001,7 +20001,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "php-laravel-developer-interview-india-2026",
     title: "PHP and Laravel Developer Interview Questions India 2026: MVC, Eloquent, and Web Development",
-    metaDescription: "Complete PHP and Laravel developer interview guide India 2026. PHP fundamentals, Laravel MVC framework, Eloquent ORM, REST APIs, and PHP interview questions at Indian web development agencies and product companies.",
+    metaDescription: "PHP and Laravel interview guide India 2026: PHP fundamentals, Laravel MVC, Eloquent ORM, REST APIs, at web agencies and product companies.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20038,7 +20038,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "startup-job-hunting-india-2026",
     title: "How to Get a Job at an Indian Startup in 2026: From Application to Offer",
-    metaDescription: "Complete guide to finding and landing a job at Indian startups in 2026. Where to find startup job openings, how the startup interview process differs from IT services, equity and ESOPs, and which Indian startups are worth joining.",
+    metaDescription: "Getting a job at an Indian startup in 2026: where to find openings, how the interview process differs from IT services, ESOPs, and worthwhile startups.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20075,7 +20075,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "kubernetes-docker-interview-india-2026",
     title: "Kubernetes and Docker Interview Questions India 2026: Container Orchestration and DevOps",
-    metaDescription: "Complete Kubernetes and Docker interview guide India 2026. Docker images, containers, Kubernetes pods, deployments, services, ConfigMaps, Helm charts, and DevOps interview questions at Indian product companies and cloud teams.",
+    metaDescription: "Kubernetes and Docker interview guide: images, containers, pods, deployments, services, ConfigMaps, Helm charts, and DevOps questions at Indian companies.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "12 min",
@@ -20112,7 +20112,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "django-python-developer-interview-india-2026",
     title: "Django Python Developer Interview Questions India 2026: ORM, REST APIs, and Web Framework",
-    metaDescription: "Complete Django and Python developer interview guide India 2026. Django ORM, class-based views, Django REST Framework, authentication, middleware, and interview questions at Indian product companies and Python shops.",
+    metaDescription: "Django and Python developer interview guide: Django ORM, class-based views, DRF, authentication, middleware, at Indian product companies and Python shops.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20149,7 +20149,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "spring-boot-microservices-interview-india-2026",
     title: "Spring Boot Microservices Interview Questions India 2026: Architecture, APIs, and Cloud Native",
-    metaDescription: "Complete Spring Boot microservices interview guide India 2026. Microservices vs monolith, Spring Boot auto-configuration, REST API design, Spring Cloud (Eureka, Gateway, Config Server), Kafka integration, and interview questions at Indian BFSI and product companies.",
+    metaDescription: "Spring Boot microservices interview guide India 2026: monolith vs microservices, REST API design, Spring Cloud (Eureka, Gateway), and Kafka integration.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "13 min",
@@ -20186,7 +20186,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "work-from-home-remote-jobs-india-2026",
     title: "Remote Work and Work From Home Jobs for Indian Engineers in 2026: Finding, Getting, and Thriving",
-    metaDescription: "Complete guide to remote and WFH tech jobs for Indian engineers in 2026. Best platforms to find remote jobs (Toptal, Turing, remote-first companies), how to negotiate remote work, time zones, payments in USD, and remote work tools.",
+    metaDescription: "Remote and WFH tech jobs for Indian engineers 2026: best platforms (Toptal, Turing, remote-first companies), negotiating remote work, time zones, USD pay.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20223,7 +20223,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "android-developer-interview-india-2026",
     title: "Android Developer Interview Questions India 2026: Kotlin, Jetpack Compose, and Architecture Patterns",
-    metaDescription: "Complete Android developer interview guide India 2026. Kotlin coroutines, Jetpack Compose, Android architecture (MVVM, Clean Architecture), Room database, and Android interview questions at Indian product companies and consumer app startups.",
+    metaDescription: "Android developer interview guide for India: Kotlin coroutines, Jetpack Compose, MVVM, Clean Architecture, Room database, and app startup questions.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -20260,7 +20260,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "golang-developer-interview-india-2026",
     title: "Go (Golang) Developer Interview Questions India 2026: Concurrency, Microservices, and Performance",
-    metaDescription: "Complete Go/Golang developer interview guide India 2026. Go goroutines and channels, interfaces, error handling, microservices with Go, and Golang interview questions at Indian product companies, cloud-native companies, and DevOps teams.",
+    metaDescription: "Go goroutines and channels, interfaces, error handling, and microservices interview questions at Indian product and cloud-native companies, 2026.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20297,7 +20297,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "typescript-developer-interview-india-2026",
     title: "TypeScript Developer Interview Questions India 2026: Types, Generics, and Full-Stack Development",
-    metaDescription: "Complete TypeScript developer interview guide India 2026. TypeScript type system (interfaces vs types, generics, union types, utility types), strict mode, TypeScript with React and Node.js, and interview questions at Indian product companies.",
+    metaDescription: "TypeScript interview guide India 2026: interfaces vs types, generics, union types, utility types, strict mode, TS with React and Node.js questions.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20334,7 +20334,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ios-swift-developer-interview-india-2026",
     title: "iOS Swift Developer Interview Questions India 2026: SwiftUI, UIKit, and App Architecture",
-    metaDescription: "Complete iOS Swift developer interview guide India 2026. Swift language fundamentals, SwiftUI vs UIKit, iOS app architecture (MVVM, Clean Swift), Core Data, and iOS interview questions at Indian product companies and consumer app startups.",
+    metaDescription: "iOS Swift developer interview guide India 2026: Swift fundamentals, SwiftUI vs UIKit, MVVM and Clean Swift architecture, Core Data, and product startups.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -20371,7 +20371,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "team-lead-engineering-manager-interview-india-2026",
     title: "Team Lead and Engineering Manager Interview Questions India 2026: Leadership, Processes, and People",
-    metaDescription: "Complete team lead and engineering manager interview guide India 2026. What interviewers assess for leadership roles, how to answer conflict resolution and team performance questions, technical leadership vs people management, and EM salary in India.",
+    metaDescription: "Team lead and EM interview guide India 2026: leadership assessment, conflict resolution, team performance, technical vs people management, and EM salary.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -20408,7 +20408,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ask-for-promotion-india-2026",
     title: "How to Ask for a Promotion in India 2026: Making the Case and Getting the Yes",
-    metaDescription: "Complete guide to asking for a promotion in Indian tech companies in 2026. How to build the case for your promotion, when to ask, how to have the conversation with your manager, dealing with delays, and what to do if your promotion is denied.",
+    metaDescription: "Asking for a promotion in Indian tech companies 2026: building your case, timing, the conversation with your manager, delays, and denial recovery.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "10 min",
@@ -20445,7 +20445,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "vuejs-developer-interview-india-2026",
     title: "Vue.js Developer Interview Questions India 2026: Composition API, Pinia, and Nuxt",
-    metaDescription: "Complete Vue.js developer interview guide India 2026. Vue 3 Composition API vs Options API, Pinia state management, Nuxt.js SSR, Vue Router, and Vue interview questions at Indian product companies.",
+    metaDescription: "Vue.js developer interview guide: Vue 3 Composition API vs Options API, Pinia state management, Nuxt.js SSR, Vue Router, and questions at Indian companies.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -20482,7 +20482,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "nextjs-interview-questions-india-2026",
     title: "Next.js Interview Questions India 2026: App Router, SSR, Server Components, and Performance",
-    metaDescription: "Complete Next.js interview guide India 2026. App Router vs Pages Router, Server Components vs Client Components, SSR vs SSG vs ISR, API routes, and Next.js interview questions at Indian product companies.",
+    metaDescription: "Next.js interview guide: App Router vs Pages Router, Server vs Client Components, SSR vs SSG vs ISR, API routes, at Indian product companies 2026.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20519,7 +20519,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "redis-interview-questions-india-2026",
     title: "Redis Interview Questions India 2026: Caching, Data Structures, and Distributed Systems",
-    metaDescription: "Complete Redis interview guide India 2026. Redis data structures (strings, hashes, sets, sorted sets, lists), caching patterns (cache-aside, write-through), pub/sub, Redis Cluster, and interview questions at Indian product companies.",
+    metaDescription: "Redis interview guide India 2026: data structures (strings, hashes, sorted sets), caching patterns, pub/sub, Redis Cluster, at Indian product companies.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -20556,7 +20556,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "kafka-interview-questions-india-2026",
     title: "Apache Kafka Interview Questions India 2026: Topics, Partitions, Consumer Groups, and Streaming",
-    metaDescription: "Complete Apache Kafka interview guide India 2026. Kafka architecture (topics, partitions, brokers, consumer groups), delivery guarantees, Kafka Streams, Schema Registry, and Kafka interview questions at Indian fintech and data engineering teams.",
+    metaDescription: "Apache Kafka interview guide India 2026: topics, partitions, brokers, consumer groups, delivery guarantees, Kafka Streams, Schema Registry for fintech.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20593,7 +20593,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "elasticsearch-interview-questions-india-2026",
     title: "Elasticsearch Interview Questions India 2026: Search Architecture, Query DSL, and Performance",
-    metaDescription: "Complete Elasticsearch interview guide India 2026. Elasticsearch architecture (inverted index, shards, replicas), Query DSL (match, term, bool, aggregations), performance tuning, and interview questions at Indian e-commerce and search-heavy companies.",
+    metaDescription: "Elasticsearch interview guide for India: inverted index, shards, replicas, Query DSL, aggregations, performance tuning, and search-heavy company questions.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -20630,7 +20630,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "azure-cloud-interview-india-2026",
     title: "Microsoft Azure Interview Questions India 2026: Services, AKS, DevOps, and Certifications",
-    metaDescription: "Complete Azure interview guide India 2026. Azure core services (compute, storage, networking, databases), Azure Kubernetes Service, Azure DevOps, ARM templates/Bicep, and Azure interview questions at Indian BFSI and enterprise companies.",
+    metaDescription: "Azure core services, Azure Kubernetes Service, Azure DevOps, ARM templates/Bicep, and interview questions at Indian BFSI and enterprise firms.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20667,7 +20667,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "technical-program-manager-interview-india-2026",
     title: "Technical Program Manager (TPM) Interview Questions India 2026: Cross-Team Coordination and Delivery",
-    metaDescription: "Complete TPM interview guide India 2026. What a Technical Program Manager does, how TPM interviews differ from EM interviews, cross-team dependency management, risk frameworks, and TPM interview questions at Indian product companies and FAANG India.",
+    metaDescription: "TPM interview guide India 2026: what a TPM does, how TPM interviews differ from EM interviews, dependency management, risk frameworks, and questions.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20704,7 +20704,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sql-advanced-interview-questions-india-2026",
     title: "Advanced SQL Interview Questions India 2026: Window Functions, CTEs, Query Optimisation, and Indexes",
-    metaDescription: "Complete advanced SQL interview guide India 2026. Window functions, CTEs, subqueries, query optimisation (EXPLAIN), indexing strategies, and advanced SQL questions for data engineering and backend roles at Indian product companies.",
+    metaDescription: "Advanced SQL interview guide India 2026: window functions, CTEs, subqueries, query optimisation (EXPLAIN), indexing for data and backend roles.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20741,7 +20741,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "spark-interview-questions-india-2026",
     title: "Apache Spark Interview Questions India 2026: RDDs, DataFrames, Optimization, and Data Engineering",
-    metaDescription: "Complete Apache Spark interview guide India 2026. Spark architecture (driver, executors, DAG), RDD vs DataFrame vs Dataset, transformations vs actions, shuffle operations, Spark SQL, and Spark interview questions for data engineering roles.",
+    metaDescription: "Apache Spark interview guide India 2026: architecture (driver, executors, DAG), RDD vs DataFrame vs Dataset, transformations, shuffle, and Spark SQL.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20778,7 +20778,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "angular-developer-interview-india-2026",
     title: "Angular Developer Interview Questions India 2026: Components, RxJS, and TypeScript",
-    metaDescription: "Complete Angular developer interview guide India 2026. Angular components, directives, services, dependency injection, RxJS observables, lazy loading, and Angular interview questions at Indian IT companies and product companies.",
+    metaDescription: "Angular developer interview guide India 2026: components, directives, services, dependency injection, RxJS observables, lazy loading, and more.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -20811,7 +20811,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "nodejs-developer-interview-india-2026",
     title: "Node.js Developer Interview Questions India 2026: Event Loop, Express, and Microservices",
-    metaDescription: "Complete Node.js developer interview guide India 2026. Event loop, libuv, streams, Express middleware, REST API design, microservices, clustering, and Node.js interview questions at Indian product companies.",
+    metaDescription: "Node.js interview guide: event loop, libuv, streams, Express middleware, REST API design, microservices, clustering, and questions at Indian companies.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -20844,7 +20844,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "selenium-interview-questions-india-2026",
     title: "Selenium Interview Questions India 2026: WebDriver, TestNG, Page Object Model",
-    metaDescription: "Complete Selenium interview guide India 2026. WebDriver architecture, locator strategies, TestNG framework, Page Object Model, Selenium Grid, handling dynamic elements, and Selenium interview questions at Indian IT and product companies.",
+    metaDescription: "Selenium interview guide: WebDriver architecture, locator strategies, TestNG, Page Object Model, Selenium Grid, and dynamic elements at Indian IT firms.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "9 min",
@@ -20877,7 +20877,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "manual-testing-interview-india-2026",
     title: "Manual Testing Interview Questions India 2026: STLC, Test Cases, and Bug Reporting",
-    metaDescription: "Complete manual testing interview guide India 2026. STLC, SDLC, test case design techniques (BVA, ECP, decision table), bug life cycle, defect severity vs priority, Agile testing, and manual QA interview questions at Indian IT companies.",
+    metaDescription: "Manual testing interview guide India 2026: STLC, SDLC, test case design (BVA, ECP, decision table), bug life cycle, defect severity, Agile testing.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "9 min",
@@ -20910,7 +20910,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "data-science-interview-india-2026",
     title: "Data Science Interview Questions India 2026: Statistics, ML Algorithms, and Python",
-    metaDescription: "Complete data science interview guide India 2026. Statistics, probability, ML algorithms (regression, classification, clustering), feature engineering, Python (pandas, scikit-learn), case studies, and data science interview questions at Indian product companies.",
+    metaDescription: "Data science interview India 2026: statistics, probability, ML algorithms, feature engineering, Python (pandas, scikit-learn), case studies at top firms.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -20943,7 +20943,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tech-lead-interview-india-2026",
     title: "Tech Lead Interview Questions India 2026: Leadership, Architecture, and Team Management",
-    metaDescription: "Complete tech lead interview guide India 2026. Engineering leadership, system design, technical roadmap, team management, code review culture, cross-functional collaboration, and tech lead interview questions at Indian product companies.",
+    metaDescription: "Tech lead interview guide for India: engineering leadership, system design, technical roadmap, team management, and code review culture questions.",
     category: "Leadership",
     company: "Career Advice",
     readTime: "10 min",
@@ -20976,7 +20976,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "computer-networks-interview-india-2026",
     title: "Computer Networks Interview Questions India 2026: OSI Model, TCP/IP, HTTP, and DNS",
-    metaDescription: "Complete computer networks interview guide India 2026. OSI model, TCP/IP stack, HTTP vs HTTPS, DNS resolution, TCP three-way handshake, subnetting, load balancers, and networking interview questions for software engineers and DevOps roles in India.",
+    metaDescription: "OSI model, TCP/IP stack, HTTP vs HTTPS, DNS resolution, three-way handshake, subnetting, and load balancers for SWE and DevOps roles, 2026.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21009,7 +21009,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "operating-systems-interview-india-2026",
     title: "Operating Systems Interview Questions India 2026: Processes, Threads, Memory, and Scheduling",
-    metaDescription: "Complete operating systems interview guide India 2026. Processes vs threads, CPU scheduling algorithms, memory management, virtual memory, deadlocks, semaphores, and OS interview questions for software engineers and system programmers in India.",
+    metaDescription: "OS interview questions India 2026: processes vs threads, CPU scheduling, memory management, virtual memory, deadlocks, and semaphores explained.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21042,7 +21042,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "product-based-vs-service-based-india-2026",
     title: "Product-Based vs Service-Based Companies in India 2026: Salary, Work Culture, and Career Growth",
-    metaDescription: "Product-based vs service-based companies India 2026: salary comparison (TCS vs Flipkart vs Google), work culture differences, skill development, career growth paths, and how to transition from a service company to a product company in India.",
+    metaDescription: "Product vs service companies India 2026: salary comparison (TCS vs Flipkart vs Google), culture, skill growth, and transitioning to product roles.",
     category: "Career Advice",
     company: "Career",
     readTime: "9 min",
@@ -21075,7 +21075,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ios-developer-interview-india-2026",
     title: "iOS Developer Interview Questions India 2026: Swift, UIKit, SwiftUI, and App Architecture",
-    metaDescription: "Complete iOS developer interview guide India 2026. Swift language fundamentals, UIKit vs SwiftUI, MVVM vs MVC, concurrency (async/await, DispatchQueue), memory management (ARC), and iOS interview questions at Indian product companies.",
+    metaDescription: "iOS developer interview guide India 2026: Swift fundamentals, UIKit vs SwiftUI, MVVM vs MVC, async/await, DispatchQueue, and ARC memory management.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21112,7 +21112,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "microservices-architecture-interview-india-2026",
     title: "Microservices Architecture Interview India 2026: Design, Decomposition, and Distributed Patterns",
-    metaDescription: "Complete microservices architecture interview guide India 2026. Microservices vs monolith, domain-driven design, service decomposition, distributed transactions (Saga pattern), inter-service communication, and microservices interview questions at Indian product companies.",
+    metaDescription: "Microservices architecture interview guide India 2026: monolith vs microservices, DDD, service decomposition, Saga pattern, and communication.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -21149,7 +21149,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "api-gateway-design-india-2026",
     title: "API Gateway Interview Questions India 2026: Design, Rate Limiting, BFF, and Kong",
-    metaDescription: "Complete API gateway interview guide India 2026. API gateway patterns (BFF, aggregation), rate limiting (token bucket, sliding window), authentication (JWT, OAuth), Kong, AWS API Gateway, and API gateway interview questions at Indian product companies.",
+    metaDescription: "API gateway interview guide: BFF and aggregation patterns, rate limiting (token bucket, sliding window), JWT/OAuth, Kong, and AWS API Gateway questions.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21186,7 +21186,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "observability-interview-india-2026",
     title: "Observability Interview Questions India 2026: Logs, Metrics, Traces, and OpenTelemetry",
-    metaDescription: "Complete observability interview guide India 2026. The three pillars of observability (logs, metrics, traces), OpenTelemetry, Prometheus and Grafana, distributed tracing (Jaeger), and observability interview questions at Indian SRE and platform engineering teams.",
+    metaDescription: "Observability interview guide: the three pillars (logs, metrics, traces), OpenTelemetry, Prometheus, Grafana, and distributed tracing with Jaeger.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21223,7 +21223,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "java-multithreading-interview-india-2026",
     title: "Java Multithreading Interview Questions India 2026: Threads, Concurrency, and ExecutorService",
-    metaDescription: "Complete Java multithreading interview guide India 2026. Java threads, synchronized, volatile, java.util.concurrent (ExecutorService, CompletableFuture, locks), common concurrency problems (race conditions, deadlocks), and multithreading interview questions at Indian product companies.",
+    metaDescription: "Java multithreading interview guide India 2026: synchronized, volatile, ExecutorService, CompletableFuture, locks, race conditions, and deadlocks.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21260,7 +21260,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "design-patterns-interview-india-2026",
     title: "Design Patterns Interview Questions India 2026: SOLID, Creational, Structural, and Behavioral",
-    metaDescription: "Complete design patterns interview guide India 2026. SOLID principles, creational patterns (Singleton, Factory, Builder), structural patterns (Decorator, Proxy, Adapter), behavioral patterns (Observer, Strategy, Command), and design patterns interview questions at Indian product companies.",
+    metaDescription: "Design patterns interview India 2026: SOLID, creational (Singleton, Factory), structural (Decorator, Proxy), behavioral (Observer, Strategy) patterns.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -21297,7 +21297,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "low-level-design-interview-india-2026",
     title: "Low Level Design (LLD) Interview Questions India 2026: Parking Lot, Cache, and Library Management",
-    metaDescription: "Complete Low Level Design (LLD) interview guide India 2026. What LLD interviews assess, how to structure your design, class diagrams, common LLD problems (parking lot, library management, movie ticket booking, LRU cache), and preparation for Indian product companies.",
+    metaDescription: "LLD interview guide for India: class diagrams, common problems (parking lot, library management, ticket booking, LRU cache), and product-company prep.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -21334,7 +21334,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "service-mesh-interview-india-2026",
     title: "Service Mesh Interview Questions India 2026: Istio, Envoy, mTLS, and Traffic Management",
-    metaDescription: "Complete service mesh interview guide India 2026. What a service mesh is, Istio architecture (control plane, data plane, Envoy sidecar), mutual TLS (mTLS), traffic management (canary deployments, circuit breaker, retries), observability, and service mesh interview questions at Indian platform engineering teams.",
+    metaDescription: "Istio architecture (control plane, Envoy sidecar), mTLS, traffic management, canary deploys, and circuit breakers for platform engineering roles.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21371,7 +21371,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "platform-engineering-interview-india-2026",
     title: "Platform Engineering Interview Questions India 2026: IDPs, Golden Paths, and Developer Experience",
-    metaDescription: "Complete platform engineering interview guide India 2026. What platform engineering is, internal developer platforms (IDPs), golden paths, self-service infrastructure, Backstage, Kubernetes operators, and platform engineering interview questions at Indian product companies.",
+    metaDescription: "Platform engineering interview guide India 2026: internal developer platforms, golden paths, self-service infra, Backstage, Kubernetes operators.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21408,7 +21408,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "software-engineering-internship-india-2026",
     title: "Software Engineering Internship India 2026: FAANG, Product Companies, and Startup Internships",
-    metaDescription: "Complete guide to software engineering internships in India 2026. How to apply for Google, Microsoft, Amazon, Flipkart, Swiggy internships, what the interview process looks like, stipends, conversion rates, and how to prepare for internship coding rounds.",
+    metaDescription: "Software engineering internships India 2026: applying to Google, Microsoft, Amazon, Flipkart, Swiggy, interview process, stipends, and conversion rates.",
     category: "Career",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21445,7 +21445,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "python-advanced-interview-india-2026",
     title: "Advanced Python Interview Questions India 2026: Decorators, Generators, Asyncio, and GIL",
-    metaDescription: "Complete advanced Python interview guide India 2026. Python decorators, generators, context managers, metaclasses, asyncio and async/await, the GIL, type hints, and advanced Python questions for senior engineering roles at Indian product companies.",
+    metaDescription: "Advanced Python interview guide India 2026: decorators, generators, context managers, metaclasses, asyncio, the GIL, and type hints for senior roles.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21482,7 +21482,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "flutter-developer-interview-india-2026",
     title: "Flutter Developer Interview Questions India 2026: Widgets, State Management, and Cross-Platform",
-    metaDescription: "Complete Flutter interview guide India 2026. Flutter widget tree, stateful vs stateless widgets, state management (Provider, Riverpod, BLoC), Dart async/await, platform channels, and Flutter interview questions at Indian product companies.",
+    metaDescription: "Flutter interview guide India 2026: widget tree, stateful vs stateless widgets, state management (Provider, Riverpod, BLoC), and Dart async/await.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21519,7 +21519,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "graphql-interview-questions-india-2026",
     title: "GraphQL Interview Questions India 2026: Schema, Resolvers, Queries, and Apollo Federation",
-    metaDescription: "Complete GraphQL interview guide India 2026. GraphQL schema definition language, queries vs mutations vs subscriptions, resolvers, DataLoader (N+1 problem), Apollo federation, and GraphQL interview questions at Indian product companies.",
+    metaDescription: "GraphQL interview guide: schema definition language, queries vs mutations vs subscriptions, resolvers, DataLoader (N+1 problem), and Apollo federation.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21556,7 +21556,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "docker-interview-questions-india-2026",
     title: "Docker Interview Questions India 2026: Containers, Images, Networking, and Docker Compose",
-    metaDescription: "Complete Docker interview guide India 2026. Docker architecture (images, containers, layers), Dockerfile best practices, Docker Compose, container networking, Docker vs VMs, and Docker interview questions at Indian DevOps and backend engineering teams.",
+    metaDescription: "Docker interview guide: architecture (images, containers, layers), Dockerfile best practices, Docker Compose, networking, and Docker vs VMs.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21593,7 +21593,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ci-cd-interview-questions-india-2026",
     title: "CI/CD Interview Questions India 2026: GitHub Actions, Jenkins, and Deployment Strategies",
-    metaDescription: "Complete CI/CD interview guide India 2026. CI vs CD, GitHub Actions workflows, Jenkins pipelines, deployment strategies (blue-green, canary, rolling), GitOps with ArgoCD, and CI/CD interview questions at Indian DevOps and platform engineering teams.",
+    metaDescription: "CI/CD interview guide India 2026: GitHub Actions, Jenkins pipelines, blue-green/canary/rolling deployments, GitOps with ArgoCD, for DevOps teams.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21630,7 +21630,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "grpc-interview-questions-india-2026",
     title: "gRPC Interview Questions India 2026: Protocol Buffers, Streaming, and Microservice Communication",
-    metaDescription: "Complete gRPC interview guide India 2026. gRPC vs REST, Protocol Buffers (protobuf), streaming types (unary, server, client, bidirectional), gRPC-Web, and gRPC interview questions at Indian fintech and platform engineering teams.",
+    metaDescription: "gRPC interview guide India 2026: gRPC vs REST, Protocol Buffers, streaming types (unary, server, client, bidirectional), gRPC-Web for fintech teams.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21667,7 +21667,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "react-native-interview-india-2026",
     title: "React Native Interview Questions India 2026: Bridge Architecture, Navigation, and Performance",
-    metaDescription: "Complete React Native interview guide India 2026. React Native vs Flutter, Bridge vs New Architecture (JSI), React Navigation, FlatList, NativeModules, and React Native interview questions at Indian mobile-first product companies.",
+    metaDescription: "React Native interview guide for India: React Native vs Flutter, Bridge vs New Architecture (JSI), React Navigation, FlatList, and mobile-first questions.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21704,7 +21704,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "staff-engineer-interview-india-2026",
     title: "Staff Engineer Interview Questions India 2026: Technical Leadership, Architecture, and Impact",
-    metaDescription: "Complete Staff Engineer interview guide India 2026. What Staff Engineers do, IC6/L6 expectations, technical leadership vs people management, architecture decision records, staff engineering interview rounds at FAANG India, and salary.",
+    metaDescription: "IC6/L6 expectations, technical leadership vs people management, architecture decision records, FAANG India interview rounds, and salary, 2026.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "11 min",
@@ -21741,7 +21741,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "principal-engineer-interview-india-2026",
     title: "Principal Engineer Interview India 2026: Strategic Technical Leadership and Organisation-Wide Impact",
-    metaDescription: "Complete Principal Engineer interview guide India 2026. Principal vs Staff Engineer, technical strategy, architecture review boards, cross-organisation influence, and principal engineer interview preparation at FAANG India.",
+    metaDescription: "Principal Engineer interview guide India 2026: Principal vs Staff, technical strategy, architecture review boards, org-wide influence at FAANG India.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21778,7 +21778,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "engineering-management-india-2026",
     title: "Engineering Manager Interview India 2026: IC to EM Transition, 1:1s, Performance, and Hiring",
-    metaDescription: "Complete Engineering Manager interview guide India 2026. Transitioning from IC to EM, first-90-days plan, running effective 1:1s, performance management, hiring, and EM interview questions at Indian product companies.",
+    metaDescription: "Engineering Manager interview guide India 2026: IC to EM transition, first 90 days, running 1:1s, performance management, hiring, and EM questions.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "11 min",
@@ -21815,7 +21815,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "scrum-master-interview-questions-india-2026",
     title: "Scrum Master Interview Questions India 2026: Agile Ceremonies, Team Facilitation, and CSM Certification",
-    metaDescription: "Complete Scrum Master interview guide India 2026. Scrum roles and ceremonies, sprint planning, retrospectives, impediment removal, Scrum Master vs Project Manager, and how to prepare for the CSM certification exam.",
+    metaDescription: "Scrum Master interview guide India 2026: agile ceremonies, sprint planning, retrospectives, impediment removal, vs Project Manager, and CSM prep.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21852,7 +21852,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "multiple-job-offers-india-2026",
     title: "How to Handle Multiple Job Offers in India 2026: Evaluation, Negotiation, and Deciding",
-    metaDescription: "Complete guide to handling multiple job offers in India 2026. How to compare offers fairly (base salary, ESOPs, bonus, growth), negotiate competing offers, buy time professionally, and make the final decision without burning bridges.",
+    metaDescription: "Handling multiple job offers in India 2026: comparing base salary, ESOPs, and bonus, negotiating competing offers, and deciding without burning bridges.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "10 min",
@@ -21889,7 +21889,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "h1b-visa-interview-tips-india-2026",
     title: "H1B Visa and US Tech Job Interview Tips for Indian Engineers 2026: FAANG and Beyond",
-    metaDescription: "Complete guide for Indian engineers targeting US tech jobs in 2026. H1B visa process, OPT/CPT for students, FAANG interview preparation from India, remote-first US companies that hire Indians, and realistic expectations.",
+    metaDescription: "Indian engineers targeting US tech jobs: H1B visa process, OPT/CPT for students, FAANG prep from India, and remote-first US employers that hire Indians.",
     category: "Career Advice",
     company: "Interview Skills",
     readTime: "12 min",
@@ -21926,7 +21926,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "freshers-resume-guide-india-2026",
     title: "Fresher Resume Guide India 2026: How to Write a Resume with No Experience",
-    metaDescription: "Complete resume writing guide for freshers in India 2026. How to write a resume with no work experience, what to include (projects, certifications, internships), formatting tips, ATS optimisation, and resume samples for software engineering freshers.",
+    metaDescription: "Resume guide for Indian freshers: writing a resume with no work experience, what to include (projects, certifications, internships), and ATS optimisation.",
     category: "Interview Skills",
     company: "Interview Skills",
     readTime: "11 min",
@@ -21963,7 +21963,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sarvam-ai-interview-experience-2026",
     title: "Sarvam AI Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Real Sarvam AI interview experience guide India 2026. Understand Sarvam AI's hiring process, interview rounds (ML, systems design, coding, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's leading speech and language AI startup.",
+    metaDescription: "Sarvam AI interview experience 2026: hiring process, rounds (ML, systems design, coding, culture), salary ranges at India's speech and language AI startup.",
     company: "Sarvam AI",
     category: "Experience",
     readTime: "8 min",
@@ -22001,7 +22001,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "krutrim-interview-experience-2026",
     title: "Krutrim Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Krutrim interview experience guide India 2026. Understand Ola Krutrim's hiring process, interview rounds (ML, AI cloud/systems, coding, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's first AI unicorn.",
+    metaDescription: "Krutrim interview guide 2026: Ola Krutrim's hiring process, ML/AI cloud/systems/coding/culture rounds, salary ranges at India's first AI unicorn.",
     company: "Krutrim",
     category: "Experience",
     readTime: "9 min",
@@ -22039,7 +22039,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "perplexity-interview-experience-2026",
     title: "Perplexity Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Perplexity AI interview experience guide for India 2026. Understand Perplexity's hiring process for remote India hires, interview rounds (ML, RAG/search systems, coding, culture), what interviewers look for, salary ranges, and how to prepare for AI-engine roles.",
+    metaDescription: "Perplexity AI interview guide for India: remote hiring process, ML, RAG/search systems, coding and culture rounds, and salary ranges for AI-engine roles.",
     company: "Perplexity",
     category: "Experience",
     readTime: "9 min",
@@ -22077,7 +22077,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "moglix-interview-experience-2026",
     title: "Moglix Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Moglix interview experience guide India 2026. Understand Moglix's hiring process for software engineers, interview rounds (DSA, backend systems design, marketplace domain, culture), what interviewers look for, salary ranges, and how to prepare for roles at the B2B industrial-commerce unicorn.",
+    metaDescription: "Moglix's hiring process 2026: DSA, backend systems design, marketplace domain, culture rounds, salary ranges, at the B2B industrial unicorn.",
     company: "Moglix",
     category: "Experience",
     readTime: "8 min",
@@ -22114,7 +22114,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "linux-interview-questions-india-2026",
     title: "Linux Interview Questions India 2026: File Permissions, Process Management, and Shell Scripting",
-    metaDescription: "Complete Linux interview guide India 2026. File permissions (chmod, chown), process management (ps, top, kill), networking commands, shell scripting, systemd services for backend, DevOps, and SRE roles at Wipro, TCS, HCL, and IBM.",
+    metaDescription: "Linux interview guide: file permissions (chmod, chown), process management (ps, top, kill), networking, shell scripting, and systemd for backend/SRE roles.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -22147,7 +22147,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "scala-interview-questions-india-2026",
     title: "Scala Interview Questions India 2026: Functional Programming, Akka, and Apache Spark",
-    metaDescription: "Complete Scala interview guide India 2026. Scala vs Java differences, functional programming (immutability, higher-order functions, pattern matching), case classes, traits, Akka basics, and Spark with Scala for data engineering roles.",
+    metaDescription: "Scala interview guide: Scala vs Java, functional programming (immutability, higher-order functions, pattern matching), case classes, traits, Akka, Spark.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -22180,7 +22180,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "embedded-systems-interview-questions-india-2026",
     title: "Embedded Systems Interview Questions India 2026: Microcontrollers, RTOS, and Communication Protocols",
-    metaDescription: "Complete embedded systems interview guide India 2026. Microcontrollers vs microprocessors, RTOS, interrupt handling, memory-mapped I/O, CAN/SPI/I2C protocols, watchdog timers for roles at Bosch India, Texas Instruments, and Qualcomm India.",
+    metaDescription: "Embedded systems interview guide India 2026: microcontrollers, RTOS, interrupt handling, CAN/SPI/I2C protocols, for Bosch, TI, and Qualcomm India roles.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -22213,7 +22213,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "mongodb-interview-questions-india-2026",
     title: "MongoDB Interview Questions India 2026: Document Model, Aggregation Pipeline, and Sharding",
-    metaDescription: "Complete MongoDB interview guide India 2026. Document model vs relational, BSON, CRUD operations, aggregation pipeline, indexing strategies, replica sets, sharding for Node.js stacks at Razorpay, Swiggy, and Zomato.",
+    metaDescription: "MongoDB interview guide India 2026: document model, BSON, CRUD, aggregation pipeline, indexing, sharding for Node.js stacks at Razorpay, Swiggy, Zomato.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -22246,7 +22246,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "jest-testing-interview-questions-india-2026",
     title: "Jest Testing Interview Questions India 2026: Unit Testing, Mocking, and Code Coverage",
-    metaDescription: "Complete Jest interview guide India 2026. Unit testing philosophy, describe/it blocks, jest.fn and jest.mock, async testing, snapshot testing, coverage reports for frontend and full-stack roles at Indian product companies.",
+    metaDescription: "Jest interview guide: unit testing philosophy, describe/it blocks, jest.fn and jest.mock, async testing, snapshot testing, and coverage at product firms.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "9 min",
@@ -22279,7 +22279,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cypress-e2e-testing-interview-india-2026",
     title: "Cypress E2E Testing Interview Questions India 2026: Selectors, Intercepts, and CI Integration",
-    metaDescription: "Complete Cypress interview guide India 2026. E2E vs unit testing, cy.get selectors, cy.intercept for network stubbing, fixtures, custom commands, CI integration for QA and frontend engineer roles at Indian product companies.",
+    metaDescription: "E2E vs unit testing, cy.get selectors, cy.intercept stubbing, fixtures, custom commands, and CI integration for QA/frontend roles in India.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "9 min",
@@ -22312,7 +22312,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "performance-testing-interview-questions-india-2026",
     title: "Performance Testing Interview Questions India 2026: JMeter, Load Testing, and Percentile Metrics",
-    metaDescription: "Complete performance testing interview guide India 2026. Load vs stress vs spike vs soak testing, JMeter basics, latency vs throughput vs p95/p99 percentiles, Apdex score, bottleneck identification for BFSI, e-commerce, and payment companies.",
+    metaDescription: "Performance testing interview guide India 2026: load vs stress vs spike vs soak, JMeter basics, p95/p99 percentiles, Apdex, and BFSI/e-commerce cases.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -22345,7 +22345,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tableau-interview-questions-india-2026",
     title: "Tableau Interview Questions India 2026: LOD Expressions, Calculated Fields, and Dashboard Design",
-    metaDescription: "Complete Tableau interview guide India 2026. Calculated fields vs table calculations, LOD expressions (FIXED/INCLUDE/EXCLUDE), data blending vs joining, dashboard performance optimisation, Tableau Server for data analyst and BI roles at Deloitte, EY, and KPMG.",
+    metaDescription: "Tableau interview guide India 2026: calculated fields, LOD expressions (FIXED/INCLUDE/EXCLUDE), data blending, dashboard performance at Deloitte, EY, KPMG.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "10 min",
@@ -22378,7 +22378,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "dotnet-csharp-interview-questions-india-2026",
     title: ".NET and C# Interview Questions India 2026: ASP.NET Core, Entity Framework, and LINQ",
-    metaDescription: "Complete .NET and C# interview guide India 2026. C# classes, interfaces, async/await, LINQ, .NET Core vs .NET Framework, ASP.NET Core MVC vs Web API, Entity Framework Core, dependency injection for IBM, Infosys, Cognizant, and TCS enterprise roles.",
+    metaDescription: ".NET and C# interview guide India 2026: classes, interfaces, async/await, LINQ, ASP.NET Core, Entity Framework, and DI for IBM, Infosys, TCS roles.",
     category: "Technical",
     company: "Interview Skills",
     readTime: "11 min",
@@ -22411,7 +22411,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "solution-architect-interview-questions-india-2026",
     title: "Solution Architect Interview Questions India 2026: Architecture Patterns, CAP Theorem, and Cloud Design",
-    metaDescription: "Complete Solution Architect interview guide India 2026. Monolith vs microservices vs serverless, CAP theorem, trade-off analysis, cloud-agnostic design principles, RFP response writing, stakeholder communication for Infosys, Wipro, TCS, and GCC roles.",
+    metaDescription: "Solution Architect interview guide India 2026: monolith vs microservices vs serverless, CAP theorem, cloud-agnostic design for TCS, Infosys, Wipro, GCC.",
     category: "Role Guides",
     company: "Interview Skills",
     readTime: "12 min",
@@ -22444,7 +22444,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "best-ai-mock-interview-tools-india-2026",
     title: "Best AI Mock Interview Tools in India (2026): An Honest Comparison",
-    metaDescription: "A practical comparison of AI mock interview tools available in India in 2026: HireStepX, Pramp, Interviewing.io, Final Round AI, Google Interview Warmup, Verve AI, Yoodli, and Big Interview. Pricing, voice support, India-specific question banks, and who each one actually fits.",
+    metaDescription: "AI mock interview tools compared: HireStepX, Pramp, Interviewing.io, Final Round AI, Google Interview Warmup, Verve AI, Yoodli, and Big Interview.",
     company: "General",
     category: "Career",
     readTime: "10 min",
@@ -22495,7 +22495,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "early-data-hirestepx-practice-sessions-2026",
     title: "What Our Early Practice Session Data Shows About Interview Weak Spots",
-    metaDescription: "A transparent look at early, small-sample scoring data from HireStepX practice sessions: which interview type candidates score lowest on, and why. Honest about sample size, not a claim of scale.",
+    metaDescription: "A transparent look at early, small-sample HireStepX practice session data: which interview type candidates score lowest on, and why it happens.",
     company: "General",
     category: "Industry Insights",
     readTime: "5 min",
@@ -22529,7 +22529,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "notice-period-buyout-negotiation-it-services-india",
     title: "Notice Period Buyout in Indian IT Services: How Negotiation Actually Works",
-    metaDescription: "A practical guide to notice period buyouts at Indian IT services companies: why the 60-90 day norm exists, when buyout is actually negotiable, and how to raise it with your manager without burning the relationship.",
+    metaDescription: "Notice period buyouts at Indian IT services companies: why the 60-90 day norm exists, when buyout is negotiable, and how to raise it with your manager.",
     company: "General",
     category: "Career Advice",
     readTime: "6 min",
@@ -22567,7 +22567,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ai-layoffs-it-services-india-interview-prep-2026",
     title: "AI Is Reshaping Indian IT Hiring in 2026: What It Actually Means for Your Interview Prep",
-    metaDescription: "TCS, Infosys, Wipro, and other IT services firms are restructuring around AI in 2026, not just cutting costs. Here's what's actually happening and how to prepare for interviews in a market that's judging candidates differently now.",
+    metaDescription: "TCS, Infosys, and Wipro are restructuring around AI in 2026, not just cutting costs: what it means for your interview prep in a shifting market.",
     company: "General",
     category: "Industry Insights",
     readTime: "7 min",
@@ -22605,7 +22605,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "boat-interview-experience-2026",
     title: "boAt Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "boAt interview experience guide India 2026. How boAt (Imagine Marketing) hires software engineers: interview rounds (DSA, backend, systems design, D2C/e-commerce domain), what interviewers look for, salary ranges, and how to prepare for roles at India's #1 audio brand.",
+    metaDescription: "boAt (Imagine Marketing) interview experience 2026: DSA, backend, systems design, D2C/e-commerce rounds, salary ranges at India's #1 audio brand.",
     company: "boAt",
     category: "Experience",
     readTime: "8 min",
@@ -22639,7 +22639,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "wakefit-interview-experience-2026",
     title: "Wakefit Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Wakefit interview experience guide India 2026. How Wakefit hires software engineers: interview rounds (DSA, backend, low-level design, D2C commerce domain), what interviewers look for, salary ranges, and how to prepare for roles at India's leading D2C sleep and furniture brand.",
+    metaDescription: "Wakefit interview experience 2026: rounds (DSA, backend, low-level design, D2C commerce domain), what interviewers look for, salary at the sleep brand.",
     company: "Wakefit",
     category: "Experience",
     readTime: "8 min",
@@ -22673,7 +22673,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fibe-interview-experience-2026",
     title: "Fibe (EarlySalary) Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Fibe interview experience guide India 2026. How Fibe (formerly EarlySalary) hires software engineers: interview rounds (DSA, backend, systems design, lending/fintech domain), what interviewers look for, salary ranges, and how to prepare for roles at the Pune salary-advance fintech.",
+    metaDescription: "Fibe (EarlySalary) interview guide 2026: rounds (DSA, backend, systems design, lending/fintech domain), what interviewers seek, salary, and prep tips.",
     company: "Fibe",
     category: "Experience",
     readTime: "8 min",
@@ -22707,7 +22707,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "navi-interview-experience-2026",
     title: "Navi Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Navi interview experience guide India 2026. How Navi Technologies (Sachin Bansal's fintech) hires software engineers: interview rounds (DSA, backend, systems design, fintech domain), what interviewers look for, salary ranges, and how to prepare for roles in loans, insurance, and UPI payments.",
+    metaDescription: "Navi interview guide India 2026: how Sachin Bansal's fintech hires engineers, DSA and systems design rounds, salary ranges, and loans/insurance/UPI prep.",
     company: "Navi",
     category: "Experience",
     readTime: "8 min",
@@ -22741,7 +22741,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "shadowfax-interview-experience-2026",
     title: "Shadowfax Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Shadowfax interview experience guide India 2026. How Shadowfax hires software engineers: interview rounds (DSA, backend, systems design, logistics domain), what interviewers look for, salary ranges, and how to prepare for roles at the Bengaluru gig-logistics unicorn.",
+    metaDescription: "Shadowfax interview guide: rounds (DSA, backend, systems design, logistics domain), what interviewers look for, salary ranges, and how to prepare.",
     company: "Shadowfax",
     category: "Experience",
     readTime: "8 min",
@@ -22775,7 +22775,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "plivo-interview-experience-2026",
     title: "Plivo Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Plivo interview experience guide India 2026. How Plivo hires software engineers: interview rounds (DSA, backend, systems design, CPaaS/messaging domain), what interviewers look for, salary ranges, and how to prepare for roles at the profitable Bengaluru CPaaS company.",
+    metaDescription: "Plivo interview guide: how the profitable Bengaluru CPaaS company hires engineers, rounds (DSA, backend, systems design, messaging domain), salary ranges.",
     company: "Plivo",
     category: "Experience",
     readTime: "8 min",
@@ -22809,7 +22809,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "khatabook-interview-experience-2026",
     title: "Khatabook Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Khatabook interview experience guide India 2026. How Khatabook hires software engineers: interview rounds (DSA, backend, systems design, SMB fintech domain), what interviewers look for, salary ranges, and how to prepare for roles at the Bengaluru SMB-ledger fintech.",
+    metaDescription: "Khatabook interview experience 2026: rounds (DSA, backend, systems design, SMB fintech domain), salary ranges, at the Bengaluru SMB-ledger fintech.",
     company: "Khatabook",
     category: "Experience",
     readTime: "8 min",
@@ -22843,7 +22843,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "policybazaar-interview-experience-2026",
     title: "PolicyBazaar Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "PolicyBazaar interview experience guide India 2026. How PolicyBazaar (PB Fintech) hires software engineers: interview rounds (DSA, backend, systems design, insurance-marketplace domain), what interviewers look for, salary ranges, and how to prepare for roles at India's largest insurance marketplace.",
+    metaDescription: "PolicyBazaar (PB Fintech) interview guide 2026: DSA, backend, systems design, insurance-marketplace domain rounds, and salary at India's largest insurer.",
     company: "PolicyBazaar",
     category: "Experience",
     readTime: "8 min",
@@ -22877,7 +22877,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "purplle-interview-experience-2026",
     title: "Purplle Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Purplle interview experience guide India 2026. How Purplle hires software engineers: interview rounds (DSA, backend, systems design, D2C beauty-marketplace domain), what interviewers look for, salary ranges, and how to prepare for roles at the Mumbai beauty-commerce unicorn.",
+    metaDescription: "Purplle interview guide: DSA, backend, systems design, and D2C beauty-marketplace rounds, plus salary at the Mumbai beauty-commerce unicorn.",
     company: "Purplle",
     category: "Experience",
     readTime: "8 min",
@@ -22911,7 +22911,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "kreditbee-interview-experience-2026",
     title: "KreditBee Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "KreditBee interview experience guide India 2026. How KreditBee hires software engineers: interview rounds (DSA, backend, systems design, lending-fintech domain), what interviewers look for, salary ranges, and how to prepare for roles at the Bengaluru lending fintech and RBI-regulated NBFC.",
+    metaDescription: "KreditBee's hiring process: DSA, backend, systems design, lending-fintech domain rounds, salary ranges, at the Bengaluru RBI-regulated NBFC.",
     company: "KreditBee",
     category: "Experience",
     readTime: "8 min",
@@ -22945,7 +22945,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "clevertap-interview-experience-2026",
     title: "CleverTap Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "CleverTap interview experience guide India 2026. How CleverTap hires software engineers: interview rounds (DSA, backend, systems design, analytics/engagement-SaaS domain), what interviewers look for, salary ranges, and how to prepare for roles at the Mumbai mobile-engagement SaaS platform.",
+    metaDescription: "CleverTap interview experience 2026: DSA, backend, systems design, analytics/engagement-SaaS rounds, salary ranges at the Mumbai SaaS platform.",
     company: "CleverTap",
     category: "Experience",
     readTime: "8 min",
@@ -22979,7 +22979,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fintech-system-design-interview-india-2026",
     title: "Fintech System Design Interviews India 2026: Zerodha, Groww, PhonePe, Paytm",
-    metaDescription: "How Indian fintechs run system-design interviews in 2026. What Zerodha, Groww, PhonePe, and Paytm actually test — low latency, money-movement correctness, idempotency, and reconciliation — with a framework and how to prepare.",
+    metaDescription: "How Zerodha, Groww, PhonePe, and Paytm run system-design interviews: low latency, money-movement correctness, idempotency, and reconciliation.",
     company: "General",
     category: "Technical",
     readTime: "9 min",
@@ -23026,7 +23026,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "consumer-tech-behavioral-interview-india-2026",
     title: "Consumer Tech Behavioral Interviews India 2026: Swiggy, Zomato, CRED",
-    metaDescription: "How India's consumer-tech companies run behavioral and craft interviews in 2026. What Swiggy, Zomato, and CRED look for — ownership, bias for action, taste, and quality bar — with a STAR-based framework and how to prepare.",
+    metaDescription: "What Swiggy, Zomato, and CRED look for in behavioral interviews 2026: ownership, bias for action, taste, quality bar, and a STAR framework.",
     company: "General",
     category: "Behavioral",
     readTime: "8 min",
@@ -23068,7 +23068,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "zepto-interview-experience-2026",
     title: "Zepto Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Zepto interview experience guide India 2026. Understand Zepto's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, inventory and delivery-routing systems, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's fastest-growing quick-commerce unicorn.",
+    metaDescription: "Zepto interview guide 2026: DSA, backend and LLD, inventory and delivery-routing systems, culture, salary at India's quick-commerce unicorn.",
     company: "Zepto",
     category: "Experience",
     readTime: "8 min",
@@ -23105,7 +23105,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "databricks-interview-experience-2026",
     title: "Databricks Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Databricks interview experience guide India 2026. Understand Databricks' hiring process for software, data, and ML engineers, the interview rounds (coding, distributed data-pipeline design, Spark optimisation, Delta Lake, systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the Lakehouse company's Bengaluru GCC.",
+    metaDescription: "Databricks interview guide India 2026: coding, distributed data-pipeline design, Spark optimisation, Delta Lake, salary ranges, and Bengaluru GCC roles.",
     company: "Databricks",
     category: "Experience",
     readTime: "9 min",
@@ -23142,7 +23142,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "juspay-interview-experience-2026",
     title: "Juspay Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Juspay interview experience guide India 2026. Understand Juspay's hiring process for software engineers, the interview rounds (DSA, functional-programming and Haskell aptitude, backend and payment-systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's payments-orchestration unicorn in Bengaluru.",
+    metaDescription: "Juspay interview experience 2026: rounds covering DSA, Haskell and functional programming, payments-systems design, and salary at the Bengaluru unicorn.",
     company: "Juspay",
     category: "Experience",
     readTime: "8 min",
@@ -23179,7 +23179,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cashfree-interview-experience-2026",
     title: "Cashfree Payments Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Cashfree Payments interview experience guide India 2026. Understand Cashfree's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, payment-systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the Bengaluru payments and payouts platform.",
+    metaDescription: "Cashfree Payments interview guide 2026: DSA, backend and LLD, payment-systems design, culture fit, salary ranges at the Bengaluru payments platform.",
     company: "Cashfree",
     category: "Experience",
     readTime: "8 min",
@@ -23216,7 +23216,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "zeta-interview-experience-2026",
     title: "Zeta Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Zeta interview experience guide India 2026. Understand Zeta's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, banking-systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the Bengaluru banking-technology unicorn behind modern core banking and card processing.",
+    metaDescription: "Zeta interview guide India 2026: hiring process for engineers, DSA and banking-systems design rounds, salary ranges, and the Bengaluru unicorn's culture.",
     company: "Zeta",
     category: "Experience",
     readTime: "8 min",
@@ -23253,7 +23253,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "pine-labs-interview-experience-2026",
     title: "Pine Labs Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Pine Labs interview experience guide India 2026. Understand Pine Labs' hiring process for software engineers, the interview rounds (DSA, backend and low-level design, merchant-payments systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the pre-IPO merchant-commerce and payments platform.",
+    metaDescription: "Pine Labs hiring process: DSA, backend and low-level design, merchant-payments systems design, culture, salary ranges, and prep for this pre-IPO fintech.",
     company: "Pine Labs",
     category: "Experience",
     readTime: "8 min",
@@ -23290,7 +23290,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "lenskart-interview-experience-2026",
     title: "Lenskart Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Lenskart interview experience guide India 2026. Understand Lenskart's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, e-commerce and supply-chain systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's omnichannel eyewear leader.",
+    metaDescription: "Lenskart interview guide: hiring rounds (DSA, low-level design, e-commerce and supply-chain systems design), culture, and salary at the eyewear leader.",
     company: "Lenskart",
     category: "Experience",
     readTime: "8 min",
@@ -23327,7 +23327,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cars24-interview-experience-2026",
     title: "Cars24 Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Cars24 interview experience guide India 2026. Understand Cars24's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, marketplace and pricing systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's largest used-car marketplace.",
+    metaDescription: "Cars24 interview experience 2026: rounds (DSA, LLD, marketplace/pricing systems design, culture), salary ranges, at India's largest used-car marketplace.",
     company: "Cars24",
     category: "Experience",
     readTime: "8 min",
@@ -23364,7 +23364,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "delhivery-interview-experience-2026",
     title: "Delhivery Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Delhivery interview experience guide India 2026. Understand Delhivery's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, logistics and routing systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's largest integrated logistics company.",
+    metaDescription: "Delhivery interview guide 2026: DSA, backend/low-level design, logistics and routing systems rounds, salary at India's largest logistics firm.",
     company: "Delhivery",
     category: "Experience",
     readTime: "8 min",
@@ -23401,7 +23401,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "rapido-interview-experience-2026",
     title: "Rapido Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Rapido interview experience guide India 2026. Understand Rapido's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, real-time matching and mapping systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's largest bike-taxi and mobility platform.",
+    metaDescription: "Rapido interview guide: DSA, backend and LLD, real-time matching and mapping systems design, culture rounds, and salary at India's bike-taxi platform.",
     company: "Rapido",
     category: "Experience",
     readTime: "8 min",
@@ -23438,7 +23438,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "udaan-interview-experience-2026",
     title: "Udaan Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Udaan interview experience guide India 2026. Understand Udaan's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, B2B commerce and supply-chain systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's largest B2B e-commerce platform.",
+    metaDescription: "Udaan's hiring process: DSA, backend/low-level design, B2B commerce and supply-chain systems design, culture, and salary ranges for 2026.",
     company: "Udaan",
     category: "Experience",
     readTime: "8 min",
@@ -23475,7 +23475,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "bigbasket-interview-experience-2026",
     title: "BigBasket Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "BigBasket interview experience guide India 2026. Understand BigBasket's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, e-grocery and inventory systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's largest online grocery platform, now part of the Tata group.",
+    metaDescription: "BigBasket interview experience 2026: DSA, backend, low-level design, e-grocery and inventory systems rounds, salary at India's top grocery platform.",
     company: "BigBasket",
     category: "Experience",
     readTime: "8 min",
@@ -23512,7 +23512,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ninjacart-interview-experience-2026",
     title: "Ninjacart Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Ninjacart interview experience guide India 2026. Understand Ninjacart's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, agri supply-chain systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at India's leading agritech supply-chain platform.",
+    metaDescription: "Ninjacart interview experience 2026: rounds on DSA, backend and low-level design, agri supply-chain systems, culture, and salary at the agritech leader.",
     company: "Ninjacart",
     category: "Experience",
     readTime: "8 min",
@@ -23549,7 +23549,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "slice-interview-experience-2026",
     title: "slice Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "slice interview experience guide India 2026. Understand slice's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, payments and credit-ledger systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the credit-led fintech and small finance bank.",
+    metaDescription: "slice interview guide 2026: DSA, backend and LLD, payments and credit-ledger systems design, culture, salary ranges at the credit-led fintech.",
     company: "slice",
     category: "Experience",
     readTime: "8 min",
@@ -23586,7 +23586,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "jupiter-interview-experience-2026",
     title: "Jupiter Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Jupiter interview experience guide India 2026. Understand Jupiter's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, neobanking and payments systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the digital banking and money-management fintech.",
+    metaDescription: "Jupiter interview guide India 2026: engineer hiring process, DSA and neobanking systems design rounds, salary ranges, and digital banking fintech culture.",
     company: "Jupiter",
     category: "Experience",
     readTime: "8 min",
@@ -23623,7 +23623,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "bharatpe-interview-experience-2026",
     title: "BharatPe Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "BharatPe interview experience guide India 2026. Understand BharatPe's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, merchant payments and settlement systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the merchant-payments and lending fintech.",
+    metaDescription: "BharatPe hiring process: DSA, backend and low-level design, merchant payments and settlement systems design, culture, salary ranges, and how to prepare.",
     company: "BharatPe",
     category: "Experience",
     readTime: "8 min",
@@ -23660,7 +23660,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "fi-money-interview-experience-2026",
     title: "Fi Money Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Fi Money interview experience guide India 2026. Understand Fi's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, neobanking and account-aggregation systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the digital banking and wealth fintech.",
+    metaDescription: "Fi Money interview guide: hiring rounds (DSA, low-level design, neobanking and account-aggregation systems design), culture, and fintech salary ranges.",
     company: "Fi Money",
     category: "Experience",
     readTime: "8 min",
@@ -23697,7 +23697,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "indmoney-interview-experience-2026",
     title: "INDmoney Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "INDmoney interview experience guide India 2026. Understand INDmoney's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, wealthtech and portfolio-aggregation systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the investing and money-management super app.",
+    metaDescription: "INDmoney interview experience 2026: rounds (DSA, LLD, wealthtech and portfolio-aggregation systems design), salary ranges, at the investing super app.",
     company: "INDmoney",
     category: "Experience",
     readTime: "8 min",
@@ -23734,7 +23734,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "smallcase-interview-experience-2026",
     title: "smallcase Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "smallcase interview experience guide India 2026. Understand smallcase's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, investing-infrastructure and broker-integration systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the investing-platform fintech.",
+    metaDescription: "smallcase interview guide 2026: DSA, backend/low-level design, investing-infra and broker-integration systems rounds at the investing-platform fintech.",
     company: "smallcase",
     category: "Experience",
     readTime: "8 min",
@@ -23771,7 +23771,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "moneyview-interview-experience-2026",
     title: "Moneyview Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Moneyview interview experience guide India 2026. Understand Moneyview's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, lending and credit-underwriting systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the digital lending fintech.",
+    metaDescription: "Moneyview interview guide: DSA, backend and LLD, lending and credit-underwriting systems design, culture rounds, and salary at the digital lending fintech.",
     company: "Moneyview",
     category: "Experience",
     readTime: "8 min",
@@ -23808,7 +23808,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "niyo-interview-experience-2026",
     title: "Niyo Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Niyo interview experience guide India 2026. Understand Niyo's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, neobanking and cards/forex systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the digital banking and travel-cards fintech.",
+    metaDescription: "Niyo's hiring process: DSA, backend/low-level design, neobanking and cards/forex systems design, culture, and salary ranges for 2026.",
     company: "Niyo",
     category: "Experience",
     readTime: "8 min",
@@ -23845,7 +23845,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "acko-interview-experience-2026",
     title: "Acko Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Acko interview experience guide India 2026. Understand Acko's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, insurtech and claims/pricing systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the digital-first insurance unicorn.",
+    metaDescription: "Acko interview experience 2026: DSA, backend, low-level design, insurtech and claims/pricing systems rounds, and salary at the insurance unicorn.",
     company: "Acko",
     category: "Experience",
     readTime: "8 min",
@@ -23882,7 +23882,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "digit-interview-experience-2026",
     title: "Go Digit Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Go Digit interview experience guide India 2026. Understand Go Digit's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, insurtech and claims/pricing systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the listed digital general-insurance company.",
+    metaDescription: "Go Digit interview experience 2026: rounds on DSA, backend design, insurtech claims/pricing systems, culture, and salary at the listed insurer.",
     company: "Go Digit",
     category: "Experience",
     readTime: "8 min",
@@ -23919,7 +23919,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "apollo-247-interview-experience-2026",
     title: "Apollo 24|7 Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Apollo 24|7 interview experience guide India 2026. Understand Apollo 24|7's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, e-pharmacy and teleconsultation systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at Apollo's digital health platform.",
+    metaDescription: "Apollo 24|7 interview guide 2026: DSA, backend and LLD, e-pharmacy and teleconsultation systems design, culture, and salary at the digital health platform.",
     company: "Apollo 24|7",
     category: "Experience",
     readTime: "8 min",
@@ -23956,7 +23956,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tata-1mg-interview-experience-2026",
     title: "Tata 1mg Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Tata 1mg interview experience guide India 2026. Understand Tata 1mg's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, e-pharmacy and diagnostics systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the Tata group's digital health platform.",
+    metaDescription: "Tata 1mg interview guide India 2026: engineer hiring process, DSA and e-pharmacy systems design rounds, salary ranges, and Tata's digital health platform.",
     company: "Tata 1mg",
     category: "Experience",
     readTime: "8 min",
@@ -23993,7 +23993,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "practo-interview-experience-2026",
     title: "Practo Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Practo interview experience guide India 2026. Understand Practo's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, appointments and teleconsultation systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the doctor-discovery and healthtech platform.",
+    metaDescription: "Practo hiring process: DSA, backend and low-level design, appointments and teleconsultation systems design, culture, salary ranges, and how to prepare.",
     company: "Practo",
     category: "Experience",
     readTime: "8 min",
@@ -24030,7 +24030,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "medibuddy-interview-experience-2026",
     title: "MediBuddy Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "MediBuddy interview experience guide India 2026. Understand MediBuddy's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, teleconsultation and health-benefits systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the digital healthcare and teleconsultation platform.",
+    metaDescription: "MediBuddy interview guide: hiring rounds (DSA, low-level design, teleconsultation and health-benefits systems design), culture, and salary ranges.",
     company: "MediBuddy",
     category: "Experience",
     readTime: "8 min",
@@ -24067,7 +24067,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "curefit-interview-experience-2026",
     title: "Cult.fit (Curefit) Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Cult.fit interview experience guide India 2026. Understand Curefit's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, fitness-booking and content systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the health-and-fitness platform.",
+    metaDescription: "Cult.fit (Curefit) interview experience 2026: rounds (DSA, LLD, fitness-booking and content systems design), salary ranges, at the fitness platform.",
     company: "Cult.fit",
     category: "Experience",
     readTime: "8 min",
@@ -24104,7 +24104,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "dr-lal-pathlabs-interview-experience-2026",
     title: "Dr Lal PathLabs Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Dr Lal PathLabs interview experience guide India 2026. Understand Dr Lal PathLabs' hiring process for software engineers, the interview rounds (DSA, backend and low-level design, diagnostics and lab-information systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the listed diagnostics chain.",
+    metaDescription: "Dr Lal PathLabs interview guide 2026: DSA, backend/low-level design, diagnostics and lab-information systems design rounds at the listed diagnostics chain.",
     company: "Dr Lal PathLabs",
     category: "Experience",
     readTime: "8 min",
@@ -24141,7 +24141,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "metropolis-interview-experience-2026",
     title: "Metropolis Healthcare Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Metropolis Healthcare interview experience guide India 2026. Understand Metropolis' hiring process for software engineers, the interview rounds (DSA, backend and low-level design, diagnostics and lab-information systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the listed diagnostics chain.",
+    metaDescription: "Metropolis Healthcare interview guide: DSA, backend and LLD, diagnostics and lab-information systems design, and salary at the listed diagnostics chain.",
     company: "Metropolis Healthcare",
     category: "Experience",
     readTime: "8 min",
@@ -24178,7 +24178,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "chargebee-interview-experience-2026",
     title: "Chargebee Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Chargebee interview experience guide India 2026. Understand Chargebee's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, subscription billing systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a subscription-billing and revenue-management SaaS platform.",
+    metaDescription: "Chargebee's hiring process: DSA, backend/low-level design, subscription billing systems design, culture, and salary ranges for 2026.",
     company: "Chargebee",
     category: "Experience",
     readTime: "8 min",
@@ -24215,7 +24215,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hasura-interview-experience-2026",
     title: "Hasura Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Hasura interview experience guide India 2026. Understand Hasura's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, developer-tools and API infrastructure systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a developer-tools SaaS company best known for its instant GraphQL engine over databases.",
+    metaDescription: "Hasura interview experience 2026: DSA, backend, API infrastructure systems design rounds, and salary at the instant-GraphQL developer-tools SaaS.",
     company: "Hasura",
     category: "Experience",
     readTime: "8 min",
@@ -24252,7 +24252,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "druva-interview-experience-2026",
     title: "Druva Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Druva interview experience guide India 2026. Understand Druva's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, cloud data protection and backup systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a cloud data-protection and SaaS backup company.",
+    metaDescription: "Druva interview experience 2026: rounds on DSA, backend design, cloud data-protection and backup systems, culture, and salary at the SaaS company.",
     company: "Druva",
     category: "Experience",
     readTime: "8 min",
@@ -24289,7 +24289,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "darwinbox-interview-experience-2026",
     title: "Darwinbox Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Darwinbox interview experience guide India 2026. Understand Darwinbox's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, HR SaaS systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a human-resources (HR) SaaS platform.",
+    metaDescription: "Darwinbox interview guide 2026: DSA, backend and LLD, HR SaaS systems design, culture fit, salary ranges at the HR SaaS platform.",
     company: "Darwinbox",
     category: "Experience",
     readTime: "8 min",
@@ -24326,7 +24326,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "moengage-interview-experience-2026",
     title: "MoEngage Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "MoEngage interview experience guide India 2026. Understand MoEngage's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, customer engagement and marketing automation systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a customer-engagement and marketing-automation SaaS platform.",
+    metaDescription: "MoEngage interview guide India 2026: engineer hiring process, DSA and marketing-automation systems design rounds, salary ranges, and SaaS culture.",
     company: "MoEngage",
     category: "Experience",
     readTime: "8 min",
@@ -24363,7 +24363,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "mindtickle-interview-experience-2026",
     title: "Mindtickle Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Mindtickle interview experience guide India 2026. Understand Mindtickle's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, sales-readiness and enablement SaaS systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a sales-readiness and revenue-enablement SaaS platform.",
+    metaDescription: "Mindtickle hiring process: DSA, backend and low-level design, sales-readiness and enablement SaaS systems design, culture, salary ranges, and prep tips.",
     company: "Mindtickle",
     category: "Experience",
     readTime: "8 min",
@@ -24400,7 +24400,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "gupshup-interview-experience-2026",
     title: "Gupshup Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Gupshup interview experience guide India 2026. Understand Gupshup's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, conversational messaging and CPaaS systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a conversational-messaging and CPaaS (communications platform as a service) company.",
+    metaDescription: "Gupshup interview guide: hiring rounds (DSA, low-level design, conversational messaging and CPaaS systems design), culture, and salary at the CPaaS firm.",
     company: "Gupshup",
     category: "Experience",
     readTime: "8 min",
@@ -24437,7 +24437,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "exotel-interview-experience-2026",
     title: "Exotel Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Exotel interview experience guide India 2026. Understand Exotel's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, cloud telephony and CPaaS systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a cloud-telephony and customer-communications (CPaaS) platform.",
+    metaDescription: "Exotel interview experience 2026: rounds (DSA, LLD, cloud telephony and CPaaS systems design), salary ranges, at India's customer-communications platform.",
     company: "Exotel",
     category: "Experience",
     readTime: "8 min",
@@ -24474,7 +24474,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "sigmoid-interview-experience-2026",
     title: "Sigmoid Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Sigmoid interview experience guide India 2026. Understand Sigmoid's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, data engineering and analytics systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a data-engineering and analytics-solutions company.",
+    metaDescription: "Sigmoid interview guide 2026: DSA, backend/low-level design, data engineering and analytics systems design rounds at a data-engineering solutions company.",
     company: "Sigmoid",
     category: "Experience",
     readTime: "8 min",
@@ -24511,7 +24511,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tracxn-interview-experience-2026",
     title: "Tracxn Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Tracxn interview experience guide India 2026. Understand Tracxn's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, market intelligence and data platform systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a market-intelligence and private-company data platform.",
+    metaDescription: "Tracxn interview guide: DSA, backend and LLD, market intelligence and data platform systems design, culture rounds, and salary at this data company.",
     company: "Tracxn",
     category: "Experience",
     readTime: "8 min",
@@ -24548,7 +24548,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ather-energy-interview-experience-2026",
     title: "Ather Energy Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Ather Energy interview experience guide India 2026. Understand Ather Energy's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, connected-vehicle and EV software systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a listed electric-two-wheeler company building connected EVs and a charging network.",
+    metaDescription: "Ather Energy's hiring process: DSA, backend/low-level design, connected-vehicle and EV software systems design, and salary ranges 2026.",
     company: "Ather Energy",
     category: "Experience",
     readTime: "8 min",
@@ -24585,7 +24585,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ola-electric-interview-experience-2026",
     title: "Ola Electric Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Ola Electric interview experience guide India 2026. Understand Ola Electric's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, EV and connected-vehicle software systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a listed electric-vehicle company building EV two-wheelers, software, and manufacturing at scale.",
+    metaDescription: "Ola Electric interview experience 2026: DSA, backend, EV and connected-vehicle systems design rounds, salary at the listed EV two-wheeler company.",
     company: "Ola Electric",
     category: "Experience",
     readTime: "8 min",
@@ -24622,7 +24622,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "spinny-interview-experience-2026",
     title: "Spinny Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Spinny interview experience guide India 2026. Understand Spinny's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, used-car e-commerce systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a full-stack used-car e-commerce platform.",
+    metaDescription: "Spinny interview experience 2026: rounds on DSA, backend and low-level design, used-car e-commerce systems, culture, and salary at the platform.",
     company: "Spinny",
     category: "Experience",
     readTime: "8 min",
@@ -24659,7 +24659,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "blackbuck-interview-experience-2026",
     title: "BlackBuck Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "BlackBuck interview experience guide India 2026. Understand BlackBuck's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, trucking and logistics marketplace systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a listed trucking and logistics marketplace for India's road-freight ecosystem.",
+    metaDescription: "BlackBuck interview guide 2026: DSA, backend and LLD, trucking and logistics marketplace systems design, culture, salary at the listed freight platform.",
     company: "BlackBuck",
     category: "Experience",
     readTime: "8 min",
@@ -24696,7 +24696,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "shiprocket-interview-experience-2026",
     title: "Shiprocket Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Shiprocket interview experience guide India 2026. Understand Shiprocket's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, e-commerce shipping and logistics aggregation systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at an e-commerce shipping and logistics-aggregation platform.",
+    metaDescription: "Shiprocket interview guide India 2026: engineer hiring process, DSA and logistics-aggregation systems design rounds, salary ranges, and culture.",
     company: "Shiprocket",
     category: "Experience",
     readTime: "8 min",
@@ -24733,7 +24733,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "unacademy-interview-experience-2026",
     title: "Unacademy Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Unacademy interview experience guide India 2026. Understand Unacademy's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, edtech and live learning systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a large online-education (edtech) platform.",
+    metaDescription: "Unacademy hiring process: DSA, backend and low-level design, edtech and live learning systems design, culture, salary ranges, and how to prepare in 2026.",
     company: "Unacademy",
     category: "Experience",
     readTime: "8 min",
@@ -24770,7 +24770,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "ixigo-interview-experience-2026",
     title: "ixigo Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "ixigo interview experience guide India 2026. Understand ixigo's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, online travel and booking systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a listed online travel platform for trains, flights, and buses.",
+    metaDescription: "ixigo interview guide: hiring rounds (DSA, low-level design, online travel booking systems design), culture, and salary at the listed OTA platform.",
     company: "ixigo",
     category: "Experience",
     readTime: "8 min",
@@ -24807,7 +24807,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "truecaller-interview-experience-2026",
     title: "Truecaller Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Truecaller interview experience guide India 2026. Understand Truecaller's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, caller-ID and communications at scale systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the company behind the widely used caller-ID and spam-detection app, with a large India engineering presence.",
+    metaDescription: "Truecaller interview experience 2026: rounds (DSA, LLD, caller-ID and communications-at-scale systems design), salary ranges, at the caller-ID app maker.",
     company: "Truecaller",
     category: "Experience",
     readTime: "8 min",
@@ -24844,7 +24844,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "yulu-interview-experience-2026",
     title: "Yulu Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Yulu interview experience guide India 2026. Understand Yulu's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, shared electric-mobility software systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a shared electric-mobility company running dockless EV two-wheelers and battery-swapping.",
+    metaDescription: "Yulu interview guide 2026: DSA, backend/low-level design, shared electric-mobility systems rounds at the dockless EV two-wheeler and battery-swap company.",
     company: "Yulu",
     category: "Experience",
     readTime: "8 min",
@@ -24881,7 +24881,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "licious-interview-experience-2026",
     title: "Licious Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Licious interview experience guide India 2026. Understand Licious's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, fresh-commerce and cold-chain fulfilment systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a direct-to-consumer fresh-meat and seafood brand with an integrated cold-chain supply.",
+    metaDescription: "Licious interview guide: DSA, backend and LLD, fresh-commerce and cold-chain fulfilment systems design, and salary at the D2C meat and seafood brand.",
     company: "Licious",
     category: "Experience",
     readTime: "8 min",
@@ -24918,7 +24918,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "mamaearth-interview-experience-2026",
     title: "Mamaearth Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Mamaearth interview experience guide India 2026. Understand Mamaearth's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, D2C e-commerce and personal care systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a listed direct-to-consumer beauty and personal-care company (Honasa Consumer).",
+    metaDescription: "Mamaearth's (Honasa Consumer) hiring process: DSA, backend/low-level design, D2C e-commerce systems design, culture, and salary ranges.",
     company: "Mamaearth",
     category: "Experience",
     readTime: "8 min",
@@ -24955,7 +24955,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "rebel-foods-interview-experience-2026",
     title: "Rebel Foods Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Rebel Foods interview experience guide India 2026. Understand Rebel Foods's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, cloud-kitchen and food-tech operations systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at the cloud-kitchen company that operates many food brands from shared kitchens.",
+    metaDescription: "Rebel Foods interview experience 2026: DSA, backend, cloud-kitchen and food-tech operations systems rounds, salary at the multi-brand cloud kitchen.",
     company: "Rebel Foods",
     category: "Experience",
     readTime: "8 min",
@@ -24992,7 +24992,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "country-delight-interview-experience-2026",
     title: "Country Delight Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Country Delight interview experience guide India 2026. Understand Country Delight's hiring process for software engineers, the interview rounds (DSA, backend and low-level design, D2C subscription and daily-delivery systems design, culture), what interviewers look for, salary ranges, and how to prepare for roles at a direct-to-consumer dairy and daily-essentials subscription brand.",
+    metaDescription: "Country Delight interview experience 2026: rounds on DSA, D2C subscription and delivery systems design, culture, and salary at the dairy brand.",
     company: "Country Delight",
     category: "Experience",
     readTime: "8 min",
@@ -25029,7 +25029,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "godrej-interview-experience-2026",
     title: "Godrej Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Godrej interview experience guide India 2026. Understand Godrej Group's hiring process for software engineers and the Godrej Leadership Program (GLP), interview rounds (DSA, SQL, OOP, case study), what interviewers look for, salary ranges, and how to prepare.",
+    metaDescription: "Godrej interview experience 2026: hiring process for SWEs and the Godrej Leadership Program, DSA, SQL, OOP, case study rounds, and salary ranges.",
     company: "Godrej",
     category: "Experience",
     readTime: "8 min",
@@ -25068,7 +25068,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "hul-uflp-interview-experience-2026",
     title: "HUL UFLP Interview Experience 2026: Process, Case Study, and What to Expect",
-    metaDescription: "HUL interview experience guide India 2026. Hindustan Unilever's hiring process, the UFLP management-trainee track, case study and leadership rounds, what interviewers look for, salary ranges, and how to prepare.",
+    metaDescription: "HUL interview experience 2026: Hindustan Unilever's hiring process, the UFLP management-trainee track, case study and leadership rounds, and salary.",
     company: "HUL",
     category: "Experience",
     readTime: "8 min",
@@ -25107,7 +25107,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "globallogic-interview-experience-2026",
     title: "GlobalLogic Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "GlobalLogic interview experience guide India 2026. Hitachi-owned product engineering services company's hiring process for software engineers, technical and client-interview rounds, domain-specific questions, salary ranges, and how to prepare.",
+    metaDescription: "GlobalLogic interview guide 2026: Hitachi-owned product engineering firm's hiring process, technical and client rounds, domain questions, and salary.",
     company: "GlobalLogic",
     category: "Experience",
     readTime: "7 min",
@@ -25146,7 +25146,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "anthropic-interview-experience-2026",
     title: "Anthropic Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "Anthropic interview experience guide India 2026. The AI safety company's hiring process for remote software engineers: take-home challenge, technical and values rounds, salary ranges, and how to prepare.",
+    metaDescription: "Anthropic interview guide India 2026: the AI safety company's remote SWE hiring, take-home challenge, technical and values rounds, and salary ranges.",
     company: "Anthropic",
     category: "Experience",
     readTime: "7 min",
@@ -25184,7 +25184,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "procter-gamble-interview-experience-2026",
     title: "Procter & Gamble India Interview Experience 2026: CAR Framework, Rounds, and What to Expect",
-    metaDescription: "P&G India interview experience guide 2026. Procter & Gamble's structured CAR-framework interview process, case study and GD rounds, what interviewers look for, salary ranges, and how to prepare.",
+    metaDescription: "P&G India interview guide: CAR-framework interview process, case study and GD rounds, what interviewers look for, salary ranges, and how to prepare.",
     company: "Procter & Gamble",
     category: "Experience",
     readTime: "8 min",
@@ -25222,7 +25222,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "tower-research-interview-experience-2026",
     title: "Tower Research Capital Interview Experience 2026: Quant Rounds and What to Expect",
-    metaDescription: "Tower Research Capital interview experience guide India 2026. The HFT firm's Gurgaon quant hiring process: probability screens, C++/Python coding, market microstructure, salary ranges, and how to prepare.",
+    metaDescription: "Tower Research Capital interview guide: the HFT firm's Gurgaon quant hiring, probability screens, C++/Python coding, market microstructure, salaries.",
     company: "Tower Research Capital",
     category: "Experience",
     readTime: "7 min",
@@ -25260,7 +25260,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "boat-interview-experience-2026",
     title: "boAt Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "boAt (Imagine Marketing) interview experience guide India 2026. India's #1 consumer electronics brand's software engineering hiring process, technical and culture rounds, salary ranges, and how to prepare.",
+    metaDescription: "boAt (Imagine Marketing) interview experience 2026: DSA, backend, systems design, D2C/e-commerce rounds, salary ranges at India's #1 audio brand.",
     company: "boAt",
     category: "Experience",
     readTime: "7 min",
@@ -25298,7 +25298,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "policybazaar-interview-experience-2026",
     title: "PolicyBazaar Interview Experience 2026: Process, Rounds, and What to Expect",
-    metaDescription: "PolicyBazaar (PB Fintech) interview experience guide India 2026. India's largest insurance marketplace's SDE hiring process, DSA and backend rounds, salary ranges, and how to prepare.",
+    metaDescription: "PolicyBazaar (PB Fintech) interview guide 2026: DSA, backend, systems design, insurance-marketplace domain rounds, and salary at India's largest insurer.",
     company: "PolicyBazaar",
     category: "Experience",
     readTime: "7 min",

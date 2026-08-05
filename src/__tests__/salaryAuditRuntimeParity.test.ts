@@ -91,6 +91,12 @@ describe("salary audit ↔ runtime parity", () => {
     "bajaj finance/software-engineer/mid",
     "capgemini/project-manager/senior",
     "delhivery/software-engineer/entry",
+    /* AB scrape's entry-level "software-engineer" cell is actually a
+     * lower/adjacent title (Fiserv's "Technology Analyst", GlobalLogic's
+     * "Associate Software Engineer"), not a re-measurement of the
+     * curator's SDE-level figure; keep curator. */
+    "fiserv/software-engineer/entry",
+    "globallogic/software-engineer/entry",
     /* Bug-report 15 follow-up: Deloitte BA-Senior pinned to curated
      * Glassdoor/UpGrad numbers (₹20-30L, midpoint 25). Imported scrape
      * tracks generic Big-4 senior-consultant which is wider; keep

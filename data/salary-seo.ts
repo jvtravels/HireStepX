@@ -3142,7 +3142,11 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Siemens India Software Engineer Salary 2026",
     metaDescription:
       "Siemens India salary 2026: SWE entry ₹10–16 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. Siemens RSU (SIE Xetra). Bengaluru and Pune. Industrial IoT, automation, and energy tech.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "project-manager", label: "Project Manager" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+    ],
     questionSlug: "siemens-india-software-engineer-interview-questions",
     hubNote: "German industrial tech GCC: SIE RSU; deep industrial IoT and automation engineering",
     sitemapPriority: 0.71,
@@ -3162,7 +3166,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Texas Instruments India Software Engineer Salary 2026",
     metaDescription:
       "Texas Instruments India salary 2026: SWE entry ₹25–38 LPA, mid ₹40–65 LPA, senior ₹68–110 LPA. TI RSU (TXN Nasdaq). Bengaluru and Hyderabad. Analog and embedded chip design.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "embedded-engineer", label: "Embedded Engineer" },
+    ],
     questionSlug: "texas-instruments-software-engineer-interview-questions",
     hubNote: "Premium semiconductor GCC: TXN RSU; Bengaluru is TI's largest non-US engineering site",
     sitemapPriority: 0.75,
@@ -3216,7 +3223,14 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Thoughtworks Software Engineer Salary India 2026",
     metaDescription:
       "Thoughtworks salary India 2026: SWE entry ₹8–14 LPA, mid ₹16–28 LPA, senior ₹30–52 LPA. No equity for most India roles. Global IT consultancy. Bengaluru and Pune. Agile and XP culture.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+      { roleKey: "solutions-architect", label: "Solutions Architect" },
+    ],
     questionSlug: "thoughtworks-india-software-engineer-interview-questions",
     hubNote: "Global IT consultancy: strong engineering culture (TDD, XP); listed TWKS Nasdaq",
     sitemapPriority: 0.71,
@@ -3236,7 +3250,17 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Ericsson India Software Engineer Salary 2026",
     metaDescription:
       "Ericsson India salary 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. Ericsson RSU (ERIC Nasdaq). Bengaluru and Chennai. 5G RAN, telecom protocol, and OSS/BSS engineering.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "automation-engineer", label: "Automation Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "network-engineer", label: "Network Engineer" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+      { roleKey: "solutions-architect", label: "Solutions Architect" },
+    ],
     questionSlug: "ericsson-india-software-engineer-interview-questions",
     hubNote: "Telecom giant India GCC: ERIC RSU; 5G and telecom protocol stack engineering",
     sitemapPriority: 0.70,
@@ -3246,7 +3270,16 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Nokia India Software Engineer Salary 2026",
     metaDescription:
       "Nokia India salary 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. Nokia RSU (NOKIA Helsinki). Bengaluru and Chennai. 5G network software, cloud RAN, and IP routing.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "network-engineer", label: "Network Engineer" },
+      { roleKey: "project-manager", label: "Project Manager" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+      { roleKey: "solutions-architect", label: "Solutions Architect" },
+    ],
     questionSlug: "nokia-india-software-engineer-interview-questions",
     hubNote: "Telecom equipment GCC: Nokia Helsinki RSU; cloud RAN and 5G protocol engineering",
     sitemapPriority: 0.70,
@@ -3256,7 +3289,13 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "NTT Data India Software Engineer Salary 2026",
     metaDescription:
       "NTT Data India salary 2026: SWE entry ₹6–10 LPA, mid ₹12–20 LPA, senior ₹22–36 LPA. No equity for India roles. Japanese IT services giant. Bengaluru and Chennai. Full CTC breakdown.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "network-engineer", label: "Network Engineer" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+    ],
     questionSlug: "ntt-data-software-engineer-interview-questions",
     hubNote: "Japanese IT services giant: NTT group; no India equity; comp close to mid-tier IT services",
     sitemapPriority: 0.69,
@@ -3266,7 +3305,14 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "GlobalLogic Software Engineer Salary India 2026: ₹8–44 LPA",
     metaDescription:
       "GlobalLogic salary India 2026: SWE entry ₹8–12 LPA, mid ₹14–24 LPA, senior ₹26–44 LPA. Hitachi RSU. Noida, Bengaluru, Hyderabad. Product engineering services for global tech companies.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "backend-developer", label: "Backend Developer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+    ],
     questionSlug: "globallogic-india-software-engineer-interview-questions",
     hubNote: "Hitachi-acquired (2021): product engineering services; Hitachi RSU; strong embedded domain",
     sitemapPriority: 0.70,
@@ -3277,7 +3323,12 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Juspay Software Engineer Salary India 2026",
     metaDescription:
       "Juspay salary India 2026: SWE entry ₹14–22 LPA, mid ₹24–38 LPA, senior ₹40–65 LPA. ESOP. India's payments infra company (BHIM, Amazon Pay, Reliance backend). Bengaluru. CTC guide.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+      { roleKey: "sre", label: "SRE" },
+    ],
     questionSlug: "juspay-swe-interview-questions",
     hubNote: "Payments infra: powers BHIM and Amazon Pay; Haskell-first backend; strong eng bar",
     sitemapPriority: 0.71,
@@ -3365,7 +3416,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Khatabook Software Engineer Salary India 2026",
     metaDescription:
       "Khatabook salary India 2026: SWE entry ₹16–26 LPA, mid ₹26–40 LPA, senior ₹42–65 LPA. ESOP. Bengaluru SMB fintech: digital ledger, payments, and credit for small businesses.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+    ],
     questionSlug: "khatabook-software-engineer-interview-questions",
     hubNote: "SMB fintech: 10M+ merchants on digital ledger; ESOP; Bengaluru HQ",
     sitemapPriority: 0.69,
@@ -3385,7 +3439,12 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Zeta Tech Software Engineer Salary India 2026",
     metaDescription:
       "Zeta salary India 2026: SWE entry ₹18–28 LPA, mid ₹28–45 LPA, senior ₹48–78 LPA. ESOP (unicorn, $1.5B). Bengaluru banking tech SaaS: next-gen core banking for Kotak, HDFC, global banks.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+      { roleKey: "project-manager", label: "Project Manager" },
+      { roleKey: "sre", label: "SRE" },
+    ],
     questionSlug: "zeta-software-engineer-interview-questions",
     hubNote: "Banking SaaS unicorn ($1.5B): powers next-gen core banking; strong eng culture; ESOP",
     sitemapPriority: 0.71,
@@ -3405,7 +3464,12 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "KreditBee Software Engineer Salary India 2026",
     metaDescription:
       "KreditBee salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. ESOP. Bengaluru lending fintech: personal loans, credit line, and BNPL for salaried and self-employed.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+    ],
     questionSlug: "kreditbee-software-engineer-interview-questions",
     hubNote: "Lending fintech: 40M+ registered users; ESOP; Bengaluru; RBI-regulated NBFC",
     sitemapPriority: 0.69,
@@ -3608,7 +3672,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Shiprocket Software Engineer Salary India 2026",
     metaDescription:
       "Shiprocket salary India 2026: SWE entry ₹12–18 LPA, mid ₹20–32 LPA, senior ₹34–56 LPA. ESOP. Delhi-based shipping aggregator for D2C brands. IPO-filed. 100,000+ merchants on platform.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "shiprocket-software-engineer-interview-questions",
     hubNote: "Shipping aggregator: IPO-filed; ESOP credibility lifting; 100K+ merchants; Delhi HQ",
     sitemapPriority: 0.70,
@@ -3618,7 +3685,11 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Udaan B2B Commerce Software Engineer Salary India 2026",
     metaDescription:
       "Udaan salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–62 LPA. ESOP. Bengaluru B2B trade platform connecting manufacturers, distributors, and retailers.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "program-manager", label: "Program Manager" },
+    ],
     questionSlug: "udaan-software-engineer-interview-questions",
     hubNote: "B2B commerce unicorn: $3B valuation; ESOP; supply chain + trade financing tech",
     sitemapPriority: 0.70,
@@ -3638,7 +3709,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Ninjacart Software Engineer Salary India 2026",
     metaDescription:
       "Ninjacart salary India 2026: SWE entry ₹12–18 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. ESOP. Bengaluru B2B fresh produce supply chain: farm-to-business in 5+ cities.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "ninjacart-software-engineer-interview-questions",
     hubNote: "Agri-tech supply chain: Walmart-backed; ESOP; cold-chain and logistics tech",
     sitemapPriority: 0.68,
@@ -3658,7 +3732,11 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Vedantu Software Engineer Salary India 2026",
     metaDescription:
       "Vedantu salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–32 LPA, senior ₹34–56 LPA. ESOP. Bengaluru live-class EdTech: LIVE tutoring for K-12 students (JEE, NEET, CBSE prep).",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "program-manager", label: "Program Manager" },
+    ],
     questionSlug: "vedantu-software-engineer-interview-questions",
     hubNote: "Live-class EdTech: ESOP post-2023 reset; Bengaluru; JEE/NEET LIVE tutoring tech",
     sitemapPriority: 0.68,
@@ -3698,7 +3776,13 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Shadowfax Software Engineer Salary India 2026",
     metaDescription:
       "Shadowfax salary India 2026: SWE entry ₹8–14 LPA, mid ₹16–26 LPA, senior ₹28–46 LPA. ESOP. Bengaluru gig-logistics platform: hyperlocal delivery for Meesho, JioMart, AJIO.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "shadowfax-software-engineer-interview-questions",
     hubNote: "Gig-logistics unicorn: hyperlocal delivery for major e-commerce; ESOP; Bengaluru",
     sitemapPriority: 0.68,
@@ -3758,7 +3842,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "INDmoney Software Engineer Salary India 2026",
     metaDescription:
       "INDmoney salary India 2026: SWE entry ₹14–22 LPA, mid ₹22–36 LPA, senior ₹38–60 LPA. ESOP. Gurugram wealth management super-app: US stocks, India mutual funds, and NPS investing.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "product-manager", label: "Product Manager" },
+    ],
     questionSlug: "indmoney-software-engineer-interview-questions",
     hubNote: "Wealth super-app: US stocks for India investors; ESOP unicorn; Gurugram HQ",
     sitemapPriority: 0.70,
@@ -3768,7 +3855,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Rupeek Software Engineer Salary India 2026",
     metaDescription:
       "Rupeek salary India 2026: SWE entry ₹14–20 LPA, mid ₹20–32 LPA, senior ₹34–55 LPA. ESOP. Bengaluru gold loan fintech: doorstep gold loan collection and digital lending platform.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+    ],
     questionSlug: "rupeek-software-engineer-interview-questions",
     hubNote: "Gold loan fintech: doorstep model; ESOP; Bengaluru; $600M+ raised from Goldman Sachs",
     sitemapPriority: 0.68,
@@ -3821,7 +3911,13 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Sigmoid Software Engineer Salary India 2026",
     metaDescription:
       "Sigmoid salary India 2026: SWE entry ₹12–20 LPA, mid ₹20–34 LPA, senior ₹36–58 LPA. ESOP. Bengaluru data engineering consultancy: big data pipelines, ML platforms for global Fortune 500.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-engineer", label: "Data Engineer" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "devops-engineer", label: "DevOps Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+    ],
     questionSlug: "sigmoid-software-engineer-interview-questions",
     hubNote: "Data engineering consultancy: Spark/Kafka/Airflow experts; ESOP; Bengaluru HQ",
     sitemapPriority: 0.68,
@@ -3851,7 +3947,10 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Tracxn Software Engineer Salary India 2026",
     metaDescription:
       "Tracxn salary India 2026: SWE mid ₹10–18 LPA, senior ₹20–34 LPA. Listed RSU (NSE: TRACXN). Bengaluru startup intelligence SaaS: market research and deal sourcing for VCs and corporates.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "program-manager", label: "Program Manager" },
+    ],
     questionSlug: "tracxn-software-engineer-interview-questions",
     hubNote: "Listed startup intelligence (NSE: TRACXN): RSU; Bengaluru; VC market research SaaS",
     sitemapPriority: 0.67,
@@ -3929,7 +4028,11 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "BNY Mellon Technology India Software Engineer Salary 2026",
     metaDescription:
       "BNY Mellon India salary 2026: SWE entry ₹15–24 LPA, mid ₹24–42 LPA, senior ₹42–70 LPA. RSU on NYSE (BK). Pune and Chennai fintech GCC for the world's largest custody bank with $47T in assets.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+    ],
     questionSlug: "bny-mellon-software-engineer-interview-questions",
     hubNote: "World's largest custody bank GCC; Pune + Chennai; NYSE; RSU; fintech engineering",
     sitemapPriority: 0.71,
@@ -4002,7 +4105,14 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     searchPhrase: "Fiserv India Software Engineer Salary 2026",
     metaDescription:
       "Fiserv India salary 2026: SWE entry ₹12–20 LPA, mid ₹20–36 LPA, senior ₹36–60 LPA. RSU on Nasdaq (FI). Pune and Hyderabad fintech GCC for a $18B revenue payment processing and banking software giant.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "cloud-engineer", label: "Cloud Engineer" },
+      { roleKey: "engineering-manager", label: "Engineering Manager" },
+      { roleKey: "project-manager", label: "Project Manager" },
+      { roleKey: "qa-engineer", label: "QA Engineer" },
+    ],
     questionSlug: "fiserv-software-engineer-interview-questions",
     hubNote: "Fintech GCC Pune + Hyderabad; Nasdaq listed; RSU; banking software + payments",
     sitemapPriority: 0.70,
