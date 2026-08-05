@@ -25,7 +25,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Walk-in Interview Preparation & Tips (India) | HireStepX",
   description:
-    "No appointment, no advance notice, interview happens the moment you're called. How to prepare for a walk-in interview drive in a single day, plus the questions that come up most.",
+    "No appointment, no advance notice: the interview happens the moment you're called. How to prepare for a walk-in drive, plus common questions.",
   keywords: [
     "walk-in interview tips",
     "how to prepare for a walk-in interview",

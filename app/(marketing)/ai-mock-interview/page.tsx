@@ -28,7 +28,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "AI Mock Interview Practice: Free, Voice-Based | HireStepX",
   description:
-    "Practice AI mock interviews for free. Voice-based AI interviewer asks company-specific questions, evaluates your answers on STAR structure, and scores communication. 2 free sessions, no card needed.",
+    "Practice AI mock interviews free. Voice AI asks company-specific questions and scores your answers on STAR structure and communication. 2 free sessions.",
   keywords: [
     "ai mock interview",
     "ai mock interview free",

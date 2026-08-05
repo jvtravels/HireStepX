@@ -18,7 +18,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Campus Placement Interview Preparation Guide India 2026 | HireStepX",
+  title: "Campus Placement Interview Prep Guide 2026 | HireStepX",
   description:
     "Campus placement guide for India 2026. Aptitude, technical, GD, and HR rounds for TCS, Infosys, Wipro, Cognizant, Accenture, and Capgemini.",
   keywords: [

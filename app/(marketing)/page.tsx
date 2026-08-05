@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
 
 export const metadata: Metadata = {
-  title: "HireStepX: AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
+  title: "AI Mock Interview Practice India 2026 | HireStepX",
   description:
     "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies. Voice AI scores answers in real time. 2 sessions free.",
   keywords: [

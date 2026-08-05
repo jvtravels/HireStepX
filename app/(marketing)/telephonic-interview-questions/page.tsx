@@ -25,9 +25,9 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Telephonic Interview Questions & Prep Tips (India) | HireStepX",
+  title: "Telephonic Interview Questions & Prep Tips | HireStepX",
   description:
-    "The telephonic round has no face, no body language, no screen: just your voice. Common telephonic interview questions, what recruiters actually screen for, and how to practice the format before the call.",
+    "The telephonic round has no face, no body language, just your voice. Common questions, what recruiters screen for, and how to practice the format.",
   keywords: [
     "telephonic interview questions",
     "phone interview tips india",

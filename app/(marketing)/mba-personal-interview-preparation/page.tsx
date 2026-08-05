@@ -27,9 +27,9 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "MBA Personal Interview (PI) Preparation: CAT, XAT, SNAP | HireStepX",
+  title: "MBA Personal Interview (PI) Prep: CAT, XAT | HireStepX",
   description:
-    "The PI round carries 30-50% weightage at many IIMs. Common MBA personal interview questions, how the panel evaluates you differently from a job interview, and how to practice answering out loud.",
+    "The PI round carries 30-50% weightage at many IIMs. Common MBA interview questions and how the panel evaluates you differently from a job interview.",
   keywords: [
     "mba personal interview preparation",
     "cat pi questions",

@@ -27,9 +27,9 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Bank PO Interview Questions: SBI & IBPS Prep (India) | HireStepX",
+  title: "Bank PO Interview Questions: SBI & IBPS | HireStepX",
   description:
-    "The bank PO interview is a personality and banking-awareness round, not a resume screen. Common SBI and IBPS PO interview questions, what the panel evaluates, and how to practice answering out loud.",
+    "The bank PO interview is a personality and banking-awareness round, not a resume screen. Common SBI and IBPS questions and what the panel evaluates.",
   keywords: [
     "bank po interview questions",
     "sbi po interview questions",

@@ -26,9 +26,9 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "How to Overcome Interview Anxiety: Practice-Based Tips | HireStepX",
+  title: "How to Overcome Interview Anxiety | HireStepX",
   description:
-    "Interview nerves come from facing the unknown too few times. Practical techniques to calm interview anxiety, plus how repeated AI mock interview practice builds real confidence before the day that counts.",
+    "Interview nerves come from facing the unknown too few times. Practical techniques to calm anxiety, and how repeated AI mock practice builds confidence.",
   keywords: [
     "interview anxiety",
     "how to overcome interview anxiety",

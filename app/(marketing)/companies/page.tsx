@@ -27,7 +27,7 @@ import {
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Company Interview Questions: All Companies India 2026 | HireStepX",
+  title: "Company Interview Questions India 2026 | HireStepX",
   description:
     "Interview questions for 200+ companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.",
   keywords: [

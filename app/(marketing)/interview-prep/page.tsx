@@ -30,7 +30,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Interview Preparation Guide India 2026: AI Mock Interviews | HireStepX",
+  title: "Interview Preparation Guide India 2026 | HireStepX",
   description:
     "Interview prep guide for India 2026. AI mock interviews for TCS, Infosys, Google, Amazon, Flipkart, and 200+ companies. All formats covered.",
   keywords: [

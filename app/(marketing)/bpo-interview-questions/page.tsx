@@ -29,7 +29,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "BPO Interview Questions & Answers (India) | HireStepX",
   description:
-    "Common BPO and call center interview questions, what the voice & accent round actually checks for, and how to practice spoken English answers before the interview.",
+    "Common BPO and call center interview questions, what the voice & accent round checks for, and how to practice spoken English before the interview.",
   keywords: [
     "bpo interview questions and answers",
     "call center interview questions india",

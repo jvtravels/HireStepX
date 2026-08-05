@@ -26,7 +26,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "English Speaking Practice for Job Interviews | HireStepX",
   description:
-    "Practice interviews out loud with an AI voice interviewer trained on Indian English and regional accents. Get comfortable speaking under pressure before the real interview, free.",
+    "Practice interviews out loud with an AI voice interviewer trained on Indian English and regional accents. Get comfortable speaking under pressure, free.",
   keywords: [
     "english speaking practice for job interview",
     "interview preparation in hindi",

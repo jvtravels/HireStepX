@@ -28,7 +28,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "One-Way Video Interview Practice & Tips (India) | HireStepX",
   description:
-    "No interviewer on the other end, no live cues, often one take per question. How to prepare for a one-way (asynchronous) video interview, and how to practice talking to a camera before the real one.",
+    "No interviewer on the other end, no live cues, often one take per question. How to prepare for a one-way video interview and practice talking to a camera.",
   keywords: [
     "one way video interview",
     "asynchronous video interview practice",
