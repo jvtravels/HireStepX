@@ -1789,7 +1789,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam-ai",
-    searchPhrase: "Sarvam AI ML Engineer & Researcher Salary India 2026: ₹50–150 LPA",
+    searchPhrase: "Sarvam AI ML Engineer Salary India 2026: ₹50–150 LPA",
     metaDescription:
       "Sarvam AI ML Engineer / Researcher salary: mid ₹50–80 LPA, senior ₹90–150 LPA, plus ESOP (Series B, $1.5B valuation). India's leading vernacular AI unicorn. Bengaluru CTC guide.",
     roles: [
@@ -3763,7 +3763,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "blackbuck",
-    searchPhrase: "BlackBuck (Zinka Logistics) Software Engineer Salary India 2026",
+    searchPhrase: "BlackBuck Software Engineer Salary India 2026",
     metaDescription:
       "BlackBuck (Zinka Logistics) salary India 2026: SWE entry ₹10–16 LPA, mid ₹18–30 LPA, senior ₹32–52 LPA. Listed RSU (NSE: ZINKA). Bengaluru truck marketplace and telematics platform.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
