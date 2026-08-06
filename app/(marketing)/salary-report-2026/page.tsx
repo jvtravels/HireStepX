@@ -107,7 +107,8 @@ export default async function SalaryReport2026Page() {
     },
     mainEntityOfPage: "https://hirestepx.com/salary-report-2026",
     image: "https://hirestepx.com/opengraph-image",
-    ...(stats.lastVerified ? { dateModified: stats.lastVerified, datePublished: stats.lastVerified } : {}),
+    datePublished: "2026-07-31",
+    dateModified: stats.lastVerified ?? "2026-07-31",
   };
 
   return (

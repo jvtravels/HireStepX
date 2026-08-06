@@ -42,6 +42,7 @@ const ORGANIZATION_SCHEMA = {
   name: "HireStepX",
   url: "https://hirestepx.com",
   logo: "https://hirestepx.com/wordmark.png",
+  image: "https://hirestepx.com/opengraph-image",
   description: "AI-powered mock interview platform for Indian job seekers. Practice with conversational AI interviewers, get scored feedback, and land your next role.",
   foundingDate: "2024",
   sameAs: [
