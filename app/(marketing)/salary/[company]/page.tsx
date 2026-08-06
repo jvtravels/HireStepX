@@ -382,7 +382,7 @@ export default async function SalaryCompanySlugPage({
     publisher: {
       "@type": "Organization",
       name: "HireStepX",
-      logo: { "@type": "ImageObject", url: "https://hirestepx.com/icon.png" },
+      logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     datePublished: "2026-06-01",
     dateModified: `${CALIBRATION_DATE}-01`,

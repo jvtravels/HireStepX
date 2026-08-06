@@ -103,7 +103,7 @@ export default async function SalaryReport2026Page() {
     publisher: {
       "@type": "Organization",
       name: "HireStepX",
-      logo: { "@type": "ImageObject", url: "https://hirestepx.com/icon.png" },
+      logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     mainEntityOfPage: "https://hirestepx.com/salary-report-2026",
     image: "https://hirestepx.com/opengraph-image",
