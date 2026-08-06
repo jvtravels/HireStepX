@@ -2926,7 +2926,7 @@ function StructuredData() {
     "@type": "Organization",
     name: "HireStepX",
     url: "https://hirestepx.com",
-    logo: "https://hirestepx.com/logo.png",
+    logo: "https://hirestepx.com/wordmark.png",
     sameAs: ["https://twitter.com/hirestepx"],
     address: {
       "@type": "PostalAddress",
