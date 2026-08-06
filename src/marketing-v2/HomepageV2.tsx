@@ -2939,6 +2939,7 @@ function StructuredData() {
     "@type": "Product",
     name: "HireStepX · AI Mock Interviewer",
     description: "Voice-first AI mock interviews scored on STAR, built for Indian job seekers.",
+    image: "https://hirestepx.com/opengraph-image",
     brand: { "@type": "Brand", name: "HireStepX" },
     offers: {
       "@type": "AggregateOffer",
