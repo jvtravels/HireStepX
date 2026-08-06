@@ -155,9 +155,12 @@ export default async function InterviewAnxietyPage() {
     headline: "How to Overcome Interview Anxiety",
     description:
       "Why interview anxiety happens, techniques that reduce it, and how repeated practice builds real confidence before the interview that counts.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/interview-anxiety",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

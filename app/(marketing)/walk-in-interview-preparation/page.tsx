@@ -132,9 +132,12 @@ export default async function WalkInInterviewPage() {
     headline: "Walk-in Interview Preparation & Tips",
     description:
       "How to prepare for a walk-in interview drive with almost no advance notice, plus the questions that come up most.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/walk-in-interview-preparation",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

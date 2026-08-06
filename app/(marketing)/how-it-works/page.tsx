@@ -61,6 +61,7 @@ const ARTICLE_SCHEMA = {
   "@type": "Article",
   headline: "How AI Mock Interviews Work: 5-Step Practice Guide",
   description: "How HireStepX works: upload resume, pick target company and interview type, practice a voice interview with AI, get a scored STAR report, and repeat with spaced repetition.",
+  image: "https://hirestepx.com/opengraph-image",
   author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
   publisher: {
     "@type": "Organization",

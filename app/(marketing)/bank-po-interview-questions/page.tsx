@@ -133,9 +133,12 @@ export default async function BankPoInterviewPage() {
     headline: "Bank PO Interview Questions: SBI & IBPS Prep",
     description:
       "Common SBI and IBPS PO interview questions, what the panel evaluates, and how to practice answering out loud before the final round.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/bank-po-interview-questions",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

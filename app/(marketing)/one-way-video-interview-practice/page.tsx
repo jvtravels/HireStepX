@@ -142,9 +142,12 @@ export default async function OneWayVideoInterviewPage() {
     headline: "One-Way Video Interview Practice & Tips",
     description:
       "How to prepare for a one-way, asynchronous video interview with no live interviewer, and how to practice talking to a camera before the real one.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/one-way-video-interview-practice",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

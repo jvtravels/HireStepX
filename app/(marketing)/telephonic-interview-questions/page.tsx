@@ -131,9 +131,12 @@ export default async function TelephonicInterviewPage() {
     headline: "Telephonic Interview Questions & Prep Tips",
     description:
       "Common telephonic round questions, what recruiters actually screen for, and how to practice the voice-only format before the real call.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/telephonic-interview-questions",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

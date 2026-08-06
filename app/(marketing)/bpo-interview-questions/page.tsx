@@ -133,9 +133,12 @@ export default async function BpoInterviewPage() {
     headline: "BPO Interview Questions & Answers",
     description:
       "Common BPO and call center interview questions, what the voice & accent round checks for, and how to practice spoken English answers before the interview.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/bpo-interview-questions",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

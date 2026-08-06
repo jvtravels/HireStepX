@@ -133,9 +133,12 @@ export default async function MbaPersonalInterviewPage() {
     headline: "MBA Personal Interview (PI) Preparation",
     description:
       "Common MBA PI questions, what the panel is actually evaluating, and how to practice answering out loud before the round that decides your admit.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/mba-personal-interview-preparation",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (

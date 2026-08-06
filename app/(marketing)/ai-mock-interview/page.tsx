@@ -211,9 +211,12 @@ export default async function AiMockInterviewPage() {
     headline: "AI Mock Interview Practice: Free, Voice-Based",
     description:
       "How AI mock interviews work, how they compare to ChatGPT and human coaches, and how to start practicing for free on HireStepX.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/ai-mock-interview",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-20",
+    dateModified: "2026-08-05",
   };
 
   return (

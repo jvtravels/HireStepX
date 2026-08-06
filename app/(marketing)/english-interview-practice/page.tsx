@@ -128,9 +128,12 @@ export default async function EnglishInterviewPracticePage() {
     headline: "English Speaking Practice for Job Interviews",
     description:
       "Why spoken English is the real gap for interview prep, and how voice-based AI practice trained on Indian English closes it.",
+    image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/english-interview-practice",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     author: { "@type": "Organization", name: "HireStepX" },
+    datePublished: "2026-07-31",
+    dateModified: "2026-08-05",
   };
 
   return (
