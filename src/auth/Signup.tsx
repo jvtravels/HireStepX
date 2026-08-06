@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth, storePendingReferralCode } from "../AuthContext";
+import { useAuth, storePendingReferralCode, storePendingNextTarget } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -172,7 +172,15 @@ export default function Signup() {
   }, [isLoggedIn, user, router, computeRedirect]);
 
   useEffect(() => {
-    trackAuth(loginViewedEvent("signup"));
+    trackAuth(
+      loginViewedEvent("signup", {
+        source: searchParams?.get("source") ?? undefined,
+        company: searchParams?.get("company") ?? undefined,
+        role: searchParams?.get("role") ?? undefined,
+        focus: searchParams?.get("focus") ?? undefined,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Capture a referral code from the signup link (/signup?ref=HSX-XXXXXX) so it
@@ -180,7 +188,8 @@ export default function Signup() {
   // applied here — the user has no session yet.
   useEffect(() => {
     storePendingReferralCode(searchParams?.get("ref") ?? null);
-  }, [searchParams]);
+    storePendingNextTarget(nextParam);
+  }, [searchParams, nextParam]);
 
   useEffect(() => {
     if (!showPassword) return;

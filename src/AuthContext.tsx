@@ -224,6 +224,40 @@ function clearPendingReferralCode(): void {
   try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch { /* expected */ }
 }
 
+/* ─── Deferred-onboarding redirect (SEO signups only) ───
+   Salary/questions SEO CTAs append ?next=/interview so that cohort can reach
+   a session immediately after verifying instead of being forced through
+   onboarding first (SEO copy promises "practice free" — onboarding's resume
+   upload + profile analysis broke that promise). Stashed at /signup mount,
+   consumed once the user is verified and would otherwise be bounced to
+   /onboarding. Allowlisted to exactly "/interview" — this is a targeted
+   funnel fix, not a general redirect mechanism. */
+const PENDING_NEXT_KEY = "hirestepx_pending_next";
+/* Fixed prefix, not an arbitrary-path allowlist — the only supported skip
+ * target is /interview, optionally with a ?role= query string carried over
+ * from the SEO page for personalization. Same-origin path always, so the
+ * query content can't turn this into an open redirect. */
+function isAllowedPendingNext(raw: string): boolean {
+  return raw === "/interview" || raw.startsWith("/interview?");
+}
+
+/** Stash a post-verification redirect target from a signup link. No-ops
+ *  unless the target is in the allowlist. Exported for the signup page. */
+export function storePendingNextTarget(raw: string | null | undefined): void {
+  if (typeof raw !== "string" || !isAllowedPendingNext(raw)) return;
+  try { localStorage.setItem(PENDING_NEXT_KEY, raw); } catch { /* expected */ }
+}
+
+function consumePendingNextTarget(): string | null {
+  try {
+    const target = localStorage.getItem(PENDING_NEXT_KEY);
+    if (target) localStorage.removeItem(PENDING_NEXT_KEY);
+    return target && isAllowedPendingNext(target) ? target : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Build the canonical referral signup URL for a code. Falls back to the app
  *  origin (or the prod app URL during SSR) when no code is available, so every
  *  share surface always emits a working — and, when possible, attributed —
@@ -2166,7 +2200,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       // cross-user localStorage leakage used to surface stale resume
       // data that would trick this guard into letting a brand-new user
       // through.
-      router.replace("/onboarding");
+      const pendingNext = consumePendingNextTarget();
+      router.replace(pendingNext || "/onboarding");
     }
   }, [isLoggedIn, loading, user, router, pathname]);
 
