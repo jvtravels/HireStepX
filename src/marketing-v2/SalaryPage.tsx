@@ -1166,6 +1166,8 @@ export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[
                         <img
                           src={logoUrl}
                           alt=""
+                          width={18}
+                          height={18}
                           onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
