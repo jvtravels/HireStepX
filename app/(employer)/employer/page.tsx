@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/AuthContext";
 import { useEmployerData } from "@/employer/EmployerDataContext";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
+import { tokens as t, fonts as f, shadows } from "@/auth/_tokens";
 import {
   Card,
   Eyebrow,
@@ -11,6 +12,7 @@ import {
   HelpText,
   PrimaryCta,
   OutlineCta,
+  StatCell,
   StatusChip,
   EmployerIcon,
 } from "@/employer/_atoms";
@@ -114,43 +116,141 @@ function CompanyRejected() {
   );
 }
 
-function Console() {
+/* Employer landing after approval — same two-column dashboard layout as the
+   candidate DashboardHome (src/DashboardHome.tsx): hero greeting, one
+   emphasized "next move" card, a 3-cell stat strip, then the requirements
+   list in the main column; a supporting card in the rail. Reuses that
+   file's grid proportions (minmax(0,1fr) / minmax(280px,360px), 1280 max
+   width) so the employer surface reads as the same product. */
+function EmployerDashboard() {
+  const { user } = useAuth();
   const { requirements } = useEmployerData();
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <div>
-          <Eyebrow tone="indigo">Requirements</Eyebrow>
-          <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>Your open roles</h1>
-        </div>
-        <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-          <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
-        </Link>
-      </div>
 
-      {requirements.length === 0 ? (
-        <Card style={{ textAlign: "center", padding: 48 }}>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>
-            You haven't posted a requirement yet.
+  const openRequirements = requirements.filter((r) => r.status !== "closed");
+  const allCandidates = requirements.flatMap((r) => r.candidates);
+  const unlockedCount = allCandidates.filter((c) => c.unlocked).length;
+  const avgMatch = allCandidates.length
+    ? Math.round(allCandidates.reduce((sum, c) => sum + c.matchScore, 0) / allCandidates.length)
+    : null;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
+        gap: 32,
+        maxWidth: 1280,
+        margin: "0 auto",
+        width: "100%",
+      }}
+    >
+      {/* ─── Main stage ─── */}
+      <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
+        <section>
+          <Eyebrow tone="ink">Employer console</Eyebrow>
+          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px" }}>
+            Welcome <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>back</em>, {user?.name || "there"}.
+          </h1>
+          <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
+            {openRequirements.length > 0
+              ? "Here's where your open roles and shortlists stand."
+              : "Post your first requirement and we'll start matching candidates against it."}
           </p>
+        </section>
+
+        <Card pad={28}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Eyebrow tone="copper">Your next move</Eyebrow>
+              <p style={{ fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
+                Post a requirement
+              </p>
+              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
+                Tell us the role, location, and notice-period preference — we'll return a scored shortlist
+                from candidates actively practicing on HireStepX.
+              </p>
+              <div style={{ marginTop: 18 }}>
+                <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
+                  <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
+                </Link>
+              </div>
+            </div>
+          </div>
         </Card>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {requirements.map((req) => (
-            <Link key={req.id} href={`/employer/requirements/${req.id}`} style={{ textDecoration: "none" }}>
-              <Card style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>{req.title}</div>
-                  <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 4 }}>
-                    {req.location} · Posted {req.createdAt}
-                  </div>
-                </div>
-                <StatusChip status={req.status} />
-              </Card>
-            </Link>
-          ))}
+
+        <section>
+          <Eyebrow tone="ink">Overview</Eyebrow>
+          <dl style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
+            <StatCell label="Open requirements" value={String(openRequirements.length)} unit="" />
+            <StatCell label="Candidates unlocked" value={String(unlockedCount)} unit="" />
+            <StatCell label="Avg. match score" value={avgMatch != null ? String(avgMatch) : "—"} unit={avgMatch != null ? "/100" : ""} />
+          </dl>
+        </section>
+
+        <section>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+                Your open roles
+              </h2>
+              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
+                Newest first.
+              </p>
+            </div>
+          </div>
+
+          {requirements.length === 0 ? (
+            <Card style={{ textAlign: "center", padding: 48 }}>
+              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>
+                You haven't posted a requirement yet.
+              </p>
+            </Card>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {requirements.map((req) => (
+                <Link key={req.id} href={`/employer/requirements/${req.id}`} style={{ textDecoration: "none" }}>
+                  <Card style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>{req.title}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 4 }}>
+                        {req.location} · Posted {req.createdAt}
+                      </div>
+                    </div>
+                    <StatusChip status={req.status} />
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* ─── Rail ─── */}
+      <aside style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+        <Card>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span style={{ color: t.indigo }}><EmployerIcon.Building /></span>
+            <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+              Company profile
+            </h2>
+          </div>
+          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
+            You're approved to browse the candidate roster and unlock contact details.
+          </p>
+          <OutlineCta full size="sm">Edit company details</OutlineCta>
+        </Card>
+
+        <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 20, boxShadow: shadows.card }}>
+          <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>
+            How matching works
+          </h2>
+          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
+            Match score reflects fit against this requirement; roster score reflects lifetime interview
+            performance across a candidate's practice sessions. Contact details stay hidden until you unlock
+            them.
+          </p>
         </div>
-      )}
+      </aside>
     </div>
   );
 }
@@ -161,5 +261,5 @@ export default function EmployerHomePage() {
   if (companyStatus === "none") return <CompanyOnboarding />;
   if (companyStatus === "pending") return <CompanyPending />;
   if (companyStatus === "rejected") return <CompanyRejected />;
-  return <Console />;
+  return <EmployerDashboard />;
 }

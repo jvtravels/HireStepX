@@ -245,6 +245,23 @@ export function Divider() {
   return <div style={{ height: 1, background: t.line, width: "100%" }} />;
 }
 
+/* Mirrors DashboardHome.tsx's StatCell — same 3-column stat-strip pattern
+   used on the candidate dashboard, reused so the employer dashboard reads
+   as the same product. */
+export function StatCell({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div style={{ padding: "16px 4px", borderRight: `1px solid ${t.line}` }}>
+      <dt style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.6, textTransform: "uppercase", margin: 0 }}>
+        {label}
+      </dt>
+      <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>
+        <span style={{ fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
+        {unit && <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{unit}</span>}
+      </dd>
+    </div>
+  );
+}
+
 export const EmployerIcon = {
   Check: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">

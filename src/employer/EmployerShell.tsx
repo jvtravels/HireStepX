@@ -133,7 +133,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           </button>
         </div>
       </header>
-      <main style={{ maxWidth: 1120, margin: "0 auto", padding: "40px 32px" }}>{children}</main>
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 32px" }}>{children}</main>
     </div>
   );
 }
