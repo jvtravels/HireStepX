@@ -1716,9 +1716,10 @@ Requirements:
       gq_total_tokens: result.tokensUsed?.total ?? null,
       gq_model: result.model,
       // Total aiText chars across all steps — the TTS billing unit.
-      // At Sarvam Bulbul v2 (₹15/10K chars), multiply by 0.0015 to get ₹ cost.
+      // At Sarvam Bulbul v3 (₹30/10K chars, up from v2's ₹15 pre-migration),
+      // multiply by 0.003 to get ₹ cost.
       gq_ai_text_chars: totalAiTextChars,
-      gq_ai_text_cost_inr_est: Math.round((totalAiTextChars / 10_000) * 15 * 100) / 100,
+      gq_ai_text_cost_inr_est: Math.round((totalAiTextChars / 10_000) * 30 * 100) / 100,
       grounding_verified: groundingVerified,
       grounding_generic: groundingGeneric,
       grounding_hypothetical: groundingHypothetical,
