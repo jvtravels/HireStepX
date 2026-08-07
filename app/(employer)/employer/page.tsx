@@ -25,15 +25,17 @@ function CompanyOnboarding() {
   const canSubmit = companyName.trim().length > 1 && website.trim().length > 3;
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto" }}>
-      <Eyebrow tone="indigo">Company profile</Eyebrow>
-      <h1 style={{ fontFamily: f.serif, fontSize: 30, color: t.coal, margin: "8px 0 8px" }}>
-        Tell us about your company
-      </h1>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.6 }}>
-        We review every employer before they can browse the candidate roster — this protects candidates from
-        recruiters who aren't hiring in good faith.
-      </p>
+    <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <Eyebrow tone="indigo">Company profile</Eyebrow>
+        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: "10px 0 12px" }}>
+          Tell us about your company
+        </h1>
+        <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
+          We review every employer before they can browse the candidate roster — this protects candidates from
+          recruiters who aren't hiring in good faith.
+        </p>
+      </div>
       <Card>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
@@ -82,7 +84,7 @@ function CompanyOnboarding() {
 
 function CompanyPending() {
   return (
-    <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center" }}>
+    <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
       <div style={{ width: 48, height: 48, borderRadius: 12, background: t.indigo100, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: t.indigoDeep }}>
         <EmployerIcon.Clock />
       </div>
@@ -98,7 +100,7 @@ function CompanyPending() {
 function CompanyRejected() {
   const { resetCompanyProfile } = useEmployerData();
   return (
-    <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center" }}>
+    <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
       <div style={{ width: 48, height: 48, borderRadius: 12, background: t.error100, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: t.error }}>
         <EmployerIcon.Alert />
       </div>
