@@ -5,7 +5,8 @@
  * Client component so the hub can use search/filter/pagination.
  * All data still flows from server-side route files as props.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 import {
@@ -910,10 +911,30 @@ const FEATURED_SLUGS = [
   "databricks", "openai", "moglix", "zepto",
 ] as const;
 
-export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[]; faqs?: { q: string; a: string }[] }) {
+export function SalaryHubPage({
+  entries,
+  faqs = [],
+  initialPage,
+}: {
+  entries: SalaryHubEntry[];
+  faqs?: { q: string; a: string }[];
+  initialPage?: number;
+}) {
   const [search, setSearch] = useState("");
   const [activeTier, setActiveTier] = useState<typeof TIER_TABS[number]>("All");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage ?? 1);
+
+  useEffect(() => {
+    setPage(initialPage ?? 1);
+  }, [initialPage]);
+
+  /* Only the unfiltered hub has real /salary?page=N URLs (see
+     app/(marketing)/salary/page.tsx) — that's the state Google can discover,
+     so only it gets crawlable <Link> pagination. Search/tier filters stay
+     client-only; those states aren't in the sitemap and shouldn't be indexed
+     as separate search-result pages. */
+  const isDefaultView = !search.trim() && activeTier === "All";
+  const pageHref = (p: number) => (p > 1 ? `/salary?page=${p}` : "/salary");
 
   /* Filter + sort */
   const q = search.trim().toLowerCase();
@@ -1303,31 +1324,71 @@ export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[
               </span>
 
               {/* Prev */}
-              <button
-                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                disabled={safePage === 1}
-                aria-label="Previous page"
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                  background: safePage === 1 ? t.creamSoft : "#fff",
-                  color: safePage === 1 ? t.inkFaint : t.coal,
-                  cursor: safePage === 1 ? "default" : "pointer",
-                  opacity: safePage === 1 ? 0.45 : 1,
-                  transition: "border-color 150ms, background 150ms",
-                }}
-              >
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-                Prev
-              </button>
+              {isDefaultView ? (
+                <Link
+                  href={pageHref(safePage - 1)}
+                  aria-label="Previous page"
+                  aria-disabled={safePage === 1}
+                  onClick={e => { if (safePage === 1) e.preventDefault(); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                    padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                    background: safePage === 1 ? t.creamSoft : "#fff",
+                    color: safePage === 1 ? t.inkFaint : t.coal,
+                    cursor: safePage === 1 ? "default" : "pointer",
+                    opacity: safePage === 1 ? 0.45 : 1,
+                    transition: "border-color 150ms, background 150ms",
+                  }}
+                >
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Prev
+                </Link>
+              ) : (
+                <button
+                  onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  disabled={safePage === 1}
+                  aria-label="Previous page"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                    padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                    background: safePage === 1 ? t.creamSoft : "#fff",
+                    color: safePage === 1 ? t.inkFaint : t.coal,
+                    cursor: safePage === 1 ? "default" : "pointer",
+                    opacity: safePage === 1 ? 0.45 : 1,
+                    transition: "border-color 150ms, background 150ms",
+                  }}
+                >
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Prev
+                </button>
+              )}
 
               {/* Page numbers */}
               {pageNumbers.map((n, i) =>
                 n === "…" ? (
                   <span key={`ellipsis-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
+                ) : isDefaultView ? (
+                  <Link
+                    key={n}
+                    href={pageHref(n as number)}
+                    aria-current={safePage === n ? "page" : undefined}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
+                      fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
+                      minWidth: 36, height: 36, borderRadius: 8, border: `1.5px solid ${safePage === n ? t.indigo : t.line}`,
+                      background: safePage === n ? t.indigo : "#fff",
+                      color: safePage === n ? "#fff" : t.coal,
+                      cursor: "pointer", transition: "all 150ms",
+                    }}
+                  >
+                    {n}
+                  </Link>
                 ) : (
                   <button
                     key={n}
@@ -1347,26 +1408,50 @@ export function SalaryHubPage({ entries, faqs = [] }: { entries: SalaryHubEntry[
               )}
 
               {/* Next */}
-              <button
-                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                disabled={safePage === totalPages}
-                aria-label="Next page"
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                  background: safePage === totalPages ? t.creamSoft : "#fff",
-                  color: safePage === totalPages ? t.inkFaint : t.coal,
-                  cursor: safePage === totalPages ? "default" : "pointer",
-                  opacity: safePage === totalPages ? 0.45 : 1,
-                  transition: "border-color 150ms, background 150ms",
-                }}
-              >
-                Next
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
+              {isDefaultView ? (
+                <Link
+                  href={pageHref(safePage + 1)}
+                  aria-label="Next page"
+                  aria-disabled={safePage === totalPages}
+                  onClick={e => { if (safePage === totalPages) e.preventDefault(); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                    padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                    background: safePage === totalPages ? t.creamSoft : "#fff",
+                    color: safePage === totalPages ? t.inkFaint : t.coal,
+                    cursor: safePage === totalPages ? "default" : "pointer",
+                    opacity: safePage === totalPages ? 0.45 : 1,
+                    transition: "border-color 150ms, background 150ms",
+                  }}
+                >
+                  Next
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  disabled={safePage === totalPages}
+                  aria-label="Next page"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
+                    padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
+                    background: safePage === totalPages ? t.creamSoft : "#fff",
+                    color: safePage === totalPages ? t.inkFaint : t.coal,
+                    cursor: safePage === totalPages ? "default" : "pointer",
+                    opacity: safePage === totalPages ? 0.45 : 1,
+                    transition: "border-color 150ms, background 150ms",
+                  }}
+                >
+                  Next
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
 

@@ -8,8 +8,9 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { tokens as t, fonts } from "@/auth/_tokens";
 
-export const revalidate = 86400;
-
+/* Accessing searchParams makes this page dynamic — intentional, mirrors
+   app/(marketing)/questions/page.tsx. The ?page= param drives real
+   crawlable pagination via <Link href="/salary?page=N"> in SalaryHubPage. */
 export function generateMetadata(): Metadata {
   const count = SALARY_SEO_PAGES.length;
   const ogDesc = `Salary ranges for ${count} companies, total CTC sourced from AmbitionBox and Glassdoor.`;
@@ -47,9 +48,15 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default async function SalaryIndexPage() {
+export default async function SalaryIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
   const entries: SalaryHubEntry[] = SALARY_SEO_PAGES.map((page) => {
     const overrides = COMPANY_SALARY_OVERRIDES[page.slug] ?? COMPANY_SALARY_OVERRIDES[page.slug.replace(/-/g, " ")];
@@ -170,6 +177,7 @@ export default async function SalaryIndexPage() {
       <SalaryHubPage
         entries={entries}
         faqs={faqSchema.mainEntity.map((e) => ({ q: e.name, a: e.acceptedAnswer.text }))}
+        initialPage={pageNum}
       />
       <FooterDome />
       <MobileStickyCTA />

@@ -34,8 +34,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 3600;
-
+/* Accessing searchParams makes this page dynamic — intentional, mirrors
+   app/(marketing)/questions/page.tsx. The ?page= param drives real
+   crawlable pagination via <Link href="/blog?page=N"> in BlogIndex. */
 const BLOG_ITEM_LIST_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "ItemList",
@@ -51,9 +52,15 @@ const BLOG_ITEM_LIST_SCHEMA = {
   })),
 };
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
   return (
     <>
@@ -73,7 +80,7 @@ export default async function Page() {
         crossOrigin="anonymous"
         strategy="lazyOnload"
       />
-      <BlogPage metas={BLOG_META} />
+      <BlogPage metas={BLOG_META} page={pageNum} />
     </>
   );
 }
