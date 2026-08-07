@@ -434,6 +434,7 @@ const chipStyle: CSSProperties = {
 /* ─── Component ──────────────────────────────────────────────────── */
 
 export function SalaryCompanyPage({
+  companySlug,
   companyLabel,
   companyDescription,
   roles,
@@ -861,7 +862,11 @@ export function SalaryCompanyPage({
               framework. Know what the interviewer is actually evaluating before
               you walk in.
             </p>
-            <a href="/signup" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+            <a
+              href={`/signup?source=salary-seo&company=${encodeURIComponent(companySlug)}&next=${encodeURIComponent(`/interview${headlineRole ? `?role=${encodeURIComponent(headlineRole.roleLabel)}` : ""}`)}`}
+              className="ed-cta"
+              style={ctaPrimaryStyle("lg")}
+            >
               Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
             </a>
           </DarkBand>

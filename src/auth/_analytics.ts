@@ -10,7 +10,15 @@ import { captureClientEvent } from "../posthogClient";
 export type AuthMethod = "google" | "email" | "phone" | "passkey" | "magic-link";
 
 export type AuthEvent =
-  | { type: "login_viewed"; variant?: string; referrer?: string }
+  | {
+      type: "login_viewed";
+      variant?: string;
+      referrer?: string;
+      source?: string;
+      company?: string;
+      role?: string;
+      focus?: string;
+    }
   | { type: "login_method_selected"; method: AuthMethod }
   | { type: "login_field_focused"; field: "email" | "password" }
   | { type: "login_password_visibility_toggled"; visible: boolean }
@@ -41,12 +49,18 @@ export function trackAuth(event: AuthEvent): void {
   captureClientEvent(type, safe);
 }
 
-/** Build a viewed-event payload from the current document. */
-export function loginViewedEvent(variant?: string): AuthEvent {
+/** Build a viewed-event payload from the current document.
+ *  `sourceParams` carries the SEO-page attribution (?source=&company=&role=&focus=)
+ *  so the funnel from a specific landing page through to signup is traceable. */
+export function loginViewedEvent(
+  variant?: string,
+  sourceParams?: { source?: string; company?: string; role?: string; focus?: string },
+): AuthEvent {
   return {
     type: "login_viewed",
     variant,
     referrer:
       typeof document !== "undefined" ? document.referrer || undefined : undefined,
+    ...sourceParams,
   };
 }

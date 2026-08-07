@@ -260,7 +260,8 @@ export function QuestionSetPage({
   salaryPageSlug,
   faqs = [],
 }: QuestionSetPageProps) {
-  const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
+  const interviewNext = `/interview${page.roleFamily ? `?role=${encodeURIComponent(page.roleFamily)}` : ""}`;
+  const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}&next=${encodeURIComponent(interviewNext)}`;
 
   /* Show first 10 free; gate the rest behind a signup prompt. A 5-question
      free sample bounced most visitors before they'd read enough to see the
