@@ -2219,3 +2219,44 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+
+/* Route guard for non-candidate surfaces (e.g. the employer console) — same
+   login redirect as RequireAuth, but deliberately skips the emailVerified /
+   hasCompletedOnboarding bounce, which is specific to the candidate
+   onboarding funnel and doesn't apply here. */
+export function RequireAuthOnly({ children }: { children: ReactNode }) {
+  const { isLoggedIn, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const retryCount = useRef(0);
+
+  useEffect(() => {
+    if (isLoggedIn) saveLastRoute(pathname);
+  }, [isLoggedIn, pathname]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!isLoggedIn) {
+      if (hasStoredSession() && retryCount.current < 3) {
+        const delay = 500 * Math.pow(2, retryCount.current);
+        retryCount.current++;
+        setTimeout(() => getSupabase().then(c => c.auth.getSession()), delay);
+        return;
+      }
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [isLoggedIn, loading, router, pathname]);
+
+  if (loading || (!isLoggedIn && hasStoredSession())) return (
+    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: "#FAF7F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 16, height: 16, border: "2px solid rgba(180,83,9,0.25)", borderTopColor: "#B45309", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      </div>
+      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#6B635A" }}>Loading...</span>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+  if (!isLoggedIn) return null;
+
+  return <>{children}</>;
+}
