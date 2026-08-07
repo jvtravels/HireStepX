@@ -33,10 +33,18 @@ const SECONDS_PER_DAY = 86_400;
 
 /* Audio cache — repeated questions ("Tell me about a time…", canned greetings,
  * panelist intros) dominate the prompt distribution. Caching the WAV body
- * keyed by (model, speaker, text) collapses these to a single Sarvam call.
- * 24h TTL keeps Redis tidy; cap the cacheable payload at 1500 chars so we
- * don't blow Upstash memory on multi-paragraph monologues. */
-const TTS_CACHE_TTL_SEC = 86_400;
+ * keyed by (model, speaker, text) collapses these to a single Sarvam call —
+ * shared across every user, so a hit-rate improvement here is a direct
+ * multiplier on real spend, more so now that bulbul:v3 costs 2x per char.
+ *
+ * 7-day TTL (was 24h): the cache key already includes SARVAM_TTS_MODEL, so
+ * a future model bump auto-invalidates every entry — holding entries longer
+ * has no staleness risk, only upside, since the question bank
+ * (data/interview-question-bank.ts) and panelist intros are static and
+ * would otherwise recompute from scratch every day. Cap the cacheable
+ * payload at 1500 chars so we don't blow Upstash memory on multi-paragraph
+ * monologues. */
+const TTS_CACHE_TTL_SEC = 7 * 86_400;
 const TTS_CACHE_MAX_BYTES = 256 * 1024; // 256 KB — covers ~10s of 22 kHz WAV
 const TTS_CACHE_VERSION = "v1";
 
