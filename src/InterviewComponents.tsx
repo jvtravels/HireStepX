@@ -66,10 +66,9 @@ export const WaveformVisualizer = React.memo(function WaveformVisualizer({ activ
 
 /* ─── Interviewer Names (deterministic per session) ─── */
 /* Defaults pinned at index 0 of each pool so they're the most prominent
- * pick and the no-seed fallback. "Prita Menon" → female default
- * (routes to Sarvam `anushka`); "Rahul Verma" → male default (routes
- * to Sarvam `abhilash`). The gender→voice mapping lives in
- * server-handlers/sarvam-tts.ts. */
+ * pick and the no-seed fallback. "Prita Menon" → female default;
+ * "Rahul Verma" → male default. The gender→voice mapping lives in
+ * server-handlers/sarvam-tts.ts (Sarvam bulbul:v3 voice roster). */
 export const DEFAULT_FEMALE_INTERVIEWER = "Prita Menon";
 export const DEFAULT_MALE_INTERVIEWER = "Rahul Verma";
 

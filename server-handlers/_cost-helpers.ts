@@ -18,7 +18,7 @@ export interface CostRates {
   llmUsdPerMToken: number;
   /** Blended USD per million tokens, fallback LLM (Gemini Flash). */
   llmFallbackUsdPerMToken: number;
-  /** USD per million characters, TTS (Azure/Cartesia/Sarvam ~ same order). */
+  /** USD per million characters, TTS — primary provider (Sarvam bulbul:v3). */
   ttsUsdPerMChar: number;
   /** USD per STT session. Estimate: avg session minutes × per-minute rate. */
   sttUsdPerCall: number;
@@ -30,7 +30,13 @@ export interface CostRates {
 export const DEFAULT_COST_RATES: CostRates = {
   llmUsdPerMToken: 0.7, // Groq Llama 3.3 70B, blended ~$0.59 in / $0.79 out
   llmFallbackUsdPerMToken: 0.3, // Gemini 2.x Flash, blended
-  ttsUsdPerMChar: 16, // Azure Standard $16 / 1M chars (Cartesia/Sarvam comparable)
+  // Sarvam bulbul:v3 (primary TTS as of Aug 2026 migration): ₹30/10K chars
+  // = ₹3000/1M chars ≈ $35.71/1M @ usdToInr below. bulbul:v2 was ₹15/10K
+  // (~$16.7/1M, coincidentally close to the old Azure-list-price placeholder
+  // this constant used to carry) — update this alongside any future Sarvam
+  // model/price change so the credit guardrail (_sarvam-credit-guard.ts)
+  // and admin cost dashboard don't quietly under-count real spend.
+  ttsUsdPerMChar: 35.71,
   sttUsdPerCall: 0.0077, // ≈ 1.8 min avg × $0.0043/min (Deepgram Nova) — rough
   usdToInr: 84,
 };

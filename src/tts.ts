@@ -145,8 +145,8 @@ export function getCachedVoices(language = "en_IN"): CartesiaVoice[] {
 
 const DEFAULT_SETTINGS: TTSSettings = {
   provider: "sarvam",
-  voiceId: "manisha",
-  voiceName: "Manisha (Sarvam Indian English)",
+  voiceId: "priya",
+  voiceName: "Priya (Sarvam Indian English)",
   language: "en_IN",
 };
 
@@ -1450,7 +1450,9 @@ function addBreathCues(text: string): string {
 
 /** All available Sarvam female voices — exported so the interview engine
  *  can pick one at session-start for consistent within-session variety. */
-export const SARVAM_FEMALE_VOICES = ["manisha", "anushka", "vidya", "arya"] as const;
+// Kept in lockstep with VOICES.female in server-handlers/sarvam-tts.ts
+// (bulbul:v3 roster — v2's manisha/anushka/vidya/arya no longer exist).
+export const SARVAM_FEMALE_VOICES = ["priya", "ritu", "neha", "pooja", "simran", "kavya", "ishita", "shreya", "roopa", "tanya", "shruti", "suhani", "kavitha", "rupali"] as const;
 
 export async function speak(
   text: string,

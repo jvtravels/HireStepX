@@ -3922,10 +3922,11 @@ export function useInterviewEngine() {
     // Snapshot COGS accumulators before any cleanup resets them.
     const sessionTtsChars = ttsCharsRef.current;
     const sessionSttSeconds = Math.round(sttAudioSecondsRef.current * 10) / 10;
-    // Estimated TTS cost: Sarvam Bulbul v2 = ₹15/10K chars.
+    // Estimated TTS cost: Sarvam Bulbul v3 = ₹30/10K chars (v2, ₹15/10K, was
+    // deprecated by Sarvam on 15 Aug 2026).
     // Estimated STT cost: Sarvam Saarika = ₹30/hr → ₹0.00833/sec; Deepgram = $0.0077/min → ₹0.0108/sec.
     // Using Deepgram rate as current provider. Switch constant when migrating to Sarvam.
-    const ttsCostInr = Math.round((sessionTtsChars / 10_000) * 15 * 100) / 100;
+    const ttsCostInr = Math.round((sessionTtsChars / 10_000) * 30 * 100) / 100;
     const sttCostInr = Math.round(sessionSttSeconds * (0.0077 / 60) * 84 * 100) / 100;
     captureClientEvent("interview_session_completed", {
       focus: interviewType,
