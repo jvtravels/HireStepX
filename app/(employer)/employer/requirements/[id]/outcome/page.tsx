@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useEmployerData } from "@/employer/EmployerDataContext";
+import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card, Eyebrow, FieldLabel, OutlineCta, PrimaryCta } from "@/employer/_atoms";
@@ -13,15 +13,38 @@ export default function OutcomeFeedbackPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { getRequirement } = useEmployerData();
+  const { fetchRequirementDetail } = useEmployerData();
   const { toast } = useToast();
-  const requirement = getRequirement(params.id);
+  const [requirement, setRequirement] = useState<Requirement | null>(null);
+  const [loading, setLoading] = useState(true);
   const candidateId = searchParams.get("candidate");
   const candidate = requirement?.candidates.find((c) => c.id === candidateId);
 
   const [outcome, setOutcome] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchRequirementDetail(params.id).then((r) => {
+      if (active) {
+        setRequirement(r);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchRequirementDetail, params.id]);
+
+  if (loading) {
+    return (
+      <Card style={{ textAlign: "center", padding: 48 }}>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
+      </Card>
+    );
+  }
 
   if (!requirement || !candidate) {
     return (
@@ -32,8 +55,8 @@ export default function OutcomeFeedbackPage() {
   }
 
   const handleSubmit = () => {
-    // Mocked-data pass: this feedback isn't persisted anywhere yet — it
-    // would feed the matching model's fairness/quality loop in a real build.
+    // This feedback isn't persisted anywhere yet — it would feed the
+    // matching model's fairness/quality loop in a future pass.
     setSent(true);
     toast("Thanks — this helps us improve future shortlists", "success");
   };

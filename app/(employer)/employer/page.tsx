@@ -24,6 +24,7 @@ function CompanyOnboarding() {
   const [gstin, setGstin] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const canSubmit = companyName.trim().length > 1 && website.trim().length > 3;
 
   return (
@@ -68,12 +69,20 @@ function CompanyOnboarding() {
             />
             <HelpText>Speeds up review — not required to apply.</HelpText>
           </div>
+          {submitError && (
+            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
+          )}
           <PrimaryCta
             full
             disabled={!canSubmit || submitted}
-            onClick={() => {
+            onClick={async () => {
+              setSubmitError(null);
               setSubmitted(true);
-              submitCompanyProfile();
+              const ok = await submitCompanyProfile({ companyName, website, gstin });
+              if (!ok) {
+                setSubmitted(false);
+                setSubmitError("Couldn't submit your company profile — please try again.");
+              }
             }}
           >
             {submitted ? "Submitting…" : "Submit for approval"}
@@ -124,14 +133,10 @@ function CompanyRejected() {
    width) so the employer surface reads as the same product. */
 function EmployerDashboard() {
   const { user } = useAuth();
-  const { requirements } = useEmployerData();
+  const { requirements, requirementsLoading } = useEmployerData();
 
   const openRequirements = requirements.filter((r) => r.status !== "closed");
-  const allCandidates = requirements.flatMap((r) => r.candidates);
-  const unlockedCount = allCandidates.filter((c) => c.unlocked).length;
-  const avgMatch = allCandidates.length
-    ? Math.round(allCandidates.reduce((sum, c) => sum + c.matchScore, 0) / allCandidates.length)
-    : null;
+  const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
 
   return (
     <div
@@ -180,10 +185,9 @@ function EmployerDashboard() {
 
         <section>
           <Eyebrow tone="ink">Overview</Eyebrow>
-          <dl style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
+          <dl style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
             <StatCell label="Open requirements" value={String(openRequirements.length)} unit="" />
-            <StatCell label="Candidates unlocked" value={String(unlockedCount)} unit="" />
-            <StatCell label="Avg. match score" value={avgMatch != null ? String(avgMatch) : "—"} unit={avgMatch != null ? "/100" : ""} />
+            <StatCell label="Candidates matched" value={String(totalCandidates)} unit="" />
           </dl>
         </section>
 
@@ -199,7 +203,11 @@ function EmployerDashboard() {
             </div>
           </div>
 
-          {requirements.length === 0 ? (
+          {requirementsLoading ? (
+            <Card style={{ textAlign: "center", padding: 48 }}>
+              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
+            </Card>
+          ) : requirements.length === 0 ? (
             <Card style={{ textAlign: "center", padding: 48 }}>
               <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>
                 You haven't posted a requirement yet.
@@ -256,8 +264,9 @@ function EmployerDashboard() {
 }
 
 export default function EmployerHomePage() {
-  const { companyStatus } = useEmployerData();
+  const { companyStatus, companyStatusLoading } = useEmployerData();
 
+  if (companyStatusLoading) return null;
   if (companyStatus === "none") return <CompanyOnboarding />;
   if (companyStatus === "pending") return <CompanyPending />;
   if (companyStatus === "rejected") return <CompanyRejected />;

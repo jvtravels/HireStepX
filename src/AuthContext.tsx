@@ -496,6 +496,9 @@ export interface User {
   referralCode?: string;
   emailVerified: boolean;
   deletedAt?: string | null;
+  /** Opt-in to being included in the employer talent-roster candidate
+      pool. Private by default — see settingsSections.tsx AccountSection. */
+  isDiscoverableToEmployers?: boolean;
 }
 
 interface AuthContextType {
@@ -570,6 +573,7 @@ function profileToUser(profile: Profile, session: Session): User {
     cancelAtPeriodEnd: profile.cancel_at_period_end || false,
     subscriptionPaused: !!profile.subscription_paused,
     referralCode: profile.referral_code || undefined,
+    isDiscoverableToEmployers: profile.is_discoverable_to_employers ?? false,
     emailVerified:
       session.user.user_metadata?.custom_email_verified === true ||
       !!session.user.email_confirmed_at ||
@@ -1815,6 +1819,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updates.practiceTimestamps !== undefined) payload.practice_timestamps = updates.practiceTimestamps;
     if (updates.cancelAtPeriodEnd !== undefined) payload.cancel_at_period_end = updates.cancelAtPeriodEnd;
     if (updates.hasCompletedOnboarding !== undefined) payload.has_completed_onboarding = updates.hasCompletedOnboarding;
+    if (updates.isDiscoverableToEmployers !== undefined) payload.is_discoverable_to_employers = updates.isDiscoverableToEmployers;
 
     if (Object.keys(payload).length === 0) return;
 

@@ -1594,3 +1594,83 @@ CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions (created_at DESC)
 CREATE INDEX IF NOT EXISTS idx_sessions_focus ON sessions (focus);
 CREATE INDEX IF NOT EXISTS idx_service_usage_session_id ON service_usage (session_id);
 
+-- ═══════════════════════════════════════════════════════
+-- Employer talent-roster feature (2026-08-08)
+--
+-- Employers are modeled as a separate table keyed by auth.users id, not a
+-- role flag on `profiles` — a company account is a distinct entity with its
+-- own approval lifecycle, even though it authenticates via the same
+-- Supabase Auth session as candidates. See CLAUDE.md scope note in
+-- app/(employer). Matching is a deterministic heuristic scorer (role/skill
+-- token overlap + roster performance), not LLM-based, to keep this pass's
+-- cost/blast-radius bounded — see server-handlers/_requirement-match-helpers.ts.
+-- ═══════════════════════════════════════════════════════
+
+create table if not exists employers (
+  id uuid references auth.users on delete cascade primary key,
+  company_name text not null default '',
+  website text not null default '',
+  gstin text default '',
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  submitted_at timestamptz default now(),
+  approved_at timestamptz,
+  created_at timestamptz default now()
+);
+
+alter table employers enable row level security;
+drop policy if exists "Employers manage own profile" on employers;
+create policy "Employers manage own profile" on employers
+  for all using ((auth.uid())::text = id::text) with check ((auth.uid())::text = id::text);
+
+create table if not exists employer_requirements (
+  id uuid primary key default gen_random_uuid(),
+  employer_id uuid references employers(id) on delete cascade not null,
+  title text not null,
+  location text not null default '',
+  notice_period_pref text default 'Any',
+  description text default '',
+  status text not null default 'generating' check (status in ('generating', 'ready', 'partial', 'zero', 'failed', 'closed')),
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
+
+alter table employer_requirements enable row level security;
+drop policy if exists "Employers manage own requirements" on employer_requirements;
+create policy "Employers manage own requirements" on employer_requirements
+  for all using ((auth.uid())::text = employer_id::text) with check ((auth.uid())::text = employer_id::text);
+
+create table if not exists requirement_matches (
+  id uuid primary key default gen_random_uuid(),
+  requirement_id uuid references employer_requirements(id) on delete cascade not null,
+  candidate_user_id uuid references profiles(id) on delete cascade not null,
+  match_score integer not null default 0,
+  roster_score integer not null default 0,
+  unlocked boolean default false,
+  unlocked_at timestamptz,
+  created_at timestamptz default now(),
+  unique (requirement_id, candidate_user_id)
+);
+
+create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
+
+alter table requirement_matches enable row level security;
+-- Owner-only, scoped via the parent requirement's employer_id. No direct
+-- client writes are exposed — matching + unlock happen server-side with
+-- the service role key.
+drop policy if exists "Employers view own matches" on requirement_matches;
+create policy "Employers view own matches" on requirement_matches
+  for select using (
+    exists (
+      select 1 from employer_requirements r
+      where r.id = requirement_matches.requirement_id
+        and (auth.uid())::text = r.employer_id::text
+    )
+  );
+
+-- Candidate opt-in gate for the real matching pool — mirrors
+-- is_profile_public's private-by-default contract. Employers can only ever
+-- match against candidates who have explicitly flipped this on from
+-- Settings (src/settingsSections.tsx AccountSection).
+alter table profiles add column if not exists is_discoverable_to_employers boolean not null default false;
+

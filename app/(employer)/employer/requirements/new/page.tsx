@@ -17,11 +17,24 @@ export default function PostRequirementPage() {
 
   const canSubmit = title.trim().length > 1 && location.trim().length > 1;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || submitting) return;
+    setSubmitError(null);
     setSubmitting(true);
-    const id = addRequirement({ title: title.trim(), location: location.trim(), noticePeriodPref });
+    const id = await addRequirement({
+      title: title.trim(),
+      location: location.trim(),
+      noticePeriodPref,
+      description: description.trim(),
+    });
+    if (!id) {
+      setSubmitting(false);
+      setSubmitError("Couldn't create this requirement — please try again.");
+      return;
+    }
     router.push(`/employer/requirements/${id}`);
   };
 
@@ -74,6 +87,9 @@ export default function PostRequirementPage() {
             />
             <HelpText>We use this to match against candidates' practice sessions — the more specific, the better the shortlist.</HelpText>
           </div>
+          {submitError && (
+            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
+          )}
           <PrimaryCta type="submit" full disabled={!canSubmit || submitting}>
             {submitting ? "Generating shortlist…" : "Generate shortlist"}
           </PrimaryCta>

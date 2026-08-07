@@ -1,28 +1,33 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { seedRequirements, Requirement, Candidate } from "./mockData";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { authHeaders } from "@/supabase";
+import { apiFetch } from "@/apiClient";
+import { RequirementSummary, Requirement, Candidate } from "./mockData";
 
-/* Mocked-data layer for the employer console (see CLAUDE.md scope note in
-   app/(employer)) — no Supabase table backs this yet. Company approval
-   status and requirement/candidate state live in localStorage so the
-   flow survives a refresh within one browser, but there is no real
-   review queue on the other end. */
+/* Real backend layer for the employer console — see server-handlers/
+   employer-profile.ts, employer-requirements.ts,
+   employer-requirement-detail.ts, employer-unlock-candidate.ts and the
+   "Employer talent-roster feature" block in supabase-schema.sql.
+
+   Employer approval has no human review queue yet — employer-profile.ts
+   lazily auto-approves a pending row 20s after submission on GET. That's
+   a placeholder, not a security boundary; this context just polls GET
+   while status is "pending" so the console updates without a refresh. */
 
 export type CompanyStatus = "none" | "pending" | "approved" | "rejected";
 
-const STATUS_KEY = "hsx_employer_company_status";
-const REQS_KEY = "hsx_employer_requirements";
-
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
-  requirements: Requirement[];
-  submitCompanyProfile: () => void;
-  simulateRejection: () => void;
+  companyStatusLoading: boolean;
+  requirements: RequirementSummary[];
+  requirementsLoading: boolean;
+  submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
-  addRequirement: (r: Pick<Requirement, "title" | "location" | "noticePeriodPref">) => string;
-  unlockCandidate: (requirementId: string, candidateId: string) => void;
-  getRequirement: (id: string) => Requirement | undefined;
+  addRequirement: (r: { title: string; location: string; noticePeriodPref?: string; description?: string }) => Promise<string | null>;
+  unlockCandidate: (matchId: string) => Promise<{ name: string; contact: { email: string } } | null>;
+  fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
+  refreshRequirements: () => Promise<void>;
 }
 
 const EmployerDataContext = createContext<EmployerDataContextValue | null>(null);
@@ -35,99 +40,121 @@ export function useEmployerData() {
 
 export function EmployerDataProvider({ children }: { children: React.ReactNode }) {
   const [companyStatus, setCompanyStatus] = useState<CompanyStatus>("none");
-  const [requirements, setRequirements] = useState<Requirement[]>(seedRequirements);
-  const [hydrated, setHydrated] = useState(false);
+  const [companyStatusLoading, setCompanyStatusLoading] = useState(true);
+  const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
+  const [requirementsLoading, setRequirementsLoading] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const refreshCompanyStatus = useCallback(async () => {
     try {
-      const storedStatus = window.localStorage.getItem(STATUS_KEY) as CompanyStatus | null;
-      if (storedStatus) setCompanyStatus(storedStatus);
-      const storedReqs = window.localStorage.getItem(REQS_KEY);
-      if (storedReqs) setRequirements(JSON.parse(storedReqs));
+      const headers = await authHeaders();
+      const res = await fetch("/api/employer-profile", { headers });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data) setCompanyStatus(data.status as CompanyStatus);
     } catch {
-      // localStorage unavailable (private mode, SSR) — fall back to seed data
+      // network hiccup — keep last known status, next poll/refresh retries
+    } finally {
+      setCompanyStatusLoading(false);
     }
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(STATUS_KEY, companyStatus);
-    } catch {
-      // ignore
+    refreshCompanyStatus();
+  }, [refreshCompanyStatus]);
+
+  // Poll while pending so the console flips to the dashboard once the
+  // (currently lazy-auto-approve) review resolves, without a manual refresh.
+  useEffect(() => {
+    if (pollRef.current) {
+      clearTimeout(pollRef.current);
+      pollRef.current = null;
     }
-  }, [companyStatus, hydrated]);
+    if (companyStatus === "pending") {
+      pollRef.current = setTimeout(refreshCompanyStatus, 4000);
+    }
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, [companyStatus, refreshCompanyStatus]);
+
+  const refreshRequirements = useCallback(async () => {
+    if (companyStatus !== "approved") return;
+    setRequirementsLoading(true);
+    try {
+      const headers = await authHeaders();
+      const res = await fetch("/api/employer-requirements", { headers });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.requirements) setRequirements(data.requirements);
+    } catch {
+      // leave previous list in place on a transient failure
+    } finally {
+      setRequirementsLoading(false);
+    }
+  }, [companyStatus]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(REQS_KEY, JSON.stringify(requirements));
-    } catch {
-      // ignore
-    }
-  }, [requirements, hydrated]);
+    refreshRequirements();
+  }, [refreshRequirements]);
 
-  const submitCompanyProfile = useCallback(() => {
-    setCompanyStatus("pending");
-    // Demo-only auto-approval — a real review queue would flip this
-    // server-side once someone actions the application.
-    setTimeout(() => setCompanyStatus("approved"), 3000);
+  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; gstin?: string }) => {
+    const res = await apiFetch<{ status: CompanyStatus }>("/api/employer-profile", fields, { method: "POST" });
+    if (res.ok && res.data) {
+      setCompanyStatus(res.data.status);
+      return true;
+    }
+    return false;
   }, []);
 
-  const simulateRejection = useCallback(() => setCompanyStatus("rejected"), []);
+  // Server-side status stays "rejected" until a real resubmission lands —
+  // this just lets the client show the onboarding form again so the user
+  // can resubmit via submitCompanyProfile, which POSTs a fresh "pending" row.
   const resetCompanyProfile = useCallback(() => setCompanyStatus("none"), []);
 
-  const addRequirement = useCallback((r: Pick<Requirement, "title" | "location" | "noticePeriodPref">) => {
-    const id = `req-${Date.now()}`;
-    const newReq: Requirement = { id, ...r, status: "generating", createdAt: new Date().toISOString().slice(0, 10), candidates: [] };
-    setRequirements((prev) => [newReq, ...prev]);
-    // Simulate the async matching job that generate-questions-style
-    // endpoints would run — after this pass, real matching would call
-    // analyze-jd-match.ts instead of resolving a timeout.
-    setTimeout(() => {
-      setRequirements((prev) =>
-        prev.map((req) =>
-          req.id === id
-            ? { ...req, status: "ready", candidates: seedRequirements[0].candidates }
-            : req
-        )
-      );
-    }, 2600);
-    return id;
-  }, []);
+  const addRequirement = useCallback(async (r: { title: string; location: string; noticePeriodPref?: string; description?: string }) => {
+    const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
+    if (res.ok && res.data) {
+      refreshRequirements();
+      return res.data.id;
+    }
+    return null;
+  }, [refreshRequirements]);
 
-  const unlockCandidate = useCallback((requirementId: string, candidateId: string) => {
-    setRequirements((prev) =>
-      prev.map((req) =>
-        req.id !== requirementId
-          ? req
-          : {
-              ...req,
-              candidates: req.candidates.map((c) =>
-                c.id !== candidateId
-                  ? c
-                  : { ...c, unlocked: true, contact: { email: `${c.name.toLowerCase().replace(/\s+/g, ".")}@example.com`, phone: "+91 98XXX XXXXX" } }
-              ),
-            }
-      )
+  const unlockCandidate = useCallback(async (matchId: string) => {
+    const res = await apiFetch<{ name: string; contact: { email: string } }>(
+      "/api/employer-unlock-candidate",
+      { matchId },
+      { method: "POST" },
     );
+    if (res.ok && res.data) return res.data;
+    return null;
   }, []);
 
-  const getRequirement = useCallback((id: string) => requirements.find((r) => r.id === id), [requirements]);
+  const fetchRequirementDetail = useCallback(async (id: string): Promise<Requirement | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) return null;
+      return data as Requirement;
+    } catch {
+      return null;
+    }
+  }, []);
 
   const value: EmployerDataContextValue = {
     companyStatus,
+    companyStatusLoading,
     requirements,
+    requirementsLoading,
     submitCompanyProfile,
-    simulateRejection,
     resetCompanyProfile,
     addRequirement,
     unlockCandidate,
-    getRequirement,
+    fetchRequirementDetail,
+    refreshRequirements,
   };
 
   return <EmployerDataContext.Provider value={value}>{children}</EmployerDataContext.Provider>;
 }
 
-export type { Requirement, Candidate };
+export type { Requirement, RequirementSummary, Candidate };

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEmployerData } from "@/employer/EmployerDataContext";
+import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { Candidate } from "@/employer/mockData";
-import { formatCtc } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
   Card,
@@ -15,7 +14,6 @@ import {
   EmployerIcon,
   HelpText,
   OutlineCta,
-  Pill,
   PrimaryCta,
   ScoreChip,
   SkillTag,
@@ -74,6 +72,7 @@ function CandidateRow({
   compareChecked,
   onToggleCompare,
   compareDisabled,
+  onUnlocked,
 }: {
   candidate: Candidate;
   requirementId: string;
@@ -81,16 +80,24 @@ function CandidateRow({
   compareChecked: boolean;
   onToggleCompare: () => void;
   compareDisabled: boolean;
+  onUnlocked: (candidateId: string, name: string, email: string) => void;
 }) {
   const { unlockCandidate } = useEmployerData();
   const { toast } = useToast();
   const [confirming, setConfirming] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
 
-  const handleConfirmUnlock = () => {
-    // Mocked-data pass: no real Razorpay charge happens here yet.
-    unlockCandidate(requirementId, candidate.id);
-    toast(`Unlocked ${candidate.name}'s contact details`, "success");
+  const handleConfirmUnlock = async () => {
+    setUnlocking(true);
+    const result = await unlockCandidate(candidate.id);
+    setUnlocking(false);
     setConfirming(false);
+    if (!result) {
+      toast("Couldn't unlock this candidate — please try again", "error");
+      return;
+    }
+    onUnlocked(candidate.id, result.name, result.contact.email);
+    toast(`Unlocked ${result.name}'s contact details`, "success");
   };
 
   return (
@@ -111,13 +118,12 @@ function CandidateRow({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
             <div>
               <span style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>
-                {candidate.unlocked ? candidate.name : `Candidate #${candidate.id}`}
+                {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
               </span>
               <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginLeft: 8 }}>
-                {candidate.targetRole} · {candidate.city} · {candidate.experienceYears} yrs
+                {candidate.targetRole} · {candidate.city}
               </span>
             </div>
-            {candidate.exclusiveToUs && <Pill tone="copper">Exclusive to you</Pill>}
           </div>
 
           <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 6 }}>
@@ -131,20 +137,12 @@ function CandidateRow({
             ))}
           </div>
 
-          <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 10 }}>
-            Advisory CTC {formatCtc(candidate.ctcAdvisory.low, candidate.ctcAdvisory.high)} · as of{" "}
-            {candidate.ctcAdvisory.asOf} · {candidate.ctcAdvisory.basis}
-          </div>
-          <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>
-            Notice period ~{candidate.noticePeriodDays} days
-          </div>
-
           <Divider />
 
           {candidate.unlocked ? (
             <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
               <div style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>
-                {candidate.contact?.email} · {candidate.contact?.phone}
+                {candidate.contact?.email}
               </div>
               {!readOnly && (
                 <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`} style={{ textDecoration: "none" }}>
@@ -162,7 +160,9 @@ function CandidateRow({
                 Unlock this candidate's contact details for <strong>₹999–1,999</strong>?
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <PrimaryCta size="sm" onClick={handleConfirmUnlock}>Confirm & unlock</PrimaryCta>
+                <PrimaryCta size="sm" onClick={handleConfirmUnlock} disabled={unlocking}>
+                  {unlocking ? "Unlocking…" : "Confirm & unlock"}
+                </PrimaryCta>
                 <OutlineCta size="sm" onClick={() => setConfirming(false)}>Cancel</OutlineCta>
               </div>
             </div>
@@ -181,9 +181,51 @@ function CandidateRow({
 
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
-  const { getRequirement } = useEmployerData();
-  const requirement = getRequirement(params.id);
+  const { fetchRequirementDetail } = useEmployerData();
+  const [requirement, setRequirement] = useState<Requirement | null>(null);
+  const [loading, setLoading] = useState(true);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const r = await fetchRequirementDetail(params.id);
+    setRequirement(r);
+    setLoading(false);
+  }, [fetchRequirementDetail, params.id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // A freshly created requirement matches synchronously on the server, so
+  // by the time this page loads it's already past "generating" in
+  // practice — this poll only covers the rare case of a stale fetch.
+  useEffect(() => {
+    if (requirement?.status !== "generating") return;
+    const timer = setTimeout(load, 2500);
+    return () => clearTimeout(timer);
+  }, [requirement?.status, load]);
+
+  const handleUnlocked = (candidateId: string, name: string, email: string) => {
+    setRequirement((prev) =>
+      prev
+        ? {
+            ...prev,
+            candidates: prev.candidates.map((c) =>
+              c.id !== candidateId ? c : { ...c, unlocked: true, name, contact: { email } }
+            ),
+          }
+        : prev
+    );
+  };
+
+  if (loading) {
+    return (
+      <Card style={{ textAlign: "center", padding: 48 }}>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
+      </Card>
+    );
+  }
 
   if (!requirement) {
     return (
@@ -251,6 +293,7 @@ export default function RequirementDetailPage() {
                 compareChecked={compareIds.includes(c.id)}
                 compareDisabled={compareIds.length >= 2}
                 onToggleCompare={() => toggleCompare(c.id)}
+                onUnlocked={handleUnlocked}
               />
             ))}
           </div>

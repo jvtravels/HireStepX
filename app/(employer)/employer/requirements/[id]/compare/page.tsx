@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { useEmployerData } from "@/employer/EmployerDataContext";
-import { formatCtc, Candidate } from "@/employer/mockData";
+import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
+import { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card, Eyebrow, ScoreChip, SkillTag, Divider } from "@/employer/_atoms";
 
@@ -13,7 +14,7 @@ function CompareColumn({ candidate }: { candidate: Candidate }) {
         <ScoreChip score={candidate.matchScore} />
         <div>
           <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>
-            {candidate.unlocked ? candidate.name : `Candidate #${candidate.id}`}
+            {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
           </div>
           <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{candidate.targetRole} · {candidate.city}</div>
         </div>
@@ -23,9 +24,6 @@ function CompareColumn({ candidate }: { candidate: Candidate }) {
         <div>Match score for this role: <strong style={{ color: t.coal }}>{candidate.matchScore}</strong></div>
         <div>Roster score (lifetime): <strong style={{ color: t.coal }}>{candidate.rosterScore}</strong></div>
         <div>Practice sessions: <strong style={{ color: t.coal }}>{candidate.sessionsCompleted}</strong> · last active {candidate.lastActiveDaysAgo}d ago</div>
-        <div>Experience: <strong style={{ color: t.coal }}>{candidate.experienceYears} yrs</strong></div>
-        <div>Notice period: <strong style={{ color: t.coal }}>~{candidate.noticePeriodDays} days</strong></div>
-        <div>Advisory CTC: <strong style={{ color: t.coal }}>{formatCtc(candidate.ctcAdvisory.low, candidate.ctcAdvisory.high)}</strong></div>
         <div>
           Skills:
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
@@ -42,13 +40,36 @@ function CompareColumn({ candidate }: { candidate: Candidate }) {
 export default function ComparePage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const { getRequirement } = useEmployerData();
-  const requirement = getRequirement(params.id);
+  const { fetchRequirementDetail } = useEmployerData();
+  const [requirement, setRequirement] = useState<Requirement | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchRequirementDetail(params.id).then((r) => {
+      if (active) {
+        setRequirement(r);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchRequirementDetail, params.id]);
 
   const aId = searchParams.get("a");
   const bId = searchParams.get("b");
   const a = requirement?.candidates.find((c) => c.id === aId);
   const b = requirement?.candidates.find((c) => c.id === bId);
+
+  if (loading) {
+    return (
+      <Card style={{ textAlign: "center", padding: 48 }}>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
+      </Card>
+    );
+  }
 
   if (!requirement || !a || !b) {
     return (
