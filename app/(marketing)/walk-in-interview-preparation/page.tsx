@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildWalkInInterviewJsonLd, FAQ_ENTRIES } from "./_jsonld";
 
 /*
  * /walk-in-interview-preparation — pillar page for walk-in interview
@@ -84,69 +84,13 @@ const QUESTIONS = [
 ];
 
 export default async function WalkInInterviewPage() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How do I prepare for a walk-in interview with no notice?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Focus on what you can control fast: carry printed resume copies and ID proof, rehearse your 'tell me about yourself' answer out loud so it's not being improvised for the first time in the queue, and research the company for the few minutes you'll likely spend waiting. Walk-in rounds reward candidates who show up prepared for a compressed interview, not a long exploratory one.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What questions are usually asked in a walk-in interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Walk-in interviews for freshers typically cover: tell me about yourself, why you're interested in the role or company, what you know about the company, expected salary, availability to join, and whether you have questions. The round is usually shorter than a scheduled interview, so concise answers matter more.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What should I carry to a walk-in interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Multiple printed copies of your resume, a government ID, and any certificates the job listing specifically mentions. Walk-in drives process candidates in the order they arrive, and missing documents can cost you your slot in the queue.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Can I practice for a walk-in interview in advance if I don't know when it will happen?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes, because walk-in interviews rely on the same core questions across most companies (tell me about yourself, why this role, expected salary, availability), practicing those answers out loud ahead of time pays off regardless of which specific drive you attend. AI mock interview practice lets you rehearse the exact opening questions that decide the first minute of a walk-in round.",
-        },
-      },
-    ],
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "Walk-in Interview Preparation & Tips",
-    description:
-      "How to prepare for a walk-in interview drive with almost no advance notice, plus the questions that come up most.",
-    image: "https://hirestepx.com/opengraph-image",
-    url: "https://hirestepx.com/walk-in-interview-preparation",
-    publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    author: { "@type": "Organization", name: "HireStepX" },
-    datePublished: "2026-07-31",
-    dateModified: "2026-08-05",
-  };
-
   return (
     <>
       <NavV2 />
 
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(articleSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Walk-in Interview Preparation", path: "/walk-in-interview-preparation" }]))} />
+      {buildWalkInInterviewJsonLd(FAQ_ENTRIES).map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
 
       <main id="main-content" style={{ ...s, background: t.cream, minHeight: "100vh" }}>
 
@@ -241,10 +185,10 @@ export default async function WalkInInterviewPage() {
               Walk-in interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {faqSchema.mainEntity.map((item) => (
-                <div key={item.name}>
-                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.name}</dt>
-                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.acceptedAnswer.text}</dd>
+              {FAQ_ENTRIES.map((item) => (
+                <div key={item.q}>
+                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.q}</dt>
+                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.a}</dd>
                 </div>
               ))}
             </dl>

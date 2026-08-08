@@ -27,7 +27,12 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/dashboard",
           "/dashboard/",
-          "/interview",
+          /* Bare "/interview" is a prefix match in robots.txt, not an exact
+             path match — without the $ anchor it also disallows
+             /interview-anxiety and /interview-prep, both marketing pages
+             we want indexed. "/interview/" (with trailing slash) is safe
+             as a prefix since neither marketing page starts with that. */
+          "/interview$",
           "/interview/",
           "/onboarding",
           "/onboarding/",

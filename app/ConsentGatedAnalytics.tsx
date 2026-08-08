@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import { getCookieConsent } from "./CookieConsent";
 import { initPostHog, upgradePostHogPersistence } from "../src/posthogClient";
+import { buildGa4InitScript } from "./_ga4-script";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -51,12 +52,7 @@ export default function ConsentGatedAnalytics({ nonce }: { nonce: string }) {
             strategy="afterInteractive"
             nonce={nonce}
           />
-          <Script id="ga4-init" strategy="afterInteractive" nonce={nonce}>{`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_ID}', { anonymize_ip: true });
-          `}</Script>
+          <Script id="ga4-init" strategy="afterInteractive" nonce={nonce}>{buildGa4InitScript(GA_ID)}</Script>
         </>
       )}
     </>

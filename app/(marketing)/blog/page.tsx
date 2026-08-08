@@ -64,6 +64,13 @@ export default async function Page({
 
   return (
     <>
+      {/* This page reads its own headers()-derived nonce above (it's already
+          dynamic — searchParams opts it out of static rendering regardless
+          of the root-layout split). BlogPage's client-side useSEO() call
+          looks up this meta tag to nonce its own client-injected JSON-LD
+          <script>, so it needs to be rendered here now that the root layout
+          no longer renders it globally. */}
+      <meta name="csp-nonce" content={nonce} />
       <script
         type="application/ld+json"
         nonce={nonce || undefined}

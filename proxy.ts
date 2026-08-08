@@ -29,6 +29,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAllowedOnGate } from "./src/middlewareGate";
+import jsonLdCspHashes from "./data/generated/jsonld-csp-hashes.json";
+
+/* Static, per-route SHA-256 hashes for the inline JSON-LD <script> tags on
+ * /blog/[slug], /salary/[company], and /questions/[slug]. Those routes read
+ * no live nonce (a per-request headers() read would force them fully dynamic,
+ * defeating ISR/static caching) — their inline JSON-LD is instead allowlisted
+ * by content hash, which stays valid across requests to the same cached HTML.
+ * Regenerate via `npm run generate:jsonld-hashes` — wired into `prebuild` so
+ * it can't go stale relative to data/*.
+ */
+const JSONLD_CSP_HASHES: Record<string, string[]> = jsonLdCspHashes;
 
 /* ── Per-request CSP nonce ──────────────────────────────────────────────────
  *
@@ -37,14 +48,27 @@ import { isAllowedOnGate } from "./src/middlewareGate";
  * trusted (nonced) script — covering Razorpay and PostHog loaders. The host
  * allowlist is kept as a CSP L1/L2 fallback for browsers that don't support
  * 'strict-dynamic' (they ignore it and fall back to the host list). No
- * 'unsafe-inline': inline scripts must carry the nonce from app/layout.tsx.
+ * 'unsafe-inline': inline scripts must carry the nonce from AnalyticsNonce.
+ *
+ * Marketing routes (nonce === null) get NO live nonce and NO 'strict-dynamic'
+ * — reading headers() to mint one would force them fully dynamic, defeating
+ * static/ISR generation. 'strict-dynamic' present with no nonce would make
+ * CSP L2+ browsers ignore the host allowlist entirely, so it must be dropped
+ * too; the host allowlist below (googletagmanager.com, posthog, vercel
+ * scripts, googlesyndication) then does the allowlisting job on its own, and
+ * inline scripts (JSON-LD, ga4-init) are allowlisted by content hash instead
+ * — see JSONLD_CSP_HASHES.
  */
-function buildCsp(nonce: string): string {
-  const n = `'nonce-${nonce}'`;
+function buildCsp(pathname: string, nonce: string | null): string {
+  const extraHashes = JSONLD_CSP_HASHES[pathname] || [];
+  const globalHashes = JSONLD_CSP_HASHES.__global__ || [];
+  const scriptExtra = nonce
+    ? `'nonce-${nonce}' 'strict-dynamic'`
+    : [...extraHashes, ...globalHashes].map((h) => `'${h}'`).join(" ");
   return [
     "default-src 'self'",
-    `script-src 'self' ${n} 'strict-dynamic' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com`,
-    `script-src-elem 'self' ${n} 'strict-dynamic' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net`,
+    `script-src 'self' ${scriptExtra} blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com`,
+    `script-src-elem 'self' ${scriptExtra} blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com",
@@ -177,15 +201,33 @@ function isAppPath(pathname: string): boolean {
   return APP_EXACT_PATHS.has(pathname) || APP_PREFIXES.some(p => pathname.startsWith(p));
 }
 
+// Routes that must keep a live per-request nonce (they render through
+// app/(app)/layout.tsx, app/(auth)/layout.tsx, or app/admin/layout.tsx, all
+// of which call headers() via AnalyticsNonce). Everything else renders
+// through app/(marketing)/layout.tsx, which never calls headers() so those
+// routes can stay static/ISR. isAppPath() covers (app) + most of (auth);
+// "/forgot-password" is the one (auth) route it doesn't already enumerate.
+function needsLiveNonce(pathname: string): boolean {
+  return (
+    isAppPath(pathname) ||
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api/")
+  );
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.nextUrl.hostname;
 
   // Generate a per-request nonce and forward it to server components via
-  // x-nonce so app/layout.tsx can attach it to JSON-LD <script> tags.
+  // x-nonce so AnalyticsNonce (app/(app), app/(auth), app/admin layouts) can
+  // attach it to JSON-LD/analytics <script> tags. Marketing routes don't
+  // read it (no headers() call in app/(marketing)/layout.tsx), so the CSP
+  // for those omits the nonce/'strict-dynamic' entirely — see buildCsp().
   // crypto.randomUUID() is available on all WinterCG-compliant runtimes.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildCsp(nonce);
+  const csp = buildCsp(pathname, needsLiveNonce(pathname) ? nonce : null);
 
   // Helper: attach nonce to request headers so server components can read it,
   // and set the CSP + hardening response headers on the final response.

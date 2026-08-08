@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AnalyticsNonce from "../AnalyticsNonce";
 
 export const metadata: Metadata = {
   title: "Admin | HireStepX",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <AnalyticsNonce />
+      {children}
+    </>
+  );
 }

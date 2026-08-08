@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
+    "prebuild": "tsx scripts/generate-jsonld-csp-hashes.mts",
     "check": "tsc --noEmit && eslint .",
     "dev": "next dev",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
@@ -19,6 +20,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "generate:jsonld-hashes": "tsx scripts/generate-jsonld-csp-hashes.mts",
     "import:salaries": "tsx scripts/import-salary-csv.mts",
     "audit:coverage": "tsx scripts/audit-coverage-gaps.mts",
     "audit:confidence": "tsx scripts/csv-confidence-audit.mts",
