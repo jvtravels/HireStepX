@@ -34,6 +34,7 @@ interface MatchRow {
   employer_requirements: {
     title: string;
     location: string;
+    status: string;
     employers: { company_name: string } | null;
   } | null;
 }
@@ -79,16 +80,23 @@ export default async function handler(req: Request): Promise<Response> {
 
     const matchesRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
-        `&select=id,unlocked,created_at,employer_requirements(title,location,employers(company_name))` +
+        `&select=id,unlocked,created_at,employer_requirements(title,location,status,employers(company_name))` +
         `&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
     const matches = (await matchesRes.json().catch(() => [])) as MatchRow[];
 
-    const shortlistedCount = matches.length;
+    // A closed/failed requirement is no longer actually hiring — don't count or
+    // list it as an active match. An unlock that already happened is a real
+    // historical event (the employer has the contact info regardless), so it
+    // still counts even if the requirement closes afterward.
+    const isClosed = (m: MatchRow) => m.employer_requirements?.status === "closed" || m.employer_requirements?.status === "failed";
+    const activeMatches = matches.filter((m) => m.unlocked || !isClosed(m));
+
+    const shortlistedCount = activeMatches.length;
     const unlockedCount = matches.filter((m) => m.unlocked).length;
-    const recent = matches.slice(0, 10).map((m) => ({
+    const recent = activeMatches.slice(0, 10).map((m) => ({
       roleTitle: m.employer_requirements?.title || "Open role",
       companyName: m.employer_requirements?.employers?.company_name || "A HireStepX employer",
       location: m.employer_requirements?.location || "",
