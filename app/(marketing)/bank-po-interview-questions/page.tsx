@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildBankPoInterviewJsonLd, FAQ_ENTRIES } from "./_jsonld";
 
 /*
  * /bank-po-interview-questions — pillar page for the bank PO / government
@@ -85,69 +85,13 @@ const QUESTIONS = [
 ];
 
 export default async function BankPoInterviewPage() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What questions are asked in a bank PO interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Bank PO interviews (SBI, IBPS) typically cover personal and motivational questions (tell us about yourself, why banking), banking and financial awareness (repo rate, monetary policy, types of accounts, recent banking news), and role-specific questions about a Probationary Officer's day-to-day responsibilities. It's a panel interview, usually the final stage after prelims and mains.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How is a bank PO interview different from a corporate interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "It's conducted by a multi-member panel rather than one or two interviewers, and it combines personality assessment with domain knowledge (banking and financial awareness) rather than focusing on resume or work experience. Since the written exam already screened your aptitude, the interview weighs communication, composure, and current banking knowledge more heavily.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How should I prepare banking awareness for the PO interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Focus on current figures (repo rate, key policy rates), core concepts (types of accounts, NPA, monetary policy) explained simply, and recent banking-sector news from the weeks before your interview. Panels reward being current and able to explain a concept in plain language over memorized definitions.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Can I practice for a bank PO panel interview with AI?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. Rehearsing your motivational and personality-round answers out loud (tell us about yourself, why banking, handling pressure) builds the composure a panel is directly evaluating, since most candidates have only reviewed these silently. AI mock interview practice lets you say your answers out loud and get a scored read on clarity and structure before facing a real multi-member panel.",
-        },
-      },
-    ],
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "Bank PO Interview Questions: SBI & IBPS Prep",
-    description:
-      "Common SBI and IBPS PO interview questions, what the panel evaluates, and how to practice answering out loud before the final round.",
-    image: "https://hirestepx.com/opengraph-image",
-    url: "https://hirestepx.com/bank-po-interview-questions",
-    publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    author: { "@type": "Organization", name: "HireStepX" },
-    datePublished: "2026-07-31",
-    dateModified: "2026-08-05",
-  };
-
   return (
     <>
       <NavV2 />
 
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(articleSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Bank PO Interview Questions", path: "/bank-po-interview-questions" }]))} />
+      {buildBankPoInterviewJsonLd(FAQ_ENTRIES).map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
 
       <main id="main-content" style={{ ...s, background: t.cream, minHeight: "100vh" }}>
 
@@ -240,10 +184,10 @@ export default async function BankPoInterviewPage() {
               Bank PO interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {faqSchema.mainEntity.map((item) => (
-                <div key={item.name}>
-                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.name}</dt>
-                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.acceptedAnswer.text}</dd>
+              {FAQ_ENTRIES.map((item) => (
+                <div key={item.q}>
+                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.q}</dt>
+                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.a}</dd>
                 </div>
               ))}
             </dl>

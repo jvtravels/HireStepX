@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildBpoInterviewJsonLd, FAQ_ENTRIES } from "./_jsonld";
 
 /*
  * /bpo-interview-questions — pillar page for the BPO / call center /
@@ -85,69 +85,13 @@ const QUESTIONS = [
 ];
 
 export default async function BpoInterviewPage() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What questions are asked in a BPO interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "BPO interviews typically include a voice & accent check, general HR questions (why BPO, shift availability, salary expectations), and a situational round testing how you'd handle a difficult customer. The voice & accent portion evaluates clarity and pace, not a specific accent: being consistently understood matters more than sounding a particular way.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What is a voice and accent round in a BPO interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "It's a short spoken-English assessment where you read a passage or answer questions out loud, and the recruiter evaluates clarity, pace, and neutral pronunciation. It exists because call center work depends entirely on being understood over the phone, often with background noise and no visual cues to compensate for unclear speech.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How can I prepare my English for a BPO interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Practice speaking out loud, not reading silently: the skill being tested is spontaneous spoken clarity, not vocabulary. Record yourself answering common questions and listen for pace and filler words, or practice with an AI voice interviewer that gives you unlimited repetition without judgment, since most candidates don't have a patient listener available on demand.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Is a BPO interview different from a corporate interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes, delivery is weighted more heavily than in most corporate interviews, since the job itself is entirely voice-based. Content still matters in the situational round, but clarity, tone, and calm pacing under a customer-handling scenario are evaluated as directly as the answer itself.",
-        },
-      },
-    ],
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "BPO Interview Questions & Answers",
-    description:
-      "Common BPO and call center interview questions, what the voice & accent round checks for, and how to practice spoken English answers before the interview.",
-    image: "https://hirestepx.com/opengraph-image",
-    url: "https://hirestepx.com/bpo-interview-questions",
-    publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    author: { "@type": "Organization", name: "HireStepX" },
-    datePublished: "2026-07-31",
-    dateModified: "2026-08-05",
-  };
-
   return (
     <>
       <NavV2 />
 
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(articleSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "BPO Interview Questions", path: "/bpo-interview-questions" }]))} />
+      {buildBpoInterviewJsonLd(FAQ_ENTRIES).map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
 
       <main id="main-content" style={{ ...s, background: t.cream, minHeight: "100vh" }}>
 
@@ -240,10 +184,10 @@ export default async function BpoInterviewPage() {
               BPO interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {faqSchema.mainEntity.map((item) => (
-                <div key={item.name}>
-                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.name}</dt>
-                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.acceptedAnswer.text}</dd>
+              {FAQ_ENTRIES.map((item) => (
+                <div key={item.q}>
+                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.q}</dt>
+                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.a}</dd>
                 </div>
               ))}
             </dl>

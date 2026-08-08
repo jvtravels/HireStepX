@@ -5,11 +5,16 @@ import Script from "next/script";
 import { BLOG_META } from "@/blog-meta";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { SEO_PAGES } from "../../../../../data/seo-pages";
 import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../../../data/salary-seo";
 import { COMPANY_LABEL } from "../../../../../data/company-labels";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import {
+  buildBlogCompanyJsonLd,
+  companyToSlug,
+  companyKeyFromLabel,
+  getAllBlogCompanySlugs,
+} from "./_jsonld";
 
 /* /blog/company/[slug] — company-specific blog category pages.
  *
@@ -26,27 +31,10 @@ const GENERAL_COMPANIES = new Set([
   "Career Advice", "Career",
 ]);
 
-function companyToSlug(company: string): string {
-  return company.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
-
-/* Reverse-lookup COMPANY_LABEL to find the data key from display name. */
-function companyKeyFromLabel(label: string): string | null {
-  const lower = label.toLowerCase();
-  const entry = Object.entries(COMPANY_LABEL).find(([, v]) => v.toLowerCase() === lower);
-  if (entry) return entry[0];
-  return lower.replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || null;
-}
-
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
-  const companies = [...new Set(
-    BLOG_META
-      .map((p) => p.company)
-      .filter((c) => !GENERAL_COMPANIES.has(c)),
-  )];
-  return companies.map((c) => ({ slug: companyToSlug(c) }));
+  return getAllBlogCompanySlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -98,8 +86,6 @@ export default async function BlogCompanyPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
 
   const posts = BLOG_META.filter(
     (p) => companyToSlug(p.company) === slug && !GENERAL_COMPANIES.has(p.company),
@@ -117,30 +103,20 @@ export default async function BlogCompanyPage({
     ? SALARY_SEO_PAGES.find((s) => s.slug === companyKey) ?? null
     : null;
 
-  const breadcrumbSchema = breadcrumb([
-    { name: "Blog", path: "/blog" },
-    { name: `${displayName} Guides`, path: `/blog/company/${slug}` },
-  ]);
-
-  const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: `${displayName} Interview Guides, HireStepX Blog`,
-    description: `All ${displayName} interview preparation articles on HireStepX`,
-    url: `https://hirestepx.com/blog/company/${slug}`,
-    numberOfItems: posts.length,
-    itemListElement: posts.map((post, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: `https://hirestepx.com/blog/${post.slug}`,
-      name: post.title,
-    })),
-  };
+  /* No CSP nonce here on purpose — a live per-request headers() read would
+     force this ISR route fully dynamic (defeating `revalidate` and killing
+     cache-control, which is what starved this route of Googlebot crawl
+     budget). This JSON-LD content is deterministic per company, so its CSP
+     allowance comes from a build-time content hash instead — see
+     scripts/generate-jsonld-csp-hashes.mts and proxy.ts's buildCsp(). */
+  const jsonLdScripts = buildBlogCompanyJsonLd(slug);
+  if (!jsonLdScripts) notFound();
 
   return (
     <>
-      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={ldJson(breadcrumbSchema)} />
-      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      {jsonLdScripts.map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <Script
         async
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"

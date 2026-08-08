@@ -1,6 +1,11 @@
-"use client";
+import AnalyticsNonce from "../AnalyticsNonce";
 import AppShell from "./AppShell";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <>
+      <AnalyticsNonce />
+      <AppShell>{children}</AppShell>
+    </>
+  );
 }

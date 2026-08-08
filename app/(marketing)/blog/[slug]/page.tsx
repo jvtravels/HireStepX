@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import BlogPage from "@/BlogPage";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { getBlogMetaBySlug, getBlogMetasBySlugs } from "@/blog-meta";
 import { getBlogPostBySlug } from "../../../../data/blog-posts";
+import { buildBlogJsonLd } from "./_jsonld";
 
 /* /blog/[slug] — per-post route.
  *
@@ -24,10 +24,6 @@ function slugToTitle(slug: string): string {
   return slug
     .replace(/-/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function slugAuthor(_slug: string): string {
-  return "HireStepX Editorial Team";
 }
 
 export async function generateMetadata({
@@ -88,50 +84,15 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const post = getBlogPostBySlug(slug);
   if (!post) notFound();
 
-  const meta = getBlogMetaBySlug(slug);
-  const title = meta?.title ?? slugToTitle(slug);
   const relatedPosts = getBlogMetasBySlugs(post.relatedSlugs);
 
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
-  /* BlogPosting JSON-LD — the specific subtype required for "Top Stories"
-     carousel eligibility. "Article" works but "BlogPosting" gets stronger
-     signals for blog content. */
-  const articleSchema = meta ? {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: meta.title,
-    description: meta.metaDescription,
-    image: meta.heroImage,
-    datePublished: meta.datePublished,
-    dateModified: meta.datePublished,
-    author: { "@type": "Organization", name: slugAuthor(slug), url: "https://hirestepx.com/about" },
-    publisher: {
-      "@type": "Organization",
-      name: "HireStepX",
-      logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
-    },
-    inLanguage: "en-IN",
-    articleSection: meta.category,
-    url: `https://hirestepx.com/blog/${slug}`,
-    keywords: [meta.company, meta.category, "interview preparation India", "mock interview", "HireStepX"].filter(Boolean).join(", "),
-    mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/blog/${slug}` },
-    isPartOf: { "@type": "Blog", name: "HireStepX Blog", url: "https://hirestepx.com/blog" },
-  } : null;
-
-  /* FAQPage JSON-LD — structured Q&A data. Note: FAQ rich results
-     (visual accordion in SERP) were deprecated May 7, 2026; Article schema
-     carries the main editorial signal. Only injected when faqs are defined. */
-  const faqSchema = (meta?.faqs && meta.faqs.length > 0) ? {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: meta.faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: { "@type": "Answer", text: faq.answer },
-    })),
-  } : null;
+  /* No CSP nonce here on purpose — a live per-request headers() read would
+     force this ISR route fully dynamic (defeating `revalidate` and killing
+     cache-control, which is what starved this route of Googlebot crawl
+     budget). This JSON-LD content is deterministic per slug, so its CSP
+     allowance comes from a build-time content hash instead — see
+     scripts/generate-jsonld-csp-hashes.mts and proxy.ts's buildCsp(). */
+  const jsonLdScripts = buildBlogJsonLd(slug);
 
   return (
     <>
@@ -141,22 +102,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         crossOrigin="anonymous"
         strategy="lazyOnload"
       />
-      <script
-        type="application/ld+json"
-        nonce={nonce || undefined}
-        dangerouslySetInnerHTML={ldJson(
-          breadcrumb([
-            { name: "Blog", path: "/blog" },
-            { name: title, path: `/blog/${slug}` },
-          ]),
-        )}
-      />
-      {articleSchema && (
-        <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      )}
-      {faqSchema && (
-        <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      )}
+      {jsonLdScripts.map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <BlogPage post={post} related={relatedPosts} />
     </>
   );

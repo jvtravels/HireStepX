@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ReferralPageV2 } from "@/marketing-v2/MarketingPagesV2";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { buildReferralJsonLd } from "./_jsonld";
 
 export const metadata: Metadata = {
   title: "Refer a Friend: Give a Session, Get a Session | HireStepX",
@@ -35,15 +35,11 @@ export const metadata: Metadata = {
 export const revalidate = 86400;
 
 export default async function Page() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script
-        nonce={nonce || undefined}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Refer a friend", path: "/referral" }]))}
-      />
+      {buildReferralJsonLd().map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <ReferralPageV2 />
     </>
   );

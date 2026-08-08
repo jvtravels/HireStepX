@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildOneWayVideoInterviewJsonLd, FAQ_ENTRIES } from "./_jsonld";
 
 /*
  * /one-way-video-interview-practice — pillar page for asynchronous
@@ -94,69 +94,13 @@ const TIPS = [
 ];
 
 export default async function OneWayVideoInterviewPage() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What is a one-way video interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "A one-way (asynchronous) video interview is a recorded round where you answer preset questions to a camera on a timer, with no live interviewer present. A recruiter reviews the recording afterward. It's increasingly common as a first round at Indian IT and GCC companies to screen high volumes of applicants efficiently.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How is a one-way video interview different from a live video interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "There's no interviewer reacting in real time, no follow-up questions, and usually a hard time limit with limited retakes per question. You're being evaluated on delivery and structure alone, with none of the rapport or reassurance cues a live conversation provides.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How many times can I redo my answer in a one-way interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "It depends on the platform the company uses, but most allow only one or two attempts per question, and some give none at all. That makes rehearsing the answer's structure in advance more important than in a live interview, where a stumble can be recovered from mid-conversation.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How can I practice for a one-way video interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Practice answering out loud on a timer, addressing a camera lens directly instead of a person, since both are unfamiliar skills most candidates have never rehearsed. AI mock interview practice simulates this well: no live interviewer, a real question, and a scored review of your delivery afterward, the same shape as the actual format.",
-        },
-      },
-    ],
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "One-Way Video Interview Practice & Tips",
-    description:
-      "How to prepare for a one-way, asynchronous video interview with no live interviewer, and how to practice talking to a camera before the real one.",
-    image: "https://hirestepx.com/opengraph-image",
-    url: "https://hirestepx.com/one-way-video-interview-practice",
-    publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    author: { "@type": "Organization", name: "HireStepX" },
-    datePublished: "2026-07-31",
-    dateModified: "2026-08-05",
-  };
-
   return (
     <>
       <NavV2 />
 
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(articleSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "One-Way Video Interview Practice", path: "/one-way-video-interview-practice" }]))} />
+      {buildOneWayVideoInterviewJsonLd(FAQ_ENTRIES).map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
 
       <main id="main-content" style={{ ...s, background: t.cream, minHeight: "100vh" }}>
 
@@ -254,10 +198,10 @@ export default async function OneWayVideoInterviewPage() {
               One-way video interviews: common questions
             </h2>
             <dl style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {faqSchema.mainEntity.map((item) => (
-                <div key={item.name}>
-                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.name}</dt>
-                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.acceptedAnswer.text}</dd>
+              {FAQ_ENTRIES.map((item) => (
+                <div key={item.q}>
+                  <dt style={{ ...s, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{item.q}</dt>
+                  <dd style={{ ...s, fontSize: 15, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.a}</dd>
                 </div>
               ))}
             </dl>

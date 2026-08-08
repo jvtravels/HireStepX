@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TermsV2 } from "@/marketing-v2/MarketingPagesV2";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { buildTermsJsonLd } from "./_jsonld";
 
 export const metadata: Metadata = {
   title: "Terms of Service | HireStepX",
@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 export const revalidate = 86400;
 
 export default async function Page() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Terms", path: "/terms" }]))} />
+      {buildTermsJsonLd().map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <TermsV2 />
     </>
   );

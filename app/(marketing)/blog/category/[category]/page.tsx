@@ -5,8 +5,8 @@ import { BLOG_META } from "@/blog-meta";
 import { CATEGORY_BUCKETS, bucketToSlug, bucketDescription, bucketIntro, categoryBucket } from "@/blog-categories";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildBlogCategoryJsonLd, bucketFromSlug, getAllBlogCategorySlugs } from "./_jsonld";
 
 /* /blog/category/[category] — topic-bucket blog landing pages.
  *
@@ -22,11 +22,7 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
-  return CATEGORY_BUCKETS.map((bucket) => ({ category: bucketToSlug(bucket) }));
-}
-
-function bucketFromSlug(slug: string): string | null {
-  return CATEGORY_BUCKETS.find((b) => bucketToSlug(b) === slug) ?? null;
+  return getAllBlogCategorySlugs().map((category) => ({ category }));
 }
 
 export async function generateMetadata({
@@ -72,38 +68,25 @@ export default async function BlogCategoryPage({
   const bucket = bucketFromSlug(slug);
   if (!bucket) notFound();
 
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
   const posts = BLOG_META
     .filter((p) => categoryBucket(p.category) === bucket)
     .sort((a, b) => (a.datePublished < b.datePublished ? 1 : -1));
   if (posts.length === 0) notFound();
 
-  const breadcrumbSchema = breadcrumb([
-    { name: "Blog", path: "/blog" },
-    { name: `${bucket} Guides`, path: `/blog/category/${slug}` },
-  ]);
-
-  const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: `${bucket} Interview Guides: HireStepX Blog`,
-    description: bucketDescription(bucket),
-    url: `https://hirestepx.com/blog/category/${slug}`,
-    numberOfItems: posts.length,
-    itemListElement: posts.map((post, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: `https://hirestepx.com/blog/${post.slug}`,
-      name: post.title,
-    })),
-  };
+  /* No CSP nonce here on purpose — a live per-request headers() read would
+     force this ISR route fully dynamic (defeating `revalidate` and killing
+     cache-control, which is what starved this route of Googlebot crawl
+     budget). This JSON-LD content is deterministic per category, so its CSP
+     allowance comes from a build-time content hash instead — see
+     scripts/generate-jsonld-csp-hashes.mts and proxy.ts's buildCsp(). */
+  const jsonLdScripts = buildBlogCategoryJsonLd(slug);
+  if (!jsonLdScripts) notFound();
 
   return (
     <>
-      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={ldJson(breadcrumbSchema)} />
-      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      {jsonLdScripts.map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <NavV2 />
       <main style={{ background: "#fdfcf7", minHeight: "60vh" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 80px" }}>

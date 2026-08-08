@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildInterviewAnxietyJsonLd } from "./_jsonld";
 
 /*
  * /interview-anxiety — pillar page for interview nervousness/anxiety
@@ -99,8 +99,13 @@ const TECHNIQUES = [
 ];
 
 export default async function InterviewAnxietyPage() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
+  /* No CSP nonce here on purpose — a live per-request headers() read would
+     force this route fully dynamic (defeating static generation and
+     killing cache-control, which is what starved this route of Googlebot
+     crawl budget). This JSON-LD content is static, so its CSP allowance
+     comes from a build-time content hash instead — see
+     scripts/generate-jsonld-csp-hashes.mts and proxy.ts's buildCsp(). */
+  const jsonLdScripts = buildInterviewAnxietyJsonLd();
 
   const faqSchema = {
     "@context": "https://schema.org",
@@ -149,27 +154,13 @@ export default async function InterviewAnxietyPage() {
     ],
   };
 
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "How to Overcome Interview Anxiety",
-    description:
-      "Why interview anxiety happens, techniques that reduce it, and how repeated practice builds real confidence before the interview that counts.",
-    image: "https://hirestepx.com/opengraph-image",
-    url: "https://hirestepx.com/interview-anxiety",
-    publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    author: { "@type": "Organization", name: "HireStepX" },
-    datePublished: "2026-07-31",
-    dateModified: "2026-08-05",
-  };
-
   return (
     <>
       <NavV2 />
 
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(articleSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Interview Anxiety", path: "/interview-anxiety" }]))} />
+      {jsonLdScripts.map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
 
       <main id="main-content" style={{ ...s, background: t.cream, minHeight: "100vh" }}>
 

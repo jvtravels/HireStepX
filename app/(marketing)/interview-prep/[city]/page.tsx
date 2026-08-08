@@ -6,8 +6,8 @@ import { SEO_PAGES } from "../../../../data/seo-pages";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildInterviewPrepCityJsonLd } from "./_jsonld";
 
 /* /interview-prep/[city] — city-specific interview prep landing pages.
  *
@@ -71,8 +71,14 @@ export default async function CityInterviewPrepPage({
   const page = getCityPageBySlug(slug);
   if (!page) notFound();
 
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
+  /* No CSP nonce here on purpose — a live per-request headers() read would
+     force this ISR route fully dynamic (defeating `revalidate` and killing
+     cache-control, which is what starved this route of Googlebot crawl
+     budget). This JSON-LD content is deterministic per city, so its CSP
+     allowance comes from a build-time content hash instead — see
+     scripts/generate-jsonld-csp-hashes.mts and proxy.ts's buildCsp(). */
+  const jsonLdScripts = buildInterviewPrepCityJsonLd(slug);
+  if (!jsonLdScripts) notFound();
 
   const companyLinks = page.companies
     .map((key) => {
@@ -97,29 +103,15 @@ export default async function CityInterviewPrepPage({
     },
   ];
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
-      "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
-    })),
-  };
-
-  const breadcrumbSchema = breadcrumb([
-    { name: "Interview Prep", path: "/interview-prep" },
-    { name: page.displayName, path: `/interview-prep/${slug}` },
-  ]);
-
   const s = { fontFamily: fonts.sans };
   const serif = { fontFamily: fonts.serif };
   const mono = { fontFamily: fonts.mono };
 
   return (
     <>
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumbSchema)} />
+      {jsonLdScripts.map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 780, margin: "0 auto" }}>
