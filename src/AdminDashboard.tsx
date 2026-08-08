@@ -201,6 +201,16 @@ export interface ReferralsData {
   recent: Array<{ id: string; referrerName: string; refereeEmail: string; status: string; rewardGranted: boolean; createdAt: string }>;
 }
 
+export interface EmployersData {
+  total: number; pending: number; approved: number; rejected: number;
+  rows: Array<{
+    id: string; companyName: string; website: string; gstin: string | null;
+    status: "pending" | "approved" | "rejected";
+    submittedAt: string; approvedAt: string | null;
+    contactName: string; contactEmail: string;
+  }>;
+}
+
 export interface PromoCodesData {
   total: number; active: number; expired: number; totalUses: number;
   codes: Array<{
@@ -246,7 +256,7 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live";
+type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live" | "employers";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
@@ -261,6 +271,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "support-messages", label: "Support", icon: "🛟" },
   { key: "outcomes", label: "Outcomes", icon: "🏆" },
   { key: "referrals", label: "Referrals", icon: "🔗" },
+  { key: "employers", label: "Employers", icon: "🏢" },
   { key: "promo-codes", label: "Promo Codes", icon: "🎟️" },
   { key: "calendar", label: "Calendar", icon: "📅" },
 ];
@@ -610,7 +621,7 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return "overview";
     const p = new URLSearchParams(window.location.search);
     const t = p.get("tab") as Tab | null;
-    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","referrals","promo-codes","calendar","outcomes","analytics","live"].includes(t)) ? t : "overview";
+    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","referrals","promo-codes","calendar","outcomes","analytics","live","employers"].includes(t)) ? t : "overview";
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -630,6 +641,8 @@ export default function AdminDashboard() {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [supportMessages, setSupportMessages] = useState<SupportMessagesData | null>(null);
   const [referrals, setReferrals] = useState<ReferralsData | null>(null);
+  const [employers, setEmployers] = useState<EmployersData | null>(null);
+  const [employerActionBusyId, setEmployerActionBusyId] = useState<string | null>(null);
   const [promoCodes, setPromoCodes] = useState<PromoCodesData | null>(null);
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
   const [outcomes, setOutcomes] = useState<OutcomesData | null>(null);
@@ -752,6 +765,11 @@ export default function AdminDashboard() {
         case "referrals": {
           const d = await fetchSection("referrals") as ReferralsData | null;
           if (d) setReferrals(d);
+          break;
+        }
+        case "employers": {
+          const d = await fetchSection("employers") as EmployersData | null;
+          if (d) setEmployers(d);
           break;
         }
         case "promo-codes": {
@@ -904,6 +922,11 @@ export default function AdminDashboard() {
       case "referrals": {
         const d = await fetchSection("referrals", undefined, true) as ReferralsData | null;
         if (d) setReferrals(d);
+        break;
+      }
+      case "employers": {
+        const d = await fetchSection("employers", undefined, true) as EmployersData | null;
+        if (d) setEmployers(d);
         break;
       }
       case "promo-codes": {
@@ -3259,6 +3282,7 @@ export default function AdminDashboard() {
       case "feedback": return renderFeedback();
       case "support-messages": return renderSupportMessages();
       case "referrals": return renderReferrals();
+      case "employers": return renderEmployers();
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();
       case "outcomes": return renderOutcomes();
@@ -3773,6 +3797,138 @@ export default function AdminDashboard() {
                     <td style={{ ...tdStyle, color: r.status === "converted" ? c.sage : c.stone }}>{r.status}</td>
                     <td style={tdStyle}>{r.rewardGranted ? "✓" : "—"}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(r.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderEmployers = () => {
+    if (!employers) return <EmptyState title="No employer signups yet" />;
+
+    const decide = async (id: string, action: "approve-employer" | "reject-employer") => {
+      setEmployerActionBusyId(id);
+      const token = getToken();
+      const reqHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) reqHeaders["x-admin-token"] = token;
+      try {
+        const res = await fetch("/api/admin-data", {
+          method: "POST",
+          headers: reqHeaders,
+          credentials: "include",
+          body: JSON.stringify({ action, id }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { _token?: string };
+          if (data._token) setToken(data._token);
+          const d = await fetchSection("employers", undefined, true) as EmployersData | null;
+          if (d) setEmployers(d);
+        }
+      } finally {
+        setEmployerActionBusyId(null);
+      }
+    };
+
+    const statusColors: Record<string, string> = {
+      pending: c.gilt, approved: c.sage, rejected: c.ember,
+    };
+
+    const pendingRows = employers.rows.filter((e) => e.status === "pending");
+    const decidedRows = employers.rows.filter((e) => e.status !== "pending");
+
+    return (
+      <div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+          <div style={statCard}><p style={labelStyle}>Total Signups</p><p style={bigNum}>{employers.total}</p></div>
+          <div style={statCard}><p style={labelStyle}>Pending Review</p><p style={{ ...bigNum, color: c.gilt }}>{employers.pending}</p></div>
+          <div style={statCard}><p style={labelStyle}>Approved</p><p style={{ ...bigNum, color: c.sage }}>{employers.approved}</p></div>
+          <div style={statCard}><p style={labelStyle}>Rejected</p><p style={{ ...bigNum, color: c.ember }}>{employers.rejected}</p></div>
+        </div>
+
+        <div style={{ ...card, padding: 0, marginBottom: 24, overflow: "auto" }}>
+          <div style={{ padding: "16px 24px 8px" }}>
+            <p style={labelStyle}>Pending Review ({pendingRows.length})</p>
+          </div>
+          {pendingRows.length === 0 ? (
+            <div style={{ padding: "8px 24px 20px", color: c.stone, fontSize: 13 }}>Nothing waiting on review.</div>
+          ) : (
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Company</th>
+                  <th style={thStyle}>Website</th>
+                  <th style={thStyle}>GSTIN</th>
+                  <th style={thStyle}>Contact</th>
+                  <th style={thStyle}>Submitted</th>
+                  <th style={thStyle}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRows.map((e) => (
+                  <tr key={e.id}>
+                    <td style={tdStyle}>{e.companyName}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>
+                      <a href={e.website} target="_blank" rel="noopener noreferrer" style={{ color: c.gilt }}>{e.website}</a>
+                    </td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{e.gstin || "—"}</td>
+                    <td style={tdStyle}>
+                      <div>{e.contactName}</div>
+                      <div style={{ fontSize: 11, color: c.stone }}>{e.contactEmail}</div>
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(e.submittedAt)}</td>
+                    <td style={tdStyle}>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => decide(e.id, "approve-employer")}
+                          disabled={employerActionBusyId === e.id}
+                          style={{ ...exportBtn, background: c.sage, color: c.obsidian, opacity: employerActionBusyId === e.id ? 0.6 : 1 }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => decide(e.id, "reject-employer")}
+                          disabled={employerActionBusyId === e.id}
+                          style={{ ...exportBtn, background: c.ember, color: c.obsidian, opacity: employerActionBusyId === e.id ? 0.6 : 1 }}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {decidedRows.length > 0 && (
+          <div style={{ ...card, padding: 0, overflow: "auto" }}>
+            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>Reviewed</p>
+              <button onClick={() => exportCsv("employers.csv", decidedRows)} style={exportBtn}>Export CSV</button>
+            </div>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Company</th>
+                  <th style={thStyle}>Contact</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Submitted</th>
+                  <th style={thStyle}>Decided</th>
+                </tr>
+              </thead>
+              <tbody>
+                {decidedRows.map((e) => (
+                  <tr key={e.id}>
+                    <td style={tdStyle}>{e.companyName}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{e.contactEmail}</td>
+                    <td style={{ ...tdStyle, color: statusColors[e.status] || c.ivory }}>{e.status}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(e.submittedAt)}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{e.approvedAt ? formatDateTime(e.approvedAt) : "—"}</td>
                   </tr>
                 ))}
               </tbody>

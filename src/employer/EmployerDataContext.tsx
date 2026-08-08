@@ -10,10 +10,11 @@ import { RequirementSummary, Requirement, Candidate } from "./mockData";
    employer-requirement-detail.ts, employer-unlock-candidate.ts and the
    "Employer talent-roster feature" block in supabase-schema.sql.
 
-   Employer approval has no human review queue yet — employer-profile.ts
-   lazily auto-approves a pending row 20s after submission on GET. That's
-   a placeholder, not a security boundary; this context just polls GET
-   while status is "pending" so the console updates without a refresh. */
+   Employer approval is a human review step in the admin panel (see
+   src/AdminDashboard.tsx "Employers" tab + server-handlers/admin-data.ts
+   "employers"/"approve-employer"/"reject-employer"). This context just
+   polls GET while status is "pending" so the console flips to the
+   dashboard once an admin approves it, without a manual refresh. */
 
 export type CompanyStatus = "none" | "pending" | "approved" | "rejected";
 

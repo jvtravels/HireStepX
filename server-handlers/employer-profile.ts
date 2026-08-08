@@ -10,11 +10,10 @@
  * scope note in app/(employer) and the schema comment in
  * supabase-schema.sql ("Employer talent-roster feature").
  *
- * There is no human review queue yet. GET lazily auto-approves a pending
- * row once PENDING_REVIEW_MS has elapsed since submission — an explicit
- * placeholder for a real approval flow, not a security boundary (employer
- * status only gates the requirements/matching endpoints, not any
- * candidate-facing data).
+ * Pending rows are reviewed by a human admin via the "Employers" tab in
+ * the admin panel (server-handlers/admin-data.ts, actions "employers" /
+ * "approve-employer" / "reject-employer") — this handler only ever reads
+ * and writes a fresh "pending" row; it never mutates status itself.
  */
 
 export const config = { runtime: "edge" };
@@ -24,8 +23,6 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_share
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
-const PENDING_REVIEW_MS = 20_000;
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -98,33 +95,9 @@ async function fetchEmployer(userId: string): Promise<EmployerRow | null> {
 
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
-    let row = await fetchEmployer(userId);
+    const row = await fetchEmployer(userId);
     if (!row) {
       return new Response(JSON.stringify({ status: "none" }), { status: 200, headers });
-    }
-
-    if (row.status === "pending") {
-      const elapsed = Date.now() - new Date(row.submitted_at).getTime();
-      if (elapsed >= PENDING_REVIEW_MS) {
-        const patchRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}`,
-          {
-            method: "PATCH",
-            headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
-            body: JSON.stringify({ status: "approved", approved_at: new Date().toISOString() }),
-          },
-        );
-        if (patchRes.ok) {
-          const updated = (await patchRes.json().catch(() => [])) as EmployerRow[];
-          if (Array.isArray(updated) && updated[0]) row = updated[0];
-        } else {
-          slog.warn("employer-profile auto-approve patch failed", {
-            code: "employer_profile_auto_approve_failed",
-            httpStatus: patchRes.status,
-            userId,
-          });
-        }
-      }
     }
 
     return new Response(

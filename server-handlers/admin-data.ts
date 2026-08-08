@@ -1191,6 +1191,44 @@ function isReferralConverted(r: ReferralRow): boolean {
   return r.status === "rewarded" || !!r.reward_granted_at;
 }
 
+interface EmployerRow {
+  id: string;
+  company_name: string;
+  website: string;
+  gstin: string | null;
+  status: "pending" | "approved" | "rejected";
+  submitted_at: string;
+  approved_at: string | null;
+}
+
+async function getEmployers() {
+  const [employers, profiles] = await Promise.all([
+    fetchJSON<EmployerRow>("employers?select=id,company_name,website,gstin,status,submitted_at,approved_at&order=submitted_at.desc&limit=1000"),
+    fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
+  ]);
+  const profileMap = new Map(profiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
+
+  const rows = employers.map((e) => ({
+    id: e.id,
+    companyName: e.company_name,
+    website: e.website,
+    gstin: e.gstin || null,
+    status: e.status,
+    submittedAt: e.submitted_at,
+    approvedAt: e.approved_at,
+    contactName: profileMap.get(e.id)?.name || "(deleted user)",
+    contactEmail: profileMap.get(e.id)?.email || "—",
+  }));
+
+  return {
+    total: rows.length,
+    pending: rows.filter((r) => r.status === "pending").length,
+    approved: rows.filter((r) => r.status === "approved").length,
+    rejected: rows.filter((r) => r.status === "rejected").length,
+    rows,
+  };
+}
+
 async function getReferrals() {
   const monthAgo = daysAgo(30);
   const [allReferrals, recentProfiles] = await Promise.all([
@@ -1729,6 +1767,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "feedback": return getFeedback();
         case "support-messages": return getSupportMessages();
         case "referrals": return getReferrals();
+        case "employers": return getEmployers();
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
         case "outcomes": return getOutcomes();
@@ -1812,6 +1851,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
           );
           if (!banRes.ok) return { ok: false, error: `Auth ban failed: HTTP ${banRes.status}` };
+          return { ok: true };
+        }
+        case "approve-employer": {
+          if (!body?.id) throw new Error("id required");
+          const patchRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(body.id)}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ status: "approved", approved_at: new Date().toISOString() }),
+            },
+          );
+          if (!patchRes.ok) return { ok: false, error: `Approve failed: HTTP ${patchRes.status}` };
+          return { ok: true };
+        }
+        case "reject-employer": {
+          if (!body?.id) throw new Error("id required");
+          const patchRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(body.id)}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ status: "rejected", approved_at: null }),
+            },
+          );
+          if (!patchRes.ok) return { ok: false, error: `Reject failed: HTTP ${patchRes.status}` };
           return { ok: true };
         }
         case "unban-user": {
