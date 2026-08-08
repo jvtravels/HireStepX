@@ -1668,6 +1668,12 @@ create policy "Employers view own matches" on requirement_matches
     )
   );
 
+-- Defense-in-depth for candidate-hiring-activity.ts, which normally reads via
+-- the service role — this is the RLS fallback if that ever changes.
+drop policy if exists "Candidates view own matches" on requirement_matches;
+create policy "Candidates view own matches" on requirement_matches
+  for select using ((auth.uid())::text = candidate_user_id::text);
+
 -- Candidate opt-in gate for the real matching pool — mirrors
 -- is_profile_public's private-by-default contract. Employers can only ever
 -- match against candidates who have explicitly flipped this on from

@@ -19,6 +19,7 @@ import { captureClientEvent } from "./posthogClient";
 import type { DashboardSession } from "./dashboardTypes";
 import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 import { UpcomingInterviews } from "./DashboardHomePanels";
+import HiringActivityCard from "./HiringActivityCard";
 import {
   computeResumeFreshness,
   parseDismissal,
@@ -966,6 +967,10 @@ export default function DashboardHome() {
             </div>
             <OutlineCta size="sm" onClick={goToResume}>Open</OutlineCta>
           </div>
+
+          {/* Talent-roster visibility — see settingsSections.tsx AccountSection
+              for the opt-in toggle this reflects. */}
+          <HiringActivityCard />
 
           {/* Jump back in, plain link list */}
           <nav aria-label="Quick links">

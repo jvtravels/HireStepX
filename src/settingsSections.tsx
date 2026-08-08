@@ -401,7 +401,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         <ThinDivider />
         <KeyValue
           label="Visible to employers"
-          value="Let companies using our talent roster discover your profile and match you to open roles. Off by default."
+          value="Let companies using our talent roster discover your profile and match you to open roles. Off by default. Once on, matches and contact activity show up on your Dashboard."
           right={
             <Toggle
               on={isDiscoverableToEmployers}
