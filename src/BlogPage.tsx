@@ -1686,24 +1686,6 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
     ]} caption="Amazon India 2026; Bengaluru/Hyderabad; total compensation including RSUs (4yr vest)" />
   ),
 
-  /* hcl-interview-questions-india-2026: HCL interview process and salary */
-  "hcl-interview-questions-india-2026||HCL Interview Process 2026: All Rounds": (
-    <RoundFlow rounds={[
-      { label: "Online Assessment", duration: "90 min", detail: "Aptitude + Verbal + Reasoning + Coding (2 easy-medium problems); AMCAT or internal platform" },
-      { label: "Technical Interview", duration: "45 min", detail: "CS fundamentals (OOP, DBMS, OS), core language proficiency (Java/C/C++), project walkthrough" },
-      { label: "HR Interview", duration: "20 min", detail: "Relocation, background, career goals, salary expectations; HCL has no bond for standard hires" },
-    ]} />
-  ),
-
-  "hcl-interview-questions-india-2026||HCL Salary in India 2026": (
-    <SalaryLadder maxLPA={16} rows={[
-      { role: "Fresher – HCL TechBee", min: 1.8, max: 3, note: "12th-pass early career programme; unique track" },
-      { role: "Fresher – Graduate Engineer", min: 3.5, max: 5.5, note: "Most campus hires; variable included" },
-      { role: "Experienced (2–4 yrs)", min: 6, max: 11, note: "Lateral hires; depends on tech stack" },
-      { role: "Senior Engineer (5+ yrs)", min: 10, max: 16, note: "Cloud/SAP/DevOps skills command higher bands" },
-    ]} caption="HCL Technologies India 2026; Noida/Bengaluru; gross CTC" />
-  ),
-
   /* google-interview-questions-india-2026: Google India interview process and salary */
   "google-interview-questions-india-2026||Google India SWE Interview Process: All Rounds": (
     <RoundFlow rounds={[
