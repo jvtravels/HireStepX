@@ -7878,11 +7878,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
   "sarvam-ai": {
-    "software-engineer": {
-      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
-      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
-      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
-    },
     "ai-engineer": {
       mid: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + recruiter signal", lastVerified: "2026-05-07", notes: "Sarvam AI pays AI-research-premium 1.5-2x SE. ₹50-80L mid; ₹100L+ senior." },
       senior: { totalMin: 90, totalMax: 150, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },
@@ -7892,11 +7887,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
      to a single space before lookup, so it never reaches the hyphenated
      key above. Kept in sync manually — same data, both spellings. */
   "sarvam ai": {
-    "software-engineer": {
-      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
-      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
-      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
-    },
     "ai-engineer": {
       mid: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + recruiter signal", lastVerified: "2026-05-07", notes: "Sarvam AI pays AI-research-premium 1.5-2x SE. ₹50-80L mid; ₹100L+ senior." },
       senior: { totalMin: 90, totalMax: 150, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },

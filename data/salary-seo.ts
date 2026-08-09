@@ -1794,7 +1794,6 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       "Sarvam AI ML Engineer / Researcher salary: mid ₹50–80 LPA, senior ₹90–150 LPA, plus ESOP (Series B, $1.5B valuation). India's leading vernacular AI unicorn. Bengaluru CTC guide.",
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
-      { roleKey: "software-engineer", label: "Software Engineer" },
     ],
     questionSlug: "sarvam-ai-ml-engineer-interview-questions",
     hubNote: "India's leading vernacular AI unicorn: BharatGPT, Sarvam-2B; Series B ($1.5B) ESOP",
