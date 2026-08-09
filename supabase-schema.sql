@@ -1680,3 +1680,25 @@ create policy "Candidates view own matches" on requirement_matches
 -- Settings (src/settingsSections.tsx AccountSection).
 alter table profiles add column if not exists is_discoverable_to_employers boolean not null default false;
 
+-- Employer contact-unlock payments (2026-08-09). A dedicated table rather
+-- than reusing `payments`: that table's user_id FK requires a `profiles`
+-- row, which employer accounts never have (see the "Employer talent-roster
+-- feature" note above — employers are keyed by auth.users, not profiles).
+-- Mirrors payment_dedup's shape: service-role-only, no client policies —
+-- writes happen server-side in employer-verify-unlock-payment.ts.
+create table if not exists employer_unlock_payments (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid references requirement_matches(id) on delete cascade not null,
+  employer_id uuid references employers(id) on delete cascade not null,
+  razorpay_payment_id text unique not null,
+  razorpay_order_id text default '',
+  amount integer not null,
+  currency text default 'INR',
+  status text default 'completed',
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_employer_unlock_payments_employer on employer_unlock_payments(employer_id, created_at desc);
+
+alter table employer_unlock_payments enable row level security;
+
