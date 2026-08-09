@@ -65,6 +65,24 @@ function FailedState() {
   );
 }
 
+// Dynamically loads the Razorpay checkout script with a CSP nonce — see
+// handleCheckout in src/dashboardComponents.tsx for the original pattern
+// this mirrors (strict-dynamic CSP means a script tag without the nonce
+// is silently blocked, not rejected).
+function loadRazorpayScript(): Promise<void> {
+  if (window.Razorpay) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
+    if (nonce) s.nonce = nonce;
+    const timer = setTimeout(() => { s.remove(); reject(new Error("timeout")); }, 10_000);
+    s.onload = () => { clearTimeout(timer); resolve(); };
+    s.onerror = () => { clearTimeout(timer); s.remove(); reject(new Error("load failed")); };
+    document.head.appendChild(s);
+  });
+}
+
 function CandidateRow({
   candidate,
   requirementId,
@@ -82,22 +100,72 @@ function CandidateRow({
   compareDisabled: boolean;
   onUnlocked: (candidateId: string, name: string, email: string) => void;
 }) {
-  const { unlockCandidate } = useEmployerData();
+  const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
   const { toast } = useToast();
   const [confirming, setConfirming] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
+  // Display-only — mirrors the >= 60 threshold in
+  // server-handlers/_unlock-pricing.ts, which is the sole source of truth
+  // for the amount actually charged.
+  const displayPrice = candidate.matchScore >= 60 ? "₹1,999" : "₹999";
+
   const handleConfirmUnlock = async () => {
     setUnlocking(true);
-    const result = await unlockCandidate(candidate.id);
-    setUnlocking(false);
-    setConfirming(false);
-    if (!result) {
-      toast("Couldn't unlock this candidate — please try again", "error");
+    const order = await createUnlockOrder(candidate.id);
+    if (!order) {
+      setUnlocking(false);
+      toast("Couldn't start payment — please try again", "error");
       return;
     }
-    onUnlocked(candidate.id, result.name, result.contact.email);
-    toast(`Unlocked ${result.name}'s contact details`, "success");
+
+    try {
+      await loadRazorpayScript();
+    } catch {
+      setUnlocking(false);
+      toast("Payment system failed to load. Check your connection and try again.", "error");
+      return;
+    }
+    if (!window.Razorpay) {
+      setUnlocking(false);
+      toast("Payment system not available. Please refresh and try again.", "error");
+      return;
+    }
+
+    const rzp = new window.Razorpay({
+      key: order.keyId,
+      amount: order.amount,
+      currency: order.currency,
+      name: order.name,
+      description: order.description,
+      order_id: order.orderId,
+      theme: { color: t.indigo },
+      method: { upi: true, card: true, netbanking: true, wallet: true },
+      handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+        const result = await verifyUnlockPayment({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        });
+        setUnlocking(false);
+        setConfirming(false);
+        if (!result) {
+          toast("Payment received but unlock failed — contact support@hirestepx.com", "error");
+          return;
+        }
+        onUnlocked(candidate.id, result.name, result.contact.email);
+        toast(`Unlocked ${result.name}'s contact details`, "success");
+      },
+      modal: {
+        ondismiss: function () { setUnlocking(false); },
+      },
+    });
+    (rzp as unknown as { on(event: string, cb: (r: unknown) => void): void }).on("payment.failed", function (response: unknown) {
+      const errDetail = (response as { error?: { description?: string; reason?: string } })?.error;
+      toast(errDetail?.description || errDetail?.reason || "Payment failed. Please try again.", "error");
+      setUnlocking(false);
+    });
+    rzp.open();
   };
 
   return (
@@ -157,7 +225,7 @@ function CandidateRow({
           ) : confirming ? (
             <div style={{ marginTop: 12, background: t.creamSoft, borderRadius: 10, padding: 14 }}>
               <div style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 10 }}>
-                Unlock this candidate's contact details for <strong>₹999–1,999</strong>?
+                Unlock this candidate's contact details for <strong>{displayPrice}</strong>?
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <PrimaryCta size="sm" onClick={handleConfirmUnlock} disabled={unlocking}>
@@ -169,7 +237,7 @@ function CandidateRow({
           ) : (
             <div style={{ marginTop: 12 }}>
               <PrimaryCta size="sm" icon={<EmployerIcon.Lock />} onClick={() => setConfirming(true)}>
-                Unlock contact — ₹999–1,999
+                Unlock contact — {displayPrice}
               </PrimaryCta>
             </div>
           )}

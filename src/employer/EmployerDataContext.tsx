@@ -7,8 +7,9 @@ import { RequirementSummary, Requirement, Candidate } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
-   employer-requirement-detail.ts, employer-unlock-candidate.ts and the
-   "Employer talent-roster feature" block in supabase-schema.sql.
+   employer-requirement-detail.ts, employer-create-unlock-order.ts,
+   employer-verify-unlock-payment.ts and the "Employer talent-roster
+   feature" block in supabase-schema.sql.
 
    Employer approval is a human review step in the admin panel (see
    src/AdminDashboard.tsx "Employers" tab + server-handlers/admin-data.ts
@@ -18,6 +19,15 @@ import { RequirementSummary, Requirement, Candidate } from "./mockData";
 
 export type CompanyStatus = "none" | "pending" | "approved" | "rejected";
 
+export interface UnlockOrder {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  name: string;
+  description: string;
+}
+
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
@@ -26,7 +36,12 @@ interface EmployerDataContextValue {
   submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
   addRequirement: (r: { title: string; location: string; noticePeriodPref?: string; description?: string }) => Promise<string | null>;
-  unlockCandidate: (matchId: string) => Promise<{ name: string; contact: { email: string } } | null>;
+  createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
+  verifyUnlockPayment: (payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => Promise<{ name: string; contact: { email: string } } | null>;
   fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
   refreshRequirements: () => Promise<void>;
 }
@@ -120,10 +135,24 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return null;
   }, [refreshRequirements]);
 
-  const unlockCandidate = useCallback(async (matchId: string) => {
-    const res = await apiFetch<{ name: string; contact: { email: string } }>(
-      "/api/employer-unlock-candidate",
+  const createUnlockOrder = useCallback(async (matchId: string) => {
+    const res = await apiFetch<UnlockOrder>(
+      "/api/employer-create-unlock-order",
       { matchId },
+      { method: "POST" },
+    );
+    if (res.ok && res.data) return res.data;
+    return null;
+  }, []);
+
+  const verifyUnlockPayment = useCallback(async (payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    const res = await apiFetch<{ name: string; contact: { email: string } }>(
+      "/api/employer-verify-unlock-payment",
+      payload,
       { method: "POST" },
     );
     if (res.ok && res.data) return res.data;
@@ -150,7 +179,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     submitCompanyProfile,
     resetCompanyProfile,
     addRequirement,
-    unlockCandidate,
+    createUnlockOrder,
+    verifyUnlockPayment,
     fetchRequirementDetail,
     refreshRequirements,
   };
