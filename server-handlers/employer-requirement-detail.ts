@@ -4,7 +4,7 @@
  *
  * Returns one requirement owned by the caller plus its scored candidate
  * shortlist. Candidate identity (name, email) stays masked until a match
- * is unlocked — see employer-unlock-candidate.ts.
+ * is unlocked via paid employer-verify-unlock-payment.ts.
  *
  * Candidate fields are limited to what the real schema actually backs:
  * target role, resume-derived city/skills, session count, and last-active
