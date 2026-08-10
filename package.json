@@ -35,7 +35,7 @@
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "next": "^16.2.4",
+    "next": "^16.2.11",
     "pdfjs-dist": "^3.11.174",
     "posthog-js": "^1.372.3",
     "posthog-node": "^5.30.6",
@@ -73,6 +73,9 @@
     "vitest": "^4.1.2"
   },
   "overrides": {
-    "canvas": "npm:empty-npm-package@1.0.0"
+    "canvas": "npm:empty-npm-package@1.0.0",
+    "undici": "^7.29.0",
+    "postcss": "^8.5.23",
+    "sharp": "^0.35.3"
   }
 }
