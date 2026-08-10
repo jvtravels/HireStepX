@@ -29,17 +29,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAllowedOnGate } from "./src/middlewareGate";
-import jsonLdCspHashes from "./data/generated/jsonld-csp-hashes.json";
-
-/* Static, per-route SHA-256 hashes for the inline JSON-LD <script> tags on
- * /blog/[slug], /salary/[company], and /questions/[slug]. Those routes read
- * no live nonce (a per-request headers() read would force them fully dynamic,
- * defeating ISR/static caching) — their inline JSON-LD is instead allowlisted
- * by content hash, which stays valid across requests to the same cached HTML.
- * Regenerate via `npm run generate:jsonld-hashes` — wired into `prebuild` so
- * it can't go stale relative to data/*.
- */
-const JSONLD_CSP_HASHES: Record<string, string[]> = jsonLdCspHashes;
 
 /* ── Per-request CSP nonce ──────────────────────────────────────────────────
  *
@@ -52,19 +41,22 @@ const JSONLD_CSP_HASHES: Record<string, string[]> = jsonLdCspHashes;
  *
  * Marketing routes (nonce === null) get NO live nonce and NO 'strict-dynamic'
  * — reading headers() to mint one would force them fully dynamic, defeating
- * static/ISR generation. 'strict-dynamic' present with no nonce would make
- * CSP L2+ browsers ignore the host allowlist entirely, so it must be dropped
- * too; the host allowlist below (googletagmanager.com, posthog, vercel
- * scripts, googlesyndication) then does the allowlisting job on its own, and
- * inline scripts (JSON-LD, ga4-init) are allowlisted by content hash instead
- * — see JSONLD_CSP_HASHES.
+ * static/ISR generation. These pages were previously locked down with a
+ * content-hash allowlist (JSONLD_CSP_HASHES) instead of a nonce, but that
+ * only ever covered the page's OWN inline JSON-LD — it never covered (and
+ * can't cover) Next.js's own framework-injected inline hydration/RSC scripts,
+ * whose content isn't knowable ahead of a build. With no nonce, no hash match
+ * for those scripts, and no 'unsafe-inline', CSP silently blocked every
+ * static/ISR marketing page's hydration entirely (2026-08-10 outage). Per the
+ * CSP spec, 'unsafe-inline' is only honored when the source list has NO
+ * nonce-source or hash-source at all, so for the no-nonce branch we must
+ * drop hash-based locking and rely on 'unsafe-inline' + the host allowlist
+ * below — the same protection level CSP-L1 browsers already had. Routes that
+ * carry a live nonce (app/auth/admin) are unaffected and keep the strict
+ * nonce + 'strict-dynamic' policy.
  */
-function buildCsp(pathname: string, nonce: string | null): string {
-  const extraHashes = JSONLD_CSP_HASHES[pathname] || [];
-  const globalHashes = JSONLD_CSP_HASHES.__global__ || [];
-  const scriptExtra = nonce
-    ? `'nonce-${nonce}' 'strict-dynamic'`
-    : [...extraHashes, ...globalHashes].map((h) => `'${h}'`).join(" ");
+function buildCsp(nonce: string | null): string {
+  const scriptExtra = nonce ? `'nonce-${nonce}' 'strict-dynamic'` : "'unsafe-inline'";
   return [
     "default-src 'self'",
     `script-src 'self' ${scriptExtra} blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com`,
@@ -227,7 +219,7 @@ export async function proxy(request: NextRequest) {
   // for those omits the nonce/'strict-dynamic' entirely — see buildCsp().
   // crypto.randomUUID() is available on all WinterCG-compliant runtimes.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildCsp(pathname, needsLiveNonce(pathname) ? nonce : null);
+  const csp = buildCsp(needsLiveNonce(pathname) ? nonce : null);
 
   // Helper: attach nonce to request headers so server components can read it,
   // and set the CSP + hardening response headers on the final response.
