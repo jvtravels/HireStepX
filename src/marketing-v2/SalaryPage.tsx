@@ -18,6 +18,34 @@ import {
   ctaGhostStyle,
 } from "./_editorial";
 import { FAQItem } from "./MarketingPagesV2";
+import { pickVariant } from "../../data/_content-variants";
+
+/* PRI-150: rotate a few hand-written phrasings for the templated sentences
+   below so 224 salary pages built from one skeleton don't read as
+   verbatim duplicates to Google — see data/_content-variants.ts. */
+const INTRO_SOURCING_VARIANTS = [
+  (_companyLabel: string) =>
+    `Salary ranges below are sourced primarily from AmbitionBox, with Glassdoor as a secondary cross-check, and reflect total CTC (base + variable + equity) at the 25th–90th percentile of reported offers in India.`,
+  (companyLabel: string) =>
+    `The figures below reflect total CTC — base, variable, and equity combined — at the 25th–90th percentile of reported ${companyLabel} offers in India, cross-checked against AmbitionBox and Glassdoor.`,
+  (companyLabel: string) =>
+    `Every band below is total CTC (base + variable + equity), drawn from the 25th–90th percentile of reported offers at ${companyLabel} in India and verified against AmbitionBox and Glassdoor.`,
+] as const;
+
+const ROLE_HEADING_VARIANTS = [
+  (roleLabel: string, companyLabel: string) => `${roleLabel} Salary at ${companyLabel} (India, 2026)`,
+  (roleLabel: string, companyLabel: string) => `${companyLabel} ${roleLabel} Compensation (India, 2026)`,
+  (roleLabel: string, companyLabel: string) => `How Much Does ${companyLabel} Pay a ${roleLabel}?`,
+] as const;
+
+const ROLE_SUBTEXT_VARIANTS = [
+  (roleLabel: string, companyLabel: string) =>
+    `Total CTC ranges for ${roleLabel}s at ${companyLabel} India, from fresher to senior level.`,
+  (roleLabel: string, companyLabel: string) =>
+    `${companyLabel}'s pay bands for ${roleLabel}s in India, fresher through senior.`,
+  (roleLabel: string, companyLabel: string) =>
+    `What ${roleLabel}s actually earn at ${companyLabel} in India, across every experience level.`,
+] as const;
 /* ─── Types ─────────────────────────────────────────────────────── */
 
 export interface SalaryBandRow {
@@ -495,10 +523,8 @@ export function SalaryCompanyPage({
               {companyLabel} Salary Guide India 2026
             </h1>
             <p className="ed-rise ed-d2" style={leadStyle}>
-              {companyDescription} Salary ranges below are sourced primarily from
-              AmbitionBox, with Glassdoor as a secondary cross-check, and reflect
-              total CTC (base + variable + equity) at the 25th–90th percentile of
-              reported offers in India.
+              {companyDescription}{" "}
+              {pickVariant(companySlug, INTRO_SOURCING_VARIANTS)(companyLabel)}
             </p>
 
             {/* Quick meta chips */}
@@ -664,7 +690,7 @@ export function SalaryCompanyPage({
               >
                 <p style={eyebrow}>Role</p>
                 <h2 style={sectionTitle}>
-                  {role.roleLabel} Salary at {companyLabel} (India, 2026)
+                  {pickVariant(`${companySlug}:${role.roleKey}`, ROLE_HEADING_VARIANTS)(role.roleLabel, companyLabel)}
                 </h2>
                 <p
                   style={{
@@ -674,8 +700,7 @@ export function SalaryCompanyPage({
                     marginBottom: 20,
                   }}
                 >
-                  Total CTC ranges for {role.roleLabel}s at {companyLabel} India, from fresher to
-                  senior level.
+                  {pickVariant(`${companySlug}:${role.roleKey}`, ROLE_SUBTEXT_VARIANTS)(role.roleLabel, companyLabel)}
                 </p>
 
                 <div style={tableWrap}>
