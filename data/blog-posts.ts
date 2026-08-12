@@ -25334,6 +25334,41 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
   },
   {
+    slug: "zetwerk-interview-experience-2026",
+    title: "Zetwerk Interview Experience 2026: SDE Process and Prep",
+    metaDescription: "Zetwerk SDE interview experience 2026: DSA and Node.js/JavaScript-focused coding rounds, system design, and what candidates actually report.",
+    company: "Zetwerk",
+    category: "Experience",
+    readTime: "6 min",
+    heroImage: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&q=80",
+    heroAlt: "Manufacturing factory floor and engineering laptop representing Zetwerk's B2B manufacturing marketplace",
+    heroBg: "#171412",
+    datePublished: "2026-08-12",
+    intro: "Zetwerk is one of India's largest B2B manufacturing marketplaces, connecting businesses with a network of contract manufacturers across metals, electronics, and precision engineering. Public interview accounts for Zetwerk's SDE roles are genuinely sparse compared to more heavily discussed companies, so this guide sticks to what's actually corroborated across candidate reports rather than inventing a rigid round-by-round script. Where the sourcing is thin, we say so directly.",
+    sections: [
+      {
+        heading: "What Zetwerk's SDE interview process actually looks like",
+        content: "Across Glassdoor reviews and a small number of detailed candidate write-ups, Zetwerk's SDE loop consistently includes: one or two technical/coding rounds covering DSA (LeetCode-style array, string, and hashmap problems) plus Node.js and JavaScript fundamentals, and SQL (joins, aggregations); a system-design-and-project-deep-dive round for more experienced candidates, where you walk through your own past architecture decisions; and a hiring-manager or HR round on background, expectations, and compensation.\n\nThe exact number and order of rounds varies by candidate report — some describe as few as 2 rounds, others describe up to 4–5 for backend-specific reqs — so treat any specific round count you see elsewhere as one candidate's experience, not a fixed template. Overall reported difficulty clusters around moderate (roughly 3/5 on Glassdoor)." ,
+      },
+      {
+        heading: "What's distinctive about Zetwerk's technical rounds",
+        content: "The one clearly repeated, distinguishing signal across multiple sources is a Node.js/JavaScript-backend skew: expect Express.js and API-design questions, and DSA framed in a JS-first way, more than a language-agnostic DSA screen. Beyond that, be skeptical of anything claiming a manufacturing- or supply-chain-specific case study in the SDE loop — that pattern shows up for operations and business roles at Zetwerk, not engineering, and conflating the two produces exactly the kind of generic, inaccurate prep advice this guide is trying to avoid.",
+      },
+      {
+        heading: "How to prepare for a Zetwerk interview",
+        content: "1. Get comfortable with DSA in a JavaScript-first context:\nPractise standard array, string, and hashmap problems, but do them in JavaScript/Node rather than only in Python or Java, since interviewers appear to frame problems around your JS fluency directly.\n\n2. Review Node.js and Express fundamentals:\nEvent loop behaviour, middleware, async/await patterns, and REST API design — these come up repeatedly across accounts.\n\n3. Brush up on SQL joins and aggregations:\nExpect practical query-writing, not just conceptual questions.\n\n4. Prepare a clear walkthrough of one past project's architecture:\nThe system-design round leans on your own project history more than abstract scale-out design, so have a specific decision (why you chose a schema, a caching approach, an API shape) ready to defend.\n\n5. Set salary expectations from a wide, low-confidence range:\nPublicly reported SDE compensation for Zetwerk varies significantly by source (roughly ₹12–21 LPA base-level ranges, with senior total comp reported higher in small self-reported samples) — confirm current numbers directly with a recruiter rather than anchoring hard to any single online figure.",
+      },
+    ],
+    faqs: [
+      { question: "What is the Zetwerk interview process like for SDE roles?", answer: "Zetwerk's SDE interview process (2026), based on the available candidate accounts: typically one or two technical rounds on DSA plus Node.js/JavaScript and SQL, a system-design-and-project-deep-dive round for more experienced hires, and a hiring-manager or HR round on background and compensation. The exact round count varies by report (2 to 4-5 rounds have both been described), so treat any single detailed account as one data point rather than a universal template. Reported difficulty is moderate, roughly 3 out of 5." },
+      { question: "Does Zetwerk ask manufacturing- or supply-chain-specific questions in SDE interviews?", answer: "Not based on available SDE candidate accounts. Manufacturing- and business-case-style questions appear to show up for operations and business roles at Zetwerk, not software engineering. The one clearly corroborated technical skew for SDE interviews is toward Node.js and JavaScript-backend questions, not domain-specific case studies." },
+      { question: "What salary does Zetwerk pay software engineers in India in 2026?", answer: "Public data on Zetwerk SDE salaries is limited and inconsistent across sources: self-reported figures range roughly ₹12–21 LPA for base-level roles, with some senior total-comp reports higher, but sample sizes are small. Treat these as directional only and confirm current numbers with a recruiter before negotiating." },
+    ],
+    relatedSlugs: ["startup-vs-mnc-india-2026", "system-design-interview-questions-india-2026", "top-startups-hiring-engineers-india-2026"],
+    cta: "Practice Zetwerk's JavaScript/Node.js-focused DSA and project-architecture rounds with scored feedback and a coached model answer after every response. First 2 sessions free.",
+    relatedLinks: [],
+  },
+  {
     slug: "porter-interview-experience-2026",
     title: "Porter Interview Experience 2026: Process and Rounds",
     metaDescription: "Porter interview experience 2026: SDE hiring process, fast-paced DSA rounds, live sandbox coding, LLD and system design questions, salary ranges.",
