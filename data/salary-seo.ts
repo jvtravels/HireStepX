@@ -752,7 +752,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "jpmc",
-    searchPhrase: "JP Morgan Chase (JPMC) Salary India 2026",
+    searchPhrase: "JPMC Salary India 2026: ₹14–80 LPA",
     metaDescription:
       "JP Morgan Chase salary India 2026: Software Engineer ₹14–80 LPA, Business Analyst ₹4–35 LPA across Bengaluru, Mumbai & Hyderabad. No RSU at India offices. Negotiate smarter.",
     roles: [
@@ -1533,7 +1533,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "de-shaw",
-    searchPhrase: "DE Shaw India Quant Analyst Salary 2026",
+    searchPhrase: "DE Shaw India Salary 2026: ₹35–180 LPA",
     metaDescription:
       "DE Shaw India salary 2026: Quant Analyst entry ₹35–60 LPA, mid ₹80–180 LPA. Pure cash + heavy performance bonus. Hyderabad offices. IIT-targeted fresher recruiting guide.",
     roles: [
@@ -3094,7 +3094,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "citadel",
-    searchPhrase: "Citadel Software Engineer Salary India 2026",
+    searchPhrase: "Citadel Salary India 2026: ₹55–160 LPA",
     metaDescription:
       "Citadel India salary 2026: SWE / Quant entry ₹55–90 LPA, mid ₹90–160 LPA. No public equity. World's top-performing hedge fund. Hyderabad quant engineering team. CTC guide.",
     roles: [{ roleKey: "data-scientist", label: "Quantitative Researcher" }],
