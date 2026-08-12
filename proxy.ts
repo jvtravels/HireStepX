@@ -241,6 +241,14 @@ export async function proxy(request: NextRequest) {
   function nextWithNonce(): NextResponse {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
+    // Next.js auto-stamps this nonce onto its own framework-injected inline
+    // scripts (the RSC hydration payload) only if it can read a matching
+    // `content-security-policy` header on the INCOMING request — see
+    // getScriptNonceFromHeader() in next/dist/server/app-render/app-render.js.
+    // x-nonce alone only covers scripts we manually attach it to (e.g.
+    // ConsentGatedAnalytics); without this, Next's own scripts render with no
+    // nonce and get silently blocked under 'strict-dynamic'.
+    requestHeaders.set("Content-Security-Policy", csp);
     return withCsp(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
@@ -261,6 +269,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/";
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("Content-Security-Policy", csp);
     return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
   }
 
@@ -300,6 +309,7 @@ export async function proxy(request: NextRequest) {
       url.pathname = "/admin";
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set("x-nonce", nonce);
+      requestHeaders.set("Content-Security-Policy", csp);
       return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
     }
     return nextWithNonce();
