@@ -2514,7 +2514,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "boat",
-    searchPhrase: "boAt Software Engineer Salary India 2026",
+    searchPhrase: "boAt Salary India 2026: SWE CTC ₹14–40 LPA",
     metaDescription:
       "boAt salary India 2026: SWE mid ₹14–24 LPA, senior ₹24–40 LPA. Pre-IPO ESOP. India's #1 consumer electronics brand in audio. New Delhi CTC guide.",
     roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
