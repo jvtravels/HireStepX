@@ -48,6 +48,11 @@ export default function robots(): MetadataRoute.Robots {
           /* Share-token URLs are public-by-design but ephemeral —
              no SEO value, all crawl-budget cost. */
           "/report/share/",
+          /* Company-branded blog pages are noindex'd already (low CTR,
+             thin content per internal review) — disallow too so
+             crawlers (including AdSense's reviewer) never fetch them
+             at all instead of relying solely on the noindex meta tag. */
+          "/blog/company/",
         ],
       },
     ],

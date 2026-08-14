@@ -95,6 +95,15 @@ export async function generateMetadata({
   const roleSections = buildRoleSections(company, page.roles);
   const hasData = roleSections.length > 0;
 
+  // A page with only 1-2 roles and no verified interview notes is little
+  // more than the shared template around a couple of salary bands —
+  // genuinely thin relative to the 10+ role pages elsewhere in this set.
+  // Keep it live (still useful if someone lands directly) but don't ask
+  // search/ad crawlers to index it as a standalone page.
+  const overrideKey = company.replace(/-/g, " ");
+  const knownFacts = COMPANY_KNOWN_FACTS[company] ?? COMPANY_KNOWN_FACTS[overrideKey];
+  const isThin = roleSections.length <= 2 && !knownFacts?.notes;
+
   // Pages with a handful of roles keep their hand-tuned, single-keyword
   // searchPhrase (e.g. "Razorpay Software Engineer Salary India 2026") —
   // that title is deliberately optimized for the highest-search-volume
@@ -140,8 +149,10 @@ export async function generateMetadata({
       "salary India 2026",
     ],
     /* No verified salary data yet for this company — don't let a stub
-       page ("data not yet available") compete for the query in search. */
-    ...(hasData ? {} : { robots: { index: false, follow: true } }),
+       page ("data not yet available") compete for the query in search.
+       Same treatment for pages that technically have data but too little
+       of it to stand alone (see isThin above). */
+    ...(!hasData || isThin ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical: `/salary/${company}` },
     openGraph: {
       type: "article",
