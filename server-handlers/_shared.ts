@@ -629,17 +629,10 @@ function isAllowedDomain(urlOrOrigin: string): boolean {
     const hostname = urlOrOrigin.includes("://") ? new URL(urlOrOrigin).hostname : urlOrOrigin;
     // Allow *.hirestepx.com subdomains
     if (hostname === "hirestepx.com" || hostname.endsWith(".hirestepx.com")) return true;
-    // Allow this project's specific Vercel deployment(s). We intentionally do NOT
-    // allow all *.vercel.app — that would let any Vercel tenant call our API.
-    // VERCEL_URL is the unique per-deployment hostname (e.g. "hirestepx-abc123.vercel.app");
-    // VERCEL_BRANCH_URL is the stable per-branch alias (e.g.
-    // "hirestepx-git-feature-x-team.vercel.app") that PR/branch preview links actually point
-    // to — without it, opening the shared preview link (rather than the one-off deployment
-    // URL) fails every mutating request with a CSRF-origin 403.
-    const vercelUrl = process.env.VERCEL_URL;
-    const vercelBranchUrl = process.env.VERCEL_BRANCH_URL;
+    // Allow this project's specific Vercel deployment (VERCEL_URL is set automatically per-deployment).
+    // We intentionally do NOT allow all *.vercel.app — that would let any Vercel tenant call our API.
+    const vercelUrl = process.env.VERCEL_URL; // e.g. "hirestepx-git-main-xyz.vercel.app"
     if (vercelUrl && hostname === vercelUrl) return true;
-    if (vercelBranchUrl && hostname === vercelBranchUrl) return true;
   } catch { /* invalid URL */ }
   return false;
 }
