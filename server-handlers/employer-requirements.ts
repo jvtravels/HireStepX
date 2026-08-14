@@ -1,0 +1,265 @@
+/* Vercel Edge Function — Employer Requirements
+ *
+ * GET  /api/employer-requirements → list of the caller's requirements
+ *      (newest first), each with its matched-candidate count.
+ * POST /api/employer-requirements { title, location, noticePeriodPref?,
+ *      description? } → creates a requirement, then synchronously scores
+ *      it against the real, consent-gated candidate pool
+ *      (profiles.is_discoverable_to_employers = true) using the
+ *      deterministic heuristic in _requirement-match-helpers.ts, persists
+ *      requirement_matches, and returns the requirement with its final
+ *      status (ready/partial/zero/failed).
+ *
+ * Requires an approved employer row — see employer-profile.ts.
+ */
+
+export const config = { runtime: "edge" };
+
+import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import {
+  scoreCandidateMatch,
+  classifyRequirementStatus,
+  rankAndCap,
+  type CandidatePoolRow,
+} from "./_requirement-match-helpers";
+
+declare const process: { env: Record<string, string | undefined> };
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+function serviceHeaders(): Record<string, string> {
+  return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+function asString(v: unknown, max: number): string {
+  return typeof v === "string" ? v.slice(0, max) : "";
+}
+
+interface RequirementRow {
+  id: string;
+  title: string;
+  location: string;
+  notice_period_pref: string;
+  status: string;
+  created_at: string;
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders(req, { allowGet: true }) });
+  }
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+      status: 503, headers: withRequestId(corsHeaders(req, { allowGet: true })),
+    });
+  }
+
+  const pre = await withAuthAndRateLimit(req, {
+    endpoint: "employer-requirements",
+    ipLimit: 20,
+    userLimit: 10,
+    maxBytes: 20_000,
+    checkQuota: false,
+    allowGet: true,
+  });
+  if (pre instanceof Response) return pre;
+  const { auth } = pre;
+  const headers = { ...pre.headers, ...corsHeaders(req, { allowGet: true }) };
+
+  if (!auth.userId) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+  }
+
+  if (req.method === "GET") return handleGet(auth.userId, headers);
+  if (req.method === "POST") return handlePost(req, auth.userId, headers);
+  return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+}
+
+async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,created_at&order=created_at.desc`,
+      { headers: serviceHeaders() },
+    );
+    if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
+    const rows = (await res.json().catch(() => [])) as RequirementRow[];
+
+    const ids = rows.map((r) => r.id);
+    const countsByRequirement = new Map<string, number>();
+    if (ids.length > 0) {
+      const idParam = ids.map((id) => encodeURIComponent(id)).join(",");
+      const matchesRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${idParam})&select=requirement_id,match_score`,
+        { headers: serviceHeaders() },
+      );
+      if (matchesRes.ok) {
+        const matchRows = (await matchesRes.json().catch(() => [])) as Array<{ requirement_id: string; match_score: number }>;
+        for (const m of matchRows) countsByRequirement.set(m.requirement_id, (countsByRequirement.get(m.requirement_id) || 0) + 1);
+      }
+    }
+
+    const requirements = rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      location: r.location,
+      noticePeriodPref: r.notice_period_pref,
+      status: r.status,
+      createdAt: r.created_at.slice(0, 10),
+      candidateCount: countsByRequirement.get(r.id) || 0,
+    }));
+
+    return new Response(JSON.stringify({ requirements }), { status: 200, headers });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirements GET threw", { code: "employer_requirements_get_unexpected_error", error: msg.slice(0, 200), userId });
+    return new Response(JSON.stringify({ error: "Failed to load requirements" }), { status: 500, headers });
+  }
+}
+
+async function handlePost(req: Request, userId: string, headers: Record<string, string>): Promise<Response> {
+  let body: { title?: unknown; location?: unknown; noticePeriodPref?: unknown; description?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers });
+  }
+
+  const title = asString(body.title, 200);
+  const location = asString(body.location, 200);
+  const noticePeriodPref = asString(body.noticePeriodPref, 60) || "Any";
+  const description = asString(body.description, 5000);
+
+  if (title.length < 2 || location.length < 1) {
+    return new Response(JSON.stringify({ error: "title and location are required" }), { status: 400, headers });
+  }
+
+  try {
+    const employerRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=status`,
+      { headers: serviceHeaders() },
+    );
+    const employerRows = (await employerRes.json().catch(() => [])) as Array<{ status: string }>;
+    if (!employerRes.ok || !employerRows[0] || employerRows[0].status !== "approved") {
+      return new Response(JSON.stringify({ error: "Employer profile is not approved" }), { status: 403, headers });
+    }
+
+    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements`, {
+      method: "POST",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify([{ employer_id: userId, title, location, notice_period_pref: noticePeriodPref, description, status: "generating" }]),
+    });
+    if (!insertRes.ok) {
+      const t = await insertRes.text().catch(() => "");
+      slog.error("employer-requirements insert failed", { code: "employer_requirements_insert_failed", httpStatus: insertRes.status, body: t.slice(0, 200), userId });
+      return new Response(JSON.stringify({ error: "Failed to create requirement" }), { status: 500, headers });
+    }
+    const inserted = (await insertRes.json()) as RequirementRow[];
+    const requirement = inserted[0];
+
+    const finalStatus = await runMatching(requirement.id, { title, location, description });
+
+    return new Response(
+      JSON.stringify({
+        id: requirement.id,
+        title: requirement.title,
+        location: requirement.location,
+        noticePeriodPref: requirement.notice_period_pref,
+        status: finalStatus,
+        createdAt: requirement.created_at.slice(0, 10),
+      }),
+      { status: 200, headers },
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirements POST threw", { code: "employer_requirements_post_unexpected_error", error: msg.slice(0, 200), userId });
+    return new Response(JSON.stringify({ error: "Failed to create requirement" }), { status: 500, headers });
+  }
+}
+
+/** Scores the real candidate pool against a freshly created requirement,
+    persists requirement_matches, and PATCHes the requirement's final
+    status. Returns that status. Any failure here is caught and recorded
+    as a "failed" requirement rather than left stuck on "generating". */
+async function runMatching(requirementId: string, req: { title: string; location: string; description: string }): Promise<string> {
+  try {
+    const poolRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?is_discoverable_to_employers=eq.true&select=id,name,target_role,industry,resume_data,practice_timestamps`,
+      { headers: serviceHeaders() },
+    );
+    if (!poolRes.ok) throw new Error(`candidate pool read failed: ${poolRes.status}`);
+    const pool = (await poolRes.json().catch(() => [])) as Array<{
+      id: string; name: string; target_role: string | null; industry: string | null;
+      resume_data: unknown; practice_timestamps: string[] | null;
+    }>;
+
+    const scores = new Map<string, number>();
+    const sessionCounts = new Map<string, number>();
+    if (pool.length > 0) {
+      const idParam = pool.map((p) => encodeURIComponent(p.id)).join(",");
+      const sessionsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id,score`,
+        { headers: serviceHeaders() },
+      );
+      if (sessionsRes.ok) {
+        const sessionRows = (await sessionsRes.json().catch(() => [])) as Array<{ user_id: string; score: number }>;
+        const sums = new Map<string, number>();
+        for (const s of sessionRows) {
+          sums.set(s.user_id, (sums.get(s.user_id) || 0) + (s.score || 0));
+          sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
+        }
+        for (const [uid, sum] of sums) scores.set(uid, sum / (sessionCounts.get(uid) || 1));
+      }
+    }
+
+    const candidateRows: CandidatePoolRow[] = pool.map((p) => {
+      const timestamps = Array.isArray(p.practice_timestamps) ? p.practice_timestamps : [];
+      const lastActive = timestamps.length ? timestamps[timestamps.length - 1] : null;
+      const daysAgo = lastActive ? Math.max(0, Math.round((Date.now() - new Date(lastActive).getTime()) / 86_400_000)) : 999;
+      return {
+        id: p.id,
+        name: p.name,
+        target_role: p.target_role,
+        industry: p.industry,
+        resume_data: p.resume_data,
+        avg_score: scores.get(p.id) ?? null,
+        sessions_completed: sessionCounts.get(p.id) || 0,
+        last_active_days_ago: daysAgo,
+      };
+    });
+
+    const scored = candidateRows.map((c) => scoreCandidateMatch(c, req));
+    const ranked = rankAndCap(scored);
+
+    if (ranked.length > 0) {
+      const rows = ranked.map((m) => ({
+        requirement_id: requirementId,
+        candidate_user_id: m.candidateId,
+        match_score: m.matchScore,
+        roster_score: m.rosterScore,
+      }));
+      const insertMatchesRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches`, {
+        method: "POST",
+        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify(rows),
+      });
+      if (!insertMatchesRes.ok) throw new Error(`requirement_matches insert failed: ${insertMatchesRes.status}`);
+    }
+
+    const finalStatus = classifyRequirementStatus(ranked);
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+      method: "PATCH",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ status: finalStatus }),
+    });
+    return finalStatus;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirements matching threw", { code: "employer_requirements_matching_failed", error: msg.slice(0, 200), requirementId });
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+      method: "PATCH",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ status: "failed" }),
+    }).catch(() => {});
+    return "failed";
+  }
+}
