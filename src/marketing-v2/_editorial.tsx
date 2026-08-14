@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
+import { LazyBandVideo } from "./_editorial-lazy-video";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Editorial kit for SEO surfaces
@@ -466,23 +466,8 @@ export function DarkBand({
   children?: ReactNode;
   videoSrc?: string;
 }) {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [nearViewport, setNearViewport] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setNearViewport(true); obs.disconnect(); } },
-      { rootMargin: "400px 0px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
   return (
     <section
-      ref={sectionRef}
       className="ed-close"
       style={{
         position: "relative",
@@ -497,17 +482,9 @@ export function DarkBand({
         alignItems: "center",
       }}
     >
-      {/* Video — mounted only once the section nears the viewport, so the
-         25MB file isn't fetched on every page load (this CTA is the last
-         section on every question/company/salary page). */}
-      {videoSrc && nearViewport && (
-        <video
-          aria-hidden
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="none"
+      {videoSrc && (
+        <LazyBandVideo
+          src={videoSrc}
           style={{
             position: "absolute",
             inset: 0,
@@ -518,9 +495,7 @@ export function DarkBand({
             opacity: 0.9,
             pointerEvents: "none",
           }}
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
+        />
       )}
       {/* Gradient — top-heavy dark for text contrast, fades to reveal video */}
       <div
