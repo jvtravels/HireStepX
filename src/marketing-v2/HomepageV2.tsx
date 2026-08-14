@@ -334,6 +334,7 @@ export function NavV2() {
   const navLinks: Array<[string, string]> = [
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
+    ["For Employers", "/employers"],
     ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
