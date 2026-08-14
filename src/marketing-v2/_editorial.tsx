@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -465,8 +466,23 @@ export function DarkBand({
   children?: ReactNode;
   videoSrc?: string;
 }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setNearViewport(true); obs.disconnect(); } },
+      { rootMargin: "400px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       className="ed-close"
       style={{
         position: "relative",
@@ -481,8 +497,10 @@ export function DarkBand({
         alignItems: "center",
       }}
     >
-      {/* Video — full opacity so it IS the background, matching VideoCtaV2 */}
-      {videoSrc && (
+      {/* Video — mounted only once the section nears the viewport, so the
+         25MB file isn't fetched on every page load (this CTA is the last
+         section on every question/company/salary page). */}
+      {videoSrc && nearViewport && (
         <video
           aria-hidden
           autoPlay

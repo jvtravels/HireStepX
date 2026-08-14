@@ -3637,24 +3637,27 @@ export function VideoCtaV2({
   return (
     <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
 
-      {/* Background video */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="none"
-        crossOrigin="anonymous"
-        style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", objectPosition: "center 75%",
-          opacity: revealed ? 1 : 0,
-          transform: revealed ? "scale(1)" : "scale(1.06)",
-          transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
-        }}
-      >
-        <source src="/cta.mp4" type="video/mp4" />
-      </video>
+      {/* Background video — mounted only once revealed (section near viewport),
+         so the 25MB file isn't fetched before a visitor scrolls anywhere near it. */}
+      {revealed && (
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="none"
+          crossOrigin="anonymous"
+          style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center 75%",
+            opacity: 1,
+            transform: "scale(1)",
+            transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
+          }}
+        >
+          <source src="/cta.mp4" type="video/mp4" />
+        </video>
+      )}
 
       {/* Dark gradient — top to transparent */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />
