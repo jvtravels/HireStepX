@@ -3567,8 +3567,8 @@ export function HiredDirectlyV2() {
           <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 38px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 10px" }}>
             Companies hire directly from HireStepX
           </h2>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.indigoGray, margin: "0 0 24px", maxWidth: "48ch" }}>
-            Hiring teams browse a roster of practiced candidates and reach out for real roles — no extra applications. Opt in anytime from Settings; it&rsquo;s off by default and only shows what you choose.
+          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.coal, margin: "0 0 24px", maxWidth: "48ch" }}>
+            Hiring teams browse a roster of practiced candidates and reach out for real roles, no extra applications. Opt in anytime from Settings; it&rsquo;s off by default and only shows what you choose.
           </p>
           <a
             href="/settings"
