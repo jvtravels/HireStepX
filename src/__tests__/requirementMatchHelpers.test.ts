@@ -62,6 +62,20 @@ describe("scoreCandidateMatch", () => {
     const stale = scoreCandidateMatch(candidate({ last_active_days_ago: 90 }), req);
     expect(stale.matchScore).toBeLessThan(fresh.matchScore);
   });
+
+  it("reads skills from an AI-parsed resume's topSkills, not just a flat skills array", () => {
+    const flat = scoreCandidateMatch(candidate({ resume_data: { skills: ["React", "TypeScript"], location: "Bengaluru" } }), req);
+    const ai = scoreCandidateMatch(candidate({ resume_data: { topSkills: ["React", "TypeScript"], location: "Bengaluru" } }), req);
+    expect(ai.matchScore).toBe(flat.matchScore);
+  });
+
+  it("prefers a flat skills array over topSkills when both are present", () => {
+    const result = scoreCandidateMatch(
+      candidate({ resume_data: { skills: ["React", "TypeScript"], topSkills: ["Unrelated"], location: "Bengaluru" } }),
+      req,
+    );
+    expect(result.matchScore).toBeGreaterThanOrEqual(60);
+  });
 });
 
 describe("classifyRequirementStatus", () => {
