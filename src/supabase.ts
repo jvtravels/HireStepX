@@ -134,6 +134,9 @@ export interface Profile {
   /** Soft-delete timestamp. Set when the user requests account
       deletion; profile rows linger for the 30-day grace period. */
   deleted_at: string | null;
+  /** Opt-in gate for the employer talent-roster matching pool — mirrors
+      is_profile_public's private-by-default contract. */
+  is_discoverable_to_employers: boolean;
   created_at: string;
 }
 
