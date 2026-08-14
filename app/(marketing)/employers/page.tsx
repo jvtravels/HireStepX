@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
+import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
+import { FooterDome } from "@/marketing-v2/FooterDome";
+import { editorialCSS, DarkBand, ctaPrimaryStyle } from "@/marketing-v2/_editorial";
 
 export const metadata: Metadata = {
   title: "Hire from HireStepX's practicing talent roster",
@@ -10,7 +13,10 @@ export const metadata: Metadata = {
 
 export default function EmployersLandingPage() {
   return (
-    <div style={{ background: t.cream, minHeight: "60vh" }}>
+    <>
+      <style>{editorialCSS}</style>
+      <NavV2 />
+      <div style={{ background: t.cream, minHeight: "60vh" }}>
       <section style={{ maxWidth: 880, margin: "0 auto", padding: "96px 24px 64px", textAlign: "center" }}>
         <div
           style={{
@@ -68,6 +74,18 @@ export default function EmployersLandingPage() {
           </div>
         ))}
       </section>
-    </div>
+
+      <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on proof." videoSrc="/cta.mp4">
+        <p style={{ fontFamily: f.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
+          Every candidate on the roster has already practiced and been scored on real interview performance. Post a role and see your shortlist in minutes.
+        </p>
+        <Link href="/login?next=/employer" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+          Post a role, free <span className="ed-cta-arrow" aria-hidden>→</span>
+        </Link>
+      </DarkBand>
+      </div>
+      <FooterDome />
+      <MobileStickyCTA />
+    </>
   );
 }
