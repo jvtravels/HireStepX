@@ -502,15 +502,14 @@ export function NavV2() {
           <div
             className="mv2-nav-links"
             style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
+              flex: 1,
               display: "flex",
               alignItems: "center",
-              gap: 32,
+              justifyContent: "center",
+              gap: 28,
               fontFamily: fonts.sans,
               fontSize: 14,
+              minWidth: 0,
             }}
           >
             {navLinks.map(([label, href]) => {
