@@ -9,7 +9,6 @@ import {
   Card,
   Eyebrow,
   FieldLabel,
-  HelpText,
   PrimaryCta,
   OutlineCta,
   StatCell,
@@ -21,7 +20,6 @@ function CompanyOnboarding() {
   const { submitCompanyProfile } = useEmployerData();
   const [companyName, setCompanyName] = useState("");
   const [website, setWebsite] = useState("");
-  const [gstin, setGstin] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -59,16 +57,6 @@ function CompanyOnboarding() {
               style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
             />
           </div>
-          <div>
-            <FieldLabel>GSTIN (optional)</FieldLabel>
-            <input
-              value={gstin}
-              onChange={(e) => setGstin(e.target.value)}
-              placeholder="22AAAAA0000A1Z5"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-            <HelpText>Speeds up review — not required to apply.</HelpText>
-          </div>
           {submitError && (
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
           )}
@@ -78,7 +66,7 @@ function CompanyOnboarding() {
             onClick={async () => {
               setSubmitError(null);
               setSubmitted(true);
-              const ok = await submitCompanyProfile({ companyName, website, gstin });
+              const ok = await submitCompanyProfile({ companyName, website });
               if (!ok) {
                 setSubmitted(false);
                 setSubmitError("Couldn't submit your company profile — please try again.");
