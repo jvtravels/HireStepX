@@ -3456,11 +3456,12 @@ export function SecurityComplianceV2() {
 
 /* ─────────────────────────── HIRED DIRECTLY ─────────────────────────── */
 function RosterPreviewCard() {
-  const rows: Array<{ initials: string; name: string; role: string; score: number; tone: "indigo" | "copper" }> = [
-    { initials: "RS", name: "R. Sharma", role: "Product Analyst", score: 82, tone: "indigo" },
-    { initials: "AI", name: "A. Iyer", role: "SDE-1, Backend", score: 91, tone: "copper" },
-    { initials: "PN", name: "P. Nair", role: "Ops Lead", score: 76, tone: "indigo" },
+  const rows: Array<{ initials: string; name: string; role: string; score: number }> = [
+    { initials: "RS", name: "R. Sharma", role: "Product Analyst", score: 82 },
+    { initials: "AI", name: "A. Iyer", role: "SDE-1, Backend", score: 91 },
+    { initials: "PN", name: "P. Nair", role: "Ops Lead", score: 76 },
   ];
+  const topScore = Math.max(...rows.map((r) => r.score));
   return (
     <div
       className="mv2-hired-card"
@@ -3474,71 +3475,170 @@ function RosterPreviewCard() {
         maxWidth: 380,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
         <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: t.coal, textTransform: "uppercase" as const }}>
-          Live roster
+          Roster preview
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>
-          <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: t.success }} />
-          Bengaluru
-        </span>
+        <span style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>Bengaluru</span>
+      </div>
+      <div style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray, marginBottom: 14 }}>
+        Interview-readiness score, out of 100
       </div>
 
-      {rows.map((r, i) => (
-        <div
-          key={r.name}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "10px 0",
-            borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
-          }}
-        >
-          <span
-            aria-hidden
+      {rows.map((r, i) => {
+        const isTop = r.score === topScore;
+        return (
+          <div
+            key={r.name}
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              flexShrink: 0,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontFamily: fonts.sans,
-              fontSize: 12,
-              fontWeight: 700,
-              background: r.tone === "indigo" ? t.indigo100 : t.copper100,
-              color: r.tone === "indigo" ? t.indigo : t.copper,
+              gap: 12,
+              padding: "10px 0",
+              borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
             }}
           >
-            {r.initials}
-          </span>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 700, color: t.coal }}>{r.name}</div>
-            <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>{r.role}</div>
+            <span
+              aria-hidden
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: fonts.sans,
+                fontSize: 12,
+                fontWeight: 700,
+                background: isTop ? t.copper100 : t.indigo100,
+                color: isTop ? t.copperDark : t.indigo,
+              }}
+            >
+              {r.initials}
+            </span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 700, color: t.coal }}>{r.name}</div>
+              <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>{r.role}</div>
+            </div>
+            <span
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: isTop ? t.copperDark : t.indigo,
+                background: isTop ? t.copper100 : t.indigo100,
+                borderRadius: 999,
+                padding: "3px 9px",
+                flexShrink: 0,
+              }}
+            >
+              {r.score}/100
+            </span>
           </div>
-          <span
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11.5,
-              fontWeight: 700,
-              color: r.tone === "indigo" ? t.indigo : t.copper,
-              background: r.tone === "indigo" ? t.indigo100 : t.copper100,
-              borderRadius: 999,
-              padding: "3px 9px",
-              flexShrink: 0,
-            }}
-          >
-            {r.score}
-          </span>
-        </div>
-      ))}
+        );
+      })}
 
       <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>
         Contact details stay hidden until a company requests them.
       </div>
     </div>
+  );
+}
+
+function HiredDirectlyNotifyForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (status === "loading" || status === "done") return;
+    setStatus("loading");
+    setError("");
+    try {
+      const res = await fetch("/api/waitlist-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "homepage_talent_roster" }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error || "Something went wrong. Please try again.");
+        setStatus("error");
+        return;
+      }
+      setStatus("done");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setStatus("error");
+    }
+  }
+
+  if (status === "done") {
+    return (
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 14.5, fontWeight: 700, color: t.success }}>
+        <span aria-hidden>✓</span>
+        You&rsquo;re on the list. We&rsquo;ll email you when discovery opens.
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap" as const, gap: 10 }}>
+      <label htmlFor="hired-directly-email" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
+        Email address
+      </label>
+      <input
+        id="hired-directly-email"
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="you@company.com"
+        className="mv2-tap-44"
+        style={{
+          flex: "1 1 200px",
+          minWidth: 0,
+          background: t.creamRaised,
+          border: `1px solid ${t.line}`,
+          borderRadius: 999,
+          padding: "0 18px",
+          fontFamily: fonts.sans,
+          fontSize: 14.5,
+          color: t.coal,
+        }}
+      />
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="mv2-tap-44"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          background: t.coal,
+          color: t.cream,
+          fontFamily: fonts.sans,
+          fontSize: 14.5,
+          fontWeight: 700,
+          border: "none",
+          borderRadius: 999,
+          padding: "0 24px",
+          whiteSpace: "nowrap" as const,
+          cursor: status === "loading" ? "default" : "pointer",
+          opacity: status === "loading" ? 0.7 : 1,
+        }}
+      >
+        {status === "loading" ? "Joining…" : "Notify me"}
+        {status !== "loading" && <span aria-hidden>→</span>}
+      </button>
+      {status === "error" && (
+        <div role="alert" style={{ width: "100%", fontFamily: fonts.sans, fontSize: 13, color: t.copperDark }}>
+          {error}
+        </div>
+      )}
+    </form>
   );
 }
 
@@ -3568,29 +3668,9 @@ export function HiredDirectlyV2() {
             Companies hire directly from HireStepX
           </h2>
           <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.coal, margin: "0 0 24px", maxWidth: "48ch" }}>
-            Hiring teams browse a roster of practiced candidates and reach out for real roles, no extra applications. Opt in anytime from Settings; it&rsquo;s off by default and only shows what you choose.
+            Hiring teams will soon be able to browse a roster of practiced candidates and reach out for real roles, no extra applications. Opt in anytime, off by default, showing only what you choose.
           </p>
-          <a
-            href="/settings"
-            className="mv2-tap-44"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: t.coal,
-              color: t.cream,
-              fontFamily: fonts.sans,
-              fontSize: 14.5,
-              fontWeight: 700,
-              textDecoration: "none",
-              borderRadius: 999,
-              padding: "13px 24px",
-              whiteSpace: "nowrap" as const,
-            }}
-          >
-            Turn on discovery
-            <span aria-hidden>→</span>
-          </a>
+          <HiredDirectlyNotifyForm />
         </MotionReveal>
         <MotionReveal delay={90} style={{ display: "flex", justifyContent: "center" }}>
           <RosterPreviewCard />
