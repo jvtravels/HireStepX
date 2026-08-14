@@ -89,6 +89,9 @@ const ResponsiveSheet = () => (
          not under the number. Same pattern as the 881-1100px breakpoint. */
       .mv2-why-row { grid-template-columns: 40px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
       .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
+      /* Hired-directly: text + roster-preview card stack on tablet/mobile */
+      .mv2-hired-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
+      .mv2-hired-card { max-width: 420px; }
       main { padding-bottom: 48px; }
     }
     /* ── Small laptops (lg) ── */
@@ -3452,23 +3455,109 @@ export function SecurityComplianceV2() {
 }
 
 /* ─────────────────────────── HIRED DIRECTLY ─────────────────────────── */
+function RosterPreviewCard() {
+  const rows: Array<{ initials: string; name: string; role: string; score: number; tone: "indigo" | "copper" }> = [
+    { initials: "RS", name: "R. Sharma", role: "Product Analyst", score: 82, tone: "indigo" },
+    { initials: "AI", name: "A. Iyer", role: "SDE-1, Backend", score: 91, tone: "copper" },
+    { initials: "PN", name: "P. Nair", role: "Ops Lead", score: 76, tone: "indigo" },
+  ];
+  return (
+    <div
+      className="mv2-hired-card"
+      style={{
+        background: t.cream,
+        border: `1px solid ${t.line}`,
+        borderRadius: 18,
+        padding: "20px 22px",
+        boxShadow: "0 16px 40px -28px rgba(14, 12, 8, 0.35)",
+        width: "100%",
+        maxWidth: 380,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: t.coal, textTransform: "uppercase" as const }}>
+          Live roster
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: t.success }} />
+          Bengaluru
+        </span>
+      </div>
+
+      {rows.map((r, i) => (
+        <div
+          key={r.name}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 0",
+            borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: fonts.sans,
+              fontSize: 12,
+              fontWeight: 700,
+              background: r.tone === "indigo" ? t.indigo100 : t.copper100,
+              color: r.tone === "indigo" ? t.indigo : t.copper,
+            }}
+          >
+            {r.initials}
+          </span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 700, color: t.coal }}>{r.name}</div>
+            <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>{r.role}</div>
+          </div>
+          <span
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: r.tone === "indigo" ? t.indigo : t.copper,
+              background: r.tone === "indigo" ? t.indigo100 : t.copper100,
+              borderRadius: 999,
+              padding: "3px 9px",
+              flexShrink: 0,
+            }}
+          >
+            {r.score}
+          </span>
+        </div>
+      ))}
+
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>
+        Contact details stay hidden until a company requests them.
+      </div>
+    </div>
+  );
+}
+
 export function HiredDirectlyV2() {
   return (
-    <section style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, padding: "56px 0" }}>
+    <section style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, padding: "64px 0" }}>
       <div
-        className="mv2-container"
+        className="mv2-hired-grid mv2-container"
         style={{
           maxWidth: 1120,
           margin: "0 auto",
           padding: "0 40px",
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) 380px",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 32,
-          flexWrap: "wrap",
+          gap: 56,
         }}
       >
-        <MotionReveal style={{ maxWidth: 620 }}>
+        <MotionReveal>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.indigo100, border: `1px solid ${t.indigoRing}`, borderRadius: 999, padding: "5px 12px", marginBottom: 14 }}>
             <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo }} />
             <span style={{ fontFamily: fonts.sans, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", color: t.indigo, textTransform: "uppercase" as const }}>
@@ -3478,11 +3567,9 @@ export function HiredDirectlyV2() {
           <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 38px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 10px" }}>
             Companies hire directly from HireStepX
           </h2>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.indigoGray, margin: 0, maxWidth: "56ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.indigoGray, margin: "0 0 24px", maxWidth: "48ch" }}>
             Hiring teams browse a roster of practiced candidates and reach out for real roles — no extra applications. Opt in anytime from Settings; it&rsquo;s off by default and only shows what you choose.
           </p>
-        </MotionReveal>
-        <MotionReveal delay={90}>
           <a
             href="/settings"
             className="mv2-tap-44"
@@ -3504,6 +3591,9 @@ export function HiredDirectlyV2() {
             Turn on discovery
             <span aria-hidden>→</span>
           </a>
+        </MotionReveal>
+        <MotionReveal delay={90} style={{ display: "flex", justifyContent: "center" }}>
+          <RosterPreviewCard />
         </MotionReveal>
       </div>
     </section>
