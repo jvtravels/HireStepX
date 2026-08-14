@@ -9,7 +9,6 @@ export function EmployerWordmark() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       <img src="/wordmark.png" alt="HireStepX" style={{ height: 28, width: "auto", display: "block" }} />
-      <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.inkFaint }}>· Employers</span>
     </div>
   );
 }
