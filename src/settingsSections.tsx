@@ -164,11 +164,8 @@ export interface AccountSectionProps {
   }>;
   // Blur handler (auto-save)
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
-  // Auto-save the experience select / discoverability toggle on change (no blur event)
-  authUpdateUser: (updates: { experienceLevel?: string; isDiscoverableToEmployers?: boolean }) => void | Promise<void>;
-  /** Opt-in to being included in the employer talent-roster candidate
-      pool — private by default. */
-  isDiscoverableToEmployers: boolean;
+  // Auto-save the experience select on change (no blur event)
+  authUpdateUser: (updates: { experienceLevel?: string }) => void | Promise<void>;
 }
 
 const EXPERIENCE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -327,7 +324,6 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     recentDevices,
     focusOut,
     authUpdateUser,
-    isDiscoverableToEmployers,
   } = props;
 
   const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
@@ -397,18 +393,6 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             </div>
           </FieldShell>
         </div>
-
-        <ThinDivider />
-        <KeyValue
-          label="Visible to employers"
-          value="Let companies using our talent roster discover your profile and match you to open roles. Off by default. Once on, matches and contact activity show up on your Dashboard."
-          right={
-            <Toggle
-              on={isDiscoverableToEmployers}
-              onToggle={() => authUpdateUser({ isDiscoverableToEmployers: !isDiscoverableToEmployers })}
-            />
-          }
-        />
 
         <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 20, gap: 10, fontFamily: font.ui, fontSize: 12, color: c.stone }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage }} />

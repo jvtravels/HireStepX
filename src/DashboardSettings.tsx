@@ -376,7 +376,6 @@ export default function SettingsPage() {
           recentDevices={recentDevices}
           focusOut={focusOut}
           authUpdateUser={authUpdateUser}
-          isDiscoverableToEmployers={authUser?.isDiscoverableToEmployers ?? false}
         />
       )}
 
