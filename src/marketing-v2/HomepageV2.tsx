@@ -3451,6 +3451,65 @@ export function SecurityComplianceV2() {
   );
 }
 
+/* ─────────────────────────── HIRED DIRECTLY ─────────────────────────── */
+export function HiredDirectlyV2() {
+  return (
+    <section style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, padding: "56px 0" }}>
+      <div
+        className="mv2-container"
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto",
+          padding: "0 40px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 32,
+          flexWrap: "wrap",
+        }}
+      >
+        <MotionReveal style={{ maxWidth: 620 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.indigo100, border: `1px solid ${t.indigoRing}`, borderRadius: 999, padding: "5px 12px", marginBottom: 14 }}>
+            <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo }} />
+            <span style={{ fontFamily: fonts.sans, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", color: t.indigo, textTransform: "uppercase" as const }}>
+              Talent roster
+            </span>
+          </div>
+          <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 38px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 10px" }}>
+            Companies hire directly from HireStepX
+          </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.indigoGray, margin: 0, maxWidth: "56ch" }}>
+            Hiring teams browse a roster of practiced candidates and reach out for real roles — no extra applications. Opt in anytime from Settings; it&rsquo;s off by default and only shows what you choose.
+          </p>
+        </MotionReveal>
+        <MotionReveal delay={90}>
+          <a
+            href="/settings"
+            className="mv2-tap-44"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: t.coal,
+              color: t.cream,
+              fontFamily: fonts.sans,
+              fontSize: 14.5,
+              fontWeight: 700,
+              textDecoration: "none",
+              borderRadius: 999,
+              padding: "13px 24px",
+              whiteSpace: "nowrap" as const,
+            }}
+          >
+            Turn on discovery
+            <span aria-hidden>→</span>
+          </a>
+        </MotionReveal>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2({
   headingPlain = "Your next interview won't wait.",
@@ -3552,20 +3611,23 @@ export default function HomepageV2() {
       <StructuredData />
       <a href="#main" className="mv2-skip">Skip to content</a>
       <NavV2 />
-      {/* 12-section composition:
+      {/* 13-section composition:
             1. NavV2  2. HeroV2  3. InterviewFocusV2  4. PersonalizedReportsV2
-            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. PricingV2
-            8. ComparisonV2  9. BuiltForIndiaV2  10. SecurityComplianceV2
-            11. FAQV2  12. VideoCtaV2  13. FooterDome
+            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. HiredDirectlyV2
+            8. PricingV2  9. ComparisonV2  10. BuiltForIndiaV2  11. SecurityComplianceV2
+            12. FAQV2  13. VideoCtaV2  14. FooterDome
             Arc: hook → proof → features → how-it-works → price → vs-alternatives → buy
             Pricing moved before Comparison so candidates see the cost before the
-            competitor contrast — most decide on price first, then validate "why us". */}
+            competitor contrast — most decide on price first, then validate "why us".
+            HiredDirectlyV2 sits right before pricing: one more reason to pay, right
+            before they see the number. */}
       <main id="main">
         <HeroV2 />
         <InterviewFocusV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
         <ProductStoryV2 />
+        <HiredDirectlyV2 />
         <PricingV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
