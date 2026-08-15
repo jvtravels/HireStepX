@@ -58,6 +58,7 @@ import { NextStepsSection } from "./panels/sr-NextStepsSection";
 import { FooterSection } from "./panels/sr-FooterSection";
 import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
 import { TestimonialNudge } from "./panels/sr-TestimonialNudge";
+import { ProductRating } from "./panels/sr-ProductRating";
 import { ScoreCardDownloadButton } from "./panels/sr-ScoreCard";
 import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote";
 import { CredibilitySection } from "./panels/sr-CredibilitySection";
@@ -324,6 +325,10 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
 
 export interface SessionReportViewProps {
   data: InterviewResultData;
+  /** Session id — wired to ProductRating so the 1-5 star widget can POST
+   *  /api/product-rating. Optional so the storybook/canvas path renders
+   *  without needing a real session. */
+  sessionId?: string;
   /** Back navigation handler — wired by `dashboardComponents.tsx` to
    *  return to the dashboard. Optional so the canvas/storybook usage
    *  still works without a navigation stack. */
@@ -434,6 +439,7 @@ export interface SessionReportViewProps {
 
 export default function SessionReportView({
   data,
+  sessionId,
   onBack,
   backLabel,
   onDownloadPdf,
@@ -492,6 +498,7 @@ export default function SessionReportView({
               onDrillSkill={onDrillSkill}
             />
             <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
+            <ProductRating sessionId={sessionId ?? ""} />
             <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
             <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
           </main>
@@ -665,6 +672,7 @@ export default function SessionReportView({
             />
           </div>
           <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
+          <ProductRating sessionId={sessionId ?? ""} />
           <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
           <FooterSection
             onTrustAnswer={onTrustAnswer}

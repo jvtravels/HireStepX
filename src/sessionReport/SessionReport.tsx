@@ -1206,6 +1206,7 @@ export const SessionReport = memo(function SessionReport({
   return (
     <SessionReportView
       data={viewData}
+      sessionId={session.id}
       onBack={onBack}
       backLabel={backLabel}
       onDownloadPdf={onDownloadPdf}

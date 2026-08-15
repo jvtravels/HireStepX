@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PricingPageV2 } from "@/marketing-v2/MarketingPagesV2";
-import { buildPricingJsonLd } from "./_jsonld";
+import { buildPricingJsonLd, buildPricingProductSchema } from "./_jsonld";
+import { fetchProductRatingAggregate } from "../../../server-handlers/_product-rating-helpers";
 
 export const metadata: Metadata = {
   title: "Pricing: Start Free, ₹9 per session | HireStepX",
@@ -26,12 +27,22 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
+declare const process: { env: Record<string, string | undefined> };
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
 export default async function Page() {
+  const [breadcrumbHtml] = buildPricingJsonLd();
+  const ratingAggregate = await fetchProductRatingAggregate({
+    supabaseUrl: SUPABASE_URL,
+    serviceKey: SUPABASE_SERVICE_KEY,
+  });
+  const productHtml = { __html: JSON.stringify(buildPricingProductSchema(ratingAggregate)) };
+
   return (
     <>
-      {buildPricingJsonLd().map((html, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
-      ))}
+      <script type="application/ld+json" dangerouslySetInnerHTML={breadcrumbHtml} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={productHtml} />
       <PricingPageV2 />
     </>
   );
