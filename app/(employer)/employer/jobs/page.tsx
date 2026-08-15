@@ -52,12 +52,14 @@ export default function EmployerJobsPage() {
     <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
         <section>
-          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
-            Jobs
-          </h1>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 480 }}>
-            Every requirement you've posted, and its match status.
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
+              Jobs
+            </h1>
+            {!requirementsLoading && (
+              <Pill tone="neutral">{requirements.length}</Pill>
+            )}
+          </div>
         </section>
         <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
           <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
