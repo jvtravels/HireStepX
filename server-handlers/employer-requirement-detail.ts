@@ -3,8 +3,9 @@
  * GET /api/employer-requirement-detail?id=<requirementId>
  *
  * Returns one requirement owned by the caller plus its scored candidate
- * shortlist. Candidate identity (name, email) stays masked until a match
- * is unlocked via paid employer-verify-unlock-payment.ts.
+ * shortlist. Contact-unlock paywall is disabled for now — every match
+ * shows full candidate identity (name, email) regardless of the
+ * `unlocked` DB flag, which stays wired up for a future re-enable.
  *
  * Candidate fields are limited to what the real schema actually backs:
  * target role, resume-derived city/skills, session count, and last-active
@@ -128,7 +129,7 @@ export default async function handler(req: Request): Promise<Response> {
 
       return {
         id: m.id,
-        name: m.unlocked ? (profile?.name || "Candidate") : `Candidate #${m.id.slice(0, 6)}`,
+        name: profile?.name || "Candidate",
         targetRole: profile?.target_role || "Not specified",
         city: extractResumeLocation(profile?.resume_data) || "Not specified",
         matchScore: m.match_score,
@@ -136,8 +137,8 @@ export default async function handler(req: Request): Promise<Response> {
         sessionsCompleted: sessionCounts.get(m.candidate_user_id) || 0,
         lastActiveDaysAgo,
         skills: extractSkills(profile?.resume_data),
-        unlocked: m.unlocked,
-        contact: m.unlocked && profile ? { email: profile.email } : undefined,
+        unlocked: true,
+        contact: profile ? { email: profile.email } : undefined,
       };
     });
 

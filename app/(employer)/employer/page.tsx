@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/AuthContext";
+import { CopyEmailLink } from "@/_CopyEmailLink";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f, shadows } from "@/auth/_tokens";
 import {
@@ -30,17 +31,43 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+/* A pragmatic website check, not a full RFC 3986 parser: catches the two
+   real-world mistakes (missing scheme, no dot in the host) without
+   rejecting valid domains our regex doesn't fully understand. */
+function isPlausibleWebsite(value: string): boolean {
+  const v = value.trim();
+  if (!/^https?:\/\//i.test(v)) return false;
+  try {
+    const host = new URL(v).hostname;
+    return host.includes(".") && host.length > 3;
+  } catch {
+    return false;
+  }
+}
+
 function CompanyOnboarding() {
   const { submitCompanyProfile } = useEmployerData();
   const [companyName, setCompanyName] = useState("");
   const [website, setWebsite] = useState("");
+  const [websiteTouched, setWebsiteTouched] = useState(false);
   const [gstin, setGstin] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const canSubmit = companyName.trim().length > 1 && website.trim().length > 3;
+  const nameValid = companyName.trim().length > 1;
+  const websiteValid = isPlausibleWebsite(website);
+  const canSubmit = nameValid && websiteValid;
+  const websiteFormatError = websiteTouched && website.trim().length > 0 && !websiteValid;
+
+  const missingFieldsHint = !nameValid && !websiteValid
+    ? "Enter your company name and website to continue."
+    : !nameValid
+      ? "Enter your company name to continue."
+      : !websiteValid
+        ? "Enter a valid company website to continue."
+        : null;
 
   const handleLogoChange = async (file: File | undefined) => {
     setLogoError(null);
@@ -59,13 +86,13 @@ function CompanyOnboarding() {
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <Eyebrow tone="indigo">Company profile</Eyebrow>
+        <Eyebrow tone="indigo">Company profile · one step</Eyebrow>
         <h1 style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: "10px 0 12px" }}>
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
           We review every employer before they can browse the candidate roster — this protects candidates from
-          recruiters who aren't hiring in good faith.
+          recruiters who aren't hiring in good faith. Most companies hear back within one business day.
         </p>
       </div>
       <Card>
@@ -84,9 +111,23 @@ function CompanyOnboarding() {
             <input
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
+              onBlur={() => setWebsiteTouched(true)}
               placeholder="https://acme.com"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: `1px solid ${websiteFormatError ? t.error : t.line}`,
+                fontFamily: f.sans,
+                fontSize: 14,
+                boxSizing: "border-box",
+              }}
             />
+            {websiteFormatError ? (
+              <HelpText tone="error">Include the full address, starting with https:// — e.g. https://acme.com</HelpText>
+            ) : (
+              <HelpText>We'll use this to verify your company is real.</HelpText>
+            )}
           </div>
           <div>
             <FieldLabel>GSTIN (optional)</FieldLabel>
@@ -153,28 +194,35 @@ function CompanyOnboarding() {
           {submitError && (
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
           )}
-          <PrimaryCta
-            full
-            disabled={!canSubmit || submitted}
-            onClick={async () => {
-              setSubmitError(null);
-              setSubmitted(true);
-              const [logoContentType, logoBase64] = logoDataUrl ? logoDataUrl.split(",") : [undefined, undefined];
-              const ok = await submitCompanyProfile({
-                companyName,
-                website,
-                gstin,
-                logoBase64,
-                logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
-              });
-              if (!ok) {
-                setSubmitted(false);
-                setSubmitError("Couldn't submit your company profile — please try again.");
-              }
-            }}
-          >
-            {submitted ? "Submitting…" : "Submit for approval"}
-          </PrimaryCta>
+          <div>
+            <PrimaryCta
+              full
+              disabled={!canSubmit || submitted}
+              onClick={async () => {
+                setSubmitError(null);
+                setSubmitted(true);
+                const [logoContentType, logoBase64] = logoDataUrl ? logoDataUrl.split(",") : [undefined, undefined];
+                const ok = await submitCompanyProfile({
+                  companyName,
+                  website,
+                  gstin,
+                  logoBase64,
+                  logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
+                });
+                if (!ok) {
+                  setSubmitted(false);
+                  setSubmitError("Couldn't submit your company profile — please try again.");
+                }
+              }}
+            >
+              {submitted ? "Submitting…" : "Submit for approval"}
+            </PrimaryCta>
+            {!submitted && missingFieldsHint && (
+              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: "8px 0 0", textAlign: "center" }}>
+                {missingFieldsHint}
+              </p>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -225,9 +273,13 @@ function CompanyPending() {
         <EmployerIcon.Clock />
       </div>
       <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>Your profile is under review</h1>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6 }}>
+      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "0 0 20px" }}>
         We typically approve genuine employers within one business day. You'll be able to post a requirement as
         soon as you're approved — this page will update automatically.
+      </p>
+      <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
+        Made a mistake in your details, or been waiting longer than a day?{" "}
+        <CopyEmailLink email="support@hirestepx.com" style={{ color: t.inkFaint }} />
       </p>
     </div>
   );
@@ -376,7 +428,7 @@ function EmployerDashboard() {
             </h2>
           </div>
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
-            You're approved to browse the candidate roster and unlock contact details.
+            You're approved to browse the candidate roster and view contact details.
           </p>
           <OutlineCta full size="sm">Edit company details</OutlineCta>
         </Card>
@@ -387,8 +439,7 @@ function EmployerDashboard() {
           </h2>
           <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
             Match score reflects fit against this requirement; roster score reflects lifetime interview
-            performance across a candidate's practice sessions. Contact details stay hidden until you unlock
-            them.
+            performance across a candidate's practice sessions.
           </p>
         </div>
       </aside>
