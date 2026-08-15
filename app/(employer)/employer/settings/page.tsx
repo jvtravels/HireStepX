@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
+import { Card, FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
 import {
   LOGO_MAX_MB,
   LOGO_ACCEPTED_TYPES,
@@ -69,8 +69,7 @@ export default function EmployerSettingsPage() {
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", width: "100%" }}>
       <div style={{ marginBottom: 24 }}>
-        <Eyebrow tone="ink">Employer console</Eyebrow>
-        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px" }}>
+        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
           Settings
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>

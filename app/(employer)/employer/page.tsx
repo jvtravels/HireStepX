@@ -294,8 +294,7 @@ function EmployerDashboard() {
       {/* ─── Main stage ─── */}
       <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
         <section>
-          <Eyebrow tone="ink">Employer console</Eyebrow>
-          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px" }}>
+          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
             Welcome <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>back</em>, {user?.name || "there"}.
           </h1>
           <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
