@@ -80,7 +80,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
             </button>
           </div>
         </header>
-        <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px" }}>
+        <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "8px 32px 40px" }}>
           {children}
         </main>
       </div>
