@@ -290,21 +290,21 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         style={{
           width: SIDEBAR_WIDTH,
           borderRight: `1px solid ${t.line}`,
-          padding: "20px 14px 0",
+          padding: "20px 18px 0",
           display: "flex",
           flexDirection: "column",
           position: "fixed",
           top: 0,
           bottom: 0,
           left: 0,
-          background: t.white,
+          background: t.cream,
           zIndex: 20,
           transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
           transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         <div style={{ paddingBottom: 20, flexShrink: 0 }}>
-          <Link href="/employer" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 6 }}>
+          <Link href="/employer" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 14 }}>
             <EmployerWordmark />
           </Link>
         </div>
@@ -329,7 +329,10 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
                   color: active ? t.coal : t.inkSoft,
                   background: active ? t.creamSoft : "transparent",
                   textDecoration: "none",
+                  transition: "background 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                 }}
+                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = t.creamSoft; }}
+                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
               >
                 {item.icon}
                 <span>{item.label}</span>
