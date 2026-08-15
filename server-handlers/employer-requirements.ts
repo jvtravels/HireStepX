@@ -24,6 +24,8 @@ import {
 } from "./_requirement-match-helpers";
 import {
   asBoundedString,
+  asBoundedExperience,
+  asBoundedDueDate,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -74,7 +76,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -105,7 +107,10 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 }
 
 async function handlePost(req: Request, userId: string, headers: Record<string, string>): Promise<Response> {
-  let body: { title?: unknown; location?: unknown; noticePeriodPref?: unknown; description?: unknown };
+  let body: {
+    title?: unknown; location?: unknown; noticePeriodPref?: unknown; description?: unknown;
+    experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
@@ -116,6 +121,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const location = asBoundedString(body.location, 200);
   const noticePeriodPref = asBoundedString(body.noticePeriodPref, 60) || "Any";
   const description = asBoundedString(body.description, 5000);
+  const experienceMin = asBoundedExperience(body.experienceMin);
+  const experienceMax = asBoundedExperience(body.experienceMax);
+  const dueDate = asBoundedDueDate(body.dueDate);
 
   if (!isValidRequirementInput(title, location)) {
     return new Response(JSON.stringify({ error: "title and location are required" }), { status: 400, headers });
@@ -134,7 +142,10 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements`, {
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify([{ employer_id: userId, title, location, notice_period_pref: noticePeriodPref, description, status: "generating" }]),
+      body: JSON.stringify([{
+        employer_id: userId, title, location, notice_period_pref: noticePeriodPref, description, status: "generating",
+        experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
+      }]),
     });
     if (!insertRes.ok) {
       const t = await insertRes.text().catch(() => "");
@@ -153,6 +164,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         location: requirement.location,
         noticePeriodPref: requirement.notice_period_pref,
         status: finalStatus,
+        experienceMin: requirement.experience_min ?? null,
+        experienceMax: requirement.experience_max ?? null,
+        dueDate: requirement.due_date ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

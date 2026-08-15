@@ -31,6 +31,9 @@ export interface RequirementSummary {
   location: string;
   noticePeriodPref: string;
   status: RequirementStatus;
+  experienceMin: number | null;
+  experienceMax: number | null;
+  dueDate: string | null;
   createdAt: string;
   candidateCount: number;
 }
@@ -41,6 +44,9 @@ export interface Requirement {
   location: string;
   noticePeriodPref: string;
   status: RequirementStatus;
+  experienceMin: number | null;
+  experienceMax: number | null;
+  dueDate: string | null;
   createdAt: string;
   candidates: Candidate[];
 }

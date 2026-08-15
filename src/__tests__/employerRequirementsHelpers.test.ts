@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   asBoundedString,
+  asBoundedExperience,
+  asBoundedDueDate,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -40,20 +42,70 @@ describe("isValidRequirementInput", () => {
 
 describe("buildRequirementsListResponse", () => {
   const rows = [
-    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", created_at: "2026-08-01T10:00:00Z" },
-    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", created_at: "2026-08-02T10:00:00Z" },
+    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", experience_min: 3, experience_max: 6, due_date: "2026-09-01", created_at: "2026-08-01T10:00:00Z" },
+    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", experience_min: null, experience_max: null, due_date: null, created_at: "2026-08-02T10:00:00Z" },
   ];
 
   it("joins requirement rows with their match counts", () => {
     const counts = new Map([["req_1", 4]]);
     expect(buildRequirementsListResponse(rows, counts)).toEqual([
-      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", createdAt: "2026-08-01", candidateCount: 4 },
-      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", createdAt: "2026-08-02", candidateCount: 0 },
+      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", createdAt: "2026-08-01", candidateCount: 4 },
+      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, createdAt: "2026-08-02", candidateCount: 0 },
     ]);
   });
 
   it("defaults candidateCount to 0 when the map is empty", () => {
     expect(buildRequirementsListResponse(rows, new Map())[0].candidateCount).toBe(0);
+  });
+});
+
+describe("asBoundedExperience", () => {
+  it("accepts a valid whole number within range", () => {
+    expect(asBoundedExperience(5)).toBe(5);
+    expect(asBoundedExperience(0)).toBe(0);
+    expect(asBoundedExperience(40)).toBe(40);
+  });
+
+  it("rejects non-numbers", () => {
+    expect(asBoundedExperience("5")).toBeNull();
+    expect(asBoundedExperience(null)).toBeNull();
+    expect(asBoundedExperience(undefined)).toBeNull();
+  });
+
+  it("rejects non-integer numbers", () => {
+    expect(asBoundedExperience(2.5)).toBeNull();
+  });
+
+  it("rejects numbers out of the 0-40 range", () => {
+    expect(asBoundedExperience(-1)).toBeNull();
+    expect(asBoundedExperience(41)).toBeNull();
+  });
+
+  it("rejects non-finite numbers", () => {
+    expect(asBoundedExperience(Infinity)).toBeNull();
+    expect(asBoundedExperience(NaN)).toBeNull();
+  });
+});
+
+describe("asBoundedDueDate", () => {
+  it("accepts a strict YYYY-MM-DD date string", () => {
+    expect(asBoundedDueDate("2026-09-01")).toBe("2026-09-01");
+  });
+
+  it("rejects non-string input", () => {
+    expect(asBoundedDueDate(123)).toBeNull();
+    expect(asBoundedDueDate(null)).toBeNull();
+    expect(asBoundedDueDate(undefined)).toBeNull();
+  });
+
+  it("rejects malformed date strings", () => {
+    expect(asBoundedDueDate("09/01/2026")).toBeNull();
+    expect(asBoundedDueDate("2026-9-1")).toBeNull();
+    expect(asBoundedDueDate("not-a-date")).toBeNull();
+  });
+
+  it("rejects a syntactically valid but impossible calendar date", () => {
+    expect(asBoundedDueDate("2026-13-40")).toBeNull();
   });
 });
 

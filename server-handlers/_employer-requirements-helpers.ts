@@ -10,6 +10,9 @@ export interface RequirementRow {
   location: string;
   notice_period_pref: string;
   status: string;
+  experience_min: number | null;
+  experience_max: number | null;
+  due_date: string | null;
   created_at: string;
 }
 
@@ -26,6 +29,24 @@ export function isValidRequirementInput(title: string, location: string): boolea
   return title.length >= 2 && location.length >= 1;
 }
 
+/** Validated read of a client-supplied years-of-experience field: whole
+ *  numbers only, clamped to a plausible 0–40 range. Returns null for
+ *  anything else so it stores as a real SQL NULL, not a fabricated 0. */
+export function asBoundedExperience(v: unknown): number | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
+  if (v < 0 || v > 40) return null;
+  return v;
+}
+
+/** Validated read of a client-supplied due date: must be a real calendar
+ *  date in strict YYYY-MM-DD form. Returns null for anything else — a
+ *  malformed date is treated as "no due date", not a parse error. */
+export function asBoundedDueDate(v: unknown): string | null {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const parsed = new Date(`${v}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? null : v;
+}
+
 /** Joins requirement rows with their match counts for the GET response,
  *  defaulting to 0 for requirements nothing has matched yet. */
 export function buildRequirementsListResponse(
@@ -37,6 +58,9 @@ export function buildRequirementsListResponse(
   location: string;
   noticePeriodPref: string;
   status: string;
+  experienceMin: number | null;
+  experienceMax: number | null;
+  dueDate: string | null;
   createdAt: string;
   candidateCount: number;
 }> {
@@ -46,6 +70,9 @@ export function buildRequirementsListResponse(
     location: r.location,
     noticePeriodPref: r.notice_period_pref,
     status: r.status,
+    experienceMin: r.experience_min ?? null,
+    experienceMax: r.experience_max ?? null,
+    dueDate: r.due_date ?? null,
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
   }));
