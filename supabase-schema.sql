@@ -1702,3 +1702,35 @@ create index if not exists idx_employer_unlock_payments_employer on employer_unl
 
 alter table employer_unlock_payments enable row level security;
 
+-- Product satisfaction ratings (2026-08-15). Plain 1-5 star rating of
+-- HireStepX itself, prompted once per session on the report screen.
+-- Distinct from `feedback` (rating text enum on AI-scoring accuracy) and
+-- from `question_feedback` (thumbs on individual generated questions) —
+-- this is the only table backing a genuine schema.org aggregateRating
+-- on /pricing (see server-handlers/_product-rating-helpers.ts). One row
+-- per (user, session); resubmitting updates the same row via upsert.
+create table if not exists product_ratings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  session_id text references sessions(id) on delete cascade not null,
+  rating integer not null check (rating between 1 and 5),
+  created_at timestamptz default now()
+);
+create unique index if not exists ux_product_ratings_per_session on product_ratings(user_id, session_id);
+create index if not exists idx_product_ratings_created on product_ratings(created_at desc);
+
+-- Owner can insert/update/view their own rating. No client select across
+-- users — the public aggregate on /pricing is computed server-side via
+-- the service role (bypasses RLS), same pattern as salary-aggregate.ts.
+alter table product_ratings enable row level security;
+drop policy if exists "Users can view own product rating" on product_ratings;
+create policy "Users can view own product rating" on product_ratings
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can insert own product rating" on product_ratings;
+create policy "Users can insert own product rating" on product_ratings
+  for insert with check ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can update own product rating" on product_ratings;
+create policy "Users can update own product rating" on product_ratings
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
+

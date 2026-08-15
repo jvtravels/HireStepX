@@ -28,33 +28,58 @@ const PRICING_TIERS = [
 ] as const;
 
 const tierPrices = PRICING_TIERS.map((t) => Number(t.price));
-const PRICING_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "Product",
-  name: "HireStepX AI Mock Interview Practice",
-  description:
-    "AI-powered voice mock interviews with STAR scoring, company-specific question banks, and skill-decay tracking.",
-  brand: { "@type": "Brand", name: "HireStepX" },
-  offers: {
-    "@type": "AggregateOffer",
-    priceCurrency: "INR",
-    lowPrice: String(Math.min(...tierPrices)),
-    highPrice: String(Math.max(...tierPrices)),
-    offerCount: PRICING_TIERS.length,
-    offers: PRICING_TIERS.map((tier) => ({
-      "@type": "Offer",
-      name: tier.name,
-      price: tier.price,
+
+export interface PricingRatingAggregate {
+  average: number;
+  count: number;
+}
+
+/* aggregateRating is only ever real: the caller passes what
+ * fetchProductRatingAggregate (server-handlers/_product-rating-helpers.ts)
+ * reads from genuine 1-5 star submissions, already null below its
+ * K-anonymity floor. Never fabricate one to satisfy Search Console's
+ * "could be improved" nudge — omit the field until there's a real,
+ * non-gameable sample. buildPricingJsonLd() (used by the CSP hash script,
+ * which can't await a DB read at build time) always omits it; the page
+ * calls buildPricingProductSchema() directly with the live aggregate. */
+export function buildPricingProductSchema(ratingAggregate?: PricingRatingAggregate | null) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "HireStepX AI Mock Interview Practice",
+    description:
+      "AI-powered voice mock interviews with STAR scoring, company-specific question banks, and skill-decay tracking.",
+    brand: { "@type": "Brand", name: "HireStepX" },
+    ...(ratingAggregate && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: String(ratingAggregate.average),
+        reviewCount: String(ratingAggregate.count),
+        bestRating: "5",
+        worstRating: "1",
+      },
+    }),
+    offers: {
+      "@type": "AggregateOffer",
       priceCurrency: "INR",
-      description: tier.description,
-      url: `https://hirestepx.com/pricing#${tier.anchor}`,
-    })),
-  },
-};
+      lowPrice: String(Math.min(...tierPrices)),
+      highPrice: String(Math.max(...tierPrices)),
+      offerCount: PRICING_TIERS.length,
+      offers: PRICING_TIERS.map((tier) => ({
+        "@type": "Offer",
+        name: tier.name,
+        price: tier.price,
+        priceCurrency: "INR",
+        description: tier.description,
+        url: `https://hirestepx.com/pricing#${tier.anchor}`,
+      })),
+    },
+  };
+}
 
 export function buildPricingJsonLd(): { __html: string }[] {
   return [
     { __html: JSON.stringify(BREADCRUMB_SCHEMA) },
-    { __html: JSON.stringify(PRICING_SCHEMA) },
+    { __html: JSON.stringify(buildPricingProductSchema(null)) },
   ];
 }
