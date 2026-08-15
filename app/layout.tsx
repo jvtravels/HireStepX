@@ -1,17 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Instrument_Serif } from "next/font/google";
 import localFont from "next/font/local";
 import "../src/index.css";
 
-/* ── Google Fonts via next/font ──
+/* ── Instrument Serif via next/font/google ──
  *
- * Each font has:
  *   - display: "swap" so FCP never blocks on font download
  *   - adjustFontFallback: auto — Next.js generates a size-adjusted fallback
  *     which removes the CLS spike when the real font loads
- *   - preload: true for the two critical (UI + display) fonts; JetBrains Mono
- *     (used only in the Hero metrics + occasional badges) is preload:false
- *     to cut a parallel font download off the critical path.
+ *   - preload: true — this is one of the two critical (UI + display) fonts.
  */
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -23,9 +20,18 @@ const instrumentSerif = Instrument_Serif({
   fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "600"],
+/* JetBrains Mono — self-hosted via next/font/local. Previously loaded via
+ * next/font/google, which fetches from fonts.gstatic.com at build time —
+ * Google rotates font-file hashes without notice, and a stale Vercel build
+ * cache holding an old hash turns into a hard Turbopack build failure
+ * ("Module not found ... internal/font/google/font") instead of a runtime
+ * fallback. Self-hosting removes that build-time CDN dependency entirely,
+ * same rationale as the Satoshi migration below. */
+const jetbrainsMono = localFont({
+  src: [
+    { path: "../public/fonts/jetbrains-mono-var.woff2", weight: "400", style: "normal" },
+    { path: "../public/fonts/jetbrains-mono-var.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-mono",
   display: "swap",
   preload: false,  // Non-critical — used only in metrics/badges below the fold
