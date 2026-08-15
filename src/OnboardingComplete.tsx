@@ -7,6 +7,7 @@ import { useAuth, referralSignupUrl } from "./AuthContext";
 import { getUserSessions } from "./supabase";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
 import { captureClientEvent } from "./posthogClient";
+import LoadingScreen from "./_LoadingScreen";
 
 function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
@@ -70,13 +71,7 @@ export default function OnboardingComplete() {
     : null;
 
   if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
-        <div style={{ width: 36, height: 36, border: `3px solid ${c.border}`, borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone }}>Loading your results...</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <LoadingScreen message="Loading your results…" />;
   }
 
   return (
