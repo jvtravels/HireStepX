@@ -24,11 +24,16 @@ import {
   supabaseServiceHeaders,
 } from "./_shared";
 import { verifyRazorpaySignature, buildSignaturePayload } from "./_payment-verification";
+import {
+  validatePaymentIdsFormat,
+  isOversizedRequest,
+  verifyOrderOwnership,
+  isClosedAndLocked,
+  buildUnlockResponsePayload,
+} from "./_employer-unlock-verify-helpers";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
-
-const razorpayIdPattern = /^[a-zA-Z0-9_]{6,50}$/;
 
 interface MatchRow {
   id: string;
@@ -48,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
   const bodyBytes = req.body != null ? Buffer.byteLength(JSON.stringify(req.body), "utf8") : 0;
-  if (bodyContentLength > 4_096 || bodyBytes > 4_096) {
+  if (isOversizedRequest(bodyContentLength, bodyBytes, 4_096)) {
     return res.status(413).json({ error: "Request too large" });
   }
 
@@ -93,11 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ error: "Missing payment details" });
     }
-    if (
-      !razorpayIdPattern.test(razorpay_order_id)
-      || !razorpayIdPattern.test(razorpay_payment_id)
-      || typeof razorpay_signature !== "string" || razorpay_signature.length > 128
-    ) {
+    if (!validatePaymentIdsFormat({ orderId: razorpay_order_id, paymentId: razorpay_payment_id, signature: razorpay_signature })) {
       return res.status(400).json({ error: "Invalid payment details format" });
     }
 
@@ -126,7 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const notedEmployerId = orderData.notes?.employerId || "";
     const matchId = orderData.notes?.matchId || "";
-    if (!matchId || notedEmployerId !== employerId) {
+    if (!verifyOrderOwnership({ notedEmployerId, matchId, employerId })) {
       console.error("Employer unlock order/employer mismatch for order", razorpay_order_id.slice(0, 8) + "...");
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -149,7 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!reqRes.ok || !reqRows[0]) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    if (reqRows[0].status === "closed" && !match.unlocked) {
+    if (isClosedAndLocked(reqRows[0].status, match.unlocked)) {
       return res.status(409).json({ error: "This requirement is closed" });
     }
 
@@ -199,12 +200,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profileRows = (await profileRes.json().catch(() => [])) as Array<{ name: string; email: string }>;
     const profile = profileRows[0];
 
-    return res.status(200).json({
-      matchId,
-      unlocked: true,
-      name: profile?.name || "Candidate",
-      contact: { email: profile?.email || "" },
-    });
+    return res.status(200).json(buildUnlockResponsePayload({ matchId, profile }));
   } catch (err) {
     console.error("employer-verify-unlock-payment error:", err);
     return res.status(500).json({ error: "Internal error" });
