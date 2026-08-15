@@ -19,6 +19,7 @@ vi.mock("../supabase", () => ({
   supabaseConfigured: false,
   getProfile: vi.fn(),
   upsertProfile: vi.fn(),
+  authHeaders: vi.fn(() => Promise.resolve({})),
 }));
 
 function TestConsumer() {
