@@ -5,13 +5,40 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
-import { EmployerWordmark } from "./_atoms";
+import { EmployerWordmark, EmployerIcon, Pill } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 
 const navItems = [
-  { key: "dashboard", label: "Dashboard", href: "/employer" },
-  { key: "jobs", label: "Jobs", href: "/employer/jobs" },
-  { key: "settings", label: "Settings", href: "/employer/settings" },
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    href: "/employer",
+    icon: (
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+      </svg>
+    ),
+  },
+  {
+    key: "jobs",
+    label: "Jobs",
+    href: "/employer/jobs",
+    icon: (
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><line x1="2" y1="12" x2="22" y2="12" />
+      </svg>
+    ),
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    href: "/employer/settings",
+    icon: (
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+  },
 ];
 
 const SIDEBAR_WIDTH = 220;
@@ -161,7 +188,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company is even approved. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus } = useEmployerData();
+  const { companyStatus, companyName, companyWebsite } = useEmployerData();
   const router = useRouter();
   const pathname = usePathname();
   const isConsole = companyStatus === "approved";
@@ -201,7 +228,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
             <AccountMenu name={user?.name} email={user?.email} onLogout={handleLogout} />
           </div>
         </header>
-        <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "8px 32px 40px" }}>
+        <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 32px 40px" }}>
           {children}
         </main>
       </div>
@@ -276,29 +303,37 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <Link href="/employer" style={{ display: "flex", width: "fit-content", paddingLeft: 6, marginBottom: 24, textDecoration: "none" }}>
-          <EmployerWordmark />
-        </Link>
-        <nav aria-label="Employer navigation" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ paddingBottom: 20, flexShrink: 0 }}>
+          <Link href="/employer" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 6 }}>
+            <EmployerWordmark />
+          </Link>
+        </div>
+        <nav aria-label="Employer navigation" style={{ display: "flex", flexDirection: "column", gap: 2, flex: "0 0 auto" }}>
           {navItems.map((item) => {
             const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.key}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 onClick={() => setSidebarOpen(false)}
                 style={{
-                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "11px 14px",
                   borderRadius: 10,
                   fontFamily: f.sans,
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  color: active ? t.indigoDeep : t.inkSoft,
-                  background: active ? t.indigo100 : "transparent",
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  color: active ? t.coal : t.inkSoft,
+                  background: active ? t.creamSoft : "transparent",
                   textDecoration: "none",
                 }}
               >
-                {item.label}
+                {item.icon}
+                <span>{item.label}</span>
+                {active && <div style={{ width: 3, height: 16, borderRadius: 2, background: t.copper, marginLeft: "auto" }} />}
               </Link>
             );
           })}
@@ -306,26 +341,47 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
 
         <div style={{ flex: 1 }} />
 
-        <div style={{ borderTop: `1px solid ${t.line}`, padding: "14px 6px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {user?.name}
-          </span>
+        {/* Company card — mirrors the candidate dashboard's Plan Status card
+            (white card, copper accents, same margin/padding rhythm), swapped
+            for company identity + approval status instead of plan/usage. */}
+        <div style={{ margin: "0 8px 12px", padding: 14, borderRadius: 12, background: t.white, border: `1px solid ${t.line}`, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+            <span style={{ color: t.copper, display: "flex" }}><EmployerIcon.Building /></span>
+            <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em", color: t.copper }}>
+              {companyName || "Your company"}
+            </span>
+          </div>
+          {companyWebsite && (
+            <p style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, margin: "0 0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {companyWebsite}
+            </p>
+          )}
+          <Pill tone="success">Approved</Pill>
+        </div>
+
+        {/* User info — mirrors the candidate dashboard's footer block */}
+        <div style={{ borderTop: `1px solid ${t.line}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.copper100, border: "1px solid rgba(180,83,9,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.copper }}>{(user?.name || "?")[0].toUpperCase()}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
+              <p style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={handleLogout}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 8,
-              border: `1px solid ${t.lineStrong}`,
-              background: "transparent",
-              color: t.coal,
-              fontFamily: f.sans,
-              fontSize: 12.5,
-              fontWeight: 600,
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
+            style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.inkSoft, background: "none", border: "none", cursor: "pointer", padding: "6px 0", display: "flex", alignItems: "center", gap: 6, transition: "color 0.2s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = t.error; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = t.inkSoft; }}
           >
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
             Log out
           </button>
         </div>

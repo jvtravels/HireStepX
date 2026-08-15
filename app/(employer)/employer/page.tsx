@@ -244,7 +244,7 @@ function CompanyPending() {
       </p>
       <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
         Made a mistake in your details, or been waiting longer than a day?{" "}
-        <CopyEmailLink email="support@hirestepx.com" style={{ color: t.inkFaint }} />
+        <CopyEmailLink email="support@hirestepx.com" style={{ color: t.copper, fontWeight: 600 }} />
       </p>
     </div>
   );
