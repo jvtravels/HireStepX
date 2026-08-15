@@ -1,9 +1,47 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
+import { RequirementSummary } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, PrimaryCta, StatusChip, EmployerIcon } from "@/employer/_atoms";
+import { Card, Eyebrow, Pill, PrimaryCta, StatusChip, EmployerIcon } from "@/employer/_atoms";
+
+function experienceLabel(req: RequirementSummary): string {
+  const { experienceMin, experienceMax } = req;
+  if (experienceMin == null && experienceMax == null) return "Any";
+  if (experienceMin != null && experienceMax != null) return `${experienceMin}–${experienceMax} yrs`;
+  if (experienceMin != null) return `${experienceMin}+ yrs`;
+  return `Up to ${experienceMax} yrs`;
+}
+
+function DueDateBadge({ dueDate }: { dueDate: string | null }) {
+  if (!dueDate) return <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>—</span>;
+  const daysLeft = Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
+  const tone = daysLeft < 0 ? "error" : daysLeft <= 7 ? "warning" : "neutral";
+  const label = daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? "Due today" : `${daysLeft}d left`;
+  return <Pill tone={tone}>{label}</Pill>;
+}
+
+const th: CSSProperties = {
+  textAlign: "left",
+  fontFamily: f.sans,
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: 0.4,
+  textTransform: "uppercase",
+  color: t.inkFaint,
+  padding: "0 16px 12px",
+};
+
+const td: CSSProperties = {
+  padding: "16px",
+  borderTop: `1px solid ${t.line}`,
+  fontFamily: f.sans,
+  fontSize: 13.5,
+  color: t.coal,
+  verticalAlign: "middle",
+};
 
 /* /employer/jobs — the requirements console. Owns the full list that used
    to live on the root dashboard; the dashboard now only links here. */
@@ -11,7 +49,7 @@ export default function EmployerJobsPage() {
   const { requirements, requirementsLoading } = useEmployerData();
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", width: "100%" }}>
+    <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
         <section>
           <Eyebrow tone="ink">Employer console</Eyebrow>
@@ -38,21 +76,52 @@ export default function EmployerJobsPage() {
           </p>
         </Card>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {requirements.map((req) => (
-            <Link key={req.id} href={`/employer/requirements/${req.id}`} style={{ textDecoration: "none" }}>
-              <Card style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>{req.title}</div>
-                  <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 4 }}>
-                    {req.location} · Posted {req.createdAt}
-                  </div>
-                </div>
-                <StatusChip status={req.status} />
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <Card pad={0} style={{ overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
+              <thead>
+                <tr>
+                  <th style={{ ...th, paddingTop: 20 }}>Role</th>
+                  <th style={{ ...th, paddingTop: 20 }}>Location</th>
+                  <th style={{ ...th, paddingTop: 20 }}>Experience</th>
+                  <th style={{ ...th, paddingTop: 20 }}>Status</th>
+                  <th style={{ ...th, paddingTop: 20 }}>Matches</th>
+                  <th style={{ ...th, paddingTop: 20 }}>Due date</th>
+                  <th style={{ ...th, paddingTop: 20 }}>Posted</th>
+                  <th style={{ ...th, paddingTop: 20, textAlign: "right", paddingRight: 20 }}>&nbsp;</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requirements.map((req) => (
+                  <tr key={req.id}>
+                    <td style={td}>
+                      <span style={{ fontWeight: 600 }}>{req.title}</span>
+                    </td>
+                    <td style={{ ...td, color: t.inkSoft }}>{req.location}</td>
+                    <td style={{ ...td, color: t.inkSoft }}>{experienceLabel(req)}</td>
+                    <td style={td}>
+                      <StatusChip status={req.status} />
+                    </td>
+                    <td style={{ ...td, color: t.inkSoft }}>{req.candidateCount}</td>
+                    <td style={td}>
+                      <DueDateBadge dueDate={req.dueDate} />
+                    </td>
+                    <td style={{ ...td, color: t.inkFaint, fontSize: 12.5 }}>{req.createdAt}</td>
+                    <td style={{ ...td, textAlign: "right", paddingRight: 20 }}>
+                      <Link
+                        href={`/employer/requirements/${req.id}`}
+                        style={{ display: "inline-flex", color: t.indigo, textDecoration: "none" }}
+                        aria-label={`View ${req.title}`}
+                      >
+                        <EmployerIcon.Arrow />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );

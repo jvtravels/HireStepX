@@ -13,6 +13,9 @@ export default function PostRequirementPage() {
   const [location, setLocation] = useState("");
   const [noticePeriodPref, setNoticePeriodPref] = useState("Any");
   const [description, setDescription] = useState("");
+  const [experienceMin, setExperienceMin] = useState("");
+  const [experienceMax, setExperienceMax] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = title.trim().length > 1 && location.trim().length > 1;
@@ -24,11 +27,16 @@ export default function PostRequirementPage() {
     if (!canSubmit || submitting) return;
     setSubmitError(null);
     setSubmitting(true);
+    const parsedMin = experienceMin.trim() ? Number(experienceMin) : undefined;
+    const parsedMax = experienceMax.trim() ? Number(experienceMax) : undefined;
     const id = await addRequirement({
       title: title.trim(),
       location: location.trim(),
       noticePeriodPref,
       description: description.trim(),
+      experienceMin: Number.isFinite(parsedMin) ? parsedMin : undefined,
+      experienceMax: Number.isFinite(parsedMax) ? parsedMax : undefined,
+      dueDate: dueDate || undefined,
     });
     if (!id) {
       setSubmitting(false);
@@ -61,6 +69,42 @@ export default function PostRequirementPage() {
               placeholder="Bengaluru (hybrid), Remote, …"
               style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
             />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <FieldLabel>Experience — min (years)</FieldLabel>
+              <input
+                type="number"
+                min={0}
+                max={40}
+                value={experienceMin}
+                onChange={(e) => setExperienceMin(e.target.value)}
+                placeholder="2"
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <FieldLabel>Experience — max (years)</FieldLabel>
+              <input
+                type="number"
+                min={0}
+                max={40}
+                value={experienceMax}
+                onChange={(e) => setExperienceMax(e.target.value)}
+                placeholder="5"
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+          </div>
+          <div>
+            <FieldLabel>Due date (optional)</FieldLabel>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+            />
+            <HelpText>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
           </div>
           <div>
             <FieldLabel>Notice period preference</FieldLabel>

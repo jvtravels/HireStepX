@@ -1635,8 +1635,14 @@ create table if not exists employer_requirements (
   notice_period_pref text default 'Any',
   description text default '',
   status text not null default 'generating' check (status in ('generating', 'ready', 'partial', 'zero', 'failed', 'closed')),
+  experience_min integer,
+  experience_max integer,
+  due_date date,
   created_at timestamptz default now()
 );
+alter table employer_requirements add column if not exists experience_min integer;
+alter table employer_requirements add column if not exists experience_max integer;
+alter table employer_requirements add column if not exists due_date date;
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 
