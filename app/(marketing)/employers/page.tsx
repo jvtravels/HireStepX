@@ -58,14 +58,14 @@ export default function EmployersLandingPage() {
           Get started
         </Link>
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, marginTop: 12 }}>
-          Free to post. Pay only to unlock a candidate's contact details.
+          Free to post. Free to view every candidate's contact details.
         </p>
       </section>
 
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 96px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
         {[
           { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on interview-performance signal — coherence, STAR structure, technical depth — scored across their real practice sessions." },
-          { title: "Pay only to unlock", body: "Browse match scores and skill breakdowns for free. Pay a small per-candidate fee only when you want their contact details." },
+          { title: "Free candidate contact details", body: "Browse match scores, skill breakdowns, and full contact details for every candidate — no per-candidate fee." },
           { title: "Fair to candidates too", body: "Every shortlist runs through anti-gaming and fairness checks, and candidates consent to being surfaced before you ever see their name." },
         ].map((f2) => (
           <div key={f2.title} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24 }}>

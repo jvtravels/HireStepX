@@ -18,6 +18,19 @@ import {
   EmployerIcon,
 } from "@/employer/_atoms";
 
+const LOGO_MAX_MB = 2;
+const LOGO_ACCEPTED_TYPES = "image/png,image/jpeg,image/webp";
+const LOGO_CONTENT_TYPE_ALLOWLIST = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 /* A pragmatic website check, not a full RFC 3986 parser: catches the two
    real-world mistakes (missing scheme, no dot in the host) without
    rejecting valid domains our regex doesn't fully understand. */
@@ -37,6 +50,9 @@ function CompanyOnboarding() {
   const [companyName, setCompanyName] = useState("");
   const [website, setWebsite] = useState("");
   const [websiteTouched, setWebsiteTouched] = useState(false);
+  const [gstin, setGstin] = useState("");
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -53,6 +69,20 @@ function CompanyOnboarding() {
         ? "Enter a valid company website to continue."
         : null;
 
+  const handleLogoChange = async (file: File | undefined) => {
+    setLogoError(null);
+    if (!file) return;
+    if (!LOGO_CONTENT_TYPE_ALLOWLIST.has(file.type)) {
+      setLogoError("Use a PNG, JPG, or WEBP image.");
+      return;
+    }
+    if (file.size > LOGO_MAX_MB * 1_000_000) {
+      setLogoError(`Keep it under ${LOGO_MAX_MB} MB.`);
+      return;
+    }
+    setLogoDataUrl(await readFileAsDataUrl(file));
+  };
+
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -62,8 +92,7 @@ function CompanyOnboarding() {
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
           We review every employer before they can browse the candidate roster — this protects candidates from
-          recruiters who aren't hiring in good faith. Most companies hear back within one business day, and
-          there's nothing else to fill out after this.
+          recruiters who aren't hiring in good faith. Most companies hear back within one business day.
         </p>
       </div>
       <Card>
@@ -100,6 +129,68 @@ function CompanyOnboarding() {
               <HelpText>We'll use this to verify your company is real.</HelpText>
             )}
           </div>
+          <div>
+            <FieldLabel>GSTIN (optional)</FieldLabel>
+            <input
+              value={gstin}
+              onChange={(e) => setGstin(e.target.value)}
+              placeholder="22AAAAA0000A1Z5"
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+            />
+            <HelpText>Speeds up review — not required to apply.</HelpText>
+          </div>
+          <div>
+            <FieldLabel>Company logo (optional)</FieldLabel>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 12,
+                  border: `1px solid ${t.line}`,
+                  background: t.creamSoft,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                }}
+              >
+                {logoDataUrl ? (
+                  <img src={logoDataUrl} alt="Company logo preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <span style={{ color: t.inkFaint }}><EmployerIcon.Building /></span>
+                )}
+              </div>
+              <label
+                htmlFor="company-logo-input"
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: 10,
+                  border: `1px solid ${t.lineStrong}`,
+                  fontFamily: f.sans,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: t.coal,
+                  cursor: "pointer",
+                }}
+              >
+                {logoDataUrl ? "Change logo" : "Upload logo"}
+                <input
+                  id="company-logo-input"
+                  type="file"
+                  accept={LOGO_ACCEPTED_TYPES}
+                  onChange={(e) => handleLogoChange(e.target.files?.[0])}
+                  style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}
+                />
+              </label>
+            </div>
+            {logoError ? (
+              <HelpText tone="error">{logoError}</HelpText>
+            ) : (
+              <HelpText>PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.</HelpText>
+            )}
+          </div>
           {submitError && (
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
           )}
@@ -110,7 +201,14 @@ function CompanyOnboarding() {
               onClick={async () => {
                 setSubmitError(null);
                 setSubmitted(true);
-                const ok = await submitCompanyProfile({ companyName, website });
+                const [logoContentType, logoBase64] = logoDataUrl ? logoDataUrl.split(",") : [undefined, undefined];
+                const ok = await submitCompanyProfile({
+                  companyName,
+                  website,
+                  gstin,
+                  logoBase64,
+                  logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
+                });
                 if (!ok) {
                   setSubmitted(false);
                   setSubmitError("Couldn't submit your company profile — please try again.");
@@ -134,7 +232,7 @@ function CompanyOnboarding() {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {[
-            { icon: <EmployerIcon.Check />, title: "You submit", body: "Just your company name and website — nothing else to fill out." },
+            { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website — GSTIN and a logo speed up review." },
             { icon: <EmployerIcon.Clock />, title: "We review", body: "A human checks every employer. Most hear back in one business day." },
             { icon: <EmployerIcon.Arrow />, title: "You post roles", body: "Get an AI-matched shortlist, scored on real interview performance." },
           ].map((step) => (
@@ -212,7 +310,7 @@ function CompanyRejected() {
    width) so the employer surface reads as the same product. */
 function EmployerDashboard() {
   const { user } = useAuth();
-  const { requirements, requirementsLoading } = useEmployerData();
+  const { requirements, requirementsLoading, companyLogoUrl } = useEmployerData();
 
   const openRequirements = requirements.filter((r) => r.status !== "closed");
   const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
@@ -316,13 +414,21 @@ function EmployerDashboard() {
       <aside style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
         <Card>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <span style={{ color: t.indigo }}><EmployerIcon.Building /></span>
+            {companyLogoUrl ? (
+              <img
+                src={companyLogoUrl}
+                alt="Company logo"
+                style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }}
+              />
+            ) : (
+              <span style={{ color: t.indigo }}><EmployerIcon.Building /></span>
+            )}
             <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
               Company profile
             </h2>
           </div>
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
-            You're approved to browse the candidate roster and unlock contact details.
+            You're approved to browse the candidate roster and view contact details.
           </p>
           <OutlineCta full size="sm">Edit company details</OutlineCta>
         </Card>
@@ -333,8 +439,7 @@ function EmployerDashboard() {
           </h2>
           <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
             Match score reflects fit against this requirement; roster score reflects lifetime interview
-            performance across a candidate's practice sessions. Contact details stay hidden until you unlock
-            them.
+            performance across a candidate's practice sessions.
           </p>
         </div>
       </aside>

@@ -31,9 +31,10 @@ export interface UnlockOrder {
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
+  companyLogoUrl: string | null;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
-  submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string }) => Promise<boolean>;
+  submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
   addRequirement: (r: { title: string; location: string; noticePeriodPref?: string; description?: string }) => Promise<string | null>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
@@ -57,6 +58,7 @@ export function useEmployerData() {
 export function EmployerDataProvider({ children }: { children: React.ReactNode }) {
   const [companyStatus, setCompanyStatus] = useState<CompanyStatus>("none");
   const [companyStatusLoading, setCompanyStatusLoading] = useState(true);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoading, setRequirementsLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,7 +68,10 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       const headers = await authHeaders();
       const res = await fetch("/api/employer-profile", { headers });
       const data = await res.json().catch(() => null);
-      if (res.ok && data) setCompanyStatus(data.status as CompanyStatus);
+      if (res.ok && data) {
+        setCompanyStatus(data.status as CompanyStatus);
+        setCompanyLogoUrl(typeof data.logoUrl === "string" ? data.logoUrl : null);
+      }
     } catch {
       // network hiccup — keep last known status, next poll/refresh retries
     } finally {
@@ -112,10 +117,11 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshRequirements();
   }, [refreshRequirements]);
 
-  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; gstin?: string }) => {
-    const res = await apiFetch<{ status: CompanyStatus }>("/api/employer-profile", fields, { method: "POST" });
+  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => {
+    const res = await apiFetch<{ status: CompanyStatus; logoUrl?: string | null }>("/api/employer-profile", fields, { method: "POST" });
     if (res.ok && res.data) {
       setCompanyStatus(res.data.status);
+      setCompanyLogoUrl(res.data.logoUrl ?? null);
       return true;
     }
     return false;
@@ -174,6 +180,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const value: EmployerDataContextValue = {
     companyStatus,
     companyStatusLoading,
+    companyLogoUrl,
     requirements,
     requirementsLoading,
     submitCompanyProfile,

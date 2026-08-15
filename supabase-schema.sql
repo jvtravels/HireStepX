@@ -1611,11 +1611,16 @@ create table if not exists employers (
   company_name text not null default '',
   website text not null default '',
   gstin text default '',
+  -- Path within the `employer-logos` Storage bucket (public bucket, created
+  -- manually — see runbook note next to `resume-files` — not this file),
+  -- e.g. "{employer_id}/logo.png". NULL when no logo was uploaded.
+  logo_path text,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   submitted_at timestamptz default now(),
   approved_at timestamptz,
   created_at timestamptz default now()
 );
+alter table employers add column if not exists logo_path text;
 
 alter table employers enable row level security;
 drop policy if exists "Employers manage own profile" on employers;
