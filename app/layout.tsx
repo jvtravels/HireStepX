@@ -137,22 +137,22 @@ export const viewport: Viewport = {
 import { ServiceWorkerRegistrar } from "./ServiceWorkerRegistrar";
 import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
-import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
 import { RouteFocusManager } from "./RouteFocusManager";
-import { headers } from "next/headers";
 
-export default async function RootLayout({
+/* No headers()/nonce here on purpose — reading headers() forces the whole
+   app dynamic (this is the ONE shared layout every route renders through),
+   which is what kept every marketing page stuck server-rendering per-request
+   instead of static/ISR. Nonce-dependent rendering (analytics scripts, the
+   csp-nonce meta tag consumed by dashboardComponents.tsx's Razorpay loader
+   and BlogPage's client JSON-LD injection) now lives in the route groups
+   that actually need it: app/(app)/layout.tsx, app/(auth)/layout.tsx, and
+   app/admin/layout.tsx render <AnalyticsNonce />; app/(marketing)/layout.tsx
+   renders <MarketingAnalytics /> (no nonce, hash-allowlisted instead). */
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // proxy.ts stamps a per-request CSP nonce onto x-nonce (see buildCsp there).
-  // With 'strict-dynamic' in the policy, host-based allowlisting (checkout.razorpay.com,
-  // googletagmanager.com, etc.) is ignored — every script tag must carry this nonce or
-  // it's silently blocked. Server Components can read it directly; the meta tag below
-  // is how Client Components (ConsentGatedAnalytics, the Razorpay loader in
-  // dashboardComponents.tsx) get the same value, since they can't call headers().
-  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <html
       lang="en"
@@ -169,7 +169,6 @@ export default async function RootLayout({
         {/* Satoshi is self-hosted via next/font/local (public/fonts/satoshi-*.woff2).
             The CDN preconnects and stylesheet link are no longer needed. */}
         <meta name="google-adsense-account" content="ca-pub-7810403590527236" />
-        <meta name="csp-nonce" content={nonce} />
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
         {/* dns-prefetch (not preconnect) for LLM/TTS/STT origins — only
             /interview needs a live TCP connection. Prefetch cuts the first-lookup
@@ -200,7 +199,6 @@ export default async function RootLayout({
 
         <ServiceWorkerRegistrar />
         <CookieConsent />
-        <ConsentGatedAnalytics nonce={nonce} />
       </body>
     </html>
   );

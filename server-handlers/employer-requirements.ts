@@ -22,6 +22,15 @@ import {
   rankAndCap,
   type CandidatePoolRow,
 } from "./_requirement-match-helpers";
+import {
+  asBoundedString,
+  isValidRequirementInput,
+  buildRequirementsListResponse,
+  countMatchesByRequirement,
+  averageScoresByUser,
+  daysSinceLastActive,
+  type RequirementRow,
+} from "./_employer-requirements-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -29,19 +38,6 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
-}
-
-function asString(v: unknown, max: number): string {
-  return typeof v === "string" ? v.slice(0, max) : "";
-}
-
-interface RequirementRow {
-  id: string;
-  title: string;
-  location: string;
-  notice_period_pref: string;
-  status: string;
-  created_at: string;
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -85,7 +81,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
     const rows = (await res.json().catch(() => [])) as RequirementRow[];
 
     const ids = rows.map((r) => r.id);
-    const countsByRequirement = new Map<string, number>();
+    let countsByRequirement = new Map<string, number>();
     if (ids.length > 0) {
       const idParam = ids.map((id) => encodeURIComponent(id)).join(",");
       const matchesRes = await fetch(
@@ -94,19 +90,11 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
       );
       if (matchesRes.ok) {
         const matchRows = (await matchesRes.json().catch(() => [])) as Array<{ requirement_id: string; match_score: number }>;
-        for (const m of matchRows) countsByRequirement.set(m.requirement_id, (countsByRequirement.get(m.requirement_id) || 0) + 1);
+        countsByRequirement = countMatchesByRequirement(matchRows);
       }
     }
 
-    const requirements = rows.map((r) => ({
-      id: r.id,
-      title: r.title,
-      location: r.location,
-      noticePeriodPref: r.notice_period_pref,
-      status: r.status,
-      createdAt: r.created_at.slice(0, 10),
-      candidateCount: countsByRequirement.get(r.id) || 0,
-    }));
+    const requirements = buildRequirementsListResponse(rows, countsByRequirement);
 
     return new Response(JSON.stringify({ requirements }), { status: 200, headers });
   } catch (err) {
@@ -124,12 +112,12 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers });
   }
 
-  const title = asString(body.title, 200);
-  const location = asString(body.location, 200);
-  const noticePeriodPref = asString(body.noticePeriodPref, 60) || "Any";
-  const description = asString(body.description, 5000);
+  const title = asBoundedString(body.title, 200);
+  const location = asBoundedString(body.location, 200);
+  const noticePeriodPref = asBoundedString(body.noticePeriodPref, 60) || "Any";
+  const description = asBoundedString(body.description, 5000);
 
-  if (title.length < 2 || location.length < 1) {
+  if (!isValidRequirementInput(title, location)) {
     return new Response(JSON.stringify({ error: "title and location are required" }), { status: 400, headers });
   }
 
@@ -202,19 +190,13 @@ async function runMatching(requirementId: string, req: { title: string; location
       );
       if (sessionsRes.ok) {
         const sessionRows = (await sessionsRes.json().catch(() => [])) as Array<{ user_id: string; score: number }>;
-        const sums = new Map<string, number>();
-        for (const s of sessionRows) {
-          sums.set(s.user_id, (sums.get(s.user_id) || 0) + (s.score || 0));
-          sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
-        }
-        for (const [uid, sum] of sums) scores.set(uid, sum / (sessionCounts.get(uid) || 1));
+        for (const [uid, avg] of averageScoresByUser(sessionRows)) scores.set(uid, avg);
+        for (const s of sessionRows) sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
       }
     }
 
     const candidateRows: CandidatePoolRow[] = pool.map((p) => {
       const timestamps = Array.isArray(p.practice_timestamps) ? p.practice_timestamps : [];
-      const lastActive = timestamps.length ? timestamps[timestamps.length - 1] : null;
-      const daysAgo = lastActive ? Math.max(0, Math.round((Date.now() - new Date(lastActive).getTime()) / 86_400_000)) : 999;
       return {
         id: p.id,
         name: p.name,
@@ -223,7 +205,7 @@ async function runMatching(requirementId: string, req: { title: string; location
         resume_data: p.resume_data,
         avg_score: scores.get(p.id) ?? null,
         sessions_completed: sessionCounts.get(p.id) || 0,
-        last_active_days_ago: daysAgo,
+        last_active_days_ago: daysSinceLastActive(timestamps, Date.now()),
       };
     });
 

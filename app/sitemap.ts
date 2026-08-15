@@ -2,8 +2,10 @@ import type { MetadataRoute } from "next";
 import { SEO_PAGES, SEO_PAGES_LAST_MODIFIED } from "../data/seo-pages";
 import { getAllBlogSlugs, BLOG_META } from "../src/blog-meta";
 import { CATEGORY_BUCKETS, bucketToSlug } from "../src/blog-categories";
-import { getAllSalarySlugs } from "../data/salary-seo";
+import { getAllSalarySlugs, getSalaryPage } from "../data/salary-seo";
 import { getAllCitySlugs } from "../data/city-pages";
+import { COMPANY_KNOWN_FACTS } from "../data/company-known-facts";
+import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)
@@ -108,12 +110,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
   ];
-  const salaryEntries: MetadataRoute.Sitemap = getAllSalarySlugs().map((slug) => ({
-    url: `${baseUrl}/salary/${slug}`,
-    lastModified: seoPagesLastModified,
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
+  /* Mirrors the noindex logic in salary/[company]/page.tsx's
+     generateMetadata: a page with 1-2 roles and no verified interview
+     notes is too thin to submit for indexing on its own. */
+  const salaryEntries: MetadataRoute.Sitemap = getAllSalarySlugs()
+    .filter((slug) => {
+      const page = getSalaryPage(slug);
+      if (!page) return false;
+      const roleSections = buildRoleSections(slug, page.roles);
+      if (roleSections.length === 0) return false;
+      const overrideKey = slug.replace(/-/g, " ");
+      const knownFacts = COMPANY_KNOWN_FACTS[slug] ?? COMPANY_KNOWN_FACTS[overrideKey];
+      return !(roleSections.length <= 2 && !knownFacts?.notes);
+    })
+    .map((slug) => ({
+      url: `${baseUrl}/salary/${slug}`,
+      lastModified: seoPagesLastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    }));
 
   /* /blog/category/[category] — topic-bucket blog landing pages. */
   const blogCategoryEntries: MetadataRoute.Sitemap = CATEGORY_BUCKETS.map((bucket) => ({

@@ -42,9 +42,13 @@ function intersectionRatio(a: Set<string>, b: Set<string>): number {
   return hits / a.size;
 }
 
+/* resumeData is a StoredResume (see src/resumeParser.ts): fallback-type
+   resumes carry a flat `skills` array, ai-type ones carry `topSkills`
+   instead — read whichever the stored variant actually has. */
 function extractSkills(resumeData: unknown): string[] {
   if (!resumeData || typeof resumeData !== "object") return [];
-  const skills = (resumeData as Record<string, unknown>).skills;
+  const record = resumeData as Record<string, unknown>;
+  const skills = Array.isArray(record.skills) ? record.skills : record.topSkills;
   return Array.isArray(skills) ? skills.filter((s): s is string => typeof s === "string") : [];
 }
 

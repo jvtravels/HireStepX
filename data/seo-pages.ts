@@ -7517,7 +7517,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── PhonePe — technical (DSA) ───────────────────────────────── */
   {
     slug: "phonepe-technical-interview-questions",
-    searchPhrase: "PhonePe Technical Interview Questions 2026",
+    searchPhrase: "PhonePe Technical Interview 2026: UPI & DSA",
     company: "phonepe", roleFamily: "swe", focus: "technical",
     intro: "PhonePe's coding rounds tie classic data-structures and algorithms to payments reality: sliding-window top-K over a UPI transaction stream, rate limiting per merchant at thousands of requests per second, and dynamic-programming counting problems framed as cashback denominations. In 2026 expect medium-to-hard problems where the interviewer wants your optimal-substructure reasoning stated aloud, an honest complexity analysis, and a note on idempotency or concurrency because the code would sit in a real payments backend. Puzzles for their own sake are rare; in-domain framing is the norm.",
     framework: { name: "Reason-Aloud DSA", summary: "State the brute force, name the pattern (sliding window, DP, heap), optimise with the invariant spoken out loud, then analyse time and space and mention the production edge case" },
@@ -8278,7 +8278,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Cognizant — HR round ───────────────────────────────────── */
   {
     slug: "cognizant-hr-interview-questions",
-    searchPhrase: "Cognizant HR Interview Questions 2026",
+    searchPhrase: "Cognizant HR Interview 2026: 3 Real Questions",
     company: "cognizant", roleFamily: "campus", focus: "hr",
     intro: "The Cognizant HR round follows the GenC aptitude and technical stages and focuses on fit, flexibility, and a client-service mindset. In 2026 expect questions on why Cognizant, what you know about the company and role, comfort with night shifts or client-timezone hours and relocation, strengths and weaknesses, and how you would handle a difficult client. Interviewers reward candidates who did their homework, show self-awareness, and demonstrate a service orientation. Vague answers, no knowledge of the company, or rigidity on shifts and location are the usual reasons strong technical candidates still get filtered here.",
     framework: { name: "Homework-and-Service", summary: "Know the company and role, show flexibility on shifts and location, and answer with self-awareness and a client-service mindset" },
@@ -8467,7 +8467,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wipro — HR round ───────────────────────────────────────── */
   {
     slug: "wipro-hr-interview-questions",
-    searchPhrase: "Wipro HR Interview Questions 2026",
+    searchPhrase: "Wipro HR Interview 2026: 3 Real Questions",
     company: "wipro", roleFamily: "campus", focus: "hr",
     intro: "The Wipro HR round is the final gate after the online test and technical stages, focused on fit, communication, and commitment. In 2026 expect questions on why Wipro and why IT services over a core or product role, willingness to sign the service agreement and work from any location in any shift, and strengths backed by a concrete example. Interviewers assess motivation, honesty, and flexibility more than technical skill. Candidates trip up with generic praise, adjective-only strength answers, or rigidity on location and shifts. A short, specific STAR story and honest flexibility go a long way here.",
     framework: { name: "Honest-Fit-STAR", summary: "Give a genuine reason for choosing Wipro and services, back strengths with a short STAR example, and be honestly flexible on location and shifts" },
@@ -9291,7 +9291,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── L&T — Graduate Engineer Trainee (core engineering) ────── */
   {
     slug: "lt-graduate-engineer-trainee-interview-questions",
-    searchPhrase: "L&T Graduate Engineer Trainee Interview Questions 2026",
+    searchPhrase: "L&T GET Interview Questions 2026: Site & HR",
     company: "l-and-t", roleFamily: "campus", focus: "campus-placement",
     intro: "L&T's Graduate Engineer Trainee (GET) interview is a core-engineering campus round focused on applied fundamentals and genuine readiness for site life, not coding. In 2026 expect a technical round that maps your branch subjects to real EPC, construction, and heavy-engineering scenarios (how a core concept applies on site, your final-year project end to end), plus an HR round that probes willingness for long postings at remote project locations. L&T recruits mechanical, civil, electrical, and instrumentation engineers for large infrastructure projects, so interviewers reward candidates who connect theory to field application and have honestly thought through mobility. Revise your core subjects and project, and prepare a considered answer on site postings.",
     framework: { name: "Applied-and-Field-Ready", summary: "Map core branch fundamentals to real EPC and site scenarios, know your project cold, and give an honest, thought-through answer on remote postings" },

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import Link from "next/link";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { FAQItem } from "@/marketing-v2/MarketingPagesV2";
 import { DarkBand, ctaPrimaryStyle, editorialCSS } from "@/marketing-v2/_editorial";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { buildAiMockInterviewJsonLd, FAQ_ENTRIES, HOW_IT_WORKS } from "./_jsonld";
 
 /*
  * /ai-mock-interview — dedicated landing page for the highest-volume
@@ -103,122 +103,7 @@ const TOP_COMPANIES = [
   { label: "Scaler", slug: "scaler-software-engineer-interview-questions" },
 ];
 
-const HOW_IT_WORKS = [
-  {
-    step: "1",
-    title: "Upload your resume",
-    desc: "The AI reads your experience and crafts role-specific questions, not generic ones from a bank.",
-  },
-  {
-    step: "2",
-    title: "Pick a company and interview type",
-    desc: "Choose from 200+ companies and 10 interview formats: behavioral, technical, HR, case study, salary negotiation, and more.",
-  },
-  {
-    step: "3",
-    title: "Speak your answers",
-    desc: "The AI interviewer asks questions by voice, listens to your spoken answer, and asks intelligent follow-up questions.",
-  },
-  {
-    step: "4",
-    title: "Get your scored report",
-    desc: "STAR breakdown, communication score, filler-word count, pacing, and a coached model answer for every question.",
-  },
-];
-
 export default async function AiMockInterviewPage() {
-  const { headers } = await import("next/headers");
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What is an AI mock interview?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "An AI mock interview is a simulated job interview conducted by an AI system that acts as an interviewer. It asks you questions by voice, listens to your spoken answers, evaluates your responses on criteria like STAR structure and communication clarity, and delivers a scored report. Unlike text-based tools like ChatGPT, a voice-based AI mock interview closely replicates the pressure and format of a real interview.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Is AI mock interview practice effective?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. Research on deliberate practice consistently shows that repeated realistic simulation improves performance. AI mock interviews let you practice the same question 10 times at 2am without scheduling anyone: the volume and immediacy of feedback is the key advantage over human coaches. The STAR scoring gives you objective data on what specifically is weak (situation setup, action clarity, result quantification) rather than vague subjective impressions.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Is HireStepX AI mock interview free?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. HireStepX includes 2 complete AI mock interview sessions for free, with no credit card required. Each free session is a full voice interview with STAR scoring, a detailed performance report, and a coached model answer for every question. After your 2 free sessions, additional sessions are ₹9 each (credits never expire) or ₹39/month for the Sprint Pack (5 sessions).",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How is AI mock interview different from practicing with ChatGPT?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "ChatGPT is text-only, it cannot speak questions, cannot hear your spoken answers, cannot score your communication delivery, and has no resume integration. HireStepX is purpose-built: voice-based (the AI speaks and listens), resume-personalised questions, STAR structure scoring, company-specific question banks, progress tracking across sessions, and a coached model answer after every response.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What companies can I practice AI mock interviews for?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "HireStepX supports 200+ target companies including Google, Amazon, Microsoft, Meta, Flipkart, Swiggy, Zomato, Razorpay, CRED, Meesho, PhonePe, Nykaa, Ola, Paytm, Goldman Sachs, McKinsey, Deloitte, TCS, Infosys, Wipro, Cognizant, Accenture, HCL, and Capgemini. Each company has a distinct interview pattern and question bank.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What types of AI mock interviews are available?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "HireStepX supports 10 interview types: Behavioral (STAR method), Technical (CS fundamentals, system design), Strategic, Case Study, Campus Placement, HR Round, Panel, Management, Salary Negotiation, and Government/PSU. Each supports 3 difficulty levels and mini (10-minute) or full (25-minute) session options.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Does the AI mock interview work on mobile?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes, HireStepX works on any modern browser including mobile. For the best AI mock interview experience (especially for voice recognition accuracy), a laptop or desktop with a microphone in a quiet room is recommended. Mobile works for quick practice but a headset significantly improves STT accuracy.",
-        },
-      },
-    ],
-  };
-
-  const howToSchema = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    name: "How to do an AI mock interview on HireStepX",
-    description: "Practice a full voice-based AI mock interview in 4 steps, free, no card needed.",
-    step: HOW_IT_WORKS.map((s) => ({
-      "@type": "HowToStep",
-      name: s.title,
-      text: s.desc,
-    })),
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "AI Mock Interview Practice: Free, Voice-Based",
-    description:
-      "How AI mock interviews work, how they compare to ChatGPT and human coaches, and how to start practicing for free on HireStepX.",
-    image: "https://hirestepx.com/opengraph-image",
-    url: "https://hirestepx.com/ai-mock-interview",
-    publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    author: { "@type": "Organization", name: "HireStepX" },
-    datePublished: "2026-07-20",
-    dateModified: "2026-08-05",
-  };
-
   return (
     <>
       <Script
@@ -230,10 +115,9 @@ export default async function AiMockInterviewPage() {
       <style>{editorialCSS}</style>
       <NavV2 />
 
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(faqSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(howToSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(articleSchema)} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "AI Mock Interview", path: "/ai-mock-interview" }]))} />
+      {buildAiMockInterviewJsonLd(FAQ_ENTRIES, HOW_IT_WORKS).map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
 
       <main id="main-content" style={{ ...s, background: t.cream, minHeight: "100vh" }}>
 
@@ -523,8 +407,8 @@ export default async function AiMockInterviewPage() {
               }
             `}</style>
             <div style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10 }}>
-              {faqSchema.mainEntity.map((item, i) => (
-                <FAQItem key={item.name} q={item.name} a={item.acceptedAnswer.text} first={i === 0} />
+              {FAQ_ENTRIES.map((item, i) => (
+                <FAQItem key={item.q} q={item.q} a={item.a} first={i === 0} />
               ))}
             </div>
           </div>

@@ -27,7 +27,12 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/dashboard",
           "/dashboard/",
-          "/interview",
+          /* Bare "/interview" is a prefix match in robots.txt, not an exact
+             path match — without the $ anchor it also disallows
+             /interview-anxiety and /interview-prep, both marketing pages
+             we want indexed. "/interview/" (with trailing slash) is safe
+             as a prefix since neither marketing page starts with that. */
+          "/interview$",
           "/interview/",
           "/onboarding",
           "/onboarding/",
@@ -43,6 +48,11 @@ export default function robots(): MetadataRoute.Robots {
           /* Share-token URLs are public-by-design but ephemeral —
              no SEO value, all crawl-budget cost. */
           "/report/share/",
+          /* Company-branded blog pages are noindex'd already (low CTR,
+             thin content per internal review) — disallow too so
+             crawlers (including AdSense's reviewer) never fetch them
+             at all instead of relying solely on the noindex meta tag. */
+          "/blog/company/",
         ],
       },
     ],

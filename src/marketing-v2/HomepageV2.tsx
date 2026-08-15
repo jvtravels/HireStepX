@@ -89,6 +89,9 @@ const ResponsiveSheet = () => (
          not under the number. Same pattern as the 881-1100px breakpoint. */
       .mv2-why-row { grid-template-columns: 40px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
       .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
+      /* Hired-directly: text + roster-preview card stack on tablet/mobile */
+      .mv2-hired-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
+      .mv2-hired-card { max-width: 420px; }
       main { padding-bottom: 48px; }
     }
     /* ── Small laptops (lg) ── */
@@ -331,6 +334,7 @@ export function NavV2() {
   const navLinks: Array<[string, string]> = [
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
+    ["For Employers", "/employers"],
     ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
@@ -521,15 +525,14 @@ export function NavV2() {
           <div
             className="mv2-nav-links"
             style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
+              flex: 1,
               display: "flex",
               alignItems: "center",
-              gap: 32,
+              justifyContent: "center",
+              gap: 28,
               fontFamily: fonts.sans,
               fontSize: 14,
+              minWidth: 0,
             }}
           >
             {navLinks.map(([label, href]) => {
@@ -3474,6 +3477,232 @@ export function SecurityComplianceV2() {
   );
 }
 
+/* ─────────────────────────── HIRED DIRECTLY ─────────────────────────── */
+function RosterPreviewCard() {
+  const rows: Array<{ initials: string; name: string; role: string; score: number }> = [
+    { initials: "RS", name: "R. Sharma", role: "Product Analyst", score: 82 },
+    { initials: "AI", name: "A. Iyer", role: "SDE-1, Backend", score: 91 },
+    { initials: "PN", name: "P. Nair", role: "Ops Lead", score: 76 },
+  ];
+  const topScore = Math.max(...rows.map((r) => r.score));
+  return (
+    <div
+      className="mv2-hired-card"
+      style={{
+        background: t.cream,
+        border: `1px solid ${t.line}`,
+        borderRadius: 18,
+        padding: "20px 22px",
+        boxShadow: "0 16px 40px -28px rgba(14, 12, 8, 0.35)",
+        width: "100%",
+        maxWidth: 380,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: t.coal, textTransform: "uppercase" as const }}>
+          Roster preview
+        </span>
+        <span style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>Bengaluru</span>
+      </div>
+      <div style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray, marginBottom: 14 }}>
+        Interview-readiness score, out of 100
+      </div>
+
+      {rows.map((r, i) => {
+        const isTop = r.score === topScore;
+        return (
+          <div
+            key={r.name}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 0",
+              borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: fonts.sans,
+                fontSize: 12,
+                fontWeight: 700,
+                background: isTop ? t.copper100 : t.indigo100,
+                color: isTop ? t.copperDark : t.indigo,
+              }}
+            >
+              {r.initials}
+            </span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 700, color: t.coal }}>{r.name}</div>
+              <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>{r.role}</div>
+            </div>
+            <span
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: isTop ? t.copperDark : t.indigo,
+                background: isTop ? t.copper100 : t.indigo100,
+                borderRadius: 999,
+                padding: "3px 9px",
+                flexShrink: 0,
+              }}
+            >
+              {r.score}/100
+            </span>
+          </div>
+        );
+      })}
+
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>
+        Contact details stay hidden until a company requests them.
+      </div>
+    </div>
+  );
+}
+
+function HiredDirectlyNotifyForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (status === "loading" || status === "done") return;
+    setStatus("loading");
+    setError("");
+    try {
+      const res = await fetch("/api/waitlist-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "homepage_talent_roster" }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error || "Something went wrong. Please try again.");
+        setStatus("error");
+        return;
+      }
+      setStatus("done");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setStatus("error");
+    }
+  }
+
+  if (status === "done") {
+    return (
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 14.5, fontWeight: 700, color: t.success }}>
+        <span aria-hidden>✓</span>
+        You&rsquo;re on the list. We&rsquo;ll email you when discovery opens.
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap" as const, gap: 10 }}>
+      <label htmlFor="hired-directly-email" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
+        Email address
+      </label>
+      <input
+        id="hired-directly-email"
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="you@company.com"
+        className="mv2-tap-44"
+        style={{
+          flex: "1 1 200px",
+          minWidth: 0,
+          background: t.creamRaised,
+          border: `1px solid ${t.line}`,
+          borderRadius: 999,
+          padding: "0 18px",
+          fontFamily: fonts.sans,
+          fontSize: 14.5,
+          color: t.coal,
+        }}
+      />
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="mv2-tap-44"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          background: t.coal,
+          color: t.cream,
+          fontFamily: fonts.sans,
+          fontSize: 14.5,
+          fontWeight: 700,
+          border: "none",
+          borderRadius: 999,
+          padding: "0 24px",
+          whiteSpace: "nowrap" as const,
+          cursor: status === "loading" ? "default" : "pointer",
+          opacity: status === "loading" ? 0.7 : 1,
+        }}
+      >
+        {status === "loading" ? "Joining…" : "Notify me"}
+        {status !== "loading" && <span aria-hidden>→</span>}
+      </button>
+      {status === "error" && (
+        <div role="alert" style={{ width: "100%", fontFamily: fonts.sans, fontSize: 13, color: t.copperDark }}>
+          {error}
+        </div>
+      )}
+    </form>
+  );
+}
+
+export function HiredDirectlyV2() {
+  return (
+    <section style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, padding: "64px 0" }}>
+      <div
+        className="mv2-hired-grid mv2-container"
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto",
+          padding: "0 40px",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) 380px",
+          alignItems: "center",
+          gap: 56,
+        }}
+      >
+        <MotionReveal>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.indigo100, border: `1px solid ${t.indigoRing}`, borderRadius: 999, padding: "5px 12px", marginBottom: 14 }}>
+            <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo }} />
+            <span style={{ fontFamily: fonts.sans, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", color: t.indigo, textTransform: "uppercase" as const }}>
+              Talent roster
+            </span>
+          </div>
+          <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 38px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 10px" }}>
+            Companies hire directly from HireStepX
+          </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.coal, margin: "0 0 24px", maxWidth: "48ch" }}>
+            Hiring teams will soon be able to browse a roster of practiced candidates and reach out for real roles, no extra applications. Opt in anytime, off by default, showing only what you choose.
+          </p>
+          <HiredDirectlyNotifyForm />
+        </MotionReveal>
+        <MotionReveal delay={90} style={{ display: "flex", justifyContent: "center" }}>
+          <RosterPreviewCard />
+        </MotionReveal>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2({
   headingPlain = "Your next interview won't wait.",
@@ -3575,20 +3804,23 @@ export default function HomepageV2() {
       <StructuredData />
       <a href="#main" className="mv2-skip">Skip to content</a>
       <NavV2 />
-      {/* 12-section composition:
+      {/* 13-section composition:
             1. NavV2  2. HeroV2  3. InterviewFocusV2  4. PersonalizedReportsV2
-            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. PricingV2
-            8. ComparisonV2  9. BuiltForIndiaV2  10. SecurityComplianceV2
-            11. FAQV2  12. VideoCtaV2  13. FooterDome
+            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. HiredDirectlyV2
+            8. PricingV2  9. ComparisonV2  10. BuiltForIndiaV2  11. SecurityComplianceV2
+            12. FAQV2  13. VideoCtaV2  14. FooterDome
             Arc: hook → proof → features → how-it-works → price → vs-alternatives → buy
             Pricing moved before Comparison so candidates see the cost before the
-            competitor contrast — most decide on price first, then validate "why us". */}
+            competitor contrast — most decide on price first, then validate "why us".
+            HiredDirectlyV2 sits right before pricing: one more reason to pay, right
+            before they see the number. */}
       <main id="main">
         <HeroV2 />
         <InterviewFocusV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
         <ProductStoryV2 />
+        <HiredDirectlyV2 />
         <PricingV2 />
         <SecurityComplianceV2 />
         <FAQV2 />

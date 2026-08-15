@@ -8,6 +8,7 @@ import {
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
 import { isSlowConnection } from "./_browser-api-guards";
+import { tokens } from "./auth/_tokens";
 import {
   decideDeviceAction,
   markDeviceGrace,
@@ -2212,11 +2213,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }, [isLoggedIn, loading, user, router, pathname]);
 
   if (loading || (!isLoggedIn && hasStoredSession())) return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: "#FAF7F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 16, height: 16, border: "2px solid rgba(180,83,9,0.25)", borderTopColor: "#B45309", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: tokens.cream, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: tokens.copperWash, border: `1px solid ${tokens.copperMid}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 16, height: 16, border: `2px solid ${tokens.copperBorder}`, borderTopColor: tokens.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
-      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#6B635A" }}>Loading...</span>
+      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -2254,11 +2255,11 @@ export function RequireAuthOnly({ children }: { children: ReactNode }) {
   }, [isLoggedIn, loading, router, pathname]);
 
   if (loading || (!isLoggedIn && hasStoredSession())) return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: "#FAF7F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 16, height: 16, border: "2px solid rgba(180,83,9,0.25)", borderTopColor: "#B45309", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: tokens.cream, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: tokens.copperWash, border: `1px solid ${tokens.copperMid}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 16, height: 16, border: `2px solid ${tokens.copperBorder}`, borderTopColor: tokens.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
-      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#6B635A" }}>Loading...</span>
+      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

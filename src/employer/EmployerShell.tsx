@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
-import { tokens as t, fonts as f } from "../auth/_tokens";
+import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 
@@ -15,6 +15,144 @@ const navItems = [
 ];
 
 const SIDEBAR_WIDTH = 220;
+
+/* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
+   (initials avatar chip + "Signed in as / Log out" dropdown) so the
+   pre-approval employer flow reads as the same account chrome as the
+   candidate onboarding flow, not a different, plainer pattern. */
+function AccountMenu({ name, email, onLogout }: { name?: string; email?: string; onLogout: () => void }) {
+  const display = (name || email || "").trim();
+  const initials =
+    display
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "?";
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  if (!display) return null;
+
+  return (
+    <div ref={menuRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-label={`Account: ${display}`}
+        title={display}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontFamily: f.sans,
+          fontSize: 14,
+          fontWeight: 500,
+          color: t.coal,
+          background: "transparent",
+          border: `1px solid ${menuOpen ? t.lineStrong : "transparent"}`,
+          borderRadius: 999,
+          padding: "4px 10px 4px 4px",
+          cursor: "pointer",
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 999,
+            background: t.indigo100,
+            color: t.indigo,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: f.serif,
+            fontSize: 13,
+          }}
+        >
+          {initials}
+        </span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+          {display}
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {menuOpen && (
+        <div
+          role="menu"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 6px)",
+            minWidth: 200,
+            background: t.white,
+            border: `1px solid ${t.line}`,
+            borderRadius: 10,
+            boxShadow: shadows.card,
+            padding: 6,
+            zIndex: 20,
+            fontFamily: f.sans,
+          }}
+        >
+          <div style={{ padding: "6px 10px", fontSize: 12, color: t.inkSoft, borderBottom: `1px solid ${t.line}`, marginBottom: 4 }}>
+            Signed in as<br />
+            <span style={{ color: t.coal, fontWeight: 500 }}>{email || display}</span>
+          </div>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setMenuOpen(false); onLogout(); }}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: "8px 10px",
+              borderRadius: 6,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: f.sans,
+              fontSize: 14,
+              color: t.coal,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = t.creamSoft; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* Pre-approval states (none/pending/rejected) use the same bare, centered
    top bar as the candidate onboarding flow (src/onboarding/Panels.tsx
@@ -59,25 +197,8 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           <Link href="/employer" style={{ display: "flex", width: "fit-content", textDecoration: "none" }}>
             <EmployerWordmark />
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, justifySelf: "end" }}>
-            <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{user?.name}</span>
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 10,
-                border: `1px solid ${t.lineStrong}`,
-                background: "transparent",
-                color: t.coal,
-                fontFamily: f.sans,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Log out
-            </button>
+          <div style={{ justifySelf: "end" }}>
+            <AccountMenu name={user?.name} email={user?.email} onLogout={handleLogout} />
           </div>
         </header>
         <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "8px 32px 40px" }}>
