@@ -1,26 +1,13 @@
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { tokens as t, fonts as f, shadows } from "../../design-system/_tokens";
 
-/* HireStepX — Employer console shared atoms.
-   Mirrors src/auth/_fields.tsx conventions (inline styles + real tokens),
-   ported from the talent-roster-employer canvas mockup. */
+/* ── Wordmark / shell ───────────────────────────────────────────── */
 
-export function EmployerWordmark() {
+export function Wordmark() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/wordmark.png" alt="HireStepX" style={{ height: 28, width: "auto", display: "block" }} />
-      <span
-        style={{
-          fontFamily: f.mono,
-          fontSize: 11,
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-          color: t.copper,
-          fontWeight: 600,
-        }}
-      >
-        Companies
-      </span>
+      <img src="/wordmark.png" alt="HireStepX" style={{ height: 32, width: "auto", display: "block" }} />
+      <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.inkFaint }}>· Employers</span>
     </div>
   );
 }
@@ -28,11 +15,22 @@ export function EmployerWordmark() {
 export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode; tone?: "ink" | "copper" | "indigo" | "error" }) {
   const color = tone === "copper" ? t.copper : tone === "indigo" ? t.indigo : tone === "error" ? t.error : t.inkSoft;
   return (
-    <div style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color, fontWeight: 600 }}>
+    <div
+      style={{
+        fontFamily: f.mono,
+        fontSize: 11,
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        color,
+        fontWeight: 600,
+      }}
+    >
       {children}
     </div>
   );
 }
+
+/* ── Pills / chips ──────────────────────────────────────────────── */
 
 type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error";
 
@@ -45,7 +43,15 @@ const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
   neutral: { bg: t.creamSoft, fg: t.inkSoft },
 };
 
-export function Pill({ children, tone = "neutral", filled = false }: { children: React.ReactNode; tone?: PillTone; filled?: boolean }) {
+export function Pill({
+  children,
+  tone = "neutral",
+  filled = false,
+}: {
+  children: React.ReactNode;
+  tone?: PillTone;
+  filled?: boolean;
+}) {
   const p = pillPalette[tone];
   return (
     <span
@@ -92,12 +98,15 @@ export function ScoreChip({ score }: { score: number }) {
   );
 }
 
+/* ── Card / layout ──────────────────────────────────────────────── */
+
 export function Card({
   children,
   pad = 24,
   radius = 16,
   background = t.white,
   border = `1px solid ${t.line}`,
+  interactive = false,
   style,
 }: {
   children: React.ReactNode;
@@ -105,14 +114,28 @@ export function Card({
   radius?: number;
   background?: string;
   border?: string;
+  interactive?: boolean;
   style?: React.CSSProperties;
 }) {
   return (
-    <section style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
+    <section
+      className="hsx-db-card"
+      data-interactive={interactive || undefined}
+      style={{
+        background,
+        border,
+        borderRadius: radius,
+        padding: pad,
+        boxShadow: shadows.card,
+        ...style,
+      }}
+    >
       {children}
     </section>
   );
 }
+
+/* ── Buttons ────────────────────────────────────────────────────── */
 
 export function PrimaryCta({
   children,
@@ -121,7 +144,6 @@ export function PrimaryCta({
   size = "md",
   disabled = false,
   full = false,
-  type = "button",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -129,11 +151,11 @@ export function PrimaryCta({
   size?: "sm" | "md";
   disabled?: boolean;
   full?: boolean;
-  type?: "button" | "submit";
 }) {
   return (
     <button
-      type={type}
+      type="button"
+      className="hsx-db-cta"
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -155,7 +177,7 @@ export function PrimaryCta({
       }}
     >
       {children}
-      {icon}
+      {icon ?? <Icon.Arrow />}
     </button>
   );
 }
@@ -178,6 +200,7 @@ export function OutlineCta({
   return (
     <button
       type="button"
+      className="hsx-db-cta-outline"
       onClick={onClick}
       style={{
         display: "inline-flex",
@@ -202,6 +225,8 @@ export function OutlineCta({
   );
 }
 
+/* ── Misc ───────────────────────────────────────────────────────── */
+
 export function SkillTag({ children }: { children: React.ReactNode }) {
   return (
     <span
@@ -222,12 +247,10 @@ export function SkillTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function StatusChip({ status }: { status: "generating" | "ready" | "partial" | "zero" | "failed" | "closed" }) {
+export function StatusChip({ status }: { status: "generating" | "ready" | "failed" | "closed" }) {
   const map: Record<string, { tone: PillTone; label: string }> = {
     generating: { tone: "indigo", label: "Generating…" },
     ready: { tone: "success", label: "Shortlist ready" },
-    partial: { tone: "warning", label: "Partial match" },
-    zero: { tone: "neutral", label: "No matches yet" },
     failed: { tone: "error", label: "Generation failed" },
     closed: { tone: "neutral", label: "Closed" },
   };
@@ -237,7 +260,16 @@ export function StatusChip({ status }: { status: "generating" | "ready" | "parti
 
 export function FieldLabel({ children, required = false }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label style={{ display: "block", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginBottom: 6 }}>
+    <label
+      style={{
+        display: "block",
+        fontFamily: f.sans,
+        fontSize: 13,
+        fontWeight: 600,
+        color: t.coal,
+        marginBottom: 6,
+      }}
+    >
       {children}
       {required && <span style={{ color: t.copper }}> *</span>}
     </label>
@@ -246,7 +278,14 @@ export function FieldLabel({ children, required = false }: { children: React.Rea
 
 export function HelpText({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "error" }) {
   return (
-    <div style={{ fontFamily: f.sans, fontSize: 12, color: tone === "error" ? t.error : t.inkFaint, marginTop: 6 }}>
+    <div
+      style={{
+        fontFamily: f.sans,
+        fontSize: 12,
+        color: tone === "error" ? t.error : t.inkFaint,
+        marginTop: 6,
+      }}
+    >
       {children}
     </div>
   );
@@ -256,24 +295,47 @@ export function Divider() {
   return <div style={{ height: 1, background: t.line, width: "100%" }} />;
 }
 
-/* Mirrors DashboardHome.tsx's StatCell — same 3-column stat-strip pattern
-   used on the candidate dashboard, reused so the employer dashboard reads
-   as the same product. */
-export function StatCell({ label, value, unit }: { label: string; value: string; unit: string }) {
+export function Checkbox({ checked = true, label }: { checked?: boolean; label: React.ReactNode }) {
   return (
-    <div style={{ padding: "16px 4px", borderRight: `1px solid ${t.line}` }}>
-      <dt style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.6, textTransform: "uppercase", margin: 0 }}>
-        {label}
-      </dt>
-      <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
-        {unit && <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{unit}</span>}
-      </dd>
-    </div>
+    <label
+      style={{
+        display: "inline-flex",
+        alignItems: "flex-start",
+        gap: 10,
+        cursor: "default",
+        fontFamily: f.sans,
+        fontSize: 13,
+        lineHeight: 1.5,
+        color: t.inkSoft,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: 4,
+          border: `1.5px solid ${checked ? t.indigo : t.lineStrong}`,
+          background: checked ? t.indigo : t.white,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          marginTop: 1,
+        }}
+      >
+        {checked && (
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke={t.cream} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 6.5L4.8 9.2 10 3.5" />
+          </svg>
+        )}
+      </span>
+      <span>{label}</span>
+    </label>
   );
 }
 
-export const EmployerIcon = {
+export const Icon = {
   Check: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -292,7 +354,13 @@ export const EmployerIcon = {
   ),
   Refresh: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M4 4v6h6M20 20v-6h-6M4.5 15a8 8 0 0013.9 3.4M19.5 9A8 8 0 005.6 5.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M4 4v6h6M20 20v-6h-6M4.5 15a8 8 0 0013.9 3.4M19.5 9A8 8 0 005.6 5.6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   Alert: () => (

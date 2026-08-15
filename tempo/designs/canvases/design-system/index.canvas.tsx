@@ -1,4 +1,3 @@
-import type { TempoPage, TempoStoryboard } from "tempo-sdk";
 import CanvasProviders from "../../../CanvasProviders";
 import DesignSystemIndex from "./DesignSystemIndex";
 import DesignSystemColor from "./DesignSystemColor";
@@ -16,169 +15,203 @@ import DesignSystemPersonas from "./DesignSystemPersonas";
 import DesignSystemSound from "./DesignSystemSound";
 import DesignSystemDataViz from "./DesignSystemDataViz";
 import DesignSystemComponentsAdvanced from "./DesignSystemComponentsAdvanced";
+import { Canvas, Storyboard } from "tempo-sdk/canvas";
 
-const page: TempoPage = {
-  name: "Design System",
-};
-
-export default page;
-
-export const Index: TempoStoryboard = {
-  name: "Index · Cover",
-  render: () => (
+const Index = () => (
     <CanvasProviders>
       <DesignSystemIndex />
     </CanvasProviders>
-  ),
-  layout: { x: -1391, y: 0, width: 1280, height: 5800 },
-};
+  );
 
-export const Color: TempoStoryboard = {
-  name: "Color",
-  render: () => (
+const Color = () => (
     <CanvasProviders>
       <DesignSystemColor />
     </CanvasProviders>
-  ),
-  layout: { x: -51, y: 0, width: 1280, height: 6521 },
-};
+  );
 
-export const Typography: TempoStoryboard = {
-  name: "Typography",
-  render: () => (
+const Typography = () => (
     <CanvasProviders>
       <DesignSystemTypography />
     </CanvasProviders>
-  ),
-  layout: { x: 1279, y: 0, width: 1280, height: 7919 },
-};
+  );
 
-export const Foundations: TempoStoryboard = {
-  name: "Foundations",
-  render: () => (
+const Foundations = () => (
     <CanvasProviders>
       <DesignSystemFoundations />
     </CanvasProviders>
-  ),
-  layout: { x: 2706, y: 0, width: 1280, height: 5500 },
-};
+  );
 
-export const Motion: TempoStoryboard = {
-  name: "Motion",
-  render: () => (
+const Motion = () => (
     <CanvasProviders>
       <DesignSystemMotion />
     </CanvasProviders>
-  ),
-  layout: { x: 4036, y: 0, width: 1280, height: 5200 },
-};
+  );
 
-export const Components: TempoStoryboard = {
-  name: "Components",
-  render: () => (
+const Components = () => (
     <CanvasProviders>
       <DesignSystemComponents />
     </CanvasProviders>
-  ),
-  layout: { x: 5366, y: 0, width: 1280, height: 7200 },
-};
+  );
 
-export const Patterns: TempoStoryboard = {
-  name: "Patterns",
-  render: () => (
+const Patterns = () => (
     <CanvasProviders>
       <DesignSystemPatterns />
     </CanvasProviders>
-  ),
-  layout: { x: 6696, y: 0, width: 1280, height: 5800 },
-};
+  );
 
-export const Voice: TempoStoryboard = {
-  name: "Voice & Tone",
-  render: () => (
+const Voice = () => (
     <CanvasProviders>
       <DesignSystemVoice />
     </CanvasProviders>
-  ),
-  layout: { x: 8026, y: 0, width: 1280, height: 5800 },
-};
+  );
 
-export const Accessibility: TempoStoryboard = {
-  name: "Accessibility",
-  render: () => (
+const Accessibility = () => (
     <CanvasProviders>
       <DesignSystemAccessibility />
     </CanvasProviders>
-  ),
-  layout: { x: 9356, y: 0, width: 1280, height: 5500 },
-};
+  );
 
-export const BrandStory: TempoStoryboard = {
-  name: "Brand Story",
-  render: () => (
+const BrandStory = () => (
     <CanvasProviders>
       <DesignSystemBrandStory />
     </CanvasProviders>
-  ),
-  layout: { x: 10686, y: 0, width: 1280, height: 6800 },
-};
+  );
 
-export const Email: TempoStoryboard = {
-  name: "Email Design",
-  render: () => (
+const Email = () => (
     <CanvasProviders>
       <DesignSystemEmail />
     </CanvasProviders>
-  ),
-  layout: { x: 12016, y: 0, width: 1280, height: 7800 },
-};
+  );
 
-export const Photography: TempoStoryboard = {
-  name: "Photography",
-  render: () => (
+const Photography = () => (
     <CanvasProviders>
       <DesignSystemPhotography />
     </CanvasProviders>
-  ),
-  layout: { x: 13346, y: 0, width: 1280, height: 5800 },
-};
+  );
 
-export const Personas: TempoStoryboard = {
-  name: "Customer Personas",
-  render: () => (
+const Personas = () => (
     <CanvasProviders>
       <DesignSystemPersonas />
     </CanvasProviders>
-  ),
-  layout: { x: 14676, y: 0, width: 1280, height: 4800 },
-};
+  );
 
-export const Sound: TempoStoryboard = {
-  name: "Sound Identity",
-  render: () => (
+const Sound = () => (
     <CanvasProviders>
       <DesignSystemSound />
     </CanvasProviders>
-  ),
-  layout: { x: 16006, y: 0, width: 1280, height: 5400 },
-};
+  );
 
-export const DataViz: TempoStoryboard = {
-  name: "Data Visualization",
-  render: () => (
+const DataViz = () => (
     <CanvasProviders>
       <DesignSystemDataViz />
     </CanvasProviders>
-  ),
-  layout: { x: 17336, y: 0, width: 1280, height: 6800 },
-};
+  );
 
-export const ComponentsAdvanced: TempoStoryboard = {
-  name: "Components · Advanced",
-  render: () => (
+const ComponentsAdvanced = () => (
     <CanvasProviders>
       <DesignSystemComponentsAdvanced />
     </CanvasProviders>
-  ),
-  layout: { x: 18666, y: 0, width: 1280, height: 7200 },
-};
+  );
+
+export default function DesignSystemCanvas() {
+  return (
+    <Canvas name="Design System">
+      <Storyboard
+        id="Index"
+        name="Index · Cover"
+        component={Index}
+        layout={{ x: -1391, y: 0, width: 1280, height: 5800 }}
+      />
+      <Storyboard
+        id="Color"
+        name="Color"
+        component={Color}
+        layout={{ x: -51, y: 0, width: 1280, height: 6521 }}
+      />
+      <Storyboard
+        id="Typography"
+        name="Typography"
+        component={Typography}
+        layout={{ x: 1279, y: 0, width: 1280, height: 7919 }}
+      />
+      <Storyboard
+        id="Foundations"
+        name="Foundations"
+        component={Foundations}
+        layout={{ x: 2706, y: 0, width: 1280, height: 5500 }}
+      />
+      <Storyboard
+        id="Motion"
+        name="Motion"
+        component={Motion}
+        layout={{ x: 4036, y: 0, width: 1280, height: 5200 }}
+      />
+      <Storyboard
+        id="Components"
+        name="Components"
+        component={Components}
+        layout={{ x: 5366, y: 0, width: 1280, height: 7200 }}
+      />
+      <Storyboard
+        id="Patterns"
+        name="Patterns"
+        component={Patterns}
+        layout={{ x: 6696, y: 0, width: 1280, height: 5800 }}
+      />
+      <Storyboard
+        id="Voice"
+        name={"Voice & Tone"}
+        component={Voice}
+        layout={{ x: 8026, y: 0, width: 1280, height: 5800 }}
+      />
+      <Storyboard
+        id="Accessibility"
+        name="Accessibility"
+        component={Accessibility}
+        layout={{ x: 9356, y: 0, width: 1280, height: 5500 }}
+      />
+      <Storyboard
+        id="BrandStory"
+        name="Brand Story"
+        component={BrandStory}
+        layout={{ x: 10686, y: 0, width: 1280, height: 6800 }}
+      />
+      <Storyboard
+        id="Email"
+        name="Email Design"
+        component={Email}
+        layout={{ x: 12016, y: 0, width: 1280, height: 7800 }}
+      />
+      <Storyboard
+        id="Photography"
+        name="Photography"
+        component={Photography}
+        layout={{ x: 13346, y: 0, width: 1280, height: 5800 }}
+      />
+      <Storyboard
+        id="Personas"
+        name="Customer Personas"
+        component={Personas}
+        layout={{ x: 14676, y: 0, width: 1280, height: 4800 }}
+      />
+      <Storyboard
+        id="Sound"
+        name="Sound Identity"
+        component={Sound}
+        layout={{ x: 16006, y: 0, width: 1280, height: 5400 }}
+      />
+      <Storyboard
+        id="DataViz"
+        name="Data Visualization"
+        component={DataViz}
+        layout={{ x: 17336, y: 0, width: 1280, height: 6800 }}
+      />
+      <Storyboard
+        id="ComponentsAdvanced"
+        name="Components · Advanced"
+        component={ComponentsAdvanced}
+        layout={{ x: 18666, y: 0, width: 1280, height: 7200 }}
+      />
+    </Canvas>
+  );
+}

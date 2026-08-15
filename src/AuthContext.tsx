@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, type Profile } from "./supabase";
+import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
   clearSessionStart,
   isSessionExpiredByPreference,
@@ -632,7 +632,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // live the next time the report renders.
   useEffect(() => {
     if (!user?.id || user.referralCode) return;
-    fetch("/api/referral")
+    authHeaders()
+      .then((headers) => fetch("/api/referral", { headers }))
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { code?: string } | null) => {
         if (data?.code) {

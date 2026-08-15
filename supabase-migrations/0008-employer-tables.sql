@@ -7,17 +7,24 @@
 -- so they were never applied to production. This file exists to run that
 -- DDL against production and to keep a record of it going forward.
 -- All statements are idempotent (if not exists / drop-then-create policy).
+--
+-- This is why POST /api/employer-profile 500s in prod — the employers
+-- table doesn't exist there yet. Run this in the Supabase Dashboard SQL
+-- Editor against the production project (see LAUNCH_STEPS.md for the
+-- same manual-migration pattern used for session_credits).
 
 create table if not exists employers (
   id uuid references auth.users on delete cascade primary key,
   company_name text not null default '',
   website text not null default '',
   gstin text default '',
+  logo_path text,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   submitted_at timestamptz default now(),
   approved_at timestamptz,
   created_at timestamptz default now()
 );
+alter table employers add column if not exists logo_path text;
 
 alter table employers enable row level security;
 drop policy if exists "Employers manage own profile" on employers;
@@ -57,6 +64,9 @@ create table if not exists requirement_matches (
 create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
 
 alter table requirement_matches enable row level security;
+-- Owner-only, scoped via the parent requirement's employer_id. No direct
+-- client writes are exposed — matching + unlock happen server-side with
+-- the service role key.
 drop policy if exists "Employers view own matches" on requirement_matches;
 create policy "Employers view own matches" on requirement_matches
   for select using (

@@ -9,7 +9,9 @@ import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 
 const navItems = [
-  { key: "console", label: "Requirements", href: "/employer" },
+  { key: "dashboard", label: "Dashboard", href: "/employer" },
+  { key: "jobs", label: "Jobs", href: "/employer/jobs" },
+  { key: "settings", label: "Settings", href: "/employer/settings" },
 ];
 
 const SIDEBAR_WIDTH = 220;
@@ -192,14 +194,14 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
             gap: 16,
           }}
         >
-          <Link href="/employer" style={{ display: "flex", width: "fit-content" }}>
+          <Link href="/employer" style={{ display: "flex", width: "fit-content", textDecoration: "none" }}>
             <EmployerWordmark />
           </Link>
           <div style={{ justifySelf: "end" }}>
             <AccountMenu name={user?.name} email={user?.email} onLogout={handleLogout} />
           </div>
         </header>
-        <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px" }}>
+        <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "8px 32px 40px" }}>
           {children}
         </main>
       </div>
@@ -274,7 +276,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <Link href="/employer" style={{ display: "flex", width: "fit-content", paddingLeft: 6, marginBottom: 24 }}>
+        <Link href="/employer" style={{ display: "flex", width: "fit-content", paddingLeft: 6, marginBottom: 24, textDecoration: "none" }}>
           <EmployerWordmark />
         </Link>
         <nav aria-label="Employer navigation" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
