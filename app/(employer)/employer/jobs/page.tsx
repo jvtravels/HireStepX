@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { RequirementSummary } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, Pill, PrimaryCta, StatusChip, EmployerIcon } from "@/employer/_atoms";
+import { Card, Pill, PrimaryCta, StatusChip, EmployerIcon } from "@/employer/_atoms";
 
 function experienceLabel(req: RequirementSummary): string {
   const { experienceMin, experienceMax } = req;
@@ -52,8 +52,7 @@ export default function EmployerJobsPage() {
     <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
         <section>
-          <Eyebrow tone="ink">Employer console</Eyebrow>
-          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px" }}>
+          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
             Jobs
           </h1>
           <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 480 }}>
