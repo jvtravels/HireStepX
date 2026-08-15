@@ -310,7 +310,9 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         </div>
         <nav aria-label="Employer navigation" style={{ display: "flex", flexDirection: "column", gap: 2, flex: "0 0 auto" }}>
           {navItems.map((item) => {
-            const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            const active = item.href === "/employer"
+              ? pathname === item.href
+              : pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.key}
