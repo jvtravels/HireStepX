@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
-import { EmployerWordmark, EmployerIcon, Pill } from "./_atoms";
+import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 
 const navItems = [
@@ -188,7 +188,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company is even approved. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus, companyName, companyWebsite } = useEmployerData();
+  const { companyStatus } = useEmployerData();
   const router = useRouter();
   const pathname = usePathname();
   const isConsole = companyStatus === "approved";
@@ -343,24 +343,6 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         </nav>
 
         <div style={{ flex: 1 }} />
-
-        {/* Company card — mirrors the candidate dashboard's Plan Status card
-            (white card, copper accents, same margin/padding rhythm), swapped
-            for company identity + approval status instead of plan/usage. */}
-        <div style={{ margin: "0 8px 12px", padding: 14, borderRadius: 12, background: t.white, border: `1px solid ${t.line}`, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-            <span style={{ color: t.copper, display: "flex" }}><EmployerIcon.Building /></span>
-            <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em", color: t.copper }}>
-              {companyName || "Your company"}
-            </span>
-          </div>
-          {companyWebsite && (
-            <p style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, margin: "0 0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {companyWebsite}
-            </p>
-          )}
-          <Pill tone="success">Approved</Pill>
-        </div>
 
         {/* User info — mirrors the candidate dashboard's footer block */}
         <div style={{ borderTop: `1px solid ${t.line}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
