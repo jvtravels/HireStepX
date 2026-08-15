@@ -127,6 +127,43 @@ function CompanyOnboarding() {
           </div>
         </div>
       </Card>
+
+      <div style={{ marginTop: 48 }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <Eyebrow tone="copper">What happens next</Eyebrow>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          {[
+            { icon: <EmployerIcon.Check />, title: "You submit", body: "Just your company name and website — nothing else to fill out." },
+            { icon: <EmployerIcon.Clock />, title: "We review", body: "A human checks every employer. Most hear back in one business day." },
+            { icon: <EmployerIcon.Arrow />, title: "You post roles", body: "Get an AI-matched shortlist, scored on real interview performance." },
+          ].map((step) => (
+            <div key={step.title} style={{ textAlign: "center" }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: t.indigo100,
+                  color: t.indigoDeep,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 10px",
+                }}
+              >
+                {step.icon}
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 700, color: t.coal, marginBottom: 4 }}>
+                {step.title}
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
+                {step.body}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

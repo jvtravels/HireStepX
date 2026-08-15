@@ -356,6 +356,14 @@ export function NavV2() {
     return pathname === href || (href !== "/" && pathname?.startsWith(href));
   };
 
+  // On the employer-facing marketing pages, "Sign in"/"Start free" should
+  // route into the employer console, not the candidate signup flow.
+  const isEmployerContext = pathname?.startsWith("/employers") ?? false;
+  const dashboardHref = isEmployerContext ? "/employer" : "/dashboard";
+  const dashboardLabel = isEmployerContext ? "Go to console" : "Dashboard";
+  const signInHref = isEmployerContext ? "/login?next=/employer" : "/login";
+  const signUpHref = isEmployerContext ? "/signup?next=/employer" : "/signup";
+
   // Mobile drawer (≤880px): the desktop link row is hidden by the
   // responsive sheet, so without this the nav links are unreachable on
   // phones/tablets. The hamburger only renders ≤880px (CSS); state lives
@@ -494,9 +502,23 @@ export function NavV2() {
           <a
             href="/"
             aria-label="HireStepX home"
-            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10, flexShrink: 0 }}
           >
             <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority style={{ height: scrolled ? 21 : 26, width: "auto", transition: "height 0.2s ease" }} />
+            {isEmployerContext && (
+              <span
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 11,
+                  letterSpacing: 1.2,
+                  textTransform: "uppercase",
+                  color: t.copper,
+                  fontWeight: 600,
+                }}
+              >
+                For Employers
+              </span>
+            )}
           </a>
 
           <div
@@ -531,7 +553,7 @@ export function NavV2() {
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
             {showDashboard ? (
               <a
-                href="/dashboard"
+                href={dashboardHref}
                 style={{
                   fontFamily: fonts.sans,
                   fontSize: 14,
@@ -546,13 +568,13 @@ export function NavV2() {
                   gap: 6,
                 }}
               >
-                Dashboard
+                {dashboardLabel}
                 <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
               </a>
             ) : (
               <>
                 <a
-                  href="/login"
+                  href={signInHref}
                   className="mv2-nav-sign-in"
                   style={{
                     fontFamily: fonts.sans,
@@ -565,7 +587,7 @@ export function NavV2() {
                   Sign in
                 </a>
                 <a
-                  href="/signup"
+                  href={signUpHref}
                   style={{
                     fontFamily: fonts.sans,
                     fontSize: 14,
@@ -665,7 +687,7 @@ export function NavV2() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
               {showDashboard ? (
                 <a
-                  href="/dashboard"
+                  href={dashboardHref}
                   onClick={() => setMenuOpen(false)}
                   style={{
                     fontFamily: fonts.sans,
@@ -679,12 +701,12 @@ export function NavV2() {
                     textAlign: "center",
                   }}
                 >
-                  Go to dashboard →
+                  {isEmployerContext ? "Go to console →" : "Go to dashboard →"}
                 </a>
               ) : (
                 <>
                   <a
-                    href="/login"
+                    href={signInHref}
                     onClick={() => setMenuOpen(false)}
                     style={{
                       fontFamily: fonts.sans,
@@ -702,7 +724,7 @@ export function NavV2() {
                     Sign in
                   </a>
                   <a
-                    href="/signup"
+                    href={signUpHref}
                     onClick={() => setMenuOpen(false)}
                     style={{
                       fontFamily: fonts.sans,
