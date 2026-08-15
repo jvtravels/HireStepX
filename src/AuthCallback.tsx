@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { getSupabase, supabaseConfigured } from "./supabase";
 import { clearSessionStart } from "./auth/_shell";
 import { c, font } from "./tokens";
+import LoadingScreen from "./_LoadingScreen";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -154,6 +155,8 @@ export default function AuthCallback() {
     })();
   }, [router]);
 
+  if (!error) return <LoadingScreen message="Completing sign-in…" />;
+
   return (
     <div style={{
       minHeight: "100vh", background: c.obsidian,
@@ -161,58 +164,41 @@ export default function AuthCallback() {
       fontFamily: font.ui,
     }}>
       <div style={{ textAlign: "center" }}>
-        {error ? (
-          <>
-            <div style={{
-              padding: "16px 24px", borderRadius: 12, marginBottom: 16,
-              background: "rgba(185,28,28,0.1)", border: "1px solid rgba(185,28,28,0.3)",
-              maxWidth: 360,
-            }}>
-              <p style={{ color: c.ember, fontSize: 14, margin: 0 }}>{error}</p>
-            </div>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
-              <button
-                onClick={() => router.push("/login")}
-                style={{
-                  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
-                  background: "transparent", border: `1px solid ${c.border}`,
-                  borderRadius: 8, padding: "8px 20px", cursor: "pointer",
-                }}
-              >
-                Back to Login
-              </button>
-              <button
-                onClick={() => {
-                  setError("");
-                  router.push("/login");
-                  setTimeout(() => {
-                    // Re-trigger Google OAuth from login page
-                  }, 100);
-                }}
-                style={{
-                  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-                  background: c.gilt, border: "none",
-                  borderRadius: 8, padding: "8px 20px", cursor: "pointer",
-                }}
-              >
-                Try Again
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{
-              width: 36, height: 36, border: "2px solid rgba(180,83,9,0.15)",
-              borderTopColor: c.gilt, borderRadius: "50%",
-              animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
-            }} />
-            <p style={{ color: c.ivory, fontSize: 15, fontWeight: 500, marginBottom: 4 }}>
-              Completing sign-in...
-            </p>
-            <p style={{ color: c.stone, fontSize: 13 }}>Please wait</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </>
-        )}
+        <div style={{
+          padding: "16px 24px", borderRadius: 12, marginBottom: 16,
+          background: "rgba(185,28,28,0.1)", border: "1px solid rgba(185,28,28,0.3)",
+          maxWidth: 360,
+        }}>
+          <p style={{ color: c.ember, fontSize: 14, margin: 0 }}>{error}</p>
+        </div>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
+          <button
+            onClick={() => router.push("/login")}
+            style={{
+              fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+              background: "transparent", border: `1px solid ${c.border}`,
+              borderRadius: 8, padding: "8px 20px", cursor: "pointer",
+            }}
+          >
+            Back to Login
+          </button>
+          <button
+            onClick={() => {
+              setError("");
+              router.push("/login");
+              setTimeout(() => {
+                // Re-trigger Google OAuth from login page
+              }, 100);
+            }}
+            style={{
+              fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
+              background: c.gilt, border: "none",
+              borderRadius: 8, padding: "8px 20px", cursor: "pointer",
+            }}
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     </div>
   );
