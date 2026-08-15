@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PricingPageV2 } from "@/marketing-v2/MarketingPagesV2";
+import { fetchProductRatingAggregate } from "../../../server-handlers/_product-rating-helpers";
 
 export const metadata: Metadata = {
   title: "Pricing: Start Free, ₹9 per session | HireStepX",
@@ -50,33 +51,59 @@ const PRICING_TIERS = [
 ] as const;
 
 const tierPrices = PRICING_TIERS.map((t) => Number(t.price));
-const PRICING_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "Product",
-  name: "HireStepX AI Mock Interview Practice",
-  description:
-    "AI-powered voice mock interviews with STAR scoring, company-specific question banks, and skill-decay tracking.",
-  brand: { "@type": "Brand", name: "HireStepX" },
-  offers: {
-    "@type": "AggregateOffer",
-    priceCurrency: "INR",
-    lowPrice: String(Math.min(...tierPrices)),
-    highPrice: String(Math.max(...tierPrices)),
-    offerCount: PRICING_TIERS.length,
-    offers: PRICING_TIERS.map((tier) => ({
-      "@type": "Offer",
-      name: tier.name,
-      price: tier.price,
-      priceCurrency: "INR",
-      description: tier.description,
-      url: `https://hirestepx.com/pricing#${tier.anchor}`,
-    })),
-  },
-};
+
+declare const process: { env: Record<string, string | undefined> };
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 export default async function Page() {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
+
+  /* aggregateRating is only ever real: fetchProductRatingAggregate reads
+   * genuine 1-5 star submissions (product_ratings, collected on the
+   * session report screen) and returns null below its K-anonymity floor.
+   * Google flags Product schema without aggregateRating/review as
+   * "could be improved" — never fabricate one to silence that; omit the
+   * field until there's a real, non-gameable sample. */
+  const ratingAggregate = await fetchProductRatingAggregate({
+    supabaseUrl: SUPABASE_URL,
+    serviceKey: SUPABASE_SERVICE_KEY,
+  });
+
+  const PRICING_SCHEMA = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "HireStepX AI Mock Interview Practice",
+    description:
+      "AI-powered voice mock interviews with STAR scoring, company-specific question banks, and skill-decay tracking.",
+    brand: { "@type": "Brand", name: "HireStepX" },
+    ...(ratingAggregate && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: String(ratingAggregate.average),
+        reviewCount: String(ratingAggregate.count),
+        bestRating: "5",
+        worstRating: "1",
+      },
+    }),
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "INR",
+      lowPrice: String(Math.min(...tierPrices)),
+      highPrice: String(Math.max(...tierPrices)),
+      offerCount: PRICING_TIERS.length,
+      offers: PRICING_TIERS.map((tier) => ({
+        "@type": "Offer",
+        name: tier.name,
+        price: tier.price,
+        priceCurrency: "INR",
+        description: tier.description,
+        url: `https://hirestepx.com/pricing#${tier.anchor}`,
+      })),
+    },
+  };
+
   return (
     <>
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BREADCRUMB_SCHEMA) }} />

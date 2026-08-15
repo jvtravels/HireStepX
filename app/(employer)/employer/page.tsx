@@ -14,43 +14,21 @@ import {
   PrimaryCta,
   OutlineCta,
   StatCell,
-  StatusChip,
   EmployerIcon,
 } from "@/employer/_atoms";
-
-const LOGO_MAX_MB = 2;
-const LOGO_ACCEPTED_TYPES = "image/png,image/jpeg,image/webp";
-const LOGO_CONTENT_TYPE_ALLOWLIST = new Set(["image/png", "image/jpeg", "image/webp"]);
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-/* A pragmatic website check, not a full RFC 3986 parser: catches the two
-   real-world mistakes (missing scheme, no dot in the host) without
-   rejecting valid domains our regex doesn't fully understand. */
-function isPlausibleWebsite(value: string): boolean {
-  const v = value.trim();
-  if (!/^https?:\/\//i.test(v)) return false;
-  try {
-    const host = new URL(v).hostname;
-    return host.includes(".") && host.length > 3;
-  } catch {
-    return false;
-  }
-}
+import {
+  LOGO_MAX_MB,
+  LOGO_ACCEPTED_TYPES,
+  LOGO_CONTENT_TYPE_ALLOWLIST,
+  readFileAsDataUrl,
+  isPlausibleWebsite,
+} from "@/employer/_companyProfileHelpers";
 
 function CompanyOnboarding() {
   const { submitCompanyProfile } = useEmployerData();
   const [companyName, setCompanyName] = useState("");
   const [website, setWebsite] = useState("");
   const [websiteTouched, setWebsiteTouched] = useState(false);
-  const [gstin, setGstin] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -86,13 +64,11 @@ function CompanyOnboarding() {
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <Eyebrow tone="indigo">Company profile · one step</Eyebrow>
-        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: "10px 0 12px" }}>
+        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: 0 }}>
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-          We review every employer before they can browse the candidate roster — this protects candidates from
-          recruiters who aren't hiring in good faith. Most companies hear back within one business day.
+          We review every employer before they can browse the roster. Most companies hear back within one business day.
         </p>
       </div>
       <Card>
@@ -128,16 +104,6 @@ function CompanyOnboarding() {
             ) : (
               <HelpText>We'll use this to verify your company is real.</HelpText>
             )}
-          </div>
-          <div>
-            <FieldLabel>GSTIN (optional)</FieldLabel>
-            <input
-              value={gstin}
-              onChange={(e) => setGstin(e.target.value)}
-              placeholder="22AAAAA0000A1Z5"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-            <HelpText>Speeds up review — not required to apply.</HelpText>
           </div>
           <div>
             <FieldLabel>Company logo (optional)</FieldLabel>
@@ -205,7 +171,6 @@ function CompanyOnboarding() {
                 const ok = await submitCompanyProfile({
                   companyName,
                   website,
-                  gstin,
                   logoBase64,
                   logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
                 });
@@ -232,7 +197,7 @@ function CompanyOnboarding() {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {[
-            { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website — GSTIN and a logo speed up review." },
+            { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website. A logo speeds up review." },
             { icon: <EmployerIcon.Clock />, title: "We review", body: "A human checks every employer. Most hear back in one business day." },
             { icon: <EmployerIcon.Arrow />, title: "You post roles", body: "Get an AI-matched shortlist, scored on real interview performance." },
           ].map((step) => (
@@ -302,15 +267,15 @@ function CompanyRejected() {
   );
 }
 
-/* Employer landing after approval — same two-column dashboard layout as the
-   candidate DashboardHome (src/DashboardHome.tsx): hero greeting, one
-   emphasized "next move" card, a 3-cell stat strip, then the requirements
-   list in the main column; a supporting card in the rail. Reuses that
-   file's grid proportions (minmax(0,1fr) / minmax(280px,360px), 1280 max
-   width) so the employer surface reads as the same product. */
+/* Employer landing after approval — lightweight overview only. The full
+   requirements list lives on /employer/jobs; this screen is the "how's it
+   going" glance (greeting, next move, stat strip, company profile rail).
+   Reuses DashboardHome's (src/DashboardHome.tsx) grid proportions
+   (minmax(0,1fr) / minmax(280px,360px), 1280 max width) so the employer
+   surface reads as the same product. */
 function EmployerDashboard() {
   const { user } = useAuth();
-  const { requirements, requirementsLoading, companyLogoUrl } = useEmployerData();
+  const { requirements, companyLogoUrl } = useEmployerData();
 
   const openRequirements = requirements.filter((r) => r.status !== "closed");
   const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
@@ -368,46 +333,9 @@ function EmployerDashboard() {
           </dl>
         </section>
 
-        <section>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
-                Your open roles
-              </h2>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
-                Newest first.
-              </p>
-            </div>
-          </div>
-
-          {requirementsLoading ? (
-            <Card style={{ textAlign: "center", padding: 48 }}>
-              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
-            </Card>
-          ) : requirements.length === 0 ? (
-            <Card style={{ textAlign: "center", padding: 48 }}>
-              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>
-                You haven't posted a requirement yet.
-              </p>
-            </Card>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {requirements.map((req) => (
-                <Link key={req.id} href={`/employer/requirements/${req.id}`} style={{ textDecoration: "none" }}>
-                  <Card style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>{req.title}</div>
-                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 4 }}>
-                        {req.location} · Posted {req.createdAt}
-                      </div>
-                    </div>
-                    <StatusChip status={req.status} />
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
+        <Link href="/employer/jobs" style={{ textDecoration: "none" }}>
+          <OutlineCta full>View all jobs</OutlineCta>
+        </Link>
       </main>
 
       {/* ─── Rail ─── */}
@@ -430,7 +358,9 @@ function EmployerDashboard() {
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
             You're approved to browse the candidate roster and view contact details.
           </p>
-          <OutlineCta full size="sm">Edit company details</OutlineCta>
+          <Link href="/employer/settings" style={{ textDecoration: "none" }}>
+            <OutlineCta full size="sm">Edit company details</OutlineCta>
+          </Link>
         </Card>
 
         <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 20, boxShadow: shadows.card }}>

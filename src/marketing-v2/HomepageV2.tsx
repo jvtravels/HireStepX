@@ -510,9 +510,10 @@ export function NavV2() {
                   textTransform: "uppercase",
                   color: t.copper,
                   fontWeight: 600,
+                  textDecoration: "none",
                 }}
               >
-                For Employers
+                Companies
               </span>
             )}
           </a>

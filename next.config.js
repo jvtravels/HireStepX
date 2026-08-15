@@ -1,5 +1,6 @@
 /* global process, URL */
 import { readFileSync } from "node:fs";
+import tempoNextjsPlugin from "tempo-sdk/nextjs";
 
 // Bare company slugs (e.g. /companies/flipkart) redirect to that company's
 // first SEO page. Regenerate via scripts/generate-company-redirect-map.mjs
@@ -151,19 +152,26 @@ const nextConfig = {
     // conflict — the middleware-set response header always wins, making a
     // build-time CSP string dead weight. All other security headers are static
     // and safe to keep here.
+    const headers = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
+      { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+    ];
+    // Tempo's canvas devserver embeds route storyboards in an iframe to
+    // preview the real app — X-Frame-Options: DENY would block that. Only
+    // skip it when running under Tempo's own supervised dev process;
+    // production and any other traffic keep the anti-clickjacking header.
+    if (process.env.TEMPO !== "true") {
+      headers.unshift({ key: "X-Frame-Options", value: "DENY" });
+    }
     return [
       {
         source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        ],
+        headers,
       },
     ];
   },
 };
 
-export default nextConfig;
+export default tempoNextjsPlugin()(nextConfig);

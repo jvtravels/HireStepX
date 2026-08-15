@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
+import { LazyBandVideo } from "./_editorial-lazy-video";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Editorial kit for SEO surfaces
@@ -481,15 +482,9 @@ export function DarkBand({
         alignItems: "center",
       }}
     >
-      {/* Video — full opacity so it IS the background, matching VideoCtaV2 */}
       {videoSrc && (
-        <video
-          aria-hidden
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="none"
+        <LazyBandVideo
+          src={videoSrc}
           style={{
             position: "absolute",
             inset: 0,
@@ -500,9 +495,7 @@ export function DarkBand({
             opacity: 0.9,
             pointerEvents: "none",
           }}
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
+        />
       )}
       {/* Gradient — top-heavy dark for text contrast, fades to reveal video */}
       <div

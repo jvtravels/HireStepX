@@ -32,9 +32,11 @@ interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
   companyLogoUrl: string | null;
+  companyName: string;
+  companyWebsite: string;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
-  submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
+  submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
   addRequirement: (r: { title: string; location: string; noticePeriodPref?: string; description?: string }) => Promise<string | null>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
@@ -59,6 +61,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [companyStatus, setCompanyStatus] = useState<CompanyStatus>("none");
   const [companyStatusLoading, setCompanyStatusLoading] = useState(true);
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoading, setRequirementsLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +75,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       if (res.ok && data) {
         setCompanyStatus(data.status as CompanyStatus);
         setCompanyLogoUrl(typeof data.logoUrl === "string" ? data.logoUrl : null);
+        setCompanyName(typeof data.companyName === "string" ? data.companyName : "");
+        setCompanyWebsite(typeof data.website === "string" ? data.website : "");
       }
     } catch {
       // network hiccup — keep last known status, next poll/refresh retries
@@ -117,11 +123,13 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshRequirements();
   }, [refreshRequirements]);
 
-  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => {
-    const res = await apiFetch<{ status: CompanyStatus; logoUrl?: string | null }>("/api/employer-profile", fields, { method: "POST" });
+  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => {
+    const res = await apiFetch<{ status: CompanyStatus; companyName?: string; website?: string; logoUrl?: string | null }>("/api/employer-profile", fields, { method: "POST" });
     if (res.ok && res.data) {
       setCompanyStatus(res.data.status);
       setCompanyLogoUrl(res.data.logoUrl ?? null);
+      setCompanyName(res.data.companyName ?? fields.companyName);
+      setCompanyWebsite(res.data.website ?? fields.website);
       return true;
     }
     return false;
@@ -181,6 +189,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     companyStatus,
     companyStatusLoading,
     companyLogoUrl,
+    companyName,
+    companyWebsite,
     requirements,
     requirementsLoading,
     submitCompanyProfile,

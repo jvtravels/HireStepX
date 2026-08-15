@@ -41,7 +41,7 @@ import { isAllowedOnGate } from "./src/middlewareGate";
  */
 function buildCsp(nonce: string): string {
   const n = `'nonce-${nonce}'`;
-  return [
+  const directives = [
     "default-src 'self'",
     `script-src 'self' ${n} 'strict-dynamic' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com`,
     `script-src-elem 'self' ${n} 'strict-dynamic' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net`,
@@ -56,8 +56,15 @@ function buildCsp(nonce: string): string {
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-    "frame-ancestors 'none'",
-  ].join("; ");
+  ];
+  // Tempo's canvas devserver embeds route storyboards (e.g. /dashboard) in an
+  // iframe to preview the real app. Only relax frame-ancestors when the app
+  // is running under Tempo's own supervised dev process — production and any
+  // other non-Tempo traffic keep the strict 'none' policy.
+  if (process.env.TEMPO !== "true") {
+    directives.push("frame-ancestors 'none'");
+  }
+  return directives.join("; ");
 }
 
 const APP_HOST = "app.hirestepx.com";
