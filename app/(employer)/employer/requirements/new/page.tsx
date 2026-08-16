@@ -113,11 +113,11 @@ export default function PostRequirementPage() {
     <div style={{ maxWidth: 720, margin: "0 auto" }}>
       <Eyebrow tone="indigo">New requirement · step {step} of 2</Eyebrow>
       <StepProgress step={step} />
-      <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 28px" }}>
+      <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 20px" }}>
         {step === 1 ? "Basic information" : "Preferences & perks"}
       </h1>
-      <Card pad={28}>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <Card pad={24}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 26 }}>
           {step === 1 && (
             <>
               <FormSection title="Role">
@@ -132,14 +132,15 @@ export default function PostRequirementPage() {
                   <HelpText>Add each city or "Remote" as its own tag, then press Enter.</HelpText>
                 </div>
 
-                <div>
-                  <FieldLabel>Work mode</FieldLabel>
-                  <SegmentedControl options={WORK_MODES} value={workMode} onChange={setWorkMode} />
-                </div>
-
-                <div>
-                  <FieldLabel>Open positions</FieldLabel>
-                  <input type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={{ ...inputStyle, maxWidth: 160 }} />
+                <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+                  <div>
+                    <FieldLabel>Work mode</FieldLabel>
+                    <SegmentedControl options={WORK_MODES} value={workMode} onChange={setWorkMode} />
+                  </div>
+                  <div style={{ width: 140 }}>
+                    <FieldLabel>Open positions</FieldLabel>
+                    <input type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={inputStyle} />
+                  </div>
                 </div>
               </FormSection>
 
