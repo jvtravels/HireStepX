@@ -3,39 +3,69 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEmployerData } from "@/employer/EmployerDataContext";
+import { WorkMode } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, FieldLabel, HelpText, PrimaryCta } from "@/employer/_atoms";
+import { Card, Eyebrow, FieldLabel, HelpText, OutlineCta, PrimaryCta, TagInput } from "@/employer/_atoms";
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: 10,
+  border: `1px solid ${t.line}`,
+  fontFamily: f.sans,
+  fontSize: 14,
+  boxSizing: "border-box",
+};
+
+const WORK_MODES: { value: WorkMode; label: string }[] = [
+  { value: "remote", label: "Remote" },
+  { value: "onsite", label: "Onsite" },
+  { value: "hybrid", label: "Hybrid" },
+];
 
 export default function PostRequirementPage() {
   const { addRequirement } = useEmployerData();
   const router = useRouter();
+  const [step, setStep] = useState<1 | 2>(1);
+
   const [title, setTitle] = useState("");
-  const [location, setLocation] = useState("");
-  const [noticePeriodPref, setNoticePeriodPref] = useState("Any");
-  const [description, setDescription] = useState("");
-  const [experienceMin, setExperienceMin] = useState("");
-  const [experienceMax, setExperienceMax] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [locations, setLocations] = useState<string[]>([]);
+  const [openPositions, setOpenPositions] = useState("");
+  const [workMode, setWorkMode] = useState<WorkMode>("remote");
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
+  const [experienceMin, setExperienceMin] = useState("");
+  const [experienceMax, setExperienceMax] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [responsibilities, setResponsibilities] = useState("");
+  const [niceToHave, setNiceToHave] = useState("");
+
+  const [preferredIndustry, setPreferredIndustry] = useState("");
+  const [preferredColleges, setPreferredColleges] = useState<string[]>([]);
+  const [targetCompanies, setTargetCompanies] = useState<string[]>([]);
+  const [perksAndBenefits, setPerksAndBenefits] = useState<string[]>([]);
+  const [noticePeriodPref, setNoticePeriodPref] = useState("Any");
+  const [dueDate, setDueDate] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
-
-  const canSubmit = title.trim().length > 1 && location.trim().length > 1;
-
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const step1Valid = title.trim().length > 1 && locations.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || submitting) return;
+    if (!step1Valid || submitting) return;
     setSubmitError(null);
     setSubmitting(true);
     const parsedMin = experienceMin.trim() ? Number(experienceMin) : undefined;
     const parsedMax = experienceMax.trim() ? Number(experienceMax) : undefined;
     const parsedBudgetMin = budgetMin.trim() ? Number(budgetMin) : undefined;
     const parsedBudgetMax = budgetMax.trim() ? Number(budgetMax) : undefined;
+    const parsedOpenPositions = openPositions.trim() ? Number(openPositions) : undefined;
     const id = await addRequirement({
       title: title.trim(),
-      location: location.trim(),
+      locations,
       noticePeriodPref,
       description: description.trim(),
       experienceMin: Number.isFinite(parsedMin) ? parsedMin : undefined,
@@ -43,6 +73,15 @@ export default function PostRequirementPage() {
       dueDate: dueDate || undefined,
       budgetMin: Number.isFinite(parsedBudgetMin) ? parsedBudgetMin : undefined,
       budgetMax: Number.isFinite(parsedBudgetMax) ? parsedBudgetMax : undefined,
+      openPositions: Number.isFinite(parsedOpenPositions) ? parsedOpenPositions : undefined,
+      workMode,
+      skills,
+      responsibilities: responsibilities.trim() || undefined,
+      niceToHave: niceToHave.trim() || undefined,
+      preferredIndustry: preferredIndustry.trim() || undefined,
+      preferredColleges,
+      targetCompanies,
+      perksAndBenefits,
     });
     if (!id) {
       setSubmitting(false);
@@ -53,122 +92,145 @@ export default function PostRequirementPage() {
   };
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto" }}>
-      <Eyebrow tone="indigo">New requirement</Eyebrow>
-      <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "8px 0 24px" }}>Post a requirement</h1>
+    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      <Eyebrow tone="indigo">New requirement · step {step} of 2</Eyebrow>
+      <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "8px 0 24px" }}>
+        {step === 1 ? "Basic information" : "Preferences & perks"}
+      </h1>
       <Card>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <FieldLabel required>Role title</FieldLabel>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Senior Frontend Engineer"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-          </div>
-          <div>
-            <FieldLabel required>Location</FieldLabel>
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Bengaluru (hybrid), Remote, …"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <FieldLabel>Experience — min (years)</FieldLabel>
-              <input
-                type="number"
-                min={0}
-                max={40}
-                value={experienceMin}
-                onChange={(e) => setExperienceMin(e.target.value)}
-                placeholder="2"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <FieldLabel>Experience — max (years)</FieldLabel>
-              <input
-                type="number"
-                min={0}
-                max={40}
-                value={experienceMax}
-                onChange={(e) => setExperienceMax(e.target.value)}
-                placeholder="5"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-              />
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <FieldLabel>Budget — min (LPA)</FieldLabel>
-              <input
-                type="number"
-                min={0}
-                max={1000}
-                value={budgetMin}
-                onChange={(e) => setBudgetMin(e.target.value)}
-                placeholder="12"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <FieldLabel>Budget — max (LPA)</FieldLabel>
-              <input
-                type="number"
-                min={0}
-                max={1000}
-                value={budgetMax}
-                onChange={(e) => setBudgetMax(e.target.value)}
-                placeholder="18"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-              />
-            </div>
-          </div>
-          <div>
-            <FieldLabel>Due date (optional)</FieldLabel>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-            <HelpText>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
-          </div>
-          <div>
-            <FieldLabel>Notice period preference</FieldLabel>
-            <select
-              value={noticePeriodPref}
-              onChange={(e) => setNoticePeriodPref(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, background: t.white, boxSizing: "border-box" }}
-            >
-              <option>Any</option>
-              <option>Immediate</option>
-              <option>Immediate–30 days</option>
-              <option>30 days</option>
-              <option>60 days</option>
-            </select>
-          </div>
-          <div>
-            <FieldLabel>Role description (optional)</FieldLabel>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={5}
-              placeholder="Paste the JD or a few lines about what you're looking for…"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, resize: "vertical", boxSizing: "border-box" }}
-            />
-            <HelpText>We use this to match against candidates' practice sessions — the more specific, the better the shortlist.</HelpText>
-          </div>
-          {submitError && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
+          {step === 1 && (
+            <>
+              <div>
+                <FieldLabel required>Job title</FieldLabel>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Senior Frontend Engineer" style={inputStyle} />
+              </div>
+
+              <div>
+                <FieldLabel required>Locations</FieldLabel>
+                <TagInput values={locations} onChange={setLocations} placeholder="Mumbai, Bengaluru, Remote…" />
+                <HelpText>Add each city or "Remote" as its own tag, then press Enter.</HelpText>
+              </div>
+
+              <div>
+                <FieldLabel>Work mode</FieldLabel>
+                <div style={{ display: "flex", gap: 16 }}>
+                  {WORK_MODES.map((m) => (
+                    <label key={m.value} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 14, color: t.coal, cursor: "pointer" }}>
+                      <input type="radio" name="workMode" checked={workMode === m.value} onChange={() => setWorkMode(m.value)} />
+                      {m.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <FieldLabel>Open positions</FieldLabel>
+                <input type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={{ ...inputStyle, maxWidth: 160 }} />
+              </div>
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <FieldLabel>Budget — min (LPA)</FieldLabel>
+                  <input type="number" min={0} max={1000} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder="12" style={inputStyle} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <FieldLabel>Budget — max (LPA)</FieldLabel>
+                  <input type="number" min={0} max={1000} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder="18" style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <FieldLabel>Experience — min (years)</FieldLabel>
+                  <input type="number" min={0} max={40} value={experienceMin} onChange={(e) => setExperienceMin(e.target.value)} placeholder="2" style={inputStyle} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <FieldLabel>Experience — max (years)</FieldLabel>
+                  <input type="number" min={0} max={40} value={experienceMax} onChange={(e) => setExperienceMax(e.target.value)} placeholder="5" style={inputStyle} />
+                </div>
+              </div>
+
+              <div>
+                <FieldLabel>Skills</FieldLabel>
+                <TagInput values={skills} onChange={setSkills} placeholder="React, TypeScript, System design…" />
+              </div>
+
+              <div>
+                <FieldLabel>Role description (optional)</FieldLabel>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="Paste the JD or a few lines about what you're looking for…" style={{ ...inputStyle, resize: "vertical" }} />
+                <HelpText>We use this to match against candidates' practice sessions. {description.length}/500</HelpText>
+              </div>
+
+              <div>
+                <FieldLabel>Responsibilities (optional)</FieldLabel>
+                <textarea value={responsibilities} onChange={(e) => setResponsibilities(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="What will this person own day to day?" style={{ ...inputStyle, resize: "vertical" }} />
+                <HelpText>{responsibilities.length}/500</HelpText>
+              </div>
+
+              <div>
+                <FieldLabel>Nice to have (optional)</FieldLabel>
+                <textarea value={niceToHave} onChange={(e) => setNiceToHave(e.target.value.slice(0, 500))} rows={3} maxLength={500} placeholder="Bonus skills or experience" style={{ ...inputStyle, resize: "vertical" }} />
+                <HelpText>{niceToHave.length}/500</HelpText>
+              </div>
+
+              {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
+
+              <PrimaryCta type="button" full disabled={!step1Valid} onClick={() => setStep(2)}>
+                Continue
+              </PrimaryCta>
+            </>
           )}
-          <PrimaryCta type="submit" full disabled={!canSubmit || submitting}>
-            {submitting ? "Generating shortlist…" : "Generate shortlist"}
-          </PrimaryCta>
+
+          {step === 2 && (
+            <>
+              <div>
+                <FieldLabel>Preferred industry (optional)</FieldLabel>
+                <input value={preferredIndustry} onChange={(e) => setPreferredIndustry(e.target.value)} placeholder="Fintech, SaaS, Ecommerce…" style={inputStyle} />
+              </div>
+
+              <div>
+                <FieldLabel>Preferred colleges (optional)</FieldLabel>
+                <TagInput values={preferredColleges} onChange={setPreferredColleges} placeholder="IIT, NIT, BITS…" />
+              </div>
+
+              <div>
+                <FieldLabel>Target companies (optional)</FieldLabel>
+                <TagInput values={targetCompanies} onChange={setTargetCompanies} placeholder="Companies you'd like candidates to come from" />
+              </div>
+
+              <div>
+                <FieldLabel>Perks and benefits (optional)</FieldLabel>
+                <TagInput values={perksAndBenefits} onChange={setPerksAndBenefits} placeholder="Full healthcare, Unlimited vacation…" />
+              </div>
+
+              <div>
+                <FieldLabel>Notice period preference</FieldLabel>
+                <select value={noticePeriodPref} onChange={(e) => setNoticePeriodPref(e.target.value)} style={{ ...inputStyle, background: t.white }}>
+                  <option>Any</option>
+                  <option>Immediate</option>
+                  <option>Immediate–30 days</option>
+                  <option>30 days</option>
+                  <option>60 days</option>
+                </select>
+              </div>
+
+              <div>
+                <FieldLabel>Due date (optional)</FieldLabel>
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
+                <HelpText>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
+              </div>
+
+              {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <OutlineCta onClick={() => setStep(1)}>Back</OutlineCta>
+                <PrimaryCta type="submit" full disabled={submitting}>
+                  {submitting ? "Generating shortlist…" : "Generate shortlist"}
+                </PrimaryCta>
+              </div>
+            </>
+          )}
         </form>
       </Card>
     </div>

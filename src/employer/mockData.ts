@@ -45,6 +45,8 @@ export interface Candidate {
 
 export type RequirementStatus = "generating" | "ready" | "partial" | "zero" | "failed" | "closed";
 
+export type WorkMode = "remote" | "onsite" | "hybrid";
+
 export interface RequirementSummary {
   id: string;
   title: string;
@@ -56,6 +58,10 @@ export interface RequirementSummary {
   dueDate: string | null;
   budgetMin: number | null; // INR lakhs per annum
   budgetMax: number | null;
+  locations: string[];
+  openPositions: number | null;
+  workMode: WorkMode | null;
+  skills: string[];
   createdAt: string;
   candidateCount: number;
 }
@@ -72,6 +78,16 @@ export interface Requirement {
   dueDate: string | null;
   budgetMin: number | null; // INR lakhs per annum
   budgetMax: number | null;
+  locations: string[];
+  openPositions: number | null;
+  workMode: WorkMode | null;
+  skills: string[];
+  responsibilities: string;
+  niceToHave: string;
+  preferredIndustry: string;
+  preferredColleges: string[];
+  targetCompanies: string[];
+  perksAndBenefits: string[];
   createdAt: string;
   candidates: Candidate[];
 }

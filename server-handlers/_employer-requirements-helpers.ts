@@ -15,6 +15,16 @@ export interface RequirementRow {
   due_date: string | null;
   budget_min: number | null;
   budget_max: number | null;
+  locations: string[];
+  open_positions: number | null;
+  work_mode: string | null;
+  skills: string[];
+  responsibilities: string | null;
+  nice_to_have: string | null;
+  preferred_industry: string | null;
+  preferred_colleges: string[];
+  target_companies: string[];
+  perks_and_benefits: string[];
   created_at: string;
 }
 
@@ -25,10 +35,42 @@ export function asBoundedString(v: unknown, max: number): string {
   return typeof v === "string" ? v.slice(0, max) : "";
 }
 
-/** A requirement needs a real title and location before it's worth scoring
- *  against the candidate pool. */
-export function isValidRequirementInput(title: string, location: string): boolean {
-  return title.length >= 2 && location.length >= 1;
+/** Validated read of a client-supplied tag list (locations, skills, target
+ *  companies, …): keeps only non-empty strings, trims + length-caps each
+ *  entry, and caps the list length so a malicious payload can't balloon the
+ *  Postgres array column. */
+export function asBoundedStringArray(v: unknown, maxItems: number, maxItemLen: number): string[] {
+  if (!Array.isArray(v)) return [];
+  const cleaned: string[] = [];
+  for (const item of v) {
+    if (typeof item !== "string") continue;
+    const trimmed = item.trim().slice(0, maxItemLen);
+    if (trimmed.length > 0) cleaned.push(trimmed);
+    if (cleaned.length >= maxItems) break;
+  }
+  return cleaned;
+}
+
+/** A requirement needs a real title and at least one location before it's
+ *  worth scoring against the candidate pool. */
+export function isValidRequirementInput(title: string, locations: string[]): boolean {
+  return title.length >= 2 && locations.length >= 1;
+}
+
+/** Validated read of a client-supplied open-positions count: whole numbers
+ *  only, clamped to a plausible 1–500 range. Returns null for anything else
+ *  so it stores as a real SQL NULL, not a fabricated default. */
+export function asBoundedOpenPositions(v: unknown): number | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
+  if (v < 1 || v > 500) return null;
+  return v;
+}
+
+/** Validated read of a client-supplied work mode: must be one of the three
+ *  values the DB check constraint allows. Returns null for anything else so
+ *  the column falls back to its own default rather than storing garbage. */
+export function asBoundedWorkMode(v: unknown): "remote" | "onsite" | "hybrid" | null {
+  return v === "remote" || v === "onsite" || v === "hybrid" ? v : null;
 }
 
 /** Validated read of a client-supplied years-of-experience field: whole
@@ -75,6 +117,10 @@ export function buildRequirementsListResponse(
   dueDate: string | null;
   budgetMin: number | null;
   budgetMax: number | null;
+  locations: string[];
+  openPositions: number | null;
+  workMode: string | null;
+  skills: string[];
   createdAt: string;
   candidateCount: number;
 }> {
@@ -89,6 +135,10 @@ export function buildRequirementsListResponse(
     dueDate: r.due_date ?? null,
     budgetMin: r.budget_min ?? null,
     budgetMax: r.budget_max ?? null,
+    locations: r.locations ?? [],
+    openPositions: r.open_positions ?? null,
+    workMode: r.work_mode ?? null,
+    skills: r.skills ?? [],
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
   }));

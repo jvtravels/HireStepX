@@ -74,14 +74,18 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
     const reqRows = (await reqRes.json().catch(() => [])) as Array<{
       id: string; title: string; location: string; notice_period_pref: string; description: string | null; status: string;
       experience_min: number | null; experience_max: number | null; due_date: string | null;
-      budget_min: number | null; budget_max: number | null; created_at: string;
+      budget_min: number | null; budget_max: number | null;
+      locations: string[] | null; open_positions: number | null; work_mode: string | null; skills: string[] | null;
+      responsibilities: string | null; nice_to_have: string | null; preferred_industry: string | null;
+      preferred_colleges: string[] | null; target_companies: string[] | null; perks_and_benefits: string[] | null;
+      created_at: string;
     }>;
     const requirement = reqRows[0];
     if (!requirement) {
@@ -162,6 +166,16 @@ export default async function handler(req: Request): Promise<Response> {
         dueDate: requirement.due_date ? requirement.due_date.slice(0, 10) : null,
         budgetMin: requirement.budget_min,
         budgetMax: requirement.budget_max,
+        locations: requirement.locations ?? [],
+        openPositions: requirement.open_positions,
+        workMode: requirement.work_mode,
+        skills: requirement.skills ?? [],
+        responsibilities: requirement.responsibilities || "",
+        niceToHave: requirement.nice_to_have || "",
+        preferredIndustry: requirement.preferred_industry || "",
+        preferredColleges: requirement.preferred_colleges ?? [],
+        targetCompanies: requirement.target_companies ?? [],
+        perksAndBenefits: requirement.perks_and_benefits ?? [],
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
       }),

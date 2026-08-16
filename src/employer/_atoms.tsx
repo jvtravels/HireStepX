@@ -240,6 +240,108 @@ export function HelpText({ children, tone = "muted" }: { children: React.ReactNo
   );
 }
 
+/** Multi-value tag input — type + Enter (or comma) to add, click "x" to
+ *  remove. Backs every array-valued requirement field (locations, skills,
+ *  preferred colleges, target companies, perks). No dropdown/autocomplete;
+ *  it's a free-text chip list, matching what the API actually stores. */
+export function TagInput({
+  values,
+  onChange,
+  placeholder,
+}: {
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = React.useState("");
+
+  const commit = () => {
+    const cleaned = draft.trim();
+    if (cleaned.length === 0) return;
+    if (!values.includes(cleaned)) onChange([...values, cleaned]);
+    setDraft("");
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        padding: "8px 10px",
+        borderRadius: 10,
+        border: `1px solid ${t.line}`,
+        background: t.white,
+      }}
+    >
+      {values.map((v) => (
+        <span
+          key={v}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 6px 4px 10px",
+            borderRadius: 8,
+            background: t.creamSoft,
+            border: `1px solid ${t.line}`,
+            fontFamily: f.sans,
+            fontSize: 12,
+            color: t.inkSoft,
+            fontWeight: 500,
+          }}
+        >
+          {v}
+          <button
+            type="button"
+            onClick={() => onChange(values.filter((x) => x !== v))}
+            aria-label={`Remove ${v}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 16,
+              height: 16,
+              border: "none",
+              background: "transparent",
+              color: t.inkFaint,
+              cursor: "pointer",
+              fontSize: 14,
+              lineHeight: 1,
+              padding: 0,
+            }}
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            commit();
+          } else if (e.key === "Backspace" && draft.length === 0 && values.length > 0) {
+            onChange(values.slice(0, -1));
+          }
+        }}
+        onBlur={commit}
+        placeholder={values.length === 0 ? placeholder : ""}
+        style={{
+          flex: 1,
+          minWidth: 120,
+          border: "none",
+          outline: "none",
+          fontFamily: f.sans,
+          fontSize: 14,
+          padding: "4px 2px",
+        }}
+      />
+    </div>
+  );
+}
+
 export function Divider() {
   return <div style={{ height: 1, background: t.line, width: "100%" }} />;
 }
