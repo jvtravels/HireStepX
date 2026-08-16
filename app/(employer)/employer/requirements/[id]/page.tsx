@@ -17,7 +17,6 @@ import {
   PrimaryCta,
   ScoreChip,
   SkillTag,
-  StatCell,
   StatusChip,
 } from "@/employer/_atoms";
 
@@ -31,6 +30,17 @@ function experienceLabel(min: number | null, max: number | null): string | null 
 function daysUntil(dueDate: string): number {
   return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
 }
+
+// Real match-score tiers (mirrors the >=85 / >=70 thresholds ScoreChip already
+// uses) standing in for the reference layout's interview-round pipeline —
+// HireStepX has no interview-round data, but this is the closest genuine
+// equivalent: how many shared candidates land in each match-quality band.
+const scoreTiers: Array<{ key: string; label: string; min: number; max: number }> = [
+  { key: "strong", label: "Strong match", min: 85, max: 101 },
+  { key: "good", label: "Good match", min: 70, max: 85 },
+  { key: "fair", label: "Fair match", min: 50, max: 70 },
+  { key: "low", label: "Low match", min: 0, max: 50 },
+];
 
 const th: CSSProperties = {
   textAlign: "left",
@@ -51,6 +61,35 @@ const td: CSSProperties = {
   color: t.coal,
   verticalAlign: "top",
 };
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
+function CandidateAvatar({ name, unlocked }: { name: string; unlocked: boolean }) {
+  return (
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: "50%",
+        background: unlocked ? t.indigo100 : t.creamSoft,
+        color: unlocked ? t.indigoDeep : t.inkFaint,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: f.sans,
+        fontSize: 12,
+        fontWeight: 700,
+        flexShrink: 0,
+      }}
+    >
+      {unlocked ? initials(name) : "?"}
+    </div>
+  );
+}
 
 function GeneratingState() {
   return (
@@ -215,16 +254,21 @@ function CandidateTableRow({
         </td>
       )}
       <td style={td}>
-        <Link
-          href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
-          style={{ fontWeight: 700, fontSize: 14, color: t.coal, textDecoration: "none" }}
-          onMouseOver={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-          onMouseOut={(e) => { e.currentTarget.style.textDecoration = "none"; }}
-        >
-          {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
-        </Link>
-        <div style={{ fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>
-          {candidate.targetRole} · {candidate.city}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <CandidateAvatar name={candidate.name} unlocked={candidate.unlocked} />
+          <div>
+            <Link
+              href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
+              style={{ fontWeight: 700, fontSize: 14, color: t.coal, textDecoration: "none" }}
+              onMouseOver={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+              onMouseOut={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            >
+              {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
+            </Link>
+            <div style={{ fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>
+              {candidate.targetRole} · {candidate.city}
+            </div>
+          </div>
         </div>
       </td>
       <td style={td}>
@@ -292,6 +336,7 @@ export default function RequirementDetailPage() {
   const [loading, setLoading] = useState(true);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"candidates" | "description">("candidates");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -354,128 +399,250 @@ export default function RequirementDetailPage() {
     : 0;
   const expLabel = experienceLabel(requirement.experienceMin, requirement.experienceMax);
   const dueDaysLeft = requirement.dueDate ? daysUntil(requirement.dueDate) : null;
+  const tierCounts = scoreTiers.map((tier) => ({
+    ...tier,
+    count: requirement.candidates.filter((c) => c.matchScore >= tier.min && c.matchScore < tier.max).length,
+  }));
+  const hasCandidates = requirement.candidates.length > 0 && requirement.status !== "generating";
 
   return (
     <div>
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
-            <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
-            <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {expLabel && <span>{expLabel}</span>}
-              {dueDaysLeft != null && (
-                <span>
-                  {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
-                </span>
-              )}
-              <span>Posted {requirement.createdAt}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 16, marginBottom: 4, alignItems: "stretch" }}>
+        <Card>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
+              <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
             </div>
+            <StatusChip status={requirement.status} />
           </div>
-          <StatusChip status={requirement.status} />
-        </div>
 
-        {requirement.description && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-            <p
-              style={{
-                fontFamily: f.sans,
-                fontSize: 13.5,
-                color: t.inkSoft,
-                lineHeight: 1.6,
-                margin: 0,
-                display: descExpanded ? "block" : "-webkit-box",
-                WebkitLineClamp: descExpanded ? undefined : 2,
-                WebkitBoxOrient: "vertical",
-                overflow: descExpanded ? "visible" : "hidden",
-              }}
-            >
-              {requirement.description}
-            </p>
-            <button
-              type="button"
-              onClick={() => setDescExpanded((v) => !v)}
-              style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, cursor: "pointer" }}
-            >
-              {descExpanded ? "Show less" : "Read more"}
-            </button>
+          {requirement.description && (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+              <p
+                style={{
+                  fontFamily: f.sans,
+                  fontSize: 13.5,
+                  color: t.inkSoft,
+                  lineHeight: 1.6,
+                  margin: 0,
+                  display: descExpanded ? "block" : "-webkit-box",
+                  WebkitLineClamp: descExpanded ? undefined : 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: descExpanded ? "visible" : "hidden",
+                }}
+              >
+                {requirement.description}
+              </p>
+              <button
+                type="button"
+                onClick={() => setDescExpanded((v) => !v)}
+                style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, cursor: "pointer" }}
+              >
+                {descExpanded ? "Show less" : "Read more"}
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            {expLabel && (
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+                <EmployerIcon.Clock /> {expLabel}
+              </span>
+            )}
+            {dueDaysLeft != null && (
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+                <EmployerIcon.Clock /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
+              </span>
+            )}
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+              <EmployerIcon.Building /> Posted {requirement.createdAt}
+            </span>
           </div>
-        )}
-      </Card>
+        </Card>
 
-      {requirement.candidates.length > 0 && requirement.status !== "generating" && (
-        <Card style={{ marginBottom: 16, padding: "4px 20px" }}>
-          <div style={{ display: "flex" }}>
-            <StatCell label="Candidates shared" value={String(requirement.candidates.length)} unit="" />
-            <StatCell label="Contacts unlocked" value={String(unlockedCount)} unit="" />
-            <StatCell label="Avg match score" value={String(avgMatch)} unit="/ 100" />
+        <Card style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+            <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft }}>Candidates shared</span>
+            <span style={{ fontFamily: f.serif, fontSize: 26, color: t.coal }}>{requirement.candidates.length}</span>
+          </div>
+
+          {hasCandidates ? (
+            <>
+              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                {tierCounts.map((tier) => (
+                  <div key={tier.key} style={{ flex: 1, textAlign: "center" }} title={tier.label}>
+                    <div
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1 / 1",
+                        borderRadius: 10,
+                        background: tier.count > 0 ? t.indigo : t.creamSoft,
+                        color: tier.count > 0 ? t.white : t.inkFaint,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: f.mono,
+                        fontSize: 15,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {tier.count}
+                    </div>
+                    <div style={{ fontFamily: f.sans, fontSize: 10, color: t.inkFaint, marginTop: 4, lineHeight: 1.3 }}>
+                      {tier.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: "auto", paddingTop: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13 }}>
+                  <span style={{ color: t.inkSoft }}>Contacts unlocked</span>
+                  <span style={{ color: t.coal, fontWeight: 600 }}>{unlockedCount}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13 }}>
+                  <span style={{ color: t.inkSoft }}>Avg match score</span>
+                  <span style={{ color: t.coal, fontWeight: 600 }}>{avgMatch} / 100</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+              <HelpText>
+                {requirement.status === "generating" ? "Scoring candidates…" : "No candidates shared yet."}
+              </HelpText>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div style={{ display: "flex", gap: 6, margin: "20px 0 16px", borderBottom: `1px solid ${t.line}`, paddingBottom: 2 }}>
+        {(["candidates", "description"] as const).map((tabKey) => (
+          <button
+            key={tabKey}
+            type="button"
+            onClick={() => setActiveTab(tabKey)}
+            style={{
+              padding: "9px 18px",
+              borderRadius: "10px 10px 0 0",
+              border: "none",
+              background: activeTab === tabKey ? t.indigo : "transparent",
+              color: activeTab === tabKey ? t.white : t.inkSoft,
+              fontFamily: f.sans,
+              fontSize: 13.5,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {tabKey === "candidates" ? "Candidates" : "Job Description"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "description" && (
+        <Card>
+          <h2 style={{ fontFamily: f.serif, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Description</h2>
+          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
+            {requirement.description || "No description was added for this requirement."}
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Location</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.location}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Experience</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{expLabel || "Any"}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Notice period</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.noticePeriodPref}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Due date</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.dueDate || "No due date set"}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Posted</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.createdAt}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Status</div>
+              <div style={{ marginTop: 4 }}><StatusChip status={requirement.status} /></div>
+            </div>
           </div>
         </Card>
       )}
 
-      {requirement.status === "generating" && <GeneratingState />}
-      {requirement.status === "failed" && <FailedState />}
-      {requirement.status === "zero" && <ZeroMatchState />}
-
-      {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
+      {activeTab === "candidates" && (
         <>
-          {requirement.status === "partial" && (
-            <Card style={{ background: t.warning100, border: "none", marginBottom: 16 }}>
-              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.warningInk }}>
-                Only a partial match was found — fewer candidates met this requirement closely. Consider widening
-                location or experience range.
-              </span>
-            </Card>
+          {requirement.status === "generating" && <GeneratingState />}
+          {requirement.status === "failed" && <FailedState />}
+          {requirement.status === "zero" && <ZeroMatchState />}
+
+          {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
+            <>
+              {requirement.status === "partial" && (
+                <Card style={{ background: t.warning100, border: "none", marginBottom: 16 }}>
+                  <span style={{ fontFamily: f.sans, fontSize: 13, color: t.warningInk }}>
+                    Only a partial match was found — fewer candidates met this requirement closely. Consider widening
+                    location or experience range.
+                  </span>
+                </Card>
+              )}
+              {readOnly && (
+                <Card style={{ background: t.creamSoft, marginBottom: 16 }}>
+                  <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+                    This requirement is closed. Candidate details are read-only.
+                  </span>
+                </Card>
+              )}
+              {!readOnly && compareIds.length === 2 && (
+                <div style={{ marginBottom: 16 }}>
+                  <Link
+                    href={`/employer/requirements/${requirement.id}/compare?a=${compareIds[0]}&b=${compareIds[1]}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <PrimaryCta size="sm">Compare selected candidates</PrimaryCta>
+                  </Link>
+                </div>
+              )}
+              <Card pad={0} style={{ overflow: "hidden" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                    <thead>
+                      <tr>
+                        {!readOnly && <th style={{ ...th, paddingTop: 20 }}></th>}
+                        <th style={{ ...th, paddingTop: 20 }}>Candidate</th>
+                        <th style={{ ...th, paddingTop: 20 }}>Match</th>
+                        <th style={{ ...th, paddingTop: 20 }}>Practice history</th>
+                        <th style={{ ...th, paddingTop: 20 }}>Last active</th>
+                        <th style={{ ...th, paddingTop: 20 }}>Skills</th>
+                        <th style={{ ...th, paddingTop: 20 }}>Status</th>
+                        <th style={{ ...th, paddingTop: 20 }}>Contact</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.map((c) => (
+                        <CandidateTableRow
+                          key={c.id}
+                          candidate={c}
+                          requirementId={requirement.id}
+                          readOnly={readOnly}
+                          compareChecked={compareIds.includes(c.id)}
+                          compareDisabled={compareIds.length >= 2}
+                          onToggleCompare={() => toggleCompare(c.id)}
+                          onUnlocked={handleUnlocked}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
           )}
-          {readOnly && (
-            <Card style={{ background: t.creamSoft, marginBottom: 16 }}>
-              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
-                This requirement is closed. Candidate details are read-only.
-              </span>
-            </Card>
-          )}
-          {!readOnly && compareIds.length === 2 && (
-            <div style={{ marginBottom: 16 }}>
-              <Link
-                href={`/employer/requirements/${requirement.id}/compare?a=${compareIds[0]}&b=${compareIds[1]}`}
-                style={{ textDecoration: "none" }}
-              >
-                <PrimaryCta size="sm">Compare selected candidates</PrimaryCta>
-              </Link>
-            </div>
-          )}
-          <Card pad={0} style={{ overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-                <thead>
-                  <tr>
-                    {!readOnly && <th style={{ ...th, paddingTop: 20 }}></th>}
-                    <th style={{ ...th, paddingTop: 20 }}>Candidate</th>
-                    <th style={{ ...th, paddingTop: 20 }}>Match</th>
-                    <th style={{ ...th, paddingTop: 20 }}>Practice history</th>
-                    <th style={{ ...th, paddingTop: 20 }}>Last active</th>
-                    <th style={{ ...th, paddingTop: 20 }}>Skills</th>
-                    <th style={{ ...th, paddingTop: 20 }}>Status</th>
-                    <th style={{ ...th, paddingTop: 20 }}>Contact</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.map((c) => (
-                    <CandidateTableRow
-                      key={c.id}
-                      candidate={c}
-                      requirementId={requirement.id}
-                      readOnly={readOnly}
-                      compareChecked={compareIds.includes(c.id)}
-                      compareDisabled={compareIds.length >= 2}
-                      onToggleCompare={() => toggleCompare(c.id)}
-                      onUnlocked={handleUnlocked}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
         </>
       )}
     </div>
