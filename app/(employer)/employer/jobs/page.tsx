@@ -276,8 +276,8 @@ export default function EmployerJobsPage() {
                       <SortableTh label="Location" sortKey="location" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <SortableTh label="Experience" sortKey="experience" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <SortableTh label="Status" sortKey="status" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <SortableTh label="Matches" sortKey="matches" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <SortableTh label="Due date" sortKey="dueDate" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Matches" sortKey="matches" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <SortableTh label="Posted" sortKey="posted" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <th style={{ ...th, paddingTop: 20, textAlign: "right", paddingRight: 20 }}>&nbsp;</th>
                     </tr>
@@ -300,10 +300,10 @@ export default function EmployerJobsPage() {
                         <td style={td}>
                           <StatusChip status={req.status} />
                         </td>
-                        <td style={{ ...td, color: t.inkSoft }}>{req.candidateCount}</td>
                         <td style={td}>
                           <DueDateBadge dueDate={req.dueDate} />
                         </td>
+                        <td style={{ ...td, color: t.inkSoft }}>{req.candidateCount}</td>
                         <td style={{ ...td, color: t.inkFaint, fontSize: 12.5 }}>{req.createdAt}</td>
                         <td style={{ ...td, textAlign: "right", paddingRight: 20 }}>
                           <Link
