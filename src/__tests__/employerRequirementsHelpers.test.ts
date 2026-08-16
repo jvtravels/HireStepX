@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   asBoundedString,
+  asBoundedStringArray,
   asBoundedExperience,
   asBoundedDueDate,
   asBoundedBudget,
+  asBoundedOpenPositions,
+  asBoundedWorkMode,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -28,30 +31,86 @@ describe("asBoundedString", () => {
 });
 
 describe("isValidRequirementInput", () => {
-  it("accepts a real title and location", () => {
-    expect(isValidRequirementInput("SDE II", "Bengaluru")).toBe(true);
+  it("accepts a real title and at least one location", () => {
+    expect(isValidRequirementInput("SDE II", ["Bengaluru"])).toBe(true);
   });
 
   it("rejects a one-character title", () => {
-    expect(isValidRequirementInput("S", "Bengaluru")).toBe(false);
+    expect(isValidRequirementInput("S", ["Bengaluru"])).toBe(false);
   });
 
-  it("rejects an empty location", () => {
-    expect(isValidRequirementInput("SDE II", "")).toBe(false);
+  it("rejects an empty locations list", () => {
+    expect(isValidRequirementInput("SDE II", [])).toBe(false);
+  });
+});
+
+describe("asBoundedStringArray", () => {
+  it("keeps non-empty trimmed strings", () => {
+    expect(asBoundedStringArray(["Mumbai", " Bengaluru ", "Remote"], 20, 100)).toEqual(["Mumbai", "Bengaluru", "Remote"]);
+  });
+
+  it("drops empty and non-string entries", () => {
+    expect(asBoundedStringArray(["Mumbai", "", "  ", 42, null], 20, 100)).toEqual(["Mumbai"]);
+  });
+
+  it("caps the list at maxItems", () => {
+    expect(asBoundedStringArray(["a", "b", "c"], 2, 100)).toEqual(["a", "b"]);
+  });
+
+  it("caps each item at maxItemLen", () => {
+    expect(asBoundedStringArray(["abcdef"], 20, 3)).toEqual(["abc"]);
+  });
+
+  it("returns an empty array for non-array input", () => {
+    expect(asBoundedStringArray("Mumbai", 20, 100)).toEqual([]);
+    expect(asBoundedStringArray(null, 20, 100)).toEqual([]);
+    expect(asBoundedStringArray(undefined, 20, 100)).toEqual([]);
+  });
+});
+
+describe("asBoundedOpenPositions", () => {
+  it("accepts a valid whole number within range", () => {
+    expect(asBoundedOpenPositions(1)).toBe(1);
+    expect(asBoundedOpenPositions(500)).toBe(500);
+  });
+
+  it("rejects numbers out of the 1-500 range", () => {
+    expect(asBoundedOpenPositions(0)).toBeNull();
+    expect(asBoundedOpenPositions(501)).toBeNull();
+  });
+
+  it("rejects non-integers and non-numbers", () => {
+    expect(asBoundedOpenPositions(2.5)).toBeNull();
+    expect(asBoundedOpenPositions("3")).toBeNull();
+    expect(asBoundedOpenPositions(null)).toBeNull();
+  });
+});
+
+describe("asBoundedWorkMode", () => {
+  it("accepts the three valid work modes", () => {
+    expect(asBoundedWorkMode("remote")).toBe("remote");
+    expect(asBoundedWorkMode("onsite")).toBe("onsite");
+    expect(asBoundedWorkMode("hybrid")).toBe("hybrid");
+  });
+
+  it("rejects anything else", () => {
+    expect(asBoundedWorkMode("flexible")).toBeNull();
+    expect(asBoundedWorkMode(null)).toBeNull();
+    expect(asBoundedWorkMode(undefined)).toBeNull();
   });
 });
 
 describe("buildRequirementsListResponse", () => {
   const rows = [
-    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, created_at: "2026-08-01T10:00:00Z" },
-    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, created_at: "2026-08-02T10:00:00Z" },
+    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, locations: ["Bengaluru"], open_positions: 2, work_mode: "hybrid", skills: ["React", "Node"], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-01T10:00:00Z" },
+    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, locations: [], open_positions: null, work_mode: null, skills: [], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-02T10:00:00Z" },
   ];
 
   it("joins requirement rows with their match counts", () => {
     const counts = new Map([["req_1", 4]]);
     expect(buildRequirementsListResponse(rows, counts)).toEqual([
-      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, createdAt: "2026-08-01", candidateCount: 4 },
-      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, createdAt: "2026-08-02", candidateCount: 0 },
+      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, locations: ["Bengaluru"], openPositions: 2, workMode: "hybrid", skills: ["React", "Node"], createdAt: "2026-08-01", candidateCount: 4 },
+      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, locations: [], openPositions: null, workMode: null, skills: [], createdAt: "2026-08-02", candidateCount: 0 },
     ]);
   });
 

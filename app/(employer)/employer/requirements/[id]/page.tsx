@@ -490,7 +490,9 @@ export default function RequirementDetailPage() {
       <Card>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
+            <Eyebrow tone="indigo">
+              {(requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location)} · {requirement.noticePeriodPref} notice
+            </Eyebrow>
             <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
           </div>
           <StatusChip status={requirement.status} />
@@ -613,7 +615,17 @@ export default function RequirementDetailPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Location</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.location}</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>
+                {requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Work mode</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4, textTransform: "capitalize" }}>{requirement.workMode || "Not specified"}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Open positions</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.openPositions ?? "Not specified"}</div>
             </div>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Experience</div>
@@ -622,6 +634,10 @@ export default function RequirementDetailPage() {
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Notice period</div>
               <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.noticePeriodPref}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Preferred industry</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.preferredIndustry || "Not specified"}</div>
             </div>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Due date</div>
@@ -636,6 +652,56 @@ export default function RequirementDetailPage() {
               <div style={{ marginTop: 4 }}><StatusChip status={requirement.status} /></div>
             </div>
           </div>
+
+          {requirement.skills.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Skills</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {requirement.skills.map((s) => <SkillTag key={s}>{s}</SkillTag>)}
+              </div>
+            </div>
+          )}
+
+          {requirement.responsibilities && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Responsibilities</div>
+              <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{requirement.responsibilities}</p>
+            </div>
+          )}
+
+          {requirement.niceToHave && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Nice to have</div>
+              <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{requirement.niceToHave}</p>
+            </div>
+          )}
+
+          {requirement.preferredColleges.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Preferred colleges</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {requirement.preferredColleges.map((c) => <Pill key={c} tone="indigo">{c}</Pill>)}
+              </div>
+            </div>
+          )}
+
+          {requirement.targetCompanies.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Target companies</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {requirement.targetCompanies.map((c) => <Pill key={c} tone="copper">{c}</Pill>)}
+              </div>
+            </div>
+          )}
+
+          {requirement.perksAndBenefits.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Perks and benefits</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {requirement.perksAndBenefits.map((p) => <Pill key={p} tone="success">{p}</Pill>)}
+              </div>
+            </div>
+          )}
         </Card>
       )}
 

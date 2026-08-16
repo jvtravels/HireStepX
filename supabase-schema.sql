@@ -1640,6 +1640,16 @@ create table if not exists employer_requirements (
   due_date date,
   budget_min integer,
   budget_max integer,
+  locations text[] not null default '{}',
+  open_positions integer,
+  work_mode text default 'remote' check (work_mode in ('remote', 'onsite', 'hybrid')),
+  skills text[] not null default '{}',
+  responsibilities text,
+  nice_to_have text,
+  preferred_industry text,
+  preferred_colleges text[] not null default '{}',
+  target_companies text[] not null default '{}',
+  perks_and_benefits text[] not null default '{}',
   created_at timestamptz default now()
 );
 alter table employer_requirements add column if not exists experience_min integer;
@@ -1647,6 +1657,16 @@ alter table employer_requirements add column if not exists experience_max intege
 alter table employer_requirements add column if not exists due_date date;
 alter table employer_requirements add column if not exists budget_min integer;
 alter table employer_requirements add column if not exists budget_max integer;
+alter table employer_requirements add column if not exists locations text[] not null default '{}';
+alter table employer_requirements add column if not exists open_positions integer;
+alter table employer_requirements add column if not exists work_mode text default 'remote' check (work_mode in ('remote', 'onsite', 'hybrid'));
+alter table employer_requirements add column if not exists skills text[] not null default '{}';
+alter table employer_requirements add column if not exists responsibilities text;
+alter table employer_requirements add column if not exists nice_to_have text;
+alter table employer_requirements add column if not exists preferred_industry text;
+alter table employer_requirements add column if not exists preferred_colleges text[] not null default '{}';
+alter table employer_requirements add column if not exists target_companies text[] not null default '{}';
+alter table employer_requirements add column if not exists perks_and_benefits text[] not null default '{}';
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 

@@ -24,9 +24,12 @@ import {
 } from "./_requirement-match-helpers";
 import {
   asBoundedString,
+  asBoundedStringArray,
   asBoundedExperience,
   asBoundedDueDate,
   asBoundedBudget,
+  asBoundedOpenPositions,
+  asBoundedWorkMode,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -77,7 +80,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,budget_min,budget_max,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -112,6 +115,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     title?: unknown; location?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
     budgetMin?: unknown; budgetMax?: unknown;
+    locations?: unknown; openPositions?: unknown; workMode?: unknown; skills?: unknown;
+    responsibilities?: unknown; niceToHave?: unknown; preferredIndustry?: unknown;
+    preferredColleges?: unknown; targetCompanies?: unknown; perksAndBenefits?: unknown;
   };
   try {
     body = await req.json();
@@ -120,7 +126,6 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   }
 
   const title = asBoundedString(body.title, 200);
-  const location = asBoundedString(body.location, 200);
   const noticePeriodPref = asBoundedString(body.noticePeriodPref, 60) || "Any";
   const description = asBoundedString(body.description, 5000);
   const experienceMin = asBoundedExperience(body.experienceMin);
@@ -128,9 +133,20 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const dueDate = asBoundedDueDate(body.dueDate);
   const budgetMin = asBoundedBudget(body.budgetMin);
   const budgetMax = asBoundedBudget(body.budgetMax);
+  const locations = asBoundedStringArray(body.locations, 20, 100);
+  const openPositions = asBoundedOpenPositions(body.openPositions);
+  const workMode = asBoundedWorkMode(body.workMode);
+  const skills = asBoundedStringArray(body.skills, 40, 60);
+  const responsibilities = asBoundedString(body.responsibilities, 2000);
+  const niceToHave = asBoundedString(body.niceToHave, 2000);
+  const preferredIndustry = asBoundedString(body.preferredIndustry, 120);
+  const preferredColleges = asBoundedStringArray(body.preferredColleges, 20, 100);
+  const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
+  const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
+  const location = locations.join(", ");
 
-  if (!isValidRequirementInput(title, location)) {
-    return new Response(JSON.stringify({ error: "title and location are required" }), { status: 400, headers });
+  if (!isValidRequirementInput(title, locations)) {
+    return new Response(JSON.stringify({ error: "title and at least one location are required" }), { status: 400, headers });
   }
 
   try {
@@ -150,6 +166,10 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         employer_id: userId, title, location, notice_period_pref: noticePeriodPref, description, status: "generating",
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
+        locations, open_positions: openPositions, work_mode: workMode, skills,
+        responsibilities, nice_to_have: niceToHave, preferred_industry: preferredIndustry,
+        preferred_colleges: preferredColleges, target_companies: targetCompanies,
+        perks_and_benefits: perksAndBenefits,
       }]),
     });
     if (!insertRes.ok) {
@@ -174,6 +194,10 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         dueDate: requirement.due_date ?? null,
         budgetMin: requirement.budget_min ?? null,
         budgetMax: requirement.budget_max ?? null,
+        locations: requirement.locations ?? [],
+        openPositions: requirement.open_positions ?? null,
+        workMode: requirement.work_mode ?? null,
+        skills: requirement.skills ?? [],
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },
