@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
@@ -9,16 +9,48 @@ import { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
   Card,
-  Divider,
   Eyebrow,
   EmployerIcon,
   HelpText,
   OutlineCta,
+  Pill,
   PrimaryCta,
   ScoreChip,
   SkillTag,
+  StatCell,
   StatusChip,
 } from "@/employer/_atoms";
+
+function experienceLabel(min: number | null, max: number | null): string | null {
+  if (min == null && max == null) return null;
+  if (min != null && max != null) return `${min}–${max} yrs experience`;
+  if (min != null) return `${min}+ yrs experience`;
+  return `Up to ${max} yrs experience`;
+}
+
+function daysUntil(dueDate: string): number {
+  return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
+}
+
+const th: CSSProperties = {
+  textAlign: "left",
+  fontFamily: f.sans,
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: 0.4,
+  textTransform: "uppercase",
+  color: t.inkFaint,
+  padding: "0 14px 12px",
+};
+
+const td: CSSProperties = {
+  padding: "14px",
+  borderTop: `1px solid ${t.line}`,
+  fontFamily: f.sans,
+  fontSize: 13.5,
+  color: t.coal,
+  verticalAlign: "top",
+};
 
 function GeneratingState() {
   return (
@@ -83,7 +115,7 @@ function loadRazorpayScript(): Promise<void> {
   });
 }
 
-function CandidateRow({
+function CandidateTableRow({
   candidate,
   requirementId,
   readOnly,
@@ -169,81 +201,82 @@ function CandidateRow({
   };
 
   return (
-    <Card>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-        {!readOnly && (
+    <tr>
+      {!readOnly && (
+        <td style={{ ...td, width: 32 }}>
           <input
             type="checkbox"
             checked={compareChecked}
             disabled={compareDisabled && !compareChecked}
             onChange={onToggleCompare}
             title="Select to compare"
-            style={{ marginTop: 6, width: 16, height: 16 }}
+            style={{ width: 16, height: 16 }}
           />
-        )}
+        </td>
+      )}
+      <td style={td}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>
+          {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
+        </div>
+        <div style={{ fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>
+          {candidate.targetRole} · {candidate.city}
+        </div>
+      </td>
+      <td style={td}>
         <ScoreChip score={candidate.matchScore} />
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-            <div>
-              <span style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>
-                {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
-              </span>
-              <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginLeft: 8 }}>
-                {candidate.targetRole} · {candidate.city}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 6 }}>
-            Match score {candidate.matchScore} for this role · Roster score {candidate.rosterScore} across{" "}
-            {candidate.sessionsCompleted} practice sessions · active {candidate.lastActiveDaysAgo}d ago
-          </div>
-
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-            {candidate.skills.map((s) => (
-              <SkillTag key={s}>{s}</SkillTag>
-            ))}
-          </div>
-
-          <Divider />
-
-          {candidate.unlocked ? (
-            <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-              <div style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>
-                {candidate.contact?.email}
-              </div>
-              {!readOnly && (
-                <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`} style={{ textDecoration: "none" }}>
-                  <OutlineCta size="sm">How did it go?</OutlineCta>
-                </Link>
-              )}
-            </div>
-          ) : readOnly ? (
-            <div style={{ marginTop: 12 }}>
-              <HelpText>This requirement is closed — contact unlocking is no longer available.</HelpText>
-            </div>
-          ) : confirming ? (
-            <div style={{ marginTop: 12, background: t.creamSoft, borderRadius: 10, padding: 14 }}>
-              <div style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 10 }}>
-                Unlock this candidate's contact details for <strong>{displayPrice}</strong>?
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <PrimaryCta size="sm" onClick={handleConfirmUnlock} disabled={unlocking}>
-                  {unlocking ? "Unlocking…" : "Confirm & unlock"}
-                </PrimaryCta>
-                <OutlineCta size="sm" onClick={() => setConfirming(false)}>Cancel</OutlineCta>
-              </div>
-            </div>
-          ) : (
-            <div style={{ marginTop: 12 }}>
-              <PrimaryCta size="sm" icon={<EmployerIcon.Lock />} onClick={() => setConfirming(true)}>
-                Unlock contact — {displayPrice}
-              </PrimaryCta>
-            </div>
+      </td>
+      <td style={{ ...td, color: t.inkSoft }}>
+        {candidate.rosterScore} roster · {candidate.sessionsCompleted} sessions
+      </td>
+      <td style={{ ...td, color: t.inkSoft }}>
+        {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
+      </td>
+      <td style={{ ...td, maxWidth: 220 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {candidate.skills.slice(0, 3).map((s) => (
+            <SkillTag key={s}>{s}</SkillTag>
+          ))}
+          {candidate.skills.length > 3 && (
+            <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, alignSelf: "center" }}>
+              +{candidate.skills.length - 3}
+            </span>
           )}
         </div>
-      </div>
-    </Card>
+      </td>
+      <td style={td}>
+        <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
+      </td>
+      <td style={{ ...td, minWidth: 200 }}>
+        {candidate.unlocked ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
+            <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal }}>{candidate.contact?.email}</span>
+            {!readOnly && (
+              <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`} style={{ textDecoration: "none" }}>
+                <OutlineCta size="sm">How did it go?</OutlineCta>
+              </Link>
+            )}
+          </div>
+        ) : readOnly ? (
+          <HelpText>Unlocking closed</HelpText>
+        ) : confirming ? (
+          <div style={{ background: t.creamSoft, borderRadius: 10, padding: 10 }}>
+            <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, marginBottom: 8 }}>
+              Unlock for <strong>{displayPrice}</strong>?
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <PrimaryCta size="sm" onClick={handleConfirmUnlock} disabled={unlocking}>
+                {unlocking ? "Unlocking…" : "Confirm"}
+              </PrimaryCta>
+              <OutlineCta size="sm" onClick={() => setConfirming(false)}>Cancel</OutlineCta>
+            </div>
+          </div>
+        ) : (
+          <PrimaryCta size="sm" icon={<EmployerIcon.Lock />} onClick={() => setConfirming(true)}>
+            Unlock — {displayPrice}
+          </PrimaryCta>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -253,6 +286,7 @@ export default function RequirementDetailPage() {
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -309,16 +343,70 @@ export default function RequirementDetailPage() {
 
   const readOnly = requirement.status === "closed";
   const sorted = [...requirement.candidates].sort((a, b) => b.matchScore - a.matchScore);
+  const unlockedCount = requirement.candidates.filter((c) => c.unlocked).length;
+  const avgMatch = requirement.candidates.length
+    ? Math.round(requirement.candidates.reduce((sum, c) => sum + c.matchScore, 0) / requirement.candidates.length)
+    : 0;
+  const expLabel = experienceLabel(requirement.experienceMin, requirement.experienceMax);
+  const dueDaysLeft = requirement.dueDate ? daysUntil(requirement.dueDate) : null;
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
-          <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
+            <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
+            <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {expLabel && <span>{expLabel}</span>}
+              {dueDaysLeft != null && (
+                <span>
+                  {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
+                </span>
+              )}
+              <span>Posted {requirement.createdAt}</span>
+            </div>
+          </div>
+          <StatusChip status={requirement.status} />
         </div>
-        <StatusChip status={requirement.status} />
-      </div>
+
+        {requirement.description && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            <p
+              style={{
+                fontFamily: f.sans,
+                fontSize: 13.5,
+                color: t.inkSoft,
+                lineHeight: 1.6,
+                margin: 0,
+                display: descExpanded ? "block" : "-webkit-box",
+                WebkitLineClamp: descExpanded ? undefined : 2,
+                WebkitBoxOrient: "vertical",
+                overflow: descExpanded ? "visible" : "hidden",
+              }}
+            >
+              {requirement.description}
+            </p>
+            <button
+              type="button"
+              onClick={() => setDescExpanded((v) => !v)}
+              style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, cursor: "pointer" }}
+            >
+              {descExpanded ? "Show less" : "Read more"}
+            </button>
+          </div>
+        )}
+      </Card>
+
+      {requirement.candidates.length > 0 && requirement.status !== "generating" && (
+        <Card style={{ marginBottom: 16, padding: "4px 20px" }}>
+          <div style={{ display: "flex" }}>
+            <StatCell label="Candidates shared" value={String(requirement.candidates.length)} unit="" />
+            <StatCell label="Contacts unlocked" value={String(unlockedCount)} unit="" />
+            <StatCell label="Avg match score" value={String(avgMatch)} unit="/ 100" />
+          </div>
+        </Card>
+      )}
 
       {requirement.status === "generating" && <GeneratingState />}
       {requirement.status === "failed" && <FailedState />}
@@ -351,20 +439,38 @@ export default function RequirementDetailPage() {
               </Link>
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {sorted.map((c) => (
-              <CandidateRow
-                key={c.id}
-                candidate={c}
-                requirementId={requirement.id}
-                readOnly={readOnly}
-                compareChecked={compareIds.includes(c.id)}
-                compareDisabled={compareIds.length >= 2}
-                onToggleCompare={() => toggleCompare(c.id)}
-                onUnlocked={handleUnlocked}
-              />
-            ))}
-          </div>
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                <thead>
+                  <tr>
+                    {!readOnly && <th style={{ ...th, paddingTop: 20 }}></th>}
+                    <th style={{ ...th, paddingTop: 20 }}>Candidate</th>
+                    <th style={{ ...th, paddingTop: 20 }}>Match</th>
+                    <th style={{ ...th, paddingTop: 20 }}>Practice history</th>
+                    <th style={{ ...th, paddingTop: 20 }}>Last active</th>
+                    <th style={{ ...th, paddingTop: 20 }}>Skills</th>
+                    <th style={{ ...th, paddingTop: 20 }}>Status</th>
+                    <th style={{ ...th, paddingTop: 20 }}>Contact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((c) => (
+                    <CandidateTableRow
+                      key={c.id}
+                      candidate={c}
+                      requirementId={requirement.id}
+                      readOnly={readOnly}
+                      compareChecked={compareIds.includes(c.id)}
+                      compareDisabled={compareIds.length >= 2}
+                      onToggleCompare={() => toggleCompare(c.id)}
+                      onUnlocked={handleUnlocked}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </>
       )}
     </div>
