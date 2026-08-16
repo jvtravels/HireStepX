@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
@@ -60,6 +60,32 @@ const th: CSSProperties = {
   color: t.inkFaint,
   padding: "0 14px 12px",
 };
+
+// Mirrors the search/filter toolbar on /employer/jobs (selectStyle) so the
+// two candidate-facing tables in the console share one input language.
+const toolbarInputStyle: CSSProperties = {
+  padding: "9px 12px",
+  borderRadius: 10,
+  border: `1px solid ${t.line}`,
+  background: t.white,
+  fontFamily: f.sans,
+  fontSize: 13,
+  color: t.coal,
+};
+
+type ContactFilter = "all" | "locked" | "unlocked";
+type SortKey = "match" | "recent";
+
+const contactFilterOptions: Array<{ value: ContactFilter; label: string }> = [
+  { value: "all", label: "All candidates" },
+  { value: "unlocked", label: "Unlocked" },
+  { value: "locked", label: "Locked" },
+];
+
+const sortOptions: Array<{ value: SortKey; label: string }> = [
+  { value: "match", label: "Best match" },
+  { value: "recent", label: "Most recently active" },
+];
 
 const td: CSSProperties = {
   padding: "14px",
@@ -288,6 +314,19 @@ function CandidateTableRow({
       <td style={{ ...td, color: t.inkSoft }}>
         {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
       </td>
+      <td style={{ ...td, color: t.inkSoft }}>
+        {candidate.resume?.noticePeriod || <span style={{ color: t.inkFaint }}>—</span>}
+      </td>
+      <td style={{ ...td, color: t.inkSoft }}>
+        {candidate.resume?.currentCtc ? (
+          <>
+            {candidate.resume.currentCtc}
+            <div style={{ fontFamily: f.sans, fontSize: 10.5, color: t.inkFaint, marginTop: 2 }}>self-reported</div>
+          </>
+        ) : (
+          <span style={{ color: t.inkFaint }}>—</span>
+        )}
+      </td>
       <td style={{ ...td, maxWidth: 220 }}>
         {candidate.skills.length ? (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -349,6 +388,9 @@ export default function RequirementDetailPage() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<"candidates" | "description">("candidates");
+  const [search, setSearch] = useState("");
+  const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("match");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -369,6 +411,20 @@ export default function RequirementDetailPage() {
     const timer = setTimeout(load, 2500);
     return () => clearTimeout(timer);
   }, [requirement?.status, load]);
+
+  const filteredSorted = useMemo(() => {
+    const candidates = requirement?.candidates ?? [];
+    const q = search.trim().toLowerCase();
+    const filtered = candidates.filter((c) => {
+      if (contactFilter === "locked" && c.unlocked) return false;
+      if (contactFilter === "unlocked" && !c.unlocked) return false;
+      if (!q) return true;
+      const haystack = [c.unlocked ? c.name : "", c.targetRole, c.city, ...c.skills].join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+    const recency = (c: Candidate) => (c.lastActiveDaysAgo < 0 ? Number.POSITIVE_INFINITY : c.lastActiveDaysAgo);
+    return filtered.sort((a, b) => (sortKey === "match" ? b.matchScore - a.matchScore : recency(a) - recency(b)));
+  }, [requirement, search, contactFilter, sortKey]);
 
   const handleUnlocked = (candidateId: string, name: string, email: string) => {
     setRequirement((prev) =>
@@ -404,7 +460,6 @@ export default function RequirementDetailPage() {
   };
 
   const readOnly = requirement.status === "closed";
-  const sorted = [...requirement.candidates].sort((a, b) => b.matchScore - a.matchScore);
   const unlockedCount = requirement.candidates.filter((c) => c.unlocked).length;
   const avgMatch = requirement.candidates.length
     ? Math.round(requirement.candidates.reduce((sum, c) => sum + c.matchScore, 0) / requirement.candidates.length)
@@ -419,6 +474,19 @@ export default function RequirementDetailPage() {
 
   return (
     <div>
+      {/* Mirrors the back-link on the candidate-detail page (rotated
+          EmployerIcon.Arrow) so both detail surfaces share one breadcrumb
+          language instead of a one-off pattern here. */}
+      <Link
+        href="/employer/jobs"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft, textDecoration: "none", marginBottom: 16 }}
+      >
+        <span style={{ display: "inline-block", transform: "rotate(180deg)" }}>
+          <EmployerIcon.Arrow />
+        </span>
+        Jobs
+      </Link>
+
       <Card>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
@@ -604,38 +672,87 @@ export default function RequirementDetailPage() {
                   </Link>
                 </div>
               )}
-              <Card pad={0} style={{ overflow: "hidden" }}>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-                    <thead>
-                      <tr>
-                        {!readOnly && <th style={{ ...th, paddingTop: 20 }}></th>}
-                        <th style={{ ...th, paddingTop: 20 }}>Candidate</th>
-                        <th style={{ ...th, paddingTop: 20 }}>Match</th>
-                        <th style={{ ...th, paddingTop: 20 }}>Practice history</th>
-                        <th style={{ ...th, paddingTop: 20 }}>Last active</th>
-                        <th style={{ ...th, paddingTop: 20 }}>Skills</th>
-                        <th style={{ ...th, paddingTop: 20 }}>Status</th>
-                        <th style={{ ...th, paddingTop: 20 }}>Contact</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sorted.map((c) => (
-                        <CandidateTableRow
-                          key={c.id}
-                          candidate={c}
-                          requirementId={requirement.id}
-                          readOnly={readOnly}
-                          compareChecked={compareIds.includes(c.id)}
-                          compareDisabled={compareIds.length >= 2}
-                          onToggleCompare={() => toggleCompare(c.id)}
-                          onUnlocked={handleUnlocked}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name, role, or skill…"
+                  style={{ ...toolbarInputStyle, flex: "1 1 220px", minWidth: 200 }}
+                  aria-label="Search candidates"
+                />
+                <select
+                  value={contactFilter}
+                  onChange={(e) => setContactFilter(e.target.value as ContactFilter)}
+                  style={toolbarInputStyle}
+                  aria-label="Filter by contact status"
+                >
+                  {contactFilterOptions.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as SortKey)}
+                  style={toolbarInputStyle}
+                  aria-label="Sort candidates"
+                >
+                  {sortOptions.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                {(search.trim() !== "" || contactFilter !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearch(""); setContactFilter("all"); }}
+                    style={{ ...toolbarInputStyle, background: "transparent", border: "none", color: t.indigo, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+
+              {filteredSorted.length === 0 ? (
+                <Card style={{ textAlign: "center", padding: 48 }}>
+                  <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
+                    No candidates match your search or filters.
+                  </p>
+                </Card>
+              ) : (
+                <Card pad={0} style={{ overflow: "hidden" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1120 }}>
+                      <thead>
+                        <tr>
+                          {!readOnly && <th style={{ ...th, paddingTop: 20 }}></th>}
+                          <th style={{ ...th, paddingTop: 20 }}>Candidate</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Match</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Practice history</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Last active</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Notice period</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Current CTC</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Skills</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Status</th>
+                          <th style={{ ...th, paddingTop: 20 }}>Contact</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSorted.map((c) => (
+                          <CandidateTableRow
+                            key={c.id}
+                            candidate={c}
+                            requirementId={requirement.id}
+                            readOnly={readOnly}
+                            compareChecked={compareIds.includes(c.id)}
+                            compareDisabled={compareIds.length >= 2}
+                            onToggleCompare={() => toggleCompare(c.id)}
+                            onUnlocked={handleUnlocked}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
             </>
           )}
         </>
