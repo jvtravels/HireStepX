@@ -103,40 +103,48 @@ export default function EmployerJobsPage() {
 
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
-        <section>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {requirementsLoading ? (
+        <>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
             <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
               Jobs
             </h1>
-            {!requirementsLoading && (
-              <Pill tone="neutral">{filtersActive ? `${filtered.length} of ${requirements.length}` : requirements.length}</Pill>
-            )}
+            <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
+              <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
+            </Link>
           </div>
-        </section>
-        <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-          <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
-        </Link>
-      </div>
-
-      {requirementsLoading ? (
-        <Card style={{ textAlign: "center", padding: 48 }}>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
-        </Card>
+          <Card style={{ textAlign: "center", padding: 48 }}>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
+          </Card>
+        </>
       ) : requirements.length === 0 ? (
-        <Card style={{ textAlign: "center", padding: 48 }}>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
-            You haven't posted a requirement yet.
-          </p>
-        </Card>
+        <>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
+            <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
+              Jobs
+            </h1>
+            <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
+              <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
+            </Link>
+          </div>
+          <Card style={{ textAlign: "center", padding: 48 }}>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
+              You haven't posted a requirement yet.
+            </p>
+          </Card>
+        </>
       ) : (
         <>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+            <h1 style={{ fontFamily: f.serif, fontSize: "clamp(20px, 4vw, 28px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0, marginRight: 4 }}>
+              Jobs
+            </h1>
+            <Pill tone="neutral">{filtersActive ? `${filtered.length} of ${requirements.length}` : requirements.length}</Pill>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by role or location…"
-              style={{ ...selectStyle, flex: "1 1 220px", minWidth: 200 }}
+              style={{ ...selectStyle, flex: "1 1 200px", minWidth: 160 }}
               aria-label="Search jobs"
             />
             <select
@@ -168,6 +176,9 @@ export default function EmployerJobsPage() {
                 Clear filters
               </button>
             )}
+            <Link href="/employer/requirements/new" style={{ textDecoration: "none", marginLeft: "auto" }}>
+              <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
+            </Link>
           </div>
 
           {filtered.length === 0 ? (
