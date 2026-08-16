@@ -16,6 +16,8 @@ export default function PostRequirementPage() {
   const [experienceMin, setExperienceMin] = useState("");
   const [experienceMax, setExperienceMax] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [budgetMin, setBudgetMin] = useState("");
+  const [budgetMax, setBudgetMax] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = title.trim().length > 1 && location.trim().length > 1;
@@ -29,6 +31,8 @@ export default function PostRequirementPage() {
     setSubmitting(true);
     const parsedMin = experienceMin.trim() ? Number(experienceMin) : undefined;
     const parsedMax = experienceMax.trim() ? Number(experienceMax) : undefined;
+    const parsedBudgetMin = budgetMin.trim() ? Number(budgetMin) : undefined;
+    const parsedBudgetMax = budgetMax.trim() ? Number(budgetMax) : undefined;
     const id = await addRequirement({
       title: title.trim(),
       location: location.trim(),
@@ -37,6 +41,8 @@ export default function PostRequirementPage() {
       experienceMin: Number.isFinite(parsedMin) ? parsedMin : undefined,
       experienceMax: Number.isFinite(parsedMax) ? parsedMax : undefined,
       dueDate: dueDate || undefined,
+      budgetMin: Number.isFinite(parsedBudgetMin) ? parsedBudgetMin : undefined,
+      budgetMax: Number.isFinite(parsedBudgetMax) ? parsedBudgetMax : undefined,
     });
     if (!id) {
       setSubmitting(false);
@@ -92,6 +98,32 @@ export default function PostRequirementPage() {
                 value={experienceMax}
                 onChange={(e) => setExperienceMax(e.target.value)}
                 placeholder="5"
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <FieldLabel>Budget — min (LPA)</FieldLabel>
+              <input
+                type="number"
+                min={0}
+                max={1000}
+                value={budgetMin}
+                onChange={(e) => setBudgetMin(e.target.value)}
+                placeholder="12"
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <FieldLabel>Budget — max (LPA)</FieldLabel>
+              <input
+                type="number"
+                min={0}
+                max={1000}
+                value={budgetMax}
+                onChange={(e) => setBudgetMax(e.target.value)}
+                placeholder="18"
                 style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
               />
             </div>

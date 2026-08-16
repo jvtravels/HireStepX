@@ -26,6 +26,7 @@ import {
   asBoundedString,
   asBoundedExperience,
   asBoundedDueDate,
+  asBoundedBudget,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -76,7 +77,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,budget_min,budget_max,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -110,6 +111,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   let body: {
     title?: unknown; location?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
+    budgetMin?: unknown; budgetMax?: unknown;
   };
   try {
     body = await req.json();
@@ -124,6 +126,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const experienceMin = asBoundedExperience(body.experienceMin);
   const experienceMax = asBoundedExperience(body.experienceMax);
   const dueDate = asBoundedDueDate(body.dueDate);
+  const budgetMin = asBoundedBudget(body.budgetMin);
+  const budgetMax = asBoundedBudget(body.budgetMax);
 
   if (!isValidRequirementInput(title, location)) {
     return new Response(JSON.stringify({ error: "title and location are required" }), { status: 400, headers });
@@ -145,6 +149,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       body: JSON.stringify([{
         employer_id: userId, title, location, notice_period_pref: noticePeriodPref, description, status: "generating",
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
+        budget_min: budgetMin, budget_max: budgetMax,
       }]),
     });
     if (!insertRes.ok) {
@@ -167,6 +172,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         experienceMin: requirement.experience_min ?? null,
         experienceMax: requirement.experience_max ?? null,
         dueDate: requirement.due_date ?? null,
+        budgetMin: requirement.budget_min ?? null,
+        budgetMax: requirement.budget_max ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

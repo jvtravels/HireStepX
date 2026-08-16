@@ -3,6 +3,7 @@ import {
   asBoundedString,
   asBoundedExperience,
   asBoundedDueDate,
+  asBoundedBudget,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -42,15 +43,15 @@ describe("isValidRequirementInput", () => {
 
 describe("buildRequirementsListResponse", () => {
   const rows = [
-    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", experience_min: 3, experience_max: 6, due_date: "2026-09-01", created_at: "2026-08-01T10:00:00Z" },
-    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", experience_min: null, experience_max: null, due_date: null, created_at: "2026-08-02T10:00:00Z" },
+    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, created_at: "2026-08-01T10:00:00Z" },
+    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, created_at: "2026-08-02T10:00:00Z" },
   ];
 
   it("joins requirement rows with their match counts", () => {
     const counts = new Map([["req_1", 4]]);
     expect(buildRequirementsListResponse(rows, counts)).toEqual([
-      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", createdAt: "2026-08-01", candidateCount: 4 },
-      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, createdAt: "2026-08-02", candidateCount: 0 },
+      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, createdAt: "2026-08-01", candidateCount: 4 },
+      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, createdAt: "2026-08-02", candidateCount: 0 },
     ]);
   });
 
@@ -84,6 +85,34 @@ describe("asBoundedExperience", () => {
   it("rejects non-finite numbers", () => {
     expect(asBoundedExperience(Infinity)).toBeNull();
     expect(asBoundedExperience(NaN)).toBeNull();
+  });
+});
+
+describe("asBoundedBudget", () => {
+  it("accepts a valid whole number within range", () => {
+    expect(asBoundedBudget(18)).toBe(18);
+    expect(asBoundedBudget(0)).toBe(0);
+    expect(asBoundedBudget(1000)).toBe(1000);
+  });
+
+  it("rejects non-numbers", () => {
+    expect(asBoundedBudget("18")).toBeNull();
+    expect(asBoundedBudget(null)).toBeNull();
+    expect(asBoundedBudget(undefined)).toBeNull();
+  });
+
+  it("rejects non-integer numbers", () => {
+    expect(asBoundedBudget(18.5)).toBeNull();
+  });
+
+  it("rejects numbers out of the 0-1000 range", () => {
+    expect(asBoundedBudget(-1)).toBeNull();
+    expect(asBoundedBudget(1001)).toBeNull();
+  });
+
+  it("rejects non-finite numbers", () => {
+    expect(asBoundedBudget(Infinity)).toBeNull();
+    expect(asBoundedBudget(NaN)).toBeNull();
   });
 });
 

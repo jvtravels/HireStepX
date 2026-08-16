@@ -54,6 +54,8 @@ export interface RequirementSummary {
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
+  budgetMin: number | null; // INR lakhs per annum
+  budgetMax: number | null;
   createdAt: string;
   candidateCount: number;
 }
@@ -68,6 +70,8 @@ export interface Requirement {
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
+  budgetMin: number | null; // INR lakhs per annum
+  budgetMax: number | null;
   createdAt: string;
   candidates: Candidate[];
 }
