@@ -17,6 +17,7 @@ import {
   PrimaryCta,
   ScoreChip,
   SkillTag,
+  StatCell,
   StatusChip,
 } from "@/employer/_atoms";
 
@@ -41,6 +42,13 @@ const scoreTiers: Array<{ key: string; label: string; min: number; max: number }
   { key: "fair", label: "Fair match", min: 50, max: 70 },
   { key: "low", label: "Low match", min: 0, max: 50 },
 ];
+
+const tierColors: Record<string, string> = {
+  strong: t.success,
+  good: t.indigo,
+  fair: t.warning,
+  low: t.inkFaintWeak,
+};
 
 const th: CSSProperties = {
   textAlign: "left",
@@ -281,16 +289,20 @@ function CandidateTableRow({
         {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
       </td>
       <td style={{ ...td, maxWidth: 220 }}>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {candidate.skills.slice(0, 3).map((s) => (
-            <SkillTag key={s}>{s}</SkillTag>
-          ))}
-          {candidate.skills.length > 3 && (
-            <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, alignSelf: "center" }}>
-              +{candidate.skills.length - 3}
-            </span>
-          )}
-        </div>
+        {candidate.skills.length ? (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {candidate.skills.slice(0, 3).map((s) => (
+              <SkillTag key={s}>{s}</SkillTag>
+            ))}
+            {candidate.skills.length > 3 && (
+              <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, alignSelf: "center" }}>
+                +{candidate.skills.length - 3}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span style={{ color: t.inkFaint }}>—</span>
+        )}
       </td>
       <td style={td}>
         <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
@@ -407,128 +419,111 @@ export default function RequirementDetailPage() {
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 16, marginBottom: 4, alignItems: "stretch" }}>
-        <Card>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div>
-              <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
-              <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
-            </div>
-            <StatusChip status={requirement.status} />
+      <Card>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <Eyebrow tone="indigo">{requirement.location} · {requirement.noticePeriodPref} notice</Eyebrow>
+            <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
           </div>
+          <StatusChip status={requirement.status} />
+        </div>
 
-          {requirement.description && (
-            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-              <p
-                style={{
-                  fontFamily: f.sans,
-                  fontSize: 13.5,
-                  color: t.inkSoft,
-                  lineHeight: 1.6,
-                  margin: 0,
-                  display: descExpanded ? "block" : "-webkit-box",
-                  WebkitLineClamp: descExpanded ? undefined : 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: descExpanded ? "visible" : "hidden",
-                }}
-              >
-                {requirement.description}
-              </p>
-              <button
-                type="button"
-                onClick={() => setDescExpanded((v) => !v)}
-                style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, cursor: "pointer" }}
-              >
-                {descExpanded ? "Show less" : "Read more"}
-              </button>
-            </div>
-          )}
+        {requirement.description && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            <p
+              style={{
+                fontFamily: f.sans,
+                fontSize: 13.5,
+                color: t.inkSoft,
+                lineHeight: 1.6,
+                margin: 0,
+                display: descExpanded ? "block" : "-webkit-box",
+                WebkitLineClamp: descExpanded ? undefined : 2,
+                WebkitBoxOrient: "vertical",
+                overflow: descExpanded ? "visible" : "hidden",
+              }}
+            >
+              {requirement.description}
+            </p>
+            <button
+              type="button"
+              onClick={() => setDescExpanded((v) => !v)}
+              style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, cursor: "pointer" }}
+            >
+              {descExpanded ? "Show less" : "Read more"}
+            </button>
+          </div>
+        )}
 
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-            {expLabel && (
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-                <EmployerIcon.Clock /> {expLabel}
-              </span>
-            )}
-            {dueDaysLeft != null && (
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-                <EmployerIcon.Clock /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
-              </span>
-            )}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+          {expLabel && (
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-              <EmployerIcon.Building /> Posted {requirement.createdAt}
+              <EmployerIcon.Clock /> {expLabel}
             </span>
-          </div>
-        </Card>
+          )}
+          {dueDaysLeft != null && (
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+              <EmployerIcon.Clock /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
+            </span>
+          )}
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+            <EmployerIcon.Building /> Posted {requirement.createdAt}
+          </span>
+        </div>
 
-        <Card style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft }}>Candidates shared</span>
-            <span style={{ fontFamily: f.serif, fontSize: 26, color: t.coal }}>{requirement.candidates.length}</span>
-          </div>
+        {hasCandidates ? (
+          <>
+            <div style={{ display: "flex", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+              <StatCell label="Candidates shared" value={String(requirement.candidates.length)} unit="" />
+              <StatCell label="Contacts unlocked" value={String(unlockedCount)} unit="" />
+              <StatCell label="Avg match score" value={String(avgMatch)} unit="/ 100" />
+            </div>
 
-          {hasCandidates ? (
-            <>
-              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ display: "flex", height: 6, borderRadius: 999, overflow: "hidden", background: t.line }}>
                 {tierCounts.map((tier) => (
-                  <div key={tier.key} style={{ flex: 1, textAlign: "center" }} title={tier.label}>
+                  tier.count > 0 && (
                     <div
-                      style={{
-                        width: "100%",
-                        aspectRatio: "1 / 1",
-                        borderRadius: 10,
-                        background: tier.count > 0 ? t.indigo : t.creamSoft,
-                        color: tier.count > 0 ? t.white : t.inkFaint,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontFamily: f.mono,
-                        fontSize: 15,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {tier.count}
-                    </div>
-                    <div style={{ fontFamily: f.sans, fontSize: 10, color: t.inkFaint, marginTop: 4, lineHeight: 1.3 }}>
-                      {tier.label}
-                    </div>
-                  </div>
+                      key={tier.key}
+                      title={tier.label}
+                      style={{ width: `${(tier.count / requirement.candidates.length) * 100}%`, background: tierColors[tier.key] }}
+                    />
+                  )
                 ))}
               </div>
-
-              <div style={{ marginTop: "auto", paddingTop: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13 }}>
-                  <span style={{ color: t.inkSoft }}>Contacts unlocked</span>
-                  <span style={{ color: t.coal, fontWeight: 600 }}>{unlockedCount}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13 }}>
-                  <span style={{ color: t.inkSoft }}>Avg match score</span>
-                  <span style={{ color: t.coal, fontWeight: 600 }}>{avgMatch} / 100</span>
-                </div>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10 }}>
+                {tierCounts.map((tier) => (
+                  <span key={tier.key} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: tierColors[tier.key], flexShrink: 0 }} />
+                    {tier.count} {tier.label.toLowerCase()}
+                  </span>
+                ))}
               </div>
-            </>
-          ) : (
-            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-              <HelpText>
-                {requirement.status === "generating" ? "Scoring candidates…" : "No candidates shared yet."}
-              </HelpText>
             </div>
-          )}
-        </Card>
-      </div>
+          </>
+        ) : (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            <HelpText>
+              {requirement.status === "generating" ? "Scoring candidates…" : "No candidates shared yet."}
+            </HelpText>
+          </div>
+        )}
+      </Card>
 
-      <div style={{ display: "flex", gap: 6, margin: "20px 0 16px", borderBottom: `1px solid ${t.line}`, paddingBottom: 2 }}>
+      <div role="tablist" style={{ display: "flex", gap: 24, borderBottom: `1px solid ${t.line}`, margin: "20px 0 16px" }}>
         {(["candidates", "description"] as const).map((tabKey) => (
           <button
             key={tabKey}
             type="button"
+            role="tab"
+            aria-selected={activeTab === tabKey}
             onClick={() => setActiveTab(tabKey)}
             style={{
-              padding: "9px 18px",
-              borderRadius: "10px 10px 0 0",
+              padding: "10px 2px",
               border: "none",
-              background: activeTab === tabKey ? t.indigo : "transparent",
-              color: activeTab === tabKey ? t.white : t.inkSoft,
+              borderBottom: `2px solid ${activeTab === tabKey ? t.indigo : "transparent"}`,
+              background: "transparent",
+              color: activeTab === tabKey ? t.coal : t.inkSoft,
               fontFamily: f.sans,
               fontSize: 13.5,
               fontWeight: 600,
