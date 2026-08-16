@@ -273,7 +273,7 @@ export default function PostRequirementPage() {
               <div style={{ display: "flex", gap: 12 }}>
                 <OutlineCta onClick={() => setStep(1)}>Back</OutlineCta>
                 <PrimaryCta type="submit" full disabled={submitting}>
-                  {submitting ? "Generating shortlist…" : "Generate shortlist"}
+                  {submitting ? "Posting job…" : "Post Job"}
                 </PrimaryCta>
               </div>
             </>
