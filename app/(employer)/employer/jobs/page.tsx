@@ -196,7 +196,14 @@ export default function EmployerJobsPage() {
                     {filtered.map((req) => (
                       <tr key={req.id}>
                         <td style={td}>
-                          <span style={{ fontWeight: 600 }}>{req.title}</span>
+                          <Link
+                            href={`/employer/requirements/${req.id}`}
+                            style={{ fontWeight: 600, color: t.coal, textDecoration: "none" }}
+                            onMouseOver={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+                            onMouseOut={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+                          >
+                            {req.title}
+                          </Link>
                         </td>
                         <td style={{ ...td, color: t.inkSoft }}>{req.location}</td>
                         <td style={{ ...td, color: t.inkSoft }}>{experienceLabel(req)}</td>
