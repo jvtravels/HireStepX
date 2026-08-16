@@ -15,6 +15,14 @@ function experienceLabel(req: RequirementSummary): string {
   return `Up to ${experienceMax} yrs`;
 }
 
+function budgetLabel(req: RequirementSummary): string | null {
+  const { budgetMin, budgetMax } = req;
+  if (budgetMin == null && budgetMax == null) return null;
+  if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
+  if (budgetMin != null) return `₹${budgetMin}+ LPA`;
+  return `Up to ₹${budgetMax} LPA`;
+}
+
 function daysUntil(dueDate: string): number {
   return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
 }
@@ -294,6 +302,9 @@ export default function EmployerJobsPage() {
                           >
                             {req.title}
                           </Link>
+                          {budgetLabel(req) && (
+                            <div style={{ fontSize: 12, color: t.inkFaint, marginTop: 2 }}>{budgetLabel(req)}</div>
+                          )}
                         </td>
                         <td style={{ ...td, color: t.inkSoft }}>{req.location}</td>
                         <td style={{ ...td, color: t.inkSoft }}>{experienceLabel(req)}</td>

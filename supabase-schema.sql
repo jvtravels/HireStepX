@@ -1638,11 +1638,15 @@ create table if not exists employer_requirements (
   experience_min integer,
   experience_max integer,
   due_date date,
+  budget_min integer,
+  budget_max integer,
   created_at timestamptz default now()
 );
 alter table employer_requirements add column if not exists experience_min integer;
 alter table employer_requirements add column if not exists experience_max integer;
 alter table employer_requirements add column if not exists due_date date;
+alter table employer_requirements add column if not exists budget_min integer;
+alter table employer_requirements add column if not exists budget_max integer;
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 

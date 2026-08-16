@@ -74,13 +74,14 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
     const reqRows = (await reqRes.json().catch(() => [])) as Array<{
       id: string; title: string; location: string; notice_period_pref: string; description: string | null; status: string;
-      experience_min: number | null; experience_max: number | null; due_date: string | null; created_at: string;
+      experience_min: number | null; experience_max: number | null; due_date: string | null;
+      budget_min: number | null; budget_max: number | null; created_at: string;
     }>;
     const requirement = reqRows[0];
     if (!requirement) {
@@ -159,6 +160,8 @@ export default async function handler(req: Request): Promise<Response> {
         experienceMin: requirement.experience_min,
         experienceMax: requirement.experience_max,
         dueDate: requirement.due_date ? requirement.due_date.slice(0, 10) : null,
+        budgetMin: requirement.budget_min,
+        budgetMax: requirement.budget_max,
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
       }),

@@ -38,7 +38,7 @@ interface EmployerDataContextValue {
   requirementsLoading: boolean;
   submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
-  addRequirement: (r: { title: string; location: string; noticePeriodPref?: string; description?: string; experienceMin?: number; experienceMax?: number; dueDate?: string }) => Promise<string | null>;
+  addRequirement: (r: { title: string; location: string; noticePeriodPref?: string; description?: string; experienceMin?: number; experienceMax?: number; dueDate?: string; budgetMin?: number; budgetMax?: number }) => Promise<string | null>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
     razorpay_order_id: string;
@@ -140,7 +140,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   // can resubmit via submitCompanyProfile, which POSTs a fresh "pending" row.
   const resetCompanyProfile = useCallback(() => setCompanyStatus("none"), []);
 
-  const addRequirement = useCallback(async (r: { title: string; location: string; noticePeriodPref?: string; description?: string; experienceMin?: number; experienceMax?: number; dueDate?: string }) => {
+  const addRequirement = useCallback(async (r: { title: string; location: string; noticePeriodPref?: string; description?: string; experienceMin?: number; experienceMax?: number; dueDate?: string; budgetMin?: number; budgetMax?: number }) => {
     const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
     if (res.ok && res.data) {
       refreshRequirements();

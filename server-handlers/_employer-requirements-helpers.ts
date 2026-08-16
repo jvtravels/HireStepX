@@ -13,6 +13,8 @@ export interface RequirementRow {
   experience_min: number | null;
   experience_max: number | null;
   due_date: string | null;
+  budget_min: number | null;
+  budget_max: number | null;
   created_at: string;
 }
 
@@ -47,6 +49,16 @@ export function asBoundedDueDate(v: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : v;
 }
 
+/** Validated read of a client-supplied budget field, in whole INR lakhs
+ *  per annum: whole numbers only, clamped to a plausible 0–1000 range.
+ *  Returns null for anything else so it stores as a real SQL NULL, not a
+ *  fabricated 0. */
+export function asBoundedBudget(v: unknown): number | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
+  if (v < 0 || v > 1000) return null;
+  return v;
+}
+
 /** Joins requirement rows with their match counts for the GET response,
  *  defaulting to 0 for requirements nothing has matched yet. */
 export function buildRequirementsListResponse(
@@ -61,6 +73,8 @@ export function buildRequirementsListResponse(
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
+  budgetMin: number | null;
+  budgetMax: number | null;
   createdAt: string;
   candidateCount: number;
 }> {
@@ -73,6 +87,8 @@ export function buildRequirementsListResponse(
     experienceMin: r.experience_min ?? null,
     experienceMax: r.experience_max ?? null,
     dueDate: r.due_date ?? null,
+    budgetMin: r.budget_min ?? null,
+    budgetMax: r.budget_max ?? null,
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
   }));
