@@ -9,17 +9,20 @@
  *
  * Candidate fields are limited to what the real schema actually backs:
  * target role, resume-derived city/skills, session count, and last-active
- * recency. The mocked-data pass additionally showed a CTC advisory range,
- * an "exclusive to you" flag, and a notice-period estimate — none of
- * those exist as real candidate data yet (no CTC module wired in, no
- * notice-period field collected, "exclusive" was fixture flavor), so they
- * are intentionally dropped here rather than fabricated.
+ * recency, plus a normalized `resume` detail block (see
+ * _resume-detail-helpers.ts) — summary, employment history, education,
+ * and any self-reported notice period / CTC the candidate's own resume
+ * text stated. Those last two are exactly what the resume said, not a
+ * verified figure, so the UI must label them as self-reported. The
+ * mocked-data pass additionally showed an "exclusive to you" flag with no
+ * real backing — that one stays dropped rather than fabricated.
  */
 
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { extractResumeLocation } from "./_requirement-match-helpers";
+import { extractResumeDetail } from "./_resume-detail-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -127,6 +130,7 @@ export default async function handler(req: Request): Promise<Response> {
       const timestamps = Array.isArray(profile?.practice_timestamps) ? profile!.practice_timestamps : [];
       const lastActive = timestamps.length ? timestamps[timestamps.length - 1] : null;
       const lastActiveDaysAgo = lastActive ? Math.max(0, Math.round((Date.now() - new Date(lastActive).getTime()) / 86_400_000)) : -1;
+      const resumeDetail = extractResumeDetail(profile?.resume_data);
 
       return {
         id: m.id,
@@ -139,7 +143,8 @@ export default async function handler(req: Request): Promise<Response> {
         lastActiveDaysAgo,
         skills: extractSkills(profile?.resume_data),
         unlocked: true,
-        contact: profile ? { email: profile.email } : undefined,
+        contact: profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
+        resume: resumeDetail,
       };
     });
 

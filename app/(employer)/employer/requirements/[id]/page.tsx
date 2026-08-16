@@ -215,9 +215,14 @@ function CandidateTableRow({
         </td>
       )}
       <td style={td}>
-        <div style={{ fontWeight: 700, fontSize: 14 }}>
+        <Link
+          href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
+          style={{ fontWeight: 700, fontSize: 14, color: t.coal, textDecoration: "none" }}
+          onMouseOver={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+          onMouseOut={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+        >
           {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
-        </div>
+        </Link>
         <div style={{ fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>
           {candidate.targetRole} · {candidate.city}
         </div>
