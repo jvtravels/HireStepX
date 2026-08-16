@@ -31,6 +31,8 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
+const MIN_DESCRIPTION_LENGTH = 20;
+
 const WORK_MODES: { value: WorkMode; label: string }[] = [
   { value: "remote", label: "Remote" },
   { value: "onsite", label: "Onsite" },
@@ -83,7 +85,8 @@ export default function PostRequirementPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const step1Valid = title.trim().length > 1 && locations.length > 0;
+  const step1Valid =
+    title.trim().length > 1 && locations.length > 0 && description.trim().length >= MIN_DESCRIPTION_LENGTH;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,9 +192,11 @@ export default function PostRequirementPage() {
                 </div>
 
                 <div>
-                  <FieldLabel>Role description (optional)</FieldLabel>
+                  <FieldLabel required>Role description</FieldLabel>
                   <textarea value={description} onChange={(e) => setDescription(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="Paste the JD or a few lines about what you're looking for…" style={{ ...inputStyle, resize: "vertical" }} />
-                  <HelpText>We use this to match against candidates' practice sessions. {description.length}/500</HelpText>
+                  <HelpText tone={description.trim().length > 0 && description.trim().length < MIN_DESCRIPTION_LENGTH ? "error" : "muted"}>
+                    We diff this against each candidate's resume to generate their JD-match report — at least {MIN_DESCRIPTION_LENGTH} characters. {description.length}/500
+                  </HelpText>
                 </div>
 
                 <div>

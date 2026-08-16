@@ -31,16 +31,27 @@ describe("asBoundedString", () => {
 });
 
 describe("isValidRequirementInput", () => {
-  it("accepts a real title and at least one location", () => {
-    expect(isValidRequirementInput("SDE II", ["Bengaluru"])).toBe(true);
+  const jd = "Own the checkout funnel end to end and mentor two juniors.";
+
+  it("accepts a real title, at least one location, and a real JD", () => {
+    expect(isValidRequirementInput("SDE II", ["Bengaluru"], jd)).toBe(true);
   });
 
   it("rejects a one-character title", () => {
-    expect(isValidRequirementInput("S", ["Bengaluru"])).toBe(false);
+    expect(isValidRequirementInput("S", ["Bengaluru"], jd)).toBe(false);
   });
 
   it("rejects an empty locations list", () => {
-    expect(isValidRequirementInput("SDE II", [])).toBe(false);
+    expect(isValidRequirementInput("SDE II", [], jd)).toBe(false);
+  });
+
+  it("rejects a missing or too-short description", () => {
+    expect(isValidRequirementInput("SDE II", ["Bengaluru"], "")).toBe(false);
+    expect(isValidRequirementInput("SDE II", ["Bengaluru"], "Short JD")).toBe(false);
+  });
+
+  it("trims whitespace before checking description length", () => {
+    expect(isValidRequirementInput("SDE II", ["Bengaluru"], `   ${jd}   `)).toBe(true);
   });
 });
 

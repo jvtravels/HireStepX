@@ -145,8 +145,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
   const location = locations.join(", ");
 
-  if (!isValidRequirementInput(title, locations)) {
-    return new Response(JSON.stringify({ error: "title and at least one location are required" }), { status: 400, headers });
+  if (!isValidRequirementInput(title, locations, description)) {
+    return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
   }
 
   try {

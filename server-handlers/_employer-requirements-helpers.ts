@@ -51,10 +51,12 @@ export function asBoundedStringArray(v: unknown, maxItems: number, maxItemLen: n
   return cleaned;
 }
 
-/** A requirement needs a real title and at least one location before it's
- *  worth scoring against the candidate pool. */
-export function isValidRequirementInput(title: string, locations: string[]): boolean {
-  return title.length >= 2 && locations.length >= 1;
+/** A requirement needs a real title, at least one location, and a real JD
+ *  before it's worth scoring against the candidate pool — the description
+ *  is what the LLM diffs against each candidate's resume, so a token
+ *  placeholder produces a useless JD-vs-candidate report. */
+export function isValidRequirementInput(title: string, locations: string[], description: string): boolean {
+  return title.length >= 2 && locations.length >= 1 && description.trim().length >= 20;
 }
 
 /** Validated read of a client-supplied open-positions count: whole numbers
