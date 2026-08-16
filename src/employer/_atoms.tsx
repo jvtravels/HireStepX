@@ -346,6 +346,66 @@ export function Divider() {
   return <div style={{ height: 1, background: t.line, width: "100%" }} />;
 }
 
+/** Groups related fields under a small-caps label with a hairline rule,
+ *  so a long form reads as scannable sections instead of one flat list. */
+export function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
+          {title}
+        </span>
+        <Divider />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+    </div>
+  );
+}
+
+/** Toggle-button group for a small closed set of mutually-exclusive options
+ *  (e.g. work mode) — replaces bare native radios with a brand-consistent,
+ *  larger-touch-target control. */
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div style={{ display: "inline-flex", padding: 3, borderRadius: 11, background: t.creamSoft, gap: 2 }}>
+      {options.map((opt) => {
+        const selected = opt.value === value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            aria-pressed={selected}
+            style={{
+              padding: "8px 16px",
+              minHeight: 36,
+              borderRadius: 8,
+              border: "none",
+              background: selected ? t.white : "transparent",
+              color: selected ? t.indigoDeep : t.inkSoft,
+              boxShadow: selected ? shadows.card : "none",
+              fontFamily: f.sans,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* Mirrors DashboardHome.tsx's StatCell — same 3-column stat-strip pattern
    used on the candidate dashboard, reused so the employer dashboard reads
    as the same product. */
