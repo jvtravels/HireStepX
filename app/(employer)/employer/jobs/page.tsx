@@ -77,6 +77,52 @@ const td: CSSProperties = {
   verticalAlign: "middle",
 };
 
+type SortKey = "title" | "location" | "experience" | "status" | "matches" | "dueDate" | "posted";
+type SortDir = "asc" | "desc";
+
+function SortableTh({
+  label,
+  sortKey: key,
+  activeKey,
+  dir,
+  onClick,
+  style,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey;
+  dir: SortDir;
+  onClick: (key: SortKey) => void;
+  style?: CSSProperties;
+}) {
+  const active = key === activeKey;
+  return (
+    <th style={{ ...th, paddingTop: 20, ...style }}>
+      <button
+        type="button"
+        onClick={() => onClick(key)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          background: "none",
+          border: "none",
+          padding: 0,
+          margin: 0,
+          font: "inherit",
+          color: active ? t.coal : "inherit",
+          cursor: "pointer",
+        }}
+      >
+        {label}
+        <span style={{ color: active ? t.indigo : t.inkFaintWeak, display: "inline-flex" }}>
+          {active && dir === "asc" ? <EmployerIcon.ChevronUp /> : <EmployerIcon.ChevronDown />}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 /* /employer/jobs — the requirements console. Owns the full list that used
    to live on the root dashboard; the dashboard now only links here. */
 export default function EmployerJobsPage() {
@@ -84,10 +130,21 @@ export default function EmployerJobsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dueFilter, setDueFilter] = useState<DueFilter>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("posted");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return requirements.filter((req) => {
+    const rows = requirements.filter((req) => {
       if (q && !req.title.toLowerCase().includes(q) && !req.location.toLowerCase().includes(q)) return false;
       if (statusFilter !== "all" && req.status !== statusFilter) return false;
       if (dueFilter !== "all") {
@@ -97,7 +154,29 @@ export default function EmployerJobsPage() {
       }
       return true;
     });
-  }, [requirements, search, statusFilter, dueFilter]);
+
+    const sign = sortDir === "asc" ? 1 : -1;
+    const dueValue = (req: RequirementSummary) => (req.dueDate ? new Date(`${req.dueDate}T00:00:00Z`).getTime() : Number.POSITIVE_INFINITY);
+    return [...rows].sort((a, b) => {
+      switch (sortKey) {
+        case "title":
+          return sign * a.title.localeCompare(b.title);
+        case "location":
+          return sign * a.location.localeCompare(b.location);
+        case "experience":
+          return sign * ((a.experienceMin ?? -1) - (b.experienceMin ?? -1));
+        case "status":
+          return sign * a.status.localeCompare(b.status);
+        case "matches":
+          return sign * (a.candidateCount - b.candidateCount);
+        case "dueDate":
+          return sign * (dueValue(a) - dueValue(b));
+        case "posted":
+        default:
+          return sign * a.createdAt.localeCompare(b.createdAt);
+      }
+    });
+  }, [requirements, search, statusFilter, dueFilter, sortKey, sortDir]);
 
   const filtersActive = search.trim() !== "" || statusFilter !== "all" || dueFilter !== "all";
 
@@ -193,13 +272,13 @@ export default function EmployerJobsPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
                   <thead>
                     <tr>
-                      <th style={{ ...th, paddingTop: 20 }}>Role</th>
-                      <th style={{ ...th, paddingTop: 20 }}>Location</th>
-                      <th style={{ ...th, paddingTop: 20 }}>Experience</th>
-                      <th style={{ ...th, paddingTop: 20 }}>Status</th>
-                      <th style={{ ...th, paddingTop: 20 }}>Matches</th>
-                      <th style={{ ...th, paddingTop: 20 }}>Due date</th>
-                      <th style={{ ...th, paddingTop: 20 }}>Posted</th>
+                      <SortableTh label="Role" sortKey="title" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Location" sortKey="location" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Experience" sortKey="experience" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Status" sortKey="status" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Matches" sortKey="matches" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Due date" sortKey="dueDate" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <SortableTh label="Posted" sortKey="posted" activeKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <th style={{ ...th, paddingTop: 20, textAlign: "right", paddingRight: 20 }}>&nbsp;</th>
                     </tr>
                   </thead>
