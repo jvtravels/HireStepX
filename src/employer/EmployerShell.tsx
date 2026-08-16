@@ -380,7 +380,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           padding: isMobile ? "76px 20px 40px" : "40px 32px",
         }}
       >
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>{children}</div>
+        <div style={{ maxWidth: 1600, margin: "0 auto" }}>{children}</div>
       </main>
     </div>
   );

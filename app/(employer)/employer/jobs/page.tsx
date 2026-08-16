@@ -102,7 +102,7 @@ export default function EmployerJobsPage() {
   const filtersActive = search.trim() !== "" || statusFilter !== "all" || dueFilter !== "all";
 
   return (
-    <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%" }}>
+    <div style={{ width: "100%" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
         <section>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
