@@ -43,6 +43,7 @@ export interface Requirement {
   title: string;
   location: string;
   noticePeriodPref: string;
+  description: string;
   status: RequirementStatus;
   experienceMin: number | null;
   experienceMax: number | null;
