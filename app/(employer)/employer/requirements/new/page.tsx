@@ -5,7 +5,21 @@ import { useRouter } from "next/navigation";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { WorkMode } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, FieldLabel, FormSection, HelpText, OutlineCta, PrimaryCta, SegmentedControl, TagInput } from "@/employer/_atoms";
+import {
+  AutocompleteInput,
+  Card,
+  Eyebrow,
+  FieldLabel,
+  FormSection,
+  HelpText,
+  OutlineCta,
+  PrimaryCta,
+  SegmentedControl,
+  TagAutocompleteInput,
+  TagInput,
+} from "@/employer/_atoms";
+import { CITY_SUGGESTIONS } from "../../../../../data/city-tiers";
+import { COMPANY_SUGGESTIONS, ROLE_SUGGESTIONS } from "@/onboardingData";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -123,12 +137,12 @@ export default function PostRequirementPage() {
               <FormSection title="Role">
                 <div>
                   <FieldLabel required>Job title</FieldLabel>
-                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Senior Frontend Engineer" style={inputStyle} />
+                  <AutocompleteInput value={title} onChange={setTitle} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
                 </div>
 
                 <div>
                   <FieldLabel required>Locations</FieldLabel>
-                  <TagInput values={locations} onChange={setLocations} placeholder="Mumbai, Bengaluru, Remote…" />
+                  <TagAutocompleteInput values={locations} onChange={setLocations} placeholder="Mumbai, Bengaluru, Remote…" suggestions={CITY_SUGGESTIONS} />
                   <HelpText>Add each city or "Remote" as its own tag, then press Enter.</HelpText>
                 </div>
 
@@ -216,7 +230,12 @@ export default function PostRequirementPage() {
 
                 <div>
                   <FieldLabel>Target companies (optional)</FieldLabel>
-                  <TagInput values={targetCompanies} onChange={setTargetCompanies} placeholder="Companies you'd like candidates to come from" />
+                  <TagAutocompleteInput
+                    values={targetCompanies}
+                    onChange={setTargetCompanies}
+                    placeholder="Companies you'd like candidates to come from"
+                    suggestions={COMPANY_SUGGESTIONS}
+                  />
                 </div>
               </FormSection>
 

@@ -1,5 +1,56 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+
+/** Deterministic evenly-spaced sample, used to show a diverse slice of a
+ *  suggestions list before the user has typed anything. */
+function sampleDiverse(arr: string[], count: number): string[] {
+  if (arr.length <= count) return arr;
+  const step = Math.floor(arr.length / count);
+  const result: string[] = [];
+  for (let i = 0; i < count; i++) result.push(arr[i * step]);
+  return result;
+}
+
+function computeDropdownRect(anchor: HTMLElement) {
+  const rect = anchor.getBoundingClientRect();
+  const pad = 8;
+  const vw = window.innerWidth;
+  let width = rect.width;
+  if (width > vw - pad * 2) width = vw - pad * 2;
+  let left = rect.left;
+  if (left < pad) left = pad;
+  if (left + width > vw - pad) left = vw - pad - width;
+  const spaceBelow = window.innerHeight - rect.bottom - 4;
+  const top = spaceBelow < 120 ? Math.max(pad, rect.top - 204) : rect.bottom + 4;
+  return { top, left, width };
+}
+
+const dropdownStyle: React.CSSProperties = {
+  position: "fixed",
+  zIndex: 9999,
+  background: t.white,
+  border: `1px solid ${t.line}`,
+  borderRadius: 10,
+  boxShadow: shadows.card,
+  maxHeight: 200,
+  overflowY: "auto",
+};
+
+function optionStyle(selected: boolean): React.CSSProperties {
+  return {
+    display: "block",
+    width: "100%",
+    padding: "9px 14px",
+    border: "none",
+    textAlign: "left",
+    fontFamily: f.sans,
+    fontSize: 13,
+    cursor: "pointer",
+    background: selected ? t.creamSoft : "transparent",
+    color: selected ? t.coal : t.inkSoft,
+  };
+}
 
 /* HireStepX — Employer console shared atoms.
    Mirrors src/auth/_fields.tsx conventions (inline styles + real tokens),
@@ -344,6 +395,285 @@ export function TagInput({
 
 export function Divider() {
   return <div style={{ height: 1, background: t.line, width: "100%" }} />;
+}
+
+/** Single-value text input with a suggestions dropdown, filtered as the
+ *  user types. Shows a diverse sample when empty and focused. Free text
+ *  is still accepted — suggestions are a helper, not a closed enum. */
+export function AutocompleteInput({
+  value,
+  onChange,
+  placeholder,
+  suggestions,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+  suggestions: string[];
+}) {
+  const [focused, setFocused] = React.useState(false);
+  const [selectedIdx, setSelectedIdx] = React.useState(-1);
+  const [rect, setRect] = React.useState<{ top: number; left: number; width: number } | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const listboxId = React.useId();
+  const diverseSample = React.useMemo(() => sampleDiverse(suggestions, 8), [suggestions]);
+
+  const q = value.trim().toLowerCase();
+  const filtered = focused
+    ? q.length === 0
+      ? diverseSample
+      : suggestions.filter((s) => s.toLowerCase().includes(q)).slice(0, 8)
+    : [];
+
+  React.useEffect(() => {
+    if (filtered.length > 0 && inputRef.current) setRect(computeDropdownRect(inputRef.current));
+  }, [filtered.length, focused, value]);
+
+  const select = (s: string) => {
+    onChange(s);
+    setFocused(false);
+    setSelectedIdx(-1);
+  };
+
+  return (
+    <div>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setSelectedIdx(-1);
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setTimeout(() => setFocused(false), 150)}
+        onKeyDown={(e) => {
+          if (filtered.length === 0) {
+            if (e.key === "Escape") inputRef.current?.blur();
+            return;
+          }
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setSelectedIdx((i) => Math.min(i + 1, filtered.length - 1));
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setSelectedIdx((i) => Math.max(i - 1, 0));
+          } else if (e.key === "Enter" && selectedIdx >= 0) {
+            e.preventDefault();
+            select(filtered[selectedIdx]);
+          } else if (e.key === "Escape") {
+            setFocused(false);
+            inputRef.current?.blur();
+          }
+        }}
+        placeholder={placeholder}
+        autoComplete="off"
+        role="combobox"
+        aria-expanded={filtered.length > 0}
+        aria-controls={listboxId}
+        aria-autocomplete="list"
+        style={{
+          width: "100%",
+          padding: "12px 14px",
+          borderRadius: 10,
+          border: `1px solid ${t.line}`,
+          fontFamily: f.sans,
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      />
+      {filtered.length > 0 &&
+        rect &&
+        createPortal(
+          <div id={listboxId} role="listbox" style={{ ...dropdownStyle, top: rect.top, left: rect.left, width: rect.width }}>
+            {filtered.map((s, i) => (
+              <button
+                key={s}
+                type="button"
+                role="option"
+                aria-selected={i === selectedIdx}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  select(s);
+                }}
+                style={optionStyle(i === selectedIdx)}
+              >
+                {s}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+/** TagInput with a suggestions dropdown on the draft field — same chip
+ *  behavior as TagInput, plus a filtered/sampled list the user can pick
+ *  from without losing the ability to type a free-text tag. */
+export function TagAutocompleteInput({
+  values,
+  onChange,
+  placeholder,
+  suggestions,
+}: {
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  suggestions: string[];
+}) {
+  const [draft, setDraft] = React.useState("");
+  const [focused, setFocused] = React.useState(false);
+  const [selectedIdx, setSelectedIdx] = React.useState(-1);
+  const [rect, setRect] = React.useState<{ top: number; left: number; width: number } | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const listboxId = React.useId();
+  const diverseSample = React.useMemo(() => sampleDiverse(suggestions, 8), [suggestions]);
+
+  const commit = (raw?: string) => {
+    const cleaned = (raw ?? draft).trim();
+    if (cleaned.length === 0) return;
+    if (!values.includes(cleaned)) onChange([...values, cleaned]);
+    setDraft("");
+    setSelectedIdx(-1);
+  };
+
+  const q = draft.trim().toLowerCase();
+  const filtered = focused
+    ? (q.length === 0 ? diverseSample : suggestions.filter((s) => s.toLowerCase().includes(q)).slice(0, 8)).filter(
+        (s) => !values.includes(s),
+      )
+    : [];
+
+  React.useEffect(() => {
+    if (filtered.length > 0 && containerRef.current) setRect(computeDropdownRect(containerRef.current));
+  }, [filtered.length, focused, draft]);
+
+  return (
+    <div ref={containerRef}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          padding: "8px 10px",
+          borderRadius: 10,
+          border: `1px solid ${t.line}`,
+          background: t.white,
+        }}
+      >
+        {values.map((v) => (
+          <span
+            key={v}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 6px 4px 10px",
+              borderRadius: 8,
+              background: t.creamSoft,
+              border: `1px solid ${t.line}`,
+              fontFamily: f.sans,
+              fontSize: 12,
+              color: t.inkSoft,
+              fontWeight: 500,
+            }}
+          >
+            {v}
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((x) => x !== v))}
+              aria-label={`Remove ${v}`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 16,
+                height: 16,
+                border: "none",
+                background: "transparent",
+                color: t.inkFaint,
+                cursor: "pointer",
+                fontSize: 14,
+                lineHeight: 1,
+                padding: 0,
+              }}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setSelectedIdx(-1);
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setTimeout(() => setFocused(false), 150);
+            commit();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              if (selectedIdx >= 0 && filtered[selectedIdx]) commit(filtered[selectedIdx]);
+              else commit();
+            } else if (e.key === "Backspace" && draft.length === 0 && values.length > 0) {
+              onChange(values.slice(0, -1));
+            } else if (e.key === "ArrowDown" && filtered.length > 0) {
+              e.preventDefault();
+              setSelectedIdx((i) => Math.min(i + 1, filtered.length - 1));
+            } else if (e.key === "ArrowUp" && filtered.length > 0) {
+              e.preventDefault();
+              setSelectedIdx((i) => Math.max(i - 1, 0));
+            } else if (e.key === "Escape") {
+              setFocused(false);
+              inputRef.current?.blur();
+            }
+          }}
+          placeholder={values.length === 0 ? placeholder : ""}
+          autoComplete="off"
+          role="combobox"
+          aria-expanded={filtered.length > 0}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          style={{
+            flex: 1,
+            minWidth: 120,
+            border: "none",
+            outline: "none",
+            fontFamily: f.sans,
+            fontSize: 14,
+            padding: "4px 2px",
+          }}
+        />
+      </div>
+      {filtered.length > 0 &&
+        rect &&
+        createPortal(
+          <div id={listboxId} role="listbox" style={{ ...dropdownStyle, top: rect.top, left: rect.left, width: rect.width }}>
+            {filtered.map((s, i) => (
+              <button
+                key={s}
+                type="button"
+                role="option"
+                aria-selected={i === selectedIdx}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  commit(s);
+                }}
+                style={optionStyle(i === selectedIdx)}
+              >
+                {s}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
 }
 
 /** Groups related fields under a small-caps label with a hairline rule,
