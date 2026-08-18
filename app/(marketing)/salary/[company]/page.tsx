@@ -79,7 +79,39 @@ function truncateAtWord(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   const cut = text.slice(0, maxLen);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]$/, "");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:/&-]+$/, "");
+}
+
+// Most metaDescription entries in data/salary-seo.ts are 2-3 sentences
+// (salary bands, then an equity/context aside, then a company blurb) and
+// a large share run past the ~155-char SERP budget once the role roster
+// grew. truncateAtWord alone lands wherever the Nth word happens to fall,
+// which is usually mid-sentence — "Cash-only comp (no RSU at India." reads
+// as broken in a search snippet. Prefer ending after the last complete
+// sentence that fits: same factual content, always a real full stop, and
+// it naturally drops the least-essential trailing color commentary first
+// since the salary figures always lead. Falls back to the word-boundary
+// cut only when even the first sentence overruns the budget.
+function truncateAtSentence(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen + 1);
+  const lastSentenceEnd = cut.lastIndexOf(". ");
+  if (lastSentenceEnd > maxLen * 0.4) {
+    return cut.slice(0, lastSentenceEnd + 1);
+  }
+  return `${truncateAtWord(text, maxLen - 1)}.`;
+}
+
+// Some role labels are an either/or pair ("Software Engineer / Analyst",
+// "Hardware / Embedded Engineer") — fine as a full label on the page, but
+// in a title built up to the 60-char SERP budget the slash can land right
+// at the cut point and leave a dangling "... Engineer /". Collapse to
+// whichever half reads as a complete role on its own before the title is
+// assembled, instead of truncating after the fact.
+function roleForTitle(label: string): string {
+  if (!label.includes(" / ")) return label;
+  const [a, b] = label.split(" / ");
+  return a.length >= b.length ? a : b;
 }
 
 export async function generateMetadata({
@@ -124,19 +156,43 @@ export async function generateMetadata({
     headlineBands.length > 0
       ? `₹${Math.min(...headlineBands.map((b) => b.totalMin))}–${Math.max(...headlineBands.map((b) => b.totalMax))} LPA`
       : undefined;
+  const firstRoleTitle = firstRole ? roleForTitle(firstRole) : firstRole;
   const baseTitle = isBroadRoster
     ? headlineRange
-      ? `${label} Salary India 2026: ${firstRole} ${headlineRange} (+${roleSections.length - 1} More Roles)`
-      : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRole} to ${lastRole})`
+      ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange} (+${roleSections.length - 1} More Roles)`
+      : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRoleTitle} to ${lastRole})`
     : page.searchPhrase;
-  const titleWithSuffix = `${baseTitle} | HireStepX`;
+  // For a company/role combo with a long name and a wide range (e.g.
+  // "Goldman Sachs" + "Software Engineer" + "₹20-110 LPA"), the full
+  // broad-roster template can overrun the 60-char budget so far that a
+  // word-boundary truncation lands mid-number ("...₹26–117" with no
+  // "LPA"). Try progressively shorter, still-complete compositions before
+  // falling back to truncation, so the number and its unit stay together.
+  const titleCandidates = isBroadRoster
+    ? [
+        baseTitle,
+        headlineRange ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange}` : undefined,
+        headlineRange ? `${label} Salary India 2026: ${headlineRange}` : undefined,
+        `${label} Salary India 2026 (${roleSections.length} Roles)`,
+      ].filter((c): c is string => Boolean(c))
+    : [baseTitle];
+  const fittingTitle = titleCandidates.find((c) => `${c} | HireStepX`.length <= 60);
+  const titleWithSuffix = `${fittingTitle ?? baseTitle} | HireStepX`;
   const title =
-    titleWithSuffix.length <= 60 ? titleWithSuffix : truncateAtWord(baseTitle, 60);
-  const baseDescription = isBroadRoster
+    titleWithSuffix.length <= 60 ? titleWithSuffix : truncateAtWord(fittingTitle ?? baseTitle, 60);
+  // Appending the role-coverage sentence can push an already-complete
+  // metaDescription past the SERP budget, and truncating the combined
+  // string cuts mid-sentence rather than mid-addition (e.g. "...no RSU at
+  // India." instead of "...no RSU at India offices)."). Only append it
+  // when it still fits; otherwise show the hand-written description
+  // untouched rather than a garbled truncation of it.
+  const withRoleCoverage = isBroadRoster
     ? `${page.metaDescription} Covers ${roleSections.length} roles at ${label}, from ${firstRole} to ${lastRole}.`
     : page.metaDescription;
+  const baseDescription =
+    withRoleCoverage.length <= 155 ? withRoleCoverage : page.metaDescription;
   const description =
-    baseDescription.length <= 155 ? baseDescription : `${truncateAtWord(baseDescription, 154)}.`;
+    baseDescription.length <= 155 ? baseDescription : truncateAtSentence(baseDescription, 154);
 
   return {
     title,
