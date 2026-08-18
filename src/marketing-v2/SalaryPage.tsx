@@ -932,7 +932,7 @@ const TIER_TABS = ["All", "FAANG", "Startup", "Service"] as const;
    pay rank, concentrating internal PageRank where GSC shows we rank page-1
    on long-tail queries and are one nudge from breaking into the top 5. */
 const FEATURED_SLUGS = [
-  "sarvam", "sarvam-ai", "krutrim", "perplexity",
+  "sarvam-ai", "krutrim", "perplexity",
   "databricks", "openai", "moglix", "zepto",
 ] as const;
 

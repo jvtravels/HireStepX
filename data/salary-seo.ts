@@ -1789,15 +1789,16 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
   },
   {
     slug: "sarvam-ai",
-    searchPhrase: "Sarvam AI ML Engineer Salary India 2026: ₹50–150 LPA",
+    searchPhrase: "Sarvam AI Salary India 2026: ₹16–150 LPA",
     metaDescription:
-      "Sarvam AI ML Engineer / Researcher salary: mid ₹50–80 LPA, senior ₹90–150 LPA, plus ESOP (Series B, $1.5B valuation). India's leading vernacular AI unicorn. Bengaluru CTC guide.",
+      "Sarvam AI salary India 2026: Software Engineer ₹16–90 LPA, AI Engineer / Researcher ₹50–150 LPA, plus ESOP. India's leading vernacular AI unicorn.",
     roles: [
       { roleKey: "ai-engineer", label: "AI Engineer / Researcher" },
+      { roleKey: "software-engineer", label: "Software Engineer" },
     ],
     questionSlug: "sarvam-ai-ml-engineer-interview-questions",
     hubNote: "India's leading vernacular AI unicorn: BharatGPT, Sarvam-2B; Series B ($1.5B) ESOP",
-    sitemapPriority: 0.73,
+    sitemapPriority: 0.74,
   },
   /* ── Quant / HFT Wave 7 ─────────────────────────────────────── */
   {
@@ -4115,16 +4116,6 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "fiserv-software-engineer-interview-questions",
     hubNote: "Fintech GCC Pune + Hyderabad; Nasdaq listed; RSU; banking software + payments",
     sitemapPriority: 0.70,
-  },
-  {
-    slug: "sarvam",
-    searchPhrase: "Sarvam AI Salary India 2026: SDE CTC ₹16–90 LPA by Level",
-    metaDescription:
-      "Sarvam AI salary in India 2026: Software Engineer CTC ₹16–90 LPA, entry to senior, plus ESOP at India's AI unicorn (Series B, $1.5B). Full SDE-1 to senior pay breakdown, Bengaluru.",
-    roles: [{ roleKey: "software-engineer", label: "Software Engineer" }],
-    questionSlug: "sarvam-swe-interview-questions",
-    hubNote: "India-native LLM lab Bengaluru; Series B unicorn ($1.5B); ESOP; 10 Indian languages AI",
-    sitemapPriority: 0.74,
   },
   {
     slug: "hdfc",

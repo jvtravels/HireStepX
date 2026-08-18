@@ -169,7 +169,6 @@ export function buildSalaryReport(
  *  are the entities HireStepX has unique salary + interview-process depth
  *  on (the digital-PR angle: "cite our data, no one else has it"). */
 export const EMERGING_COMPANY_SLUGS: ReadonlySet<string> = new Set([
-  "sarvam",
   "sarvam-ai",
   "krutrim",
   "perplexity",

@@ -7870,13 +7870,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 36, totalMax: 60, equityMin: 10, equityMax: 24, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
-  sarvam: {
-    "software-engineer": {
-      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
-      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
-      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
-    },
-  },
   "sarvam-ai": {
     "software-engineer": {
       entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },

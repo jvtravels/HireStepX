@@ -34,7 +34,7 @@ const SALARY_GROUPS: Record<string, string[]> = {
   "Indian Banking": ["hdfc-bank", "icici", "axis", "kotak", "sbi", "bajaj-finance", "star-health", "icici-lombard", "hdfc", "bajaj-finserv", "aditya-birla-capital"],
   "Consulting": ["deloitte", "mckinsey", "bcg", "bain", "ey", "kpmg", "pwc"],
   "Semiconductor & Hardware": ["qualcomm", "intel-india", "arm-india", "texas-instruments", "nvidia", "cisco", "mediatek", "sap-labs", "siemens-india", "bosch-india", "samsung-india", "ericsson-india", "nokia-india"],
-  "Indian AI Startups": ["sarvam", "sarvam-ai", "krutrim", "perplexity", "glance"],
+  "Indian AI Startups": ["sarvam-ai", "krutrim", "perplexity", "glance"],
   "SaaS & Enterprise Software": ["freshworks", "zoho", "postman", "browserstack", "chargebee", "hasura", "mindtickle", "darwinbox", "capillary-tech", "clari", "sumologic", "icertis", "druva", "clevertap", "moengage", "gupshup", "exotel", "plivo", "sigmoid", "tracxn"],
   "EdTech": ["unacademy", "physicswallah", "byjus", "vedantu"],
   "Logistics & Quick Commerce": ["delhivery", "bigbasket", "shadowfax", "ecom-express", "blackbuck", "rivigo", "ninjacart", "country-delight", "yulu", "moglix", "udaan"],
