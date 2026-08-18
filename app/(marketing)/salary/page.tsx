@@ -13,11 +13,18 @@ import { tokens as t, fonts } from "@/auth/_tokens";
    crawlable pagination via <Link href="/salary?page=N"> in SalaryHubPage. */
 export function generateMetadata(): Metadata {
   const count = SALARY_SEO_PAGES.length;
+  /* GSC (Aug 2026): 326 impressions, 0 clicks, avg pos ~24 — same pattern
+     as /questions. The old title carried no number at all; the individual
+     company pages already lead with a real ₹ CTC figure once they clear
+     the isBroadRoster threshold (see salary/[company]/page.tsx) and that
+     measurably beats a generic title at the same position. `count` was
+     already computed for ogDesc below — put it in the title too. */
+  const title = `${count} Company Salary Guides India 2026 | HireStepX`;
   const ogDesc = `Salary ranges for ${count} companies, total CTC sourced from AmbitionBox and Glassdoor.`;
   return {
-    title: "Company Salary Guides India 2026 | HireStepX",
+    title,
     description:
-      "Salary ranges for TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs, and more in India 2026. CTC data sourced from AmbitionBox and Glassdoor.",
+      `${count} companies with real CTC ranges — TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs & more. AmbitionBox + Glassdoor sourced, India 2026.`,
     keywords: [
       "software engineer salary India 2026",
       "TCS salary freshers 2026",
@@ -32,16 +39,16 @@ export function generateMetadata(): Metadata {
     alternates: { canonical: "/salary" },
     openGraph: {
       type: "website",
-      title: "Company Salary Guides India 2026 | HireStepX",
+      title,
       description: ogDesc,
       url: "https://hirestepx.com/salary",
       siteName: "HireStepX",
       locale: "en_IN",
-      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Company Salary Guides India 2026 | HireStepX" }],
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Company Salary Guides India 2026 | HireStepX",
+      title,
       description: ogDesc,
       images: ["https://hirestepx.com/opengraph-image"],
     },
