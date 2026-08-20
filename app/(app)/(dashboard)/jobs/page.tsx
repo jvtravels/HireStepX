@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import DashboardLayout from "@/DashboardLayout";
 import DashboardJobs from "@/DashboardJobs";
 
 export const metadata: Metadata = {
@@ -8,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return (
-    <DashboardLayout>
-      <DashboardJobs />
-    </DashboardLayout>
-  );
+  return <DashboardJobs />;
 }
