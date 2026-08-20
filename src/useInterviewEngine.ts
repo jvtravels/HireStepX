@@ -281,10 +281,17 @@ export function useInterviewEngine() {
   //     - Fresh start from SessionSetup → has ?new=1
   //     - Resume from dashboard → has ?resume=true
   //     - Page refresh mid-session → draftRef.current is populated
+  //
+  //   B-EMP2 (2026-08-20): this redirect and the record-session-start
+  //   effect below both fire on mount as SEPARATE effects. Before this ref,
+  //   a bounce-worthy entry (no intent, no draft) still let
+  //   record-session-start's effect run and burn a credit for a session
+  //   the user never saw — router.replace() only kicks off navigation, it
+  //   doesn't stop already-scheduled effects. missingStartIntentRef lets
+  //   the later effect check "are we bouncing?" before spending a credit.
+  const missingStartIntentRef = useRef(!(isNewSession || isResuming) && !draftRef.current);
   useEffect(() => {
-    const hasExplicitIntent = isNewSession || isResuming;
-    const hasRestorableDraft = !!draftRef.current;
-    if (!hasExplicitIntent && !hasRestorableDraft) {
+    if (missingStartIntentRef.current) {
       console.warn("[interview] Entered /interview with no start intent and no draft — redirecting to /dashboard");
       router.replace("/dashboard");
     }
@@ -335,6 +342,7 @@ export function useInterviewEngine() {
      would cause quota counting to undercount active sessions. */
   useEffect(() => {
     if (!user?.id) return; // anon sessions don't count
+    if (missingStartIntentRef.current) return; // B-EMP2: bouncing to /dashboard — don't charge a credit
     const sessionId = liveSessionIdRef.current;
     (async () => {
       try {
