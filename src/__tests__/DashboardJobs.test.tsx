@@ -53,10 +53,12 @@ describe("DashboardJobs", () => {
               skills: ["Node.js", "Postgres"],
               noticePeriodPref: "30 days",
               openPositions: 2,
+              description: "We're growing the payments platform team.",
               responsibilities: "Own the payments service.",
               niceToHave: "Kubernetes experience.",
               perksAndBenefits: ["Health insurance", "WFH stipend"],
               preferredIndustry: "Fintech",
+              dueDate: "2026-09-30",
               status: "open",
               matchScore: 87,
               unlocked: false,
@@ -74,9 +76,11 @@ describe("DashboardJobs", () => {
     expect(screen.getByText("2 openings")).toBeInTheDocument();
     expect(screen.getByText(/Notice: 30 days/)).toBeInTheDocument();
     expect(screen.getByText("Fintech")).toBeInTheDocument();
-    expect(screen.getByText("Own the payments service.")).toBeInTheDocument();
+    expect(screen.getByText("We're growing the payments platform team.")).toBeInTheDocument();
+    expect(screen.getByText(/Own the payments service\./)).toBeInTheDocument();
     expect(screen.getByText(/Kubernetes experience\./)).toBeInTheDocument();
     expect(screen.getByText("Health insurance")).toBeInTheDocument();
+    expect(screen.getByText(/Hiring by 2026-09-30/)).toBeInTheDocument();
   });
 
   it("shows a ROLE CLOSED badge for a closed, un-unlocked match", async () => {
@@ -118,7 +122,12 @@ describe("DashboardJobs", () => {
     ) as unknown as typeof fetch;
     render(<DashboardJobs />);
     await waitFor(() => expect(screen.getByText("ROLE CLOSED")).toBeInTheDocument());
-    expect(screen.getByText("Beta Inc")).toBeInTheDocument();
+    expect(screen.getByText(/Beta Inc/)).toBeInTheDocument();
+    expect(screen.getByText(/Location not specified/)).toBeInTheDocument();
+    expect(screen.getByText("Compensation not disclosed")).toBeInTheDocument();
+    expect(screen.getByText("No specific skills listed for this role.")).toBeInTheDocument();
+    expect(screen.getByText("This employer hasn't added a role description yet.")).toBeInTheDocument();
+    expect(screen.getByText("No perks or benefits listed.")).toBeInTheDocument();
   });
 
   it("stays on the loading skeleton and then settles on a fetch rejection", async () => {

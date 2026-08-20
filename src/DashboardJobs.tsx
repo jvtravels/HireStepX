@@ -29,10 +29,12 @@ interface JobMatch {
   skills: string[];
   noticePeriodPref: string | null;
   openPositions: number | null;
+  description: string | null;
   responsibilities: string | null;
   niceToHave: string | null;
   perksAndBenefits: string[];
   preferredIndustry: string | null;
+  dueDate: string | null;
   status: string | null;
   matchScore: number;
   unlocked: boolean;
@@ -153,17 +155,36 @@ export default function DashboardJobs() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>
-                        {r.roleTitle}
-                      </div>
-                      <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>
-                        {r.companyWebsite ? (
-                          <a href={r.companyWebsite} target="_blank" rel="noopener noreferrer" style={{ color: t.inkSoft, textDecoration: "underline" }}>
-                            {r.companyName}
-                          </a>
-                        ) : r.companyName}
-                        {r.location ? ` · ${r.location}` : ""}{mode ? ` · ${mode}` : ""}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+                      {r.companyLogoPath ? (
+                        <img
+                          src={r.companyLogoPath}
+                          alt={`${r.companyName} logo`}
+                          width={36}
+                          height={36}
+                          style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 8, background: t.cream, border: `1px solid ${t.line}`,
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          fontFamily: f.serif, fontSize: 15, color: t.inkSoft,
+                        }}>
+                          {r.companyName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>
+                          {r.roleTitle}
+                        </div>
+                        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>
+                          {r.companyWebsite ? (
+                            <a href={r.companyWebsite} target="_blank" rel="noopener noreferrer" style={{ color: t.inkSoft, textDecoration: "underline" }}>
+                              {r.companyName}
+                            </a>
+                          ) : r.companyName}
+                          {" · "}{r.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
+                        </div>
                       </div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
@@ -193,15 +214,31 @@ export default function DashboardJobs() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginBottom: 10 }}>
-                    {comp && <span>{comp}</span>}
-                    {exp && <span>{exp} exp</span>}
-                    {r.openPositions != null && <span>{r.openPositions} opening{r.openPositions === 1 ? "" : "s"}</span>}
-                    {r.noticePeriodPref && <span>Notice: {r.noticePeriodPref}</span>}
-                    {r.preferredIndustry && <span>{r.preferredIndustry}</span>}
+                  {/* Every slot always renders — a muted placeholder instead of
+                      hiding the row — so a role an employer filled out sparsely
+                      still reads as complete rather than looking broken. */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontFamily: f.sans, fontSize: 12, marginBottom: 10 }}>
+                    <span style={{ color: t.inkFaint, fontStyle: comp ? "normal" : "italic" }}>
+                      {comp || "Compensation not disclosed"}
+                    </span>
+                    <span style={{ color: t.inkFaint, fontStyle: exp ? "normal" : "italic" }}>
+                      {exp ? `${exp} exp` : "Experience not specified"}
+                    </span>
+                    <span style={{ color: t.inkFaint, fontStyle: r.openPositions != null ? "normal" : "italic" }}>
+                      {r.openPositions != null ? `${r.openPositions} opening${r.openPositions === 1 ? "" : "s"}` : "Openings not specified"}
+                    </span>
+                    <span style={{ color: t.inkFaint, fontStyle: r.noticePeriodPref ? "normal" : "italic" }}>
+                      Notice: {r.noticePeriodPref || "Not specified"}
+                    </span>
+                    <span style={{ color: t.inkFaint, fontStyle: r.preferredIndustry ? "normal" : "italic" }}>
+                      {r.preferredIndustry || "Any industry"}
+                    </span>
+                    <span style={{ color: t.inkFaint, fontStyle: r.dueDate ? "normal" : "italic" }}>
+                      {r.dueDate ? `Hiring by ${r.dueDate}` : "Open-ended timeline"}
+                    </span>
                   </div>
 
-                  {r.skills.length > 0 && (
+                  {r.skills.length > 0 ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
                       {r.skills.map((s, si) => (
                         <span key={si} style={{
@@ -212,11 +249,21 @@ export default function DashboardJobs() {
                         </span>
                       ))}
                     </div>
+                  ) : (
+                    <p style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, fontStyle: "italic", margin: "0 0 10px" }}>
+                      No specific skills listed for this role.
+                    </p>
+                  )}
+
+                  {r.description && (
+                    <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, margin: "0 0 8px", lineHeight: 1.55 }}>
+                      {r.description}
+                    </p>
                   )}
 
                   {r.responsibilities && (
                     <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, margin: "0 0 8px", lineHeight: 1.55 }}>
-                      {r.responsibilities}
+                      <strong style={{ color: t.coal }}>Responsibilities: </strong>{r.responsibilities}
                     </p>
                   )}
 
@@ -226,7 +273,13 @@ export default function DashboardJobs() {
                     </p>
                   )}
 
-                  {r.perksAndBenefits.length > 0 && (
+                  {!r.description && !r.responsibilities && !r.niceToHave && (
+                    <p style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, fontStyle: "italic", margin: "0 0 8px" }}>
+                      This employer hasn't added a role description yet.
+                    </p>
+                  )}
+
+                  {r.perksAndBenefits.length > 0 ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                       {r.perksAndBenefits.map((p, pi) => (
                         <span key={pi} style={{
@@ -237,6 +290,10 @@ export default function DashboardJobs() {
                         </span>
                       ))}
                     </div>
+                  ) : (
+                    <p style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, fontStyle: "italic", margin: "0 0 8px" }}>
+                      No perks or benefits listed.
+                    </p>
                   )}
 
                   <div style={{ fontFamily: f.sans, fontSize: 10.5, color: t.inkFaint, marginTop: 4 }}>

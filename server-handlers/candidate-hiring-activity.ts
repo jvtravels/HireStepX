@@ -36,6 +36,7 @@ interface MatchRow {
   employer_requirements: {
     title: string;
     location: string;
+    locations: string[] | null;
     status: string;
     work_mode: string | null;
     budget_min: number | null;
@@ -45,10 +46,12 @@ interface MatchRow {
     skills: string[] | null;
     notice_period_pref: string | null;
     open_positions: number | null;
+    description: string | null;
     responsibilities: string | null;
     nice_to_have: string | null;
     perks_and_benefits: string[] | null;
     preferred_industry: string | null;
+    due_date: string | null;
     employers: { company_name: string; logo_path: string | null; website: string | null } | null;
   } | null;
 }
@@ -95,8 +98,8 @@ export default async function handler(req: Request): Promise<Response> {
     const matchesRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
         `&select=id,unlocked,unlocked_at,match_score,created_at,` +
-        `employer_requirements(title,location,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,` +
-        `notice_period_pref,open_positions,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,` +
+        `employer_requirements(title,location,locations,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,` +
+        `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,` +
         `employers(company_name,logo_path,website))` +
         `&order=created_at.desc`,
       { headers: serviceHeaders() },
@@ -121,30 +124,39 @@ export default async function handler(req: Request): Promise<Response> {
     const full = url.searchParams.get("full") === "1";
     const limited = full ? activeMatches : activeMatches.slice(0, 3);
 
-    const recent = limited.map((m) => ({
-      roleTitle: m.employer_requirements?.title || "Open role",
-      companyName: m.employer_requirements?.employers?.company_name || "A HireStepX employer",
-      companyLogoPath: m.employer_requirements?.employers?.logo_path || null,
-      companyWebsite: m.employer_requirements?.employers?.website || null,
-      location: m.employer_requirements?.location || "",
-      workMode: m.employer_requirements?.work_mode || null,
-      budgetMin: m.employer_requirements?.budget_min ?? null,
-      budgetMax: m.employer_requirements?.budget_max ?? null,
-      experienceMin: m.employer_requirements?.experience_min ?? null,
-      experienceMax: m.employer_requirements?.experience_max ?? null,
-      skills: (m.employer_requirements?.skills || []).slice(0, 6),
-      noticePeriodPref: m.employer_requirements?.notice_period_pref || null,
-      openPositions: m.employer_requirements?.open_positions ?? null,
-      responsibilities: m.employer_requirements?.responsibilities || null,
-      niceToHave: m.employer_requirements?.nice_to_have || null,
-      perksAndBenefits: m.employer_requirements?.perks_and_benefits || [],
-      preferredIndustry: m.employer_requirements?.preferred_industry || null,
-      status: m.employer_requirements?.status || null,
-      matchScore: m.match_score ?? 0,
-      unlocked: m.unlocked,
-      matchedAt: m.created_at.slice(0, 10),
-      unlockedAt: m.unlocked_at ? m.unlocked_at.slice(0, 10) : null,
-    }));
+    const recent = limited.map((m) => {
+      const req = m.employer_requirements;
+      const skills = req?.skills || [];
+      const locations = req?.locations?.length ? req.locations : req?.location ? [req.location] : [];
+      return {
+        roleTitle: req?.title || "Open role",
+        companyName: req?.employers?.company_name || "A HireStepX employer",
+        companyLogoPath: req?.employers?.logo_path || null,
+        companyWebsite: req?.employers?.website || null,
+        location: locations.join(" / "),
+        workMode: req?.work_mode || null,
+        budgetMin: req?.budget_min ?? null,
+        budgetMax: req?.budget_max ?? null,
+        experienceMin: req?.experience_min ?? null,
+        experienceMax: req?.experience_max ?? null,
+        // The dashboard teaser trims to 6 chips to stay compact; the full
+        // Jobs tab shows every skill the employer listed.
+        skills: full ? skills : skills.slice(0, 6),
+        noticePeriodPref: req?.notice_period_pref || null,
+        openPositions: req?.open_positions ?? null,
+        description: req?.description || null,
+        responsibilities: req?.responsibilities || null,
+        niceToHave: req?.nice_to_have || null,
+        perksAndBenefits: req?.perks_and_benefits || [],
+        preferredIndustry: req?.preferred_industry || null,
+        dueDate: req?.due_date || null,
+        status: req?.status || null,
+        matchScore: m.match_score ?? 0,
+        unlocked: m.unlocked,
+        matchedAt: m.created_at.slice(0, 10),
+        unlockedAt: m.unlocked_at ? m.unlocked_at.slice(0, 10) : null,
+      };
+    });
 
     return new Response(
       JSON.stringify({ discoverable: true, shortlistedCount, unlockedCount, recent }),
