@@ -20,6 +20,8 @@ import type { DashboardSession } from "./dashboardTypes";
 import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 import { UpcomingInterviews } from "./DashboardHomePanels";
 import HiringActivityCard from "./HiringActivityCard";
+import { authHeaders } from "./supabase";
+import { apiFetch } from "./apiClient";
 import {
   computeResumeFreshness,
   parseDismissal,
@@ -59,6 +61,8 @@ const t = {
   copperBorder: T.copperBorder,
   success:      T.success,
   success100:   T.success100,
+  error:        T.error,
+  error100:     T.error100,
   warning100:   T.warning100,
   warningInk:   T.warningInk,
   warningLine:  T.warningLine,
@@ -281,7 +285,7 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
 const OUTCOME_DISMISS_KEY = "hirestepx_outcome_dismissed";
 
 function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: string | null | undefined; isCampus?: boolean }) {
-  const [status, setStatus] = useState<"idle" | "open" | "done" | "dismissed">("idle");
+  const [status, setStatus] = useState<"idle" | "open" | "done" | "error" | "dismissed">("idle");
   const [applied, setApplied] = useState(false);
   const [interviewed, setInterviewed] = useState(false);
   const [offer, setOffer] = useState(false);
@@ -301,12 +305,14 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
     } catch { /* private mode */ }
 
     // Check if already reported
-    fetch("/api/user-outcome", { credentials: "include" })
-      .then(r => r.ok ? r.json() : null)
-      .then((data: { outcome: Record<string, unknown> | null } | null) => {
+    (async () => {
+      try {
+        const res = await fetch("/api/user-outcome", { headers: await authHeaders() });
+        if (!res.ok) return;
+        const data = (await res.json()) as { outcome: Record<string, unknown> | null } | null;
         if (!data?.outcome) setStatus("open");
-      })
-      .catch(() => { /* best-effort */ });
+      } catch { /* best-effort */ }
+    })();
   }, [firstSessionDate]);
 
   const dismiss = () => {
@@ -316,21 +322,33 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
 
   const submit = async () => {
     setBusy(true);
-    try {
-      await fetch("/api/user-outcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ applied, interviewed, offer, accepted,
-          company: company.trim() || undefined, roleLanded: roleLanded.trim() || undefined,
-          testimonial: testimonial.trim() || undefined, mayShare }),
-      });
-    } catch { /* best-effort */ }
+    const res = await apiFetch("/api/user-outcome", { applied, interviewed, offer, accepted,
+      company: company.trim() || undefined, roleLanded: roleLanded.trim() || undefined,
+      testimonial: testimonial.trim() || undefined, mayShare });
     setBusy(false);
-    setStatus("done");
+    setStatus(res.ok ? "done" : "error");
   };
 
   if (status === "idle" || status === "dismissed") return null;
+
+  if (status === "error") {
+    return (
+      <div style={{
+        padding: "12px 14px", background: t.error100,
+        border: `1px solid ${t.error}`, borderRadius: 10,
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+      }}>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, lineHeight: 1.4 }}>
+          Couldn&apos;t save your result. Please try again.
+        </p>
+        <button
+          type="button" onClick={() => setStatus("open")}
+          style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo,
+            background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
+        >Retry</button>
+      </div>
+    );
+  }
 
   if (status === "done") {
     return (
