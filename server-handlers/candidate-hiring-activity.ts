@@ -30,11 +30,19 @@ function serviceHeaders(): Record<string, string> {
 interface MatchRow {
   id: string;
   unlocked: boolean;
+  unlocked_at: string | null;
+  match_score: number;
   created_at: string;
   employer_requirements: {
     title: string;
     location: string;
     status: string;
+    work_mode: string | null;
+    budget_min: number | null;
+    budget_max: number | null;
+    experience_min: number | null;
+    experience_max: number | null;
+    skills: string[] | null;
     employers: { company_name: string } | null;
   } | null;
 }
@@ -80,7 +88,8 @@ export default async function handler(req: Request): Promise<Response> {
 
     const matchesRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
-        `&select=id,unlocked,created_at,employer_requirements(title,location,status,employers(company_name))` +
+        `&select=id,unlocked,unlocked_at,match_score,created_at,` +
+        `employer_requirements(title,location,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,employers(company_name))` +
         `&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
@@ -100,8 +109,16 @@ export default async function handler(req: Request): Promise<Response> {
       roleTitle: m.employer_requirements?.title || "Open role",
       companyName: m.employer_requirements?.employers?.company_name || "A HireStepX employer",
       location: m.employer_requirements?.location || "",
+      workMode: m.employer_requirements?.work_mode || null,
+      budgetMin: m.employer_requirements?.budget_min ?? null,
+      budgetMax: m.employer_requirements?.budget_max ?? null,
+      experienceMin: m.employer_requirements?.experience_min ?? null,
+      experienceMax: m.employer_requirements?.experience_max ?? null,
+      skills: (m.employer_requirements?.skills || []).slice(0, 6),
+      matchScore: m.match_score ?? 0,
       unlocked: m.unlocked,
       matchedAt: m.created_at.slice(0, 10),
+      unlockedAt: m.unlocked_at ? m.unlocked_at.slice(0, 10) : null,
     }));
 
     return new Response(
