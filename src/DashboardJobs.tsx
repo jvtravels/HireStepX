@@ -13,9 +13,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f } from "./auth/_tokens";
-import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL } from "./hiringMatchFormat";
+import { daysAgo, WORK_MODE_LABEL } from "./hiringMatchFormat";
+import JobDetailModal from "./JobDetailModal";
 
-interface JobMatch {
+export interface JobMatch {
   roleTitle: string;
   companyName: string;
   companyLogoPath: string | null;
@@ -53,6 +54,7 @@ export default function DashboardJobs() {
   const router = useRouter();
   const [data, setData] = useState<HiringActivity | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [selected, setSelected] = useState<JobMatch | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,174 +141,112 @@ export default function DashboardJobs() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {matches.map((r, i) => {
-              const comp = formatComp(r.budgetMin, r.budgetMax);
-              const exp = formatExperience(r.experienceMin, r.experienceMax);
-              const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
-              const closed = r.status === "closed" || r.status === "failed";
-              return (
-                <div
-                  key={i}
-                  style={{
-                    padding: "18px", borderRadius: 10,
-                    background: r.unlocked ? t.indigo100 : t.creamSoft,
-                    border: `1px solid ${r.unlocked ? t.indigoDeep : t.line}`,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
-                      {r.companyLogoPath ? (
-                        <img
-                          src={r.companyLogoPath}
-                          alt={`${r.companyName} logo`}
-                          width={36}
-                          height={36}
-                          style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: 36, height: 36, borderRadius: 8, background: t.cream, border: `1px solid ${t.line}`,
-                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                          fontFamily: f.serif, fontSize: 15, color: t.inkSoft,
-                        }}>
-                          {r.companyName.charAt(0).toUpperCase()}
+          <div style={{ overflowX: "auto", border: `1px solid ${t.line}`, borderRadius: 10 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: f.sans }}>
+              <thead>
+                <tr>
+                  {["Role", "Company", "Location", "Status", "Matched"].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        textAlign: "left", padding: "10px 14px", fontSize: 11, letterSpacing: 0.4,
+                        textTransform: "uppercase", color: t.inkFaint, background: t.creamSoft,
+                        borderBottom: `1px solid ${t.line}`,
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {matches.map((r, i) => {
+                  const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
+                  const closed = r.status === "closed" || r.status === "failed";
+                  return (
+                    <tr
+                      key={i}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
+                      onClick={() => setSelected(r)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(r); }
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        background: r.unlocked ? t.indigo100 : "transparent",
+                        borderBottom: i < matches.length - 1 ? `1px solid ${t.line}` : "none",
+                      }}
+                    >
+                      <td style={{ padding: "12px 14px", fontSize: 13.5, fontWeight: 600, color: t.coal }}>
+                        {r.roleTitle}
+                      </td>
+                      <td style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {r.companyLogoPath ? (
+                            <img
+                              src={r.companyLogoPath}
+                              alt={`${r.companyName} logo`}
+                              width={22}
+                              height={22}
+                              style={{ borderRadius: 5, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
+                            />
+                          ) : (
+                            <div style={{
+                              width: 22, height: 22, borderRadius: 5, background: t.cream, border: `1px solid ${t.line}`,
+                              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                              fontFamily: f.serif, fontSize: 11, color: t.inkSoft,
+                            }}>
+                              {r.companyName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          {r.companyName}
                         </div>
-                      )}
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>
-                          {r.roleTitle}
+                      </td>
+                      <td style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft }}>
+                        {r.location || "Not specified"}{mode ? ` · ${mode}` : ""}
+                      </td>
+                      <td style={{ padding: "12px 14px" }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {r.unlocked ? (
+                            <span style={{
+                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
+                              background: t.cream, padding: "3px 9px", borderRadius: 999,
+                            }}>
+                              CONTACTED
+                            </span>
+                          ) : (
+                            <span style={{
+                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.inkSoft,
+                              background: t.cream, padding: "3px 9px", borderRadius: 999,
+                            }}>
+                              {r.matchScore}% MATCH
+                            </span>
+                          )}
+                          {closed && !r.unlocked && (
+                            <span style={{
+                              fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
+                              background: t.cream, padding: "2px 8px", borderRadius: 999,
+                            }}>
+                              ROLE CLOSED
+                            </span>
+                          )}
                         </div>
-                        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>
-                          {r.companyWebsite ? (
-                            <a href={r.companyWebsite} target="_blank" rel="noopener noreferrer" style={{ color: t.inkSoft, textDecoration: "underline" }}>
-                              {r.companyName}
-                            </a>
-                          ) : r.companyName}
-                          {" · "}{r.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                      {r.unlocked ? (
-                        <span style={{
-                          fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
-                          background: t.cream, padding: "3px 9px", borderRadius: 999,
-                        }}>
-                          CONTACTED
-                        </span>
-                      ) : (
-                        <span style={{
-                          fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.inkSoft,
-                          background: t.cream, padding: "3px 9px", borderRadius: 999,
-                        }}>
-                          {r.matchScore}% MATCH
-                        </span>
-                      )}
-                      {closed && !r.unlocked && (
-                        <span style={{
-                          fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
-                          background: t.cream, padding: "2px 8px", borderRadius: 999,
-                        }}>
-                          ROLE CLOSED
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Every slot always renders — a muted placeholder instead of
-                      hiding the row — so a role an employer filled out sparsely
-                      still reads as complete rather than looking broken. */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontFamily: f.sans, fontSize: 12, marginBottom: 10 }}>
-                    <span style={{ color: t.inkFaint, fontStyle: comp ? "normal" : "italic" }}>
-                      {comp || "Compensation not disclosed"}
-                    </span>
-                    <span style={{ color: t.inkFaint, fontStyle: exp ? "normal" : "italic" }}>
-                      {exp ? `${exp} exp` : "Experience not specified"}
-                    </span>
-                    <span style={{ color: t.inkFaint, fontStyle: r.openPositions != null ? "normal" : "italic" }}>
-                      {r.openPositions != null ? `${r.openPositions} opening${r.openPositions === 1 ? "" : "s"}` : "Openings not specified"}
-                    </span>
-                    <span style={{ color: t.inkFaint, fontStyle: r.noticePeriodPref ? "normal" : "italic" }}>
-                      Notice: {r.noticePeriodPref || "Not specified"}
-                    </span>
-                    <span style={{ color: t.inkFaint, fontStyle: r.preferredIndustry ? "normal" : "italic" }}>
-                      {r.preferredIndustry || "Any industry"}
-                    </span>
-                    <span style={{ color: t.inkFaint, fontStyle: r.dueDate ? "normal" : "italic" }}>
-                      {r.dueDate ? `Hiring by ${r.dueDate}` : "Open-ended timeline"}
-                    </span>
-                  </div>
-
-                  {r.skills.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-                      {r.skills.map((s, si) => (
-                        <span key={si} style={{
-                          fontFamily: f.sans, fontSize: 11, color: t.coal, background: t.cream,
-                          border: `1px solid ${t.line}`, padding: "3px 8px", borderRadius: 999,
-                        }}>
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, fontStyle: "italic", margin: "0 0 10px" }}>
-                      No specific skills listed for this role.
-                    </p>
-                  )}
-
-                  {r.description && (
-                    <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, margin: "0 0 8px", lineHeight: 1.55 }}>
-                      {r.description}
-                    </p>
-                  )}
-
-                  {r.responsibilities && (
-                    <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, margin: "0 0 8px", lineHeight: 1.55 }}>
-                      <strong style={{ color: t.coal }}>Responsibilities: </strong>{r.responsibilities}
-                    </p>
-                  )}
-
-                  {r.niceToHave && (
-                    <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 8px", lineHeight: 1.5 }}>
-                      <strong style={{ color: t.coal }}>Nice to have: </strong>{r.niceToHave}
-                    </p>
-                  )}
-
-                  {!r.description && !r.responsibilities && !r.niceToHave && (
-                    <p style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, fontStyle: "italic", margin: "0 0 8px" }}>
-                      This employer hasn't added a role description yet.
-                    </p>
-                  )}
-
-                  {r.perksAndBenefits.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                      {r.perksAndBenefits.map((p, pi) => (
-                        <span key={pi} style={{
-                          fontFamily: f.sans, fontSize: 10.5, color: t.inkSoft, background: "transparent",
-                          border: `1px solid ${t.line}`, padding: "2px 8px", borderRadius: 999,
-                        }}>
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, fontStyle: "italic", margin: "0 0 8px" }}>
-                      No perks or benefits listed.
-                    </p>
-                  )}
-
-                  <div style={{ fontFamily: f.sans, fontSize: 10.5, color: t.inkFaint, marginTop: 4 }}>
-                    {r.unlocked && r.unlockedAt
-                      ? `Contacted ${daysAgo(r.unlockedAt)} · matched ${daysAgo(r.matchedAt)}`
-                      : `Matched ${daysAgo(r.matchedAt)}`}
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td style={{ padding: "12px 14px", fontSize: 12, color: t.inkFaint, whiteSpace: "nowrap" }}>
+                        {daysAgo(r.matchedAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </>
       )}
+
+      {selected && <JobDetailModal job={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
