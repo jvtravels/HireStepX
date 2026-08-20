@@ -720,14 +720,6 @@ export default function RequirementDetailPage() {
 
           {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
             <>
-              {requirement.status === "partial" && (
-                <Card style={{ background: t.warning100, border: "none", marginBottom: 16 }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 13, color: t.warningInk }}>
-                    Only a partial match was found — fewer candidates met this requirement closely. Consider widening
-                    location or experience range.
-                  </span>
-                </Card>
-              )}
               {readOnly && (
                 <Card style={{ background: t.creamSoft, marginBottom: 16 }}>
                   <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
