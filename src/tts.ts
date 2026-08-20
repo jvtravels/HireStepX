@@ -979,7 +979,7 @@ async function speakWithAzure(
 // see B-EMP4 in speakWithBrowser below.
 const BROWSER_FEMALE_VOICE_HINTS = ["female", "samantha", "veena", "zira", "karen", "victoria", "moira", "tessa", "fiona"];
 const BROWSER_MALE_VOICE_HINTS = ["male", "daniel", "rishi", "david", "alex", "fred", "aaron", "arthur"];
-function browserVoiceGender(name: string): "male" | "female" | undefined {
+export function browserVoiceGender(name: string): "male" | "female" | undefined {
   const lower = name.toLowerCase();
   if (BROWSER_FEMALE_VOICE_HINTS.some((h) => lower.includes(h))) return "female";
   if (BROWSER_MALE_VOICE_HINTS.some((h) => lower.includes(h))) return "male";
