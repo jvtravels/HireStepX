@@ -90,6 +90,34 @@ describe("HiringActivityCard", () => {
     expect(screen.getByText(/₹20L/)).toBeInTheDocument();
   });
 
+  it("caps the teaser at 3 and shows a View all link to the Jobs tab", async () => {
+    const recent = Array.from({ length: 5 }, (_, i) => ({
+      roleTitle: `Role ${i}`,
+      companyName: `Company ${i}`,
+      location: "Bengaluru",
+      workMode: "remote",
+      budgetMin: 10,
+      budgetMax: 15,
+      experienceMin: 1,
+      experienceMax: 3,
+      skills: [],
+      matchScore: 70,
+      unlocked: false,
+      matchedAt: new Date().toISOString().slice(0, 10),
+      unlockedAt: null,
+    }));
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({ discoverable: true, shortlistedCount: 5, unlockedCount: 0, recent }),
+      }),
+    ) as unknown as typeof fetch;
+    render(<HiringActivityCard />);
+    await waitFor(() => expect(screen.getByText(/View all 5 matches/)).toBeInTheDocument());
+    expect(screen.getByText("Role 0")).toBeInTheDocument();
+    expect(screen.queryByText("Role 3")).not.toBeInTheDocument();
+  });
+
   it("stays quiet on a fetch rejection", async () => {
     global.fetch = vi.fn(() => Promise.reject(new Error("network down"))) as unknown as typeof fetch;
     const { container } = render(<HiringActivityCard />);
