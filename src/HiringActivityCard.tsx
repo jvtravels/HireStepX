@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f } from "./auth/_tokens";
+import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL } from "./hiringMatchFormat";
 
 interface HiringMatch {
   roleTitle: string;
@@ -31,35 +32,16 @@ interface HiringMatch {
   unlockedAt: string | null;
 }
 
+// Everything beyond this teaser count lives on the dedicated Jobs tab —
+// the dashboard card's job is to prompt a visit, not be the full list.
+const DASHBOARD_TEASER_LIMIT = 3;
+
 interface HiringActivity {
   discoverable: boolean;
   shortlistedCount?: number;
   unlockedCount?: number;
   recent?: HiringMatch[];
 }
-
-function daysAgo(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
-  if (days <= 0) return "today";
-  if (days === 1) return "1 day ago";
-  if (days < 30) return `${days} days ago`;
-  const months = Math.floor(days / 30);
-  return months === 1 ? "1 month ago" : `${months} months ago`;
-}
-
-function formatComp(min: number | null, max: number | null): string | null {
-  if (min == null && max == null) return null;
-  if (min != null && max != null) return `₹${min}–${max}L`;
-  return `₹${min ?? max}L`;
-}
-
-function formatExperience(min: number | null, max: number | null): string | null {
-  if (min == null && max == null) return null;
-  if (min != null && max != null) return `${min}–${max} yrs`;
-  return `${min ?? max}+ yrs`;
-}
-
-const WORK_MODE_LABEL: Record<string, string> = { remote: "Remote", onsite: "On-site", hybrid: "Hybrid" };
 
 export default function HiringActivityCard() {
   const router = useRouter();
@@ -122,7 +104,7 @@ export default function HiringActivityCard() {
 
   const shortlisted = data.shortlistedCount ?? 0;
   const unlocked = data.unlockedCount ?? 0;
-  const matches = data.recent || [];
+  const matches = (data.recent || []).slice(0, DASHBOARD_TEASER_LIMIT);
 
   return (
     <div style={boxStyle}>
@@ -213,6 +195,20 @@ export default function HiringActivityCard() {
               );
             })}
           </div>
+
+          {shortlisted > matches.length && (
+            <button
+              type="button"
+              onClick={() => router.push("/jobs")}
+              style={{
+                marginTop: 12, width: "100%", padding: "8px 0", borderRadius: 8,
+                border: `1px solid ${t.lineStrong}`, background: "transparent", color: t.coal,
+                fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              View all {shortlisted} matches →
+            </button>
+          )}
         </>
       )}
     </div>

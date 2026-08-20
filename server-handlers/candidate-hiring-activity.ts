@@ -43,7 +43,13 @@ interface MatchRow {
     experience_min: number | null;
     experience_max: number | null;
     skills: string[] | null;
-    employers: { company_name: string } | null;
+    notice_period_pref: string | null;
+    open_positions: number | null;
+    responsibilities: string | null;
+    nice_to_have: string | null;
+    perks_and_benefits: string[] | null;
+    preferred_industry: string | null;
+    employers: { company_name: string; logo_path: string | null; website: string | null } | null;
   } | null;
 }
 
@@ -89,7 +95,9 @@ export default async function handler(req: Request): Promise<Response> {
     const matchesRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
         `&select=id,unlocked,unlocked_at,match_score,created_at,` +
-        `employer_requirements(title,location,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,employers(company_name))` +
+        `employer_requirements(title,location,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,` +
+        `notice_period_pref,open_positions,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,` +
+        `employers(company_name,logo_path,website))` +
         `&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
@@ -105,9 +113,19 @@ export default async function handler(req: Request): Promise<Response> {
 
     const shortlistedCount = activeMatches.length;
     const unlockedCount = matches.filter((m) => m.unlocked).length;
-    const recent = activeMatches.slice(0, 10).map((m) => ({
+
+    // The dashboard widget only ever needs a short teaser; the dedicated
+    // Jobs tab wants the full list plus the richer per-role fields. Both
+    // read from the same match set — cap only what's returned as `recent`.
+    const url = new URL(req.url);
+    const full = url.searchParams.get("full") === "1";
+    const limited = full ? activeMatches : activeMatches.slice(0, 3);
+
+    const recent = limited.map((m) => ({
       roleTitle: m.employer_requirements?.title || "Open role",
       companyName: m.employer_requirements?.employers?.company_name || "A HireStepX employer",
+      companyLogoPath: m.employer_requirements?.employers?.logo_path || null,
+      companyWebsite: m.employer_requirements?.employers?.website || null,
       location: m.employer_requirements?.location || "",
       workMode: m.employer_requirements?.work_mode || null,
       budgetMin: m.employer_requirements?.budget_min ?? null,
@@ -115,6 +133,13 @@ export default async function handler(req: Request): Promise<Response> {
       experienceMin: m.employer_requirements?.experience_min ?? null,
       experienceMax: m.employer_requirements?.experience_max ?? null,
       skills: (m.employer_requirements?.skills || []).slice(0, 6),
+      noticePeriodPref: m.employer_requirements?.notice_period_pref || null,
+      openPositions: m.employer_requirements?.open_positions ?? null,
+      responsibilities: m.employer_requirements?.responsibilities || null,
+      niceToHave: m.employer_requirements?.nice_to_have || null,
+      perksAndBenefits: m.employer_requirements?.perks_and_benefits || [],
+      preferredIndustry: m.employer_requirements?.preferred_industry || null,
+      status: m.employer_requirements?.status || null,
       matchScore: m.match_score ?? 0,
       unlocked: m.unlocked,
       matchedAt: m.created_at.slice(0, 10),
