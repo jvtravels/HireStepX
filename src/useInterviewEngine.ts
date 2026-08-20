@@ -34,7 +34,7 @@ import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
 import type { SarvamSTTHandle } from "./sarvamSTT";
-import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, getPersonaTrait } from "./InterviewComponents";
+import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, getPersonaTrait, getInterviewerRerollCount } from "./InterviewComponents";
 import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
@@ -850,7 +850,10 @@ export function useInterviewEngine() {
   const [evaluating, setEvaluating] = useState(false);
   const [evalElapsed, setEvalElapsed] = useState(0);
   const micStreamRef = useRef<MediaStream | null>(null);
-  const interviewerName = useMemo(() => getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`, user?.id, targetCompany), [interviewType, interviewFocus, targetCompany, user?.id]);
+  const interviewerName = useMemo(() => {
+    const reroll = getInterviewerRerollCount(user?.id);
+    return getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}-${reroll}`, user?.id, targetCompany);
+  }, [interviewType, interviewFocus, targetCompany, user?.id]);
   const interviewerGender = useMemo(() => getInterviewerGender(interviewerName), [interviewerName]);
   // Pick a random female voice once per session (seeded by interviewerName so
   // the same interviewer always uses the same voice, but different interviewers
