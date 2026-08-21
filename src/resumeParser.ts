@@ -114,16 +114,19 @@ async function unzip(data: Uint8Array): Promise<{ entries: { filename: string; d
 async function readPdf(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
 
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
   // Move PDF parsing off the main thread — FakeWorker path causes 200-800ms UI freeze
   // on mid-range Indian devices. workerSrc must be set before any getDocument() call.
   // GlobalWorkerOptions is a typed named export (GlobalWorkerOptionsType) whose
   // workerSrc field is mutable — set it directly, no cast needed.
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    '/pdf.worker.min.js'; // served from public/ — copy pdfjs-dist/legacy/build/pdf.worker.min.js there
-  // Legacy worker entry kept as fallback for environments where workerSrc fails to load
-  // @ts-expect-error no type declarations for worker entry
-  await import("pdfjs-dist/legacy/build/pdf.worker.entry");
+  // pdfjs-dist v5+ ships ESM-only (.mjs) builds and dropped the old
+  // webpack-magic `pdf.worker.entry` import — `new URL(..., import.meta.url)`
+  // is the current bundler-agnostic way to point workerSrc at the shipped
+  // worker asset; webpack (Next.js) resolves and bundles it as its own chunk.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
 
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
 
