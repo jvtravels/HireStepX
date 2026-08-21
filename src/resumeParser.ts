@@ -422,6 +422,15 @@ const STOPWORDS = new Set([
   "prepared","conducted","provided","delivered","achieved","established",
 ]);
 
+// Words that only ever appear as the start of a sentence/bullet fragment,
+// never as the first word of a genuine skill — catches mid-sentence remnants
+// left over when a bullet ("...growth across campaign management...") gets
+// comma/newline-split mid-phrase instead of at a real boundary.
+const FRAGMENT_STARTERS = new Set([
+  "across", "via", "through", "toward", "towards", "against", "over", "within",
+  "amongst", "among", "onto", "into", "upon", "per", "plus", "including",
+]);
+
 function isLikelySkill(s: string): boolean {
   const lower = s.toLowerCase();
   const words = lower.split(/\s+/);
@@ -430,6 +439,10 @@ function isLikelySkill(s: string): boolean {
   if (words.every(w => STOPWORDS.has(w))) return false;
   if (/^\d+$/.test(s)) return false;
   if (/^(19|20)\d{2}/.test(s)) return false;
+  // Metric/count fragments — e.g. "000+ Google Play downloads" left over
+  // after "10,000+ Google Play downloads" gets comma-split mid-number.
+  if (/^\d+[+%]?(\s|$)/.test(s)) return false;
+  if (words.length > 1 && FRAGMENT_STARTERS.has(words[0])) return false;
   if (s.length < 2 || s.length > 40) return false;
   if (/\b(university|college|school|institute|bachelor|master|b\.?tech|m\.?tech|b\.?e|m\.?e|b\.?sc|m\.?sc|ph\.?d)\b/i.test(s)) return false;
   return true;
@@ -536,6 +549,19 @@ function parseCertifications(text: string): string[] {
     .filter(l => l.length > 2 && l.length < 120);
 }
 
+// Collapsing every newline to a space turns a summary with real paragraph
+// breaks (blank lines) or bullet lines into one run-on wall of text.
+// Preserve blank-line paragraph breaks; only join single line-wraps with
+// a space, which is what PDF/DOCX text extraction actually produces for
+// a soft-wrapped sentence.
+function formatSummaryText(text: string): string {
+  return text
+    .split(/\n{2,}/)
+    .map(block => block.replace(/\n/g, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 /** Parse raw resume text into structured data */
 export function parseResumeData(rawText: string): ParsedResume {
   const contact = extractContact(rawText);
@@ -543,7 +569,7 @@ export function parseResumeData(rawText: string): ParsedResume {
 
   return {
     ...contact,
-    summary: sections.summary?.replace(/\n/g, " ").trim() || "",
+    summary: sections.summary ? formatSummaryText(sections.summary) : "",
     skills: sections.skills ? parseSkills(sections.skills) : [],
     experience: sections.experience ? parseExperience(sections.experience) : [],
     education: sections.education ? parseEducation(sections.education) : [],
@@ -575,7 +601,7 @@ export async function parseResumeDataAsync(rawText: string): Promise<ParsedResum
   const certifications = sections.certifications ? parseCertifications(sections.certifications) : [];
   return {
     ...contact,
-    summary: sections.summary?.replace(/\n/g, " ").trim() || "",
+    summary: sections.summary ? formatSummaryText(sections.summary) : "",
     skills, experience, education, certifications,
   };
 }
