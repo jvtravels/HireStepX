@@ -22,7 +22,6 @@ import { getCreditBalance } from "./supabase";
 import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
 import { unlockAudio, prefetchTTS, VOICE_OUTPUT_DISABLED } from "./tts";
-import { getInterviewerName, getInterviewerGender, getInterviewerRerollCount, bumpInterviewerReroll } from "./InterviewComponents";
 import { UpgradeModal } from "./dashboardComponents";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
 import { GAP_CTA_MAP } from "./nextMove";
@@ -1430,24 +1429,6 @@ export default function SessionSetup() {
     !companyMissing &&
     !hardRoleCompanyMismatch;
 
-  /* Interviewer voice preview — mirrors the seed useInterviewEngine.ts
-     uses to assign a name/gender/voice, so the picker here always
-     matches who actually shows up in the interview. rerollTick just
-     forces this useMemo to recompute after bumpInterviewerReroll
-     writes a new count to localStorage. */
-  const [rerollTick, setRerollTick] = useState(() => getInterviewerRerollCount(user?.id));
-  const previewFocusType = focusToType[interviewFocus[0]] || "behavioral";
-  // Mirrors the `focus` query param useInterviewEngine reads (defaults to
-  // "general" for every focus except the two that carry an explicit one).
-  const previewFocusParam =
-    previewFocusType === "hr-round" ? "hr-round" :
-    previewFocusType === "campus-placement" ? "campus-placement" :
-    "general";
-  const interviewerPreviewName = useMemo(() => {
-    if (!formComplete) return null;
-    return getInterviewerName(`${previewFocusType}-${previewFocusParam}-${targetCompany}-${user?.id || ""}-${rerollTick}`, user?.id, targetCompany);
-  }, [formComplete, previewFocusType, previewFocusParam, targetCompany, user?.id, rerollTick]);
-  const interviewerPreviewGender = interviewerPreviewName ? getInterviewerGender(interviewerPreviewName) : null;
   /* Mic is only a hard requirement when the AI actually speaks. With the
      TTS kill-switch on (VOICE_OUTPUT_DISABLED), the interview is text-first
      and fully answerable by typing — the engine's `?nomic=1` path drives a
@@ -2193,28 +2174,6 @@ export default function SessionSetup() {
               </div>
             );
           })()}
-          {interviewerPreviewName && (
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              marginTop: 32, fontFamily: F.sans, fontSize: 13, color: T.inkSoft,
-            }}>
-              <span>
-                Your interviewer: <strong style={{ color: T.coal }}>{interviewerPreviewName}</strong>
-                {interviewerPreviewGender ? ` (${interviewerPreviewGender} voice)` : ""}
-              </span>
-              <button
-                type="button"
-                onClick={() => setRerollTick(bumpInterviewerReroll(user?.id))}
-                style={{
-                  background: "none", border: `1px solid ${T.line}`, borderRadius: 8,
-                  padding: "4px 10px", fontSize: 12, fontWeight: 600, color: T.indigo,
-                  cursor: "pointer",
-                }}
-              >
-                Try another voice
-              </button>
-            </div>
-          )}
           <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 24 }}>
             {(() => {
               const needsMic = micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting";
