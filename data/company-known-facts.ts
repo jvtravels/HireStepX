@@ -2900,15 +2900,20 @@ export function getKnownFacts(rawCompany: string | undefined): KnownFacts | null
     .replace(/[\s-]+/g, " ")
     .trim();
   if (!cleaned) return null;
+  const cleanedTokens = cleaned.split(" ");
   /* Both the input AND each candidate key get hyphen-to-space
-     normalisation before comparison. */
+     normalisation before comparison. Matching is on whole word tokens,
+     not raw substrings — a raw-substring check previously matched
+     "P&G" (-> "pg") against "capgemini" (contains "pg" mid-word),
+     surfacing Capgemini's facts under a Procter & Gamble label. Token
+     matching only accepts one company name being a whole-word prefix
+     of the other, e.g. "Razorpay Inc." -> "razorpay", "samsung" ->
+     "samsung india". */
   for (const [key, value] of Object.entries(COMPANY_KNOWN_FACTS)) {
-    const normalisedKey = key.replace(/-/g, " ");
-    if (
-      cleaned === normalisedKey ||
-      cleaned.includes(normalisedKey) ||
-      (normalisedKey.length >= 4 && normalisedKey.includes(cleaned))
-    ) {
+    const keyTokens = key.replace(/-/g, " ").split(" ");
+    const shorter = keyTokens.length <= cleanedTokens.length ? keyTokens : cleanedTokens;
+    const longer = shorter === keyTokens ? cleanedTokens : keyTokens;
+    if (shorter.every((t, i) => longer[i] === t)) {
       return value;
     }
   }

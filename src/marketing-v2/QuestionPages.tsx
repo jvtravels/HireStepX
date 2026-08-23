@@ -25,7 +25,7 @@ import {
   ED_PADDING,
 } from "./_editorial";
 import { COMPANY_LABEL } from "../../data/company-labels";
-import { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
+import { getKnownFacts } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
 import { SEO_PAGES } from "../../data/seo-pages";
 import type { SeoPage } from "../../data/seo-pages";
@@ -202,7 +202,11 @@ function QuestionGate({ practiceHref, hiddenCount }: { practiceHref: string; hid
    deliberately un-surfaced. Renders nothing when the company has no
    known-facts entry. */
 export function CompanyContextBox({ company, companyLabel }: { company: string; companyLabel: string }) {
-  const facts = COMPANY_KNOWN_FACTS[company];
+  /* Fuzzy lookup (not a direct COMPANY_KNOWN_FACTS[company] index) so
+     SEO-page company keys that don't exactly match the facts-file key
+     still resolve — e.g. page company "samsung" finds the "samsung-india"
+     entry. Same helper the LLM grounding pipeline uses. */
+  const facts = getKnownFacts(company);
   if (!facts) return null;
 
   const rows: Array<{ label: string; value: string }> = [];
