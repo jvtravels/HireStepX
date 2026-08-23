@@ -22603,40 +22603,6 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "If interviewers are now probing judgment and reasoning more than rote answers, practicing out loud against unpredictable follow-ups matters more than ever. Run a free scored HireStepX mock interview and see where your reasoning actually holds up.",
   },
   {
-    slug: "boat-interview-experience-2026",
-    title: "boAt Interview Experience 2026: Rounds and Prep Tips",
-    metaDescription: "boAt (Imagine Marketing) interview experience 2026: DSA, backend, systems design, D2C/e-commerce rounds, salary ranges at India's #1 audio brand.",
-    company: "boAt",
-    category: "Experience",
-    readTime: "8 min",
-    heroImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&q=80",
-    heroAlt: "Wireless audio earphones representing a consumer electronics and D2C brand",
-    heroBg: "#0C0C12",
-    datePublished: "2026-07-31",
-    intro: "boAt (Imagine Marketing) is India's best-known consumer-audio brand, and its engineering team runs a high-traffic D2C commerce stack that has to survive festive-sale spikes without falling over. If you're interviewing for a software role at boAt in 2026, the process is closer to a product-company loop than a hardware one: DSA, backend depth, and a real conversation about scaling e-commerce. Here's what the rounds actually look like and how to prepare.",
-    sections: [
-      {
-        heading: "What boAt's software interview process looks like",
-        content: "boAt's software-engineering loop typically runs 4-5 rounds:\n\n1. Resume screen and/or an online coding assessment (DSA: arrays, strings, hashmaps, two-pointers, basic DP).\n2. Technical round 1, live DSA and problem solving with complexity analysis. Expect to write working code and reason about edge cases, not just describe an approach.\n3. Technical round 2, backend and low-level design: OOP, REST API design, database schema modelling, caching, and how you'd structure a service like cart, checkout, or order tracking.\n4. Systems / high-level design (mid and senior): design an e-commerce component that survives a flash-sale spike, inventory consistency, idempotent checkout, rate limiting, and read-heavy catalogue scaling are common themes.\n5. Hiring-manager and culture round: past projects, ownership, working with product/design, and why consumer D2C.\n\nBecause boAt is a brand-led D2C business, interviewers value engineers who understand that traffic is spiky and customer-facing reliability is the product.",
-      },
-      {
-        heading: "boAt software engineer salary in India (2026)",
-        content: "boAt is a pre-IPO consumer-electronics company (Imagine Marketing), so compensation blends cash with ESOP whose value is tied to an eventual listing. Estimated total-CTC ranges:\n\n- Software Engineer (entry / fresher): roughly ₹8-14 LPA.\n- Software Engineer (mid, 2-5 years): approximately ₹14-24 LPA.\n- Senior Software Engineer (5+ years): around ₹24-40 LPA.\n\nMost engineering roles are based in New Delhi / Gurugram. Treat ESOP value as upside, not guaranteed cash, since boAt's IPO is still pending. See the full boAt salary page for a CTC breakdown by role and level.",
-      },
-      {
-        heading: "How to prepare for a boAt interview",
-        content: "1. Solidify DSA fundamentals: arrays, strings, hashmaps, trees, and basic dynamic programming, with clean code and honest complexity analysis.\n2. Prepare one strong low-level-design answer end to end (a cart or order service): entities, APIs, schema, and how you'd handle concurrency and failure.\n3. Have a scaling story ready: how a catalogue or checkout path behaves under a 10x festive-sale spike, and which levers (caching, queues, idempotency) you'd pull.\n4. Bring one project you can defend in depth, a real trade-off you made and why. D2C interviewers reward ownership and customer-impact framing over buzzwords.",
-      },
-    ],
-    faqs: [
-      { question: "What is the boAt interview process like for software engineers?", answer: "boAt (Imagine Marketing) runs a 4-5 round software loop: an online DSA assessment or resume screen, one to two live technical rounds (DSA plus backend and low-level design), a systems-design round for mid and senior levels focused on scaling e-commerce under sale spikes, and a hiring-manager and culture round. Interviewers value strong CS fundamentals plus practical backend depth and an understanding of high-traffic D2C reliability." },
-      { question: "What salary does boAt pay software engineers in India in 2026?", answer: "boAt salary India 2026 (estimated total CTC): entry-level software engineers around ₹8-14 LPA, mid-level (2-5 years) roughly ₹14-24 LPA, and senior (5+ years) around ₹24-40 LPA. As a pre-IPO consumer-electronics brand, boAt includes ESOP whose value depends on an eventual listing. Most roles are New Delhi / Gurugram based. See the full boAt salary page for details." },
-    ],
-    relatedSlugs: ["low-level-design-interview-india-2026", "system-design-interview-questions-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "boAt Software Engineer Salary India 2026", href: "/salary/boat" }, { label: "boAt Software Engineer Interview Questions", href: "/questions/boat-software-engineer-interview-questions" }],
-    cta: "Preparing for boAt? Practice the exact rounds, DSA, backend design, and behavioral, with HireStepX's scored, India-specific mock interview, and see where your answers actually lose points before the real loop.",
-  },
-  {
     slug: "wakefit-interview-experience-2026",
     title: "Wakefit Interview Experience 2026: Process and Rounds",
     metaDescription: "Wakefit interview experience 2026: rounds (DSA, backend, low-level design, D2C commerce domain), what interviewers look for, salary at the sleep brand.",
@@ -22839,40 +22805,6 @@ export const BLOG_POSTS: BlogPost[] = [
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
     relatedLinks: [{ label: "Khatabook Software Engineer Salary India 2026", href: "/salary/khatabook" }, { label: "Khatabook Software Engineer Interview Questions", href: "/questions/khatabook-software-engineer-interview-questions" }],
     cta: "Interviewing at Khatabook? Practice the DSA, systems-design, and behavioral rounds — with the correctness-and-sync follow-ups SMB-fintech interviewers love — using HireStepX's scored, India-specific mock interview.",
-  },
-  {
-    slug: "policybazaar-interview-experience-2026",
-    title: "PolicyBazaar Interview Experience 2026: Rounds and Prep Tips",
-    metaDescription: "PolicyBazaar (PB Fintech) interview guide 2026: DSA, backend, systems design, insurance-marketplace domain rounds, and salary at India's largest insurer.",
-    company: "PolicyBazaar",
-    category: "Experience",
-    readTime: "8 min",
-    heroImage: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200&q=80",
-    heroAlt: "A person comparing insurance policies on a laptop, representing an insurance marketplace",
-    heroBg: "#0A1220",
-    datePublished: "2026-07-31",
-    intro: "PolicyBazaar (PB Fintech) is India's largest insurance and lending marketplace, and unlike most startups on this list it's publicly listed (NSE: POLICYBZR) — which means its RSUs are liquid, not paper. Its engineering runs a high-traffic comparison, quoting, and transactions platform integrating dozens of insurers. If you're interviewing for a software role at PolicyBazaar in 2026, here's what the rounds look like and how to prepare.",
-    sections: [
-      {
-        heading: "What PolicyBazaar's software interview process looks like",
-        content: "PolicyBazaar's software-engineering loop typically runs 4-5 rounds:\n\n1. Resume screen and/or an online DSA coding assessment.\n2. Technical round 1 — live DSA: arrays, strings, hashmaps, trees, graphs, and dynamic programming, with complexity analysis.\n3. Technical round 2 — backend and low-level design: OOP, REST API design, database schema modelling, third-party integrations, and concurrency around a quoting or policy-issuance feature.\n4. Systems / high-level design (mid and senior): design a high-traffic insurance-comparison or quote-aggregation system that fans out to many insurer APIs, focusing on latency, resilience to a slow partner, and consistency.\n5. Hiring-manager and culture round: past projects, ownership, and why insurtech at scale.\n\nBecause PolicyBazaar integrates dozens of external insurer systems, interviewers value engineers who reason well about third-party failure, timeouts, and graceful degradation.",
-      },
-      {
-        heading: "PolicyBazaar software engineer salary in India (2026)",
-        content: "PolicyBazaar (PB Fintech) is publicly listed, so its equity component is liquid RSUs rather than pre-IPO ESOP. Estimated total-CTC ranges:\n\n- Software Engineer (entry / fresher): roughly ₹14-22 LPA.\n- Software Engineer (mid, 2-5 years): approximately ₹24-40 LPA.\n- Senior Software Engineer (5+ years): around ₹42-68 LPA.\n\nMost engineering roles are Gurugram-based. Because PB Fintech trades on the NSE, the RSU portion of your offer has a real, liquid market value — a meaningful difference from pre-IPO startups. See the full PolicyBazaar salary page for a CTC breakdown by role and level.",
-      },
-      {
-        heading: "How to prepare for a PolicyBazaar interview",
-        content: "1. Get DSA fundamentals clean — arrays, strings, hashmaps, trees, graphs, and DP — with correct, tested code and complexity analysis.\n2. Prepare a low-level-design answer for a quoting or policy-issuance feature: schema, external-integration handling, and idempotency.\n3. Have a systems-design story ready for a fan-out aggregation over many partner APIs — timeouts, circuit breakers, caching, and what you show the user when one insurer is slow or down.\n4. Bring one project you can defend in depth, framed around scale, reliability, or integration complexity with concrete outcomes.",
-      },
-    ],
-    faqs: [
-      { question: "What is the PolicyBazaar interview process like for software engineers?", answer: "PolicyBazaar (PB Fintech) runs a 4-5 round software loop: an online DSA assessment or resume screen, one to two live technical rounds (DSA plus backend and low-level design), a systems-design round for mid and senior levels focused on high-traffic insurance-comparison and quote-aggregation systems, and a hiring-manager and culture round. Because PolicyBazaar integrates dozens of external insurer APIs, interviewers value engineers who reason well about third-party failure, timeouts, circuit breakers, and graceful degradation." },
-      { question: "What salary does PolicyBazaar pay software engineers in India in 2026?", answer: "PolicyBazaar salary India 2026 (estimated total CTC): entry-level software engineers around ₹14-22 LPA, mid-level (2-5 years) roughly ₹24-40 LPA, and senior (5+ years) around ₹42-68 LPA. Because PB Fintech is publicly listed (NSE: POLICYBZR), the equity portion of an offer is liquid RSUs rather than pre-IPO ESOP. Most roles are Gurugram-based. See the full PolicyBazaar salary page for details." },
-    ],
-    relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "PolicyBazaar Software Engineer Salary India 2026", href: "/salary/policybazaar" }, { label: "PolicyBazaar Software Engineer Interview Questions", href: "/questions/policybazaar-software-engineer-interview-questions" }],
-    cta: "Interviewing at PolicyBazaar? Its systems questions are integration-and-resilience focused. Practice the DSA, systems-design, and behavioral rounds with HireStepX's scored, India-specific mock interview before the real loop.",
   },
   {
     slug: "purplle-interview-experience-2026",
