@@ -1,9 +1,10 @@
 import { getSeoPageBySlug, SEO_PAGES, SEO_PAGES_LAST_MODIFIED, type SeoPage } from "../../../../data/seo-pages";
 import { getSalaryPage } from "../../../../data/salary-seo";
-import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
+import { QUESTION_BANK, type BankEntry, type RoleFamily } from "../../../../data/interview-question-bank";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 import { BLOG_META } from "../../../../src/blog-meta";
+import { buildRoleSections } from "../../salary/[company]/_jsonld";
 
 /* Shared source of truth for /questions/[slug]'s data + JSON-LD, used by
  * both the page (renders it) and scripts/generate-jsonld-csp-hashes.mts
@@ -48,21 +49,28 @@ const CATEGORY: Record<string, string> = (() => {
   return map;
 })();
 
-function questionsForPage(p: SeoPage): BankEntry[] {
+/* tier 1/2 = questions genuinely tied to this company (exact roleFamily,
+   or at least exact company+focus). tier 3 = the company has too few
+   bank entries for this focus, so the list falls back to other
+   companies' questions on the same focus — real, useful questions, but
+   not "asked at {company}". The page copy must not claim company
+   attribution it can't back for tier 3 (see AdSense policy 10015918:
+   pages must deliver what they promise, not misattribute content). */
+function questionsForPage(p: SeoPage): { questions: BankEntry[]; tier: 1 | 2 | 3 } {
   const exact = QUESTION_BANK.filter(
     (q) =>
       q.company === p.company &&
       q.focus === p.focus &&
       (!p.roleFamily || q.roleFamily === p.roleFamily),
   );
-  if (exact.length >= 4) return exact.slice(0, 12);
+  if (exact.length >= 4) return { questions: exact.slice(0, 12), tier: 1 };
 
   const noRole = QUESTION_BANK.filter(
     (q) => q.company === p.company && q.focus === p.focus,
   );
-  if (noRole.length >= 4) return noRole.slice(0, 12);
+  if (noRole.length >= 4) return { questions: noRole.slice(0, 12), tier: 2 };
 
-  return QUESTION_BANK.filter((q) => q.focus === p.focus).slice(0, 12);
+  return { questions: QUESTION_BANK.filter((q) => q.focus === p.focus).slice(0, 12), tier: 3 };
 }
 
 /* Spreads pages across Jan 1 – Jul 21 2026 without touching 232 data entries.
@@ -82,11 +90,66 @@ function slugAuthor(_slug: string): string {
   return "HireStepX Editorial Team";
 }
 
+/* Maps a questions-page's roleFamily/focus to the matching /salary/[company]
+   roleKey, so the salary teaser below shows the *actual* role the page is
+   about (e.g. Product Manager pay on a PM interview-questions page) instead
+   of defaulting to Software Engineer for every page regardless of focus. */
+const FOCUS_TO_SALARY_ROLE_KEY: Partial<Record<string, string>> = {
+  hr: "hr",
+};
+const ROLE_FAMILY_TO_SALARY_ROLE_KEY: Partial<Record<RoleFamily, string>> = {
+  pm: "product-manager",
+  design: "ux-designer",
+  consultant: "consultant",
+  data: "data-scientist",
+  ml: "ml-engineer",
+  em: "engineering-manager",
+};
+
+interface SalaryTeaser {
+  roleLabel: string;
+  level: string;
+  levelLabel: string;
+  totalMin: number;
+  totalMax: number;
+}
+
+/* Real, sourced salary-band teaser pulled from /salary/[company]'s existing
+   data (never invented) — mirrors the interview-teaser thickening already
+   done on the /salary/[company] pages, but in reverse, so these pages carry
+   genuine new content instead of being noindexed for sitting at the
+   question bank's floor. Returns null when no salary page exists for the
+   company (e.g. rbi, ibps). */
+function buildSalaryTeaser(page: SeoPage): SalaryTeaser | null {
+  const salaryPage = getSalaryPage(page.company);
+  if (!salaryPage) return null;
+
+  const roleKey =
+    FOCUS_TO_SALARY_ROLE_KEY[page.focus] ??
+    (page.roleFamily ? ROLE_FAMILY_TO_SALARY_ROLE_KEY[page.roleFamily] : undefined) ??
+    "software-engineer";
+  const roleEntry = salaryPage.roles.find((r) => r.roleKey === roleKey) ?? salaryPage.roles[0];
+  if (!roleEntry) return null;
+
+  const [section] = buildRoleSections(page.company, [roleEntry]);
+  const band = section?.bands?.[section.bands.length - 1];
+  if (!band) return null;
+
+  return {
+    roleLabel: section.roleLabel,
+    level: band.level,
+    levelLabel: band.levelLabel,
+    totalMin: band.totalMin,
+    totalMax: band.totalMax,
+  };
+}
+
 export function buildQuestionsPageModel(slug: string) {
   const page = getSeoPageBySlug(slug);
   if (!page) return null;
 
-  const questions = questionsForPage(page);
+  const { questions, tier } = questionsForPage(page);
+  const questionsAreCompanySpecific = tier !== 3;
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
   const focusLabel = FOCUS_LABEL[page.focus] ?? page.focus;
 
@@ -223,6 +286,7 @@ export function buildQuestionsPageModel(slug: string) {
     .map((p: SeoPage) => ({ slug: p.slug, searchPhrase: p.searchPhrase }));
 
   const salaryPage = getSalaryPage(page.company);
+  const salaryTeaser = buildSalaryTeaser(page);
 
   const relatedBlogPosts = BLOG_META
     .filter((post) => post.company.toLowerCase() === page.company)
@@ -245,11 +309,13 @@ export function buildQuestionsPageModel(slug: string) {
   return {
     page,
     questions,
+    questionsAreCompanySpecific,
     companyLabel,
     focusLabel,
     visibleFaqs,
     relatedPages,
     salaryPage,
+    salaryTeaser,
     relatedBlogPosts,
     jsonLdScripts,
   };

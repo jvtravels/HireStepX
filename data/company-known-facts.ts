@@ -2883,6 +2883,63 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     notes: "Genuinely bootstrapped with no outside VC funding — well-documented and shapes culture (long-term thinking, rural hiring via Zoho Schools).",
     lastVerified: "2026-08-04",
   },
+
+  // ─── FMCG, PSU, government/defense bodies ────────────────────────
+  /* Conservative entries: description + well-established products/
+     competitors only. No scale/techHints/notes — those need a specific
+     verifiable source (DRHP, press release, official tech blog) per
+     this file's sourcing rule, and none was checked for these. */
+  /* Keyed "pg" not "p&g" — getKnownFacts() strips "&" from the query
+     string before matching but doesn't strip it from candidate keys, so
+     a literal "p&g" key would never match its own lookup. */
+  pg: {
+    description: "Procter & Gamble India is the Indian arm of the US consumer-goods multinational, selling household and personal-care brands through both direct retail and general trade.",
+    products: ["Gillette", "Pampers", "Ariel", "Vicks", "Whisper", "Head & Shoulders", "Olay"],
+    competitors: ["Hindustan Unilever (HUL)", "ITC", "Godrej Consumer Products", "Colgate-Palmolive"],
+    lastVerified: "2026-08-23",
+  },
+  ssb: {
+    description: "The Services Selection Board (SSB) is the tri-service body that assesses candidates for Indian Armed Forces officer commissions (via NDA, CDS, and other entries) through a multi-day process of psychological tests, group tasks, and personal interviews rather than a conventional single interview.",
+    lastVerified: "2026-08-23",
+  },
+  isro: {
+    description: "The Indian Space Research Organisation (ISRO) is India's national space agency, responsible for satellite development, launch vehicles, and interplanetary missions.",
+    products: ["PSLV", "GSLV", "Chandrayaan missions", "Gaganyaan (human spaceflight)", "Aditya-L1"],
+    lastVerified: "2026-08-23",
+  },
+  "l-and-t": {
+    description: "Larsen & Toubro (L&T) is an Indian multinational conglomerate spanning engineering, construction, heavy manufacturing, defense, and IT services.",
+    competitors: ["Tata Projects", "Adani Group", "Shapoorji Pallonji", "GMR Group"],
+    lastVerified: "2026-08-23",
+  },
+  bhel: {
+    description: "Bharat Heavy Electricals Limited (BHEL) is a state-owned engineering and manufacturing company supplying equipment for power generation, transmission, and heavy industry.",
+    products: ["Thermal power plant equipment", "Turbines", "Boilers", "Generators"],
+    competitors: ["Siemens", "GE", "Toshiba", "L&T"],
+    lastVerified: "2026-08-23",
+  },
+  ongc: {
+    description: "Oil and Natural Gas Corporation (ONGC) is India's largest state-owned crude oil and natural gas exploration and production company.",
+    competitors: ["Oil India Limited (OIL)", "Reliance Industries (upstream)", "Cairn Oil & Gas (Vedanta)"],
+    lastVerified: "2026-08-23",
+  },
+  ntpc: {
+    description: "NTPC Limited is India's largest power-generation utility, state-owned, operating thermal, hydro, and a growing renewable-energy portfolio.",
+    competitors: ["Adani Power", "Tata Power", "JSW Energy"],
+    lastVerified: "2026-08-23",
+  },
+  upsc: {
+    description: "The Union Public Service Commission (UPSC) conducts recruitment for India's central civil services — including the IAS, IPS, and IFS — primarily through the annual Civil Services Examination (prelims, mains, interview).",
+    lastVerified: "2026-08-23",
+  },
+  rbi: {
+    description: "The Reserve Bank of India (RBI) is India's central bank, responsible for monetary policy, currency issuance, and banking-sector regulation; it recruits separately via the RBI Grade B (officer) and Assistant exams.",
+    lastVerified: "2026-08-23",
+  },
+  ibps: {
+    description: "The Institute of Banking Personnel Selection (IBPS) conducts the common recruitment exams (PO, Clerk, SO, RRB) used to hire staff across most Indian public-sector banks.",
+    lastVerified: "2026-08-23",
+  },
 };
 
 /**
@@ -2891,24 +2948,32 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
  */
 export function getKnownFacts(rawCompany: string | undefined): KnownFacts | null {
   if (!rawCompany) return null;
-  /* Normalize: strip non-letter punctuation, collapse hyphens AND
+  /* Normalize: strip non-alphanumeric punctuation, collapse hyphens AND
      spaces to a single space. So "Jane Street" and "jane-street" both
-     normalise to "jane street", and "Razorpay Inc." matches "razorpay". */
+     normalise to "jane street", and "Razorpay Inc." matches "razorpay".
+     Digits must survive this strip (not just letters) — company keys
+     like "tata-1mg" and "m2p-fintech" otherwise lose the "1"/"2" and
+     can never match their own name. */
   const cleaned = rawCompany
     .toLowerCase()
-    .replace(/[^a-z\s-]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/[\s-]+/g, " ")
     .trim();
   if (!cleaned) return null;
+  const cleanedTokens = cleaned.split(" ");
   /* Both the input AND each candidate key get hyphen-to-space
-     normalisation before comparison. */
+     normalisation before comparison. Matching is on whole word tokens,
+     not raw substrings — a raw-substring check previously matched
+     "P&G" (-> "pg") against "capgemini" (contains "pg" mid-word),
+     surfacing Capgemini's facts under a Procter & Gamble label. Token
+     matching only accepts one company name being a whole-word prefix
+     of the other, e.g. "Razorpay Inc." -> "razorpay", "samsung" ->
+     "samsung india". */
   for (const [key, value] of Object.entries(COMPANY_KNOWN_FACTS)) {
-    const normalisedKey = key.replace(/-/g, " ");
-    if (
-      cleaned === normalisedKey ||
-      cleaned.includes(normalisedKey) ||
-      (normalisedKey.length >= 4 && normalisedKey.includes(cleaned))
-    ) {
+    const keyTokens = key.replace(/-/g, " ").split(" ");
+    const shorter = keyTokens.length <= cleanedTokens.length ? keyTokens : cleanedTokens;
+    const longer = shorter === keyTokens ? cleanedTokens : keyTokens;
+    if (shorter.every((t, i) => longer[i] === t)) {
       return value;
     }
   }

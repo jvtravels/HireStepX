@@ -391,12 +391,18 @@ export function classifyCompanyType(company: string): { key: string; guidance: s
  *
  * Match priority:
  *   1. EXACT match — normalized name equals an entry key.
- *   2. CONTAINMENT match — both sides ≥4 chars (prevents "EY" from
- *      false-matching "mckinsey" because mckinsey ends in "ey", or
- *      "BCG" from matching "bcgcompanyname" garbage). Critical guard:
- *      "TCS" / "EY" / "BCG" need to find their bespoke entries OR the
- *      type bucket — never a sibling exact entry that happens to
- *      contain the trigram.
+ *   2. CONTAINMENT match — input contains a known key, both sides ≥4
+ *      chars (prevents "EY" from false-matching "mckinsey" because
+ *      mckinsey ends in "ey", or "BCG" from matching "bcgcompanyname"
+ *      garbage). One-directional on purpose: only `normalized.includes(k)`
+ *      (the user's input is a longer/qualified form of a known key, e.g.
+ *      "MicrosoftIndia" contains "microsoft") — never `k.includes(normalized)`
+ *      (a short input happening to be a substring of some unrelated
+ *      company's longer key). That reverse direction previously matched
+ *      "Mahindra" -> "techmahindra" (an unrelated company), "Credit
+ *      Suisse" / "OkCredit" -> "cred", and "CoinSwitch Kuber" -> "uber" —
+ *      same bug class as the getKnownFacts() P&G/Capgemini fix in
+ *      data/company-known-facts.ts.
  *   3. TYPE-pattern bucket fallback.
  *
  * Kept pure so it's trivially testable — see src/__tests__/roleContentMatch.test.ts.
@@ -413,11 +419,15 @@ export function matchCompanyKey(company: string): { key: string; fallback: strin
   // 2. Containment — but only when BOTH sides are long enough to make
   //    the match meaningful. Without this guard, short inputs like
   //    "ey" / "bcg" / "tcs" / "ola" hit any guidance key that happens
-  //    to contain those trigrams.
+  //    to contain those trigrams. The floor is 5, not 4: 4-char keys
+  //    ("cred", "uber", "meta", "zoho", "bain", "isro", "drdo") are short
+  //    enough to appear as an accidental leading/trailing substring of an
+  //    unrelated company ("Credit Suisse" / "OkCredit" -> "cred",
+  //    "CoinSwitch Kuber" -> "uber") — those should only match exactly.
   for (const [k, v] of Object.entries(COMPANY_GUIDANCE)) {
     const minLen = Math.min(k.length, normalized.length);
-    if (minLen < 4) continue;
-    if (normalized.includes(k) || k.includes(normalized)) {
+    if (minLen < 5) continue;
+    if (normalized.includes(k)) {
       return { key: k, fallback: v };
     }
   }

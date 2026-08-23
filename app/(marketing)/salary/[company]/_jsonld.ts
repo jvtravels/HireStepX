@@ -3,6 +3,7 @@ import {
   salaryCompanyLabel,
 } from "../../../../data/salary-seo";
 import { COMPANY_SALARY_OVERRIDES } from "../../../../data/company-salary-overrides";
+import type { ExperienceLevel } from "../../../../data/salaries";
 import { IMPORTED_SALARY_OVERRIDES } from "../../../../data/_imported-salary-overrides.generated";
 import { getCsvDerivedBandOverride } from "../../../../data/csv-derived-fallbacks";
 import { CALIBRATION_DATE } from "../../../../data/salaries";
@@ -10,6 +11,8 @@ import type { SalaryRoleSection, SalaryBandRow } from "@/marketing-v2/SalaryPage
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { humanizeSalarySource } from "../../../../data/_salary-source-helpers";
 import { pickVariant } from "../../../../data/_content-variants";
+import { SLUG_TO_GROUP, SALARY_GROUPS } from "../../../../data/salary-groups";
+import { getSeoPageBySlug } from "../../../../data/seo-pages";
 
 /* Shared source of truth for /salary/[company]'s role/FAQ/JSON-LD data,
  * used by both the page (renders it) and scripts/generate-jsonld-csp-hashes.mts
@@ -114,6 +117,78 @@ export function buildRoleSections(
   });
 }
 
+export interface PeerComparison {
+  groupLabel: string;
+  level: string;
+  peerCount: number;
+  peerMedianMin: number;
+  peerMedianMax: number;
+}
+
+function median(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 0 ? Math.round((s[mid - 1] + s[mid]) / 2) : s[mid];
+}
+
+/* Real, data-driven substance for pages that otherwise have only 1-2 role
+ * tables (the AdSense "thin content" pages): how this company's band for a
+ * role stacks up against the median of the other companies in its peer
+ * group, computed live from the same COMPANY_SALARY_OVERRIDES data the
+ * tables above already show — no invented commentary. Skipped when fewer
+ * than 3 peers report the same (role, level), since a "median of 2" isn't
+ * a meaningful stat. */
+export function buildPeerComparison(
+  companySlug: string,
+  roleKey: string,
+  level: string,
+): PeerComparison | null {
+  const groupLabel = SLUG_TO_GROUP[companySlug];
+  if (!groupLabel) return null;
+  const peers = SALARY_GROUPS[groupLabel].filter((s) => s !== companySlug);
+
+  const peerMins: number[] = [];
+  const peerMaxes: number[] = [];
+  for (const peerSlug of peers) {
+    const overrides = resolveOverrides(peerSlug) ?? resolveImportedOverrides(peerSlug);
+    const band = overrides?.[roleKey]?.[level as ExperienceLevel];
+    if (!band) continue;
+    peerMins.push(band.totalMin);
+    peerMaxes.push(band.totalMax);
+  }
+  if (peerMins.length < 3) return null;
+
+  return {
+    groupLabel,
+    level,
+    peerCount: peerMins.length,
+    peerMedianMin: median(peerMins),
+    peerMedianMax: median(peerMaxes),
+  };
+}
+
+export interface InterviewTeaser {
+  questionSlug: string;
+  searchPhrase: string;
+  items: string[];
+}
+
+/* Pulls 2-3 already-public, already-vetted lines (recruitment steps or
+ * FAQ extras — never the internal QUESTION_BANK, which is curated as an
+ * LLM style reference and explicitly not meant for verbatim display) from
+ * the linked /questions/[slug] page, so a thin salary page gets real
+ * company-specific process detail instead of only a link. */
+export function buildInterviewTeaser(questionSlug: string | undefined): InterviewTeaser | null {
+  if (!questionSlug) return null;
+  const seoPage = getSeoPageBySlug(questionSlug);
+  if (!seoPage) return null;
+
+  const items = (seoPage.recruitmentSteps ?? seoPage.interviewRounds ?? []).slice(0, 3);
+  if (items.length === 0) return null;
+
+  return { questionSlug, searchPhrase: seoPage.searchPhrase, items };
+}
+
 export type SalaryFaq = { q: string; a: string };
 
 /* PRI-150: several phrasings per slot, rotated deterministically per
@@ -199,6 +274,11 @@ export function buildSalaryPageModel(company: string) {
   const label = salaryCompanyLabel(company);
   const roles = buildRoleSections(company, page.roles);
   const faqs = buildSalaryFaqs(roles, label, company);
+  const peerComparisons = roles.map((role) => {
+    const flagshipBand = role.bands[role.bands.length - 1];
+    return flagshipBand ? buildPeerComparison(company, role.roleKey, flagshipBand.level) : null;
+  });
+  const interviewTeaser = buildInterviewTeaser(page.questionSlug);
 
   const faqSchema = faqs.length > 0
     ? {
@@ -244,5 +324,5 @@ export function buildSalaryPageModel(company: string) {
   jsonLdScripts.push(ldJson(articleSchema));
   jsonLdScripts.push(ldJson(breadcrumbSchema));
 
-  return { page, label, roles, faqs, jsonLdScripts };
+  return { page, label, roles, faqs, jsonLdScripts, peerComparisons, interviewTeaser };
 }

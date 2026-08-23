@@ -857,12 +857,15 @@ export const COMPANY_NEGOTIATION_CONTEXT: Record<string, CompanyNegotiationConte
   },
 };
 
-/** Same normalisation as getKnownFacts(), keep these in lockstep. */
+/* Same normalisation as getKnownFacts(), keep these in lockstep — including
+   preserving digits, so "dream11"/"cars24" normalise to themselves instead
+   of "dream"/"cars" and still hit their own direct-match entry rather than
+   falling through to the containment loop below. */
 function normaliseCompany(rawCompany: string | undefined): string {
   if (!rawCompany) return "";
   return rawCompany
     .toLowerCase()
-    .replace(/[^a-z\s-]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/[\s-]+/g, " ")
     .trim();
 }
@@ -875,10 +878,15 @@ export function getCompanyNegotiationContext(
   // Direct match first.
   const direct = COMPANY_NEGOTIATION_CONTEXT[cleaned];
   if (direct) return direct;
-  // Loose containment (e.g. "Meesho Inc." → meesho).
+  // Loose containment (e.g. "Meesho Inc." → meesho; "Acko General
+  // Insurance" → acko). One-directional only — the reverse direction
+  // (key.includes(cleaned)) is what caused misattribution in
+  // matchCompanyKey() in data/company-guidance.ts. The 4-char floor is
+  // kept (not raised) since this file's 18-entry table has no confirmed
+  // collision at that length against the real company corpus.
   for (const [key, ctx] of Object.entries(COMPANY_NEGOTIATION_CONTEXT)) {
     if (key.length < 4) continue;
-    if (cleaned.includes(key) || key.includes(cleaned)) return ctx;
+    if (cleaned.includes(key)) return ctx;
   }
   /* CSV-derived research fallback. Synthesizes a CompanyNegotiationContext
      from the 100-company research dataset for any company we haven't

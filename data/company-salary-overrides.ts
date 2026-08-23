@@ -2285,7 +2285,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 41, totalMax: 108, equityType: "none", source: "Seed dataset 2026-05-08 (hul 0.9x hr)", lastVerified: "2026-05-08" },
     },
   },
-  "p&g": {
+  /* Keyed "pg" not "p&g" — the lookup normalises the query by stripping
+     "&" (P&G -> "pg") but object keys aren't normalised, so a literal
+     "p&g" key can never be reached by direct match; it fell through to
+     the containment loop where "pg" is a substring of "capgemini",
+     silently returning Capgemini's salary bands for P&G queries. Same
+     bug fixed in data/company-known-facts.ts's getKnownFacts(). */
+  pg: {
     marketing: {
       entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-05-07", notes: "P&G premium MNC MT, top of FMCG MBA market." },
       mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
@@ -7870,13 +7876,6 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 36, totalMax: 60, equityMin: 10, equityMax: 24, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
     },
   },
-  sarvam: {
-    "software-engineer": {
-      entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
-      mid: { totalMin: 28, totalMax: 50, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-07-21" },
-      senior: { totalMin: 50, totalMax: 90, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor / insider", lastVerified: "2026-07-21" },
-    },
-  },
   "sarvam-ai": {
     "software-engineer": {
       entry: { totalMin: 16, totalMax: 28, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff (Series A)", source: "Glassdoor 2026 (Sarvam AI Bengaluru SDE)", lastVerified: "2026-07-21" },
@@ -8080,10 +8079,16 @@ export function getCompanyBandOverride(
     return reconcileWithCsv(directHit, rawCompany, roleKey, experienceLevel);
   }
 
-  // Loose containment fallback (e.g. "Razorpay Internet Pvt Ltd" → razorpay).
+  // Loose containment fallback, both directions (e.g. "Razorpay Internet
+  // Pvt Ltd" → razorpay, and "Lollypop" → "lollypop design studio"), but
+  // only when BOTH sides are at least 5 chars (matchCompanyKey()'s pattern
+  // in company-guidance.ts). A per-side floor of 3-4 previously let "P&G"
+  // (cleaned "pg") match inside "capgemini", silently returning
+  // Capgemini's bands for P&G queries — see the "pg" key comment above.
   for (const [companyKey, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
     if (companyKey.startsWith("__sector_")) continue; // Sector entries handled below
-    if (companyKey.length < 4) continue;
+    const minLen = Math.min(companyKey.length, cleaned.length);
+    if (minLen < 5) continue;
     if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
       const hit = pickLevelInRoleMap(roleMap[roleKey], experienceLevel);
       if (hit) {
@@ -8102,7 +8107,8 @@ export function getCompanyBandOverride(
   const importedDirect = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[cleaned]?.[roleKey], experienceLevel);
   if (importedDirect) return tagImported(importedDirect);
   for (const [companyKey, roleMap] of Object.entries(IMPORTED_SALARY_OVERRIDES)) {
-    if (companyKey.length < 4) continue;
+    const minLen = Math.min(companyKey.length, cleaned.length);
+    if (minLen < 5) continue;
     if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
       const hit = pickLevelInRoleMap(roleMap[roleKey], experienceLevel);
       if (hit) return tagImported(hit);

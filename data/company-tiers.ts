@@ -285,6 +285,11 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "hcl technologies": "it-services",
   "hcltech": "it-services",
   "tech mahindra": "it-services",
+  /* Alias for the no-space spelling used by data/seo-pages.ts's SEO_PAGES
+     entries — without this exact key, "techmahindra" falls through to the
+     substring loop and matches the unrelated "mahindra" (M&M conglomerate)
+     key instead of resolving to IT services. */
+  techmahindra: "it-services",
   cognizant: "it-services",
   "cognizant technology solutions": "it-services",
   capgemini: "it-services",
@@ -1126,13 +1131,19 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
     /\b(?:advertising|creative|brand) (?:agency|house|firm|consultancy|collective|partners)\b/.test(key)
   ) return "it-services";
 
-  /* Substring match (both directions). Minimum-length guard prevents
-     1- and 2-letter keys ("x" → big-tech, "ge" → gcc, "bp" → gcc,
-     "hp" → big-tech) from false-matching company names that just
-     happen to contain those characters. 3+ char keys are kept, those
-     genuinely identify a company even as a substring. */
+  /* Substring match, both directions, but only when BOTH sides are at
+     least 4 chars. A per-side floor of 3 let short acronym keys — "rga"
+     (an unrelated reinsurer), "bel" (Bharat Electronics), "fcb" (an ad
+     agency) — false-match inside unrelated longer names ("Morgan Stanley"/
+     "Procter & Gamble" contain "rga", "Rebel Foods" contains "bel",
+     "HDFC Bank" contains "fcb"), silently misattributing their tier.
+     4 is the floor (not 5, per matchCompanyKey() in company-guidance.ts)
+     because legitimate 4-char keys ("seed", "acko", "zoho") need to keep
+     matching. Both directions are still needed: "Goldman" (short input)
+     must still reach the longer "goldman sachs" key. */
   for (const [k, tier] of Object.entries(COMPANY_TIER_MAP)) {
-    if (k.length < 3) continue;
+    const minLen = Math.min(k.length, key.length);
+    if (minLen < 4) continue;
     if (key.includes(k) || k.includes(key)) return tier;
   }
 

@@ -25,7 +25,7 @@ import {
   ED_PADDING,
 } from "./_editorial";
 import { COMPANY_LABEL } from "../../data/company-labels";
-import { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
+import { getKnownFacts } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
 import { SEO_PAGES } from "../../data/seo-pages";
 import type { SeoPage } from "../../data/seo-pages";
@@ -194,18 +194,26 @@ function QuestionGate({ practiceHref, hiddenCount }: { practiceHref: string; hid
 
 
 /* CompanyContextBox — renders verified company facts (description /
-   products / competitors / scale) from COMPANY_KNOWN_FACTS. Only the
-   neutral, publicly-verifiable fields are surfaced; interview-signal
-   `notes`/`themes`/`techHints` are deliberately omitted. Renders nothing
-   when the company has no known-facts entry. */
+   products / competitors / scale / tech stack) from COMPANY_KNOWN_FACTS.
+   `techHints` is factual (public tech-stack signal) so it's safe to show
+   candidates directly; `notes`/`themes` are internal LLM-grounding
+   directives (can read as internal commentary about the company, e.g.
+   "don't reference the exec team: turbulent recently") and stay
+   deliberately un-surfaced. Renders nothing when the company has no
+   known-facts entry. */
 export function CompanyContextBox({ company, companyLabel }: { company: string; companyLabel: string }) {
-  const facts = COMPANY_KNOWN_FACTS[company];
+  /* Fuzzy lookup (not a direct COMPANY_KNOWN_FACTS[company] index) so
+     SEO-page company keys that don't exactly match the facts-file key
+     still resolve — e.g. page company "samsung" finds the "samsung-india"
+     entry. Same helper the LLM grounding pipeline uses. */
+  const facts = getKnownFacts(company);
   if (!facts) return null;
 
   const rows: Array<{ label: string; value: string }> = [];
   if (facts.products?.length) rows.push({ label: "Products", value: facts.products.join(" · ") });
   if (facts.competitors?.length) rows.push({ label: "Competitors", value: facts.competitors.join(" · ") });
   if (facts.scale) rows.push({ label: "Scale", value: facts.scale });
+  if (facts.techHints) rows.push({ label: "Tech stack", value: facts.techHints });
 
   return (
     <section style={{ marginTop: 0, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "20px 22px" }}>
@@ -239,11 +247,18 @@ export interface QuestionSetPageProps {
   slug: string;
   page: SeoPage;
   questions: BankEntry[];
+  /* false when the question-bank has too few company-specific entries for
+     this focus and the list falls back to other companies' questions —
+     copy must not claim company attribution it can't back in that case. */
+  questionsAreCompanySpecific: boolean;
   companyLabel: string;
   focusLabel: string;
   relatedPages: { slug: string; searchPhrase: string }[];
   relatedBlogPosts?: { slug: string; title: string }[];
   salaryPageSlug?: string;
+  /* Real, sourced salary band for this page's role at this company (never
+     invented) — pulled from /salary/[company]'s existing data. */
+  salaryTeaser?: { roleLabel: string; level: string; levelLabel: string; totalMin: number; totalMax: number } | null;
   /* Visible FAQ content — must mirror the FAQPage JSON-LD schema built in
      the route file so structured data matches what's actually shown. */
   faqs?: { q: string; a: string }[];
@@ -253,11 +268,13 @@ export function QuestionSetPage({
   slug: _slug,
   page,
   questions,
+  questionsAreCompanySpecific,
   companyLabel,
   focusLabel,
   relatedPages,
   relatedBlogPosts = [],
   salaryPageSlug,
+  salaryTeaser,
   faqs = [],
 }: QuestionSetPageProps) {
   const interviewNext = `/interview${page.roleFamily ? `?role=${encodeURIComponent(page.roleFamily)}` : ""}`;
@@ -408,8 +425,12 @@ export function QuestionSetPage({
             {/* Question list */}
             <section className="ed-reveal" style={{ marginTop: 56 }}>
               <SectionHead
-                title={`${focusLabel} questions ${companyLabel} asked`}
-                sub="Sourced from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
+                title={questionsAreCompanySpecific ? `${focusLabel} questions ${companyLabel} asked` : `Common ${focusLabel.toLowerCase()} interview questions`}
+                sub={
+                  questionsAreCompanySpecific
+                    ? "Sourced from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
+                    : `We don't yet have ${companyLabel}-specific questions for this focus area — these are commonly asked across ${focusLabel.toLowerCase()} interviews. Hit Practice to answer any one with AI voice feedback.`
+                }
               />
               <div style={{ position: "relative" }}>
                 <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -474,6 +495,25 @@ export function QuestionSetPage({
                 </span>
               </div>
             </div>
+
+            {/* Salary teaser — real band pulled from the linked /salary/[company] page */}
+            {salaryTeaser && salaryPageSlug && (
+              <Link
+                href={`/salary/${salaryPageSlug}`}
+                className="ed-link"
+                style={{ textDecoration: "none", display: "block", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "20px 22px" }}
+              >
+                <div style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 10 }}>
+                  {companyLabel} {salaryTeaser.roleLabel} pay
+                </div>
+                <div style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", marginBottom: 6 }}>
+                  ₹{salaryTeaser.totalMin}–{salaryTeaser.totalMax} LPA
+                </div>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: 0 }}>
+                  {salaryTeaser.levelLabel} level, total comp. Full breakdown by level →
+                </p>
+              </Link>
+            )}
 
             {/* Related links */}
             {(relatedPages.length > 0 || relatedBlogPosts.length > 0 || salaryPageSlug) && (
@@ -543,7 +583,9 @@ export function QuestionSetPage({
         {/* Closing CTA */}
         <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
-            The AI asks {companyLabel}-style questions, listens to your voice, and scores your answer in two minutes.
+            {questionsAreCompanySpecific
+              ? `The AI asks ${companyLabel}-style questions, listens to your voice, and scores your answer in two minutes.`
+              : `The AI asks ${focusLabel.toLowerCase()} interview questions, listens to your voice, and scores your answer in two minutes.`}
             {" "}2 sessions free, no card.
           </p>
           <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>

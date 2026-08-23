@@ -99,7 +99,7 @@ export default async function QuestionsSlugPage({
      scripts/generate-jsonld-csp-hashes.mts and proxy.ts's buildCsp(). */
   const model = buildQuestionsPageModel(slug);
   if (!model) notFound();
-  const { page, questions, companyLabel, focusLabel, visibleFaqs, relatedPages, salaryPage, relatedBlogPosts, jsonLdScripts } = model;
+  const { page, questions, questionsAreCompanySpecific, companyLabel, focusLabel, visibleFaqs, relatedPages, salaryPage, salaryTeaser, relatedBlogPosts, jsonLdScripts } = model;
 
   return (
     <>
@@ -119,11 +119,13 @@ export default async function QuestionsSlugPage({
         slug={slug}
         page={page}
         questions={questions}
+        questionsAreCompanySpecific={questionsAreCompanySpecific}
         companyLabel={companyLabel}
         focusLabel={focusLabel}
         relatedPages={relatedPages}
         relatedBlogPosts={relatedBlogPosts}
         salaryPageSlug={salaryPage?.slug}
+        salaryTeaser={salaryTeaser}
         faqs={visibleFaqs}
       />
       <FooterDome />

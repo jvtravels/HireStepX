@@ -106,6 +106,11 @@ const nextConfig = {
       { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
       { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
       { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      // /salary/sarvam and /salary/sarvam-ai were two separate pages for the
+      // same company (SWE-only vs SWE+AI-Engineer roles), splitting rankings
+      // across near-identical "sarvam ai salary" queries in GSC. Merged all
+      // role data into sarvam-ai (already covers both); redirect the subset page.
+      { source: "/salary/sarvam", destination: "/salary/sarvam-ai", permanent: true },
       // kubernetes-docker-devops-interview-questions-india-2026 (2026-01-01) and
       // kubernetes-docker-interview-india-2026 (2026-04-06) covered the identical
       // Docker/Kubernetes/Helm/CI-CD topic for the same query, and GSC "Crawled -
