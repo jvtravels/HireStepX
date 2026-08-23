@@ -194,10 +194,13 @@ function QuestionGate({ practiceHref, hiddenCount }: { practiceHref: string; hid
 
 
 /* CompanyContextBox — renders verified company facts (description /
-   products / competitors / scale) from COMPANY_KNOWN_FACTS. Only the
-   neutral, publicly-verifiable fields are surfaced; interview-signal
-   `notes`/`themes`/`techHints` are deliberately omitted. Renders nothing
-   when the company has no known-facts entry. */
+   products / competitors / scale / tech stack) from COMPANY_KNOWN_FACTS.
+   `techHints` is factual (public tech-stack signal) so it's safe to show
+   candidates directly; `notes`/`themes` are internal LLM-grounding
+   directives (can read as internal commentary about the company, e.g.
+   "don't reference the exec team: turbulent recently") and stay
+   deliberately un-surfaced. Renders nothing when the company has no
+   known-facts entry. */
 export function CompanyContextBox({ company, companyLabel }: { company: string; companyLabel: string }) {
   const facts = COMPANY_KNOWN_FACTS[company];
   if (!facts) return null;
@@ -206,6 +209,7 @@ export function CompanyContextBox({ company, companyLabel }: { company: string; 
   if (facts.products?.length) rows.push({ label: "Products", value: facts.products.join(" · ") });
   if (facts.competitors?.length) rows.push({ label: "Competitors", value: facts.competitors.join(" · ") });
   if (facts.scale) rows.push({ label: "Scale", value: facts.scale });
+  if (facts.techHints) rows.push({ label: "Tech stack", value: facts.techHints });
 
   return (
     <section style={{ marginTop: 0, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "20px 22px" }}>
