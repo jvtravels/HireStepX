@@ -89,7 +89,38 @@ export interface SalaryPageProps {
   scale?: string;
   products?: string[];
   interviewNotes?: string;
+  /* Peer-median comparison per role (same array order as `roles`), computed
+     live from the other companies in this company's peer group. `null` when
+     fewer than 3 peers report data for that role/level — real substance for
+     the low-role-count pages, never shown when it'd just be noise. */
+  peerComparisons?: (PeerComparison | null)[];
+  /* 2-3 real recruitment-process lines pulled from the linked
+     /questions/[slug] page, teasing that page's already-vetted content
+     instead of only linking to it. */
+  interviewTeaser?: InterviewTeaser | null;
 }
+
+export interface PeerComparison {
+  groupLabel: string;
+  level: string;
+  peerCount: number;
+  peerMedianMin: number;
+  peerMedianMax: number;
+}
+
+export interface InterviewTeaser {
+  questionSlug: string;
+  searchPhrase: string;
+  items: string[];
+}
+
+const LEVEL_PHRASE: Record<string, string> = {
+  entry: "entry-level",
+  mid: "mid-level",
+  senior: "senior",
+  lead: "lead",
+  executive: "executive",
+};
 
 /* ─── Company logo domains (Clearbit) ───────────────────────────── */
 
@@ -476,6 +507,8 @@ export function SalaryCompanyPage({
   scale,
   products,
   interviewNotes,
+  peerComparisons,
+  interviewTeaser,
 }: SalaryPageProps) {
   const hasSnapshot = Boolean(scale || interviewNotes || (products && products.length > 0));
   const hasRoles = roles.length > 0;
@@ -681,7 +714,7 @@ export function SalaryCompanyPage({
             </nav>
           )}
           {hasRoles ? (
-            roles.map((role) => (
+            roles.map((role, roleIndex) => (
               <section
                 key={role.roleKey}
                 id={`role-${role.roleKey}`}
@@ -796,6 +829,20 @@ export function SalaryCompanyPage({
                     </p>
                   </div>
                 )}
+
+                {peerComparisons?.[roleIndex] && (
+                  <div style={{ ...tableWrap, padding: "16px 20px", marginTop: 8 }}>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 6px" }}>
+                      How this compares
+                    </p>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.coal, margin: 0 }}>
+                      The {LEVEL_PHRASE[peerComparisons[roleIndex]!.level] ?? peerComparisons[roleIndex]!.level} {role.roleLabel} band above sits against a{" "}
+                      {peerComparisons[roleIndex]!.groupLabel} peer median of{" "}
+                      <strong>{fmt(peerComparisons[roleIndex]!.peerMedianMin)} – {fmt(peerComparisons[roleIndex]!.peerMedianMax)} LPA</strong>
+                      {" "}across {peerComparisons[roleIndex]!.peerCount} other {peerComparisons[roleIndex]!.groupLabel} companies we track.
+                    </p>
+                  </div>
+                )}
               </section>
             ))
           ) : (
@@ -810,6 +857,27 @@ export function SalaryCompanyPage({
               </p>
               <a href={questionHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
                 Practice {companyLabel} interview questions <span className="ed-cta-arrow" aria-hidden>→</span>
+              </a>
+            </div>
+          )}
+
+          {/* Interview-process teaser — real recruitment-step lines pulled
+              from the linked /questions/[slug] page, not a generic blurb. */}
+          {interviewTeaser && (
+            <div style={{ marginTop: 40, paddingTop: 40, borderTop: `1px solid ${t.line}` }}>
+              <p style={eyebrow}>What the {companyLabel} interview actually looks like</p>
+              <ol style={{ margin: "16px 0 20px", paddingLeft: 20 }}>
+                {interviewTeaser.items.map((step, i) => (
+                  <li
+                    key={i}
+                    style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.7, color: t.inkSoft, marginBottom: 8 }}
+                  >
+                    {step}
+                  </li>
+                ))}
+              </ol>
+              <a href={`/questions/${interviewTeaser.questionSlug}`} style={ctaGhostStyle("md")}>
+                Full {companyLabel} interview guide →
               </a>
             </div>
           )}

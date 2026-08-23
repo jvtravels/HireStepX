@@ -14,6 +14,7 @@ import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { BLOG_META } from "@/blog-meta";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { SALARY_GROUPS, SLUG_TO_GROUP } from "../../../../data/salary-groups";
 import { buildSalaryPageModel, buildRoleSections } from "./_jsonld";
 
 /* /salary/[company] — company-specific salary guide pages.
@@ -24,36 +25,6 @@ import { buildSalaryPageModel, buildRoleSections } from "./_jsonld";
  */
 
 /* ─── Salary page groupings for cross-linking ────────────────────────────── */
-
-const SALARY_GROUPS: Record<string, string[]> = {
-  "IT Services": ["tcs", "infosys", "wipro", "cognizant", "hcl", "capgemini", "ltimindtree", "accenture", "techmahindra", "mphasis", "persistent", "ibm", "ntt-data", "globallogic", "thoughtworks"],
-  "Indian Fintech": ["razorpay", "phonepe", "paytm", "cred", "groww", "zerodha", "upstox", "angel-one", "bharatpe", "cashfree", "policybazaar", "navi", "slice", "jupiter", "fi-money", "indmoney", "smallcase", "juspay", "nium", "m2p-fintech", "khatabook", "zeta", "kreditbee", "moneyview", "fibe", "pine-labs", "rupeek", "niyo", "acko", "digit", "mobikwik"],
-  "Indian Product & Unicorns": ["flipkart", "swiggy", "zomato", "meesho", "nykaa", "myntra", "dream11", "zepto", "blinkit", "oyo", "rapido", "lenskart", "mamaearth", "cars24", "shiprocket", "truecaller", "naukri", "scaler"],
-  "Global Tech (FAANG+)": ["google", "amazon", "microsoft", "meta", "apple", "netflix", "uber", "oracle", "adobe", "atlassian", "salesforce", "stripe", "linkedin", "databricks", "openai", "servicenow", "workday", "anthropic", "airbnb", "twitter-x", "walmart-global-tech", "vmware", "paypal", "american-express", "mastercard", "visa-india", "intuit"],
-  "Finance & Quant": ["goldman", "jpmc", "morgan-stanley", "barclays", "citi", "hsbc", "deutsche-bank", "wells-fargo", "standard-chartered", "bny-mellon", "tower-research", "jane-street", "de-shaw", "optiver", "millennium", "citadel"],
-  "Indian Banking": ["hdfc-bank", "icici", "axis", "kotak", "sbi", "bajaj-finance", "star-health", "icici-lombard", "hdfc", "bajaj-finserv", "aditya-birla-capital"],
-  "Consulting": ["deloitte", "mckinsey", "bcg", "bain", "ey", "kpmg", "pwc"],
-  "Semiconductor & Hardware": ["qualcomm", "intel-india", "arm-india", "texas-instruments", "nvidia", "cisco", "mediatek", "sap-labs", "siemens-india", "bosch-india", "samsung-india", "ericsson-india", "nokia-india"],
-  "Indian AI Startups": ["sarvam-ai", "krutrim", "perplexity", "glance"],
-  "SaaS & Enterprise Software": ["freshworks", "zoho", "postman", "browserstack", "chargebee", "hasura", "mindtickle", "darwinbox", "capillary-tech", "clari", "sumologic", "icertis", "druva", "clevertap", "moengage", "gupshup", "exotel", "plivo", "sigmoid", "tracxn"],
-  "EdTech": ["unacademy", "physicswallah", "byjus", "vedantu"],
-  "Logistics & Quick Commerce": ["delhivery", "bigbasket", "shadowfax", "ecom-express", "blackbuck", "rivigo", "ninjacart", "country-delight", "yulu", "moglix", "udaan"],
-  "Healthtech": ["tata-1mg", "dr-lal-pathlabs", "metropolis", "curefit", "practo", "apollo-247", "medibuddy", "fortis", "pharmeasy"],
-  "Travel & Mobility": ["makemytrip", "ixigo", "ola", "ola-electric", "ather-energy", "spinny"],
-  "Consumer & Conglomerates": ["hul", "itc", "godrej", "nestle", "dmart", "procter-gamble", "tata-motors", "mahindra", "tata-steel", "reliance-jio", "airtel", "vodafone-idea"],
-  "D2C Consumer Brands": ["wakefit", "boat", "purplle", "licious", "rebel-foods"],
-  "Global Retail & Enterprise GCCs": ["lowes-india", "target-india", "fiserv"],
-  "Design Studios": ["bombay-design-centre", "lollypop-design-studio", "thence", "yellow-slice"],
-  "Ad-tech & Media Platforms": ["sharechat", "inmobi", "dailyhunt"],
-};
-
-/* Reverse map: slug → group name */
-const SLUG_TO_GROUP: Record<string, string> = {};
-for (const [group, slugs] of Object.entries(SALARY_GROUPS)) {
-  for (const slug of slugs) {
-    SLUG_TO_GROUP[slug] = group;
-  }
-}
 
 function relatedSalaryPages(currentSlug: string): Array<{ slug: string; label: string }> {
   const group = SLUG_TO_GROUP[currentSlug];
@@ -239,7 +210,7 @@ export default async function SalaryCompanySlugPage({
 
   const model = buildSalaryPageModel(company);
   if (!model) notFound();
-  const { page, label, roles, faqs, jsonLdScripts } = model;
+  const { page, label, roles, faqs, jsonLdScripts, peerComparisons, interviewTeaser } = model;
 
   const overrideKey = company.replace(/-/g, " ");
   const knownFacts = COMPANY_KNOWN_FACTS[company] ?? COMPANY_KNOWN_FACTS[overrideKey];
@@ -283,6 +254,8 @@ export default async function SalaryCompanySlugPage({
         scale={knownFacts?.scale}
         products={knownFacts?.products}
         interviewNotes={knownFacts?.notes}
+        peerComparisons={peerComparisons}
+        interviewTeaser={interviewTeaser}
       />
       {relatedSalary.length >= 2 && (
         <section
