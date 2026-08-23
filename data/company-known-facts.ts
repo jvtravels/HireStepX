@@ -2928,6 +2928,18 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     competitors: ["Adani Power", "Tata Power", "JSW Energy"],
     lastVerified: "2026-08-23",
   },
+  upsc: {
+    description: "The Union Public Service Commission (UPSC) conducts recruitment for India's central civil services — including the IAS, IPS, and IFS — primarily through the annual Civil Services Examination (prelims, mains, interview).",
+    lastVerified: "2026-08-23",
+  },
+  rbi: {
+    description: "The Reserve Bank of India (RBI) is India's central bank, responsible for monetary policy, currency issuance, and banking-sector regulation; it recruits separately via the RBI Grade B (officer) and Assistant exams.",
+    lastVerified: "2026-08-23",
+  },
+  ibps: {
+    description: "The Institute of Banking Personnel Selection (IBPS) conducts the common recruitment exams (PO, Clerk, SO, RRB) used to hire staff across most Indian public-sector banks.",
+    lastVerified: "2026-08-23",
+  },
 };
 
 /**
