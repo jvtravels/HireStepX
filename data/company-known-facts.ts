@@ -2936,12 +2936,15 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
  */
 export function getKnownFacts(rawCompany: string | undefined): KnownFacts | null {
   if (!rawCompany) return null;
-  /* Normalize: strip non-letter punctuation, collapse hyphens AND
+  /* Normalize: strip non-alphanumeric punctuation, collapse hyphens AND
      spaces to a single space. So "Jane Street" and "jane-street" both
-     normalise to "jane street", and "Razorpay Inc." matches "razorpay". */
+     normalise to "jane street", and "Razorpay Inc." matches "razorpay".
+     Digits must survive this strip (not just letters) — company keys
+     like "tata-1mg" and "m2p-fintech" otherwise lose the "1"/"2" and
+     can never match their own name. */
   const cleaned = rawCompany
     .toLowerCase()
-    .replace(/[^a-z\s-]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/[\s-]+/g, " ")
     .trim();
   if (!cleaned) return null;
