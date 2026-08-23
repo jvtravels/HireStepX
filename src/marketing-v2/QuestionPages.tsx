@@ -239,6 +239,10 @@ export interface QuestionSetPageProps {
   slug: string;
   page: SeoPage;
   questions: BankEntry[];
+  /* false when the question-bank has too few company-specific entries for
+     this focus and the list falls back to other companies' questions —
+     copy must not claim company attribution it can't back in that case. */
+  questionsAreCompanySpecific: boolean;
   companyLabel: string;
   focusLabel: string;
   relatedPages: { slug: string; searchPhrase: string }[];
@@ -253,6 +257,7 @@ export function QuestionSetPage({
   slug: _slug,
   page,
   questions,
+  questionsAreCompanySpecific,
   companyLabel,
   focusLabel,
   relatedPages,
@@ -408,8 +413,12 @@ export function QuestionSetPage({
             {/* Question list */}
             <section className="ed-reveal" style={{ marginTop: 56 }}>
               <SectionHead
-                title={`${focusLabel} questions ${companyLabel} asked`}
-                sub="Sourced from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
+                title={questionsAreCompanySpecific ? `${focusLabel} questions ${companyLabel} asked` : `Common ${focusLabel.toLowerCase()} interview questions`}
+                sub={
+                  questionsAreCompanySpecific
+                    ? "Sourced from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
+                    : `We don't yet have ${companyLabel}-specific questions for this focus area — these are commonly asked across ${focusLabel.toLowerCase()} interviews. Hit Practice to answer any one with AI voice feedback.`
+                }
               />
               <div style={{ position: "relative" }}>
                 <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -543,7 +552,9 @@ export function QuestionSetPage({
         {/* Closing CTA */}
         <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
-            The AI asks {companyLabel}-style questions, listens to your voice, and scores your answer in two minutes.
+            {questionsAreCompanySpecific
+              ? `The AI asks ${companyLabel}-style questions, listens to your voice, and scores your answer in two minutes.`
+              : `The AI asks ${focusLabel.toLowerCase()} interview questions, listens to your voice, and scores your answer in two minutes.`}
             {" "}2 sessions free, no card.
           </p>
           <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>

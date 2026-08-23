@@ -48,21 +48,28 @@ const CATEGORY: Record<string, string> = (() => {
   return map;
 })();
 
-function questionsForPage(p: SeoPage): BankEntry[] {
+/* tier 1/2 = questions genuinely tied to this company (exact roleFamily,
+   or at least exact company+focus). tier 3 = the company has too few
+   bank entries for this focus, so the list falls back to other
+   companies' questions on the same focus — real, useful questions, but
+   not "asked at {company}". The page copy must not claim company
+   attribution it can't back for tier 3 (see AdSense policy 10015918:
+   pages must deliver what they promise, not misattribute content). */
+function questionsForPage(p: SeoPage): { questions: BankEntry[]; tier: 1 | 2 | 3 } {
   const exact = QUESTION_BANK.filter(
     (q) =>
       q.company === p.company &&
       q.focus === p.focus &&
       (!p.roleFamily || q.roleFamily === p.roleFamily),
   );
-  if (exact.length >= 4) return exact.slice(0, 12);
+  if (exact.length >= 4) return { questions: exact.slice(0, 12), tier: 1 };
 
   const noRole = QUESTION_BANK.filter(
     (q) => q.company === p.company && q.focus === p.focus,
   );
-  if (noRole.length >= 4) return noRole.slice(0, 12);
+  if (noRole.length >= 4) return { questions: noRole.slice(0, 12), tier: 2 };
 
-  return QUESTION_BANK.filter((q) => q.focus === p.focus).slice(0, 12);
+  return { questions: QUESTION_BANK.filter((q) => q.focus === p.focus).slice(0, 12), tier: 3 };
 }
 
 /* Spreads pages across Jan 1 – Jul 21 2026 without touching 232 data entries.
@@ -86,7 +93,8 @@ export function buildQuestionsPageModel(slug: string) {
   const page = getSeoPageBySlug(slug);
   if (!page) return null;
 
-  const questions = questionsForPage(page);
+  const { questions, tier } = questionsForPage(page);
+  const questionsAreCompanySpecific = tier !== 3;
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
   const focusLabel = FOCUS_LABEL[page.focus] ?? page.focus;
 
@@ -245,6 +253,7 @@ export function buildQuestionsPageModel(slug: string) {
   return {
     page,
     questions,
+    questionsAreCompanySpecific,
     companyLabel,
     focusLabel,
     visibleFaqs,
