@@ -291,10 +291,14 @@ function lookupCompanyMeta(company: string | undefined): CompanyMeta | null {
   if (!cleaned) return null;
   // Direct match first
   if (COMPANY_META[cleaned]) return COMPANY_META[cleaned];
-  // Loose containment fallback
+  // Loose containment fallback. One-directional (only cleaned.includes(key))
+  // and a 5-char floor — the reverse direction previously matched "Mahindra"
+  // into "tech mahindra"'s notice-period/bond data and "P&G" (cleaned "pg")
+  // into "capgemini"'s, same bug class as matchCompanyKey() in
+  // data/company-guidance.ts.
   for (const [key, meta] of Object.entries(COMPANY_META)) {
-    if (key.length < 3) continue;
-    if (cleaned.includes(key) || key.includes(cleaned)) return meta;
+    if (key.length < 5) continue;
+    if (cleaned.includes(key)) return meta;
   }
   return null;
 }
