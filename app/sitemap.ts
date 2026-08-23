@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SEO_PAGES, SEO_PAGES_LAST_MODIFIED } from "../data/seo-pages";
+import { SEO_PAGES, SEO_PAGES_LAST_MODIFIED, THIN_NOINDEX_QUESTION_SLUGS } from "../data/seo-pages";
 import { getAllBlogSlugs, BLOG_META } from "../src/blog-meta";
 import { CATEGORY_BUCKETS, bucketToSlug } from "../src/blog-categories";
 import { getAllSalarySlugs, getSalaryPage } from "../data/salary-seo";
@@ -77,7 +77,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.88,
     },
   ];
-  const questionEntries: MetadataRoute.Sitemap = SEO_PAGES.map((p) => ({
+  /* Mirrors the noindex logic in questions/[slug]/page.tsx's
+     generateMetadata: pages at the question-bank's 4-question floor with
+     no meaningful GSC traffic (see THIN_NOINDEX_SLUGS) aren't submitted. */
+  const questionEntries: MetadataRoute.Sitemap = SEO_PAGES.filter(
+    (p) => !THIN_NOINDEX_QUESTION_SLUGS.has(p.slug),
+  ).map((p) => ({
     url: `${baseUrl}/questions/${p.slug}`,
     lastModified: seoPagesLastModified,
     changeFrequency: "monthly" as const,

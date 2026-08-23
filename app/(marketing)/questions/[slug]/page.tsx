@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { notFound } from "next/navigation";
-import { getSeoPageBySlug, getAllSeoSlugs } from "../../../../data/seo-pages";
+import { getSeoPageBySlug, getAllSeoSlugs, THIN_NOINDEX_QUESTION_SLUGS } from "../../../../data/seo-pages";
 import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -64,6 +64,7 @@ export async function generateMetadata(
     description,
     keywords: page.metaKeywords.join(", "),
     alternates: { canonical: `/questions/${slug}` },
+    ...(THIN_NOINDEX_QUESTION_SLUGS.has(slug) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       type: "article",
       title,
