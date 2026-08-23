@@ -256,6 +256,9 @@ export interface QuestionSetPageProps {
   relatedPages: { slug: string; searchPhrase: string }[];
   relatedBlogPosts?: { slug: string; title: string }[];
   salaryPageSlug?: string;
+  /* Real, sourced salary band for this page's role at this company (never
+     invented) — pulled from /salary/[company]'s existing data. */
+  salaryTeaser?: { roleLabel: string; level: string; levelLabel: string; totalMin: number; totalMax: number } | null;
   /* Visible FAQ content — must mirror the FAQPage JSON-LD schema built in
      the route file so structured data matches what's actually shown. */
   faqs?: { q: string; a: string }[];
@@ -271,6 +274,7 @@ export function QuestionSetPage({
   relatedPages,
   relatedBlogPosts = [],
   salaryPageSlug,
+  salaryTeaser,
   faqs = [],
 }: QuestionSetPageProps) {
   const interviewNext = `/interview${page.roleFamily ? `?role=${encodeURIComponent(page.roleFamily)}` : ""}`;
@@ -491,6 +495,25 @@ export function QuestionSetPage({
                 </span>
               </div>
             </div>
+
+            {/* Salary teaser — real band pulled from the linked /salary/[company] page */}
+            {salaryTeaser && salaryPageSlug && (
+              <Link
+                href={`/salary/${salaryPageSlug}`}
+                className="ed-link"
+                style={{ textDecoration: "none", display: "block", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "20px 22px" }}
+              >
+                <div style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 10 }}>
+                  {companyLabel} {salaryTeaser.roleLabel} pay
+                </div>
+                <div style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", marginBottom: 6 }}>
+                  ₹{salaryTeaser.totalMin}–{salaryTeaser.totalMax} LPA
+                </div>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: 0 }}>
+                  {salaryTeaser.levelLabel} level, total comp. Full breakdown by level →
+                </p>
+              </Link>
+            )}
 
             {/* Related links */}
             {(relatedPages.length > 0 || relatedBlogPosts.length > 0 || salaryPageSlug) && (

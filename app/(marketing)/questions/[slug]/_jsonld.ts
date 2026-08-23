@@ -1,9 +1,10 @@
 import { getSeoPageBySlug, SEO_PAGES, SEO_PAGES_LAST_MODIFIED, type SeoPage } from "../../../../data/seo-pages";
 import { getSalaryPage } from "../../../../data/salary-seo";
-import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
+import { QUESTION_BANK, type BankEntry, type RoleFamily } from "../../../../data/interview-question-bank";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
 import { BLOG_META } from "../../../../src/blog-meta";
+import { buildRoleSections } from "../../salary/[company]/_jsonld";
 
 /* Shared source of truth for /questions/[slug]'s data + JSON-LD, used by
  * both the page (renders it) and scripts/generate-jsonld-csp-hashes.mts
@@ -87,6 +88,60 @@ function slugPublishDate(slug: string): string {
 
 function slugAuthor(_slug: string): string {
   return "HireStepX Editorial Team";
+}
+
+/* Maps a questions-page's roleFamily/focus to the matching /salary/[company]
+   roleKey, so the salary teaser below shows the *actual* role the page is
+   about (e.g. Product Manager pay on a PM interview-questions page) instead
+   of defaulting to Software Engineer for every page regardless of focus. */
+const FOCUS_TO_SALARY_ROLE_KEY: Partial<Record<string, string>> = {
+  hr: "hr",
+};
+const ROLE_FAMILY_TO_SALARY_ROLE_KEY: Partial<Record<RoleFamily, string>> = {
+  pm: "product-manager",
+  design: "ux-designer",
+  consultant: "consultant",
+  data: "data-scientist",
+  ml: "ml-engineer",
+  em: "engineering-manager",
+};
+
+interface SalaryTeaser {
+  roleLabel: string;
+  level: string;
+  levelLabel: string;
+  totalMin: number;
+  totalMax: number;
+}
+
+/* Real, sourced salary-band teaser pulled from /salary/[company]'s existing
+   data (never invented) — mirrors the interview-teaser thickening already
+   done on the /salary/[company] pages, but in reverse, so these pages carry
+   genuine new content instead of being noindexed for sitting at the
+   question bank's floor. Returns null when no salary page exists for the
+   company (e.g. rbi, ibps). */
+function buildSalaryTeaser(page: SeoPage): SalaryTeaser | null {
+  const salaryPage = getSalaryPage(page.company);
+  if (!salaryPage) return null;
+
+  const roleKey =
+    FOCUS_TO_SALARY_ROLE_KEY[page.focus] ??
+    (page.roleFamily ? ROLE_FAMILY_TO_SALARY_ROLE_KEY[page.roleFamily] : undefined) ??
+    "software-engineer";
+  const roleEntry = salaryPage.roles.find((r) => r.roleKey === roleKey) ?? salaryPage.roles[0];
+  if (!roleEntry) return null;
+
+  const [section] = buildRoleSections(page.company, [roleEntry]);
+  const band = section?.bands?.[section.bands.length - 1];
+  if (!band) return null;
+
+  return {
+    roleLabel: section.roleLabel,
+    level: band.level,
+    levelLabel: band.levelLabel,
+    totalMin: band.totalMin,
+    totalMax: band.totalMax,
+  };
 }
 
 export function buildQuestionsPageModel(slug: string) {
@@ -231,6 +286,7 @@ export function buildQuestionsPageModel(slug: string) {
     .map((p: SeoPage) => ({ slug: p.slug, searchPhrase: p.searchPhrase }));
 
   const salaryPage = getSalaryPage(page.company);
+  const salaryTeaser = buildSalaryTeaser(page);
 
   const relatedBlogPosts = BLOG_META
     .filter((post) => post.company.toLowerCase() === page.company)
@@ -259,6 +315,7 @@ export function buildQuestionsPageModel(slug: string) {
     visibleFaqs,
     relatedPages,
     salaryPage,
+    salaryTeaser,
     relatedBlogPosts,
     jsonLdScripts,
   };
