@@ -113,6 +113,15 @@ const nextConfig = {
       // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
       // more heavily cross-linked survivor.
       { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // system-design-interview-preparation-india-2026 (8 incoming relatedSlugs) and
+      // system-design-interview-preparation (37 incoming relatedSlugs) were both generic
+      // "system design interview prep" guides covering the same framework/estimation/
+      // trade-offs ground for the same Indian-product-company audience, cannibalizing
+      // "system design interview preparation" queries. The weaker post's company-specific
+      // worked questions (Swiggy/Zomato, Razorpay/PhonePe, Flipkart), database/caching/
+      // queue architecture depth, and one FAQ were merged into the stronger, more-linked
+      // post, then it was removed from data/blog-posts.ts and src/blog-meta.ts.
+      { source: "/blog/system-design-interview-preparation-india-2026", destination: "/blog/system-design-interview-preparation", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense

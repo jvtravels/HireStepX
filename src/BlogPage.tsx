@@ -7245,17 +7245,7 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
   ),
 
   /* System design interview India */
-  "system-design-interview-preparation-india-2026||The 6-Step System Design Framework": (
-    <FrameworkSteps steps={[
-      { number: "01", label: "Clarify requirements", hint: "Ask: functional requirements (what the system does), non-functional (scale, latency, consistency, availability). Spend 3–5 minutes here." },
-      { number: "02", label: "Estimate scale", hint: "Back-of-envelope: users, requests/second, storage per day, bandwidth. Shows you think at production scale. Interviewers penalise skipping this." },
-      { number: "03", label: "Define the API", hint: "Sketch 2–3 core API endpoints. This forces clarity on input/output before you start drawing boxes." },
-      { number: "04", label: "High-level design", hint: "Draw: client, load balancer, app servers, database, cache, message queue. Explain each component's role and the data flow." },
-      { number: "05", label: "Deep dive", hint: "The interviewer picks 1–2 components to drill. This is where you differentiate: schema, cache invalidation strategy, consistency model." },
-      { number: "06", label: "Scale and trade-offs", hint: "How does the system handle 10x traffic? What breaks first? SQL vs NoSQL? Sync vs async? State trade-offs explicitly — there's no single right answer." },
-    ]} />
-  ),
-  "system-design-interview-preparation-india-2026||Caching and Message Queue Architecture for Indian Tech Interviews": (
+  "system-design-interview-preparation||Worked Questions and Deep-Dive Architecture at Indian Product Companies": (
     <TierCompare cards={[
       { tier: "Caching Layer", examples: "Redis · Memcached · CDN", rows: [{ label: "What to know", range: "Cache-aside, write-through, TTL, eviction policies (LRU)" }, { label: "Common Q", range: "Cache invalidation, cache stampede, thundering herd" }] },
       { tier: "Message Queues", examples: "Kafka · RabbitMQ · SQS", rows: [{ label: "What to know", range: "Pub/sub, consumer groups, at-least-once vs exactly-once" }, { label: "Common Q", range: "Kafka partition strategy, dead-letter queues" }] },
