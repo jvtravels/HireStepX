@@ -745,6 +745,74 @@ async function speakWithProxy(
   };
 }
 
+/* Split synthesizable text into sentence-sized chunks so Sarvam can start
+   playing the first chunk while later chunks are still being fetched —
+   unlike the Cartesia WebSocket path, Sarvam's REST endpoint has no
+   built-in streaming, so this is the only way to shrink "silence after
+   the candidate finishes talking" for the primary TTS provider.
+   Split on sentence-ending punctuation followed by whitespace + an
+   uppercase/quote char (avoids splitting mid-decimal or mid-abbreviation,
+   e.g. "Rs. 5" or "e.g. this"). Short trailing fragments (<20 chars, e.g.
+   a lone "Okay." after a split) get folded into the previous chunk so we
+   don't fire a near-empty synthesis request for them. Capped at 5 chunks —
+   beyond that, the fetch fan-out cost isn't worth the marginal latency
+   win, so remaining sentences are folded into the last chunk. */
+function splitIntoTtsChunks(text: string): string[] {
+  const trimmed = text.trim();
+  if (trimmed.length < 60) return [trimmed]; // too short to benefit from chunking
+  const rough = trimmed.split(/(?<=[.!?])\s+(?=["'A-Z0-9])/);
+  const merged: string[] = [];
+  for (const piece of rough) {
+    if (merged.length > 0 && piece.length < 20) {
+      merged[merged.length - 1] = `${merged[merged.length - 1]} ${piece}`;
+    } else {
+      merged.push(piece);
+    }
+  }
+  if (merged.length > 5) {
+    const head = merged.slice(0, 4);
+    const tail = merged.slice(4).join(" ");
+    return [...head, tail];
+  }
+  return merged.length > 0 ? merged : [trimmed];
+}
+
+async function fetchSarvamChunkBlob(
+  chunkText: string,
+  gender: "male" | "female" | undefined,
+  voiceId: string | undefined,
+  signal: AbortSignal,
+): Promise<Blob | null> {
+  try {
+    const { authHeaders } = await import("./supabase");
+    const headers = await authHeaders();
+    const res = await fetch("/api/sarvam-tts", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        text: chunkText.trim().slice(0, 1500),
+        voiceId,
+        gender,
+      }),
+      signal,
+    });
+    if (!res.ok) {
+      console.warn("[TTS-Sarvam] API error:", res.status);
+      return null;
+    }
+    const blob = await res.blob();
+    if (!blob || blob.size < 100) {
+      console.warn("[TTS-Sarvam] empty audio");
+      return null;
+    }
+    return blob;
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") return null;
+    console.warn("[TTS-Sarvam] chunk fetch error:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 /* ─── Sarvam AI TTS (primary provider — Indian English / Hinglish Bulbul voices) ─── */
 async function speakWithSarvam(
   text: string,
@@ -762,8 +830,8 @@ async function speakWithSarvam(
   }
 
   const controller = new AbortController();
-  let audio: HTMLAudioElement | null = null;
   let settled = false;
+  let cancelled = false;
   const settle = (cb: () => void) => { if (!settled) { settled = true; cb(); } };
   let audioStartedFired = false;
   const fireAudioStarted = () => {
@@ -771,89 +839,143 @@ async function speakWithSarvam(
     audioStartedFired = true;
     try { onAudioStarted(); } catch { /* consumer error must not break TTS */ }
   };
+  let currentAudio: HTMLAudioElement | null = null;
 
-  try {
-    let blob: Blob | null = null;
-
-    // Reuse prefetch cache — primary-provider prefetch hits /api/sarvam-tts.
-    const cached = consumePrefetch(text, gender);
-    if (cached) {
-      blob = await cached;
+  const doCancel = () => {
+    cancelled = true;
+    controller.abort();
+    settled = true;
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.onended = null;
+      currentAudio.onerror = null;
     }
+  };
 
-    if (!blob) {
-      const { authHeaders } = await import("./supabase");
-      const headers = await authHeaders();
+  const chunks = splitIntoTtsChunks(text);
 
-      const timeout = setTimeout(() => controller.abort(), 15_000);
-      const res = await fetch("/api/sarvam-tts", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          text: text.trim().slice(0, 1500),
-          voiceId: voiceId,
-          gender,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        console.warn("[TTS-Sarvam] API error:", res.status);
-        settle(onError);
-        return { cancel: () => {} };
+  // Single-chunk path (backchannels, short thinking phrases, anything
+  // under the chunking threshold) — unchanged behavior, and lets the
+  // whole-text prefetch cache (keyed on the full string) keep working.
+  if (chunks.length <= 1) {
+    try {
+      let blob: Blob | null = null;
+      const cached = consumePrefetch(text, gender);
+      if (cached) blob = await cached;
+      if (!blob) {
+        const timeout = setTimeout(() => controller.abort(), 15_000);
+        blob = await fetchSarvamChunkBlob(text, gender, voiceId, controller.signal);
+        clearTimeout(timeout);
       }
+      if (!blob) { settle(onError); return { cancel: doCancel }; }
 
-      blob = await res.blob();
-    }
-
-    if (!blob || blob.size < 100) {
-      console.warn("[TTS-Sarvam] empty audio");
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      currentAudio = audio;
+      audio.onloadedmetadata = () => {
+        if (isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
+          onDurationKnown(audio.duration * 1000);
+        }
+      };
+      audio.onplaying = fireAudioStarted;
+      audio.onended = () => { URL.revokeObjectURL(url); settle(onEnd); };
+      audio.onerror = () => { URL.revokeObjectURL(url); settle(onError); };
+      await audio.play();
+      fireAudioStarted();
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
+        if (!settled) settle(onError);
+        return { cancel: doCancel };
+      }
+      if (isAutoplayError(err)) {
+        console.warn("[TTS-Sarvam] autoplay blocked by browser policy — disabling voice for session");
+        _autoplayBlocked = true;
+        settle(onEnd);
+        return { cancel: doCancel };
+      }
+      console.warn("[TTS-Sarvam] error:", err instanceof Error ? err.message : err);
       settle(onError);
-      return { cancel: () => {} };
+      return { cancel: doCancel };
     }
-
-    const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
-    audio.onloadedmetadata = () => {
-      if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
-        onDurationKnown(audio.duration * 1000);
-      }
-    };
-    audio.onplaying = fireAudioStarted;
-    audio.onended = () => { URL.revokeObjectURL(url); settle(onEnd); };
-    audio.onerror = () => { URL.revokeObjectURL(url); settle(onError); };
-    await audio.play();
-    /* Same blob-Audio "playing" event quirk as Azure path. */
-    fireAudioStarted();
-  } catch (err: unknown) {
-    if (err instanceof Error && err.name === "AbortError") {
-      if (!settled) settle(onError);
-      return { cancel: () => {} };
-    }
-    if (isAutoplayError(err)) {
-      console.warn("[TTS-Sarvam] autoplay blocked by browser policy — disabling voice for session");
-      _autoplayBlocked = true;
-      settle(onEnd);
-      return { cancel: () => {} };
-    }
-    console.warn("[TTS-Sarvam] error:", err instanceof Error ? err.message : err);
-    settle(onError);
-    return { cancel: () => {} };
+    return { cancel: doCancel };
   }
 
-  const capturedAudio = audio;
-  return {
-    cancel: () => {
-      controller.abort();
-      settled = true;
-      if (capturedAudio) {
-        capturedAudio.pause();
-        capturedAudio.onended = null;
-        capturedAudio.onerror = null;
-      }
-    },
+  // Multi-chunk pipeline: kick off every chunk's synthesis in parallel
+  // (Sarvam has no per-connection streaming, so we can't pipeline a
+  // single request) but start PLAYING as soon as the first chunk lands,
+  // rather than waiting for the full text to synthesize. Playback then
+  // advances chunk-to-chunk as each next blob resolves — for a 3-sentence
+  // question this typically means audio starts on ~1/3 the latency of
+  // synthesizing the whole thing up front.
+  const chunkPromises = chunks.map(c => fetchSarvamChunkBlob(c, gender, voiceId, controller.signal));
+  let totalDurationMs = 0;
+  let durationsKnown = 0;
+  const maybeFireDuration = () => {
+    durationsKnown++;
+    if (durationsKnown === chunks.length && onDurationKnown) onDurationKnown(totalDurationMs);
   };
+
+  const playChunk = async (i: number): Promise<void> => {
+    if (cancelled) return;
+    const blob = await chunkPromises[i];
+    if (cancelled) return;
+    if (!blob) {
+      // A single chunk failing shouldn't sink the whole utterance — skip
+      // ahead so the candidate still hears the rest of the answer. Still
+      // counts toward maybeFireDuration so a failed chunk can't leave
+      // onDurationKnown permanently unfired (durationsKnown would never
+      // reach chunks.length otherwise).
+      console.warn(`[TTS-Sarvam] chunk ${i + 1}/${chunks.length} failed, skipping`);
+      maybeFireDuration();
+      if (i + 1 < chunks.length) return playChunk(i + 1);
+      // Every chunk failed (or this was the last remaining one) — only a
+      // hard error if NOTHING played yet; otherwise treat as a clean end.
+      settle(audioStartedFired ? onEnd : onError);
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.onloadedmetadata = () => {
+      if (isFinite(audio.duration) && audio.duration > 0) totalDurationMs += audio.duration * 1000;
+      maybeFireDuration();
+    };
+    audio.onplaying = fireAudioStarted;
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+      if (cancelled) return;
+      if (i + 1 < chunks.length) playChunk(i + 1);
+      else settle(onEnd);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      if (cancelled) return;
+      if (i + 1 < chunks.length) playChunk(i + 1);
+      else settle(audioStartedFired ? onEnd : onError);
+    };
+    try {
+      await audio.play();
+      fireAudioStarted();
+    } catch (err: unknown) {
+      URL.revokeObjectURL(url);
+      if (isAutoplayError(err)) {
+        console.warn("[TTS-Sarvam] autoplay blocked by browser policy — disabling voice for session");
+        _autoplayBlocked = true;
+        settle(onEnd);
+        return;
+      }
+      if (!(err instanceof Error && err.name === "AbortError")) {
+        console.warn("[TTS-Sarvam] chunk playback error:", err instanceof Error ? err.message : err);
+      }
+      if (cancelled) return;
+      if (i + 1 < chunks.length) return playChunk(i + 1);
+      settle(audioStartedFired ? onEnd : onError);
+    }
+  };
+
+  playChunk(0);
+
+  return { cancel: doCancel };
 }
 
 /* ─── Azure TTS (3rd-tier provider — Indian English neural voices) ─── */
@@ -1234,26 +1356,27 @@ export async function speakAs(
 /* ─── Unified speak function ─── */
 import { stripProsodyMarkup, renderForCartesia } from "./_prosody";
 
-/* Prosody-rendering feature flag. When ON, `_emphasis_` and `[pause]`
-   markers in the LLM output get rendered to provider-native cadence
-   (Cartesia respects ellipsis as a measurable pause, so the renderer
-   converts `[pause]` → `… ` and drops the inline emphasis markers
-   since Cartesia doesn't expose SSML on the realtime endpoint). When
-   OFF, markers are stripped entirely — the safe default until we've
-   verified the rendered audio sounds right on real devices.
+/* Prosody-rendering feature flag. When ON (default), `_emphasis_` and
+   `[pause]` markers in the LLM output get rendered to provider-native
+   cadence (Cartesia respects ellipsis as a measurable pause, so the
+   renderer converts `[pause]` → `… ` and drops the inline emphasis
+   markers since Cartesia doesn't expose SSML on the realtime
+   endpoint). When OFF, markers are stripped entirely — kept as a kill
+   switch for a bad-sounding-audio report, not the default anymore now
+   that the rendered audio has been verified on real devices.
 
    Same shape as the backchannels flag — flip via DevTools or the
    exported helper below. */
 const PROSODY_FLAG_KEY = "hsx-prosody";
 function isProsodyEnabled(): boolean {
-  try { return typeof localStorage !== "undefined" && localStorage.getItem(PROSODY_FLAG_KEY) === "on"; }
-  catch { return false; }
+  try { return typeof localStorage === "undefined" || localStorage.getItem(PROSODY_FLAG_KEY) !== "off"; }
+  catch { return true; }
 }
 export function setProsodyEnabled(enabled: boolean): void {
   try {
     if (typeof localStorage === "undefined") return;
-    if (enabled) localStorage.setItem(PROSODY_FLAG_KEY, "on");
-    else localStorage.removeItem(PROSODY_FLAG_KEY);
+    if (enabled) localStorage.removeItem(PROSODY_FLAG_KEY);
+    else localStorage.setItem(PROSODY_FLAG_KEY, "off");
   } catch { /* localStorage may be blocked (Safari private mode) */ }
 }
 

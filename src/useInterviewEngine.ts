@@ -1164,6 +1164,16 @@ export function useInterviewEngine() {
     toast("Listening — speak when ready", "info");
   }, [phase, toast]);
 
+  // Running window of the candidate's last few answer durations (ms), used to
+  // derive an adaptive STT silence timeout. A candidate who habitually gives
+  // 90s STAR answers shouldn't get yanked into text-fallback by a fixed 30s
+  // silence timer; one giving crisp 10s answers shouldn't have to sit
+  // through 30s of true silence before the fallback kicks in either.
+  // Declared here (rather than near the other per-turn refs further down)
+  // because useInterviewSTT below reads adaptiveSilenceMsRef.current.
+  const recentAnswerDurationsRef = useRef<number[]>([]);
+  const adaptiveSilenceMsRef = useRef<number | undefined>(undefined);
+
   // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
   // STT is gated behind awaitingSpeechStart — we pretend phase isn't yet
   // "listening" so the hook doesn't auto-start until the user clicks the
@@ -1174,7 +1184,7 @@ export function useInterviewEngine() {
     onLowSttConfidence: (snapshot) => { sttLowConfidenceRef.current = snapshot; },
   }, {
     recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
-  }, sttRestartTrigger);
+  }, sttRestartTrigger, adaptiveSilenceMsRef.current);
 
   /* ── micQuiet poll ───────────────────────────────────────────────
      Lift the noSpeechCountRef into React state so the inline
@@ -1365,6 +1375,12 @@ export function useInterviewEngine() {
   const sttAudioSecondsRef = useRef(0);
   // Track STT call start time so we can measure duration per utterance.
   const sttCallStartRef = useRef<number | null>(null);
+  // Stamped the moment the candidate finishes a turn (submit / skip), cleared
+  // once the AI's next audio is actually audible. Measures the full round trip
+  // the candidate perceives as "how long until the interviewer responds" —
+  // distinct from _tts-telemetry's per-utterance synthesis latency, which
+  // only covers the TTS leg and starts after this thinking-phase work is done.
+  const turnStartRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (phase === "done") return;
@@ -1576,6 +1592,21 @@ export function useInterviewEngine() {
     // Cancel any in-flight TTS from previous generation to prevent overlap
     ttsCancelRef.current?.();
     ttsCancelRef.current = null;
+
+    // Emits the candidate-perceived "how long until the interviewer
+    // responds" round trip once — fires from whichever audio (thinking
+    // phrase, or the question itself when there's no phrase) is first
+    // audible. Guarded so a stale/replayed effect can't double-log, and
+    // so the very first question of the session (no prior turn) stays
+    // silent — turnStartRef is only set at answer submission.
+    let turnLatencyLogged = false;
+    const logTurnLatencyOnce = () => {
+      if (turnLatencyLogged || turnStartRef.current === null) return;
+      turnLatencyLogged = true;
+      const ms = Date.now() - turnStartRef.current;
+      turnStartRef.current = null;
+      captureClientEvent("interview_turn_latency", { ms, step: currentStep, hadThinkingPhrase: !!thinkingPhrase });
+    };
 
     setPhase("thinking");
 
@@ -1795,9 +1826,12 @@ export function useInterviewEngine() {
           };
           // Accumulate TTS chars for per-session COGS tracking.
           ttsCharsRef.current += (step.aiText ?? "").length;
+          // Only the case with no preceding thinking phrase reaches here first —
+          // when a phrase played, logTurnLatencyOnce already fired and this is a no-op.
+          const onQuestionAudioStarted = () => { logTurnLatencyOnce(); revealTranscript(); };
           return panelVoiceId
-            ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onAllTtsProvidersFailed, panelGender, onDurationKnown, revealTranscript)
-            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript, interviewerSarvamVoice);
+            ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onAllTtsProvidersFailed, panelGender, onDurationKnown, onQuestionAudioStarted)
+            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, onQuestionAudioStarted, interviewerSarvamVoice);
         };
         speakPanel().then(handle => {
           if (ttsInstanceIdRef.current === instanceId) {
@@ -1834,7 +1868,7 @@ export function useInterviewEngine() {
           // Brief micro-pause between phrase and question (300-600ms)
           setTimeout(startSpeaking, randomDelay(300, 600));
         };
-        speak(thinkingPhrase, onPhraseDone, onPhraseDone, interviewerGender, undefined, undefined, interviewerSarvamVoice).then(handle => {
+        speak(thinkingPhrase, onPhraseDone, onPhraseDone, interviewerGender, undefined, logTurnLatencyOnce, interviewerSarvamVoice).then(handle => {
           if (ttsInstanceIdRef.current === phraseInstanceId) {
             ttsCancelRef.current = handle.cancel;
           } else {
@@ -1974,7 +2008,7 @@ export function useInterviewEngine() {
         setTimeout(() => {
           if (isStale() || interviewEndedRef.current) return;
           const phraseInstanceId = ++ttsInstanceIdRef.current;
-          speak(thinkingPhrase!, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).then(handle => {
+          speak(thinkingPhrase!, () => {}, () => {}, interviewerGender, undefined, logTurnLatencyOnce, interviewerSarvamVoice).then(handle => {
             if (ttsInstanceIdRef.current === phraseInstanceId) {
               ttsCancelRef.current = handle.cancel;
             } else {
@@ -2454,8 +2488,25 @@ export function useInterviewEngine() {
 
     // Close STT listen window and accumulate billable audio seconds.
     if (sttCallStartRef.current !== null) {
-      sttAudioSecondsRef.current += (Date.now() - sttCallStartRef.current) / 1000;
+      const listenMs = Date.now() - sttCallStartRef.current;
+      sttAudioSecondsRef.current += listenMs / 1000;
       sttCallStartRef.current = null;
+
+      // Feed the adaptive-silence-timeout window. Clamp out pathological
+      // samples (near-instant skips, or a session left idle) so a single
+      // outlier turn doesn't skew the next turn's timeout.
+      if (listenMs >= 2_000 && listenMs <= 180_000) {
+        const window = recentAnswerDurationsRef.current;
+        window.push(listenMs);
+        if (window.length > 8) window.shift();
+        if (window.length >= 2) {
+          const sorted = [...window].sort((a, b) => a - b);
+          const median = sorted[Math.floor(sorted.length / 2)];
+          // Give ~60% headroom over the median so we're timing out on
+          // genuine silence, not just a slightly-longer-than-usual answer.
+          adaptiveSilenceMsRef.current = Math.min(45_000, Math.max(20_000, Math.round(median * 1.6)));
+        }
+      }
     }
 
     const rawTranscript = currentTranscript.trim();
@@ -3329,6 +3380,7 @@ export function useInterviewEngine() {
       // dropped. The 4s safety backstop above only fires after the fact.
       clearTimeout(advancingSafetyTimer);
       advancingRef.current = false;
+      turnStartRef.current = Date.now();
       setPhase("thinking");
       setCurrentStep(currentStep + 1);
     } else {
@@ -3390,6 +3442,7 @@ export function useInterviewEngine() {
       advancingRef.current = false;
       return;
     }
+    turnStartRef.current = Date.now();
     setCurrentStep(nextIdx);
     setPhase("thinking");
     advancingRef.current = false;

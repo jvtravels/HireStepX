@@ -58,6 +58,14 @@ export function useInterviewSTT(
    *  Space-to-start-speaking shortcut + the "Tap to start" button so
    *  users have an explicit trigger when auto-start fails silently. */
   restartTrigger = 0,
+  /** Adaptive silence-timeout override (ms), computed by the engine from
+   *  the candidate's own running median answer duration. A candidate who
+   *  regularly gives 90s STAR answers shouldn't get yanked into text mode
+   *  by a one-size-fits-all 30s timer; a candidate giving crisp 10s
+   *  answers shouldn't wait 30s of true silence before the fallback
+   *  kicks in either. Falls back to the fixed 30s default until the
+   *  engine has enough turns to compute a median. */
+  silenceTimeoutMs?: number,
 ) {
   const recognitionRestartCountRef = useRef(0);
   const deepgramRetryRef = useRef(0);
@@ -94,7 +102,7 @@ export function useInterviewSTT(
       // a fixed 30s timer from listening-start, which yanked users into
       // text mode mid-answer for any STAR response longer than 30s.
       let safetyTimer: ReturnType<typeof setTimeout> | null = null;
-      const SAFETY_SILENCE_MS = 30_000;
+      const SAFETY_SILENCE_MS = silenceTimeoutMs ?? 30_000;
       const armSafetyTimer = () => {
         if (safetyTimer) clearTimeout(safetyTimer);
         safetyTimer = setTimeout(() => {
