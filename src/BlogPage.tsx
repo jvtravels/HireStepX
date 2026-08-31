@@ -5420,48 +5420,6 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
     ]} caption="Indian product company salaries — Bengaluru 2026. Includes base + variable + pre-IPO equity value" />
   ),
 
-  /* best-fintech-companies-india-2026: Industry Insights */
-  "best-fintech-companies-india-2026||Tier 1: Payments Infrastructure Leaders": (
-    <TierCompare cards={[
-      {
-        tier: "Tier 1: Payments Infra",
-        examples: "Razorpay · PhonePe · BillDesk · Juspay",
-        rows: [
-          { label: "SDE-1", range: "₹20–40 LPA" },
-          { label: "SDE-2", range: "₹35–65 LPA" },
-          { label: "SDE-3 / Senior", range: "₹55–95 LPA" },
-        ],
-      },
-      {
-        tier: "Tier 2: Consumer Finance",
-        examples: "Groww · Zerodha · Upstox · ClearTax",
-        rows: [
-          { label: "SDE-1", range: "₹15–30 LPA" },
-          { label: "SDE-2", range: "₹25–50 LPA" },
-          { label: "SDE-3 / Senior", range: "₹40–75 LPA" },
-        ],
-      },
-      {
-        tier: "Tier 3: InsurTech / Lending",
-        examples: "Acko · PolicyBazaar · BankBazaar · KreditBee",
-        rows: [
-          { label: "SDE-1", range: "₹10–22 LPA" },
-          { label: "SDE-2", range: "₹18–38 LPA" },
-          { label: "SDE-3 / Senior", range: "₹30–55 LPA" },
-        ],
-      },
-    ]} />
-  ),
-
-  "best-fintech-companies-india-2026||Tier 2: Consumer Finance and Investment Platforms": (
-    <SalaryLadder maxLPA={100} rows={[
-      { role: "Junior SDE (0-2 yr)", min: 10, max: 22, note: "Consumer finance startups" },
-      { role: "Mid-Level SDE (2-5 yr)", min: 22, max: 50 },
-      { role: "Senior SDE (5-8 yr)", min: 40, max: 75 },
-      { role: "Staff Engineer (8+ yr)", min: 60, max: 100 },
-    ]} caption="Consumer fintech (Groww, Zerodha, Upstox, CRED) engineer salaries — India 2026" />
-  ),
-
   /* software-engineer-salary-india-2026: Industry Insights */
   "software-engineer-salary-india-2026||Service IT Companies: TCS, Infosys, Wipro, HCL, Cognizant": (
     <SalaryLadder maxLPA={40} rows={[

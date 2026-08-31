@@ -113,6 +113,14 @@ const nextConfig = {
       // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
       // more heavily cross-linked survivor.
       { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // best-fintech-companies-india-2026 (2026-05-13) and top-fintech-companies-india-2026
+      // (2026-06-12) both ranked the same fintech employers (Razorpay, PhonePe, Zerodha,
+      // Groww) with the same salary/culture/interview angle, cannibalizing "fintech
+      // companies india" queries. The weaker-linked post (7 incoming relatedSlugs) had its
+      // unique employer coverage (CRED, Paytm, PolicyBazaar, Angel One, MSME lenders) and
+      // one FAQ merged into the stronger, more-linked post (9 incoming relatedSlugs), then
+      // was removed from data/blog-posts.ts and src/blog-meta.ts.
+      { source: "/blog/best-fintech-companies-india-2026", destination: "/blog/top-fintech-companies-india-2026", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense
