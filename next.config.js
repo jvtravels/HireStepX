@@ -113,6 +113,16 @@ const nextConfig = {
       // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
       // more heavily cross-linked survivor.
       { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // system-design-interview-how-to-prepare-ace-india-2026 (0 incoming relatedSlugs,
+      // the weakest link signal found across this cleanup) and
+      // system-design-interview-questions-india-2026 (88 incoming relatedSlugs, the
+      // site's canonical system-design pillar post) had near-identical titles and
+      // overlapping framework/worked-examples content, cannibalizing "system design
+      // interview" queries. The weaker post's unique worked examples (Instagram/Twitter
+      // feed fan-out, Uber ride sharing, notification service, payment gateway
+      // idempotency) and one FAQ were merged into the pillar post, then it was removed
+      // from data/blog-posts.ts and src/blog-meta.ts.
+      { source: "/blog/system-design-interview-how-to-prepare-ace-india-2026", destination: "/blog/system-design-interview-questions-india-2026", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense
