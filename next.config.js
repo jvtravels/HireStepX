@@ -106,6 +106,12 @@ const nextConfig = {
       { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
       { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
       { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      // hcl-interview-questions-india-2026 and hcl-technologies-interview-questions-2026
+      // covered the same topic (process, salary, TechBee, HR round) with heavy overlap,
+      // cannibalizing "hcl ... interview/salary/recruitment" queries. The weaker-linked
+      // (zero incoming relatedSlugs) post was merged into the stronger one (7 incoming
+      // relatedSlugs) and removed from data/blog-posts.ts and src/blog-meta.ts.
+      { source: "/blog/hcl-interview-questions-india-2026", destination: "/blog/hcl-technologies-interview-questions-2026", permanent: true },
       // kubernetes-docker-devops-interview-questions-india-2026 (2026-01-01) and
       // kubernetes-docker-interview-india-2026 (2026-04-06) covered the identical
       // Docker/Kubernetes/Helm/CI-CD topic for the same query, and GSC "Crawled -
