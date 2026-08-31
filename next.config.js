@@ -113,6 +113,15 @@ const nextConfig = {
       // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
       // more heavily cross-linked survivor.
       { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // ios-swift-developer-interview-india-2026 (0 incoming relatedSlugs) and
+      // ios-developer-interview-india-2026 (2 incoming relatedSlugs) covered the
+      // same Swift/UIKit/SwiftUI/MVVM interview content for the same query,
+      // surfaced via GSC's Aug 2026 Performance export as a near-duplicate-title
+      // cluster. Removed the weaker-linked post from data/blog-posts.ts and
+      // src/blog-meta.ts after merging its unique Clean Swift/Coordinator-pattern
+      // section and "best iOS employers in India" + SwiftUI-vs-UIKit-split FAQs
+      // into the survivor; redirect it there.
+      { source: "/blog/ios-swift-developer-interview-india-2026", destination: "/blog/ios-developer-interview-india-2026", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense
