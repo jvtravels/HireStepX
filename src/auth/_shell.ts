@@ -204,7 +204,7 @@ export interface ComputeRedirectArgs {
  * to buy, so we open the upgrade flow instead of dropping them on the
  * dashboard with no follow-through. Keep in sync with marketing CTAs in
  * src/marketing-v2/{HomepageV2,MarketingPagesV2}.tsx. */
-const PAID_PLANS = new Set(["session", "weekly", "sprint", "monthly", "starter", "pro"]);
+const PAID_PLANS = new Set(["session", "weekly", "sprint", "starter"]);
 /* "sprint" is the user-facing alias for the "weekly" plan ID — normalize
  * it here so the backend always receives the canonical plan identifier. */
 const PLAN_ALIASES: Record<string, string> = { sprint: "weekly" };

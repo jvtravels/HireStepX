@@ -121,7 +121,7 @@ export interface Profile {
   resume_version_id: string | null;
   practice_timestamps: string[];
   avatar_url: string;
-  subscription_tier: "free" | "starter" | "pro" | "team";
+  subscription_tier: "free" | "starter" | "team";
   subscription_start: string | null;
   subscription_end: string | null;
   cancel_at_period_end: boolean;

@@ -8,7 +8,7 @@ import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
   type PersistedState, type DashboardSession, type SkillData, type TrendPoint,
   type RealSession, type SkillVelocity, type CompanyReadiness, type ImprovementPlan,
-  FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT,
+  FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT,
   loadState, saveState, getSessionData,
   generateFallbackInsights, generateNotifications, generateGoals,
   getReturnContext, getSmartScheduleSuggestion, getImprovementPlan,
@@ -85,19 +85,15 @@ interface SessionsContextValue {
 interface SubscriptionContextValue {
   isFree: boolean;
   isStarter: boolean;
-  isPro: boolean;
   atSessionLimit: boolean;
   sessionsUsed: number;
   sessionsRemaining: number;
   starterRemaining: number;
   sessionsThisWeek: number;
-  /** Sessions started in the current calendar month — used to track Pro's 40/month cap. */
   sessionsThisMonth: number;
-  /** Sessions remaining for Pro this calendar month (max 0). Always 0 for non-Pro tiers. */
-  proRemaining: number;
   /** Purchased one-off session credits (₹9 each). Acts as a top-up for any tier
-   *  that has exhausted its plan allotment (free, starter, or pro). The `atSessionLimit`
-   *  gate clears for all three tiers when creditBalance > 0. Fetched lazily after auth;
+   *  that has exhausted its plan allotment (free or starter). The `atSessionLimit`
+   *  gate clears for both tiers when creditBalance > 0. Fetched lazily after auth;
    *  0 until loaded. */
   creditBalance: number;
   /** True once the credit balance DB fetch has resolved (success or error).
@@ -800,7 +796,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const effectiveTier = isTierExpired ? "free" : rawTier;
   const isFree = effectiveTier === "free";
   const isStarter = effectiveTier === "starter";
-  const isPro = effectiveTier === "pro";
   const sessionsUsed = practiceTimestamps.length;
   const sessionsRemaining = Math.max(0, FREE_SESSION_LIMIT - sessionsUsed);
   // Starter is a "Sprint Pack": 5 sessions counted from the day the pack was
@@ -833,21 +828,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch { return false; }
   }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
-  // Pro plan: 40 sessions per calendar month. Track this so the sidebar
-  // and SessionSetup can show real remaining counts instead of "Unlimited".
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const sessionsThisMonth = practiceTimestamps.filter((t) => {
     try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; }
   }).length;
-  const proRemaining = isPro ? Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth) : 0;
   // Users past their plan allotment are NOT at the limit if they hold purchased
   // credits — the backend will consume one on session start. This applies to
-  // all tiers: free (past 2 free sessions), starter (past weekly cap), and
-  // pro (past monthly cap). Credits are a universal top-up, not free-only.
+  // both tiers: free (past 2 free sessions) and starter (past weekly cap).
+  // Credits are a universal top-up, not free-only.
   const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT && creditBalance === 0)
-    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
-    || (isPro && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0);
+    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0);
 
   const daysLeft = persisted.interviewDate ? daysUntil(persisted.interviewDate) : 0;
   const readinessScore = scoreTrend.length > 0 && skills.length > 0 ? computeReadiness(scoreTrend, skills) : 0;
@@ -932,10 +923,10 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
-    isFree, isStarter, isPro, atSessionLimit,
+    isFree, isStarter, atSessionLimit,
     sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek,
-    sessionsThisMonth, proRemaining, creditBalance, creditsLoaded,
-  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance, creditsLoaded]);
+    sessionsThisMonth, creditBalance, creditsLoaded,
+  }), [isFree, isStarter, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, creditBalance, creditsLoaded]);
 
   const uiValue: UIContextValue = useMemo(() => ({
     showUpgradeModal, setShowUpgradeModal,
