@@ -30,11 +30,9 @@ describe("plan catalog", () => {
     expect(PLAN_AMOUNT["weekly"]).toBe(3900);
   });
 
-  it("monthly costs 14900 paise (₹149)", () => {
-    expect(PLAN_AMOUNT["monthly"]).toBe(14900);
-  });
-
-  it("no annual SKUs remain in the catalog", () => {
+  it("no monthly/pro or annual SKUs remain in the catalog", () => {
+    expect(PLAN_AMOUNT["monthly"]).toBeUndefined();
+    expect(PLAN_TIER["monthly"]).toBeUndefined();
     expect(PLAN_AMOUNT["yearly-starter"]).toBeUndefined();
     expect(PLAN_AMOUNT["yearly-pro"]).toBeUndefined();
     expect(PLAN_TIER["yearly-pro"]).toBeUndefined();
@@ -62,8 +60,7 @@ describe("plan catalog", () => {
 /* ─── Tier ranking ─── */
 
 describe("tier ranking", () => {
-  it("pro outranks starter outranks free", () => {
-    expect(TIER_RANK["pro"]).toBeGreaterThan(TIER_RANK["starter"]);
+  it("starter outranks free", () => {
     expect(TIER_RANK["starter"]).toBeGreaterThan(TIER_RANK["free"]);
   });
 });
@@ -116,8 +113,8 @@ describe("isUpgrade", () => {
   const futureMs = new Date("2026-04-20T12:00:00Z").getTime();
   const pastMs = new Date("2026-04-10T12:00:00Z").getTime();
 
-  it("is true when an active starter buys monthly (pro)", () => {
-    expect(isUpgrade({ currentTier: "starter", currentEndMs: futureMs, nowMs, newPlan: "monthly" })).toBe(true);
+  it("is true when an active free-tier user buys weekly (starter)", () => {
+    expect(isUpgrade({ currentTier: "free", currentEndMs: futureMs, nowMs, newPlan: "weekly" })).toBe(true);
   });
 
   it("is false for a same-tier renewal", () => {
@@ -125,11 +122,11 @@ describe("isUpgrade", () => {
   });
 
   it("is false when the current subscription has expired", () => {
-    expect(isUpgrade({ currentTier: "starter", currentEndMs: pastMs, nowMs, newPlan: "monthly" })).toBe(false);
+    expect(isUpgrade({ currentTier: "free", currentEndMs: pastMs, nowMs, newPlan: "weekly" })).toBe(false);
   });
 
   it("is false with no current subscription", () => {
-    expect(isUpgrade({ currentTier: null, currentEndMs: null, nowMs, newPlan: "monthly" })).toBe(false);
+    expect(isUpgrade({ currentTier: null, currentEndMs: null, nowMs, newPlan: "weekly" })).toBe(false);
   });
 });
 
@@ -142,11 +139,6 @@ describe("computeSubscriptionEnd — term length", () => {
     const r = computeSubscriptionEnd({ plan: "weekly", now: NOW });
     expect(r?.end.toISOString()).toBe(new Date("2026-05-15T12:00:00Z").toISOString());
     expect(r?.proratedDays).toBe(0);
-  });
-
-  it("monthly adds 30 days from now for a fresh purchase", () => {
-    const r = computeSubscriptionEnd({ plan: "monthly", now: NOW });
-    expect(r?.end.toISOString()).toBe(new Date("2026-05-15T12:00:00Z").toISOString());
   });
 
   it("returns null for a plan with no term (single)", () => {
@@ -175,34 +167,12 @@ describe("computeSubscriptionEnd — renewal extends from current end", () => {
 });
 
 describe("computeSubscriptionEnd — mid-cycle upgrade proration", () => {
-  it("grafts prorated bonus days when starter upgrades to monthly", () => {
-    const now = new Date("2026-04-15T12:00:00Z");
-    // Weekly starter started 3 days ago, 4 days remaining (measured ~7d).
-    const currentStartMs = new Date("2026-04-12T12:00:00Z").getTime();
-    const currentEndMs = new Date("2026-04-19T12:00:00Z").getTime();
-    const r = computeSubscriptionEnd({
-      plan: "monthly",
-      now,
-      currentStartMs,
-      currentEndMs,
-      currentTier: "starter",
-    });
-    // proration credits a few days on top of the 30-day term — never negative,
-    // and strictly less than a full extra month.
-    expect(r).not.toBeNull();
-    expect(r!.proratedDays).toBeGreaterThan(0);
-    expect(r!.proratedDays).toBeLessThan(30);
-    const expected = new Date(now);
-    expected.setDate(expected.getDate() + 30 + r!.proratedDays);
-    expect(r!.end.toISOString()).toBe(expected.toISOString());
-  });
-
   it("gives zero proration when the current plan just expired", () => {
     const now = new Date("2026-04-15T12:00:00Z");
     const currentStartMs = new Date("2026-04-08T12:00:00Z").getTime();
     const currentEndMs = now.getTime();
     const r = computeSubscriptionEnd({
-      plan: "monthly",
+      plan: "weekly",
       now,
       currentStartMs,
       currentEndMs,
@@ -219,7 +189,7 @@ describe("computeSubscriptionEnd — mid-cycle upgrade proration", () => {
 
 describe("computeSubscriptionEnd — month-end edges", () => {
   it("Jan 31 + 30 days = March 2", () => {
-    const r = computeSubscriptionEnd({ plan: "monthly", now: new Date("2026-01-31T12:00:00Z") });
+    const r = computeSubscriptionEnd({ plan: "weekly", now: new Date("2026-01-31T12:00:00Z") });
     expect(r?.end.toISOString()).toBe(new Date("2026-03-02T12:00:00Z").toISOString());
   });
 
@@ -229,7 +199,7 @@ describe("computeSubscriptionEnd — month-end edges", () => {
   });
 
   it("Dec 25 + 30 days = Jan 24 next year", () => {
-    const r = computeSubscriptionEnd({ plan: "monthly", now: new Date("2026-12-25T12:00:00Z") });
+    const r = computeSubscriptionEnd({ plan: "weekly", now: new Date("2026-12-25T12:00:00Z") });
     expect(r?.end.toISOString()).toBe(new Date("2027-01-24T12:00:00Z").toISOString());
   });
 });

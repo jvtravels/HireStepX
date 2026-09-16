@@ -147,7 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Send pause/resume confirmation email (best-effort)
     if (RESEND_API_KEY && profile?.email) {
       const safeName = escapeHtml(profile.name || "there");
-      const safeTier = escapeHtml(profile.subscription_tier || "Pro");
+      const safeTier = escapeHtml(profile.subscription_tier || "Starter");
       const subject = action === "pause"
         ? "Your subscription is paused"
         : "Welcome back to your plan";

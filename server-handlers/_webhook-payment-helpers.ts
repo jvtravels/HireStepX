@@ -7,16 +7,16 @@
  * networks). For that net to actually catch every product it must mirror what
  * create-order/verify-payment do, not just full-price subscriptions:
  *   - single-session (₹9 × quantity) grants credits, not a tier
- *   - promo-discounted weekly/monthly captures less than list price
+ *   - promo-discounted weekly (Sprint Pack) captures less than list price
  * Both used to be silently skipped ("missing_notes" / "amount_mismatch"),
  * leaving the buyer charged-but-not-served. resolveCapturedPayment encodes the
  * correct expected-amount math for all three so the handler can branch cleanly.
  */
 
-export const WEBHOOK_PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro" };
-export const WEBHOOK_PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900, monthly: 14900 }; // weekly = Sprint Pack ₹39
+export const WEBHOOK_PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter" };
+export const WEBHOOK_PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900 }; // weekly = Sprint Pack ₹39
 /** Term length in days for the tier plans. "single" has no term (credits). */
-export const WEBHOOK_PLAN_DURATION: Record<string, number> = { weekly: 30, monthly: 30 }; // weekly = Sprint Pack 30-day validity
+export const WEBHOOK_PLAN_DURATION: Record<string, number> = { weekly: 30 }; // weekly = Sprint Pack 30-day validity
 
 /** Parse a server-written note that should be a non-negative integer (paise
  *  discount, quantity). Notes arrive as strings on the Razorpay entity; anything

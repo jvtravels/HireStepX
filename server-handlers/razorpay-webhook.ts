@@ -19,9 +19,9 @@ const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
-const PLAN_DURATION: Record<string, number> = { weekly: 30, monthly: 30 }; // weekly = Sprint Pack 30-day validity
-const PLAN_TIER: Record<string, string> = { weekly: "starter", monthly: "pro" };
-const PLAN_AMOUNT: Record<string, number> = { weekly: 3900, monthly: 14900 }; // weekly = Sprint Pack ₹39
+const PLAN_DURATION: Record<string, number> = { weekly: 30 }; // weekly = Sprint Pack 30-day validity
+const PLAN_TIER: Record<string, string> = { weekly: "starter" };
+const PLAN_AMOUNT: Record<string, number> = { weekly: 3900 }; // weekly = Sprint Pack ₹39
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -461,19 +461,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Send payment-failed notification email (best-effort, non-blocking)
         if (RESEND_API_KEY && profileEmail) {
           const safeName = escapeHtml(profileName || "there");
-          const lostRows: [string, string][] = previousTier === "pro"
-            ? [
-                ["Unlimited sessions", "Removed"],
-                ["Full AI coaching feedback", "Removed"],
-                ["Performance analytics", "Removed"],
-                ["Priority support", "Removed"],
-              ]
-            : [
-                ["7 sessions per week", "Removed"],
-                ["All question types", "Removed"],
-                ["Detailed feedback", "Removed"],
-                ["Resume analysis", "Removed"],
-              ];
+          const lostRows: [string, string][] = [
+            ["5 sessions per Sprint Pack", "Removed"],
+            ["All question types", "Removed"],
+            ["Detailed feedback", "Removed"],
+            ["Resume analysis", "Removed"],
+          ];
 
           try {
             await fetch("https://api.resend.com/emails", {

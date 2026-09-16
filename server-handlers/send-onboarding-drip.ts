@@ -1,7 +1,7 @@
 /* Vercel Cron — Post-upgrade onboarding drip emails
  *
  * Fires daily at 12:30 UTC (6:00 PM IST). Targets users who recently
- * upgraded to starter or pro and sends two timed emails:
+ * upgraded to Starter (Sprint Pack) and sends two timed emails:
  *
  *   Day 2  (1–3 days after subscription_start): "Here's what you unlocked"
  *   Day 5  (4–7 days after subscription_start): "Have you tried this yet?"
@@ -70,35 +70,27 @@ function getDripStep(daysSinceStart: number): DripStep | null {
 
 function buildDay2Email(
   name: string,
-  tier: string,
   role: string | null,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
   const safeRole = escapeHtml(role || "your target role");
-  const isPro = tier === "pro";
   const sessionUrl = `${APP_URL}/session/new`;
-  const salaryUrl = `${APP_URL}/interview?type=salary-negotiation`;
 
   return {
-    subject: `What's unlocked on your ${isPro ? "Pro" : "Starter"} plan`,
+    subject: `What's unlocked on your Sprint Pack`,
     html: emailShell({
-      preview: `Your ${isPro ? "Pro" : "Starter"} plan is active. Here's the fastest way to get value from it.`,
+      preview: `Your Sprint Pack is active. Here's the fastest way to get value from it.`,
       body:
         title("You're in.", { accentWord: "Here's what that means." }) +
         para(`Hi ${safeName}, your plan is active. Here is the fastest way to get value from it before your ${safeRole} prep window closes.`) +
         dataCard(`What's unlocked`, [
-          ["Sessions", isPro ? "Unlimited, every day" : "5 per Sprint Pack"],
+          ["Sessions", "5 per Sprint Pack"],
           ["Question types", "Behavioral, Technical, Case Study, HR"],
-          ...(isPro ? [["Salary negotiation", "Practice your offer conversation with AI"] as [string, string]] : []),
           ["Resume tailoring", "Questions matched to your uploaded resume"],
           ["Coaching feedback", "STAR breakdown + model answer after every session"],
         ]) +
         para(`${b("Start with one session now.")} Pick ${b(safeRole)} as your focus and do a 10-minute behavioral round. The AI will tell you your weakest dimension — that becomes your practice target for the week.`) +
         button("Start your first session", sessionUrl) +
-        (isPro
-          ? para(`${b("Pro tip:")} The salary negotiation mode is the most underused feature. If you have an offer coming, practice the conversation before it happens. Most candidates leave 10–20% on the table.`) +
-            button("Try salary negotiation mode", salaryUrl)
-          : "") +
         para("Reply to this email if you have a specific company or role in mind — we can suggest the best session type to start with.", { small: true, muted: true }),
     }),
   };
@@ -106,12 +98,10 @@ function buildDay2Email(
 
 function buildDay5Email(
   name: string,
-  tier: string,
   role: string | null,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
   const safeRole = escapeHtml(role || "your target role");
-  const isPro = tier === "pro";
   const sessionUrl = `${APP_URL}/session/new`;
   const reportUrl = `${APP_URL}/dashboard`;
 
@@ -126,13 +116,12 @@ function buildDay5Email(
           ["Practice aloud", "Not in your head. Aloud. Scoring is 22 pts higher on average."],
           ["3 sessions per week", "Consistency beats marathon cramming every time."],
           ["Coach Notes tab", "After every session — the tab most users skip."],
-          ...(isPro ? [["Salary negotiation", "Do at least one session before any offer call"] as [string, string]] : []),
         ]) +
         para(`${b("The Coach Notes tab")} inside your session report is the most important feature nobody uses. After every session the AI writes a specific, personalised list of what to change in your next session. It takes 2 minutes to read and it's why candidates who use it consistently see noticeably sharper answers within a few sessions.`) +
         button("Start a session and read your Coach Notes", sessionUrl) +
         para(`Your ${b(safeRole)} sessions and all past reports are in your dashboard whenever you need them.`) +
         button("View my dashboard", reportUrl) +
-        para(`${isPro ? "Unlimited sessions" : "5 sessions per Sprint Pack"} — your plan covers you through placement season.`, { small: true, muted: true }),
+        para("5 sessions per Sprint Pack — your plan covers you through placement season.", { small: true, muted: true }),
     }),
   };
 }
@@ -169,7 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const profilesRes = await fetch(
     `${SUPABASE_URL}/rest/v1/profiles` +
-    `?subscription_tier=in.(starter,pro)` +
+    `?subscription_tier=eq.starter` +
     `&subscription_start=gte.${encodeURIComponent(cutoffFar)}` +
     `&subscription_start=lte.${encodeURIComponent(cutoffNear)}` +
     `&select=id,name,email,subscription_tier,subscription_start,target_role` +
@@ -208,8 +197,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { subject, html } =
       step === "day2"
-        ? buildDay2Email(user.name || "", user.subscription_tier, user.target_role)
-        : buildDay5Email(user.name || "", user.subscription_tier, user.target_role);
+        ? buildDay2Email(user.name || "", user.target_role)
+        : buildDay5Email(user.name || "", user.target_role);
 
     const idempotencyKey = `onboarding-${step}-${user.id}`;
     const ok = await sendEmail(user.email, subject, html, idempotencyKey);

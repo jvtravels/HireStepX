@@ -89,8 +89,8 @@ function buildEmail(
     day1: `${user.name?.split(" ")[0] || "Hey"}, your next practice session is ready`,
     day3: `Your ${weakest || "interview"} skills need a refresh`,
     day7: "Your practice sessions are still here",
-    paid14: "Two weeks since your last Pro session",
-    paid30: "Your Pro plan is active and ready when you are",
+    paid14: "Two weeks since your last session",
+    paid30: "Your Sprint Pack is active and ready when you are",
     winback: "We saved your progress — come back whenever you're ready",
   };
 
@@ -106,7 +106,7 @@ function buildEmail(
     day1: "where you left off.",
     day3: "ten minutes.",
     day7: "right here.",
-    paid14: "still unlimited.",
+    paid14: "still waiting.",
     paid30: "whenever you are.",
     winback: "your corner.",
   };
@@ -119,8 +119,8 @@ function buildEmail(
     day7: score
       ? `Hi ${name}, you scored ${b(`${score}/100`)} last time. That is a solid start, and skills stay sharp with practice. One short session is all it takes to keep your edge.`
       : `Hi ${name}, interview skills fade quietly without practice. A quick 10-minute session keeps your edge sharp and your answers ready.`,
-    paid14: `Hi ${name}, it has been two weeks since your last Pro session. Your plan includes unlimited practice, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
-    paid30: `Hi ${name}, it has been about a month. Your ${role} skills are still in there, and your Pro plan is ready when you are. A focused 15-minute drill brings it all back.`,
+    paid14: `Hi ${name}, it has been two weeks since your last session. Your Sprint Pack still has sessions on it, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
+    paid30: `Hi ${name}, it has been about a month. Your ${role} skills are still in there, and your Sprint Pack is ready when you are. A focused 15-minute drill brings it all back.`,
     winback: `Hi ${name}, it has been a while. Your resume, your target role, and everything you built is still saved exactly as you left it. Whenever you are ready to start again, we are here.`,
   };
 
@@ -141,7 +141,7 @@ function buildEmail(
       ? "Plans start at ₹9 per session — less than a coffee, and your history stays intact."
       : "Ten minutes is all it takes. Your resume-personalised questions are waiting.",
     day7: "This is our last reminder. We will stop emailing, and your practice sessions will always be here when you are ready.",
-    paid14: "You are on the Pro plan, unlimited sessions every day.",
+    paid14: "You are on the Sprint Pack — check your dashboard for sessions remaining.",
     paid30: "Pause or cancel anytime from your settings. We want you practising only when it helps.",
     winback: "No pressure. Your practice history and resume are saved. Come back whenever it suits you.",
   };
@@ -186,7 +186,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // get different copy (see buildEmail) since they need value-justification,
     // not upgrade prompts.
     const profilesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?or=(subscription_tier.eq.free,subscription_tier.eq.starter,subscription_tier.eq.pro)&select=id,name,email,subscription_tier,practice_timestamps,target_role,re_engage_sent&limit=500`,
+      `${SUPABASE_URL}/rest/v1/profiles?or=(subscription_tier.eq.free,subscription_tier.eq.starter)&select=id,name,email,subscription_tier,practice_timestamps,target_role,re_engage_sent&limit=500`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -211,7 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!p.email || !p.practice_timestamps || p.practice_timestamps.length === 0) return false;
       const lastPractice = new Date(p.practice_timestamps[p.practice_timestamps.length - 1]);
       const daysSince = Math.floor((Date.now() - lastPractice.getTime()) / 86400000);
-      const isPaid = p.subscription_tier === "starter" || p.subscription_tier === "pro";
+      const isPaid = p.subscription_tier === "starter";
       if (isPaid) {
         // Paid: re-engage 2–9 weeks idle; winback at 8–13 weeks
         return daysSince >= 14 && daysSince < 90;
@@ -229,7 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const user of candidates) {
       const lastPractice = new Date(user.practice_timestamps![user.practice_timestamps!.length - 1]);
       const daysSince = Math.floor((Date.now() - lastPractice.getTime()) / 86400000);
-      const isPaid = user.subscription_tier === "starter" || user.subscription_tier === "pro";
+      const isPaid = user.subscription_tier === "starter";
       const tier = getEmailTier(daysSince, user.re_engage_sent, isPaid);
       if (!tier) { skipped++; continue; }
       eligible.push({ user, tier });

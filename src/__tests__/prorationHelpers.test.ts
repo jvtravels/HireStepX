@@ -31,14 +31,11 @@ describe("_proration · measuredDurationDays", () => {
 });
 
 describe("_proration · currentPlanAmount", () => {
-  it("classifies yearly (≥180d) vs short plans by tier", () => {
+  it("classifies yearly (≥180d) vs short plans", () => {
     expect(currentPlanAmount("starter", 365)).toBe(PLAN_AMOUNT_PAISE["yearly-starter"]);
-    expect(currentPlanAmount("pro", 365)).toBe(PLAN_AMOUNT_PAISE["yearly-pro"]);
     expect(currentPlanAmount("starter", 7)).toBe(PLAN_AMOUNT_PAISE.weekly);
-    expect(currentPlanAmount("pro", 30)).toBe(PLAN_AMOUNT_PAISE.monthly);
   });
-  it("falls back to short plan when duration is unknown", () => {
-    expect(currentPlanAmount("pro", NaN)).toBe(PLAN_AMOUNT_PAISE.monthly);
+  it("falls back to the weekly price when duration is unknown", () => {
     expect(currentPlanAmount("starter", NaN)).toBe(PLAN_AMOUNT_PAISE.weekly);
   });
 });
@@ -59,40 +56,37 @@ describe("_proration · proratedBonusDays", () => {
 });
 
 describe("_proration · computeProratedDays (regression: yearly over-credit)", () => {
-  it("yearly-pro → monthly no longer hands a wildly inflated credit", () => {
-    // 180 days left on a 365-day yearly-pro (₹1430), upgrading to monthly (₹149).
-    // Correct: (180/365) × (143000/14900) × 30 ≈ 142 bonus days.
+  it("yearly-starter → weekly no longer hands a wildly inflated credit", () => {
+    // 180 days left on a 365-day yearly-starter (₹2039), upgrading to weekly Sprint Pack (₹39).
+    // Correct: (180/365) × (203900/3900) × 30 ≈ 2551 bonus days.
     const start = NOW - 185 * DAY;
     const endMs = NOW + 180 * DAY;
     const days = computeProratedDays({
-      nowMs: NOW, currentStartMs: start, currentEndMs: endMs, currentTier: "pro", newPlan: "monthly",
+      nowMs: NOW, currentStartMs: start, currentEndMs: endMs, currentTier: "starter", newPlan: "weekly",
     });
-    expect(days).toBe(Math.floor((180 / 365) * (143000 / 14900) * 30));
-    // The OLD tier-only guess used 30-day/₹149 duration → (180/30)×(14900/14900)×30 = 180.
-    // It also would have mis-derived the credit; assert we're below that bug's value here is
-    // not meaningful (142<180) but the formula above is the contract.
+    expect(days).toBe(Math.floor((180 / 365) * (203900 / 3900) * 30));
   });
 
-  it("monthly → monthly renewal-as-upgrade credits the unused half correctly", () => {
+  it("weekly → weekly renewal-as-upgrade credits the unused half correctly", () => {
     const start = NOW - 15 * DAY;
     const endMs = NOW + 15 * DAY; // 30-day plan, half used
     const days = computeProratedDays({
-      nowMs: NOW, currentStartMs: start, currentEndMs: endMs, currentTier: "pro", newPlan: "monthly",
+      nowMs: NOW, currentStartMs: start, currentEndMs: endMs, currentTier: "starter", newPlan: "weekly",
     });
     expect(days).toBe(15);
   });
 
   it("falls back to tier default when start date is missing", () => {
     const days = computeProratedDays({
-      nowMs: NOW, currentStartMs: NaN, currentEndMs: NOW + 15 * DAY, currentTier: "pro", newPlan: "monthly",
+      nowMs: NOW, currentStartMs: NaN, currentEndMs: NOW + 15 * DAY, currentTier: "starter", newPlan: "weekly",
     });
-    // duration defaults to 30, amount to monthly: (15/30)×1×30 = 15
+    // duration defaults to 30, amount to weekly: (15/30)×1×30 = 15
     expect(days).toBe(15);
   });
 
   it("returns 0 for an unknown new plan", () => {
     expect(computeProratedDays({
-      nowMs: NOW, currentStartMs: NOW - 15 * DAY, currentEndMs: NOW + 15 * DAY, currentTier: "pro", newPlan: "bogus",
+      nowMs: NOW, currentStartMs: NOW - 15 * DAY, currentEndMs: NOW + 15 * DAY, currentTier: "starter", newPlan: "bogus",
     })).toBe(0);
   });
 });

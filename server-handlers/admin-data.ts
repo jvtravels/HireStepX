@@ -156,7 +156,7 @@ async function getOverview() {
   const now = Date.now();
 
   // Tier breakdown + active users
-  const tierBreakdown: Record<string, number> = { free: 0, starter: 0, pro: 0, team: 0 };
+  const tierBreakdown: Record<string, number> = { free: 0, starter: 0, team: 0 };
   let activeLastWeek = 0;
   const sevenDaysFromNow = new Date(now + 7 * 86400000).toISOString().slice(0, 10);
   let churningThisWeek = 0;

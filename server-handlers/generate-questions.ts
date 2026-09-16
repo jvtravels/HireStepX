@@ -555,7 +555,7 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
     // Server-side anti-repetition fetch — pulls the user's recent
     // interviewer turns directly from the sessions table for the same
     // (type, focus) tuple. Closes the dedup loop server-side so a
-    // power user (Pro tier, 30 sessions/month) doesn't see repeats
+    // power user with many sessions doesn't see repeats
     // even when the client forgets to pass pastTopics. Best-effort:
     // returns [] on any failure, never throws.
     let serverPastQuestions: string[] = [];

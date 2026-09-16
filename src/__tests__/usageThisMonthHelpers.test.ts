@@ -32,22 +32,17 @@ describe("capsForTier", () => {
   it("returns the cap row for each known tier", () => {
     expect(capsForTier("free")).toEqual(PLAN_CAPS.free);
     expect(capsForTier("starter")).toEqual(PLAN_CAPS.starter);
-    expect(capsForTier("pro")).toEqual(PLAN_CAPS.pro);
     expect(capsForTier("team")).toEqual(PLAN_CAPS.team);
   });
 
-  it("starter cap is 5, not the Pro cap of 40", () => {
+  it("starter cap is 5, not the unlimited team cap", () => {
     expect(capsForTier("starter").mock).toBe(5);
-  });
-
-  it("pro cap is 40", () => {
-    expect(capsForTier("pro").mock).toBe(40);
   });
 
   it("falls back to free for unknown/garbage tier values", () => {
     expect(capsForTier("")).toEqual(PLAN_CAPS.free);
     expect(capsForTier("enterprise")).toEqual(PLAN_CAPS.free);
-    expect(capsForTier("PRO")).toEqual(PLAN_CAPS.free); // case-sensitive on purpose
+    expect(capsForTier("pro")).toEqual(PLAN_CAPS.free); // no longer a valid tier
   });
 });
 
