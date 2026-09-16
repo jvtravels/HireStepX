@@ -766,12 +766,13 @@ const featureHighlights: Record<string, { icon: string; items: string[] }> = {
   "Interview Calendar": { icon: "calendar", items: ["Month grid view", "Interview countdown timers", "Google Calendar sync", ".ics file export", "Prep reminders before interviews"] },
 };
 
-/* Per-feature gate copy. Most features are Pro-only, so the default (below)
-   pitches Pro. The Interview Calendar is unlocked by ANY paid plan (a ₹39
-   Sprint Pack works, not just Pro), so it gets honest copy — telling a free
-   user to "Upgrade to Pro" there over-sells when the cheaper pack suffices.
-   Note the Pro-only footnote is a Pro price, NOT "₹9/session": per-session
-   credits and packs do NOT unlock Analytics / Readiness. */
+/* Per-feature gate copy. Every ProGate call site today is actually gated on
+   `isFree` (DashboardContext.tsx) — i.e. unlocked by ANY paid plan, including
+   the ₹39 Sprint Pack, not a Pro-only tier. Copy must say so: the "monthly"
+   Pro plan (₹149/30 days) isn't even purchasable anywhere in the app right
+   now (PLANS_ALL has no pro/monthly entry, and create-order/create-subscription
+   reject plan:"monthly"), so pitching "Upgrade to Pro" is both inaccurate and
+   a dead end. Default copy below mirrors the honest "Interview Calendar" case. */
 type GateCopy = { body: string; cta: string; footnote: string };
 const gateCopy: Record<string, GateCopy> = {
   "Interview Calendar": {
@@ -784,9 +785,9 @@ const gateCopy: Record<string, GateCopy> = {
 export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
   const highlights = featureHighlights[feature];
   const copy: GateCopy = gateCopy[feature] ?? {
-    body: `Upgrade to access ${feature.toLowerCase()}. Unlock full analytics, calendar tools, and unlimited sessions with the Pro plan.`,
-    cta: "Upgrade to Pro",
-    footnote: "Pro from ₹149 / 30 days",
+    body: `Upgrade to unlock ${feature.toLowerCase()}. Included with any paid plan — Sprint Pack starts at ₹39.`,
+    cta: "See plans",
+    footnote: "On any paid plan · Sprint Pack from ₹39",
   };
   return (
     <div style={{ position: "relative", minHeight: "calc(100dvh - 160px)", overflow: "hidden" }}>
