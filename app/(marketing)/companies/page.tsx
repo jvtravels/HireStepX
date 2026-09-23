@@ -26,35 +26,52 @@ import {
 
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
-  title: "Company Interview Questions India 2026 | HireStepX",
-  description:
-    "Interview questions for 200+ companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.",
-  keywords: [
-    "company interview questions India",
-    "TCS interview questions 2026",
-    "Google interview questions India",
-    "Amazon interview questions India",
-    "Flipkart interview questions",
-    "interview questions all companies India",
-  ].join(", "),
-  alternates: { canonical: "/companies" },
-  openGraph: {
-    type: "website",
+/* ?page=N renders a real, separately-crawlable subset of the company
+   directory (see companyPageHref below), but alternates.canonical always
+   points back to plain /companies — same self-canonical-but-not-noindexed
+   gap as /questions and /salary (see their generateMetadata comments).
+   Without a matching noindex, Google is free to index each page of the
+   directory separately, which is the thin/duplicate-URL pattern behind
+   the AdSense "Low value content" flag. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+
+  return {
     title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
-    url: "https://hirestepx.com/companies",
-    siteName: "HireStepX",
-    locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Company Interview Questions" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
-    images: ["https://hirestepx.com/opengraph-image"],
-  },
-};
+    description:
+      "Interview questions for 200+ companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.",
+    keywords: [
+      "company interview questions India",
+      "TCS interview questions 2026",
+      "Google interview questions India",
+      "Amazon interview questions India",
+      "Flipkart interview questions",
+      "interview questions all companies India",
+    ].join(", "),
+    alternates: { canonical: "/companies" },
+    ...(pageNum === 1 ? {} : { robots: { index: false, follow: true } }),
+    openGraph: {
+      type: "website",
+      title: "Company Interview Questions India 2026 | HireStepX",
+      description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
+      url: "https://hirestepx.com/companies",
+      siteName: "HireStepX",
+      locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Company Interview Questions" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Company Interview Questions India 2026 | HireStepX",
+      description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
+      images: ["https://hirestepx.com/opengraph-image"],
+    },
+  };
+}
 
 /* ── Label maps ─────────────────────────────────────────────────────── */
 
