@@ -26,6 +26,12 @@ import {
 
 export const revalidate = 86400;
 
+/* GSC: this page's title had no concrete figure in it — same pattern that
+   measurably hurt CTR on /questions and the narrow-roster /salary pages
+   before those got a real number added (see their generateMetadata
+   comments). Reuse the same fix here with the actual indexed company count. */
+const totalCompanies = new Set(SEO_PAGES.map((p) => p.company)).size;
+
 /* ?page=N renders a real, separately-crawlable subset of the company
    directory (see companyPageHref below), but alternates.canonical always
    points back to plain /companies — same self-canonical-but-not-noindexed
@@ -41,10 +47,13 @@ export async function generateMetadata({
   const { page } = await searchParams;
   const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
+  const title = `${totalCompanies} Company Interview Questions India 2026 | HireStepX`;
+  const ogTitle = `${totalCompanies} Company Interview Questions — India 2026`;
+
   return {
-    title: "Company Interview Questions India 2026 | HireStepX",
+    title,
     description:
-      "Interview questions for 200+ companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.",
+      `Interview questions for ${totalCompanies} companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.`,
     keywords: [
       "company interview questions India",
       "TCS interview questions 2026",
@@ -57,8 +66,8 @@ export async function generateMetadata({
     ...(pageNum === 1 ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       type: "website",
-      title: "Company Interview Questions India 2026 | HireStepX",
-      description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
+      title: ogTitle,
+      description: `Practice guides for ${totalCompanies} companies: AI voice mock interviews available free.`,
       url: "https://hirestepx.com/companies",
       siteName: "HireStepX",
       locale: "en_IN",
@@ -66,8 +75,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: "Company Interview Questions India 2026 | HireStepX",
-      description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
+      title: ogTitle,
+      description: `Practice guides for ${totalCompanies} companies: AI voice mock interviews available free.`,
       images: ["https://hirestepx.com/opengraph-image"],
     },
   };
