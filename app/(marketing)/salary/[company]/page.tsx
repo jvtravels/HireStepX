@@ -132,11 +132,17 @@ export async function generateMetadata({
       ? `₹${Math.min(...headlineBands.map((b) => b.totalMin))}–${Math.max(...headlineBands.map((b) => b.totalMax))} LPA`
       : undefined;
   const firstRoleTitle = firstRole ? roleForTitle(firstRole) : firstRole;
+  // Same GSC pattern applies below the broad-roster threshold: a page with
+  // only 1-5 roles still has real band data for its headline role, so it
+  // gets the same numeric treatment instead of falling back straight to
+  // the hand-written, number-free searchPhrase from data/salary-seo.ts.
   const baseTitle = isBroadRoster
     ? headlineRange
       ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange} (+${roleSections.length - 1} More Roles)`
       : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRoleTitle} to ${lastRole})`
-    : page.searchPhrase;
+    : headlineRange
+      ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange}`
+      : page.searchPhrase;
   // For a company/role combo with a long name and a wide range (e.g.
   // "Goldman Sachs" + "Software Engineer" + "₹20-110 LPA"), the full
   // broad-roster template can overrun the 60-char budget so far that a
@@ -150,11 +156,20 @@ export async function generateMetadata({
         headlineRange ? `${label} Salary India 2026: ${headlineRange}` : undefined,
         `${label} Salary India 2026 (${roleSections.length} Roles)`,
       ].filter((c): c is string => Boolean(c))
-    : [baseTitle];
+    : headlineRange
+      ? [baseTitle, `${label} Salary India 2026: ${headlineRange}`, page.searchPhrase]
+      : [baseTitle];
   const fittingTitle = titleCandidates.find((c) => `${c} | HireStepX`.length <= 60);
-  const titleWithSuffix = `${fittingTitle ?? baseTitle} | HireStepX`;
+  // If nothing fits, truncate the LAST candidate (the shortest, safest
+  // composition — searchPhrase or the role-count fallback), not baseTitle:
+  // baseTitle carries the CTC number, and a long company name (e.g.
+  // "Persistent Systems") can push even that shortest candidate over 60,
+  // in which case word-boundary truncation must not land on baseTitle and
+  // sever the number from its "LPA" unit.
+  const safestFallback = titleCandidates[titleCandidates.length - 1] ?? baseTitle;
+  const titleWithSuffix = `${fittingTitle ?? safestFallback} | HireStepX`;
   const title =
-    titleWithSuffix.length <= 60 ? titleWithSuffix : truncateAtWord(fittingTitle ?? baseTitle, 60);
+    titleWithSuffix.length <= 60 ? titleWithSuffix : truncateAtWord(fittingTitle ?? safestFallback, 60);
   // Appending the role-coverage sentence can push an already-complete
   // metaDescription past the SERP budget, and truncating the combined
   // string cuts mid-sentence rather than mid-addition (e.g. "...no RSU at
