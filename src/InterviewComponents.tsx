@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { e, ef } from "./interviewTokens";
 import { stripProsodyMarkup } from "./_prosody";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -484,38 +486,39 @@ export function formatTime(seconds: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-/* ─── Control Button ─── */
+/* ─── Control Button ───
+   `danger` (End interview) is a one-shot action, not a toggle → Button.
+   Everything else (mute, AI voice, transcript, camera) is a standalone
+   on/off control → Toggle, matching shadcn's guidance for a single
+   pressed/unpressed action. */
 export const ControlButton = React.memo(function ControlButton({ icon, label, active, danger, onClick }: {
   icon: React.ReactNode; label: string; active?: boolean; danger?: boolean; onClick: () => void;
 }) {
+  if (danger) {
+    return (
+      <Button
+        type="button"
+        variant="destructive"
+        size="icon-lg"
+        className="rounded-full"
+        onClick={onClick}
+        title={label}
+        aria-label={label}
+      >
+        {icon}
+      </Button>
+    );
+  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Toggle
+      pressed={!!active}
+      onPressedChange={() => onClick()}
+      size="lg"
+      className="size-12 rounded-full"
       title={label}
       aria-label={label}
-      className="iv-ctrl-btn"
-      style={{
-        width: 48, height: 48, borderRadius: "50%",
-        background: danger ? e.copperSoft : active ? e.indigo100 : e.white,
-        border: `1px solid ${danger ? "rgba(180,83,9,0.30)" : active ? e.indigoRing : e.line}`,
-        color: danger ? e.copper : active ? e.indigo : e.inkSoft,
-        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 0.2s ease", outline: "none",
-        boxShadow: "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
-      }}
-      onFocus={(ev) => ev.currentTarget.style.boxShadow = `0 0 0 4px ${danger ? "rgba(180,83,9,0.20)" : e.indigoRing}`}
-      onBlur={(ev) => ev.currentTarget.style.boxShadow = "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)"}
-      onMouseEnter={(ev) => {
-        ev.currentTarget.style.background = danger ? "rgba(180,83,9,0.18)" : active ? e.indigo100 : e.creamSoft;
-        ev.currentTarget.style.transform = "scale(1.05)";
-      }}
-      onMouseLeave={(ev) => {
-        ev.currentTarget.style.background = danger ? e.copperSoft : active ? e.indigo100 : e.white;
-        ev.currentTarget.style.transform = "scale(1)";
-      }}
     >
       {icon}
-    </button>
+    </Toggle>
   );
 });

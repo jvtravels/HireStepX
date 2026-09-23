@@ -15,6 +15,7 @@ import { useAuth } from "./AuthContext";
 import { getSessionById } from "./supabase";
 import { loadLocalSession, type LocalSession } from "./sessionDetailHelpers";
 import type { DashboardSession } from "./dashboardTypes";
+import { Button } from "@/components/ui/button";
 
 // Lazy-load the report so the dashboard route stays slim.
 const SessionReport = dynamic(
@@ -78,28 +79,21 @@ function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetr
           {message}
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button
+          <Button
             type="button"
             onClick={onRetry}
-            style={{
-              background: "#312E81", color: "#FAF7F0", border: "none",
-              padding: "10px 20px", borderRadius: 10, fontWeight: 600,
-              fontSize: 13, cursor: "pointer",
-            }}
+            style={{ background: "#312E81", color: "#FAF7F0", fontWeight: 600 }}
           >
             Try again
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={onBack}
-            style={{
-              background: "transparent", color: "#312E81", border: "1px solid #312E81",
-              padding: "10px 20px", borderRadius: 10, fontWeight: 600,
-              fontSize: 13, cursor: "pointer",
-            }}
+            style={{ color: "#312E81", borderColor: "#312E81", fontWeight: 600 }}
           >
             Back to Sessions
-          </button>
+          </Button>
         </div>
       </div>
     </Shell>
@@ -116,22 +110,13 @@ function NotFoundScreen({ onBack }: { onBack: () => void }) {
         <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 24px", lineHeight: 1.55 }}>
           We couldn&apos;t locate this session. It may have been deleted or hasn&apos;t synced yet.
         </p>
-        <button
+        <Button
           type="button"
           onClick={onBack}
-          style={{
-            background: "#312E81",
-            color: "#FAF7F0",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: 10,
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
+          style={{ background: "#312E81", color: "#FAF7F0", fontWeight: 600 }}
         >
           Back to Sessions
-        </button>
+        </Button>
       </div>
     </Shell>
   );

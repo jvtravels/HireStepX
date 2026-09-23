@@ -7,6 +7,7 @@ import { useState } from "react";
 import { t, f, shadows, radius } from "../tokens";
 import type { CredibilitySummary } from "../../_credibilityCallout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export function CredibilitySection({
   summary,
@@ -163,8 +164,10 @@ export function CredibilitySection({
                   justifyContent: "flex-end",
                 }}
               >
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   disabled={disputed.has(item.flag)}
                   onClick={() => {
                     if (disputed.has(item.flag)) return;
@@ -176,15 +179,12 @@ export function CredibilitySection({
                     onDispute(item.flag);
                   }}
                   style={{
-                    background: "transparent",
-                    border: "none",
+                    height: "auto",
                     padding: "4px 6px",
                     fontFamily: f.sans,
                     fontSize: 11,
                     color: disputed.has(item.flag) ? t.success : t.coal,
                     opacity: disputed.has(item.flag) ? 0.7 : 0.55,
-                    cursor: disputed.has(item.flag) ? "default" : "pointer",
-                    textDecoration: disputed.has(item.flag) ? "none" : "underline",
                   }}
                   aria-label={
                     disputed.has(item.flag)
@@ -195,7 +195,7 @@ export function CredibilitySection({
                   {disputed.has(item.flag)
                     ? "✓ Thanks — feedback recorded"
                     : "Doesn't apply to me?"}
-                </button>
+                </Button>
               </div>
             )}
           </li>

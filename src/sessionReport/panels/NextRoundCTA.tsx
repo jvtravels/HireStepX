@@ -1,5 +1,6 @@
 import type { NegotiationOutcome } from "../derivations";
 import { t, f, radius } from "./_primitives";
+import { Button } from "@/components/ui/button";
 
 /* Bottom CTA — closes the report with a clear next move. The previous
    version of the report ended on the transcript collapsible. Users
@@ -45,22 +46,19 @@ export function NextRoundCTA({
           {body}
         </div>
       </div>
-      <button
+      <Button
+        type="button"
+        size="lg"
         style={{
-          padding: "12px 22px",
           background: "#FFFFFF",
           color: t.indigo,
-          border: "none",
-          borderRadius: radius.lg,
-          fontSize: 14,
-          fontWeight: 600,
-          cursor: "pointer",
           fontFamily: f.sans,
+          fontWeight: 600,
           flexShrink: 0,
         }}
       >
         {primaryLabel}
-      </button>
+      </Button>
     </div>
   );
 }

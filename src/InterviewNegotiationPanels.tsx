@@ -2,6 +2,7 @@ import React, { memo, useState } from "react";
 import { e, ef } from "./interviewTokens";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote } from "./_ctc-breakdown";
 import { resolveCandidateAskLpa } from "./negotiationDealSummary";
+import { Button } from "@/components/ui/button";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -155,38 +156,25 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
               { id: "exploding", label: "Exploding Offer", desc: "24-hour deadline — handle pressure" },
               { id: "competing", label: "Competing Offers", desc: "Use multiple offers as leverage" },
             ]).map(s => (
-              <button
+              <Button
                 key={s.id}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                style={{ minWidth: 100 }}
                 onClick={() => onSelectScenario(s.id)}
                 title={s.desc}
-                style={{
-                  flex: 1, minWidth: 100, fontFamily: ef.sans, fontSize: 10, fontWeight: 500,
-                  padding: "6px 8px", borderRadius: 8,
-                  background: "rgba(20,17,10,0.04)",
-                  border: "1px solid rgba(20,17,10,0.05)",
-                  color: e.coal, cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
               >
                 {s.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
       )}
 
-      <button
-        onClick={handleStart}
-        style={{
-          fontFamily: ef.sans, fontSize: 13, fontWeight: 600,
-          padding: "10px 20px", borderRadius: 10, marginTop: 4,
-          background: `linear-gradient(135deg, ${e.copper}, ${e.copperDark})`,
-          border: "none", color: e.cream, cursor: "pointer",
-          transition: "all 0.2s ease",
-        }}
-      >
+      <Button style={{ marginTop: 4 }} onClick={handleStart}>
         Got it — start negotiation
-      </button>
+      </Button>
     </div>
   );
 });
@@ -378,7 +366,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
             <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Try again with a different style</p>
             <div style={{ display: "flex", gap: 8 }}>
               {([{ style: "cooperative", label: "Friendly" }, { style: "aggressive", label: "Tough" }, { style: "defensive", label: "Evasive" }] as const).map(s => (
-                <button key={s.style} onClick={() => onReplay(s.style)} style={{ flex: 1, fontFamily: ef.sans, fontSize: 11, fontWeight: 500, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.04)", border: "1px solid rgba(20,17,10,0.05)", color: e.coal, cursor: "pointer" }}>{s.label}</button>
+                <Button key={s.style} variant="outline" size="sm" className="flex-1" onClick={() => onReplay(s.style)}>{s.label}</Button>
               ))}
             </div>
           </div>
@@ -543,20 +531,15 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
               { style: "aggressive", label: "Tough", emoji: "" },
               { style: "defensive", label: "Evasive", emoji: "" },
             ] as const).map(s => (
-              <button
+              <Button
                 key={s.style}
+                variant="outline"
+                size="sm"
+                className="flex-1"
                 onClick={() => onReplay(s.style)}
-                style={{
-                  flex: 1, fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
-                  padding: "8px 10px", borderRadius: 8,
-                  background: "rgba(20,17,10,0.04)",
-                  border: "1px solid rgba(20,17,10,0.05)",
-                  color: e.coal, cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
               >
                 {s.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

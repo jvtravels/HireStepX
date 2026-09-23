@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 
 const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
 
@@ -342,51 +344,29 @@ export function ProductMockHero() {
               <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
             </span>
             {phase === "listening" && <Waveform />}
-            <button
+            <Button
               onClick={start}
               disabled={phase === "listening" || phase === "scoring"}
-              style={{
-                marginLeft: "auto",
-                border: 0,
-                cursor: phase === "idle" || phase === "done" ? "pointer" : "default",
-                background: phase === "idle" || phase === "done" ? t.indigo : t.cream,
-                color: phase === "idle" || phase === "done" ? t.white : t.inkFaint,
-                fontFamily: fonts.sans,
-                fontSize: 12,
-                fontWeight: 600,
-                padding: "6px 12px",
-                borderRadius: 999,
-                minHeight: 44,
-                boxShadow:
-                  phase === "idle" || phase === "done" ? shadows.cta : "none",
-              }}
+              size="sm"
+              style={{ marginLeft: "auto", fontFamily: fonts.sans }}
             >
               {phase === "done" ? "Replay" : phase === "idle" ? "Try it ▶" : "…"}
-            </button>
+            </Button>
             {/* Pause / Resume — only meaningful while auto-rotation is still
                 budgeted and the user hasn't asked for reduced motion. Keeps
                 the User Control & Freedom heuristic honest without adding
                 chrome that does nothing 90% of the time. */}
             {!reducedMotion && phase === "done" && autoLoops < scenarios.length && (
-              <button
-                onClick={() => setAutoPaused((p) => !p)}
-                aria-pressed={autoPaused}
+              <Toggle
+                pressed={autoPaused}
+                onPressedChange={setAutoPaused}
+                variant="outline"
+                size="sm"
                 aria-label={autoPaused ? "Resume auto rotation" : "Pause auto rotation"}
-                style={{
-                  border: `1px solid ${t.lineStrong}`,
-                  cursor: "pointer",
-                  background: "transparent",
-                  color: t.inkSoft,
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  padding: "5px 10px",
-                  borderRadius: 999,
-                  minHeight: 44,
-                }}
+                style={{ fontFamily: fonts.sans }}
               >
                 {autoPaused ? "Resume" : "Pause"}
-              </button>
+              </Toggle>
             )}
           </div>
 

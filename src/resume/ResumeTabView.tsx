@@ -17,6 +17,7 @@ import type { FitnessBand, InterviewType, FitnessScore } from "../resumeFitness"
 
 /* ─── Cream palette (derived from auth/_tokens — single source of truth) */
 import { tokens as T, fonts as F, shadows as S } from "../auth/_tokens";
+import { Button } from "@/components/ui/button";
 const t = {
   cream: T.cream,
   creamSoft: T.creamSoft,
@@ -435,40 +436,31 @@ function ErrorState({
         </p>
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 20px" }}>{errorMsg}</p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button
+          <Button
             type="button"
             onClick={onTriggerUpload}
             style={{
               fontFamily: f.sans,
-              fontSize: 13,
               fontWeight: 600,
               color: t.white,
               background: t.indigo,
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 20px",
-              cursor: "pointer",
             }}
           >
             Try another file
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={onDismissError}
             style={{
               fontFamily: f.sans,
-              fontSize: 13,
               fontWeight: 500,
               color: t.inkSoft,
-              background: "transparent",
-              border: `1px solid ${t.line}`,
-              borderRadius: 8,
-              padding: "10px 20px",
-              cursor: "pointer",
+              borderColor: t.line,
             }}
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       </SectionCard>
     </PageShell>
@@ -1001,17 +993,19 @@ function DoneState(props: ResumeTabViewProps) {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <span style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, flex: 1 }}>{errorMsg}</span>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onDismissError}
               aria-label="Dismiss error"
-              style={{ background: "none", border: "none", color: t.inkSoft, cursor: "pointer", padding: 4, display: "flex" }}
+              style={{ color: t.inkSoft }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
-            </button>
+            </Button>
           </div>
         )}
 
@@ -1041,43 +1035,36 @@ function DoneState(props: ResumeTabViewProps) {
                 : "Resume text not available. Re-upload to get a full AI profile."}
             </span>
             {resumeText ? (
-              <button
+              <Button
                 type="button"
+                size="sm"
                 onClick={onReanalyze}
                 disabled={reanalyzing}
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
                   fontWeight: 600,
                   color: t.white,
                   background: t.indigo,
-                  border: "none",
-                  borderRadius: 8,
-                  padding: "6px 14px",
-                  cursor: reanalyzing ? "default" : "pointer",
-                  opacity: reanalyzing ? 0.7 : 1,
                 }}
               >
                 {reanalyzing ? "Analysing…" : "Re-analyse with AI"}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={onTriggerUpload}
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
                   fontWeight: 600,
                   color: t.indigo,
                   background: t.white,
-                  border: `1px solid ${t.indigo}`,
-                  borderRadius: 8,
-                  padding: "6px 14px",
-                  cursor: "pointer",
+                  borderColor: t.indigo,
                 }}
               >
                 Re-upload
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -1096,23 +1083,19 @@ function DoneState(props: ResumeTabViewProps) {
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.55, margin: "0 0 10px" }}>
               Your resume was uploaded but the AI summary wasn&apos;t generated. Re-upload it for a detailed profile with strengths and interview prep insights.
             </p>
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={onTriggerUpload}
               style={{
                 fontFamily: f.sans,
-                fontSize: 12,
                 fontWeight: 600,
                 color: t.white,
                 background: t.indigo,
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 16px",
-                cursor: "pointer",
               }}
             >
               Re-upload for AI analysis
-            </button>
+            </Button>
           </div>
         )}
 
@@ -1167,26 +1150,20 @@ function DoneState(props: ResumeTabViewProps) {
                   Updated ✓
                 </span>
               )}
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={onReanalyze}
                 disabled={reanalyzing}
                 aria-label="Re-analyse resume"
                 title="Re-analyse with AI"
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
                   fontWeight: 600,
                   color: t.coal,
                   background: t.white,
-                  border: `1px solid ${t.line}`,
-                  borderRadius: 8,
-                  padding: "7px 12px",
-                  cursor: reanalyzing ? "default" : "pointer",
-                  opacity: reanalyzing ? 0.7 : 1,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
+                  borderColor: t.line,
                 }}
               >
                 {reanalyzing ? (
@@ -1207,23 +1184,18 @@ function DoneState(props: ResumeTabViewProps) {
                   </svg>
                 )}
                 Re-analyse
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={onTriggerUpload}
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
                   fontWeight: 600,
                   color: t.indigo,
                   background: t.white,
-                  border: `1px solid ${t.indigo}`,
-                  borderRadius: 8,
-                  padding: "7px 14px",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
+                  borderColor: t.indigo,
                 }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2">
@@ -1232,72 +1204,61 @@ function DoneState(props: ResumeTabViewProps) {
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 Replace
-              </button>
+              </Button>
               {confirmDelete ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontFamily: f.sans, fontSize: 12, color: t.error, fontWeight: 600 }}>Delete?</span>
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
                     onClick={() => {
                       onRemove();
                       setConfirmDelete(false);
                     }}
                     aria-label="Confirm delete resume"
                     style={{
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      border: "none",
                       background: t.error,
                       color: t.white,
                       fontFamily: f.sans,
-                      fontSize: 12,
                       fontWeight: 600,
-                      cursor: "pointer",
                     }}
                   >
                     Yes
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setConfirmDelete(false)}
                     aria-label="Cancel delete"
                     style={{
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      border: `1px solid ${t.line}`,
+                      borderColor: t.line,
                       background: t.white,
                       color: t.inkSoft,
                       fontFamily: f.sans,
-                      fontSize: 12,
-                      cursor: "pointer",
                     }}
                   >
                     No
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={() => setConfirmDelete(true)}
                   aria-label="Delete resume"
                   title="Remove resume"
                   style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 8,
                     background: t.white,
-                    border: `1px solid ${t.line}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
+                    borderColor: t.line,
                   }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.error} strokeWidth="1.8">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -1820,24 +1781,16 @@ function DoneState(props: ResumeTabViewProps) {
               {jdError && (
                 <p style={{ fontFamily: f.sans, fontSize: 12, color: t.error, margin: 0 }}>{jdError}</p>
               )}
-              <button
+              <Button
                 type="button"
                 onClick={onAnalyzeJD}
                 disabled={jdLoading || jdText.trim().length < 30}
                 style={{
                   alignSelf: "flex-start",
                   fontFamily: f.sans,
-                  fontSize: 13,
                   fontWeight: 600,
-                  padding: "9px 20px",
-                  borderRadius: 8,
                   background: jdLoading || jdText.trim().length < 30 ? t.creamSoft : t.indigo,
                   color: jdLoading || jdText.trim().length < 30 ? t.inkSoft : t.white,
-                  border: `1px solid ${jdLoading || jdText.trim().length < 30 ? t.line : "transparent"}`,
-                  cursor: jdLoading || jdText.trim().length < 30 ? "not-allowed" : "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
                 }}
               >
                 {jdLoading ? (
@@ -1846,7 +1799,7 @@ function DoneState(props: ResumeTabViewProps) {
                     Analyzing…
                   </>
                 ) : "Analyze fit"}
-              </button>
+              </Button>
             </div>
           )}
           {/* JD analysis results */}
@@ -1919,13 +1872,14 @@ function DoneState(props: ResumeTabViewProps) {
                     </a>
                   </span>
                 )}
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => { onJDTextChange(""); }}
-                  style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, background: "transparent", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+                  style={{ height: "auto", fontFamily: f.sans, fontSize: 12, color: t.inkSoft, padding: 0, textDecoration: "underline" }}
                 >
                   Try a different JD
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -2046,26 +2000,19 @@ function DoneState(props: ResumeTabViewProps) {
                       {i + 1}
                     </span>
                     <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.55, flex: 1 }}>{text}</span>
-                    <button
+                    <Button
                       type="button"
+                      size="sm"
                       onClick={() => onPolishBullet(i, text)}
                       disabled={polishState?.state === "loading"}
                       title="Rewrite with stronger verbs and metrics"
                       style={{
                         fontFamily: f.sans,
-                        fontSize: 11,
                         fontWeight: 600,
-                        color: t.white,
                         background: t.indigo,
-                        border: "none",
-                        borderRadius: 6,
-                        padding: "5px 12px",
                         cursor: polishState?.state === "loading" ? "wait" : "pointer",
                         flexShrink: 0,
                         opacity: polishState?.state === "loading" ? 0.7 : 1,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
                       }}
                     >
                       {polishState?.state === "loading"
@@ -2073,7 +2020,7 @@ function DoneState(props: ResumeTabViewProps) {
                         : polishState?.state === "done"
                         ? "✓ Polished"
                         : "Polish"}
-                    </button>
+                    </Button>
                   </div>
                   {polishState?.state === "done" && polishState.rewrite && (
                     <div
@@ -2108,55 +2055,32 @@ function DoneState(props: ResumeTabViewProps) {
                         </span>
                       )}
                       <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
-                        <button
+                        <Button
                           type="button"
+                          size="sm"
                           onClick={() => onApplyPolish(i, polishState.rewrite!)}
-                          style={{
-                            fontFamily: f.sans,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: t.white,
-                            background: t.success,
-                            border: "none",
-                            borderRadius: 6,
-                            padding: "4px 12px",
-                            cursor: "pointer",
-                          }}
+                          style={{ fontFamily: f.sans, fontWeight: 600, background: t.success }}
                         >
                           Use this
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => navigator.clipboard?.writeText(polishState.rewrite!)}
-                          style={{
-                            fontFamily: f.sans,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: t.inkSoft,
-                            background: "transparent",
-                            border: `1px solid ${t.line}`,
-                            borderRadius: 6,
-                            padding: "4px 12px",
-                            cursor: "pointer",
-                          }}
+                          style={{ fontFamily: f.sans, fontWeight: 600, color: t.inkSoft }}
                         >
                           Copy
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => onDismissPolish(i)}
-                          style={{
-                            fontFamily: f.sans,
-                            fontSize: 11,
-                            color: t.inkSoft,
-                            background: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "4px 8px",
-                          }}
+                          style={{ fontFamily: f.sans, color: t.inkSoft }}
                         >
                           Dismiss
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}

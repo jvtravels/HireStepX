@@ -19,6 +19,9 @@ import {
 } from "./_editorial";
 import { FAQItem } from "./MarketingPagesV2";
 import { pickVariant } from "../../data/_content-variants";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 
 /* PRI-150: rotate a few hand-written phrasings for the templated sentences
    below so 224 salary pages built from one skeleton don't read as
@@ -1106,29 +1109,6 @@ export function SalaryHubPage({
           background: ${t.copper};
           opacity: 0.65;
         }
-        .sal-tier-tab {
-          background: none;
-          border: 1.5px solid ${t.line};
-          border-radius: 99px;
-          fontFamily: ${fonts.sans};
-          font-size: 13px;
-          font-weight: 500;
-          color: ${t.inkSoft};
-          padding: 7px 18px;
-          cursor: pointer;
-          transition: border-color 140ms, background 140ms, color 140ms;
-          white-space: nowrap;
-        }
-        .sal-tier-tab:hover {
-          border-color: ${t.copper};
-          color: ${t.copper};
-        }
-        .sal-tier-tab.active {
-          background: ${t.coal};
-          border-color: ${t.coal};
-          color: #fff;
-          font-weight: 700;
-        }
         .sal-feat-chip {
           display: inline-flex;
           align-items: center;
@@ -1223,19 +1203,18 @@ export function SalaryHubPage({
                 onBlur={e => { e.currentTarget.style.borderColor = t.line; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)"; }}
               />
               {search && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => { setSearch(""); resetPage(); }}
                   aria-label="Clear search"
-                  style={{
-                    position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer", padding: 4,
-                    color: t.inkFaint, display: "flex", alignItems: "center",
-                  }}
+                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)" }}
                 >
                   <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -1247,17 +1226,24 @@ export function SalaryHubPage({
           style={{ ...container, paddingTop: 28 }}
         >
           {/* Tier filter tabs */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 28 }}>
-            {TIER_TABS.map(tier => (
-              <button
-                key={tier}
-                className={`sal-tier-tab${activeTier === tier ? " active" : ""}`}
-                onClick={() => { setActiveTier(tier); resetPage(); }}
-                aria-pressed={activeTier === tier}
-              >
-                {tier}
-              </button>
-            ))}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={activeTier}
+              onValueChange={(value) => {
+                if (!value) return;
+                setActiveTier(value as typeof TIER_TABS[number]);
+                resetPage();
+              }}
+              aria-label="Filter companies by tier"
+            >
+              {TIER_TABS.map(tier => (
+                <ToggleGroupItem key={tier} value={tier} aria-label={tier}>
+                  {tier}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
 
           {/* ── In-demand rail — curated internal links to our lowest-
@@ -1385,23 +1371,22 @@ export function SalaryHubPage({
             </div>
           ) : (
             /* Empty state */
-            <div style={{ textAlign: "center", padding: "72px 0", fontFamily: fonts.sans }}>
-              <p style={{ fontSize: 36, marginBottom: 12 }}>🔍</p>
-              <p style={{ fontSize: 16, color: t.coal, fontWeight: 600, marginBottom: 8 }}>No companies found</p>
-              <p style={{ fontSize: 13, color: t.inkSoft, marginBottom: 20 }}>
-                Try a different keyword or clear the filter
-              </p>
-              <button
-                onClick={() => { setSearch(""); setActiveTier("All"); resetPage(); }}
-                style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
-                  background: t.coal, color: "#fff", border: "none",
-                  borderRadius: 8, padding: "10px 22px", cursor: "pointer",
-                }}
-              >
-                Clear filters
-              </button>
-            </div>
+            <Empty style={{ fontFamily: fonts.sans, padding: "72px 0" }}>
+              <EmptyHeader>
+                <EmptyMedia variant="icon" style={{ fontSize: 24 }}>🔍</EmptyMedia>
+                <EmptyTitle>No companies found</EmptyTitle>
+                <EmptyDescription>Try a different keyword or clear the filter</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  type="button"
+                  onClick={() => { setSearch(""); setActiveTier("All"); resetPage(); }}
+                  style={{ fontFamily: fonts.sans }}
+                >
+                  Clear filters
+                </Button>
+              </EmptyContent>
+            </Empty>
           )}
 
           {/* Pagination */}
@@ -1439,26 +1424,20 @@ export function SalaryHubPage({
                   Prev
                 </Link>
               ) : (
-                <button
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   disabled={safePage === 1}
                   aria-label="Previous page"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                    padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                    background: safePage === 1 ? t.creamSoft : "#fff",
-                    color: safePage === 1 ? t.inkFaint : t.coal,
-                    cursor: safePage === 1 ? "default" : "pointer",
-                    opacity: safePage === 1 ? 0.45 : 1,
-                    transition: "border-color 150ms, background 150ms",
-                  }}
+                  style={{ fontFamily: fonts.sans }}
                 >
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                   Prev
-                </button>
+                </Button>
               )}
 
               {/* Page numbers */}
@@ -1482,20 +1461,17 @@ export function SalaryHubPage({
                     {n}
                   </Link>
                 ) : (
-                  <button
+                  <Button
                     key={n}
+                    type="button"
+                    variant={safePage === n ? "default" : "outline"}
+                    size="icon-sm"
                     onClick={() => { setPage(n as number); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                     aria-current={safePage === n ? "page" : undefined}
-                    style={{
-                      fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
-                      minWidth: 36, height: 36, borderRadius: 8, border: `1.5px solid ${safePage === n ? t.indigo : t.line}`,
-                      background: safePage === n ? t.indigo : "#fff",
-                      color: safePage === n ? "#fff" : t.coal,
-                      cursor: "pointer", transition: "all 150ms",
-                    }}
+                    style={{ fontFamily: fonts.sans }}
                   >
                     {n}
-                  </button>
+                  </Button>
                 )
               )}
 
@@ -1523,26 +1499,20 @@ export function SalaryHubPage({
                   </svg>
                 </Link>
               ) : (
-                <button
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   disabled={safePage === totalPages}
                   aria-label="Next page"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                    padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                    background: safePage === totalPages ? t.creamSoft : "#fff",
-                    color: safePage === totalPages ? t.inkFaint : t.coal,
-                    cursor: safePage === totalPages ? "default" : "pointer",
-                    opacity: safePage === totalPages ? 0.45 : 1,
-                    transition: "border-color 150ms, background 150ms",
-                  }}
+                  style={{ fontFamily: fonts.sans }}
                 >
                   Next
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
               )}
             </div>
           )}

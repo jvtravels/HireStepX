@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { t, f, radius, space, shadows } from "../tokens";
+import { Button } from "@/components/ui/button";
 import {
   startDrill,
   applyDrillTurn,
@@ -150,39 +151,28 @@ export function DrillSessionView({
             }}
           />
           <div style={{ display: "flex", gap: space.md, alignItems: "center" }}>
-            <button
+            <Button
               type="button"
               onClick={submit}
               disabled={!answer.trim()}
               style={{
                 background: answer.trim() ? t.indigo : t.indigoTint,
                 color: t.white,
-                border: "none",
-                borderRadius: radius.lg,
-                padding: "10px 18px",
                 fontFamily: f.sans,
-                fontSize: 14,
                 fontWeight: 600,
-                cursor: answer.trim() ? "pointer" : "not-allowed",
               }}
             >
               Submit
-            </button>
+            </Button>
             {onExit && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={onExit}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: t.inkSoft,
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                style={{ color: t.inkSoft, fontFamily: f.sans }}
               >
                 Exit drill
-              </button>
+              </Button>
             )}
           </div>
         </>

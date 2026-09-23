@@ -22,6 +22,7 @@ import type { ResumeProfile } from "../dashboardData";
 import type { InterviewType, FitnessBand } from "../resumeFitness";
 import { computeResumeDiff } from "../resumeDiff";
 import type { ResumeCardData, FitnessAll } from "./types";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   resumes: ResumeCardData[];
@@ -98,7 +99,10 @@ export default function CatalogueGrid({
                     Active
                   </span>
                 ) : (
-                  <button
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => {
                       if (!r.latestVersionId) return;
                       // Find the matching version row for resume_text;
@@ -109,22 +113,25 @@ export default function CatalogueGrid({
                       onMakeActive(r.id, r.latestVersionId, r.latestProfile, r.latestFileName, v?.resumeText ?? null);
                     }}
                     disabled={activatingId === r.id || !r.latestVersionId}
-                    style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.gilt, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 4, padding: "4px 10px", minHeight: 26, cursor: activatingId === r.id ? "wait" : "pointer", opacity: activatingId === r.id ? 0.6 : 1 }}
+                    style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.gilt }}
                     title="Switch this resume to be the one used for interview sessions"
                   >
                     {activatingId === r.id ? "…" : "Make active"}
-                  </button>
+                  </Button>
                 )}
                 {!r.isActive && !isConfirmingArchive && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setArchiveConfirmId(r.id)}
                     disabled={archivingId === r.id}
                     title="Archive this resume"
                     aria-label="Archive resume"
-                    style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, background: "transparent", border: "none", cursor: "pointer", padding: "4px 8px", lineHeight: 1, minHeight: 26, minWidth: 26 }}
+                    style={{ fontFamily: font.ui, fontSize: 14, color: c.stone }}
                   >
                     {archivingId === r.id ? "…" : "✕"}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -134,18 +141,23 @@ export default function CatalogueGrid({
               <div role="alertdialog" aria-live="polite" style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 6, background: "rgba(196,112,90,0.06)", border: "1px solid rgba(196,112,90,0.25)" }}>
                 <p style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, marginBottom: 6 }}>Archive this resume? It stops appearing in this list. Past sessions stay readable.</p>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button
+                  <Button
+                    type="button"
+                    size="sm"
                     onClick={() => { setArchiveConfirmId(null); onArchive(r.id, r.isActive); }}
-                    style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.obsidian, background: c.ember, border: "none", borderRadius: 4, padding: "4px 10px", cursor: "pointer", minHeight: 26 }}
+                    style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.ember, color: c.obsidian }}
                   >
                     Archive
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setArchiveConfirmId(null)}
-                    style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", minHeight: 26 }}
+                    style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -165,33 +177,41 @@ export default function CatalogueGrid({
                   }}
                   style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.obsidian, border: `1px solid ${c.gilt}`, borderRadius: 4, padding: "4px 6px", flex: 1, minWidth: 0 }}
                 />
-                <button
+                <Button
+                  type="button"
+                  size="sm"
                   onMouseDown={(e) => { e.preventDefault(); onRename(r.id, renameDraft); setRenamingId(null); }}
                   title="Save (Enter)"
-                  style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.obsidian, background: c.gilt, border: "none", borderRadius: 4, padding: "0 10px", cursor: "pointer", minHeight: 26 }}
+                  style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.gilt, color: c.obsidian }}
                 >
                   Save
-                </button>
-                <button
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onMouseDown={(e) => { e.preventDefault(); setRenamingId(null); }}
                   title="Cancel (Esc)"
                   aria-label="Cancel rename"
-                  style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 4, padding: "0 10px", cursor: "pointer", minHeight: 26 }}
+                  style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}
                 >
                   ✕
-                </button>
+                </Button>
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
                 <p style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }} title={r.title}>{r.title}</p>
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => { setRenameDraft(r.title); setRenamingId(r.id); }}
                   title="Rename"
                   aria-label="Rename resume"
-                  style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, background: "transparent", border: "none", cursor: "pointer", padding: "4px 6px", lineHeight: 1, flexShrink: 0, minHeight: 26, minWidth: 26 }}
+                  style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, flexShrink: 0 }}
                 >
                   ✎
-                </button>
+                </Button>
               </div>
             )}
 
@@ -199,14 +219,17 @@ export default function CatalogueGrid({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: fits ? 8 : 0 }}>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>v{r.latestVersion}{r.latestScore != null ? ` · Score ${r.latestScore}` : ""}</p>
               {r.versions.length > 1 && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={() => setExpandedTimeline(t => ({ ...t, [r.id]: !t[r.id] }))}
                   aria-expanded={expanded}
                   aria-controls={`history-${r.id}`}
-                  style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, background: "transparent", border: "none", cursor: "pointer", padding: "2px 4px", minHeight: 22 }}
+                  style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}
                 >
                   {expanded ? "Hide history ↑" : `Show ${r.versions.length} versions ↓`}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -243,13 +266,16 @@ export default function CatalogueGrid({
                         {isCurrent ? (
                           <span style={{ fontFamily: font.ui, fontSize: 9, color: c.sage }}>current</span>
                         ) : (
-                          <button
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="xs"
                             onClick={() => onMakeActive(r.id, v.id, v.profile, v.fileName, v.resumeText)}
                             disabled={activatingId === r.id}
-                            style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 3, padding: "2px 8px", cursor: activatingId === r.id ? "wait" : "pointer", minHeight: 22 }}
+                            style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt }}
                           >
                             Restore
-                          </button>
+                          </Button>
                         )}
                       </div>
                       {diff && !diff.isUnchanged && (

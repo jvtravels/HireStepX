@@ -42,6 +42,7 @@ import { clawbackForCompany } from "../../server-handlers/_joining-bonus-clawbac
 import type { OfferNetValueInput } from "./derivations/offerNetValue";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
+import { Button } from "@/components/ui/button";
 
 /* ─── Helpers — small pure functions for transcript shaping + role-
    family inference + duration parsing. Kept local so the entry stays
@@ -124,25 +125,20 @@ function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: st
         padding: "20px 32px",
       }}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onBack}
         style={{
-          background: "transparent",
-          border: "none",
           fontFamily: f.sans,
           fontSize: 14,
           color: t.coal,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
           gap: 8,
-          padding: 0,
           marginBottom: 32,
         }}
       >
         ← {backLabel}
-      </button>
+      </Button>
       <div
         style={{
           maxWidth: 560,
@@ -291,25 +287,20 @@ function ErrorShell({
         padding: "20px 32px",
       }}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onBack}
         style={{
-          background: "transparent",
-          border: "none",
           fontFamily: f.sans,
           fontSize: 14,
           color: t.coal,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
           gap: 8,
-          padding: 0,
           marginBottom: 32,
         }}
       >
         ← {backLabel}
-      </button>
+      </Button>
       <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "120px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
           {hasPreliminary ? "Your session is saved" : "Couldn’t generate your report"}
@@ -320,23 +311,18 @@ function ErrorShell({
             : message}
         </p>
         {hasQualitativeNotes && preliminary && <PreliminaryCard p={preliminary} />}
-        <button
+        <Button
           type="button"
           onClick={onRetry}
           style={{
             background: t.indigo,
             color: t.cream,
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: 10,
             fontFamily: f.sans,
             fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
           }}
         >
           {hasPreliminary ? "Generate full report" : "Try again"}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -1155,9 +1141,9 @@ export const SessionReport = memo(function SessionReport({
     if (errorMsg === "no_candidate_answers") {
       return (
         <div style={{ background: t.cream, minHeight: "100vh", fontFamily: f.sans, color: t.coal, padding: "20px 32px" }}>
-          <button type="button" onClick={onBack} style={{ background: "transparent", border: "none", fontFamily: f.sans, fontSize: 14, color: t.coal, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <Button type="button" variant="ghost" onClick={onBack} style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, gap: 6, marginBottom: 8 }}>
             ← {backLabel}
-          </button>
+          </Button>
           <div style={{ maxWidth: 480, margin: "80px auto 0", textAlign: "center" }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🎙️</div>
             <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>No answers were recorded</h1>
@@ -1165,13 +1151,13 @@ export const SessionReport = memo(function SessionReport({
               It looks like your microphone wasn&apos;t captured during this session — the interview ran but no candidate audio reached our system.
               Check that your browser has mic permission, or use <strong>Text mode</strong> to type your answers instead.
             </p>
-            <button
+            <Button
               type="button"
               onClick={onBack}
-              style={{ background: t.indigo, color: t.cream, border: "none", padding: "10px 20px", borderRadius: 10, fontFamily: f.sans, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+              style={{ background: t.indigo, color: t.cream, fontFamily: f.sans, fontWeight: 600 }}
             >
               Back to Dashboard
-            </button>
+            </Button>
           </div>
         </div>
       );

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { tokens as t, fonts as f } from "../auth/_tokens";
 import { Card, EmployerWordmark, PrimaryCta, StageDot } from "./_atoms";
+import { Button } from "@/components/ui/button";
 
 /* Proposed employer console navigation — sidebar destinations do not all
    exist as real routes yet (Saved Talent, Messages, Payments). This screen
@@ -231,24 +232,9 @@ function TopBar() {
         <Icon.Briefcase />
         <span style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Opportunities</span>
       </div>
-      <button
-        type="button"
-        aria-label="Notifications"
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 999,
-          border: "none",
-          background: "transparent",
-          color: t.inkSoft,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-        }}
-      >
+      <Button type="button" variant="ghost" size="icon" aria-label="Notifications" style={{ borderRadius: 999, color: t.inkSoft }}>
         <Icon.Bell />
-      </button>
+      </Button>
     </header>
   );
 }
@@ -421,62 +407,34 @@ function TalentCell({ o }: { o: Opportunity }) {
 }
 
 function RowActions() {
-  const btn: React.CSSProperties = {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    border: `1px solid ${t.line}`,
-    background: t.white,
-    color: t.inkSoft,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-  };
   return (
     <td style={{ ...td, textAlign: "right" }}>
       <div style={{ display: "inline-flex", gap: 8 }}>
-        <button type="button" aria-label="Edit opportunity" style={btn}>
+        <Button type="button" variant="outline" size="icon-sm" aria-label="Edit opportunity" style={{ color: t.inkSoft }}>
           <Icon.Edit />
-        </button>
-        <button type="button" aria-label="Archive opportunity" style={btn}>
+        </Button>
+        <Button type="button" variant="outline" size="icon-sm" aria-label="Archive opportunity" style={{ color: t.inkSoft }}>
           <Icon.Archive />
-        </button>
+        </Button>
       </div>
     </td>
   );
 }
 
 function Pagination() {
-  const pageBtn = (label: React.ReactNode, active = false): React.CSSProperties => ({
-    minWidth: 32,
-    height: 32,
-    padding: "0 8px",
-    borderRadius: 8,
-    border: `1px solid ${active ? t.coal : t.line}`,
-    background: active ? t.coal : t.white,
-    color: active ? t.white : t.inkSoft,
-    fontFamily: f.sans,
-    fontSize: 13,
-    fontWeight: 600,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-  });
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
       <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>Showing 1–6 of 6 Opportunities</span>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button type="button" aria-label="Previous page" style={pageBtn(<Icon.ChevronLeft />)}>
+        <Button type="button" variant="outline" size="icon-sm" aria-label="Previous page">
           <Icon.ChevronLeft />
-        </button>
-        <button type="button" aria-current="page" style={pageBtn("1", true)}>1</button>
-        <button type="button" style={pageBtn("2")}>2</button>
-        <button type="button" style={pageBtn("3")}>3</button>
-        <button type="button" aria-label="Next page" style={pageBtn(<Icon.ChevronRight />)}>
+        </Button>
+        <Button type="button" variant="default" size="icon-sm" aria-current="page">1</Button>
+        <Button type="button" variant="outline" size="icon-sm">2</Button>
+        <Button type="button" variant="outline" size="icon-sm">3</Button>
+        <Button type="button" variant="outline" size="icon-sm" aria-label="Next page">
           <Icon.ChevronRight />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -526,24 +484,15 @@ export default function OpportunitiesScreen() {
                   }}
                 />
               </div>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon"
                 aria-label="Filter opportunities"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 10,
-                  border: `1px solid ${t.line}`,
-                  background: t.white,
-                  color: t.inkSoft,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
+                style={{ color: t.inkSoft }}
               >
                 <Icon.Filter />
-              </button>
+              </Button>
               <PrimaryCta icon={<Icon.Plus />}>Create</PrimaryCta>
             </div>
           </div>
@@ -572,23 +521,19 @@ export default function OpportunitiesScreen() {
                         </td>
                         <TalentCell o={o} />
                         <td style={td}>
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             style={{
-                              padding: "8px 14px",
-                              borderRadius: 9,
-                              border: `1px solid ${t.line}`,
-                              background: t.white,
                               color: t.coal,
                               fontFamily: f.sans,
                               fontSize: 12.5,
-                              fontWeight: 600,
-                              cursor: "pointer",
                               whiteSpace: "nowrap",
                             }}
                           >
                             {o.nextStep}
-                          </button>
+                          </Button>
                         </td>
                         <td style={{ ...td, color: t.inkFaint, fontSize: 12.5 }}>
                           <div>Last updated</div>

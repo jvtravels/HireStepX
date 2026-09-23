@@ -12,6 +12,7 @@
 
 import { t, f, shadows, radius } from "../tokens";
 import { SectionEyebrow } from "./sr-JumpNav";
+import { Button } from "@/components/ui/button";
 
 export function NextStepsSection({
   daysUntilInterview,
@@ -188,23 +189,18 @@ export function NextStepsSection({
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: 0, flex: 1 }}>
               {c.desc}
             </p>
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={c.onClick}
               disabled={!c.onClick}
               style={{
-                background: "transparent",
-                border: "none",
                 color: c.onClick ? t.indigo : t.inkFaint,
                 fontFamily: f.sans,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: c.onClick ? "pointer" : "not-allowed",
+                height: "auto",
                 padding: 0,
                 alignSelf: "flex-start",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
               }}
             >
               {c.cta}
@@ -212,7 +208,7 @@ export function NextStepsSection({
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
               </svg>
-            </button>
+            </Button>
           </div>
         ))}
       </div>

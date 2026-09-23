@@ -15,6 +15,7 @@
  */
 
 import { t } from "../tokens";
+import { Button } from "@/components/ui/button";
 
 /* ── Token values used for canvas drawing ─────────────────────────── */
 /* Canvas drawText uses raw hex strings — these come from the design
@@ -198,24 +199,15 @@ export function ScoreCardDownloadButton(props: ScoreCardProps & { className?: st
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={handleClick}
       aria-label="Download score card as image"
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 7,
-        padding: "10px 18px",
-        borderRadius: 10,
-        border: `1px solid ${t.line}`,
-        background: "transparent",
         color: t.coal,
         fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif",
-        fontSize: 13,
         fontWeight: 600,
-        cursor: "pointer",
-        lineHeight: 1,
       }}
     >
       {/* Download icon */}
@@ -235,6 +227,6 @@ export function ScoreCardDownloadButton(props: ScoreCardProps & { className?: st
         <line x1="12" y1="15" x2="12" y2="3" />
       </svg>
       Download Score Card
-    </button>
+    </Button>
   );
 }

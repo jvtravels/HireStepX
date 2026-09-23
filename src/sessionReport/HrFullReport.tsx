@@ -22,6 +22,8 @@
 import type { HrReportData, Question, Skill } from "./types";
 import { t, f } from "./tokens";
 import { ReportCardShell, SectionBand } from "./panels/_primitives";
+import { Empty, EmptyDescription } from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
 
 /* ─── Design tokens ─────────────────────────────────────────────────── */
 
@@ -128,20 +130,18 @@ function Pill({
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div
+    <Empty
       style={{
         background: CREAM_SOFT,
         border: `1px dashed ${LINE_STRONG}`,
         borderRadius: 10,
         padding: "14px 18px",
-        fontFamily: SANS,
-        fontSize: 13,
-        color: INK_SOFT,
-        lineHeight: 1.55,
       }}
     >
-      {message}
-    </div>
+      <EmptyDescription style={{ fontFamily: SANS, fontSize: 13, color: INK_SOFT, lineHeight: 1.55 }}>
+        {message}
+      </EmptyDescription>
+    </Empty>
   );
 }
 
@@ -856,24 +856,22 @@ function DrillCtaPanel({
             One 12-minute focused session per dimension — scored on the same rubric so you can see the delta.
           </div>
         </div>
-        <button
+        <Button
           type="button"
+          size="lg"
           onClick={() => onDrillSkill && weakest[0] && onDrillSkill(weakest[0].name)}
+          disabled={!onDrillSkill}
           style={{
             background: "#FFFFFF",
             color: INDIGO,
-            padding: "12px 22px",
-            borderRadius: 10,
             fontFamily: SANS,
             fontSize: 14,
             fontWeight: 700,
-            border: "none",
-            cursor: onDrillSkill ? "pointer" : "default",
             whiteSpace: "nowrap",
           }}
         >
           Start drill plan →
-        </button>
+        </Button>
       </div>
       {weakest.length > 0 && (
         <div

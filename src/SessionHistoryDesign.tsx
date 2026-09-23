@@ -11,6 +11,10 @@ import React from "react";
 import Image from "next/image";
 import { strengthCopy, gapCopy } from "./skillCopy";
 import { THEMES, type SessionHistoryTheme } from "./sessionHistoryThemes";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type Variant = "list" | "detail" | "report" | "empty";
 
@@ -738,20 +742,25 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
                  weight + coal marker, no fill chip). Card-style fill
                  is reserved for filter pills, which are a different
                  semantic (filter, not navigate). */
-              <button key={t} aria-current={isActive ? "page" : undefined} style={{
-                textAlign: "left", padding: "10px 12px", border: "none",
-                background: "transparent",
-                color: isActive ? tok.coal : tok.inkSoft,
-                fontSize: 14, fontWeight: isActive ? 700 : 500, cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 10,
-              }}>
+              <Button
+                key={t}
+                type="button"
+                variant="ghost"
+                aria-current={isActive ? "page" : undefined}
+                style={{
+                  justifyContent: "flex-start", padding: "10px 12px", height: "auto",
+                  color: isActive ? tok.coal : tok.inkSoft,
+                  fontSize: 14, fontWeight: isActive ? 700 : 500,
+                  display: "flex", alignItems: "center", gap: 10,
+                }}
+              >
                 <span style={{
                   width: 5, height: 5, borderRadius: radii.pill,
                   background: isActive ? tok.coal : "transparent",
                   display: "inline-block",
                 }} />
                 {t}
-              </button>
+              </Button>
             );
           })}
         </nav>
@@ -770,14 +779,20 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
              prefix that reads as "menu/shortcut" rather than "help me
              with this thing." The HelpDot keeps `?` for asking about
              the band itself. */}
-          <button onClick={onHelp} aria-label="Open keyboard shortcuts" style={{
-            textAlign: "left", padding: "8px 12px", border: "none", background: "transparent",
-            color: tok.inkSoft, fontSize: 13, fontWeight: 500, cursor: "pointer",
-            display: "flex", alignItems: "center", gap: 8,
-          }}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onHelp}
+            aria-label="Open keyboard shortcuts"
+            style={{
+              justifyContent: "flex-start", padding: "8px 12px", height: "auto",
+              color: tok.inkSoft, fontSize: 13, fontWeight: 500,
+              display: "flex", alignItems: "center", gap: 8,
+            }}
+          >
             <span style={{ fontFamily: fonts.mono, color: tok.inkFaint, fontSize: 12 }}>{modGlyph}</span>
             Shortcuts and bands
-          </button>
+          </Button>
           <div style={{ padding: "0 12px", fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono, lineHeight: 1.6 }}>
             <div>/ &nbsp;search · j k &nbsp;move</div>
             <div>↵ &nbsp;open · esc &nbsp;back</div>
@@ -1118,20 +1133,21 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
           {onRerun && !s.draft ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               tabIndex={-1}
               onClick={e => { e.stopPropagation(); onRerun(s); }}
               onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
               aria-label={`Practice ${s.type}${s.role ? ` ${s.role}` : ""}${s.company ? ` at ${s.company}` : ""} again`}
               style={{
-                fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
-                background: "transparent", border: `1px solid ${hovered ? tok.lineStrong : tok.line}`,
-                borderRadius: radii.btn, padding: "5px 12px", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 5, transition: "border-color 0.15s ease",
-              }}>
+                fontFamily: fonts.ui, fontWeight: 600, color: tok.inkSoft,
+                borderColor: hovered ? tok.lineStrong : tok.line,
+              }}
+            >
               <span aria-hidden style={{ fontSize: 11 }}>↻</span> Re-run
-            </button>
+            </Button>
           ) : null}
           <span aria-hidden style={{
             fontFamily: fonts.ui, fontSize: 13, fontWeight: 700, color: tok.indigo,
@@ -1451,13 +1467,11 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
            right edge (not a leading "+"). This is the brand's CTA
            shape, used everywhere from the dashboard hero down. */}
         {onStartSession && (
-          <button
+          <Button
             type="button"
             onClick={onStartSession}
-            className="hsx-cta-primary"
             style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "14px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+              padding: "14px 22px", height: "auto",
               background: tok.indigo, color: tok.white,
               fontFamily: fonts.ui, fontSize: 14, fontWeight: 600, letterSpacing: 0.1,
               boxShadow: "0 4px 16px rgba(49,46,129,0.18)", minHeight: 44,
@@ -1467,7 +1481,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             <svg aria-hidden width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M13 5l7 7-7 7" />
             </svg>
-          </button>
+          </Button>
         )}
       </header>
 
@@ -1521,18 +1535,21 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
          primary type taxonomy. */}
       {draftCount > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, fontSize: 12, color: tok.inkSoft }}>
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setShowDrafts(d => !d)}
             aria-pressed={showDrafts}
             style={{
-              padding: "4px 10px", borderRadius: radii.chip,
+              borderRadius: radii.chip,
               background: showDrafts ? tok.copperSoft : "transparent",
-              border: `1px solid ${showDrafts ? tok.copper : tok.line}`,
+              borderColor: showDrafts ? tok.copper : tok.line,
               color: showDrafts ? tok.copper : tok.inkSoft,
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+              fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
             }}>
             {showDrafts ? "Showing" : "Hiding"} {draftCount} draft{draftCount === 1 ? "" : "s"}
-          </button>
+          </Button>
           <span style={{ color: tok.inkFaint, fontSize: 11 }}>Rounds left open. Press <span style={{ fontFamily: fonts.mono, color: tok.inkSoft }}>d</span> on a row to toggle.</span>
         </div>
       )}
@@ -1540,7 +1557,12 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
       {/* Filters — flexWrap so the search/sort group drops below the
          type pills under ~960px instead of jamming. */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <ToggleGroup
+          type="single"
+          value={type}
+          onValueChange={(v) => { if (v) setType(v); }}
+          style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+        >
           {filterTypes.map(p => {
             const active = p === type;
             /* Active typed filter wears the type's hue; "All" stays
@@ -1552,19 +1574,16 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             const activeFg = hue ? hue.ink : tok.cream;
             const activeBorder = hue ? hue.ink : tok.coal;
             return (
-              <button key={p} className="hsx-touch" onClick={() => setType(p)} aria-pressed={active} style={{
-                /* Padding bumped 7→8 vertically so pill height matches
-                   the search input and sort button (32px) — the row
-                   used to misalign by 2px. */
+              <ToggleGroupItem key={p} value={p} className="hsx-touch" style={{
                 padding: "8px 14px", borderRadius: radii.pill,
-                border: `1px solid ${active ? activeBorder : tok.line}`,
+                borderColor: active ? activeBorder : tok.line,
                 background: active ? activeBg : tok.white,
                 color: active ? activeFg : tok.coal,
-                fontSize: 12, fontWeight: 600, cursor: "pointer",
-              }}>{p}</button>
+                fontSize: 12, fontWeight: 600,
+              }}>{p}</ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: radii.btn, background: tok.white, border: `1px solid ${tok.line}`, width: 220 }}>
             <span style={{ color: tok.inkFaint }}>⌕</span>
@@ -1579,17 +1598,19 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
           {/* Sort cycles Recent → Score → Duration → Recent. The
              current key is shown in coal; the next key is hinted in
              smaller faint text so the cycle isn't a black box. */}
-          <button
+          <Button
+            type="button"
+            variant="outline"
             className="hsx-touch"
             onClick={() => setSort(s => s === "recent" ? "score" : s === "score" ? "duration" : "recent")}
             title={`Next: ${sort === "recent" ? "Score" : sort === "score" ? "Duration" : "Recent"}`}
             aria-label={`Currently sorting by ${sort === "recent" ? "recent" : sort === "score" ? "score" : "duration"}. Activate to sort by ${sort === "recent" ? "score" : sort === "score" ? "duration" : "recent"}.`}
-            style={{ padding: "8px 12px", borderRadius: radii.btn, background: tok.white, border: `1px solid ${tok.line}`, fontSize: 12, fontWeight: 600, cursor: "pointer", color: tok.coal, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            style={{ background: tok.white, borderColor: tok.line, fontSize: 12, fontWeight: 600, color: tok.coal }}>
             <span>Sort: {sort === "recent" ? "Recent" : sort === "score" ? "Score" : "Duration"}</span>
             <span style={{ color: tok.inkFaint, fontSize: 11, fontWeight: 500 }}>
               → {sort === "recent" ? "Score" : sort === "score" ? "Duration" : "Recent"}
             </span>
-          </button>
+          </Button>
           {/* Polite live region: announces the new sort key after each
              cycle so screen-reader users hear "Sorted by score" without
              re-reading the button label. Visually hidden via the
@@ -1610,11 +1631,12 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
           <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>No matches</div>
           <div style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, color: tok.coal, marginBottom: 6 }}>Nothing here.</div>
           <div style={{ fontSize: 13, color: tok.inkSoft, marginBottom: 14 }}>Drop a filter or clear the search to see more.</div>
-          <button
+          <Button
+            type="button"
             onClick={() => { setType("All"); setQuery(""); }}
-            style={{ padding: "8px 16px", borderRadius: radii.btn, background: tok.coal, color: tok.cream, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            style={{ background: tok.coal, color: tok.cream, fontSize: 13, fontWeight: 600 }}>
             Clear filters
-          </button>
+          </Button>
         </div>
       )}
 
@@ -1715,18 +1737,20 @@ function DetailView({
          is metadata (this report is shareable), not a primary action. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: tok.inkSoft }}>
-          <button
+          <Button
+            type="button"
+            variant="link"
             onClick={onBack}
-            style={{ background: "transparent", border: "none", padding: 0, color: tok.inkSoft, fontSize: 12, cursor: "pointer", fontFamily: fonts.ui }}>
+            style={{ height: "auto", padding: 0, color: tok.inkSoft, fontSize: 12, fontFamily: fonts.ui }}>
             ← Sessions
-          </button>
+          </Button>
           <span style={{ color: tok.inkFaint }}>/</span>
           <span style={{ color: tok.coal, fontWeight: 600 }}>{s.type} · {s.company}</span>
         </div>
         {onShare && (
-          <button onClick={onShare} style={{ padding: "6px 12px", borderRadius: radii.btn, background: "transparent", color: tok.inkSoft, border: `1px solid ${tok.line}`, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Button type="button" variant="outline" size="sm" onClick={onShare} style={{ color: tok.inkSoft, borderColor: tok.line, fontWeight: 600 }}>
             <span aria-hidden="true">↗</span> Share report
-          </button>
+          </Button>
         )}
       </div>
 
@@ -1849,11 +1873,10 @@ function DetailView({
           const secondary = band === "below" ? "Retry this round" : "Open transcript";
           return (
             <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
-              <button
-                className="hsx-cta-primary"
+              <Button
+                type="button"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  padding: "12px 20px", borderRadius: 12, border: "none", cursor: "pointer",
+                  padding: "12px 20px", height: "auto",
                   background: tok.indigo, color: tok.white,
                   fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, letterSpacing: 0.1,
                   boxShadow: "0 4px 16px rgba(49,46,129,0.18)", minHeight: 44,
@@ -1862,16 +1885,18 @@ function DetailView({
                 <svg aria-hidden width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => { if (secondary === "Open transcript") setTab("Transcript"); }}
                 style={{
-                  padding: "12px 18px", borderRadius: radii.btn,
-                  background: "transparent", color: tok.coal,
-                  border: `1px solid ${tok.lineStrong}`,
-                  fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  padding: "12px 18px", height: "auto",
+                  color: tok.coal,
+                  borderColor: tok.lineStrong,
+                  fontFamily: fonts.ui, fontSize: 13, fontWeight: 600,
                   minHeight: 44,
-                }}>{secondary}</button>
+                }}>{secondary}</Button>
             </div>
           );
         })()}
@@ -1960,20 +1985,20 @@ function DetailView({
          The active state reads as an editor's mark on the page rather
          than a dashboard tab pill. Inactive tabs stay in inkSoft mono
          so they read as catalog labels. */}
-      <div style={{
-        display: "flex", gap: 32,
+      <Tabs value={tab} onValueChange={(v) => setTab(v as DetailTab)}>
+      <TabsList variant="line" style={{
+        display: "flex", gap: 32, height: "auto", background: "transparent", padding: 0,
         borderBottom: `1px solid ${tok.line}`,
-        marginBottom: 26, paddingLeft: 0,
+        marginBottom: 26, paddingLeft: 0, justifyContent: "flex-start", borderRadius: 0,
       }}>
         {DETAIL_TABS.map(t => {
           const isActive = t === tab;
           return (
-            <button
+            <TabsTrigger
               key={t}
-              onClick={() => setTab(t)}
-              aria-current={isActive ? "page" : undefined}
+              value={t}
               style={{
-                padding: "12px 0", border: "none", background: "transparent",
+                padding: "12px 0", background: "transparent", boxShadow: "none",
                 borderBottom: isActive
                   ? `1px solid ${tok.copper}`
                   : "1px solid transparent",
@@ -1985,16 +2010,16 @@ function DetailView({
                 fontSize: isActive ? 16 : 11,
                 letterSpacing: isActive ? "0" : "0.12em",
                 textTransform: isActive ? "none" : "uppercase",
-                cursor: "pointer",
                 transition: "color 120ms cubic-bezier(0.22,1,0.36,1)",
-              }}>{t}</button>
+              }}>{t}</TabsTrigger>
           );
         })}
-      </div>
+      </TabsList>
 
       {/* Tab body. Q-by-Q is the canonical view; other tabs render
          a quiet placeholder so the tabs feel honest rather than
          dead. */}
+      <TabsContent value={tab}>
       {tab === "Question-by-question" ? (
         /* Q-by-Q as chronicle entries: each question is a hairline-
            divided band, not a bordered card. Number + question + note
@@ -2121,6 +2146,8 @@ function DetailView({
           </p>
         </div>
       )}
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -2150,11 +2177,13 @@ function ReportView({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="hsx-pad-report" style={{ padding: "40px 56px", maxWidth: 1100 }}>
-      <button
+      <Button
+        type="button"
+        variant="link"
         onClick={onBack}
-        style={{ background: "transparent", border: "none", padding: 0, color: tok.inkSoft, fontSize: 12, cursor: "pointer", fontFamily: fonts.ui, marginBottom: 16 }}>
+        style={{ height: "auto", padding: 0, color: tok.inkSoft, fontSize: 12, fontFamily: fonts.ui, marginBottom: 16 }}>
         ← Back to session
-      </button>
+      </Button>
       {/* Cover */}
       <div style={{ background: tok.indigoDeep, color: tok.cream, borderRadius: radii.hero, padding: "40px 44px", marginBottom: 24, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 240, height: 240, borderRadius: radii.pill, background: "rgba(244,229,216,0.06)" }} />
@@ -2256,7 +2285,7 @@ function ReportView({ onBack }: { onBack: () => void }) {
           <div style={{ fontFamily: fonts.serif, fontSize: 22, fontStyle: "italic", lineHeight: 1.2, color: tok.copper100 }}>Next move</div>
           <div style={{ fontSize: 14, marginTop: 4 }}>System Design, Razorpay round 2. Suggested for Friday.</div>
         </div>
-        <button style={{ padding: "12px 22px", borderRadius: 10, background: tok.copper, color: tok.cream, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Schedule next session →</button>
+        <Button type="button" style={{ background: tok.copper, color: tok.cream, fontSize: 13, fontWeight: 700 }}>Schedule next session →</Button>
       </div>
     </div>
   );
@@ -2283,13 +2312,11 @@ function EmptyView({ onStart }: { onStart: () => void }) {
         Start with a 15-minute behavioral; we'll tune the questions to your resume.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 14, alignItems: "center", marginTop: 28 }}>
-        <button
+        <Button
           type="button"
           onClick={onStart}
-          className="hsx-cta-primary"
           style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            padding: "14px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+            padding: "14px 22px", height: "auto",
             background: tok.indigo, color: tok.white,
             fontFamily: fonts.ui, fontSize: 14, fontWeight: 600, letterSpacing: 0.1,
             boxShadow: "0 4px 16px rgba(49,46,129,0.18)", minHeight: 44,
@@ -2299,9 +2326,9 @@ function EmptyView({ onStart }: { onStart: () => void }) {
           <svg aria-hidden width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
-        </button>
+        </Button>
         <span style={{ fontSize: 12, color: tok.inkFaint, fontFamily: fonts.ui }}>
-          Or <button onClick={onStart} style={{ background: "transparent", border: "none", padding: 0, color: tok.inkSoft, fontSize: 12, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer", fontFamily: fonts.ui }}>browse interview types</button>.
+          Or <Button variant="link" onClick={onStart} style={{ height: "auto", padding: 0, color: tok.inkSoft, fontSize: 12, textDecoration: "underline", textUnderlineOffset: 3, fontFamily: fonts.ui }}>browse interview types</Button>.
         </span>
       </div>
     </div>
@@ -2344,38 +2371,28 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
     { name: "below",  range: "< 65",  verdict: "retry the round" },
   ];
   return (
-    /* Backdrop: click-to-dismiss is a convenience; keyboard users dismiss with Escape. */
-    /* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Help and keyboard shortcuts"
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 50,
-        background: "rgba(14,12,8,0.32)",
-        display: "grid", placeItems: "center",
-        animation: "hsx-fade 160ms cubic-bezier(0.22,1,0.36,1) both",
-      }}>
-      {/* Panel stops backdrop-close propagation only; it is not itself interactive. */}
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      <div onClick={e => e.stopPropagation()} className="hsx-anim-panel" style={{
-        width: 480, maxWidth: "calc(100vw - 48px)",
-        background: tok.cream, border: `1px solid ${tok.lineStrong}`,
-        borderRadius: radii.card, padding: 24,
-        boxShadow: "0 24px 60px rgba(14,12,8,0.24)",
-      }}>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent
+        aria-label="Help and keyboard shortcuts"
+        showCloseButton={false}
+        style={{
+          width: 480, maxWidth: "calc(100vw - 48px)",
+          background: tok.cream, border: `1px solid ${tok.lineStrong}`,
+          borderRadius: radii.card, padding: 24,
+          boxShadow: "0 24px 60px rgba(14,12,8,0.24)",
+        }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
           <div>
             <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sessions</div>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0 }}>
-              Keys, actions, and bands.
-            </h2>
+            <DialogTitle asChild>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0 }}>
+                Keys, actions, and bands.
+              </h2>
+            </DialogTitle>
           </div>
-          <button onClick={onClose} aria-label="Close help" style={{
-            background: "transparent", border: "none", color: tok.inkSoft,
-            fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1,
-          }}>✕</button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close help" style={{
+            color: tok.inkSoft, fontSize: 18,
+          }}>✕</Button>
         </div>
         {keyGroups.map(g => (
           <section key={g.title} style={{ marginTop: 16 }}>
@@ -2409,8 +2426,8 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
         <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${tok.line}`, fontSize: 12, color: tok.inkFaint }}>
           Press <span style={{ fontFamily: fonts.mono, color: tok.inkSoft }}>esc</span> to close, or <span style={{ fontFamily: fonts.mono, color: tok.inkSoft }}>?</span> anytime to reopen.
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -2444,13 +2461,16 @@ function UndoToast({ message, onUndo, onDismiss }: { message: string; onUndo: ()
         fontSize: 13,
       }}>
       <span>{message}</span>
-      <button
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={onUndo}
         style={{
-          background: "transparent", border: `1px solid ${tok.copper}`,
-          color: tok.copper100, padding: "4px 12px", borderRadius: radii.chip,
-          fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: fonts.ui,
-        }}>Undo</button>
+          borderColor: tok.copper,
+          color: tok.copper100, borderRadius: radii.chip,
+          fontWeight: 700, fontSize: 12, fontFamily: fonts.ui,
+        }}>Undo</Button>
       <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, minWidth: 16, textAlign: "right" }}>
         {Math.max(0, left)}s
       </span>

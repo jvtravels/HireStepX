@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 /* ─── PaceMeter — sweet-spot bar shown while user is answering ─── */
 
@@ -56,30 +57,20 @@ export const RepeatButton = memo(function RepeatButton({ onClick, disabled = fal
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onClick}
             disabled={disabled}
             aria-label="Repeat the question"
-            className="iv-repeat-btn"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-              borderRadius: 999, padding: "6px 12px", minHeight: 32,
-              cursor: disabled ? "not-allowed" : "pointer",
-              opacity: disabled ? 0.5 : 1,
-              fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.coal,
-              transition: "background 0.16s ease, border-color 0.16s ease",
-            }}
-            onMouseEnter={ev => { if (!disabled) { ev.currentTarget.style.background = "rgba(20,17,10,0.05)"; ev.currentTarget.style.borderColor = e.lineStrong; } }}
-            onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
             </svg>
             Repeat
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent>Repeat the question (Press R)</TooltipContent>
       </Tooltip>
@@ -126,13 +117,14 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
         {onSwitchToText && (
           <>
             , or{" "}
-            <button
+            <Button
               type="button"
+              variant="link"
+              className="h-auto p-0 text-[inherit]"
               onClick={onSwitchToText}
-              style={{ background: "transparent", border: "none", padding: 0, color: e.copper, fontWeight: 600, cursor: "pointer", fontFamily: ef.sans, fontSize: 12, textDecoration: "underline" }}
             >
               switch to typing
-            </button>
+            </Button>
           </>
         )}
         .
@@ -239,20 +231,9 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
         </div>
         {onPause && (
           <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 6 }}>
-            <button
-              type="button"
-              onClick={onPause}
-              style={{
-                background: "transparent", color: e.coal,
-                border: `1px solid ${e.line}`, borderRadius: 10,
-                padding: "10px 18px", fontFamily: ef.sans, fontSize: 13, fontWeight: 500, cursor: "pointer",
-                transition: "background 0.16s ease, border-color 0.16s ease",
-              }}
-              onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
-              onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = e.line; }}
-            >
+            <Button type="button" variant="outline" onClick={onPause}>
               Pause and resume later
-            </button>
+            </Button>
             <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
               We&rsquo;ll email you a link to come back.
             </span>
@@ -397,23 +378,9 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
           ))}
         </ul>
         <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
-          <button
-            ref={dismissBtnRef}
-            type="button"
-            onClick={dismiss}
-            style={{
-              background: e.indigo, color: e.cream, border: "none",
-              borderRadius: 999, padding: "10px 22px",
-              fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
-              cursor: "pointer",
-              boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-              transition: "filter 0.16s ease",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.filter = "brightness(1.10)"; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.filter = "brightness(1)"; }}
-          >
+          <Button ref={dismissBtnRef} type="button" size="lg" onClick={dismiss}>
             Got it — let&rsquo;s start
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { t, f, shadows, radius } from "../tokens";
 import type { ThoughtBubbleSegment } from "../types";
+import { Button } from "@/components/ui/button";
 
 export function ThoughtBubbleSection({ segments }: { segments: ThoughtBubbleSegment[] }) {
   const [open, setOpen] = useState(false);
@@ -23,11 +24,12 @@ export function ThoughtBubbleSection({ segments }: { segments: ThoughtBubbleSegm
         scrollMarginTop: 72,
       }}
     >
-      <button
+      <Button
         type="button"
-        className="ir-thought-toggle"
+        variant="ghost"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
+        style={{ fontFamily: f.sans, color: t.coal }}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -40,7 +42,7 @@ export function ThoughtBubbleSection({ segments }: { segments: ThoughtBubbleSegm
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
-      </button>
+      </Button>
       {open && (
         <div style={{ marginTop: 10 }}>
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 4px", lineHeight: 1.5 }}>

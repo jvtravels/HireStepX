@@ -3,6 +3,7 @@
  * answer indices. Pure presentation. */
 
 import { t, f, radius, space } from "../tokens";
+import { Button } from "@/components/ui/button";
 import type { DrillSummary } from "../../../server-handlers/_drill-session";
 
 export function DrillVerdictCard({
@@ -67,23 +68,18 @@ export function DrillVerdictCard({
         </span>
       </div>
       {onExit && (
-        <button
+        <Button
           type="button"
           onClick={onExit}
           style={{
             background: t.indigo,
             color: t.white,
-            border: "none",
-            borderRadius: radius.lg,
-            padding: "10px 18px",
             fontFamily: f.sans,
-            fontSize: 14,
             fontWeight: 600,
-            cursor: "pointer",
           }}
         >
           Back to report
-        </button>
+        </Button>
       )}
     </div>
   );

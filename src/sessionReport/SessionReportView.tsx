@@ -16,6 +16,7 @@
 "use client";
 
 import { t, f } from "./tokens";
+import { Button } from "@/components/ui/button";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
 import { upgradeNudgeCopy } from "./upgradeNudgeCopy";
@@ -142,7 +143,7 @@ function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: num
       {copy.ctaHref ? (
         <a href={copy.ctaHref} style={ctaStyle}>{copy.ctaLabel}</a>
       ) : (
-        <button onClick={onUpgrade} style={ctaStyle}>{copy.ctaLabel}</button>
+        <Button type="button" onClick={onUpgrade} style={ctaStyle}>{copy.ctaLabel}</Button>
       )}
     </div>
   );

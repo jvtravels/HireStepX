@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { font } from "../tokens";
 import { tokens } from "../auth/_tokens";
+import { Button } from "@/components/ui/button";
 
 export function EmailVerificationBanner({ email }: { email?: string } = {}) {
   const [cooldown, setCooldown] = useState(0);
@@ -36,7 +37,6 @@ export function EmailVerificationBanner({ email }: { email?: string } = {}) {
   const COPPER = tokens.copper;
   const COPPER_SOFT = "rgba(180, 83, 9, 0.08)"; // banner-local lighter wash, between copperWash & copperSoft
   const COAL = tokens.coal;
-  const INK_FAINT = tokens.inkFaintWeak;
   const LINE = tokens.line;
   const disabled = cooldown > 0 || status === "sending";
   return (
@@ -67,25 +67,16 @@ export function EmailVerificationBanner({ email }: { email?: string } = {}) {
         Check your inbox for a verification link — your progress is saved.
       </span>
       {email && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleResend}
           disabled={disabled}
-          style={{
-            fontFamily: font.ui,
-            fontSize: 12,
-            fontWeight: 500,
-            color: disabled ? INK_FAINT : COPPER,
-            background: "transparent",
-            border: `1px solid ${disabled ? LINE : "rgba(180, 83, 9, 0.35)"}`,
-            borderRadius: 6,
-            padding: "4px 10px",
-            cursor: disabled ? "default" : "pointer",
-            transition: "all 0.15s",
-          }}
+          style={{ fontFamily: font.ui }}
         >
           {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : status === "error" ? "Failed — try again" : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend email"}
-        </button>
+        </Button>
       )}
     </div>
   );

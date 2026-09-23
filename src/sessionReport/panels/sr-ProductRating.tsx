@@ -9,12 +9,9 @@
 import { useState, type CSSProperties } from "react";
 import { t, f } from "../tokens";
 import { captureClientEvent } from "../../posthogClient";
+import { Button } from "@/components/ui/button";
 
 const starButtonStyle: CSSProperties = {
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  padding: 4,
   fontSize: 26,
   lineHeight: 1,
   color: t.line,
@@ -66,9 +63,11 @@ export function ProductRating({ sessionId }: { sessionId: string }) {
         {[1, 2, 3, 4, 5].map((star) => {
           const active = (hovered ?? rating ?? 0) >= star;
           return (
-            <button
+            <Button
               key={star}
               type="button"
+              variant="ghost"
+              size="icon"
               aria-label={`${star} star${star > 1 ? "s" : ""}`}
               disabled={submitted}
               onClick={() => submit(star)}
@@ -77,11 +76,10 @@ export function ProductRating({ sessionId }: { sessionId: string }) {
               style={{
                 ...starButtonStyle,
                 color: active ? t.copper : t.line,
-                cursor: submitted ? "default" : "pointer",
               }}
             >
               ★
-            </button>
+            </Button>
           );
         })}
       </div>

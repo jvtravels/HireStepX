@@ -15,6 +15,7 @@
 
 import { useState } from "react";
 import { t, f, shadows, radius } from "../tokens";
+import { Button } from "@/components/ui/button";
 
 /* ── Date helpers ──────────────────────────────────────────────────────── */
 
@@ -247,25 +248,20 @@ export function ScheduleNextSection({
             </p>
           </div>
           {/* Allow re-scheduling */}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setScheduled(null)}
             style={{
               marginLeft: "auto",
-              background: "transparent",
-              border: "none",
               fontFamily: f.sans,
-              fontSize: 12,
-              fontWeight: 600,
               color: t.inkSoft,
-              cursor: "pointer",
-              padding: "4px 8px",
-              borderRadius: radius.sm,
               flexShrink: 0,
             }}
           >
             Change
-          </button>
+          </Button>
         </div>
       ) : (
         /* ── Picker state ── */
@@ -277,20 +273,16 @@ export function ScheduleNextSection({
             aria-label="Quick date options"
           >
             {quickPicks.map(({ label, date }) => (
-              <button
+              <Button
                 key={label}
                 type="button"
+                variant="secondary"
                 onClick={() => commit(date.toISOString())}
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 13,
-                  fontWeight: 600,
                   color: t.indigo,
                   background: t.indigoTint,
                   border: `1px solid ${t.indigoRing}`,
-                  borderRadius: radius.lg,
-                  padding: "8px 16px",
-                  cursor: "pointer",
                   transition: "background 0.15s",
                 }}
                 onMouseEnter={(e) => {
@@ -303,7 +295,7 @@ export function ScheduleNextSection({
                 }}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -365,7 +357,7 @@ export function ScheduleNextSection({
                 minWidth: 0,
               }}
             />
-            <button
+            <Button
               type="button"
               disabled={!customValue}
               onClick={() => {
@@ -374,19 +366,14 @@ export function ScheduleNextSection({
               }}
               style={{
                 fontFamily: f.sans,
-                fontSize: 13,
                 fontWeight: 700,
                 color: t.white,
                 background: customValue ? t.indigo : t.inkFaint,
-                border: "none",
-                borderRadius: radius.lg,
-                padding: "8px 20px",
-                cursor: customValue ? "pointer" : "not-allowed",
                 flexShrink: 0,
               }}
             >
               Schedule
-            </button>
+            </Button>
           </div>
         </div>
       )}

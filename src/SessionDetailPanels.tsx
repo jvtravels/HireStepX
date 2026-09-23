@@ -1,5 +1,8 @@
 import React, { memo } from "react";
 import { c, font, shadow, gradient } from "./tokens";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 /* ═══════════════════════════════════════════════
    Extracted presentational components from SessionDetail.tsx
@@ -79,7 +82,7 @@ export const SectionTitle = memo(function SectionTitle({ children, icon, action 
 
 export function LoadingSkeleton() {
   const Bone = ({ w, h, r, mb }: { w: string; h: number; r?: number; mb?: number }) => (
-    <div style={{ width: w, height: h, borderRadius: r ?? 8, background: `linear-gradient(90deg, ${c.graphite} 25%, rgba(255,255,255,0.04) 50%, ${c.graphite} 75%)`, backgroundSize: "200% 100%", animation: "skeletonShimmer 1.8s ease-in-out infinite", marginBottom: mb ?? 0 }} />
+    <Skeleton style={{ width: w, height: h, borderRadius: r ?? 8, marginBottom: mb ?? 0 }} />
   );
   return (
     <div style={{ minHeight: "100vh", background: c.obsidian, fontFamily: font.ui }}>
@@ -130,9 +133,9 @@ export const SessionNotFound = memo(function SessionNotFound({ onNavigate }: { o
     <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: font.ui }}>
       <p style={{ fontSize: 18, color: c.ivory, marginBottom: 8 }}>Session not found</p>
       <p style={{ fontSize: 13, color: c.stone, marginBottom: 24 }}>This session may have been deleted or the link is invalid.</p>
-      <button onClick={onNavigate} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+      <Button onClick={onNavigate} style={{ background: c.gilt, color: c.obsidian, fontWeight: 600 }}>
         Back to Sessions
-      </button>
+      </Button>
     </div>
   );
 });
@@ -152,13 +155,12 @@ export const SessionHeader = memo(function SessionHeader({ type, dateLabel, scor
   return (
     <div className="sd-anim" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, animationDelay: "0s" }}>
       <div>
-        <button onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: c.stone,
-          background: "none", border: "none", cursor: "pointer", marginBottom: 16, padding: 0,
+        <Button variant="ghost" onClick={onBack} style={{
+          gap: 6, fontSize: 12, color: c.stone, marginBottom: 16,
         }}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
-        </button>
+        </Button>
         <h1 style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
           Analysis Report & Answer Key
         </h1>
@@ -200,24 +202,23 @@ export interface ActionBarProps {
 export const ActionBar = memo(function ActionBar({ copied, onCopy, onDownload }: ActionBarProps) {
   return (
     <div className="sd-anim" style={{ display: "flex", gap: 8, marginBottom: 24, animationDelay: "0.05s" }}>
-      <button onClick={onCopy} aria-label="Copy report" style={{
-        padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500,
+      <Button variant="outline" size="sm" onClick={onCopy} aria-label="Copy report" style={{
+        fontWeight: 500,
         background: copied ? "rgba(21,128,61,0.08)" : "transparent",
-        border: `1px solid ${copied ? "rgba(21,128,61,0.3)" : c.border}`,
-        color: copied ? c.sage : c.stone, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+        borderColor: copied ? "rgba(21,128,61,0.3)" : c.border,
+        color: copied ? c.sage : c.stone,
       }}>
         {copied ? <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           : <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
         {copied ? "Copied!" : "Copy"}
-      </button>
-      <button onClick={onDownload} aria-label="Download report" style={{
-        padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-        background: "transparent", border: `1px solid ${c.border}`, color: c.stone,
-        cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+      </Button>
+      <Button variant="outline" size="sm" onClick={onDownload} aria-label="Download report" style={{
+        fontWeight: 500,
+        color: c.stone,
       }}>
         <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download
-      </button>
+      </Button>
     </div>
   );
 });
@@ -264,16 +265,22 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
           </div>
           {metrics.fillerBreakdown.length > 0 && (
             <div>
-              <button onClick={onToggleFillerBreakdown} style={{
-                fontSize: 10, color: c.stone, background: "rgba(255,255,255,0.03)", border: `1px solid ${c.border}`,
-                borderRadius: 6, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%", justifyContent: "space-between",
-              }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleFillerBreakdown}
+                aria-expanded={showFillerBreakdown}
+                style={{
+                  fontSize: 10, color: c.stone, background: "rgba(255,255,255,0.03)", borderColor: c.border,
+                  width: "100%", justifyContent: "space-between",
+                }}
+              >
                 <span>View breakdown</span>
                 <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                   style={{ transform: showFillerBreakdown ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
-              </button>
+              </Button>
               {showFillerBreakdown && (
                 <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
                   {metrics.fillerBreakdown.map(({ word, count }) => (
@@ -574,25 +581,27 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
         <span style={{ fontSize: 13, fontWeight: 500, color: c.stone }}>
           {feedbackSaved ? "Thanks for your feedback!" : "Was this evaluation helpful?"}
         </span>
-        <div style={{ display: "flex", gap: 6 }}>
+        <ToggleGroup
+          type="single"
+          value={feedbackRating ?? ""}
+          onValueChange={(v) => { if (v) onSubmitFeedback(v as "helpful" | "too_harsh" | "too_generous" | "inaccurate"); }}
+          aria-label="Was this evaluation helpful?"
+        >
           {(["helpful", "too_harsh", "too_generous", "inaccurate"] as const).map((rating) => {
             const labels: Record<string, string> = { helpful: "Helpful", too_harsh: "Too harsh", too_generous: "Too generous", inaccurate: "Inaccurate" };
             const icons: Record<string, string> = { helpful: "\uD83D\uDC4D", too_harsh: "\uD83D\uDCCF", too_generous: "\uD83C\uDF89", inaccurate: "\uD83D\uDEA9" };
             const isSelected = feedbackRating === rating;
             return (
-              <button key={rating} onClick={() => onSubmitFeedback(rating)} aria-pressed={isSelected}
+              <ToggleGroupItem key={rating} value={rating}
                 style={{
-                  fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "6px 12px",
-                  borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                  border: `1px solid ${isSelected ? "rgba(180,83,9,0.3)" : c.border}`,
-                  background: isSelected ? "rgba(180,83,9,0.08)" : "transparent",
+                  fontFamily: font.ui, fontSize: 11, fontWeight: 500,
                   color: isSelected ? c.gilt : c.stone,
                 }}>
                 <span>{icons[rating]}</span>{labels[rating]}
-              </button>
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
       </div>
       {showFeedbackForm && feedbackRating && (
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
@@ -604,9 +613,9 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
             onBlur={(e) => { e.currentTarget.style.borderColor = c.border; }}
             onKeyDown={(e) => { if (e.key === "Enter") onSubmitComment(); }}
           />
-          <button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, padding: "8px 16px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer" }}>
+          <Button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.gilt, color: c.obsidian }}>
             Save
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -639,28 +648,28 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       )}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {weakest && (
-          <button onClick={() => onNavigate(`/session/new?type=${session.type}&focus=${weakest.name.toLowerCase().replace(/\s+/g, "-")}`)}
-            style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, padding: "10px 22px", borderRadius: 8, border: "none", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: shadow.sm }}>
+          <Button onClick={() => onNavigate(`/session/new?type=${session.type}&focus=${weakest.name.toLowerCase().replace(/\s+/g, "-")}`)}
+            style={{ fontFamily: font.ui, fontWeight: 600, background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, boxShadow: shadow.sm }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
             Practice {weakest.name}
-          </button>
+          </Button>
         )}
-        <button onClick={() => onNavigate(`/session/new?type=${nextType}&difficulty=${nextDifficulty}`)}
-          style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 22px", borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent", color: c.chalk, cursor: "pointer" }}>
+        <Button variant="outline" onClick={() => onNavigate(`/session/new?type=${nextType}&difficulty=${nextDifficulty}`)}
+          style={{ fontFamily: font.ui, fontWeight: 500, borderColor: c.border, color: c.chalk }}>
           Try {normalizeType(nextType)}
-        </button>
-        <button onClick={() => onNavigate("/sessions")}
-          style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 22px", borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent", color: c.stone, cursor: "pointer" }}>
+        </Button>
+        <Button variant="outline" onClick={() => onNavigate("/sessions")}
+          style={{ fontFamily: font.ui, fontWeight: 500, borderColor: c.border, color: c.stone }}>
           Back to Sessions
-        </button>
+        </Button>
       </div>
       {isFreeUser && (
         <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontSize: 12, color: c.stone }}>Unlock unlimited sessions & detailed analytics</span>
-          <button onClick={() => { window.location.href = "/#pricing"; }}
-            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, padding: "6px 16px", borderRadius: 6, border: `1px solid rgba(180,83,9,0.2)`, background: "transparent", color: c.gilt, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <Button variant="outline" size="sm" onClick={() => { window.location.href = "/#pricing"; }}
+            style={{ fontFamily: font.ui, fontWeight: 600, borderColor: "rgba(180,83,9,0.2)", color: c.gilt, whiteSpace: "nowrap" }}>
             Upgrade
-          </button>
+          </Button>
         </div>
       )}
     </div>
