@@ -18,10 +18,17 @@ export async function generateMetadata({
   const { page } = await searchParams;
   const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
+  /* GSC: same generic-title pattern already fixed on /questions, /salary,
+     and /companies — no concrete figure in the title tag. Prefix with the
+     actual indexed post count. */
+  const count = BLOG_META.length;
+  const title = `${count} Interview Prep Guides India 2026 | HireStepX`;
+  const ogTitle = `${count} Interview Preparation Guides — India 2026`;
+
   return {
-    title: "Interview Prep Blog India 2026 | HireStepX",
+    title,
     description:
-      "Company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.",
+      `${count} company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.`,
     keywords: [
       "interview preparation blog India",
       "TCS interview guide 2026",
@@ -34,7 +41,7 @@ export async function generateMetadata({
     ...(pageNum === 1 ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       type: "website",
-      title: "Interview Preparation Blog India 2026 | HireStepX",
+      title: ogTitle,
       description: "Guides for TCS, Google, Flipkart, Amazon, Deloitte and more. 2026 India job market.",
       url: "https://hirestepx.com/blog",
       siteName: "HireStepX",
@@ -43,7 +50,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: "Interview Preparation Blog India 2026 | HireStepX",
+      title: ogTitle,
       description: "Company-specific interview guides for Indian candidates. TCS, Google, Flipkart, Amazon, and 20+ more.",
       images: ["https://hirestepx.com/opengraph-image"],
     },
