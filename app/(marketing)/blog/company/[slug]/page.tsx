@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Script from "next/script";
 import { BLOG_META } from "@/blog-meta";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -120,12 +119,12 @@ export default async function BlogCompanyPage({
       {jsonLdScripts.map((html, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* No AdSense loader here — this whole route is unconditionally thin/
+          noindex (see generateMetadata above). Mediapartners-Google (the
+          ad-serving crawler) evaluates pages where ads actually render for
+          policy compliance and isn't governed by the noindex meta tag, so
+          serving ads here would keep this route in scope for AdSense's
+          "Low value content" review regardless of the robots.txt disallow. */}
       <NavV2 />
       <main style={{ background: "#fdfcf7", minHeight: "60vh" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 80px" }}>

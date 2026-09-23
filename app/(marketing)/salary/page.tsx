@@ -166,12 +166,17 @@ export default async function SalaryIndexPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(itemListSchema)}
       />
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
+          noindex meta tag above — only loading ads on the canonical page 1
+          keeps thin, noindexed pagination pages out of ad-serving scope. */}
+      {pageNum === 1 && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <NavV2 />
       <div style={{ background: t.copperWash, borderBottom: `1px solid ${t.copperBorder}` }}>
         <a

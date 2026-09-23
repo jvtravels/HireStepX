@@ -126,12 +126,22 @@ export default async function QuestionsSlugPage({
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}
 
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad-serving crawler) evaluates pages
+          where ads actually render for policy compliance, and isn't governed
+          by the `robots: noindex` meta tag above — that only stops Google
+          Search from indexing the page. Loading the ad script unconditionally
+          here means every tier-3 thin/duplicate page kept serving ads and
+          staying in scope for AdSense's "Low value content" review even
+          after it was pulled from search results. Gate ad loading on the
+          same tier check so thin pages stop serving ads outright. */}
+      {!isThinDuplicateQuestionsPage(slug) && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <NavV2 />
       {/* Page body */}
       <QuestionSetPage
