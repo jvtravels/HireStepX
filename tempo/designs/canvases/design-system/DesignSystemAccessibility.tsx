@@ -2,8 +2,9 @@
    WCAG 2.1 AA minimum, AAA where it matters.
    Focus management · keyboard nav · ARIA · touch targets · reduced motion. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, radius, type } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* Compliance row */
 function CheckRow({
   passing,
@@ -44,7 +45,7 @@ function CheckRow({
       </div>
       <div>
         <div style={{ fontSize: 14, fontWeight: 500, color: t.coal }}>{label}</div>
-        <div style={{ fontSize: 13, color: t.indigoGray, marginTop: 4, lineHeight: 1.55 }}>
+        <div style={{ fontSize: 13, color: t.inkMuted, marginTop: 4, lineHeight: 1.55 }}>
           {detail}
         </div>
       </div>
@@ -58,8 +59,7 @@ export default function DesignSystemAccessibility() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -71,36 +71,11 @@ export default function DesignSystemAccessibility() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Accessibility, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>default</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            WCAG 2.1 AA minimum across the board, AAA on every text pairing.
-            Keyboard-first. Screen-reader friendly. Honors reduced-motion.
-            Touch targets ≥ 44px. Focus rings always visible.
-          </p>
-        </header>
+        {/* PAGE HEADER */}
+        <PageHeader
+          title="Accessibility, by default."
+          description="WCAG 2.1 AA minimum across the board, AAA on every text pairing. Keyboard-first. Screen-reader friendly. Honors reduced-motion. Touch targets ≥ 44px. Focus rings always visible, always copper."
+        />
 
         {/* 01 — COMPLIANCE STATUS */}
         <section style={{ marginBottom: 80 }}>
@@ -113,7 +88,7 @@ export default function DesignSystemAccessibility() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "20px 32px",
               boxShadow: shadows.card,
             }}
@@ -121,12 +96,12 @@ export default function DesignSystemAccessibility() {
             <CheckRow
               passing
               label="Color contrast — all text pairings AAA"
-              detail="Coal/Cream 15.9:1 · Indigo-gray/Cream 7.4:1 · White/Indigo 12.5:1. Even copper-on-cream meets AA at 5.4:1."
+              detail="Coal/Cream 15.9:1 · Ink-muted/Cream 7.4:1 · White/Copper 5.4:1. Copper-on-cream also meets AA at 5.4:1."
             />
             <CheckRow
               passing
               label="Focus indicators on every interactive element"
-              detail="3px indigo halo at 20% alpha. Never `outline: none` without replacement. `:focus-visible` to skip mouse-driven focus."
+              detail="3px copper halo at 20% alpha. Never `outline: none` without replacement. `:focus-visible` to skip mouse-driven focus."
             />
             <CheckRow
               passing
@@ -172,15 +147,16 @@ export default function DesignSystemAccessibility() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: 36,
               boxShadow: shadows.card,
             }}
           >
-            <p style={{ fontSize: 13, color: t.indigoGray, margin: "0 0 24px", lineHeight: 1.6 }}>
+            <p style={{ fontSize: 13, color: t.inkMuted, margin: "0 0 24px", lineHeight: 1.6 }}>
               Every interactive element ships with a focus state. Click into
-              the field below or tab through to see the indigo 3px halo at 20%
-              alpha.
+              the field below or tab through to see the copper 3px halo at 20%
+              alpha — the same `--ring` color used across every focusable
+              element in the app.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
@@ -203,14 +179,14 @@ export default function DesignSystemAccessibility() {
                     width: "100%",
                     padding: "12px 14px",
                     border: `1px solid ${t.lineStrong}`,
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontFamily: f.sans,
                     fontSize: 14,
                     outline: "none",
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = t.indigo;
-                    e.currentTarget.style.boxShadow = `0 0 0 3px ${t.indigoRing}`;
+                    e.currentTarget.style.borderColor = t.copper;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${t.copperLine}`;
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = t.lineStrong;
@@ -232,11 +208,11 @@ export default function DesignSystemAccessibility() {
                 </label>
                 <button
                   style={{
-                    background: t.indigo,
+                    background: t.copper,
                     color: t.white,
                     border: "none",
                     padding: "12px 22px",
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontSize: 14,
                     fontWeight: 500,
                     cursor: "pointer",
@@ -244,7 +220,7 @@ export default function DesignSystemAccessibility() {
                     outline: "none",
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = `0 0 0 3px ${t.indigoRing}, 0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)`;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${t.copperLine}, 0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)`;
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)";
@@ -259,7 +235,7 @@ export default function DesignSystemAccessibility() {
               style={{
                 background: t.coal,
                 color: "#d8d2c0",
-                borderRadius: 10,
+                borderRadius: radius.lg,
                 padding: "20px 24px",
                 fontFamily: f.mono,
                 fontSize: 12,
@@ -268,13 +244,13 @@ export default function DesignSystemAccessibility() {
                 overflowX: "auto",
               }}
             >
-              <span style={{ color: "#6b6660", fontStyle: "italic" }}>{"/* Always use :focus-visible, not :focus */\n"}</span>
-              <span style={{ color: "#c4a8ff" }}>.btn</span>
+              <span style={{ color: "#6b6660" }}>{"/* Always use :focus-visible, not :focus */\n"}</span>
+              <span style={{ color: "#e8a978" }}>.btn</span>
               {":focus-visible {\n"}
               {"  outline: none;\n"}
-              {"  box-shadow: 0 0 0 3px var(--indigo-ring);\n"}
+              {"  box-shadow: 0 0 0 3px var(--ring); /* copper */\n"}
               {"}\n\n"}
-              <span style={{ color: "#6b6660", fontStyle: "italic" }}>{"/* Never `outline: none` without replacing it */\n"}</span>
+              <span style={{ color: "#6b6660" }}>{"/* Never `outline: none` without replacing it */\n"}</span>
             </pre>
           </div>
         </section>
@@ -290,7 +266,7 @@ export default function DesignSystemAccessibility() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               boxShadow: shadows.card,
               overflow: "hidden",
             }}
@@ -329,7 +305,7 @@ export default function DesignSystemAccessibility() {
                           color: t.coal,
                           background: t.creamSoft,
                           border: `1px solid ${t.line}`,
-                          borderRadius: 4,
+                          borderRadius: radius.sm,
                           padding: "3px 8px",
                           minWidth: 28,
                           textAlign: "center",
@@ -340,7 +316,7 @@ export default function DesignSystemAccessibility() {
                     </React.Fragment>
                   ))}
                 </div>
-                <div style={{ fontSize: 13, color: t.indigoGray, lineHeight: 1.55 }}>{row.use}</div>
+                <div style={{ fontSize: 13, color: t.inkMuted, lineHeight: 1.55 }}>{row.use}</div>
               </div>
             ))}
           </div>
@@ -396,7 +372,7 @@ export default function DesignSystemAccessibility() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 10,
+                  borderRadius: radius.lg,
                   padding: "18px 24px",
                   display: "grid",
                   gridTemplateColumns: "180px 1fr 1fr",
@@ -409,16 +385,16 @@ export default function DesignSystemAccessibility() {
                   style={{
                     fontFamily: f.mono,
                     fontSize: 11,
-                    color: t.indigo,
+                    color: t.inkMuted,
                     background: t.creamSoft,
                     padding: "6px 10px",
-                    borderRadius: 4,
+                    borderRadius: radius.sm,
                     lineHeight: 1.6,
                   }}
                 >
                   {row.code}
                 </code>
-                <div style={{ fontSize: 12, color: t.indigoGray, lineHeight: 1.55 }}>{row.use}</div>
+                <div style={{ fontSize: 12, color: t.inkMuted, lineHeight: 1.55 }}>{row.use}</div>
               </div>
             ))}
           </div>
@@ -435,7 +411,7 @@ export default function DesignSystemAccessibility() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: 36,
               boxShadow: shadows.card,
             }}
@@ -448,8 +424,8 @@ export default function DesignSystemAccessibility() {
                     style={{
                       width: 32,
                       height: 32,
-                      borderRadius: 8,
-                      background: t.indigo,
+                      borderRadius: radius.md,
+                      background: t.coal,
                       color: t.white,
                       border: "none",
                       cursor: "pointer",
@@ -466,7 +442,7 @@ export default function DesignSystemAccessibility() {
                       width: 32,
                       height: 32,
                       border: `2px dashed ${t.error}`,
-                      borderRadius: 8,
+                      borderRadius: radius.md,
                       pointerEvents: "none",
                     }}
                   />
@@ -483,8 +459,8 @@ export default function DesignSystemAccessibility() {
                     style={{
                       width: 44,
                       height: 44,
-                      borderRadius: 10,
-                      background: t.indigo,
+                      borderRadius: radius.lg,
+                      background: t.coal,
                       color: t.white,
                       border: "none",
                       cursor: "pointer",
@@ -501,7 +477,7 @@ export default function DesignSystemAccessibility() {
                       width: 44,
                       height: 44,
                       border: `2px dashed ${t.success}`,
-                      borderRadius: 10,
+                      borderRadius: radius.lg,
                       pointerEvents: "none",
                     }}
                   />
@@ -526,7 +502,7 @@ export default function DesignSystemAccessibility() {
             style={{
               background: t.coal,
               color: "#d8d2c0",
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "28px 32px",
               fontFamily: f.mono,
               fontSize: 13,
@@ -534,7 +510,7 @@ export default function DesignSystemAccessibility() {
               overflowX: "auto",
             }}
           >
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* Required on every product surface */\n"}
             </span>
             {"@media (prefers-reduced-motion: reduce) {\n"}
@@ -565,7 +541,7 @@ export default function DesignSystemAccessibility() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: 36,
               boxShadow: shadows.card,
             }}
@@ -574,14 +550,14 @@ export default function DesignSystemAccessibility() {
               <div>
                 <MonoLabel color={t.error}>Don't · color-only</MonoLabel>
                 <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-                  <div style={{ background: t.success100, padding: "10px 14px", borderRadius: 6, fontSize: 13, color: t.success }}>
+                  <div style={{ background: t.success100, padding: "10px 14px", borderRadius: radius.sm, fontSize: 13, color: t.success }}>
                     Email saved
                   </div>
-                  <div style={{ background: t.error100, padding: "10px 14px", borderRadius: 6, fontSize: 13, color: t.error }}>
+                  <div style={{ background: t.error100, padding: "10px 14px", borderRadius: radius.sm, fontSize: 13, color: t.error }}>
                     Email failed
                   </div>
                 </div>
-                <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 12, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 12, lineHeight: 1.5 }}>
                   Indistinguishable for users with deuteranopia (red-green
                   blindness, ~5% of men).
                 </p>
@@ -593,7 +569,7 @@ export default function DesignSystemAccessibility() {
                     style={{
                       background: t.success100,
                       padding: "10px 14px",
-                      borderRadius: 6,
+                      borderRadius: radius.sm,
                       fontSize: 13,
                       color: t.success,
                       display: "flex",
@@ -608,7 +584,7 @@ export default function DesignSystemAccessibility() {
                     style={{
                       background: t.error100,
                       padding: "10px 14px",
-                      borderRadius: 6,
+                      borderRadius: radius.sm,
                       fontSize: 13,
                       color: t.error,
                       display: "flex",
@@ -620,7 +596,7 @@ export default function DesignSystemAccessibility() {
                     ! Email failed — try again
                   </div>
                 </div>
-                <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 12, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 12, lineHeight: 1.5 }}>
                   Icon + bold label make state legible regardless of color
                   perception.
                 </p>
@@ -650,7 +626,7 @@ export default function DesignSystemAccessibility() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 10,
+                  borderRadius: radius.lg,
                   padding: "20px 24px",
                 }}
               >
@@ -665,7 +641,7 @@ export default function DesignSystemAccessibility() {
                 >
                   {row.name}
                 </h4>
-                <p style={{ fontSize: 13, color: t.indigoGray, margin: 0, lineHeight: 1.55 }}>
+                <p style={{ fontSize: 13, color: t.inkMuted, margin: 0, lineHeight: 1.55 }}>
                   {row.use}
                 </p>
               </div>

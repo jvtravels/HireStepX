@@ -16,6 +16,13 @@
 
 import React from "react";
 import { t, f, radius, shadows } from "../tokens";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 export type Tone = "good" | "warn" | "bad" | "neutral";
 
@@ -65,15 +72,21 @@ export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   );
   if (methodologyUrl) {
     return (
-      <a
-        href={methodologyUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={baseStyle}
-        title="See how we computed this cohort"
-      >
-        {inner}
-      </a>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a
+              href={methodologyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={baseStyle}
+            >
+              {inner}
+            </a>
+          </TooltipTrigger>
+          <TooltipContent>See how we computed this cohort</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
   return <span style={baseStyle}>{inner}</span>;
@@ -220,8 +233,8 @@ export function HeaderChip({
   children: React.ReactNode;
 }) {
   const isAccent = variant === "accent";
-  return (
-    <span
+  const chip = (
+    <Badge
       style={{
         display: "inline-block",
         padding: "3px 10px",
@@ -235,10 +248,18 @@ export function HeaderChip({
         fontFamily: f.mono,
         border: isAccent ? "none" : `1px solid ${t.line}`,
       }}
-      title={title}
     >
       {children}
-    </span>
+    </Badge>
+  );
+  if (!title) return chip;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{chip}</TooltipTrigger>
+        <TooltipContent>{title}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

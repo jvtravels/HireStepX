@@ -2,8 +2,9 @@
    Spacing · Radius · Elevation · Lines · Iconography
    The atomic units that scaffold every component. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, radius } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 function Hex({ v }: { v: string }) {
   return (
     <span
@@ -43,18 +44,18 @@ function SpaceRow({
       }}
     >
       <div style={{ fontFamily: f.mono, fontSize: 12, color: t.coal }}>{token}</div>
-      <div style={{ fontFamily: f.mono, fontSize: 12, color: t.indigo }}>{px}px</div>
+      <div style={{ fontFamily: f.mono, fontSize: 12, color: t.inkSoft }}>{px}px</div>
       <div>
         <div
           style={{
             height: 16,
             width: px,
-            background: t.copper,
+            background: t.gray[400],
             borderRadius: 2,
           }}
         />
       </div>
-      <div style={{ color: t.indigoGray, fontSize: 12 }}>{use}</div>
+      <div style={{ color: t.inkMuted, fontSize: 12 }}>{use}</div>
     </div>
   );
 }
@@ -74,15 +75,15 @@ function RadiusTile({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: 24,
       }}
     >
       <div
         style={{
           height: 100,
-          background: t.indigo100,
-          border: `1.5px solid ${t.indigo}`,
+          background: t.creamSoft,
+          border: `1.5px solid ${t.lineStrong}`,
           borderRadius: px,
           marginBottom: 14,
         }}
@@ -90,10 +91,10 @@ function RadiusTile({
       <div style={{ fontFamily: f.mono, fontSize: 11, color: t.coal, fontWeight: 500 }}>
         {token}
       </div>
-      <div style={{ fontFamily: f.mono, fontSize: 11, color: t.indigo, marginTop: 4 }}>
+      <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, marginTop: 4 }}>
         {px === 9999 ? "999px (pill)" : `${px}px`}
       </div>
-      <div style={{ fontSize: 12, color: t.indigoGray, marginTop: 8, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: t.inkMuted, marginTop: 8, lineHeight: 1.5 }}>
         {use}
       </div>
     </div>
@@ -115,7 +116,7 @@ function ShadowTile({
       style={{
         background: t.cream,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: 32,
       }}
     >
@@ -123,7 +124,8 @@ function ShadowTile({
         style={{
           height: 100,
           background: t.white,
-          borderRadius: 10,
+          border: `1px solid ${t.line}`,
+          borderRadius: radius.md,
           boxShadow: shadow,
           marginBottom: 24,
         }}
@@ -131,7 +133,7 @@ function ShadowTile({
       <div style={{ fontFamily: f.mono, fontSize: 11, color: t.coal, fontWeight: 500 }}>
         {token}
       </div>
-      <div style={{ fontSize: 12, color: t.indigoGray, marginTop: 8, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: t.inkMuted, marginTop: 8, lineHeight: 1.5 }}>
         {use}
       </div>
     </div>
@@ -155,7 +157,7 @@ function IconBox({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: 24,
         textAlign: "center",
       }}
@@ -186,7 +188,7 @@ function IconBox({
       <div style={{ fontFamily: f.mono, fontSize: 11, color: t.coal, fontWeight: 500 }}>
         {size}px · {weight}w
       </div>
-      <div style={{ fontSize: 12, color: t.indigoGray, marginTop: 6, lineHeight: 1.5 }}>{use}</div>
+      <div style={{ fontSize: 12, color: t.inkMuted, marginTop: 6, lineHeight: 1.5 }}>{use}</div>
     </div>
   );
 }
@@ -197,8 +199,7 @@ export default function DesignSystemFoundations() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -210,41 +211,11 @@ export default function DesignSystemFoundations() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header
-          style={{
-            borderBottom: `1px solid ${t.line}`,
-            paddingBottom: 40,
-            marginBottom: 64,
-          }}
-        >
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Foundations, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>multiplication</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            The atoms that scaffold every component. A 4px grid, six radii,
-            three elevations, and a single icon family. Multiply, never invent.
-          </p>
-        </header>
+        {/* HEADER */}
+        <PageHeader
+          title="Foundations"
+          description="The atoms that scaffold every component: a 4px spacing grid, three border radii, three near-flat elevations, and a single icon family. Reach for a token, never invent a one-off value."
+        />
 
         {/* 01 — SPACING */}
         <section style={{ marginBottom: 80 }}>
@@ -257,7 +228,7 @@ export default function DesignSystemFoundations() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               boxShadow: shadows.card,
               padding: "8px 0",
             }}
@@ -286,39 +257,29 @@ export default function DesignSystemFoundations() {
           <SectionHead
             num="02"
             title="Border radius"
-            desc="Six options. Each tied to a class of surface."
+            desc="Three sizes, plus a pill shape. Small-to-medium only — never sharp, never heavily rounded."
           />
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateColumns: "repeat(4, 1fr)",
               gap: 16,
             }}
           >
             <RadiusTile
               token="--radius-sm"
-              px={4}
+              px={6}
               use="Tags · hex chips · inline code"
             />
             <RadiusTile
               token="--radius-md"
-              px={6}
-              use="Form fields (small) · tight chips"
+              px={8}
+              use="Form fields · inputs · tight chips"
             />
             <RadiusTile
               token="--radius-lg"
               px={10}
-              use="Buttons · inputs · panels · default"
-            />
-            <RadiusTile
-              token="--radius-xl"
-              px={14}
-              use="Cards · modals · score panels"
-            />
-            <RadiusTile
-              token="--radius-2xl"
-              px={20}
-              use="Hero cards · large surfaces · bottom sheets"
+              use="Buttons · cards · panels · modals · default"
             />
             <RadiusTile
               token="--radius-pill"
@@ -327,9 +288,10 @@ export default function DesignSystemFoundations() {
             />
           </div>
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
-            <b style={{ color: t.coal, fontWeight: 600 }}>Rule:</b> bigger
-            surface, larger radius. Buttons sit at 10px. Cards at 14px. The
-            score card at 20px. Pills only for things shaped like ovals.
+            <b style={{ color: t.coal, fontWeight: 600 }}>Rule:</b> almost
+            everything sits at 8-10px. There's no separate "hero" or "large
+            surface" radius — cards, modals, and buttons all share
+            --radius-lg. Pills only for things shaped like ovals.
           </p>
         </section>
 
@@ -338,7 +300,7 @@ export default function DesignSystemFoundations() {
           <SectionHead
             num="03"
             title="Elevation"
-            desc="Three shadows. Soft, warm, never harsh. Built to sit on cream, not white."
+            desc="Three near-flat shadows. The border does the definition work — shadow is only ever a faint lift."
           />
           <div
             style={{
@@ -349,24 +311,26 @@ export default function DesignSystemFoundations() {
           >
             <ShadowTile
               token="--shadow-card"
-              shadow="0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)"
-              use="Default card lift. The 'sitting on cream' baseline."
+              shadow={shadows.card}
+              use="Default card lift, paired with a 1px border. The baseline for every panel."
             />
             <ShadowTile
               token="--shadow-cta"
-              shadow="0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)"
-              use="Primary CTAs. Slight extra grounding so buttons feel pressable."
+              shadow={shadows.cta}
+              use="Primary CTAs. A hair more presence so buttons feel pressable."
             />
             <ShadowTile
               token="--shadow-modal"
-              shadow="0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)"
-              use="Modals · drawers · floating menus. Lifted off the page."
+              shadow={shadows.modal}
+              use="Modals · drawers · floating menus. The only surfaces allowed real lift."
             />
           </div>
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
-            <b style={{ color: t.coal, fontWeight: 600 }}>Rule:</b> shadows are
-            warm-toned (rgba of coal, not pure black). Never use a default
-            grey-blue Material shadow — it clashes with the cream surface.
+            <b style={{ color: t.coal, fontWeight: 600 }}>Rule:</b> a 1px
+            border carries most surfaces on its own. Shadow is a supporting
+            detail, not the effect — reach for --shadow-card by default and
+            save --shadow-modal for things that actually float above the
+            page.
           </p>
         </section>
 
@@ -388,7 +352,7 @@ export default function DesignSystemFoundations() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 32,
               }}
             >
@@ -397,20 +361,20 @@ export default function DesignSystemFoundations() {
               <p
                 style={{
                   fontSize: 13,
-                  color: t.indigoGray,
+                  color: t.inkMuted,
                   margin: 0,
                   lineHeight: 1.6,
                 }}
               >
                 Card borders, section dividers, table rows. Quiet.
               </p>
-              <Hex v="#EBE5D2" />
+              <Hex v="#E4E4E7" />
             </div>
             <div
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 32,
               }}
             >
@@ -419,14 +383,14 @@ export default function DesignSystemFoundations() {
               <p
                 style={{
                   fontSize: 13,
-                  color: t.indigoGray,
+                  color: t.inkMuted,
                   margin: 0,
                   lineHeight: 1.6,
                 }}
               >
                 Input borders, focused state outlines, key dividers.
               </p>
-              <Hex v="#D6CDB5" />
+              <Hex v="#D4D4D8" />
             </div>
           </div>
         </section>
@@ -464,12 +428,12 @@ export default function DesignSystemFoundations() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 36px",
               boxShadow: shadows.card,
             }}
           >
-            <MonoLabel color={t.copper}>The icon set</MonoLabel>
+            <MonoLabel>The icon set</MonoLabel>
             <div
               style={{
                 marginTop: 24,
@@ -628,7 +592,7 @@ export default function DesignSystemFoundations() {
             style={{
               background: t.coal,
               color: "#d8d2c0",
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "28px 32px",
               fontFamily: f.mono,
               fontSize: 13,
@@ -638,11 +602,11 @@ export default function DesignSystemFoundations() {
               whiteSpace: "pre-wrap",
             }}
           >
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* HireStepX — Foundation tokens */\n"}
             </span>
             <span style={{ color: "#d8d2c0" }}>{":root {\n"}</span>
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>{"  /* Spacing — 4px grid */\n"}</span>
+            <span style={{ color: "#6b6660" }}>{"  /* Spacing — 4px grid */\n"}</span>
             <span style={{ color: "#c4a8ff" }}>{"  --space-1"}</span>:{" "}
             <span style={{ color: "#f4d4a8" }}>4px</span>;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --space-2"}</span>:{" "}
@@ -659,34 +623,30 @@ export default function DesignSystemFoundations() {
             <span style={{ color: "#f4d4a8" }}>48px</span>;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --space-16"}</span>:{" "}
             <span style={{ color: "#f4d4a8" }}>64px</span>;{"\n\n"}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>{"  /* Radius */\n"}</span>
+            <span style={{ color: "#6b6660" }}>{"  /* Radius */\n"}</span>
             <span style={{ color: "#c4a8ff" }}>{"  --radius-sm"}</span>:{" "}
-            <span style={{ color: "#f4d4a8" }}>4px</span>;{"\n"}
-            <span style={{ color: "#c4a8ff" }}>{"  --radius-md"}</span>:{" "}
             <span style={{ color: "#f4d4a8" }}>6px</span>;{"\n"}
+            <span style={{ color: "#c4a8ff" }}>{"  --radius-md"}</span>:{" "}
+            <span style={{ color: "#f4d4a8" }}>8px</span>;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --radius-lg"}</span>:{" "}
             <span style={{ color: "#f4d4a8" }}>10px</span>;{"\n"}
-            <span style={{ color: "#c4a8ff" }}>{"  --radius-xl"}</span>:{" "}
-            <span style={{ color: "#f4d4a8" }}>14px</span>;{"\n"}
-            <span style={{ color: "#c4a8ff" }}>{"  --radius-2xl"}</span>:{" "}
-            <span style={{ color: "#f4d4a8" }}>20px</span>;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --radius-pill"}</span>:{" "}
             <span style={{ color: "#f4d4a8" }}>999px</span>;{"\n\n"}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>{"  /* Elevation */\n"}</span>
+            <span style={{ color: "#6b6660" }}>{"  /* Elevation — near-flat */\n"}</span>
             <span style={{ color: "#c4a8ff" }}>{"  --shadow-card"}</span>:{" "}
-            <span style={{ color: "#f4d4a8" }}>0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)</span>
+            <span style={{ color: "#f4d4a8" }}>0 1px 2px rgba(24,24,27,.04)</span>
             ;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --shadow-cta"}</span>:{" "}
-            <span style={{ color: "#f4d4a8" }}>0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)</span>
+            <span style={{ color: "#f4d4a8" }}>0 1px 2px rgba(24,24,27,.06), 0 2px 6px -2px rgba(24,24,27,.10)</span>
             ;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --shadow-modal"}</span>:{" "}
-            <span style={{ color: "#f4d4a8" }}>0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)</span>
+            <span style={{ color: "#f4d4a8" }}>0 4px 12px -2px rgba(24,24,27,.10), 0 16px 32px -12px rgba(24,24,27,.16)</span>
             ;{"\n}"}
           </pre>
         </section>
 
         {/* FOOTER */}
-        <Footer section="Section" tagline="4px grid · One icon family · Three shadows · Six radii." />
+        <Footer section="Section" tagline="4px grid · One icon family · Three near-flat shadows · Three radii." />
       </div>
     </>
   );

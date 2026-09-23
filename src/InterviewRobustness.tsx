@@ -15,6 +15,12 @@
  */
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { e, ef } from "./interviewTokens";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /* ─── PaceMeter — sweet-spot bar shown while user is answering ─── */
 
@@ -47,31 +53,37 @@ export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, m
 
 export const RepeatButton = memo(function RepeatButton({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label="Repeat the question"
-      title="Repeat the question (Press R)"
-      className="iv-repeat-btn"
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-        borderRadius: 999, padding: "6px 12px", minHeight: 32,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.coal,
-        transition: "background 0.16s ease, border-color 0.16s ease",
-      }}
-      onMouseEnter={ev => { if (!disabled) { ev.currentTarget.style.background = "rgba(20,17,10,0.05)"; ev.currentTarget.style.borderColor = e.lineStrong; } }}
-      onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}
-    >
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <polyline points="1 4 1 10 7 10" />
-        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-      </svg>
-      Repeat
-    </button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            aria-label="Repeat the question"
+            className="iv-repeat-btn"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
+              borderRadius: 999, padding: "6px 12px", minHeight: 32,
+              cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.5 : 1,
+              fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.coal,
+              transition: "background 0.16s ease, border-color 0.16s ease",
+            }}
+            onMouseEnter={ev => { if (!disabled) { ev.currentTarget.style.background = "rgba(20,17,10,0.05)"; ev.currentTarget.style.borderColor = e.lineStrong; } }}
+            onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            Repeat
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Repeat the question (Press R)</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });
 

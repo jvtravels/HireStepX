@@ -260,12 +260,17 @@ export default async function InterviewPrepPage({
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Interview Prep", path: "/interview-prep" }]))} />
 
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
+          noindex meta tag above — only loading ads on the canonical page 1
+          keeps thin, noindexed pagination pages out of ad-serving scope. */}
+      {safePage === 1 && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <NavV2 />
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>

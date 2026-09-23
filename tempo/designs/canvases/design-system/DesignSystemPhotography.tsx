@@ -1,9 +1,19 @@
 /* HireStepX — Design System / Photography & Imagery
    When to use photos. When to skip. The visual language for marketing,
-   testimonials, and the surfaces that need a human face. */
+   testimonials, and the surfaces that need a human face.
+
+   2026-09 SaaS-flat conversion: the SUBJECT-MATTER guidance here (real over
+   stock, warm over cool, Indian faces, natural light) is unchanged — none
+   of that is about the retired editorial visual system, it's about what
+   makes a photo authentic to the brand. What's reworked is the on-page
+   presentation: caption/label typography now runs through the compact
+   `type` scale, card padding is denser, and the couple of places that used
+   to describe the treatment as "editorial" now describe it as restrained
+   and SaaS-clean instead. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, type, radius, shadows } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* "Photo" mockup — since we can't load real images in canvas, we render a
    stylized placeholder that conveys the treatment. Think of these as
    stand-ins for what a real photo would look like. */
@@ -81,52 +91,25 @@ export default function DesignSystemPhotography() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "80px 56px 120px",
+          padding: "48px 48px 96px",
           fontFamily: f.sans,
           color: t.coal,
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Photography, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>restraint</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            The product is image-free. Marketing, testimonials, and the
-            founder's About page are where photos live. Real over stock. Warm
-            over cool. A face you'd recognize, not a face from Adobe Stock.
-          </p>
-        </header>
+        <PageHeader
+          title="Photography, by restraint."
+          description="The product is image-free. Marketing, testimonials, and the founder's About page are where photos live. Real over stock. Warm over cool. A face you'd recognize, not a face from Adobe Stock."
+        />
 
         {/* 01 — WHEN TO USE / NOT USE */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="01"
             title="When to use photos · when not to"
@@ -156,7 +139,7 @@ export default function DesignSystemPhotography() {
                     key={i}
                     style={{
                       fontSize: 14,
-                      color: t.indigoGray,
+                      color: t.inkMuted,
                       lineHeight: 1.55,
                       paddingLeft: 16,
                       position: "relative",
@@ -182,7 +165,7 @@ export default function DesignSystemPhotography() {
               <MonoLabel color={t.error}>Avoid photography</MonoLabel>
               <ul style={{ margin: "16px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
                 {[
-                  "Auth screens · the editorial type does the work",
+                  "Auth screens · the type and layout already carry the page",
                   "Dashboard · data + UI is the visual interest",
                   "Onboarding · forms and progress, not faces",
                   "Pricing · pricing tables, not happy-people photos",
@@ -195,7 +178,7 @@ export default function DesignSystemPhotography() {
                     key={i}
                     style={{
                       fontSize: 14,
-                      color: t.indigoGray,
+                      color: t.inkMuted,
                       lineHeight: 1.55,
                       paddingLeft: 16,
                       position: "relative",
@@ -213,7 +196,7 @@ export default function DesignSystemPhotography() {
         </section>
 
         {/* 02 — TONE & TREATMENT */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="02"
             title="Tone & treatment"
@@ -224,14 +207,14 @@ export default function DesignSystemPhotography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 24,
                 boxShadow: shadows.card,
               }}
             >
               <PhotoPlaceholder warm treatment="Warm · ours" caption="" />
               <MonoLabel color={t.success}>Do · warm tones</MonoLabel>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: "12px 0 0", lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: t.inkMuted, margin: "12px 0 0", lineHeight: 1.6 }}>
                 Slight warm cast (+200 Kelvin from neutral). Sits naturally on
                 cream backgrounds. Skin tones lean honey, not pink. Natural
                 light, not studio strobes. Reads as "made for HireStepX."
@@ -241,14 +224,14 @@ export default function DesignSystemPhotography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 24,
                 boxShadow: shadows.card,
               }}
             >
               <PhotoPlaceholder treatment="Cool · not ours" caption="" />
               <MonoLabel color={t.error}>Don't · cool blue</MonoLabel>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: "12px 0 0", lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: t.inkMuted, margin: "12px 0 0", lineHeight: 1.6 }}>
                 Corporate stock signature. Blue cast clashes with cream
                 background. Skin tones go ashen. Reads as "every other SaaS."
                 Avoid on principle.
@@ -258,7 +241,7 @@ export default function DesignSystemPhotography() {
         </section>
 
         {/* 03 — APPROACH */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="03"
             title="Approach"
@@ -268,7 +251,7 @@ export default function DesignSystemPhotography() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -281,7 +264,7 @@ export default function DesignSystemPhotography() {
                 },
                 {
                   k: "Candid, not posed",
-                  v: "Mid-action, mid-thought, mid-laugh. Eye contact with the camera kills the editorial feel. We want the photo to feel observed, not performed.",
+                  v: "Mid-action, mid-thought, mid-laugh. Eye contact with the camera kills the candid, observed feel we want — not performed.",
                 },
                 {
                   k: "Indian faces",
@@ -293,7 +276,7 @@ export default function DesignSystemPhotography() {
                 },
                 {
                   k: "Negative space",
-                  v: "Compose with breathing room. Subject takes 30-50% of the frame, not 90%. Allows for type overlay and matches our editorial whitespace philosophy.",
+                  v: "Compose with breathing room. Subject takes 30-50% of the frame, not 90%. Leaves room for type overlay and matches the restrained, uncluttered look of the rest of the product.",
                 },
                 {
                   k: "One subject",
@@ -306,17 +289,16 @@ export default function DesignSystemPhotography() {
                 >
                   <span
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 18,
-                      color: t.copper,
-                      fontWeight: 500,
+                      fontFamily: f.sans,
+                      fontSize: type.h4.size,
+                      color: t.coal,
+                      fontWeight: type.h4.weight,
                       paddingTop: 1,
-                      letterSpacing: "-0.01em",
                     }}
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -324,7 +306,7 @@ export default function DesignSystemPhotography() {
         </section>
 
         {/* 04 — CROP & COMPOSITION */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="04"
             title="Crop & composition"
@@ -362,7 +344,7 @@ export default function DesignSystemPhotography() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                   padding: 24,
                   boxShadow: shadows.card,
                   display: "flex",
@@ -397,11 +379,10 @@ export default function DesignSystemPhotography() {
                 <div>
                   <div
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 22,
-                      fontWeight: 500,
+                      fontFamily: f.sans,
+                      fontSize: type.h3.size,
+                      fontWeight: type.h3.weight,
                       color: t.coal,
-                      letterSpacing: "-0.01em",
                     }}
                   >
                     {c.ratio}
@@ -409,7 +390,7 @@ export default function DesignSystemPhotography() {
                   <p
                     style={{
                       fontSize: 13,
-                      color: t.indigoGray,
+                      color: t.inkMuted,
                       margin: "6px 0 0",
                       lineHeight: 1.55,
                     }}
@@ -423,17 +404,17 @@ export default function DesignSystemPhotography() {
         </section>
 
         {/* 05 — TYPE OVERLAY */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="05"
             title="Type overlay"
-            desc="When type is set on a photo. Always Instrument Serif. Never on the subject's face."
+            desc="When type is set on a photo. Always AF Sobremesa. Never on the subject's face."
           />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: 32,
               boxShadow: shadows.card,
             }}
@@ -485,18 +466,16 @@ export default function DesignSystemPhotography() {
                 </span>
                 <h3
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 36,
-                    fontWeight: 400,
+                    fontFamily: f.sans,
+                    fontSize: type.h2.size,
+                    fontWeight: 600,
                     color: t.cream,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.1,
+                    letterSpacing: type.h2.letterSpacing,
+                    lineHeight: type.h2.lineHeight,
                     margin: "16px 0 12px",
                   }}
                 >
-                  From four rejections to two{" "}
-                  <em style={{ fontStyle: "italic", color: t.copper }}>offers</em>{" "}
-                  in six weeks.
+                  From four rejections to two offers in six weeks.
                 </h3>
                 <p
                   style={{
@@ -511,18 +490,18 @@ export default function DesignSystemPhotography() {
                 </p>
               </div>
             </div>
-            <p style={{ fontSize: 13, color: t.indigoGray, marginTop: 20, marginBottom: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 13, color: t.inkMuted, marginTop: 20, marginBottom: 0, lineHeight: 1.6 }}>
               <b style={{ color: t.coal, fontWeight: 600 }}>Rules:</b> type
-              always on the negative-space side · subject never covered · the
-              italic accent word still appears in copper · text-on-image
-              contrast must hit AA (4.5:1) — verify after color grading, not
-              before.
+              always on the negative-space side · subject never covered · no
+              decorative accent color on overlay copy — cream/white only ·
+              text-on-image contrast must hit AA (4.5:1) — verify after color
+              grading, not before.
             </p>
           </div>
         </section>
 
         {/* 06 — DON'TS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="06"
             title="Common photography mistakes"
@@ -532,7 +511,7 @@ export default function DesignSystemPhotography() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -540,17 +519,17 @@ export default function DesignSystemPhotography() {
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 14 }}>
               {[
                 "Stock photos of 'happy diverse professionals'. Detectable, generic, wrong tone.",
-                "Studio strobe lighting on faces. Reads as corporate headshot, not editorial.",
+                "Studio strobe lighting on faces. Reads as corporate headshot, not candid and real.",
                 "Heavy color grading (teal-and-orange Hollywood look). Distracting and dated.",
                 "Subject staring directly at the camera with a wide smile. Reads as advertisement.",
-                "Photos with on-image text in sans-serif. Always Instrument Serif for image type.",
+                "Photos with on-image text in sans-serif. Always AF Sobremesa for image type.",
                 "Generic Indian-themed visuals (lotus, saffron, taj mahal). Cliché. Use real candidates instead.",
                 "Tech-bro aesthetics (laptops on rooftops, hoodies + sunglasses). We're not that brand.",
                 "Group photos as the primary marketing visual. Individuals tell stories better.",
               ].map((line, i) => (
                 <li
                   key={i}
-                  style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6, paddingLeft: 18, position: "relative" }}
+                  style={{ fontSize: 14, color: t.inkMuted, lineHeight: 1.6, paddingLeft: 18, position: "relative" }}
                 >
                   <span style={{ position: "absolute", left: 0, color: t.error, fontWeight: 600 }}>×</span>
                   {line}

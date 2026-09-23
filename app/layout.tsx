@@ -185,7 +185,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://us.i.posthog.com" />
       </head>
-      <body className={`bg-[#FAF7F0] text-[#0E0C08] ${satoshi.variable}`}>
+      <body className={`bg-background text-foreground ${satoshi.variable}`}>
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
         {/* Route change announcer for screen readers */}
         <div

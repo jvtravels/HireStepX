@@ -7,6 +7,12 @@ import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const navItems = [
   {
@@ -79,52 +85,58 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
 
   return (
     <div ref={menuRef} style={{ position: "relative" }}>
-      <button
-        type="button"
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        aria-label={`Account: ${display}`}
-        title={display}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          fontFamily: f.sans,
-          fontSize: 14,
-          fontWeight: 500,
-          color: t.coal,
-          background: "transparent",
-          border: `1px solid ${menuOpen ? t.lineStrong : "transparent"}`,
-          borderRadius: 999,
-          padding: "4px 10px 4px 4px",
-          cursor: "pointer",
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 999,
-            background: t.indigo100,
-            color: t.indigo,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: f.serif,
-            fontSize: 13,
-          }}
-        >
-          {initials}
-        </span>
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
-          {display}
-        </span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label={`Account: ${display}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontFamily: f.sans,
+                fontSize: 14,
+                fontWeight: 500,
+                color: t.coal,
+                background: "transparent",
+                border: `1px solid ${menuOpen ? t.lineStrong : "transparent"}`,
+                borderRadius: 999,
+                padding: "4px 10px 4px 4px",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  background: t.indigo100,
+                  color: t.indigo,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: f.serif,
+                  fontSize: 13,
+                }}
+              >
+                {initials}
+              </span>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+                {display}
+              </span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{display}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       {menuOpen && (
         <div
           role="menu"

@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { t, f, shadows, radius } from "../tokens";
 import type { CredibilitySummary } from "../../_credibilityCallout";
+import { Badge } from "@/components/ui/badge";
 
 export function CredibilitySection({
   summary,
@@ -32,7 +33,7 @@ export function CredibilitySection({
       }}
     >
       <header style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span
+        <Badge
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -50,7 +51,7 @@ export function CredibilitySection({
           aria-label={`${summary.count} credibility issue${summary.count === 1 ? "" : "s"}`}
         >
           {summary.count}
-        </span>
+        </Badge>
         <h2
           style={{
             margin: 0,

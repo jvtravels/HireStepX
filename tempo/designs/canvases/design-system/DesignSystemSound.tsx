@@ -2,8 +2,9 @@
    Voice character · audio cues · when to use sound, when to skip.
    The product is voice-led. The sound has to be on-brand. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, type, radius } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* Animated waveform — visualizes a sound character */
 function Waveform({
   bars = 24,
@@ -62,8 +63,7 @@ export default function DesignSystemSound() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -75,36 +75,11 @@ export default function DesignSystemSound() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Sound, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>presence</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            HireStepX is a voice-led product. The AI interviewer's voice IS
-            the brand most of the time the user is engaged. Get it right, the
-            rest is context.
-          </p>
-        </header>
+        {/* HEADER */}
+        <PageHeader
+          title="Sound, by presence."
+          description="HireStepX is a voice-led product. The AI interviewer's voice is the brand most of the time the user is engaged. Get it right, the rest is context."
+        />
 
         {/* 01 — VOICE CHARACTER */}
         <section style={{ marginBottom: 80 }}>
@@ -117,7 +92,7 @@ export default function DesignSystemSound() {
             style={{
               background: t.coal,
               color: t.cream,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "48px 56px",
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -129,23 +104,20 @@ export default function DesignSystemSound() {
               <MonoLabel color={t.copper}>Default voice · Neerja</MonoLabel>
               <h3
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: 40,
-                  fontWeight: 400,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
+                  fontFamily: f.sans,
+                  fontSize: type.h1.size,
+                  fontWeight: type.h1.weight,
+                  letterSpacing: type.h1.letterSpacing,
+                  lineHeight: type.h1.lineHeight,
                   margin: "16px 0 24px",
                   color: t.cream,
                 }}
               >
-                Calm. Warm.{" "}
-                <em style={{ fontStyle: "italic", color: t.copper }}>
-                  Indian English.
-                </em>
+                Calm. Warm. Indian English.
               </h3>
               <p
                 style={{
-                  fontSize: 14,
+                  fontSize: type.body.size,
                   color: "rgba(250, 247, 240, .80)",
                   lineHeight: 1.7,
                   margin: 0,
@@ -160,7 +132,7 @@ export default function DesignSystemSound() {
               style={{
                 background: "rgba(180, 83, 9, 0.08)",
                 border: "1px solid rgba(180, 83, 9, 0.20)",
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: "32px 28px",
                 color: t.copper,
               }}
@@ -187,7 +159,7 @@ export default function DesignSystemSound() {
               marginTop: 16,
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -227,7 +199,7 @@ export default function DesignSystemSound() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </React.Fragment>
               ))}
             </div>
@@ -267,7 +239,7 @@ export default function DesignSystemSound() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                   padding: "28px 28px 32px",
                   boxShadow: shadows.card,
                 }}
@@ -275,12 +247,12 @@ export default function DesignSystemSound() {
                 <MonoLabel color={p.color}>{p.role}</MonoLabel>
                 <h4
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 22,
-                    fontWeight: 500,
+                    fontFamily: f.sans,
+                    fontSize: type.h2.size,
+                    fontWeight: type.h2.weight,
                     margin: "10px 0 16px",
                     color: t.coal,
-                    letterSpacing: "-0.01em",
+                    letterSpacing: type.h2.letterSpacing,
                   }}
                 >
                   {p.voice}
@@ -291,7 +263,7 @@ export default function DesignSystemSound() {
                 <p
                   style={{
                     fontSize: 13,
-                    color: t.indigoGray,
+                    color: t.inkMuted,
                     margin: 0,
                     lineHeight: 1.6,
                   }}
@@ -322,7 +294,7 @@ export default function DesignSystemSound() {
                 background: t.white,
                 border: `1px solid ${t.line}`,
                 borderLeft: `3px solid ${t.success}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 32,
                 boxShadow: shadows.card,
               }}
@@ -343,7 +315,7 @@ export default function DesignSystemSound() {
                 ].map((s) => (
                   <li key={s.name}>
                     <div style={{ fontSize: 14, fontWeight: 500, color: t.coal }}>{s.name}</div>
-                    <div style={{ fontSize: 13, color: t.indigoGray, marginTop: 4, lineHeight: 1.55 }}>
+                    <div style={{ fontSize: 13, color: t.inkMuted, marginTop: 4, lineHeight: 1.55 }}>
                       {s.detail}
                     </div>
                   </li>
@@ -355,7 +327,7 @@ export default function DesignSystemSound() {
                 background: t.white,
                 border: `1px solid ${t.line}`,
                 borderLeft: `3px solid ${t.error}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 32,
                 boxShadow: shadows.card,
               }}
@@ -374,7 +346,7 @@ export default function DesignSystemSound() {
                     key={i}
                     style={{
                       fontSize: 13,
-                      color: t.indigoGray,
+                      color: t.inkMuted,
                       lineHeight: 1.55,
                       paddingLeft: 16,
                       position: "relative",
@@ -402,7 +374,7 @@ export default function DesignSystemSound() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -455,7 +427,7 @@ export default function DesignSystemSound() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -505,7 +477,7 @@ export default function DesignSystemSound() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 10,
+                  borderRadius: radius.lg,
                   padding: "20px 28px",
                   display: "grid",
                   gridTemplateColumns: "200px 1fr",
@@ -516,9 +488,8 @@ export default function DesignSystemSound() {
                 <MonoLabel color={t.copper}>{row.ctx}</MonoLabel>
                 <p
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 16,
-                    fontStyle: "italic",
+                    fontFamily: f.sans,
+                    fontSize: type.h4.size,
                     color: t.coal,
                     margin: 0,
                     lineHeight: 1.55,
@@ -548,7 +519,7 @@ export default function DesignSystemSound() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -565,7 +536,7 @@ export default function DesignSystemSound() {
               ].map((s, i) => (
                 <li
                   key={i}
-                  style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6, paddingLeft: 18, position: "relative" }}
+                  style={{ fontSize: 14, color: t.inkMuted, lineHeight: 1.6, paddingLeft: 18, position: "relative" }}
                 >
                   <span style={{ position: "absolute", left: 0, color: t.success, fontWeight: 600 }}>✓</span>
                   {s}

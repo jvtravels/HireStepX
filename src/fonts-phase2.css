@@ -1,0 +1,136 @@
+/* ─── Phase 2 typography (NOT wired into production) ───────────────────────
+   AF Sobremesa, added for future design exploration only. This file is
+   intentionally NOT imported by src/index.css or app/layout.tsx — importing
+   it anywhere in the production render path is the only way it takes effect,
+   so until that happens the live app's typography is untouched. Import it
+   explicitly from a phase-2 canvas/prototype when that work starts. ─────── */
+
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-ThinItalic.woff2') format('woff2');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-ExtraLight.woff2') format('woff2');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-ExtraLightItalic.woff2') format('woff2');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-MediumItalic.woff2') format('woff2');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-SemiBoldItalic.woff2') format('woff2');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-ExtraBoldItalic.woff2') format('woff2');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'AF Sobremesa';
+  src: url('/fonts/AF Sobremesa 1.0.2 [Personal Use]/AF Sobremesa - Web TT/AFSobremesa-BlackItalic.woff2') format('woff2');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Usage in phase-2 work: import this file, then apply
+   font-family: 'AF Sobremesa', serif;  (or whatever fallback fits) */

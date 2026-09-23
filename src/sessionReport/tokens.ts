@@ -1,65 +1,56 @@
 /* Session Report — local design tokens.
-   These mirror the canvas at `tempo/designs/canvases/design-system/_tokens.ts`
-   verbatim. The report is an opinionated cream/indigo/copper editorial
-   surface that reads as its own "world" inside the otherwise dark-luxury
-   product chrome — same pattern as a reading-pane in an email client.
+   Re-derives its palette from `src/auth/_tokens.ts` (the app's single
+   source of truth for brand color) instead of hand-rolling its own hex
+   values, so the two never drift out of sync. Key names are kept
+   report-local (t.cream, t.copper, …) because the report's role
+   vocabulary (wash/tint/mid/border) differs from the shared scale's,
+   and radius/space below are report-specific layout scales with no
+   shared-token equivalent. */
 
-   Kept self-contained in `src/sessionReport/` so the rest of the app
-   can keep using `src/tokens.ts` (obsidian/gilt) without conflict, and
-   so a future reskin of either side touches one file, not both. */
+import { tokens as T, fonts as F, shadows as S } from "../auth/_tokens";
 
 export const t = {
   /* Surface */
-  cream: "#FAF7F0",
-  white: "#FFFFFF",
-  creamSoft: "#F4EFE3",
+  cream: T.cream,
+  white: T.white,
+  creamSoft: T.creamSoft,
 
-  /* Ink — 2026-05-26 a11y pass.
-     `inkSoft` and `inkFaint` were darkened to clear WCAG AA on the
-     cream/creamSoft surfaces. The prior values (#6E6759 → ~4.2:1
-     and #A39C8B → ~2.5:1 on creamSoft) failed AA for body text and
-     for any non-large text respectively. New values land at ~5.4:1
-     and ~3.5:1 while preserving the warm-gray temperature so the
-     editorial register doesn't shift. */
-  coal: "#0E0C08",
-  indigoGray: "#3E3A6E",
-  inkSoft: "#5A5448",
-  inkFaint: "#888070",
+  /* Ink */
+  coal: T.coal,
+  indigoGray: T.indigoGray,
+  inkSoft: T.inkSoft,
+  inkFaint: T.inkFaint,
 
   /* Brand — interactive */
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  indigoRing: "rgba(49, 46, 129, 0.20)",
-  /* indigoWash / indigoTint — 2026-05-29 final-pass. Faint/mid indigo
-     surfaces on white. Used by sr-QuestionDetail (firstPerson highlight
-     swatch) and sr-NextStepsSection (try-again card bg). The 0.20 `Ring`
-     stays reserved for focus / emphasis rings. */
-  indigoWash: "rgba(49, 46, 129, 0.04)",
+  indigo: T.indigo,
+  indigoDeep: T.indigoDeep,
+  indigo100: T.indigo100,
+  indigoRing: T.indigoRing,
+  /* indigoWash / indigoTint — faint/mid indigo surfaces on white. Used by
+     sr-QuestionDetail (firstPerson highlight swatch) and
+     sr-NextStepsSection (try-again card bg). The 0.20 `Ring` stays
+     reserved for focus / emphasis rings. */
+  indigoWash: T.indigoMist,
   indigoTint: "rgba(49, 46, 129, 0.10)",
 
-  /* Brand — editorial.
-     2026-05-28 audit: the four extra tints below replace six hardcoded
-     `rgba(180, 83, 9, …)` strings (alphas 0.06 / 0.08 / 0.18 / 0.20) that
-     were sprinkled across PhaseLadder, ToneCard, SectionBand Part 2,
-     CohortPlacement, ArchetypePanel, and AmountPill. Named by their role
-     on the surface (wash / tint / mid / border) rather than by alpha,
-     so a future tightening of the copper scale touches one file. */
-  copper: "#B45309",
-  copperWash: "rgba(180, 83, 9, 0.06)",   // faintest wash (next-row in PhaseLadder)
-  copperTint: "rgba(180, 83, 9, 0.08)",   // tone-card warn bg + Part 2 section band
-  copperSoft: "rgba(180, 83, 9, 0.12)",   // mid-tint (archetype bar bg, accent chip)
-  copperMid:  "rgba(180, 83, 9, 0.18)",   // distribution band middle (cohort bar)
-  copperBorder: "rgba(180, 83, 9, 0.20)", // copper-toned border (AmountPill ask)
-  copper100: "#F4E5D8",
+  /* Brand — editorial. Named by role on the surface (wash / tint / mid /
+     border) rather than by alpha, so a future tightening of the copper
+     scale touches one file (`auth/_tokens.ts`). */
+  copper: T.copper,
+  copperWash: T.copperWash,     // faintest wash (next-row in PhaseLadder)
+  copperTint: T.copperTint,     // tone-card warn bg + Part 2 section band
+  copperSoft: T.copperSoft,     // mid-tint (archetype bar bg, accent chip)
+  copperMid:  T.copperMid,      // distribution band middle (cohort bar)
+  copperBorder: T.copperBorder, // copper-toned border (AmountPill ask)
+  copper100: T.copper100,
 
   /* Status */
-  success: "#15803D",
-  success100: "#DCFCE7",
-  error: "#B91C1C",
-  error100: "#FEE2E2",
-  warning: "#A16207",
-  warning100: "#FEF3C7",
+  success: T.success,
+  success100: T.success100,
+  error: T.error,
+  error100: T.error100,
+  warning: T.warning,
+  warning100: T.warning100,
 
   /* Verdict washes — 2026-05-29 split, extracted from inline rgba()
      strings in VERDICT_META (SessionReportView). Each verdict gets a
@@ -146,13 +137,9 @@ export const t = {
 } as const;
 
 export const f = {
-  /* Instrument Serif + JetBrains Mono loaded by `app/layout.tsx`.
-     Satoshi is the primary UI font, loaded from Fontshare CDN via <link>
-     in app/layout.tsx. Inter has been removed from the stack. */
-  serif: "'Instrument Serif', Georgia, serif",
-  sans:
-    "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  mono: "'JetBrains Mono', 'SF Mono', monospace",
+  serif: F.serif,
+  sans: F.sans,
+  mono: F.mono,
 } as const;
 
 /* Radius scale. Prior to 2026-05-26 these were sprinkled as magic
@@ -203,7 +190,7 @@ export const brand = {
 } as const;
 
 export const shadows = {
-  card: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-  cta: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-  modal: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
+  card: S.card,
+  cta: S.cta,
+  modal: S.modal,
 } as const;

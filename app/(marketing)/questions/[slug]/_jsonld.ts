@@ -144,6 +144,18 @@ function buildSalaryTeaser(page: SeoPage): SalaryTeaser | null {
   };
 }
 
+/* Tier 3 pages share byte-identical question sets across dozens of
+   unrelated-company slugs (see questionsForPage above) — the exact
+   "low value / duplicate content" pattern AdSense's site-wide quality
+   review flags, not just the subset GSC happens to sample into its
+   Coverage report. Used by both generateMetadata (per-page noindex)
+   and sitemap.ts (don't submit noindexed URLs for crawling). */
+export function isThinDuplicateQuestionsPage(slug: string): boolean {
+  const page = getSeoPageBySlug(slug);
+  if (!page) return false;
+  return questionsForPage(page).tier === 3;
+}
+
 export function buildQuestionsPageModel(slug: string) {
   const page = getSeoPageBySlug(slug);
   if (!page) return null;

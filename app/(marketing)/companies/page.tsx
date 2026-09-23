@@ -26,35 +26,61 @@ import {
 
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
-  title: "Company Interview Questions India 2026 | HireStepX",
-  description:
-    "Interview questions for 200+ companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.",
-  keywords: [
-    "company interview questions India",
-    "TCS interview questions 2026",
-    "Google interview questions India",
-    "Amazon interview questions India",
-    "Flipkart interview questions",
-    "interview questions all companies India",
-  ].join(", "),
-  alternates: { canonical: "/companies" },
-  openGraph: {
-    type: "website",
-    title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
-    url: "https://hirestepx.com/companies",
-    siteName: "HireStepX",
-    locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Company Interview Questions" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Company Interview Questions India 2026 | HireStepX",
-    description: "Practice guides for 200+ companies: AI voice mock interviews available free.",
-    images: ["https://hirestepx.com/opengraph-image"],
-  },
-};
+/* GSC: this page's title had no concrete figure in it — same pattern that
+   measurably hurt CTR on /questions and the narrow-roster /salary pages
+   before those got a real number added (see their generateMetadata
+   comments). Reuse the same fix here with the actual indexed company count. */
+const totalCompanies = new Set(SEO_PAGES.map((p) => p.company)).size;
+
+/* ?page=N renders a real, separately-crawlable subset of the company
+   directory (see companyPageHref below), but alternates.canonical always
+   points back to plain /companies — same self-canonical-but-not-noindexed
+   gap as /questions and /salary (see their generateMetadata comments).
+   Without a matching noindex, Google is free to index each page of the
+   directory separately, which is the thin/duplicate-URL pattern behind
+   the AdSense "Low value content" flag. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+
+  const title = `${totalCompanies} Company Interview Questions India 2026 | HireStepX`;
+  const ogTitle = `${totalCompanies} Company Interview Questions — India 2026`;
+
+  return {
+    title,
+    description:
+      `Interview questions for ${totalCompanies} companies in India, including TCS, Infosys, Google, Amazon, Flipkart, and Razorpay. Practice with AI voice mock interviews.`,
+    keywords: [
+      "company interview questions India",
+      "TCS interview questions 2026",
+      "Google interview questions India",
+      "Amazon interview questions India",
+      "Flipkart interview questions",
+      "interview questions all companies India",
+    ].join(", "),
+    alternates: { canonical: "/companies" },
+    ...(pageNum === 1 ? {} : { robots: { index: false, follow: true } }),
+    openGraph: {
+      type: "website",
+      title: ogTitle,
+      description: `Practice guides for ${totalCompanies} companies: AI voice mock interviews available free.`,
+      url: "https://hirestepx.com/companies",
+      siteName: "HireStepX",
+      locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Company Interview Questions" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: `Practice guides for ${totalCompanies} companies: AI voice mock interviews available free.`,
+      images: ["https://hirestepx.com/opengraph-image"],
+    },
+  };
+}
 
 /* ── Label maps ─────────────────────────────────────────────────────── */
 
@@ -251,12 +277,17 @@ export default async function CompaniesIndexPage({
           .co-group-label { width: 100% !important; }
         }
       `}</style>
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
+          noindex meta tag above — only loading ads on the canonical page 1
+          keeps thin, noindexed pagination pages out of ad-serving scope. */}
+      {safePage === 1 && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 

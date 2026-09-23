@@ -5,7 +5,7 @@ import { getSeoPageBySlug, getAllSeoSlugs } from "../../../../data/seo-pages";
 import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
-import { buildQuestionsPageModel } from "./_jsonld";
+import { buildQuestionsPageModel, isThinDuplicateQuestionsPage } from "./_jsonld";
 
 /* /questions/[slug] — static SEO pages for long-tail interview queries.
  *
@@ -24,32 +24,20 @@ import { buildQuestionsPageModel } from "./_jsonld";
    ISR writes every day across ~326 pages (see Vercel Usage: ISR Writes). */
 export const revalidate = 2592000; /* 30 days */
 
-/* GSC Coverage (Sept 2026): "Crawled - currently not indexed", 27 URLs.
- * Of the 14 /questions/[slug] URLs in that report, 11 fall back to the
- * generic focus-only question set (tier 3 in _jsonld.ts's questionsForPage)
- * — byte-identical content shared with dozens of other unrelated-company
- * pages, which is exactly the kind of duplicate content Google declines to
- * index. The other 3 flagged slugs (atlassian-behavioral, swiggy-pm,
- * razorpay-pm) already have genuine company-specific question sets and
- * aren't duplicates, so they're deliberately left indexable here — the
- * "not indexed" status for those has some other cause and noindexing them
- * would just be giving up on real content.
- * Scoped to exactly this list, not all tier-3 pages (269 of 326) — see
- * SEO GSC fix discussion. Revisit per-slug as company-specific question
- * banks are added. */
-const NOINDEX_THIN_DUPLICATE_SLUGS = new Set([
-  "jane-street-swe-interview-questions",
-  "deutsche-bank-system-design-interview-questions",
-  "lowes-india-software-engineer-interview-questions",
-  "bcg-case-interview-practice",
-  "cognizant-genc-interview-questions",
-  "jpmorgan-interview-questions-india",
-  "ibm-freshers-interview-questions",
-  "de-shaw-quant-interview-questions",
-  "phonepe-engineering-interview-questions",
-  "morgan-stanley-system-design-interview-questions",
-  "meesho-pm-interview-questions",
-]);
+/* AdSense flagged the site for "Low value content" (policy 10015918):
+ * pages must deliver what they promise, not misattribute content.
+ * GSC Coverage (Sept 2026) had already sampled 11 of these into "Crawled
+ * - currently not indexed", but the underlying cause is site-wide: any
+ * tier-3 /questions/[slug] page falls back to the generic focus-only
+ * question set (see questionsForPage in _jsonld.ts) — byte-identical
+ * content shared across dozens of unrelated-company pages, claiming
+ * "asked at {company}" attribution it can't back. That's 269 of 326
+ * pages, not just the 11 GSC happened to sample. Noindexing all of them
+ * (via isThinDuplicateQuestionsPage) closes the gap instead of playing
+ * whack-a-mole per GSC report. Tier 1/2 pages (genuine company-specific
+ * question sets) stay indexable. Revisit per-slug as company-specific
+ * question banks are added — moving a slug to tier 1/2 makes it
+ * indexable again automatically. */
 
 /* ─── generateStaticParams — pre-renders every slug at build time ────────── */
 
@@ -94,7 +82,7 @@ export async function generateMetadata(
     description,
     keywords: page.metaKeywords.join(", "),
     alternates: { canonical: `/questions/${slug}` },
-    ...(NOINDEX_THIN_DUPLICATE_SLUGS.has(slug) ? { robots: { index: false, follow: true } } : {}),
+    ...(isThinDuplicateQuestionsPage(slug) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       type: "article",
       title,
@@ -138,12 +126,22 @@ export default async function QuestionsSlugPage({
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}
 
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad-serving crawler) evaluates pages
+          where ads actually render for policy compliance, and isn't governed
+          by the `robots: noindex` meta tag above — that only stops Google
+          Search from indexing the page. Loading the ad script unconditionally
+          here means every tier-3 thin/duplicate page kept serving ads and
+          staying in scope for AdSense's "Low value content" review even
+          after it was pulled from search results. Gate ad loading on the
+          same tier check so thin pages stop serving ads outright. */}
+      {!isThinDuplicateQuestionsPage(slug) && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <NavV2 />
       {/* Page body */}
       <QuestionSetPage

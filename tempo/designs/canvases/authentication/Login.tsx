@@ -1,18 +1,21 @@
 /* HireStepX — Authentication / Login
    Page composition. Atoms in _auth-fields, styles in _auth-styles,
    validation in _auth-validation, analytics in _auth-analytics.
-   Discipline rule: Indigo is interactive · Copper is editorial · Never mix. */
+
+   Phase-2 redesign: rebuilt on shadcn/ui primitives (Button, Input, Label,
+   Checkbox, Alert) + Tailwind theme tokens instead of the legacy _tokens.ts
+   palette, with the AF Sobremesa display font on the headline (loaded from
+   tempo/public/fonts/af-sobremesa.css — canvas-host only, never wired into
+   the production app). Scoped to this screen only; Signup/ForgotPassword/
+   ResetPassword are untouched. */
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
-import {
-  Field,
-  Checkbox,
-  Wordmark,
-  GoogleIcon,
-  Spinner,
-  EyeIcon,
-} from "./_auth-fields";
-import { AUTH_STYLES } from "./_auth-styles";
+import "../../../public/fonts/af-sobremesa.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { GoogleIcon, Spinner, EyeIcon } from "./_auth-fields";
 import {
   passwordHasEdgeWhitespace,
   sanitizeEmail,
@@ -59,15 +62,10 @@ export default function Login({
   /** Anti-double-submit guard for Google OAuth (no loading prop for it). */
   const [googleInFlight, setGoogleInFlight] = useState(false);
 
-  // Validation — uses trimmed value internally so leading/trailing
-  // whitespace doesn't slip through to the server.
   const emailV = validateEmail(email);
   const passwordV = validatePassword(password);
   const canSubmit = emailV.valid && passwordV.valid && !loading;
 
-  // Show inline error only after the user has touched (focused) the field
-  // AND their value is invalid. Prevents the "yelling at me before I've typed"
-  // anti-pattern.
   const emailError = emailTouched ? emailV.message : null;
   const passwordError = passwordTouched
     ? passwordV.message ||
@@ -76,9 +74,6 @@ export default function Login({
         : null)
     : null;
 
-  // Analytics: fire login_viewed exactly once on mount, even if `variant`
-  // prop changes mid-session. Capture variant via ref to avoid the
-  // "[variant]" dep firing the event twice.
   const variantRef = useRef(variant);
   variantRef.current = variant;
   useEffect(() => {
@@ -86,7 +81,6 @@ export default function Login({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-hide password after timeout — over-shoulder protection.
   useEffect(() => {
     if (!showPassword) return;
     const id = setTimeout(
@@ -96,8 +90,6 @@ export default function Login({
     return () => clearTimeout(id);
   }, [showPassword]);
 
-  // autoFocus only on initial mount + only if the page is the active tab.
-  // Prevents focus-stealing if the user opens this in a background tab.
   const [shouldAutoFocus] = useState(() => {
     if (typeof document === "undefined") return false;
     return document.visibilityState === "visible";
@@ -108,20 +100,14 @@ export default function Login({
     setGoogleInFlight(true);
     trackAuth({ type: "login_method_selected", method: "google" });
     trackAuth({ type: "login_submitted", method: "google" });
-    // Re-enable after a beat in case OAuth flow is cancelled
     setTimeout(() => setGoogleInFlight(false), 2000);
   }, [googleInFlight, loading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mark both fields touched so per-field errors surface even if the
-    // user pressed Enter without ever focusing (e.g., from autofill).
     setEmailTouched(true);
     setPasswordTouched(true);
     if (!canSubmit) return;
-    // Sanitize before any downstream consumer (analytics + API). The state
-    // value remains the user's raw input so the field doesn't repaint
-    // mid-submit; the sanitized form is what we send to the server.
     const cleanEmail = sanitizeEmail(email);
     void cleanEmail; // production wiring: pass to supabase.auth.signInWithPassword
     trackAuth({ type: "login_method_selected", method: "email" });
@@ -135,412 +121,238 @@ export default function Login({
     });
   };
 
+  const isGhost = !canSubmit && !loading;
+
   return (
-    <>
-      <style>{AUTH_STYLES}</style>
-      <div
-        style={{
-          background: t.cream,
-          minHeight: "100dvh",
-          fontFamily: f.sans,
-          color: t.coal,
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {/* Top bar */}
-        <header
-          className="hsx-login-topbar"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "32px 48px",
-            gap: 16,
-          }}
-        >
-          <Wordmark />
-          <div
-            className="hsx-login-signup-prompt"
-            style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      {/* Top bar */}
+      <header className="flex items-center justify-between gap-4 px-6 py-8 sm:px-12">
+        <div className="flex items-baseline gap-0 text-xl font-semibold tracking-tight">
+          <span>HireStep</span>
+          <span className="text-primary italic">X</span>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          <span>Don&apos;t have an account? </span>
+          <a
+            href="#signup"
+            onClick={() => trackAuth({ type: "login_signup_clicked" })}
+            className="font-semibold text-primary underline-offset-4 hover:underline"
           >
-            <span className="hsx-login-signup-text">
-              Don't have an account?{" "}
-            </span>
-            <a
-              href="#signup"
-              className="hsx-link-indigo"
-              onClick={() => trackAuth({ type: "login_signup_clicked" })}
-              style={{
-                color: t.indigo,
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Sign up
-            </a>
-          </div>
-        </header>
+            Sign up
+          </a>
+        </div>
+      </header>
 
-        {/* Centered hero + form */}
-        <main
-          className="hsx-login-main"
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "clamp(24px, 4vh, 64px) 24px",
-          }}
-        >
-          {/* Hero — full-width container with one-line headline at desktop.
-              CSS @media in _styles re-enables wrapping below 900px viewport. */}
-          <div
-            className="hsx-login-hero"
-            style={{
-              width: "100%",
-              textAlign: "center",
-              marginBottom: 36,
-            }}
+      {/* Centered hero + form */}
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-8 sm:py-16">
+        <div className="mb-9 w-full max-w-xl text-center">
+          <h1
+            id="login-heading"
+            className="text-4xl leading-[1.05] font-normal tracking-tight text-balance sm:text-6xl"
+            style={{ fontFamily: "'AF Sobremesa', serif" }}
           >
-            <h1
-              id="login-heading"
-              style={{
-                fontFamily: f.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
-                lineHeight: 1.05,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                whiteSpace: "nowrap",
-                margin: 0,
-                color: t.coal,
-              }}
-            >
-              Clarity{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                wins
-              </em>{" "}
-              interviews
-            </h1>
-            <p
-              className="hsx-login-subtitle"
-              style={{
-                fontFamily: f.sans,
-                fontSize: 16,
-                lineHeight: 1.55,
-                color: t.inkSoft,
-                marginTop: 18,
-                marginBottom: 0,
-                textWrap: "balance",
-              }}
-            >
-              Practise interviews. Improve how you think under pressure. One
-              answer at a time.
-            </p>
+            Clarity <em className="text-primary">wins</em> interviews
+          </h1>
+          <p className="mt-4 text-base text-muted-foreground text-balance">
+            Practise interviews. Improve how you think under pressure. One
+            answer at a time.
+          </p>
+        </div>
+
+        <div className="w-full max-w-[420px]">
+          {/* Google CTA */}
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={handleGoogle}
+            disabled={googleInFlight || loading}
+            aria-busy={googleInFlight || undefined}
+            className="h-12 w-full gap-3 text-[15px] font-medium"
+          >
+            <GoogleIcon />
+            {googleInFlight ? "Opening Google…" : "Continue with Google"}
+          </Button>
+
+          {/* Divider */}
+          <div className="my-5 flex items-center gap-3.5">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
-          <div className="hsx-login-form" style={{ width: "100%", maxWidth: 540 }}>
-            {/* Google CTA */}
-            <button
-              type="button"
-              className="hsx-login-google"
-              onClick={handleGoogle}
-              disabled={googleInFlight || loading}
-              aria-busy={googleInFlight || undefined}
-              style={{
-                width: "100%",
-                fontFamily: f.sans,
-                fontSize: 15,
-                fontWeight: 500,
-                color: t.coal,
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 10,
-                padding: "14px 18px",
-                cursor:
-                  googleInFlight || loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 12,
-                boxShadow: shadows.card,
-                opacity: googleInFlight || loading ? 0.7 : 1,
-              }}
-            >
-              <GoogleIcon />
-              {googleInFlight ? "Opening Google…" : "Continue with Google"}
-            </button>
+          {/* Server error banner */}
+          {error && (
+            <Alert variant="destructive" id="login-error" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            {/* Divider */}
-            <div
-              className="hsx-login-divider"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                margin: "20px 0",
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-              <span
-                style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}
-              >
-                or
-              </span>
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-            </div>
-
-            {/* Server error banner */}
-            {error && (
-              <div
-                role="alert"
-                id="login-error"
-                className="hsx-error-banner"
-                style={{
-                  background: t.error100,
-                  border: `1px solid ${t.error}`,
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                  marginBottom: 16,
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                  color: t.error,
-                  lineHeight: 1.4,
-                }}
-              >
-                {error}
-              </div>
-            )}
-
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              aria-labelledby="login-heading"
-              aria-describedby={error ? "login-error" : undefined}
-              className="hsx-login-form-fields"
-              style={{ display: "flex", flexDirection: "column", gap: 18 }}
-            >
-              <Field
-                label="Email Address"
+          {/* Form */}
+          <form
+            onSubmit={handleSubmit}
+            aria-labelledby="login-heading"
+            aria-describedby={error ? "login-error" : undefined}
+            className="flex flex-col gap-4"
+          >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="login-email">Email Address</Label>
+              <Input
+                id="login-email"
                 type="email"
                 name="email"
                 value={email}
-                onChange={(v) => setEmail(v)}
+                onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => {
                   if (!emailTouched) {
                     trackAuth({ type: "login_field_focused", field: "email" });
                   }
                   setEmailTouched(true);
                 }}
-                onAutofill={() => setEmailTouched(true)}
                 autoComplete="email"
                 placeholder="rahul@example.com"
                 autoFocus={shouldAutoFocus}
                 inputMode="email"
                 enterKeyHint="next"
                 maxLength={EMAIL_MAX_LENGTH}
-                invalid={!!error || (emailTouched && !!emailV.message)}
-                errorMessage={emailError}
+                aria-invalid={!!error || (emailTouched && !!emailV.message)}
+                className="h-12 px-4 text-[15px]"
               />
-              <Field
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={password}
-                onChange={(v) => setPassword(v)}
-                onFocus={() => {
-                  if (!passwordTouched) {
-                    trackAuth({ type: "login_field_focused", field: "password" });
-                  }
-                  setPasswordTouched(true);
-                }}
-                onAutofill={() => setPasswordTouched(true)}
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                enterKeyHint="go"
-                maxLength={PASSWORD_MAX_LENGTH}
-                invalid={!!error || (passwordTouched && !!passwordV.message)}
-                errorMessage={passwordError}
-                rightSlot={
-                  <button
-                    type="button"
-                    className="hsx-eye-toggle"
-                    onClick={handlePasswordVisibility}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    aria-pressed={showPassword}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: t.inkSoft,
-                      cursor: "pointer",
-                      padding: 4,
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <EyeIcon open={showPassword} />
-                  </button>
-                }
-              />
+              {emailError && (
+                <p className="mt-0.5 text-xs text-destructive">{emailError}</p>
+              )}
+            </div>
 
-              {/* Inline row: stay signed in + forgot password */}
-              <div
-                className="hsx-login-meta-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginTop: 2,
-                }}
-              >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="login-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => {
+                    if (!passwordTouched) {
+                      trackAuth({
+                        type: "login_field_focused",
+                        field: "password",
+                      });
+                    }
+                    setPasswordTouched(true);
+                  }}
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  enterKeyHint="go"
+                  maxLength={PASSWORD_MAX_LENGTH}
+                  aria-invalid={
+                    !!error || (passwordTouched && !!passwordV.message)
+                  }
+                  className="h-12 px-4 pr-11 text-[15px]"
+                />
+                <button
+                  type="button"
+                  onClick={handlePasswordVisibility}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
+              </div>
+              {passwordError && (
+                <p className="mt-0.5 text-xs text-destructive">
+                  {passwordError}
+                </p>
+              )}
+            </div>
+
+            {/* Inline row: stay signed in + forgot password */}
+            <div className="mt-0.5 flex items-center justify-between">
+              <Label className="gap-2 text-[13px] font-normal text-muted-foreground">
                 <Checkbox
                   checked={staySignedIn}
-                  onChange={setStaySignedIn}
-                  label="Stay signed in"
-                  description="Keeps you signed in for 30 days on this device. Don't enable on shared computers."
+                  onCheckedChange={(v) => setStaySignedIn(v === true)}
+                  title="Keeps you signed in for 30 days on this device. Don't enable on shared computers."
                 />
-                <a
-                  href="#forgot"
-                  className="hsx-link-indigo"
-                  onClick={() =>
-                    trackAuth({ type: "login_forgot_password_clicked" })
-                  }
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: t.indigo,
-                    textDecoration: "none",
-                  }}
-                >
-                  Forgot password
-                </a>
-              </div>
+                Stay signed in
+              </Label>
+              <a
+                href="#forgot"
+                onClick={() =>
+                  trackAuth({ type: "login_forgot_password_clicked" })
+                }
+                className="text-[13px] font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Forgot password
+              </a>
+            </div>
 
-              {/* Primary CTA */}
-              {(() => {
-                const isGhost = !canSubmit && !loading;
-                const tooltip = isGhost
+            {/* Primary CTA */}
+            <Button
+              type="submit"
+              size="lg"
+              disabled={!canSubmit}
+              aria-busy={loading || undefined}
+              title={
+                isGhost
                   ? !emailV.valid
                     ? "Enter a valid email to continue"
                     : !passwordV.valid
                       ? "Enter your password to continue"
                       : "Complete the form to continue"
-                  : undefined;
-                return (
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    aria-busy={loading || undefined}
-                    title={tooltip}
-                    className="hsx-login-cta"
-                    style={{
-                      width: "100%",
-                      fontFamily: f.sans,
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: isGhost ? t.inkFaint : t.cream,
-                      background: isGhost ? t.creamSoft : t.indigo,
-                      border: isGhost
-                        ? `1px solid ${t.line}`
-                        : "1px solid transparent",
-                      borderRadius: 10,
-                      padding: "16px 18px",
-                      cursor: canSubmit ? "pointer" : "not-allowed",
-                      marginTop: 14,
-                      boxShadow: isGhost ? "none" : shadows.cta,
-                      letterSpacing: 0.1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 10,
-                      opacity: loading ? 0.95 : 1,
-                    }}
+                  : undefined
+              }
+              className="mt-2 h-12 gap-2 text-[15px] font-semibold"
+            >
+              {loading ? (
+                <>
+                  <Spinner />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Continue to practise
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    {loading ? (
-                      <>
-                        <Spinner />
-                        Signing in…
-                      </>
-                    ) : (
-                      <>
-                        Continue to practise
-                        <svg
-                          className="hsx-login-cta-arrow"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                );
-              })()}
-            </form>
-          </div>
-        </main>
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </>
+              )}
+            </Button>
+          </form>
+        </div>
+      </main>
 
-        {/* Footer legal microcopy */}
-        <footer
-          className="hsx-login-footer"
-          style={{
-            textAlign: "center",
-            padding: "20px 24px 28px",
-            fontFamily: f.sans,
-            fontSize: 12,
-            color: t.inkFaint,
-            lineHeight: 1.6,
-            maxWidth: 480,
-            margin: "0 auto",
-          }}
+      {/* Footer legal microcopy */}
+      <footer className="mx-auto max-w-md px-6 pt-5 pb-7 text-center text-xs leading-relaxed text-muted-foreground">
+        By clicking &ldquo;Log in with Google&rdquo; or &ldquo;Continue with email&rdquo;
+        <br />
+        you agree to our{" "}
+        <a
+          href="#terms"
+          className="font-medium text-primary underline underline-offset-2"
         >
-          By clicking &ldquo;Log in with Google&rdquo; or &ldquo;Continue with email&rdquo;
-          <br />
-          you agree to our{" "}
-          <a
-            href="#terms"
-            className="hsx-link-muted"
-            style={{
-              color: t.indigo,
-              textDecoration: "underline",
-              fontWeight: 500,
-            }}
-          >
-            Terms of Use
-          </a>{" "}
-          and{" "}
-          <a
-            href="#privacy"
-            className="hsx-link-muted"
-            style={{
-              color: t.indigo,
-              textDecoration: "underline",
-              fontWeight: 500,
-            }}
-          >
-            Privacy Policy
-          </a>
-        </footer>
-      </div>
-    </>
+          Terms of Use
+        </a>{" "}
+        and{" "}
+        <a
+          href="#privacy"
+          className="font-medium text-primary underline underline-offset-2"
+        >
+          Privacy Policy
+        </a>
+      </footer>
+    </div>
   );
 }

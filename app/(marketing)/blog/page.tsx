@@ -4,35 +4,58 @@ import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { BLOG_META } from "@/blog-meta";
 
-export const metadata: Metadata = {
-  title: "Interview Prep Blog India 2026 | HireStepX",
-  description:
-    "Company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.",
-  keywords: [
-    "interview preparation blog India",
-    "TCS interview guide 2026",
-    "Google interview questions India",
-    "campus placement tips India",
-    "fresher interview tips 2026",
-    "behavioral interview India",
-  ].join(", "),
-  alternates: { canonical: "/blog" },
-  openGraph: {
-    type: "website",
-    title: "Interview Preparation Blog India 2026 | HireStepX",
-    description: "Guides for TCS, Google, Flipkart, Amazon, Deloitte and more. 2026 India job market.",
-    url: "https://hirestepx.com/blog",
-    siteName: "HireStepX",
-    locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Interview Preparation Blog" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Interview Preparation Blog India 2026 | HireStepX",
-    description: "Company-specific interview guides for Indian candidates. TCS, Google, Flipkart, Amazon, and 20+ more.",
-    images: ["https://hirestepx.com/opengraph-image"],
-  },
-};
+/* ?page=N renders a real, separately-crawlable subset of BLOG_META (see
+   <Link href="/blog?page=N"> in BlogPage), but alternates.canonical always
+   pointed back to plain /blog with no noindex — same self-canonical-but-
+   not-noindexed gap already fixed on /questions, /salary, and /companies.
+   Without it Google is free to index each page separately, the thin/
+   duplicate-URL pattern behind the AdSense "Low value content" flag. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+
+  /* GSC: same generic-title pattern already fixed on /questions, /salary,
+     and /companies — no concrete figure in the title tag. Prefix with the
+     actual indexed post count. */
+  const count = BLOG_META.length;
+  const title = `${count} Interview Prep Guides India 2026 | HireStepX`;
+  const ogTitle = `${count} Interview Preparation Guides — India 2026`;
+
+  return {
+    title,
+    description:
+      `${count} company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.`,
+    keywords: [
+      "interview preparation blog India",
+      "TCS interview guide 2026",
+      "Google interview questions India",
+      "campus placement tips India",
+      "fresher interview tips 2026",
+      "behavioral interview India",
+    ].join(", "),
+    alternates: { canonical: "/blog" },
+    ...(pageNum === 1 ? {} : { robots: { index: false, follow: true } }),
+    openGraph: {
+      type: "website",
+      title: ogTitle,
+      description: "Guides for TCS, Google, Flipkart, Amazon, Deloitte and more. 2026 India job market.",
+      url: "https://hirestepx.com/blog",
+      siteName: "HireStepX",
+      locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Interview Preparation Blog" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: "Company-specific interview guides for Indian candidates. TCS, Google, Flipkart, Amazon, and 20+ more.",
+      images: ["https://hirestepx.com/opengraph-image"],
+    },
+  };
+}
 
 /* Accessing searchParams makes this page dynamic — intentional, mirrors
    app/(marketing)/questions/page.tsx. The ?page= param drives real
@@ -81,12 +104,17 @@ export default async function Page({
         nonce={nonce || undefined}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_ITEM_LIST_SCHEMA) }}
       />
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
+          noindex meta tag above — only loading ads on the canonical page 1
+          keeps thin, noindexed pagination pages out of ad-serving scope. */}
+      {pageNum === 1 && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <BlogPage metas={BLOG_META} page={pageNum} />
     </>
   );

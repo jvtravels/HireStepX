@@ -6,6 +6,7 @@ import { getAllSalarySlugs, getSalaryPage } from "../data/salary-seo";
 import { getAllCitySlugs } from "../data/city-pages";
 import { COMPANY_KNOWN_FACTS } from "../data/company-known-facts";
 import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
+import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)
@@ -77,24 +78,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.88,
     },
   ];
-  /* Mirrors NOINDEX_THIN_DUPLICATE_SLUGS in questions/[slug]/page.tsx —
-     11 GSC-flagged ("Crawled - not indexed") pages that fall back to the
-     generic tier-3 question set. Don't submit noindexed URLs for crawling. */
-  const NOINDEX_THIN_DUPLICATE_SLUGS = new Set([
-    "jane-street-swe-interview-questions",
-    "deutsche-bank-system-design-interview-questions",
-    "lowes-india-software-engineer-interview-questions",
-    "bcg-case-interview-practice",
-    "cognizant-genc-interview-questions",
-    "jpmorgan-interview-questions-india",
-    "ibm-freshers-interview-questions",
-    "de-shaw-quant-interview-questions",
-    "phonepe-engineering-interview-questions",
-    "morgan-stanley-system-design-interview-questions",
-    "meesho-pm-interview-questions",
-  ]);
+  /* Mirrors isThinDuplicateQuestionsPage's noindex in questions/[slug]/page.tsx
+     (tier-3 pages that fall back to the generic, company-unattributed question
+     set — AdSense policy 10015918 "low value content"). Don't submit
+     noindexed URLs for crawling. */
   const questionEntries: MetadataRoute.Sitemap = SEO_PAGES.filter(
-    (p) => !NOINDEX_THIN_DUPLICATE_SLUGS.has(p.slug),
+    (p) => !isThinDuplicateQuestionsPage(p.slug),
   ).map((p) => ({
     url: `${baseUrl}/questions/${p.slug}`,
     lastModified: seoPagesLastModified,

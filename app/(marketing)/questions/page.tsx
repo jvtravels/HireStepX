@@ -202,12 +202,18 @@ export default async function QuestionsIndexRoute({
         activeFilter={focus}
         page={pageNum}
       />
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
+          noindex meta tag in generateMetadata above — only loading ads on
+          the canonical (page 1, no filter) variant keeps thin, noindexed
+          pagination/filter pages out of ad-serving scope. */}
+      {pageNum === 1 && !focus && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <FooterDome />
       <MobileStickyCTA />
     </>
