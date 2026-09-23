@@ -1,8 +1,12 @@
 /* HireStepX — Design System / Color
-   Self-contained canvas component. No external imports.
-   Discipline rule: Indigo is interactive · Copper is editorial · Never mix. */
+   Self-contained canvas component.
+   Discipline: restrained neutral, plus one accent. Copper is the single
+   accent color — primary CTAs, active/selected states, links, focus rings
+   only. Indigo is demoted to a secondary / data-viz hue. Everything else
+   is coal, ink-muted, or the neutral gray scale. */
 import React from "react";
-import { tokens, fonts, shadows } from "./_tokens";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens, fonts, shadows, radius, type } from "./_tokens";
 import { MonoLabel, SectionHead, Footer } from "./_atoms";
 
 /* ─── Reusable atoms ─── */
@@ -16,7 +20,7 @@ function Hex({ value }: { value: string }) {
         color: tokens.coal,
         background: tokens.creamSoft,
         padding: "3px 8px",
-        borderRadius: 4,
+        borderRadius: radius.sm,
         display: "inline-block",
       }}
     >
@@ -45,14 +49,14 @@ function Swatch({
       style={{
         background: tokens.white,
         border: `1px solid ${tokens.line}`,
-        borderRadius: 10,
+        borderRadius: radius.lg,
         overflow: "hidden",
         transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <div
         style={{
-          height: 120,
+          height: 96,
           background: bg,
           borderBottom: `1px solid ${tokens.line}`,
           position: "relative",
@@ -126,7 +130,7 @@ function ContrastTile({
     <div
       style={{
         background: bg,
-        borderRadius: 10,
+        borderRadius: radius.lg,
         padding: "28px 24px",
         border: `1px solid ${tokens.line}`,
         position: "relative",
@@ -141,7 +145,7 @@ function ContrastTile({
           fontSize: 10,
           padding: "3px 8px",
           background: "rgba(255,255,255,.85)",
-          borderRadius: 4,
+          borderRadius: radius.sm,
           color: tokens.success,
           letterSpacing: "0.04em",
         }}
@@ -150,10 +154,11 @@ function ContrastTile({
       </div>
       <p
         style={{
-          fontFamily: fonts.serif,
-          fontSize: 22,
+          fontFamily: fonts.sans,
+          fontWeight: 600,
+          fontSize: type.h3.size,
           margin: "0 0 4px",
-          lineHeight: 1.2,
+          lineHeight: 1.3,
           color: fg,
         }}
       >
@@ -196,7 +201,7 @@ function Rule({
         background: tokens.white,
         border: `1px solid ${tokens.line}`,
         borderLeft: `3px solid ${isDo ? tokens.success : tokens.error}`,
-        borderRadius: 10,
+        borderRadius: radius.lg,
         padding: "24px 28px",
       }}
     >
@@ -218,18 +223,18 @@ function Rule({
       </span>
       <h4
         style={{
-          fontFamily: fonts.serif,
-          fontSize: 18,
-          fontWeight: 400,
+          fontFamily: fonts.sans,
+          fontSize: type.h4.size,
+          fontWeight: type.h4.weight,
           margin: "0 0 8px",
-          lineHeight: 1.3,
+          lineHeight: type.h4.lineHeight,
         }}
       >
         {title}
       </h4>
       <p
         style={{
-          color: tokens.indigoGray,
+          color: tokens.inkMuted,
           fontSize: 13,
           margin: "0 0 12px",
         }}
@@ -240,7 +245,7 @@ function Rule({
         style={{
           marginTop: 14,
           background: tokens.creamSoft,
-          borderRadius: 6,
+          borderRadius: radius.sm,
           padding: 14,
           fontSize: 13,
           color: tokens.inkSoft,
@@ -279,17 +284,17 @@ function TokenRow({
       <div style={{ fontFamily: fonts.mono, fontSize: 12, color: tokens.coal }}>
         {varName}
       </div>
-      <div style={{ color: tokens.indigoGray, fontSize: 12 }}>{role}</div>
+      <div style={{ color: tokens.inkMuted, fontSize: 12 }}>{role}</div>
       <div>
         <Hex value={hex} />
       </div>
-      <div style={{ color: tokens.indigoGray, fontSize: 12 }}>{notes}</div>
+      <div style={{ color: tokens.inkMuted, fontSize: 12 }}>{notes}</div>
       <div>
         <span
           style={{
             width: 28,
             height: 28,
-            borderRadius: 6,
+            borderRadius: radius.sm,
             border: `1px solid ${tokens.line}`,
             display: "inline-block",
             background: preview,
@@ -307,14 +312,13 @@ export default function DesignSystemColor() {
     <>
       {/* Font import as a one-off — canvas is self-contained */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "80px 56px 120px",
+          padding: "48px 48px 96px",
           fontFamily: fonts.sans,
           color: tokens.coal,
           background: tokens.cream,
@@ -348,28 +352,31 @@ export default function DesignSystemColor() {
             </div>
             <h1
               style={{
-                fontFamily: fonts.serif,
-                fontSize: 56,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.05,
+                fontFamily: fonts.sans,
+                fontSize: type.h1.size,
+                fontWeight: type.h1.weight,
+                letterSpacing: type.h1.letterSpacing,
+                lineHeight: type.h1.lineHeight,
                 margin: 0,
+                color: tokens.coal,
               }}
             >
-              Color, by{" "}
-              <em style={{ fontStyle: "italic", color: tokens.copper }}>discipline</em>.
+              Color reference
             </h1>
             <p
               style={{
-                color: tokens.indigoGray,
-                fontSize: 15,
-                margin: "16px 0 0",
+                color: tokens.inkMuted,
+                fontSize: type.bodyLg.size,
+                lineHeight: type.bodyLg.lineHeight,
+                margin: "10px 0 0",
                 maxWidth: 540,
               }}
             >
-              The canonical color reference for HireStepX. Cream surface, coal
-              text, indigo for everything you click, copper for one highlighted
-              fact per moment. Defaults handle the rest.
+              The canonical color reference for HireStepX, mapped to shadcn/ui
+              semantics. Cool-neutral surface, coal text, copper as the single
+              accent — CTAs, active states, links, focus rings. Indigo is a
+              secondary hue reserved for data-viz. No beige, no cream tint —
+              the shadcn defaults handle the rest.
             </p>
           </div>
           <div
@@ -385,13 +392,13 @@ export default function DesignSystemColor() {
               <b style={{ color: tokens.coal, fontWeight: 500 }}>Indigo</b> #312E81
             </div>
             <div>
-              <b style={{ color: tokens.coal, fontWeight: 500 }}>Copper</b> #B45309
+              <b style={{ color: tokens.coal, fontWeight: 500 }}>Copper</b> #BB4D00
             </div>
             <div>
-              <b style={{ color: tokens.coal, fontWeight: 500 }}>Cream</b> #FAF7F0
+              <b style={{ color: tokens.coal, fontWeight: 500 }}>Surface</b> #FFFFFF
             </div>
             <div>
-              <b style={{ color: tokens.coal, fontWeight: 500 }}>Coal</b> #0E0C08
+              <b style={{ color: tokens.coal, fontWeight: 500 }}>Coal</b> #18181B
             </div>
           </div>
         </header>
@@ -407,8 +414,8 @@ export default function DesignSystemColor() {
             style={{
               background: tokens.white,
               border: `1px solid ${tokens.line}`,
-              borderRadius: 14,
-              padding: "36px 40px",
+              borderRadius: radius.lg,
+              padding: "32px 36px",
               boxShadow: shadows.card,
               display: "grid",
               gridTemplateColumns: "220px 1fr",
@@ -418,19 +425,18 @@ export default function DesignSystemColor() {
           >
             <div
               style={{
-                fontFamily: fonts.serif,
-                fontSize: 22,
-                lineHeight: 1.25,
-                letterSpacing: "-0.01em",
+                fontFamily: fonts.sans,
+                fontWeight: 600,
+                fontSize: type.h2.size,
+                lineHeight: type.h2.lineHeight,
+                letterSpacing: type.h2.letterSpacing,
+                color: tokens.coal,
               }}
             >
-              <b style={{ color: tokens.indigo, fontWeight: 500 }}>Indigo</b> is
-              interactive.
+              Restrained neutral,
               <br />
-              <em style={{ fontStyle: "italic", color: tokens.copper }}>Copper</em>{" "}
-              is editorial.
-              <br />
-              Never mix.
+              plus{" "}
+              <span style={{ color: tokens.copper }}>one accent</span>.
             </div>
             <ul
               style={{
@@ -443,16 +449,16 @@ export default function DesignSystemColor() {
             >
               {[
                 {
-                  key: "Indigo",
-                  color: tokens.indigo,
-                  text:
-                    "CTAs · links · focus rings · brand identifiers (logo wordmark, score numbers as state) · selection",
-                },
-                {
                   key: "Copper",
                   color: tokens.copper,
                   text:
-                    'The italic accent word in a hero. A "highlighted number or fact" — once per moment. Never twice on the same screen.',
+                    "The one accent color. Primary CTAs, active/selected states, links, focus rings — nothing else. Keep it to a small fraction of any screen.",
+                },
+                {
+                  key: "Indigo",
+                  color: tokens.indigo,
+                  text:
+                    "Secondary hue, demoted to data-viz — charts, graphs, sound waves. Not used for buttons, links, or body text.",
                 },
                 {
                   key: "Coal",
@@ -460,16 +466,16 @@ export default function DesignSystemColor() {
                   text: "Primary text. Warm dark, never pure black.",
                 },
                 {
-                  key: "Indigo-gray",
+                  key: "Ink-muted / gray scale",
                   color: tokens.coal,
                   text:
-                    "Secondary text. Tints body copy with brand identity, subliminally.",
+                    "Secondary and helper text, borders, backgrounds — the neutral 11-step gray scale, not brand-tinted.",
                 },
                 {
                   key: "Defaults",
                   color: tokens.coal,
                   text:
-                    "Errors are red. Success is green. Don't burn brand budget on status.",
+                    "Errors are red. Success is green. Don't burn the accent on status.",
                 },
               ].map((row) => (
                 <li
@@ -506,7 +512,7 @@ export default function DesignSystemColor() {
           <SectionHead
             num="02"
             title="Surface"
-            desc="Where everything sits. Warm, parchment-like, never pure white."
+            desc="Where everything sits. Clean cool white, shadcn-neutral — no warm beige tint."
           />
           <div
             style={{
@@ -517,26 +523,18 @@ export default function DesignSystemColor() {
           >
             <Swatch
               bg={tokens.cream}
-              name="Cream"
-              role="Primary canvas — every page background."
-              hex="#FAF7F0"
+              name="Surface"
+              role="Primary canvas — every page background. Pure white, not cream."
+              hex="#FFFFFF"
               overlay="Page"
               dark
             />
             <Swatch
-              bg={tokens.white}
-              name="White"
-              role="Cards, input fields, surfaces lifted off cream."
-              hex="#FFFFFF"
-              overlay="Card"
-              dark
-            />
-            <Swatch
               bg={tokens.creamSoft}
-              name="Cream-soft"
-              role="Hover states, recessed sections, code snippets."
-              hex="#F4EFE3"
-              overlay="Soft"
+              name="Surface-muted"
+              role="Hover states, recessed sections, code snippets. Cool zinc, not tan."
+              hex="#F4F4F5"
+              overlay="Muted"
               dark
             />
           </div>
@@ -546,44 +544,98 @@ export default function DesignSystemColor() {
         <section style={{ marginBottom: 80 }}>
           <SectionHead
             num="03"
-            title="Ink"
-            desc="Text. Coal for primary, indigo-gray for secondary — the brand-thread move."
+            title="Ink & the neutral gray scale"
+            desc="Text and neutral surfaces. Coal for primary, ink-muted for secondary — no brand tint."
           />
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
               gap: 16,
+              marginBottom: 16,
             }}
           >
             <Swatch
               bg={tokens.coal}
               name="Coal"
-              role="Primary text. Warm dark — never pure black."
-              hex="#0E0C08"
+              role="Primary text. Cool near-black — never pure black."
+              hex="#18181B"
               overlay="Primary"
             />
             <Swatch
-              bg={tokens.indigoGray}
-              name="Indigo-gray"
-              role="Secondary text — tinted with brand. Use for body, helpers."
-              hex="#3E3A6E"
+              bg={tokens.inkMuted}
+              name="Ink-muted"
+              role="Secondary text — body copy, descriptions, list items. Neutral, not brand-tinted."
+              hex="#3F3F46"
               overlay="Secondary"
             />
             <Swatch
               bg={tokens.inkSoft}
               name="Ink-soft"
               role="Microcopy, labels, captions."
-              hex="#6E6759"
+              hex="#71717A"
               overlay="Helper"
             />
             <Swatch
               bg={tokens.inkFaint}
               name="Ink-faint"
               role="Placeholders, disabled, tertiary metadata."
-              hex="#A39C8B"
+              hex="#A1A1AA"
               overlay="Faint"
             />
+          </div>
+          <MonoLabel>The full gray scale — tokens.gray[50–950]</MonoLabel>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(11, 1fr)",
+              gap: 8,
+              marginTop: 12,
+            }}
+          >
+            {[
+              { step: "50", hex: "#FAFAFA" },
+              { step: "100", hex: "#F4F4F5" },
+              { step: "200", hex: "#E4E4E7" },
+              { step: "300", hex: "#D4D4D8" },
+              { step: "400", hex: "#A1A1AA" },
+              { step: "500", hex: "#71717A" },
+              { step: "600", hex: "#52525B" },
+              { step: "700", hex: "#3F3F46" },
+              { step: "800", hex: "#27272A" },
+              { step: "900", hex: "#18181B" },
+              { step: "950", hex: "#09090B" },
+            ].map((g) => (
+              <div key={g.step} style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    height: 56,
+                    background: g.hex,
+                    border: `1px solid ${tokens.line}`,
+                    borderRadius: radius.sm,
+                  }}
+                />
+                <div
+                  style={{
+                    fontFamily: fonts.mono,
+                    fontSize: 10,
+                    color: tokens.coal,
+                    marginTop: 6,
+                  }}
+                >
+                  {g.step}
+                </div>
+                <div
+                  style={{
+                    fontFamily: fonts.mono,
+                    fontSize: 9,
+                    color: tokens.inkSoft,
+                  }}
+                >
+                  {g.hex}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -592,7 +644,7 @@ export default function DesignSystemColor() {
           <SectionHead
             num="04"
             title="Brand"
-            desc="Indigo is the path forward. Copper is the spotlight. They never share the stage."
+            desc="Copper is the one accent — CTAs, active states, links, focus. Indigo is demoted to data-viz."
           />
           <div
             style={{
@@ -602,39 +654,39 @@ export default function DesignSystemColor() {
             }}
           >
             <Swatch
-              bg={tokens.indigo}
-              name="Indigo"
-              role="Primary CTAs, links, focus, score numerals. Anything you click."
-              hex="#312E81"
-              overlay="Interactive"
-            />
-            <Swatch
-              bg={tokens.indigoDeep}
-              name="Indigo-deep"
-              role="CTA hover, pressed state. ~10% darker."
-              hex="#1E1B4B"
-              overlay="Hover"
-            />
-            <Swatch
-              bg={tokens.indigo100}
-              name="Indigo-100"
-              role="Soft brand background — premium-tier panels, badges."
-              hex="#E5E2F2"
-              overlay="Soft"
-              dark
-            />
-            <Swatch
               bg={tokens.copper}
               name="Copper"
-              role="Italic accent words. Score numbers. Logo accent stroke."
-              hex="#B45309"
-              overlay="Editorial"
+              role="The one accent. Primary CTAs, active/selected states, links, focus rings — from the shadcn preset's own generated accent."
+              hex="#BB4D00"
+              overlay="Accent"
             />
             <Swatch
               bg={tokens.copper100}
               name="Copper-100"
               role="Avatar tints, soft accent badges, score-tag chips."
-              hex="#F4E5D8"
+              hex="#F5DFCB"
+              overlay="Soft"
+              dark
+            />
+            <Swatch
+              bg={tokens.indigo}
+              name="Indigo"
+              role="Secondary hue — charts, graphs, data-viz series. Not used for buttons or links."
+              hex="#312E81"
+              overlay="Data-viz"
+            />
+            <Swatch
+              bg={tokens.indigoDeep}
+              name="Indigo-deep"
+              role="Darker data-viz series step. ~10% darker."
+              hex="#1E1B4B"
+              overlay="Data-viz"
+            />
+            <Swatch
+              bg={tokens.indigo100}
+              name="Indigo-100"
+              role="Soft data-viz background — chart fills, legend chips."
+              hex="#E5E2F2"
               overlay="Soft"
               dark
             />
@@ -699,7 +751,7 @@ export default function DesignSystemColor() {
             style={{
               background: tokens.white,
               border: `1px solid ${tokens.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               overflow: "hidden",
               boxShadow: shadows.card,
             }}
@@ -727,65 +779,65 @@ export default function DesignSystemColor() {
               <div>Preview</div>
             </div>
             <TokenRow
-              varName="--cream"
+              varName="--background"
               role="Page background"
-              hex="#FAF7F0"
-              notes="Warm parchment, never #FFF"
+              hex="#FFFFFF"
+              notes="Pure white — shadcn default, no beige"
               preview={tokens.cream}
             />
             <TokenRow
-              varName="--white"
-              role="Card surface, inputs"
-              hex="#FFFFFF"
-              notes="Lifted off cream"
-              preview={tokens.white}
+              varName="--muted"
+              role="Recessed sections, code snippets"
+              hex="#F4F4F5"
+              notes="Cool zinc, not tan"
+              preview={tokens.creamSoft}
             />
             <TokenRow
               varName="--coal"
               role="Primary text"
-              hex="#0E0C08"
-              notes="Warm dark, premium"
+              hex="#18181B"
+              notes="Cool near-black, premium"
               preview={tokens.coal}
             />
             <TokenRow
-              varName="--indigo-gray"
+              varName="--ink-muted"
               role="Secondary text"
-              hex="#3E3A6E"
-              notes="Tinted with brand"
-              preview={tokens.indigoGray}
+              hex="#3F3F46"
+              notes="Neutral gray-700, not brand-tinted"
+              preview={tokens.inkMuted}
             />
             <TokenRow
               varName="--indigo"
-              role="Primary CTA, links, focus"
+              role="Charts, graphs, data-viz series"
               hex="#312E81"
-              notes="Anything you click"
+              notes="Secondary hue — not for buttons or links"
               preview={tokens.indigo}
             />
             <TokenRow
               varName="--indigo-deep"
-              role="CTA hover"
+              role="Darker data-viz series step"
               hex="#1E1B4B"
-              notes="Pressed state"
+              notes="Chart-only"
               preview={tokens.indigoDeep}
             />
             <TokenRow
-              varName="--indigo-ring"
-              role="Focus halos"
-              hex="rgba(49,46,129,.20)"
-              notes="3px ring outset"
-              preview={tokens.indigoRing}
+              varName="--copper"
+              role="Primary CTA, links, focus, active state"
+              hex="#BB4D00"
+              notes="The one accent — from the shadcn preset"
+              preview={tokens.copper}
             />
             <TokenRow
-              varName="--copper"
-              role="Editorial accent"
-              hex="#B45309"
-              notes="One per moment"
-              preview={tokens.copper}
+              varName="--copper-ring"
+              role="Focus halos"
+              hex="rgba(187,77,0,.20)"
+              notes="3px ring outset"
+              preview={tokens.copperLine}
             />
             <TokenRow
               varName="--copper-100"
               role="Avatar tints, badges"
-              hex="#F4E5D8"
+              hex="#F5DFCB"
               notes="Soft brand thread"
               preview={tokens.copper100}
             />
@@ -823,57 +875,57 @@ export default function DesignSystemColor() {
             <ContrastTile
               bg={tokens.cream}
               fg={tokens.coal}
-              ratio="15.9:1"
+              ratio="17.9:1"
               level="AAA"
-              text="Coal on Cream"
+              text="Coal on Surface"
               sub="Hero text, primary copy. The default pair."
-              pair="--coal / --cream"
+              pair="--coal / --background"
             />
             <ContrastTile
               bg={tokens.cream}
-              fg={tokens.indigoGray}
-              ratio="7.4:1"
+              fg={tokens.inkMuted}
+              ratio="9.7:1"
               level="AAA"
-              text="Indigo-gray on Cream"
-              sub="Body copy, secondary text. Brand-tinted reading."
-              pair="--indigo-gray / --cream"
+              text="Ink-muted on Surface"
+              sub="Body copy, secondary text. Neutral, not brand-tinted."
+              pair="--ink-muted / --background"
             />
             <ContrastTile
               bg={tokens.cream}
               fg={tokens.indigo}
               ratio="9.1:1"
               level="AAA"
-              text="Indigo on Cream"
-              sub="Links, interactive text. Always meets AAA."
-              pair="--indigo / --cream"
+              text="Indigo on Surface"
+              sub="Chart labels, data-viz text only — not links or CTAs."
+              pair="--indigo / --background"
             />
             <ContrastTile
               bg={tokens.cream}
               fg={tokens.copper}
-              ratio="5.4:1"
+              ratio="5.1:1"
               level="AA"
-              text="Copper on Cream"
-              sub="Italic accent words, headlines only. AA pass."
-              pair="--copper / --cream"
+              text="Copper on Surface"
+              sub="Links, active-state text. AA pass."
+              pair="--copper / --background"
             />
             <ContrastTile
-              bg={tokens.indigo}
+              bg={tokens.copper}
               fg={tokens.white}
-              ratio="12.5:1"
-              level="AAA"
-              text="White on Indigo"
-              sub="Primary CTA text. Universal pass."
-              pair="--white / --indigo"
+              ratio="5.0:1"
+              level="AA"
+              text="White on Copper"
+              sub="Primary CTA button text. AA pass."
+              pair="--white / --copper"
               whiteSub
             />
             <ContrastTile
               bg={tokens.white}
               fg={tokens.coal}
-              ratio="17.4:1"
+              ratio="17.7:1"
               level="AAA"
-              text="Coal on White"
+              text="Coal on Card"
               sub="Card surfaces. Maximum readability."
-              pair="--coal / --white"
+              pair="--coal / --card"
             />
           </div>
         </section>
@@ -883,7 +935,7 @@ export default function DesignSystemColor() {
           <SectionHead
             num="08"
             title="Do & don't"
-            desc="The discipline rule applied to common situations. Save the brand from drift."
+            desc="The discipline rule applied to common situations. Keep the accent scarce and deliberate."
           />
           <div
             style={{
@@ -894,85 +946,62 @@ export default function DesignSystemColor() {
           >
             <Rule
               kind="do"
-              title="One copper moment per screen."
-              body="The italic accent word is the signature. Don't dilute it."
-              demo={
-                <>
-                  Hero: "Reset your{" "}
-                  <em
-                    style={{
-                      color: tokens.copper,
-                      fontFamily: fonts.serif,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    password
-                  </em>
-                  "
-                  <br />
-                  Score numeral:{" "}
-                  <b
-                    style={{
-                      color: tokens.copper,
-                      fontFamily: fonts.serif,
-                      fontWeight: 500,
-                    }}
-                  >
-                    62
-                  </b>
-                  <br />
-                  Pick <i>one</i>. Not both.
-                </>
-              }
-            />
-            <Rule
-              kind="dont"
-              title="Stack copper on warnings, icons, AND text."
-              body="When everything is highlighted, nothing is."
-              demo={
-                <>
-                  ❌ Copper italic accent + copper warning icon + copper
-                  time-clock + copper avatar + copper "replace" link — all on
-                  one screen.
-                </>
-              }
-            />
-            <Rule
-              kind="do"
-              title="Make every clickable thing indigo."
-              body="Predictability is premium. Buttons, links, focus rings, score numbers (interactive on click)."
+              title="Make every clickable thing copper."
+              body="Predictability is premium. Buttons, links, focus rings, active/selected states — one consistent signal for 'interactive'."
               demo={
                 <>
                   <a
                     style={{
-                      color: tokens.indigo,
-                      borderBottom: `1px solid ${tokens.indigo}`,
+                      color: tokens.copper,
+                      borderBottom: `1px solid ${tokens.copper}`,
                       textDecoration: "none",
                     }}
                   >
                     View report
                   </a>{" "}
-                  · <span style={{ color: tokens.indigo }}>→ Continue</span>
+                  · <span style={{ color: tokens.copper }}>→ Continue</span>
                 </>
               }
             />
             <Rule
               kind="dont"
-              title="Use copper on click targets."
-              body="Copper is editorial — a label for a fact, not an invitation to act."
+              title="Spread copper across icons, badges, and text at once."
+              body="When everything is accented, nothing reads as the primary action."
               demo={
                 <>
-                  ❌ "Replace" link in copper · ❌ "View all" CTA in copper · ❌
-                  Tab navigation in copper.
+                  ❌ Copper heading + copper icon + copper badge + copper
+                  "replace" link — all competing on one screen.
                 </>
               }
             />
             <Rule
               kind="do"
-              title="Tint secondary text with indigo-gray."
-              body="Body copy stays subliminally on-brand. Mercury and Substack do exactly this."
+              title="Use one primary action in copper per screen."
+              body="Every other button stays neutral outline or ghost, so the one copper CTA is unambiguous."
               demo={
-                <span style={{ color: tokens.indigoGray }}>
+                <>
+                  <b style={{ color: tokens.copper }}>Continue to practise →</b>{" "}
+                  is copper. "Cancel" stays a plain outline button.
+                </>
+              }
+            />
+            <Rule
+              kind="dont"
+              title="Use indigo for buttons, links, or body text."
+              body="Indigo is demoted to a secondary/data-viz hue — it should never compete with copper as an interactive signal."
+              demo={
+                <>
+                  ❌ Indigo "View all" CTA · ❌ Indigo tab navigation · ❌
+                  Indigo body copy.
+                </>
+              }
+            />
+            <Rule
+              kind="do"
+              title="Use a neutral gray for secondary text."
+              body="Ink-muted (gray-700) keeps body copy quiet and legible without borrowing brand color."
+              demo={
+                <span style={{ color: tokens.inkMuted }}>
                   "You have a strong foundation. With a few improvements,
                   you'll stand out."
                 </span>
@@ -980,12 +1009,11 @@ export default function DesignSystemColor() {
             />
             <Rule
               kind="dont"
-              title="Use a neutral gray for secondary text."
-              body="Generic grays make every SaaS look the same. The indigo-tint is an inch of identity per paragraph."
+              title="Tint secondary text with a brand hue."
+              body="Indigo- or copper-tinted body copy reads as decorative, not functional — and quietly breaks contrast guarantees."
               demo={
-                <span style={{ color: "#6B7280" }}>
-                  ❌ "Generic Tailwind gray-500." Looks like every other
-                  dashboard.
+                <span style={{ color: tokens.indigo }}>
+                  ❌ Indigo-tinted paragraph text pretending to be neutral.
                 </span>
               }
             />
@@ -1006,7 +1034,7 @@ export default function DesignSystemColor() {
               style={{
                 background: tokens.white,
                 border: `1px solid ${tokens.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 28,
                 boxShadow: shadows.card,
               }}
@@ -1025,9 +1053,9 @@ export default function DesignSystemColor() {
               </div>
               <h3
                 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 22,
-                  fontWeight: 400,
+                  fontFamily: fonts.sans,
+                  fontSize: type.h3.size,
+                  fontWeight: type.h3.weight,
                   margin: "0 0 6px",
                   letterSpacing: "-0.01em",
                 }}
@@ -1036,20 +1064,20 @@ export default function DesignSystemColor() {
               </h3>
               <p
                 style={{
-                  color: tokens.indigoGray,
+                  color: tokens.inkMuted,
                   fontSize: 13,
                   margin: "0 0 20px",
                 }}
               >
-                Indigo on every CTA. Subtle hover lift. Focus halo for keyboard.
+                Copper on every CTA. Subtle hover lift. Focus halo for keyboard.
               </p>
               <button
                 style={{
-                  background: tokens.indigo,
+                  background: tokens.copper,
                   color: tokens.white,
                   border: "none",
                   padding: "12px 22px",
-                  borderRadius: 10,
+                  borderRadius: radius.md,
                   fontSize: 14,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -1065,7 +1093,7 @@ export default function DesignSystemColor() {
                   color: tokens.coal,
                   border: `1px solid ${tokens.lineStrong}`,
                   padding: "12px 22px",
-                  borderRadius: 10,
+                  borderRadius: radius.md,
                   fontSize: 14,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -1081,7 +1109,7 @@ export default function DesignSystemColor() {
               style={{
                 background: tokens.white,
                 border: `1px solid ${tokens.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 28,
                 boxShadow: shadows.card,
               }}
@@ -1100,9 +1128,9 @@ export default function DesignSystemColor() {
               </div>
               <h3
                 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 22,
-                  fontWeight: 400,
+                  fontFamily: fonts.sans,
+                  fontSize: type.h3.size,
+                  fontWeight: type.h3.weight,
                   margin: "0 0 6px",
                 }}
               >
@@ -1110,12 +1138,12 @@ export default function DesignSystemColor() {
               </h3>
               <p
                 style={{
-                  color: tokens.indigoGray,
+                  color: tokens.inkMuted,
                   fontSize: 13,
                   margin: "0 0 20px",
                 }}
               >
-                Click in to see the indigo focus ring at 20% alpha.
+                Click in to see the copper focus ring at 20% alpha.
               </p>
               <label
                 style={{
@@ -1135,7 +1163,7 @@ export default function DesignSystemColor() {
                   width: "100%",
                   padding: "12px 14px",
                   border: `1px solid ${tokens.lineStrong}`,
-                  borderRadius: 10,
+                  borderRadius: radius.md,
                   fontFamily: "inherit",
                   fontSize: 14,
                   background: tokens.white,
@@ -1149,7 +1177,7 @@ export default function DesignSystemColor() {
               style={{
                 background: tokens.white,
                 border: `1px solid ${tokens.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 28,
                 boxShadow: shadows.card,
               }}
@@ -1164,38 +1192,59 @@ export default function DesignSystemColor() {
                   marginBottom: 14,
                 }}
               >
-                Editorial moment
+                Active state
               </div>
               <h3
                 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 22,
-                  fontWeight: 400,
+                  fontFamily: fonts.sans,
+                  fontSize: type.h3.size,
+                  fontWeight: type.h3.weight,
                   margin: "0 0 6px",
+                  color: tokens.coal,
                 }}
               >
-                Reset your{" "}
-                <em style={{ fontStyle: "italic", color: tokens.copper }}>
-                  password
-                </em>
+                Reset your password
               </h3>
               <p
                 style={{
-                  color: tokens.indigoGray,
+                  color: tokens.inkMuted,
                   fontSize: 13,
                   margin: "0 0 20px",
                 }}
               >
-                The italic accent word is the brand signature. One copper
-                moment, no more.
+                A plain heading — no decorative accent word. Copper appears
+                only on the selected tab or step indicator below.
               </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: tokens.copper,
+                    borderBottom: `2px solid ${tokens.copper}`,
+                  }}
+                >
+                  1. Verify
+                </span>
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: tokens.inkFaint,
+                  }}
+                >
+                  2. New password
+                </span>
+              </div>
             </div>
 
             <div
               style={{
                 background: tokens.white,
                 border: `1px solid ${tokens.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: 28,
                 boxShadow: shadows.card,
               }}
@@ -1217,7 +1266,7 @@ export default function DesignSystemColor() {
                   textAlign: "center",
                   padding: "28px 24px",
                   background: tokens.creamSoft,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                 }}
               >
                 <div
@@ -1234,9 +1283,9 @@ export default function DesignSystemColor() {
                 </div>
                 <div
                   style={{
-                    fontFamily: fonts.serif,
-                    fontSize: 72,
-                    fontWeight: 400,
+                    fontFamily: fonts.sans,
+                    fontSize: 32,
+                    fontWeight: 600,
                     lineHeight: 1,
                     color: tokens.copper,
                     letterSpacing: "-0.02em",
@@ -1277,14 +1326,14 @@ export default function DesignSystemColor() {
           <SectionHead
             num="10"
             title="Why these colors"
-            desc="The cultural and competitive logic behind every choice."
+            desc="The functional logic behind the palette — restrained neutral, plus one accent."
           />
           <div
             style={{
               background: tokens.coal,
               color: tokens.cream,
-              borderRadius: 14,
-              padding: "48px 56px",
+              borderRadius: radius.lg,
+              padding: "40px 48px",
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: 48,
@@ -1293,19 +1342,16 @@ export default function DesignSystemColor() {
             <div>
               <h3
                 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 32,
-                  fontWeight: 400,
-                  lineHeight: 1.15,
-                  margin: "0 0 20px",
-                  letterSpacing: "-0.015em",
+                  fontFamily: fonts.sans,
+                  fontSize: type.h2.size,
+                  fontWeight: 600,
+                  lineHeight: type.h2.lineHeight,
+                  margin: "0 0 16px",
+                  letterSpacing: type.h2.letterSpacing,
+                  color: tokens.cream,
                 }}
               >
-                Indigo is{" "}
-                <em style={{ fontStyle: "italic", color: tokens.copper }}>
-                  historically
-                </em>{" "}
-                Indian.
+                One accent, spent deliberately.
               </h3>
               <p
                 style={{
@@ -1315,9 +1361,9 @@ export default function DesignSystemColor() {
                   margin: "0 0 14px",
                 }}
               >
-                The dye is literally named after the country — Sanskrit{" "}
-                <i>nīla</i> → Greek <i>indikón</i>. India's signature export for
-                2,000+ years.
+                Copper is the only color that means "act on this." Every
+                button, link, active tab, and focus ring shares it, so a
+                user learns the signal once and it holds everywhere.
               </p>
               <p
                 style={{
@@ -1327,41 +1373,38 @@ export default function DesignSystemColor() {
                   margin: "0 0 14px",
                 }}
               >
-                Using it isn't cliché in the way saffron is. It's quietly,
-                culturally rooted.
+                Keeping it to a small fraction of any screen is what makes
+                it work — a UI that highlights everything highlights
+                nothing.
               </p>
               <div
                 style={{
                   borderLeft: `2px solid ${tokens.copper}`,
                   paddingLeft: 20,
-                  fontFamily: fonts.serif,
-                  fontSize: 18,
-                  fontStyle: "italic",
+                  fontFamily: fonts.sans,
+                  fontWeight: 500,
+                  fontSize: type.h4.size,
                   color: tokens.cream,
                   lineHeight: 1.45,
                 }}
               >
-                No competitor in our space owns indigo — Yoodli is blue, Final
-                Round is blue/black, Pramp is orange, Big Interview is red. We
-                can be the first.
+                One clear primary action per screen, always in copper.
+                Everything else stays quiet.
               </div>
             </div>
             <div>
               <h3
                 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 32,
-                  fontWeight: 400,
-                  lineHeight: 1.15,
-                  margin: "0 0 20px",
-                  letterSpacing: "-0.015em",
+                  fontFamily: fonts.sans,
+                  fontSize: type.h2.size,
+                  fontWeight: 600,
+                  lineHeight: type.h2.lineHeight,
+                  margin: "0 0 16px",
+                  letterSpacing: type.h2.letterSpacing,
+                  color: tokens.cream,
                 }}
               >
-                Copper is the{" "}
-                <em style={{ fontStyle: "italic", color: tokens.copper }}>
-                  perfect
-                </em>{" "}
-                counterweight.
+                Neutral does the heavy lifting.
               </h3>
               <p
                 style={{
@@ -1371,9 +1414,10 @@ export default function DesignSystemColor() {
                   margin: "0 0 14px",
                 }}
               >
-                Warm where indigo is cool. Earthen where indigo is sky.
-                Indian-aware (terracotta, copper, brass are visual signatures of
-                Indian craft). And already at home in our cream-bg world.
+                Coal, ink-muted, and the 11-step gray scale carry almost
+                every surface, border, and line of text in the product.
+                That density of neutral is what reads as calm and
+                information-dense rather than busy.
               </p>
               <p
                 style={{
@@ -1383,31 +1427,30 @@ export default function DesignSystemColor() {
                   margin: "0 0 14px",
                 }}
               >
-                The two colors fight beautifully — like a Banarasi or
-                Pochampally weave. Subconsciously Indian without ever being
-                literal.
+                Indigo is kept in reserve for data-viz — charts, graphs,
+                waveforms — so it never competes with copper as a signal
+                for "click here."
               </p>
               <div
                 style={{
                   borderLeft: `2px solid ${tokens.copper}`,
                   paddingLeft: 20,
-                  fontFamily: fonts.serif,
-                  fontSize: 18,
-                  fontStyle: "italic",
+                  fontFamily: fonts.sans,
+                  fontWeight: 500,
+                  fontSize: type.h4.size,
                   color: tokens.cream,
                   lineHeight: 1.45,
                 }}
               >
-                Indigo says depth, calm, authority, premium. Copper says
-                heritage, warmth, fact. Together they say: this product was
-                made by someone who knows.
+                Restrained neutral, plus one accent. That's the whole
+                system.
               </div>
             </div>
           </div>
         </section>
 
         {/* FOOTER */}
-        <Footer section="Color" tagline="Indigo is interactive. Copper is editorial. Never mix." />
+        <Footer section="Color" tagline="Restrained neutral, plus one accent." />
       </div>
     </>
   );

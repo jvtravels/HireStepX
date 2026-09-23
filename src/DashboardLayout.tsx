@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
 import { CopyEmailLink } from "./_CopyEmailLink";
@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // changes. Each sub-context only notifies when ITS slice changes.
   const { displayName, persisted } = useDashboardCore();
   const { calendarEvents, refreshSessions } = useDashboardSessions();
-  const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance, creditsLoaded } = useDashboardSubscription();
+  const { isFree, isStarter, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, creditBalance, creditsLoaded } = useDashboardSubscription();
   // True once auth has fully resolved AND the tier is set. Gating on
   // !authLoading prevents the card from briefly showing the wrong colour
   // (green → orange flicker) when practiceTimestamps are still stale from
@@ -215,7 +215,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
   /* Exhausted-quota states — used to switch the plan card from a
      punitive "limit reached" framing to a calm "all done" achievement. */
-  const proExhausted = tierKnown && isPro && proRemaining === 0;
   const starterExhausted = tierKnown && isStarter && starterRemaining === 0;
   const freeExhausted = tierKnown && isFree && sessionsRemaining === 0;
   // Primary plan-card CTA (rendered by the else branch below) — label + matching
@@ -371,30 +370,26 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           border: `1px solid ${c.border}`,
           flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
-            {isPro ? (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-            ) : isStarter ? (
+            {isStarter ? (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             ) : (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
             )}
             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em", color: c.gilt }}>
-              {!tierKnown ? "Loading plan…" : isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
+              {!tierKnown ? "Loading plan…" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
             {/* Renewal / end date — ember if cancelling, muted stone otherwise */}
-            {tierKnown && (isPro || isStarter) && user?.subscriptionEnd && (
+            {tierKnown && isStarter && user?.subscriptionEnd && (
               <span
                 aria-label={user.cancelAtPeriodEnd
                   ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
-                  : isStarter
-                    ? `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
-                    : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                  : `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                 style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, whiteSpace: "nowrap",
                   color: user.cancelAtPeriodEnd ? c.ember : c.stone,
                   opacity: user.cancelAtPeriodEnd ? 0.9 : 0.65 }}
               >
                 {/* Starter is a one-off Sprint Pack — it expires, it doesn't renew. */}
-                {user.cancelAtPeriodEnd ? "Ends" : isStarter ? "Valid till" : "Renews"}{" "}
+                {user.cancelAtPeriodEnd ? "Ends" : "Valid till"}{" "}
                 {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </span>
             )}
@@ -403,18 +398,18 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           {!tierKnown ? (
             <div aria-hidden="true" style={{ height: 56, marginBottom: 12 }} />
           ) : (() => {
-            const planUsedRaw   = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
-            const planTotal     = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
+            const planUsedRaw   = isStarter ? sessionsThisWeek : sessionsUsed;
+            const planTotal     = isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
             /* Cap display at planTotal — a user may have more sessions than the plan
                limit (grandfathered usage, manual grants) but showing "117/40" is confusing. */
             const planUsed      = Math.min(planUsedRaw, planTotal);
-            const planLeft      = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
-            const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
-            const periodLabel   = isPro ? "this month" : isStarter ? "in this pack" : "total";
+            const planLeft      = isStarter ? starterRemaining : sessionsRemaining;
+            const planExhausted = isStarter ? starterExhausted : freeExhausted;
+            const periodLabel   = isStarter ? "in this pack" : "total";
             // planName kept for potential future use (e.g. aria labels, tooltips).
             const pct  = Math.min(100, (planUsed / planTotal) * 100);
             const isLow = !planExhausted && (
-              (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
+              (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
             // barFill: matches the "N of N" text — ember when exhausted or low, copper when healthy.
             const barFill = (planExhausted || isLow) ? c.ember : c.gilt;
@@ -422,7 +417,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
             return (
               <>
-                {/* ── Row 1: "Sessions with Pro" label + remaining count ── */}
+                {/* ── Row 1: "Sessions used" label + remaining count ── */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
                   <p
                     aria-live="polite"
@@ -511,44 +506,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               hasn't loaded yet (creditBalance defaults to 0 before the fetch resolves). */}
           {(!tierKnown || !creditsLoaded) ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
-          ) : proExhausted ? (
-            creditBalance > 0 ? (
-              /* Exhausted Pro with credits — show both actions; buy is primary */
-              <>
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  title="Buy more session credits"
-                  aria-label="Buy more sessions"
-                  style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer",
-                    background: c.gilt, color: c.obsidian,
-                    fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em",
-                    transition: "filter 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-                >Buy more sessions →</button>
-              </>
-            ) : (
-              /* Exhausted Pro, no credits — buy is the right primary action */
-              <button
-                onClick={() => setShowUpgradeModal(true)}
-                title="Buy more session credits"
-                aria-label="Buy session credits"
-                style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer",
-                  background: c.gilt, color: c.obsidian,
-                  fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em",
-                  transition: "filter 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
-                onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-              >Buy sessions →</button>
-            )
-          ) : isPro ? (
-            /* Active Pro: neutral management actions */
-            <>
-              <button onClick={() => setShowUpgradeModal(true)} title="Billing, invoices, and plan changes (⌘B)" style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: "none", background: c.gilt, color: "#fff", fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.01em", transition: "filter 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.87)")}
-                onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-              >Manage Subscription</button>
-            </>
           ) : isStarter && !starterExhausted ? (
             /* Active Starter with sessions remaining — no upsell, Pro isn't purchasable */
             null
@@ -648,7 +605,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             setShowUpgradeModal(false);
             setPaymentBanner("success");
             setTimeout(() => setPaymentBanner(null), 8000);
-            authUpdateUser({ subscriptionTier: tier as "starter" | "pro", subscriptionStart: start, subscriptionEnd: end });
+            authUpdateUser({ subscriptionTier: tier as "starter", subscriptionStart: start, subscriptionEnd: end });
           }}
           onCreditPurchase={(newBalance) => {
               // Directly apply the balance the server just reported — no DB

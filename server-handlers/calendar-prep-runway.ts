@@ -8,7 +8,7 @@
  * interview, the existing children are returned unchanged rather than
  * duplicated. The scheduling math lives in the pure _prep-runway engine;
  * this handler only loads the parent, persists the plan, and enforces the
- * Pro gate (same tier rule as calendar-save).
+ * paid-plan gate (same tier rule as calendar-save).
  *
  * POST /api/calendar/prep-runway  { parentId: string }
  */
@@ -76,9 +76,9 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const tier = await getSubscriptionTier(auth.userId);
-  if (tier !== "pro" && tier !== "team") {
+  if (tier !== "starter" && tier !== "team") {
     return new Response(
-      JSON.stringify({ error: "Prep Runway is a Pro feature. Upgrade to auto-schedule your prep.", upgradeRequired: true }),
+      JSON.stringify({ error: "Prep Runway is included with any paid plan. Upgrade to auto-schedule your prep.", upgradeRequired: true }),
       { status: 403, headers },
     );
   }

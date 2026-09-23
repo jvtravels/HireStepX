@@ -2,25 +2,20 @@
  * money calculation is unit-testable in isolation.
  *
  * The bug this fixes: the old inline code guessed the CURRENT plan's duration
- * and price from the tier alone (starter→7d/₹49, else→30d/₹149). But tier "pro"
- * can be a 30-day monthly OR a 365-day yearly-pro, and "starter" can be weekly
- * OR yearly-starter — so every yearly upgrader got a wildly inflated credit.
- * We now derive the real duration from the subscription's actual start/end dates
- * and the price from (tier, isYearly).
+ * and price from the tier alone, but "starter" can be weekly OR yearly-starter
+ * (a legacy annual SKU, no longer sold) — so every yearly upgrader got a wildly
+ * inflated credit. We now derive the real duration from the subscription's
+ * actual start/end dates and the price from (tier, isYearly).
  */
 
 export const PLAN_AMOUNT_PAISE: Record<string, number> = {
   weekly: 3900, // Sprint Pack ₹39
-  monthly: 14900,
   "yearly-starter": 203900,
-  "yearly-pro": 143000,
 };
 
 export const PLAN_DAYS: Record<string, number> = {
   weekly: 30, // Sprint Pack 30-day validity
-  monthly: 30,
   "yearly-starter": 365,
-  "yearly-pro": 365,
 };
 
 /** Days of the CURRENT plan still unused, ceil'd, never negative. */
@@ -36,14 +31,12 @@ export function measuredDurationDays(startMs: number, endMs: number): number {
   return Math.round((endMs - startMs) / 86400000);
 }
 
-/** Price (paise) the buyer is currently paying, inferred from tier + whether the
- *  measured duration looks yearly (≥180 days). Falls back to monthly/weekly when
- *  the duration is unknown. */
+/** Price (paise) the buyer is currently paying, inferred from whether the
+ *  measured duration looks yearly (≥180 days) — a legacy annual Sprint Pack
+ *  SKU no longer sold. Falls back to the weekly price when unknown. */
 export function currentPlanAmount(tier: string, measuredDays: number): number {
-  const isStarter = tier === "starter";
   const isYearly = Number.isFinite(measuredDays) ? measuredDays >= 180 : false;
-  if (isYearly) return isStarter ? PLAN_AMOUNT_PAISE["yearly-starter"] : PLAN_AMOUNT_PAISE["yearly-pro"];
-  return isStarter ? PLAN_AMOUNT_PAISE.weekly : PLAN_AMOUNT_PAISE.monthly;
+  return isYearly ? PLAN_AMOUNT_PAISE["yearly-starter"] : PLAN_AMOUNT_PAISE.weekly;
 }
 
 /** Bonus days to add to the NEW plan as credit for the unused portion of the

@@ -7,7 +7,7 @@ import { useAuth } from "./AuthContext";
 import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { useDashboardSessions, useDashboardCore, useDashboardUI, useDashboardSubscription } from "./DashboardContext";
-import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
+import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
 import type { ResumeProfile } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 
@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
   }, [trend]);
 
   if (dataLoading) return <DataLoadingSkeleton />;
-  if (isFree) return <ProGate feature="Performance Analytics" onUpgrade={() => setShowUpgradeModal(true)} />;
+  if (isFree) return <PaywallGate feature="Performance Analytics" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   if (sessions.length === 0) {
     return (

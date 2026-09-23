@@ -37,7 +37,7 @@ export default async function handler(req: Request) {
   // Only paid users get LLM insights
   const tier = await getSubscriptionTier(auth.userId);
   if (tier === "free") {
-    return new Response(JSON.stringify({ error: "Upgrade to Pro for AI-powered insights", requiresUpgrade: true }), {
+    return new Response(JSON.stringify({ error: "Upgrade to any paid plan for AI-powered insights", requiresUpgrade: true }), {
       status: 403, headers,
     });
   }

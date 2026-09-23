@@ -14,7 +14,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 // (the source of truth used when the charge actually happens). That file
 // pulls in node:crypto and is Node-serverless only, so it can't be imported
 // from this edge handler; keep this copy in sync by hand.
-const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900, monthly: 14900 };
+const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900 };
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);

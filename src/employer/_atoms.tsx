@@ -73,7 +73,7 @@ export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode;
   );
 }
 
-type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error";
+type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error" | "violet";
 
 const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
   indigo: { bg: t.indigo100, fg: t.indigoDeep },
@@ -82,6 +82,7 @@ const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
   warning: { bg: t.warning100, fg: t.warning },
   error: { bg: t.error100, fg: t.error },
   neutral: { bg: t.creamSoft, fg: t.inkSoft },
+  violet: { bg: t.violet100, fg: t.violet },
 };
 
 export function Pill({ children, tone = "neutral", filled = false }: { children: React.ReactNode; tone?: PillTone; filled?: boolean }) {
@@ -272,6 +273,17 @@ export function StatusChip({ status }: { status: "generating" | "ready" | "parti
   };
   const m = map[status];
   return <Pill tone={m.tone}>{m.label}</Pill>;
+}
+
+/** Colored dot + label — pipeline/stage indicator for opportunity and
+ *  requirement tables (matching → review → interviewing → hired). */
+export function StageDot({ tone, label }: { tone: PillTone; label: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>
+      <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: pillPalette[tone].fg, flexShrink: 0 }} />
+      {label}
+    </span>
+  );
 }
 
 export function FieldLabel({ children, required = false }: { children: React.ReactNode; required?: boolean }) {

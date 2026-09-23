@@ -1,16 +1,23 @@
 /* HireStepX — Design System / Typography
    Self-contained canvas component. No external imports.
 
-   Three families, one signature:
-     Instrument Serif  — display serif, with italic accent in copper
-     Satoshi     — UI + body sans
-     JetBrains Mono — micro-caps, labels, code
+   2026-09 SaaS-flat conversion: AF Sobremesa stays the typeface for both
+   the `serif` and `sans` roles below — no font-family swap — but it no
+   longer carries a separate "display serif identity" sized for magazine
+   drama. Headings now run through the compact, functional `type` scale
+   (see _tokens.ts): h1 28 down to micro 11, ~1.2-1.33x steps, tight
+   line-heights, restrained tracking — the way Linear/Notion/Stripe size
+   type. Copper is the one UI accent (primary CTAs, active/selected
+   states, links, focus rings) — never a decorative headline color.
 
-   The italic-accent-word treatment is the single most ownable
-   visual asset on this product. Protect it. */
+   Two families:
+     AF Sobremesa   — one family, two roles: headings and UI/body,
+                       differentiated by weight, not by typeface or size
+     JetBrains Mono — micro-caps, labels, code */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, type, radius } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* ─── Atoms ─── */
 
 function FamilyCard({
@@ -35,8 +42,8 @@ function FamilyCard({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
-        padding: "32px 36px",
+        borderRadius: radius.lg,
+        padding: "28px 32px",
         boxShadow: shadows.card,
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -49,10 +56,10 @@ function FamilyCard({
         <h3
           style={{
             fontFamily: fontStack,
-            fontSize: 36,
-            fontWeight: 400,
+            fontSize: type.h3.size,
+            fontWeight: type.h3.weight,
             margin: "8px 0 12px",
-            letterSpacing: "-0.01em",
+            lineHeight: type.h3.lineHeight,
             color: t.coal,
           }}
         >
@@ -60,9 +67,9 @@ function FamilyCard({
         </h3>
         <p
           style={{
-            color: t.indigoGray,
-            fontSize: 13,
-            lineHeight: 1.6,
+            color: t.inkMuted,
+            fontSize: type.small.size,
+            lineHeight: type.small.lineHeight,
             margin: "0 0 20px",
           }}
         >
@@ -71,11 +78,11 @@ function FamilyCard({
         <div
           style={{
             fontFamily: f.mono,
-            fontSize: 11,
+            fontSize: type.micro.size,
             color: t.inkSoft,
             background: t.creamSoft,
             padding: "8px 12px",
-            borderRadius: 6,
+            borderRadius: radius.sm,
             display: "inline-block",
           }}
         >
@@ -85,8 +92,8 @@ function FamilyCard({
       <div
         style={{
           background: t.creamSoft,
-          borderRadius: 10,
-          padding: "32px 28px",
+          borderRadius: radius.md,
+          padding: "28px 24px",
           textAlign: "center",
         }}
       >
@@ -105,7 +112,6 @@ function ScaleRow({
   sample,
   fontStack,
   weight = 400,
-  isItalic,
   color,
 }: {
   label: string;
@@ -116,7 +122,6 @@ function ScaleRow({
   sample: string;
   fontStack: string;
   weight?: number;
-  isItalic?: boolean;
   color?: string;
 }) {
   return (
@@ -162,7 +167,6 @@ function ScaleRow({
           lineHeight,
           letterSpacing: tracking,
           fontWeight: weight,
-          fontStyle: isItalic ? "italic" : "normal",
           color: color || t.coal,
           margin: 0,
         }}
@@ -171,9 +175,9 @@ function ScaleRow({
       </div>
       <div
         style={{
-          color: t.indigoGray,
-          fontSize: 12,
-          lineHeight: 1.5,
+          color: t.inkMuted,
+          fontSize: type.caption.size,
+          lineHeight: type.caption.lineHeight,
         }}
       >
         {use}
@@ -200,7 +204,7 @@ function Rule({
         background: t.white,
         border: `1px solid ${t.line}`,
         borderLeft: `3px solid ${isDo ? t.success : t.error}`,
-        borderRadius: 10,
+        borderRadius: radius.md,
         padding: "24px 28px",
       }}
     >
@@ -208,9 +212,9 @@ function Rule({
         style={{
           display: "inline-block",
           fontFamily: f.mono,
-          fontSize: 10,
+          fontSize: type.micro.size,
           textTransform: "uppercase",
-          letterSpacing: "0.12em",
+          letterSpacing: type.micro.letterSpacing,
           padding: "3px 10px",
           borderRadius: 999,
           marginBottom: 16,
@@ -222,21 +226,22 @@ function Rule({
       </span>
       <h4
         style={{
-          fontFamily: f.serif,
-          fontSize: 18,
-          fontWeight: 400,
+          fontFamily: f.sans,
+          fontSize: type.h3.size,
+          fontWeight: type.h3.weight,
           margin: "0 0 8px",
-          lineHeight: 1.3,
+          lineHeight: type.h3.lineHeight,
+          color: t.coal,
         }}
       >
         {title}
       </h4>
       <p
         style={{
-          color: t.indigoGray,
-          fontSize: 13,
+          color: t.inkMuted,
+          fontSize: type.small.size,
           margin: "0 0 12px",
-          lineHeight: 1.55,
+          lineHeight: type.small.lineHeight,
         }}
       >
         {body}
@@ -245,11 +250,11 @@ function Rule({
         style={{
           marginTop: 14,
           background: t.creamSoft,
-          borderRadius: 6,
+          borderRadius: radius.sm,
           padding: "14px 16px",
-          fontSize: 13,
+          fontSize: type.small.size,
           color: t.inkSoft,
-          lineHeight: 1.6,
+          lineHeight: type.small.lineHeight,
         }}
       >
         {demo}
@@ -264,173 +269,114 @@ export default function DesignSystemTypography() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "80px 56px 120px",
+          padding: "56px 48px 96px",
           fontFamily: f.sans,
           color: t.coal,
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header
-          style={{
-            borderBottom: `1px solid ${t.line}`,
-            paddingBottom: 40,
-            marginBottom: 64,
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            gap: 24,
-            alignItems: "end",
-          }}
-        >
-          <div>
-            <MonoLabel>Design System · v1.0</MonoLabel>
-            <h1
-              style={{
-                fontFamily: f.serif,
-                fontSize: 56,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.05,
-                margin: "12px 0 0",
-              }}
-            >
-              Typography, by{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>signature</em>.
-            </h1>
-            <p
-              style={{
-                color: t.indigoGray,
-                fontSize: 15,
-                margin: "16px 0 0",
-                maxWidth: 540,
-                lineHeight: 1.6,
-              }}
-            >
-              Three families. One signature: the italic accent word in
-              Instrument Serif, set in copper. Used once per moment. Never twice.
-              Everything else is structure around the move.
-            </p>
-          </div>
-          <div
-            style={{
-              textAlign: "right",
-              fontFamily: f.mono,
-              fontSize: 11,
-              color: t.inkSoft,
-              lineHeight: 1.7,
-            }}
-          >
-            <div>
-              <b style={{ color: t.coal, fontWeight: 500 }}>Display</b> Instrument Serif
-            </div>
-            <div>
-              <b style={{ color: t.coal, fontWeight: 500 }}>UI / Body</b> Satoshi
-            </div>
-            <div>
-              <b style={{ color: t.coal, fontWeight: 500 }}>Mono</b> JetBrains
-            </div>
-            <div>
-              <b style={{ color: t.coal, fontWeight: 500 }}>Accent</b> Italic +
-              Copper
-            </div>
-          </div>
-        </header>
+        {/* HEADER — demonstrates the PageHeader pattern: plain title, no
+            decorative accent word. See _atoms.tsx PageHeader. */}
+        <PageHeader
+          title="Typography"
+          description="One typeface, sized functionally. A compact scale from h1 down to micro, tight line-heights, restrained tracking — built for information density, not billboard moments."
+          metaRight={
+            <>
+              <div>
+                <b style={{ color: t.coal, fontWeight: 500 }}>Headings</b> AF Sobremesa
+              </div>
+              <div>
+                <b style={{ color: t.coal, fontWeight: 500 }}>UI / Body</b> AF Sobremesa
+              </div>
+              <div>
+                <b style={{ color: t.coal, fontWeight: 500 }}>Mono</b> JetBrains
+              </div>
+              <div>
+                <b style={{ color: t.coal, fontWeight: 500 }}>Accent</b> Copper
+              </div>
+            </>
+          }
+        />
 
-        {/* 01 — THE SIGNATURE */}
-        <section style={{ marginBottom: 80 }}>
+        {/* 01 — THE ACCENT DISCIPLINE */}
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="01"
-            title="The signature"
-            desc="The single move that defines HireStepX visually. Protect it from drift."
+            title="The accent discipline"
+            desc="Copper is the one UI accent, used sparingly — primary buttons, active states, links, focus rings. Not decoration."
           />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
-              padding: "56px 64px",
+              borderRadius: radius.lg,
+              padding: "40px 48px",
               boxShadow: shadows.card,
               textAlign: "center",
             }}
           >
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 64,
-                fontWeight: 400,
-                lineHeight: 1.05,
-                letterSpacing: "-0.02em",
+                fontFamily: f.sans,
+                fontSize: type.h1.size,
+                fontWeight: type.h1.weight,
+                lineHeight: type.h1.lineHeight,
+                letterSpacing: type.h1.letterSpacing,
                 margin: 0,
                 color: t.coal,
               }}
             >
-              Clarity{" "}
-              <em
+              Clarity wins the interview.
+            </p>
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
+              <button
                 style={{
-                  fontStyle: "italic",
-                  fontWeight: 500,
-                  color: t.copper,
+                  background: t.copper,
+                  color: t.white,
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: radius.md,
+                  fontFamily: f.sans,
+                  fontSize: type.body.size,
+                  fontWeight: 600,
+                  cursor: "pointer",
                 }}
               >
-                wins
-              </em>{" "}
-              the interview.
-            </p>
+                Start practising →
+              </button>
+            </div>
             <div
               style={{
-                marginTop: 36,
+                marginTop: 32,
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 28,
-                paddingTop: 32,
+                gap: 24,
+                paddingTop: 28,
                 borderTop: `1px solid ${t.line}`,
               }}
             >
               <div>
-                <MonoLabel>Family</MonoLabel>
-                <p
-                  style={{
-                    fontFamily: f.serif,
-                    fontSize: 18,
-                    margin: "8px 0 0",
-                    color: t.coal,
-                  }}
-                >
-                  Instrument Serif, italic 400
+                <MonoLabel>What gets copper</MonoLabel>
+                <p style={{ fontSize: type.small.size, margin: "8px 0 0", color: t.coal }}>
+                  Primary buttons, active/selected states, links, focus rings
                 </p>
               </div>
               <div>
-                <MonoLabel>Color</MonoLabel>
-                <p
-                  style={{
-                    fontFamily: f.serif,
-                    fontSize: 18,
-                    margin: "8px 0 0",
-                    color: t.copper,
-                    fontStyle: "italic",
-                  }}
-                >
-                  Copper #B45309
+                <MonoLabel>What doesn't</MonoLabel>
+                <p style={{ fontSize: type.small.size, margin: "8px 0 0", color: t.coal }}>
+                  Headline words, section labels, plain numerals, decoration
                 </p>
               </div>
               <div>
                 <MonoLabel>Frequency</MonoLabel>
-                <p
-                  style={{
-                    fontFamily: f.serif,
-                    fontSize: 18,
-                    margin: "8px 0 0",
-                    color: t.coal,
-                  }}
-                >
-                  Once per moment
+                <p style={{ fontSize: type.small.size, margin: "8px 0 0", color: t.coal }}>
+                  Roughly ≤10% of any given surface
                 </p>
               </div>
             </div>
@@ -438,41 +384,41 @@ export default function DesignSystemTypography() {
         </section>
 
         {/* 02 — FAMILIES */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="02"
-            title="Three families"
+            title="Two families"
             desc="One purpose each. Never substitute. Never combine outside their lane."
           />
-          <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "grid", gap: 12 }}>
             <FamilyCard
-              family="Instrument Serif"
-              fontStack={f.serif}
-              role="Display · Editorial"
-              weights="Regular 400 · Medium 500 · Italic 400 / 500"
-              preview="A high-contrast serif designed for editorial display. Used for hero text, section heads, and the score numerals on result screens. Never set below 16px — the optical sizes start to break down."
+              family="AF Sobremesa"
+              fontStack={f.sans}
+              role="Headings"
+              weights="Medium 500 · SemiBold 600"
+              preview="Sized functionally through the compact scale (h1 28 down to h4 16) — not a separate display identity. Used for section heads, card titles, and page headers."
               bigPreview="Aa"
               bigStyle={{
-                fontSize: 140,
+                fontSize: 32,
                 lineHeight: 1,
-                fontWeight: 400,
+                fontWeight: 600,
                 color: t.coal,
-                letterSpacing: "-0.04em",
+                letterSpacing: type.h1.letterSpacing,
               }}
             />
             <FamilyCard
-              family="Satoshi"
+              family="AF Sobremesa"
               fontStack={f.sans}
               role="UI · Body"
-              weights="Regular 400 · Medium 500 · SemiBold 600 · Bold 700"
-              preview="The workhorse. Buttons, form fields, body text, navigation, microcopy. Optimized for screens. Set to 14-15px for body, 12-13px for helper text."
+              weights="Regular 400 · Medium 500 · SemiBold 600"
+              preview="The workhorse. Buttons, form fields, body text, navigation, microcopy. Set to 14-15px for body, 12-13px for helper text."
               bigPreview="Aa"
               bigStyle={{
-                fontSize: 140,
+                fontSize: 32,
                 lineHeight: 1,
                 fontWeight: 500,
                 color: t.coal,
-                letterSpacing: "-0.04em",
+                letterSpacing: "0",
               }}
             />
             <FamilyCard
@@ -480,141 +426,138 @@ export default function DesignSystemTypography() {
               fontStack={f.mono}
               role="Micro · Labels · Data"
               weights="Regular 400 · Medium 500"
-              preview="Used in micro-caps for eyebrow labels, in code blocks, and for tabular data (dates, hex codes, file names). Always uppercase + tracked at 0.08-0.12em when used as a label."
+              preview="Used in micro-caps for eyebrow labels, in code blocks, and for tabular data (dates, hex codes, file names). Uppercase + tracked at 0.04em when used as a label."
               bigPreview="Aa"
               bigStyle={{
-                fontSize: 140,
+                fontSize: 32,
                 lineHeight: 1,
                 fontWeight: 500,
                 color: t.coal,
-                letterSpacing: "-0.02em",
+                letterSpacing: "0",
               }}
             />
           </div>
         </section>
 
         {/* 03 — TYPE SCALE */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="03"
             title="Type scale"
-            desc="Modular scale, ratio ~1.250. Each step has one role. Don't invent in-between sizes."
+            desc="Compact functional scale, ~1.2-1.33x steps. Each step has one role. Don't invent in-between sizes."
           />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "8px 32px 8px",
               boxShadow: shadows.card,
             }}
           >
             <ScaleRow
-              label="Display 1"
-              size={64}
-              lineHeight={1.05}
-              tracking="-0.02em"
-              use="Hero text on auth + onboarding. Brand-defining moments."
+              label="H1"
+              size={type.h1.size}
+              lineHeight={type.h1.lineHeight}
+              tracking={type.h1.letterSpacing}
+              use="Page headers, top-of-page titles."
               sample="Reset your password"
-              fontStack={f.serif}
+              fontStack={f.sans}
+              weight={type.h1.weight}
             />
             <ScaleRow
-              label="Display 2"
-              size={44}
-              lineHeight={1.1}
-              tracking="-0.02em"
-              use="Page titles inside the app, modal heroes."
-              sample="Senior Product Designer"
-              fontStack={f.serif}
-            />
-            <ScaleRow
-              label="Heading 1"
-              size={28}
-              lineHeight={1.15}
-              tracking="-0.01em"
+              label="H2"
+              size={type.h2.size}
+              lineHeight={type.h2.lineHeight}
+              tracking={type.h2.letterSpacing}
               use="Section heads inside long-form pages."
-              sample="The discipline"
-              fontStack={f.serif}
+              sample="The accent discipline"
+              fontStack={f.sans}
+              weight={type.h2.weight}
             />
             <ScaleRow
-              label="Heading 2"
-              size={22}
-              lineHeight={1.25}
-              tracking="-0.01em"
+              label="H3"
+              size={type.h3.size}
+              lineHeight={type.h3.lineHeight}
+              tracking="0"
               use="Card titles, sub-section heads."
               sample="Your weakest area"
-              fontStack={f.serif}
+              fontStack={f.sans}
+              weight={type.h3.weight}
             />
             <ScaleRow
-              label="Heading 3"
-              size={18}
-              lineHeight={1.3}
+              label="H4"
+              size={type.h4.size}
+              lineHeight={type.h4.lineHeight}
               tracking="0"
               use="Inline panel titles, dense UI."
               sample="Behavioral interview"
               fontStack={f.sans}
-              weight={500}
+              weight={type.h4.weight}
+            />
+            <ScaleRow
+              label="Body LG"
+              size={type.bodyLg.size}
+              lineHeight={type.bodyLg.lineHeight}
+              tracking="0"
+              use="Lead paragraphs, header descriptions."
+              sample="Practice unlimited mock interviews tailored to your resume and target role."
+              fontStack={f.sans}
+              weight={type.bodyLg.weight}
             />
             <ScaleRow
               label="Body"
-              size={15}
-              lineHeight={1.6}
+              size={type.body.size}
+              lineHeight={type.body.lineHeight}
               tracking="0"
               use="Default body text, form fields, paragraph copy."
-              sample="Practice unlimited mock interviews tailored to your resume and target role."
-              fontStack={f.sans}
-            />
-            <ScaleRow
-              label="Body small"
-              size={13}
-              lineHeight={1.55}
-              tracking="0"
-              use="Helper text, descriptions, secondary copy."
               sample="We'll email you a link to reset your password."
               fontStack={f.sans}
-              color={t.indigoGray}
+              weight={type.body.weight}
+              color={t.inkMuted}
+            />
+            <ScaleRow
+              label="Small"
+              size={type.small.size}
+              lineHeight={type.small.lineHeight}
+              tracking="0"
+              use="Helper text, descriptions, secondary copy."
+              sample="Helper text and secondary descriptions"
+              fontStack={f.sans}
+              weight={type.small.weight}
+              color={t.inkMuted}
             />
             <ScaleRow
               label="Caption"
-              size={12}
-              lineHeight={1.5}
+              size={type.caption.size}
+              lineHeight={type.caption.lineHeight}
               tracking="0"
               use="Form labels, tooltips, footnotes."
               sample="Email address"
               fontStack={f.sans}
-              weight={500}
+              weight={type.caption.weight}
             />
             <ScaleRow
-              label="Micro caps"
-              size={10}
-              lineHeight={1.5}
-              tracking="0.12em"
+              label="Micro"
+              size={type.micro.size}
+              lineHeight={type.micro.lineHeight}
+              tracking={type.micro.letterSpacing}
               use="Eyebrow labels, mono-uppercase tags, navigation."
               sample="DESIGN SYSTEM · V1.0"
               fontStack={f.mono}
-              weight={500}
+              weight={type.micro.weight}
               color={t.inkSoft}
-            />
-            <ScaleRow
-              label="Score"
-              size={72}
-              lineHeight={1}
-              tracking="-0.02em"
-              use="Hero numerals — clarity score, percentage, single big number."
-              sample="62"
-              fontStack={f.serif}
-              color={t.copper}
             />
             <div style={{ height: 8 }} />
           </div>
         </section>
 
         {/* 04 — WEIGHT & STYLE */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="04"
-            title="Weight, style, italic"
-            desc="When to reach for medium. When italic is allowed. The bold rule."
+            title="Weight and style"
+            desc="When to reach for medium. When to reach for semibold. The accent rule."
           />
           <div
             style={{
@@ -627,12 +570,12 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>Instrument Serif · serif rules</MonoLabel>
+              <MonoLabel>Headings (h1-h4)</MonoLabel>
               <ul
                 style={{
                   margin: "16px 0 0",
@@ -642,22 +585,21 @@ export default function DesignSystemTypography() {
                   gap: 14,
                 }}
               >
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
-                  <b style={{ color: t.coal }}>400 only for body display.</b>{" "}
-                  500 for emphasis or accent.
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
+                  <b style={{ color: t.coal }}>600 (SemiBold) is the default.</b>{" "}
+                  Every step in the scale (h1-h4) carries the same weight.
                 </li>
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
-                  <b style={{ color: t.coal }}>Italic 500 + copper</b> = the
-                  signature. The only italic moment allowed in the system.
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
+                  <b style={{ color: t.coal }}>Size carries hierarchy, not weight.</b>{" "}
+                  Don't reach for a heavier weight to make a heading feel bigger — move up a step instead.
                 </li>
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
-                  <b style={{ color: t.coal }}>Never bold (700+).</b> Heavy
-                  weights kill the editorial feel. If you need impact, use
-                  size, not weight.
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
+                  <b style={{ color: t.coal }}>Never bold (700+).</b>{" "}
+                  Heavy weights read as loud, not important, at these compact sizes.
                 </li>
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
-                  <b style={{ color: t.coal }}>Minimum 18px.</b> Below this,
-                  the letterforms break down on screen. Drop to Satoshi.
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
+                  <b style={{ color: t.coal }}>Neutral ink, not copper.</b>{" "}
+                  Copper is reserved for actions and states, never a headline color.
                 </li>
               </ul>
             </div>
@@ -665,12 +607,12 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.indigo}>Satoshi · sans rules</MonoLabel>
+              <MonoLabel>UI / body</MonoLabel>
               <ul
                 style={{
                   margin: "16px 0 0",
@@ -680,21 +622,21 @@ export default function DesignSystemTypography() {
                   gap: 14,
                 }}
               >
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
                   <b style={{ color: t.coal }}>400 for body.</b> 500 for
                   buttons, labels, and emphasis.
                 </li>
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
-                  <b style={{ color: t.coal }}>600 only on click targets.</b>{" "}
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
+                  <b style={{ color: t.coal }}>600 on click targets.</b>{" "}
                   Primary CTA text, prominent links.
                 </li>
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
                   <b style={{ color: t.coal }}>700 sparingly.</b> Reserved for
                   strong emphasis inside a paragraph (rare).
                 </li>
-                <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.55 }}>
-                  <b style={{ color: t.coal }}>Never italic.</b> Italic is
-                  Instrument Serif-copper-only territory.
+                <li style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
+                  <b style={{ color: t.coal }}>Copper only on the action itself.</b>{" "}
+                  The button or link, not the surrounding text.
                 </li>
               </ul>
             </div>
@@ -702,11 +644,11 @@ export default function DesignSystemTypography() {
         </section>
 
         {/* 05 — LINE HEIGHT & TRACKING */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="05"
             title="Line height & tracking"
-            desc="Tight when big. Open when small. Mono caps always tracked."
+            desc="Tight and consistent across the whole scale. Mono caps get the only real tracking."
           />
           <div
             style={{
@@ -719,19 +661,19 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
               }}
             >
               <MonoLabel>Line height (leading)</MonoLabel>
               <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
                 {[
-                  { range: "Display (44+px)", value: "1.05 – 1.15", note: "Tight, dramatic" },
-                  { range: "Headings (22-32px)", value: "1.2 – 1.3", note: "Balanced" },
-                  { range: "Body (14-16px)", value: "1.55 – 1.7", note: "Easy to read" },
-                  { range: "Small (12-13px)", value: "1.4 – 1.5", note: "Compact, no crowding" },
-                  { range: "Mono caps (10-11px)", value: "1.5", note: "Comfortable, no overlap" },
+                  { range: "H1 (28px)", value: "1.25", note: "Tightest, still legible" },
+                  { range: "H2-H4 (16-22px)", value: "1.3 – 1.4", note: "Balanced" },
+                  { range: "Body (14-15px)", value: "1.5", note: "Easy to read, still dense" },
+                  { range: "Small / caption (12-13px)", value: "1.4 – 1.45", note: "Compact, no crowding" },
+                  { range: "Micro (11px)", value: "1.35", note: "Comfortable, no overlap" },
                 ].map((row) => (
                   <div
                     key={row.range}
@@ -741,20 +683,20 @@ export default function DesignSystemTypography() {
                       gap: 16,
                       padding: "10px 0",
                       borderBottom: `1px solid ${t.line}`,
-                      fontSize: 13,
+                      fontSize: type.small.size,
                     }}
                   >
                     <span style={{ color: t.coal, fontWeight: 500 }}>{row.range}</span>
                     <span
                       style={{
                         fontFamily: f.mono,
-                        fontSize: 12,
-                        color: t.indigo,
+                        fontSize: type.caption.size,
+                        color: t.inkMuted,
                       }}
                     >
                       {row.value}
                     </span>
-                    <span style={{ color: t.inkSoft, fontSize: 12 }}>{row.note}</span>
+                    <span style={{ color: t.inkSoft, fontSize: type.caption.size }}>{row.note}</span>
                   </div>
                 ))}
               </div>
@@ -763,19 +705,19 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
               }}
             >
               <MonoLabel>Letter-spacing (tracking)</MonoLabel>
               <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
                 {[
-                  { range: "Display (44+px)", value: "-0.02em", note: "Very tight, optical" },
-                  { range: "Headings (22-32px)", value: "-0.01em", note: "Lightly tight" },
-                  { range: "Body (14-16px)", value: "0", note: "Default Satoshi spacing" },
-                  { range: "Small (12-13px)", value: "0", note: "Default" },
-                  { range: "Mono caps (10-11px)", value: "0.08 – 0.12em", note: "Always loose" },
+                  { range: "H1 (28px)", value: "-0.01em", note: "Slightly tight, optical" },
+                  { range: "H2 (22px)", value: "-0.006em", note: "Barely tight" },
+                  { range: "H3-H4 / body", value: "0", note: "Default AF Sobremesa spacing" },
+                  { range: "Small / caption", value: "0", note: "Default" },
+                  { range: "Micro (11px)", value: "0.04em", note: "Light, for uppercase labels" },
                 ].map((row) => (
                   <div
                     key={row.range}
@@ -785,20 +727,20 @@ export default function DesignSystemTypography() {
                       gap: 16,
                       padding: "10px 0",
                       borderBottom: `1px solid ${t.line}`,
-                      fontSize: 13,
+                      fontSize: type.small.size,
                     }}
                   >
                     <span style={{ color: t.coal, fontWeight: 500 }}>{row.range}</span>
                     <span
                       style={{
                         fontFamily: f.mono,
-                        fontSize: 12,
-                        color: t.indigo,
+                        fontSize: type.caption.size,
+                        color: t.inkMuted,
                       }}
                     >
                       {row.value}
                     </span>
-                    <span style={{ color: t.inkSoft, fontSize: 12 }}>{row.note}</span>
+                    <span style={{ color: t.inkSoft, fontSize: type.caption.size }}>{row.note}</span>
                   </div>
                 ))}
               </div>
@@ -807,11 +749,11 @@ export default function DesignSystemTypography() {
         </section>
 
         {/* 06 — NUMERALS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="06"
             title="Numerals"
-            desc="Three contexts. Three families. Never mix."
+            desc="Three contexts. Two families. Never mix."
           />
           <div
             style={{
@@ -824,45 +766,45 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
                 textAlign: "center",
               }}
             >
-              <MonoLabel color={t.copper}>Display numerals</MonoLabel>
+              <MonoLabel>Hero numerals</MonoLabel>
               <div
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: 96,
-                  fontWeight: 400,
+                  fontFamily: f.sans,
+                  fontSize: 40,
+                  fontWeight: 600,
                   lineHeight: 1,
-                  color: t.copper,
-                  letterSpacing: "-0.03em",
+                  color: t.coal,
+                  letterSpacing: type.h1.letterSpacing,
                   margin: "20px 0",
                 }}
               >
                 62
               </div>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: 0, lineHeight: 1.55 }}>
-                Instrument Serif, copper. The score moment. One per screen.
+              <p style={{ fontSize: type.small.size, color: t.inkMuted, margin: 0, lineHeight: type.small.lineHeight }}>
+                AF Sobremesa, semibold, neutral ink. The score moment — bold weight carries the emphasis, not color.
               </p>
             </div>
             <div
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
                 textAlign: "center",
               }}
             >
-              <MonoLabel color={t.indigo}>UI numerals</MonoLabel>
+              <MonoLabel>UI numerals</MonoLabel>
               <div
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 48,
+                  fontSize: 28,
                   fontWeight: 600,
                   lineHeight: 1,
                   color: t.coal,
@@ -871,16 +813,16 @@ export default function DesignSystemTypography() {
               >
                 ₹149
               </div>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: 0, lineHeight: 1.55 }}>
-                Satoshi, coal. Pricing, counts, in-line stats.
+              <p style={{ fontSize: type.small.size, color: t.inkMuted, margin: 0, lineHeight: type.small.lineHeight }}>
+                AF Sobremesa's UI weight, coal. Pricing, counts, in-line stats.
               </p>
             </div>
             <div
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
                 textAlign: "center",
               }}
@@ -889,7 +831,7 @@ export default function DesignSystemTypography() {
               <div
                 style={{
                   fontFamily: f.mono,
-                  fontSize: 22,
+                  fontSize: type.h4.size,
                   fontWeight: 500,
                   lineHeight: 1.4,
                   color: t.coal,
@@ -897,11 +839,11 @@ export default function DesignSystemTypography() {
                   letterSpacing: "0.02em",
                 }}
               >
-                #B45309
+                #BB4D00
                 <br />
                 15.9 : 1
               </div>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: type.small.size, color: t.inkMuted, margin: 0, lineHeight: type.small.lineHeight }}>
                 JetBrains Mono. Tabular. Hex codes, contrast ratios, file
                 names, dates.
               </p>
@@ -925,44 +867,41 @@ export default function DesignSystemTypography() {
           >
             <Rule
               kind="do"
-              title="One italic accent word per screen."
-              body="The italic-Instrument Serif-copper move is the brand. Pick the most important word in the hero. That's it."
+              title="One clear primary action per screen, always in the accent color."
+              body="Copper marks the one thing to do next — a button, a link, an active tab. Never a headline word."
               demo={
-                <>
-                  <span style={{ fontFamily: f.serif, fontSize: 22, color: t.coal }}>
-                    Reset your{" "}
-                    <em
-                      style={{
-                        fontStyle: "italic",
-                        fontWeight: 500,
-                        color: t.copper,
-                      }}
-                    >
-                      password
-                    </em>
-                  </span>
-                </>
+                <span
+                  style={{
+                    display: "inline-block",
+                    background: t.copper,
+                    color: t.white,
+                    fontFamily: f.sans,
+                    fontSize: type.body.size,
+                    fontWeight: 600,
+                    padding: "8px 16px",
+                    borderRadius: radius.sm,
+                  }}
+                >
+                  Reset password
+                </span>
               }
             />
             <Rule
               kind="dont"
-              title="Italicize multiple words in one hero."
-              body="Two italics dilutes both. Three is graphic chaos."
+              title="Use copper as a decorative headline color."
+              body="Coloring a headline word in copper reads as decoration, not action — it dilutes copper's meaning everywhere else."
               demo={
-                <span style={{ fontFamily: f.serif, fontSize: 22, color: t.coal }}>
-                  ❌ <em style={{ fontStyle: "italic", color: t.copper }}>Reset</em>{" "}
-                  your{" "}
-                  <em style={{ fontStyle: "italic", color: t.copper }}>own</em>{" "}
-                  <em style={{ fontStyle: "italic", color: t.copper }}>password</em>
+                <span style={{ fontFamily: f.sans, fontSize: type.h3.size, color: t.coal, fontWeight: 600 }}>
+                  ❌ Reset your <span style={{ color: t.copper }}>password</span>
                 </span>
               }
             />
             <Rule
               kind="do"
-              title="Set body in Satoshi at 14-15px."
-              body="Satoshi is engineered for screens. 14-15px hits the readability sweet spot for most adult readers."
+              title="Set body in the UI/body weight at 14-15px."
+              body="14-15px hits the readability sweet spot for most adult readers, at the regular weight."
               demo={
-                <span style={{ fontFamily: f.sans, fontSize: 14, color: t.indigoGray, lineHeight: 1.6 }}>
+                <span style={{ fontFamily: f.sans, fontSize: type.body.size, color: t.inkMuted, lineHeight: type.body.lineHeight }}>
                   Practice unlimited mock interviews tailored to your resume
                   and target role. Score, learn, repeat — until you're ready.
                 </span>
@@ -970,21 +909,21 @@ export default function DesignSystemTypography() {
             />
             <Rule
               kind="dont"
-              title="Set body in Instrument Serif."
-              body="Serifs at 14-16px lose all the optical magic that makes them feel premium at display sizes. Looks cheap."
+              title="Oversize body copy into heading territory."
+              body="A paragraph set at 18px+ reads as a design accident, not confidence — it also breaks the compact rhythm of the page."
               demo={
-                <span style={{ fontFamily: f.serif, fontSize: 14, color: t.indigoGray, lineHeight: 1.6 }}>
+                <span style={{ fontFamily: f.sans, fontSize: 20, color: t.inkMuted, lineHeight: 1.4 }}>
                   ❌ "Practice unlimited mock interviews tailored to your
-                  resume…" Looks dated and fights legibility.
+                  resume…" Fights the surrounding density.
                 </span>
               }
             />
             <Rule
               kind="do"
-              title="Use weight for emphasis, not italic."
-              body="Inside a paragraph, bump to medium 500 or semibold 600 to draw the eye. Italic is reserved for the brand signature."
+              title="Use weight for emphasis, not color."
+              body="Inside a paragraph, bump to medium 500 or semibold 600 to draw the eye. Copper stays reserved for the action layer."
               demo={
-                <span style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.7 }}>
+                <span style={{ fontFamily: f.sans, fontSize: type.body.size, color: t.coal, lineHeight: type.body.lineHeight }}>
                   Your interview readiness is{" "}
                   <b style={{ fontWeight: 600 }}>62 out of 100</b> — strong
                   foundation, room to push.
@@ -993,45 +932,46 @@ export default function DesignSystemTypography() {
             />
             <Rule
               kind="dont"
-              title="Italicize in body text."
-              body="Steals the visual budget reserved for the hero accent. Reads as Word-document italics, not editorial."
+              title="Italicize anything."
+              body="Italics aren't part of the system anywhere — not even for a 'wrong-example' callout. Use weight or color for emphasis instead."
               demo={
-                <span style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.7 }}>
-                  ❌ Your interview readiness is{" "}
-                  <i>62 out of 100</i> — diluted and off-brand.
+                <span style={{ fontFamily: f.sans, fontSize: type.body.size, color: t.coal, lineHeight: type.body.lineHeight }}>
+                  ❌ <code style={{ fontFamily: f.mono, fontSize: type.caption.size, background: t.creamSoft, padding: "2px 6px", borderRadius: radius.sm }}>font-style: italic</code>{" "}
+                  — not used anywhere in this system.
                 </span>
               }
             />
             <Rule
               kind="do"
               title="Mono-caps for eyebrow labels."
-              body="JetBrains Mono, 10-11px, uppercase, tracked at 0.12em. Used above any section heading or important block."
+              body="JetBrains Mono, 11px, uppercase, tracked at 0.04em. Used above any section heading or important block."
               demo={
                 <>
-                  <MonoLabel color={t.copper}>Section · 04</MonoLabel>
+                  <MonoLabel>Section · 04</MonoLabel>
                   <span
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 22,
+                      fontFamily: f.sans,
+                      fontSize: type.h2.size,
+                      fontWeight: type.h2.weight,
                       color: t.coal,
                       display: "block",
                       marginTop: 8,
                     }}
                   >
-                    The discipline
+                    Weight and style
                   </span>
                 </>
               }
             />
             <Rule
               kind="dont"
-              title="Satoshi caps for labels."
-              body="Satoshi at small caps loses its character. JetBrains Mono adds the technical-precision feel that matches the brand."
+              title="AF Sobremesa caps for labels."
+              body="AF Sobremesa at small caps loses its character. JetBrains Mono adds the technical-precision feel that matches the brand."
               demo={
                 <span
                   style={{
                     fontFamily: f.sans,
-                    fontSize: 10,
+                    fontSize: type.micro.size,
                     fontWeight: 600,
                     textTransform: "uppercase",
                     letterSpacing: "0.12em",
@@ -1046,7 +986,7 @@ export default function DesignSystemTypography() {
         </section>
 
         {/* 08 — LIVING EXAMPLES */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="08"
             title="Living examples"
@@ -1056,7 +996,7 @@ export default function DesignSystemTypography() {
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 20,
+              gap: 16,
             }}
           >
             {/* Hero example */}
@@ -1064,40 +1004,31 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: 36,
+                borderRadius: radius.lg,
+                padding: 28,
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>Hero · auth screen</MonoLabel>
+              <MonoLabel>Hero · auth screen</MonoLabel>
               <h3
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: 44,
-                  fontWeight: 400,
-                  lineHeight: 1.05,
-                  letterSpacing: "-0.02em",
-                  margin: "16px 0 12px",
+                  fontFamily: f.sans,
+                  fontSize: type.h1.size,
+                  fontWeight: type.h1.weight,
+                  lineHeight: type.h1.lineHeight,
+                  letterSpacing: type.h1.letterSpacing,
+                  margin: "12px 0 10px",
                   color: t.coal,
                 }}
               >
-                Check your{" "}
-                <em
-                  style={{
-                    fontStyle: "italic",
-                    fontWeight: 500,
-                    color: t.copper,
-                  }}
-                >
-                  email
-                </em>
+                Check your email
               </h3>
               <p
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 14,
-                  color: t.indigoGray,
-                  lineHeight: 1.6,
+                  fontSize: type.body.size,
+                  color: t.inkMuted,
+                  lineHeight: type.body.lineHeight,
                   margin: 0,
                 }}
               >
@@ -1114,37 +1045,37 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: 36,
+                borderRadius: radius.lg,
+                padding: 28,
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>Score card · result</MonoLabel>
+              <MonoLabel>Score card · result</MonoLabel>
               <div
                 style={{
                   marginTop: 16,
                   textAlign: "center",
                   background: t.creamSoft,
-                  borderRadius: 10,
-                  padding: "28px 24px",
+                  borderRadius: radius.md,
+                  padding: "24px 20px",
                 }}
               >
                 <MonoLabel>Clarity Score</MonoLabel>
                 <div
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 80,
-                    fontWeight: 400,
+                    fontFamily: f.sans,
+                    fontSize: 40,
+                    fontWeight: 600,
                     lineHeight: 1,
-                    color: t.copper,
-                    letterSpacing: "-0.03em",
+                    color: t.coal,
+                    letterSpacing: type.h1.letterSpacing,
                     margin: "10px 0",
                   }}
                 >
                   62
                   <small
                     style={{
-                      fontSize: 22,
+                      fontSize: type.h2.size,
                       color: t.inkFaint,
                       marginLeft: 4,
                     }}
@@ -1155,7 +1086,7 @@ export default function DesignSystemTypography() {
                 <span
                   style={{
                     fontFamily: f.sans,
-                    fontSize: 12,
+                    fontSize: type.caption.size,
                     fontWeight: 500,
                     padding: "3px 12px",
                     background: t.copperSoft,
@@ -1173,18 +1104,18 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: 36,
+                borderRadius: radius.lg,
+                padding: 28,
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>UI · button + label</MonoLabel>
+              <MonoLabel>UI · button + label</MonoLabel>
               <label
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
+                  fontSize: type.caption.size,
                   color: t.coal,
-                  fontWeight: 500,
+                  fontWeight: type.caption.weight,
                   display: "block",
                   margin: "16px 0 8px",
                 }}
@@ -1197,10 +1128,10 @@ export default function DesignSystemTypography() {
                 style={{
                   width: "100%",
                   fontFamily: f.sans,
-                  fontSize: 14,
-                  padding: "12px 14px",
+                  fontSize: type.body.size,
+                  padding: "10px 14px",
                   border: `1px solid ${t.lineStrong}`,
-                  borderRadius: 10,
+                  borderRadius: radius.md,
                   background: t.white,
                   color: t.coal,
                   outline: "none",
@@ -1209,13 +1140,13 @@ export default function DesignSystemTypography() {
               />
               <button
                 style={{
-                  background: t.indigo,
+                  background: t.copper,
                   color: t.white,
                   border: "none",
-                  padding: "12px 22px",
-                  borderRadius: 10,
+                  padding: "10px 20px",
+                  borderRadius: radius.md,
                   fontFamily: f.sans,
-                  fontSize: 14,
+                  fontSize: type.body.size,
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
@@ -1229,18 +1160,18 @@ export default function DesignSystemTypography() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: 36,
+                borderRadius: radius.lg,
+                padding: 28,
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>Data · session row</MonoLabel>
+              <MonoLabel>Data · session row</MonoLabel>
               <div style={{ marginTop: 16 }}>
                 <div
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 18,
-                    fontWeight: 500,
+                    fontFamily: f.sans,
+                    fontSize: type.h3.size,
+                    fontWeight: type.h3.weight,
                     color: t.coal,
                     margin: 0,
                   }}
@@ -1250,9 +1181,9 @@ export default function DesignSystemTypography() {
                 <div
                   style={{
                     fontFamily: f.mono,
-                    fontSize: 11,
+                    fontSize: type.micro.size,
                     color: t.inkSoft,
-                    letterSpacing: "0.04em",
+                    letterSpacing: type.micro.letterSpacing,
                     margin: "6px 0 12px",
                   }}
                 >
@@ -1267,11 +1198,11 @@ export default function DesignSystemTypography() {
                 >
                   <span
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 36,
-                      fontWeight: 500,
-                      color: t.copper,
-                      letterSpacing: "-0.02em",
+                      fontFamily: f.sans,
+                      fontSize: type.h1.size,
+                      fontWeight: 600,
+                      color: t.coal,
+                      letterSpacing: type.h1.letterSpacing,
                     }}
                   >
                     78
@@ -1279,7 +1210,7 @@ export default function DesignSystemTypography() {
                   <span
                     style={{
                       fontFamily: f.sans,
-                      fontSize: 12,
+                      fontSize: type.caption.size,
                       fontWeight: 500,
                       color: t.success,
                     }}
@@ -1293,7 +1224,7 @@ export default function DesignSystemTypography() {
         </section>
 
         {/* 09 — CSS TOKENS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 64 }}>
           <SectionHead
             num="09"
             title="CSS variables"
@@ -1303,8 +1234,8 @@ export default function DesignSystemTypography() {
             style={{
               background: t.coal,
               color: "#d8d2c0",
-              borderRadius: 14,
-              padding: "28px 32px",
+              borderRadius: radius.lg,
+              padding: "24px 28px",
               fontFamily: f.mono,
               fontSize: 13,
               lineHeight: 1.8,
@@ -1312,24 +1243,24 @@ export default function DesignSystemTypography() {
               margin: 0,
             }}
           >
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* HireStepX — Typography tokens */"}
             </span>
             {`\n:root {\n  `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* Families */"}
             </span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--font-serif</span>
             {`:    `}
             <span style={{ color: "#f4d4a8" }}>
-              "Instrument Serif", Georgia, serif;
+              "AF Sobremesa", Georgia, serif;
             </span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--font-sans</span>
             {`:     `}
             <span style={{ color: "#f4d4a8" }}>
-              "Satoshi", -apple-system, system-ui, sans-serif;
+              "AF Sobremesa", -apple-system, system-ui, sans-serif;
             </span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--font-mono</span>
@@ -1338,21 +1269,9 @@ export default function DesignSystemTypography() {
               "JetBrains Mono", monospace;
             </span>
             {`\n\n  `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
-              {"/* Sizes */"}
+            <span style={{ color: "#6b6660" }}>
+              {"/* Sizes — compact functional scale */"}
             </span>
-            {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--text-display-1</span>
-            {`: `}
-            <span style={{ color: "#f4d4a8" }}>64px;</span>
-            {`     `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
-              {"/* hero */"}
-            </span>
-            {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--text-display-2</span>
-            {`: `}
-            <span style={{ color: "#f4d4a8" }}>44px;</span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--text-h1</span>
             {`:        `}
@@ -1366,12 +1285,20 @@ export default function DesignSystemTypography() {
             {`:        `}
             <span style={{ color: "#f4d4a8" }}>18px;</span>
             {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--text-body</span>
-            {`:      `}
+            <span style={{ color: "#c4a8ff" }}>--text-h4</span>
+            {`:        `}
+            <span style={{ color: "#f4d4a8" }}>16px;</span>
+            {`\n  `}
+            <span style={{ color: "#c4a8ff" }}>--text-body-lg</span>
+            {`:   `}
             <span style={{ color: "#f4d4a8" }}>15px;</span>
             {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--text-body-sm</span>
-            {`:   `}
+            <span style={{ color: "#c4a8ff" }}>--text-body</span>
+            {`:      `}
+            <span style={{ color: "#f4d4a8" }}>14px;</span>
+            {`\n  `}
+            <span style={{ color: "#c4a8ff" }}>--text-small</span>
+            {`:     `}
             <span style={{ color: "#f4d4a8" }}>13px;</span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--text-caption</span>
@@ -1380,17 +1307,9 @@ export default function DesignSystemTypography() {
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--text-micro</span>
             {`:     `}
-            <span style={{ color: "#f4d4a8" }}>10px;</span>
-            {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--text-score</span>
-            {`:     `}
-            <span style={{ color: "#f4d4a8" }}>72px;</span>
-            {`     `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
-              {"/* clarity score */"}
-            </span>
+            <span style={{ color: "#f4d4a8" }}>11px;</span>
             {`\n\n  `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* Weights */"}
             </span>
             {`\n  `}
@@ -1406,41 +1325,41 @@ export default function DesignSystemTypography() {
             {`:`}
             <span style={{ color: "#f4d4a8" }}>600;</span>
             {`     `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
-              {"/* CTAs only */"}
+            <span style={{ color: "#6b6660" }}>
+              {"/* headings + CTAs */"}
             </span>
             {`\n\n  `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* Leading */"}
             </span>
             {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--leading-display</span>
-            {`: `}
-            <span style={{ color: "#f4d4a8" }}>1.05;</span>
-            {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--leading-heading</span>
-            {`: `}
+            <span style={{ color: "#c4a8ff" }}>--leading-h1</span>
+            {`:      `}
             <span style={{ color: "#f4d4a8" }}>1.25;</span>
+            {`\n  `}
+            <span style={{ color: "#c4a8ff" }}>--leading-h2</span>
+            {`:      `}
+            <span style={{ color: "#f4d4a8" }}>1.3;</span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--leading-body</span>
             {`:    `}
-            <span style={{ color: "#f4d4a8" }}>1.6;</span>
-            {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--leading-mono</span>
-            {`:    `}
             <span style={{ color: "#f4d4a8" }}>1.5;</span>
+            {`\n  `}
+            <span style={{ color: "#c4a8ff" }}>--leading-micro</span>
+            {`:   `}
+            <span style={{ color: "#f4d4a8" }}>1.35;</span>
             {`\n\n  `}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* Tracking */"}
             </span>
             {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--track-display</span>
-            {`:  `}
-            <span style={{ color: "#f4d4a8" }}>-0.02em;</span>
-            {`\n  `}
-            <span style={{ color: "#c4a8ff" }}>--track-heading</span>
-            {`:  `}
+            <span style={{ color: "#c4a8ff" }}>--track-h1</span>
+            {`:       `}
             <span style={{ color: "#f4d4a8" }}>-0.01em;</span>
+            {`\n  `}
+            <span style={{ color: "#c4a8ff" }}>--track-h2</span>
+            {`:       `}
+            <span style={{ color: "#f4d4a8" }}>-0.006em;</span>
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--track-body</span>
             {`:     `}
@@ -1448,7 +1367,7 @@ export default function DesignSystemTypography() {
             {`\n  `}
             <span style={{ color: "#c4a8ff" }}>--track-caps</span>
             {`:     `}
-            <span style={{ color: "#f4d4a8" }}>0.12em;</span>
+            <span style={{ color: "#f4d4a8" }}>0.04em;</span>
             {`\n}`}
           </pre>
         </section>
@@ -1458,35 +1377,39 @@ export default function DesignSystemTypography() {
           <SectionHead
             num="10"
             title="Loading the fonts"
-            desc="Google Fonts. Subsetted to the weights actually used. Drop into your <head>."
+            desc="AF Sobremesa self-hosted from /fonts; JetBrains Mono from Google Fonts."
           />
           <pre
             style={{
               background: t.coal,
               color: "#d8d2c0",
-              borderRadius: 14,
-              padding: "28px 32px",
+              borderRadius: radius.lg,
+              padding: "24px 28px",
               fontFamily: f.mono,
-              fontSize: 12,
+              fontSize: type.caption.size,
               lineHeight: 1.7,
               overflowX: "auto",
               margin: 0,
               whiteSpace: "pre-wrap",
             }}
           >
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
-              {"<!-- Add to your HTML <head> -->\n"}
+            <span style={{ color: "#6b6660" }}>
+              {"/* AF Sobremesa — self-hosted, weights 100-900 + italic */\n"}
             </span>
             <span style={{ color: "#c4a8ff" }}>
-              {'<link rel="preconnect" href="https://fonts.googleapis.com" />\n'}
-              {'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n'}
-              {'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" />'}
+              {"@import url('/fonts/af-sobremesa.css');\n"}
+            </span>
+            <span style={{ color: "#6b6660" }}>
+              {"\n/* JetBrains Mono — Google Fonts */\n"}
+            </span>
+            <span style={{ color: "#c4a8ff" }}>
+              {"@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');"}
             </span>
           </pre>
         </section>
 
         {/* FOOTER */}
-        <Footer section="Section" tagline="One italic accent word per moment. Never twice." />
+        <Footer section="Section" tagline="One accent color, used sparingly. Everything else is neutral ink." />
       </div>
     </>
   );

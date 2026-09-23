@@ -5,7 +5,7 @@
  * (Prep Runway rail, interview hero, suggest-then-build sheet) wired to the
  * real DB-authoritative data layer: listEvents / saveEvent / deleteEvent /
  * generatePrepRunway / connectGoogleCalendar, with localStorage as a cache
- * only and Pro gating enforced both here and at the API.
+ * only and paid-plan gating enforced both here and at the API.
  *
  * Centerpiece: every logged interview becomes a prep plan. Logging a real
  * interview auto-schedules an adaptive countdown of mock sessions (server
@@ -29,7 +29,7 @@ import {
 import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
 import { useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
-import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
+import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
 
 /* Scoped stylesheet — inline styles can't express :focus-visible, media
  * queries, or :hover, so the responsive grid + keyboard focus rings live here. */
@@ -291,7 +291,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
 
       <div style={{ marginTop: sp.lg, paddingTop: sp.md, borderTop: `1px solid ${c.borderSubtle}`, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: c.stone, fontFamily: font.ui }}>
         <span style={{ color: c.gilt, display: "flex" }}><Icon size={13}>{I.sparkle}</Icon></span>
-        Plan adapts to your scores and skill-decay. Sessions count against your Pro quota.
+        Plan adapts to your scores and skill-decay. Sessions count against your plan quota.
       </div>
     </div>
   );
@@ -520,10 +520,10 @@ export default function CalendarPage() {
   };
 
   if (eventsLoading) return <DataLoadingSkeleton />;
-  // Calendar is available on any PAID plan (Starter/Sprint Pack + Pro); only
+  // Calendar is available on any PAID plan (Starter/Sprint Pack + Team); only
   // the free tier hits the gate. Prep reminders and countdowns are basic
   // "don't miss your interview" utility a paying user reasonably expects.
-  if (isFree) return <ProGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
+  if (isFree) return <PaywallGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   const resetForm = () => {
     setFormTitle("");
@@ -967,7 +967,7 @@ export default function CalendarPage() {
               {!editingId && (
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11.5, color: c.stone, fontFamily: font.ui, lineHeight: 1.45 }}>
                   <span style={{ color: c.gilt, display: "flex", marginTop: 1 }}><Icon size={13}>{I.sparkle}</Icon></span>
-                  Saving schedules a Prep Runway: an adaptive countdown of mock sessions mapped back from this date. Sessions count against your Pro quota.
+                  Saving schedules a Prep Runway: an adaptive countdown of mock sessions mapped back from this date. Sessions count against your plan quota.
                 </div>
               )}
             </div>

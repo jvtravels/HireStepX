@@ -48,11 +48,11 @@ export const c = {
   slateLight: T.indigo100,
 
   /* Borders & effects — coal at low alpha on cream */
-  border: "rgba(14, 12, 8, 0.08)",         // ~T.line in alpha form
-  borderHover: "rgba(14, 12, 8, 0.14)",    // ~T.lineStrong
-  borderSubtle: "rgba(14, 12, 8, 0.04)",
-  glass: "rgba(250, 247, 240, 0.7)",       // cream glass
-  glassBright: "rgba(255, 255, 255, 0.85)",
+  border: `oklch(from ${T.coal} l c h / 0.08)`,         // ~T.line in alpha form
+  borderHover: `oklch(from ${T.coal} l c h / 0.14)`,    // ~T.lineStrong
+  borderSubtle: `oklch(from ${T.coal} l c h / 0.04)`,
+  glass: `oklch(from ${T.white} l c h / 0.7)`,          // cream glass
+  glassBright: `oklch(from ${T.white} l c h / 0.85)`,
   glow: T.copperWash,                      // rgba(180,83,9,0.06)
   glowStrong: T.copperTint,                // rgba(180,83,9,0.10)
 };

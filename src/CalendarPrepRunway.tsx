@@ -404,7 +404,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
         <span style={{ color: c.gilt, display: "flex" }}>
           <Icon size={13}>{I.sparkle}</Icon>
         </span>
-        Plan adapts to your scores and skill-decay. Sessions count against your Pro quota.
+        Plan adapts to your scores and skill-decay. Sessions count against your plan quota.
       </div>
     </div>
   );

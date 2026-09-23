@@ -1,60 +1,43 @@
 /* HireStepX — Design System / Brand Story
    Mission · vision · pillars · positioning · founder origin.
-   The "why we exist" that lives behind every design choice. */
+   The "why we exist" that lives behind every design choice.
+
+   2026-09 SaaS-flat conversion: this page used to lean hardest into the
+   retired editorial direction — an oversized serif masthead, 32px+ pull
+   quotes, copper splashed across headline words as decorative emphasis.
+   The mission/values/positioning CONTENT is unchanged (it's substantively
+   about the company), but its visual presentation now runs through the
+   compact `type` scale like every other storyboard: no display-serif
+   headline larger than an h1, no copper outside a label/tag or an actual
+   link-style emphasis, denser card padding, no italics. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, type, radius, shadows } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* ─── Main ─── */
 export default function DesignSystemBrandStory() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "80px 56px 120px",
+          padding: "48px 48px 96px",
           fontFamily: f.sans,
           color: t.coal,
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Brand, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>conviction</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            The why behind every design choice. Mission, pillars, position,
-            and origin. Read this once a quarter to remember what we're
-            actually building.
-          </p>
-        </header>
+        <PageHeader
+          title="Brand, by conviction."
+          description="The why behind every design choice. Mission, pillars, position, and origin. Read this once a quarter to remember what we're actually building."
+        />
 
         {/* 01 — MANIFESTO */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="01"
             title="Manifesto"
@@ -64,34 +47,32 @@ export default function DesignSystemBrandStory() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
-              padding: "64px 80px",
+              borderRadius: radius.lg,
+              padding: "32px 40px",
               boxShadow: shadows.card,
             }}
           >
             <p
               style={{
                 fontFamily: f.serif,
-                fontSize: 32,
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                lineHeight: 1.4,
+                fontSize: type.h1.size,
+                fontWeight: 600,
+                letterSpacing: type.h1.letterSpacing,
+                lineHeight: type.h1.lineHeight,
                 color: t.coal,
                 margin: 0,
               }}
             >
               Interviews are the most consequential ten minutes of someone's
-              decade. And they're treated like a{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>lottery</em>.
+              decade. And they're treated like a lottery.
             </p>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 22,
+                fontSize: type.bodyLg.size,
                 fontWeight: 400,
-                lineHeight: 1.55,
-                color: t.indigoGray,
-                margin: "32px 0 0",
+                lineHeight: 1.6,
+                color: t.inkMuted,
+                margin: "20px 0 0",
               }}
             >
               We think they should be a skill. One you can practise, measure,
@@ -102,68 +83,67 @@ export default function DesignSystemBrandStory() {
             </p>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 22,
+                fontSize: type.bodyLg.size,
                 fontWeight: 400,
-                lineHeight: 1.55,
-                color: t.indigoGray,
-                margin: "20px 0 0",
+                lineHeight: 1.6,
+                color: t.inkMuted,
+                margin: "14px 0 0",
               }}
             >
               The product is small. The mission is big.{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>
+              <span style={{ color: t.coal, fontWeight: 600 }}>
                 Clarity wins interviews.
-              </em>{" "}
+              </span>{" "}
               We help people get clearer.
             </p>
           </div>
         </section>
 
         {/* 02 — MISSION VISION VALUES */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="02"
             title="Mission · Vision · Values"
             desc="The three statements every team member should be able to recite. No more, no less."
           />
-          <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "grid", gap: 12 }}>
             <div
               style={{
                 background: t.coal,
                 color: t.cream,
-                borderRadius: 14,
-                padding: "40px 48px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: 32,
+                gridTemplateColumns: "140px 1fr",
+                gap: 24,
                 alignItems: "center",
               }}
             >
               <MonoLabel color={t.copper}>Mission</MonoLabel>
               <p
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: 26,
-                  fontWeight: 400,
-                  letterSpacing: "-0.01em",
-                  lineHeight: 1.35,
+                  fontFamily: f.sans,
+                  fontSize: type.h2.size,
+                  fontWeight: 600,
+                  letterSpacing: type.h2.letterSpacing,
+                  lineHeight: type.h2.lineHeight,
                   margin: 0,
                   color: t.cream,
                 }}
               >
-                Make interview prep feel less like a lottery and more like a{" "}
-                <em style={{ fontStyle: "italic", color: t.copper }}>skill</em>.
+                Make interview prep feel less like a lottery and more like a
+                skill.
               </p>
             </div>
             <div
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "32px 48px",
+                borderRadius: radius.lg,
+                padding: "20px 28px",
                 display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: 32,
+                gridTemplateColumns: "140px 1fr",
+                gap: 24,
                 alignItems: "center",
                 boxShadow: shadows.card,
               }}
@@ -171,11 +151,10 @@ export default function DesignSystemBrandStory() {
               <MonoLabel color={t.copper}>Vision</MonoLabel>
               <p
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: 22,
-                  fontWeight: 400,
-                  letterSpacing: "-0.01em",
-                  lineHeight: 1.45,
+                  fontFamily: f.sans,
+                  fontSize: type.h3.size,
+                  fontWeight: 500,
+                  lineHeight: type.h3.lineHeight,
                   margin: 0,
                   color: t.coal,
                 }}
@@ -189,18 +168,18 @@ export default function DesignSystemBrandStory() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "32px 48px",
+                borderRadius: radius.lg,
+                padding: "20px 28px",
                 boxShadow: shadows.card,
               }}
             >
               <MonoLabel color={t.copper}>Values</MonoLabel>
               <div
                 style={{
-                  marginTop: 20,
+                  marginTop: 16,
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: 24,
+                  gap: 20,
                 }}
               >
                 {[
@@ -212,17 +191,16 @@ export default function DesignSystemBrandStory() {
                   <div key={row.k}>
                     <h4
                       style={{
-                        fontFamily: f.serif,
-                        fontSize: 18,
-                        fontWeight: 500,
-                        margin: "0 0 6px",
+                        fontFamily: f.sans,
+                        fontSize: type.h4.size,
+                        fontWeight: type.h4.weight,
+                        margin: "0 0 4px",
                         color: t.coal,
-                        letterSpacing: "-0.01em",
                       }}
                     >
                       {row.k}
                     </h4>
-                    <p style={{ fontSize: 13, color: t.indigoGray, margin: 0, lineHeight: 1.6 }}>
+                    <p style={{ fontSize: type.small.size, color: t.inkMuted, margin: 0, lineHeight: type.small.lineHeight }}>
                       {row.v}
                     </p>
                   </div>
@@ -233,7 +211,7 @@ export default function DesignSystemBrandStory() {
         </section>
 
         {/* 03 — BRAND PILLARS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="03"
             title="Three brand pillars"
@@ -243,7 +221,7 @@ export default function DesignSystemBrandStory() {
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 16,
+              gap: 12,
             }}
           >
             {[
@@ -274,42 +252,39 @@ export default function DesignSystemBrandStory() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 14,
-                  padding: "32px 28px",
+                  borderRadius: radius.lg,
+                  padding: "20px 20px",
                   boxShadow: shadows.card,
                 }}
               >
                 <div
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 64,
-                    fontWeight: 400,
-                    color: t.copper,
+                    fontFamily: f.mono,
+                    fontSize: type.h2.size,
+                    fontWeight: 600,
+                    color: t.inkFaint,
                     lineHeight: 1,
-                    letterSpacing: "-0.02em",
-                    fontStyle: "italic",
                   }}
                 >
                   {p.num}
                 </div>
                 <h3
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 22,
-                    fontWeight: 500,
-                    margin: "20px 0 8px",
-                    letterSpacing: "-0.01em",
+                    fontFamily: f.sans,
+                    fontSize: type.h3.size,
+                    fontWeight: type.h3.weight,
+                    margin: "14px 0 6px",
                   }}
                 >
                   {p.title}
                 </h3>
                 <p
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 16,
-                    fontStyle: "italic",
+                    fontFamily: f.sans,
+                    fontSize: type.body.size,
+                    fontWeight: 500,
                     color: t.copper,
-                    margin: "0 0 16px",
+                    margin: "0 0 10px",
                     lineHeight: 1.4,
                   }}
                 >
@@ -317,10 +292,10 @@ export default function DesignSystemBrandStory() {
                 </p>
                 <p
                   style={{
-                    fontSize: 13,
-                    color: t.indigoGray,
+                    fontSize: type.small.size,
+                    color: t.inkMuted,
                     margin: 0,
-                    lineHeight: 1.6,
+                    lineHeight: type.small.lineHeight,
                   }}
                 >
                   {p.expand}
@@ -331,7 +306,7 @@ export default function DesignSystemBrandStory() {
         </section>
 
         {/* 04 — POSITIONING */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="04"
             title="Positioning"
@@ -341,42 +316,41 @@ export default function DesignSystemBrandStory() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
-              padding: "32px 40px",
+              borderRadius: radius.lg,
+              padding: "24px 28px",
               boxShadow: shadows.card,
             }}
           >
             <MonoLabel color={t.copper}>Position statement</MonoLabel>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 22,
-                fontWeight: 400,
+                fontFamily: f.sans,
+                fontSize: type.h3.size,
+                fontWeight: 500,
                 lineHeight: 1.5,
-                margin: "16px 0 0",
+                margin: "12px 0 0",
                 color: t.coal,
-                letterSpacing: "-0.01em",
               }}
             >
               For Indian job seekers who can't afford coaching but can't afford
               to fail their next interview, HireStepX is{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>
+              <span style={{ color: t.coal, fontWeight: 700 }}>
                 AI-powered mock interview practice
-              </em>{" "}
+              </span>{" "}
               that costs ₹10 a session and adapts to their resume, target
               company, and weak spots — unlike YouTube tutorials, generic mock
               platforms, or expensive coaches.
             </p>
 
-            <div style={{ marginTop: 40, paddingTop: 32, borderTop: `1px solid ${t.line}` }}>
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
               <MonoLabel color={t.copper}>What we're NOT</MonoLabel>
               <ul
                 style={{
-                  margin: "16px 0 0",
+                  margin: "12px 0 0",
                   padding: 0,
                   listStyle: "none",
                   display: "grid",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 {[
@@ -388,7 +362,7 @@ export default function DesignSystemBrandStory() {
                 ].map((line, i) => (
                   <li
                     key={i}
-                    style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6, paddingLeft: 16, position: "relative" }}
+                    style={{ fontSize: type.body.size, color: t.inkMuted, lineHeight: 1.6, paddingLeft: 16, position: "relative" }}
                   >
                     <span style={{ position: "absolute", left: 0, color: t.error, fontWeight: 600 }}>×</span>
                     {line}
@@ -400,7 +374,7 @@ export default function DesignSystemBrandStory() {
         </section>
 
         {/* 05 — COMPETITIVE MAP */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="05"
             title="Competitive map"
@@ -410,7 +384,7 @@ export default function DesignSystemBrandStory() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               boxShadow: shadows.card,
               overflow: "hidden",
             }}
@@ -420,13 +394,13 @@ export default function DesignSystemBrandStory() {
                 display: "grid",
                 gridTemplateColumns: "180px 1fr 1fr 1fr",
                 background: t.creamSoft,
-                padding: "12px 24px",
+                padding: "10px 20px",
                 fontFamily: f.mono,
-                fontSize: 10,
+                fontSize: type.micro.size,
                 textTransform: "uppercase",
-                letterSpacing: "0.12em",
+                letterSpacing: type.micro.letterSpacing,
                 color: t.inkSoft,
-                fontWeight: 500,
+                fontWeight: type.micro.weight,
                 borderBottom: `1px solid ${t.line}`,
               }}
             >
@@ -472,28 +446,27 @@ export default function DesignSystemBrandStory() {
                 style={{
                   display: "grid",
                   gridTemplateColumns: "180px 1fr 1fr 1fr",
-                  padding: "16px 24px",
+                  padding: "14px 20px",
                   borderBottom: `1px solid ${t.line}`,
                   alignItems: "flex-start",
-                  gap: 24,
+                  gap: 20,
                 }}
               >
                 <div
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 18,
-                    fontWeight: 500,
+                    fontFamily: f.sans,
+                    fontSize: type.h4.size,
+                    fontWeight: type.h4.weight,
                     color: t.coal,
-                    letterSpacing: "-0.01em",
                   }}
                 >
                   {row.name}
                 </div>
-                <div style={{ fontSize: 13, color: t.indigoGray, lineHeight: 1.55 }}>{row.angle}</div>
-                <div style={{ fontSize: 13, color: t.coal, lineHeight: 1.55, fontWeight: 500 }}>
+                <div style={{ fontSize: type.small.size, color: t.inkMuted, lineHeight: 1.55 }}>{row.angle}</div>
+                <div style={{ fontSize: type.small.size, color: t.coal, lineHeight: 1.55, fontWeight: 500 }}>
                   {row.wedge}
                 </div>
-                <div style={{ fontSize: 12, color: t.copper, lineHeight: 1.55, fontFamily: f.mono }}>
+                <div style={{ fontSize: type.caption.size, color: t.copper, lineHeight: 1.55, fontFamily: f.mono }}>
                   {row.price}
                 </div>
               </div>
@@ -502,7 +475,7 @@ export default function DesignSystemBrandStory() {
         </section>
 
         {/* 06 — ORIGIN */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="06"
             title="Founder origin"
@@ -512,19 +485,19 @@ export default function DesignSystemBrandStory() {
             style={{
               background: t.coal,
               color: t.cream,
-              borderRadius: 14,
-              padding: "56px 64px",
+              borderRadius: radius.lg,
+              padding: "32px 36px",
             }}
           >
             <MonoLabel color={t.copper}>The moment</MonoLabel>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                lineHeight: 1.4,
-                letterSpacing: "-0.01em",
-                margin: "20px 0 0",
+                fontFamily: f.sans,
+                fontSize: type.h2.size,
+                fontWeight: 600,
+                lineHeight: type.h2.lineHeight,
+                letterSpacing: type.h2.letterSpacing,
+                margin: "14px 0 0",
                 color: t.cream,
               }}
             >
@@ -532,11 +505,10 @@ export default function DesignSystemBrandStory() {
             </p>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 22,
+                fontSize: type.bodyLg.size,
                 fontWeight: 400,
                 lineHeight: 1.6,
-                margin: "24px 0 0",
+                margin: "16px 0 0",
                 color: "rgba(250, 247, 240, .80)",
               }}
             >
@@ -547,34 +519,31 @@ export default function DesignSystemBrandStory() {
             </p>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 22,
+                fontSize: type.bodyLg.size,
                 fontWeight: 400,
                 lineHeight: 1.6,
-                margin: "20px 0 0",
+                margin: "12px 0 0",
                 color: "rgba(250, 247, 240, .80)",
               }}
             >
-              I realized: I'd <i>studied</i> interviews. I hadn't{" "}
-              <i>practised</i> them. There's a difference. And there was no
-              affordable way for an Indian candidate to do the second one
+              I realized: I'd <b style={{ fontWeight: 700, color: t.cream }}>studied</b> interviews. I hadn't{" "}
+              <b style={{ fontWeight: 700, color: t.cream }}>practised</b> them. There's a difference. And there was
+              no affordable way for an Indian candidate to do the second one
               well — coaching cost ₹5,000 per session, friends were biased,
               YouTube was theory. Mock interview platforms existed but they
               were Western, expensive, or peer-roulette.
             </p>
             <div
               style={{
-                marginTop: 32,
-                paddingLeft: 24,
+                marginTop: 20,
+                paddingLeft: 20,
                 borderLeft: `2px solid ${t.copper}`,
               }}
             >
               <p
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: 20,
-                  fontStyle: "italic",
-                  fontWeight: 400,
+                  fontSize: type.body.size,
+                  fontWeight: 500,
                   lineHeight: 1.5,
                   color: t.cream,
                   margin: 0,
@@ -588,8 +557,8 @@ export default function DesignSystemBrandStory() {
             </div>
             <p
               style={{
-                marginTop: 28,
-                fontSize: 13,
+                marginTop: 20,
+                fontSize: type.small.size,
                 color: "rgba(250, 247, 240, .55)",
                 fontFamily: f.mono,
                 letterSpacing: "0.04em",
@@ -601,13 +570,13 @@ export default function DesignSystemBrandStory() {
         </section>
 
         {/* 07 — TAGLINES */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="07"
             title="Taglines"
             desc="The lockup line, the social caption, the billboard. Tone-tested for context."
           />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
               { ctx: "Primary · landing hero", line: "Clarity wins interviews.", note: "The default. Use everywhere unless context demands otherwise." },
               { ctx: "Pricing · payment flow", line: "₹10. One mock. No card.", note: "Friction-killer. Use on pricing CTAs." },
@@ -621,25 +590,24 @@ export default function DesignSystemBrandStory() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 14,
-                  padding: 28,
+                  borderRadius: radius.lg,
+                  padding: 20,
                   boxShadow: shadows.card,
                 }}
               >
                 <MonoLabel>{row.ctx}</MonoLabel>
                 <p
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 22,
-                    fontWeight: 400,
-                    margin: "12px 0 12px",
-                    letterSpacing: "-0.01em",
+                    fontFamily: f.sans,
+                    fontSize: type.h3.size,
+                    fontWeight: 600,
+                    margin: "10px 0 10px",
                     color: t.coal,
                   }}
                 >
                   "{row.line}"
                 </p>
-                <p style={{ fontSize: 12, color: t.indigoGray, margin: 0, lineHeight: 1.55 }}>
+                <p style={{ fontSize: type.caption.size, color: t.inkMuted, margin: 0, lineHeight: 1.55 }}>
                   {row.note}
                 </p>
               </div>

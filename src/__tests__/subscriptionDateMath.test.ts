@@ -15,28 +15,20 @@ describe("isUpgrade", () => {
   const END_ACTIVE = new Date("2026-06-15T00:00:00Z").getTime(); // 14 days out
   const END_EXPIRED = new Date("2026-05-20T00:00:00Z").getTime(); // in the past
 
-  it("starter → pro with active sub is an upgrade", () => {
-    expect(isUpgrade({ currentTier: "starter", currentEndMs: END_ACTIVE, nowMs: NOW, newPlan: "monthly" })).toBe(true);
-  });
-
-  it("pro → starter is not an upgrade (downgrade)", () => {
-    expect(isUpgrade({ currentTier: "pro", currentEndMs: END_ACTIVE, nowMs: NOW, newPlan: "weekly" })).toBe(false);
-  });
-
-  it("pro → pro is not an upgrade (same tier)", () => {
-    expect(isUpgrade({ currentTier: "pro", currentEndMs: END_ACTIVE, nowMs: NOW, newPlan: "monthly" })).toBe(false);
+  it("starter → starter (same tier) is not an upgrade", () => {
+    expect(isUpgrade({ currentTier: "starter", currentEndMs: END_ACTIVE, nowMs: NOW, newPlan: "weekly" })).toBe(false);
   });
 
   it("expired sub is NOT an upgrade (treat as fresh purchase)", () => {
-    expect(isUpgrade({ currentTier: "starter", currentEndMs: END_EXPIRED, nowMs: NOW, newPlan: "monthly" })).toBe(false);
+    expect(isUpgrade({ currentTier: "starter", currentEndMs: END_EXPIRED, nowMs: NOW, newPlan: "weekly" })).toBe(false);
   });
 
   it("null currentTier is not an upgrade", () => {
-    expect(isUpgrade({ currentTier: null, currentEndMs: END_ACTIVE, nowMs: NOW, newPlan: "monthly" })).toBe(false);
+    expect(isUpgrade({ currentTier: null, currentEndMs: END_ACTIVE, nowMs: NOW, newPlan: "weekly" })).toBe(false);
   });
 
   it("null currentEndMs is not an upgrade", () => {
-    expect(isUpgrade({ currentTier: "starter", currentEndMs: null, nowMs: NOW, newPlan: "monthly" })).toBe(false);
+    expect(isUpgrade({ currentTier: "starter", currentEndMs: null, nowMs: NOW, newPlan: "weekly" })).toBe(false);
   });
 
   it("free → starter with active sub is an upgrade", () => {
@@ -71,13 +63,6 @@ describe("computeSubscriptionEnd", () => {
       expect(result!.proratedDays).toBe(0);
     });
 
-    it("monthly plan ends 30 days from now", () => {
-      const result = computeSubscriptionEnd({ plan: "monthly", now: NOW });
-      expect(result).not.toBeNull();
-      const expected = new Date("2026-07-01T00:00:00Z");
-      expect(result!.end.toISOString()).toBe(expected.toISOString());
-      expect(result!.proratedDays).toBe(0);
-    });
   });
 
   describe("renewal (same tier, still active)", () => {
@@ -98,14 +83,14 @@ describe("computeSubscriptionEnd", () => {
   });
 
   describe("upgrade path", () => {
-    it("adds prorated days when upgrading starter → pro mid-cycle", () => {
-      // 14 days into a 30-day monthly starter sub
+    it("adds prorated days when upgrading free → starter mid-cycle", () => {
+      // 14 days into a 30-day term
       const startMs = new Date("2026-05-18T00:00:00Z").getTime();
       const endMs = new Date("2026-06-17T00:00:00Z").getTime();
       const result = computeSubscriptionEnd({
-        plan: "monthly",
+        plan: "weekly",
         now: NOW,
-        currentTier: "starter",
+        currentTier: "free",
         currentStartMs: startMs,
         currentEndMs: endMs,
       });
@@ -114,16 +99,16 @@ describe("computeSubscriptionEnd", () => {
       expect(result!.proratedDays).toBeGreaterThanOrEqual(0);
       // End should be at least 30 days from now
       const thirtyDaysOut = new Date(NOW);
-      thirtyDaysOut.setDate(thirtyDaysOut.getDate() + PLAN_DAYS["monthly"]);
+      thirtyDaysOut.setDate(thirtyDaysOut.getDate() + PLAN_DAYS["weekly"]);
       expect(result!.end.getTime()).toBeGreaterThanOrEqual(thirtyDaysOut.getTime());
     });
 
     it("no prorated days when currentStartMs is missing (guards NaN propagation)", () => {
       const endMs = new Date("2026-06-15T00:00:00Z").getTime();
       const result = computeSubscriptionEnd({
-        plan: "monthly",
+        plan: "weekly",
         now: NOW,
-        currentTier: "starter",
+        currentTier: "free",
         currentStartMs: null,
         currentEndMs: endMs,
       });

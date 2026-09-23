@@ -691,7 +691,7 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
 
   // Derive a human-readable purchase title from plan + amount.
   // payment.plan: "single" | "weekly" | "monthly"
-  // payment.tier: "free" | "starter" | "pro" (unreliable for single — always "free")
+  // payment.tier: "free" | "starter" | "team" (unreliable for single — always "free")
   const isSingle = payment.plan === "single";
   const isWeekly = payment.plan === "weekly";
   // Single-session: ₹9 each (900 paise). Derive qty from total amount.
@@ -772,11 +772,9 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   // via the auth provider on the user; if it's google-only, skip the
   // password field and rely on the email-confirm + bearer alone.
   const isOAuthOnlyUser = authUser?.signedInVia === "google";
-  const headline = tier === "pro"
-    ? "Pro, invested in your offer"
-    : tier === "starter"
-      ? "Starter, building the habit"
-      : "Practice on the house";
+  const headline = tier === "starter"
+    ? "Starter, building the habit"
+    : "Practice on the house";
   const headlineDesc = isPaid
     ? "Manage your subscription, see your invoices, and export your data."
     : "Start free. Upgrade when you want unlimited reps and the negotiation coach.";

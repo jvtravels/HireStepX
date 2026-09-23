@@ -1,9 +1,14 @@
 /* HireStepX — Design System / Data Visualization
-   Charts, scores, progress. Copper for the headline number. Indigo
-   for interaction. Editorial restraint over dashboard maximalism. */
+   Charts, scores, progress. Copper marks the one headline number on a
+   chart — it's still the single UI accent (buttons, links, focus, active
+   state) everywhere in the product. Indigo is NOT a co-equal brand color:
+   it's demoted to a secondary/data-viz role, used only for comparison
+   series, benchmarks, and other "this is structural, not an action" marks
+   inside charts. Restrained, functional charts over dashboard maximalism. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, type, radius } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 function Card({
   title,
   children,
@@ -18,7 +23,7 @@ function Card({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: "28px 32px",
         boxShadow: shadows.card,
         height,
@@ -458,8 +463,7 @@ export default function DesignSystemDataViz() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -471,37 +475,11 @@ export default function DesignSystemDataViz() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Data, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>restraint</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            Charts that read like editorial graphs in The Economist, not like
-            a cluttered Power BI dashboard. Copper for the headline number,
-            indigo for interaction, defaults for status. Every pixel earns
-            its ink.
-          </p>
-        </header>
+        {/* HEADER */}
+        <PageHeader
+          title="Data, by restraint."
+          description="Clean, functional charts, not a cluttered dashboard. Copper marks the one headline number — it's the same single UI accent used for buttons, links, and active states everywhere else in the product. Indigo is not a second brand color: it's the designated secondary/data-viz hue, reserved for comparison series and benchmarks inside a chart. Every pixel earns its ink."
+        />
 
         {/* 01 — COLOR RULES */}
         <section style={{ marginBottom: 80 }}>
@@ -514,7 +492,7 @@ export default function DesignSystemDataViz() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -572,7 +550,7 @@ export default function DesignSystemDataViz() {
                     <div
                       style={{
                         fontSize: 12,
-                        color: t.indigoGray,
+                        color: t.inkMuted,
                         marginTop: 4,
                         lineHeight: 1.5,
                       }}
@@ -601,19 +579,19 @@ export default function DesignSystemDataViz() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
             <Card title="Hero · result page">
               <ScoreArc value={62} size={240} />
-              <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 16, textAlign: "center" }}>
+              <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 16, textAlign: "center" }}>
                 240px · result reveal moment
               </p>
             </Card>
             <Card title="Card · dashboard">
               <ScoreArc value={62} size={160} />
-              <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 16, textAlign: "center" }}>
+              <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 16, textAlign: "center" }}>
                 160px · KPI panel
               </p>
             </Card>
             <Card title="Inline · session row">
               <ScoreArc value={78} size={120} label="This session" />
-              <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 16, textAlign: "center" }}>
+              <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 16, textAlign: "center" }}>
                 120px · per-session
               </p>
             </Card>
@@ -631,7 +609,7 @@ export default function DesignSystemDataViz() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "28px 32px",
               boxShadow: shadows.card,
             }}
@@ -648,18 +626,18 @@ export default function DesignSystemDataViz() {
                 <MonoLabel color={t.copper}>Score history · last 30 days</MonoLabel>
                 <h3
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 28,
-                    fontWeight: 500,
+                    fontFamily: f.sans,
+                    fontSize: type.h2.size,
+                    fontWeight: type.h2.weight,
                     color: t.coal,
                     margin: "8px 0 0",
-                    letterSpacing: "-0.01em",
+                    letterSpacing: type.h2.letterSpacing,
                   }}
                 >
                   Up{" "}
-                  <em style={{ color: t.copper, fontStyle: "italic" }}>
+                  <span style={{ color: t.copper, fontWeight: 600 }}>
                     14 points
-                  </em>{" "}
+                  </span>{" "}
                   this month
                 </h3>
               </div>
@@ -668,9 +646,9 @@ export default function DesignSystemDataViz() {
                   <MonoLabel>Current</MonoLabel>
                   <div
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 22,
-                      fontWeight: 500,
+                      fontFamily: f.sans,
+                      fontSize: type.h2.size,
+                      fontWeight: type.h2.weight,
                       color: t.copper,
                       marginTop: 2,
                     }}
@@ -682,9 +660,9 @@ export default function DesignSystemDataViz() {
                   <MonoLabel>Best</MonoLabel>
                   <div
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 22,
-                      fontWeight: 500,
+                      fontFamily: f.sans,
+                      fontSize: type.h2.size,
+                      fontWeight: type.h2.weight,
                       color: t.coal,
                       marginTop: 2,
                     }}
@@ -696,9 +674,9 @@ export default function DesignSystemDataViz() {
                   <MonoLabel>Sessions</MonoLabel>
                   <div
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 22,
-                      fontWeight: 500,
+                      fontFamily: f.sans,
+                      fontSize: type.h2.size,
+                      fontWeight: type.h2.weight,
                       color: t.coal,
                       marginTop: 2,
                     }}
@@ -731,9 +709,10 @@ export default function DesignSystemDataViz() {
                   { label: "Tone", value: 70 },
                 ]}
               />
-              <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 16, lineHeight: 1.6 }}>
-                Use when the user needs to see <i>shape</i> — a balanced
-                profile or a lopsided one. Not for ranking.
+              <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 16, lineHeight: 1.6 }}>
+                Use when the user needs to see{" "}
+                <b style={{ color: t.coal, fontWeight: 600 }}>shape</b> — a
+                balanced profile or a lopsided one. Not for ranking.
               </p>
             </Card>
             <Card title="Peer comparison · ranked">
@@ -748,7 +727,7 @@ export default function DesignSystemDataViz() {
                   ]}
                 />
               </div>
-              <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 20, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 20, lineHeight: 1.6 }}>
                 Bars show rank. The user's own bar is{" "}
                 <b style={{ color: t.copper }}>copper · marked with ★</b>.
                 Everyone else is indigo. Never reverse this.
@@ -768,7 +747,7 @@ export default function DesignSystemDataViz() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -785,14 +764,14 @@ export default function DesignSystemDataViz() {
                 <MonoLabel color={t.copper}>Practice streak</MonoLabel>
                 <h3
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 24,
-                    fontWeight: 500,
+                    fontFamily: f.sans,
+                    fontSize: type.h2.size,
+                    fontWeight: type.h2.weight,
                     margin: "8px 0 0",
-                    letterSpacing: "-0.01em",
+                    letterSpacing: type.h2.letterSpacing,
                   }}
                 >
-                  <em style={{ color: t.copper, fontStyle: "italic" }}>5</em>{" "}
+                  <span style={{ color: t.copper, fontWeight: 600 }}>5</span>{" "}
                   day streak · keep it alive
                 </h3>
               </div>
@@ -830,7 +809,7 @@ export default function DesignSystemDataViz() {
                   { label: "Other", value: 10, color: t.indigoGray },
                 ]}
               />
-              <p style={{ fontSize: 12, color: t.indigoGray, marginTop: 20, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 12, color: t.inkMuted, marginTop: 20, lineHeight: 1.6 }}>
                 Stacked when total = 100%. Use copper for the largest
                 segment to anchor the eye.
               </p>
@@ -902,7 +881,7 @@ export default function DesignSystemDataViz() {
                 <p style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 500, margin: "0 0 6px" }}>
                   No data yet
                 </p>
-                <p style={{ fontSize: 12, color: t.indigoGray, margin: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: t.inkMuted, margin: 0, lineHeight: 1.5 }}>
                   Complete one interview to start the chart.
                 </p>
               </div>
@@ -950,7 +929,7 @@ export default function DesignSystemDataViz() {
                 <p style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 500, margin: "0 0 6px" }}>
                   Couldn't load
                 </p>
-                <p style={{ fontSize: 12, color: t.indigoGray, margin: "0 0 16px", lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: t.inkMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
                   Network error. Your data is safe.
                 </p>
                 <button
@@ -978,13 +957,13 @@ export default function DesignSystemDataViz() {
           <SectionHead
             num="08"
             title="Rules of data viz"
-            desc="The discipline. Chart-junk is the enemy. Editorial restraint always wins."
+            desc="The discipline. Chart-junk is the enemy. Functional restraint always wins."
           />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -1001,11 +980,11 @@ export default function DesignSystemDataViz() {
                 },
                 {
                   k: "No 3D, no shadows on bars",
-                  v: "Flat charts. Editorial. No gradient fills inside bars. No drop-shadows on data points.",
+                  v: "Flat charts, no dashboard chrome. No gradient fills inside bars. No drop-shadows on data points.",
                 },
                 {
                   k: "Annotations as words",
-                  v: "Use a Instrument Serif 18px italic to call out the headline insight ('Up 14 points this month'), not floating numbers next to dots.",
+                  v: "Use the h2 scale (22px, 600 weight) with a copper span to call out the headline insight ('Up 14 points this month'), not floating numbers next to dots.",
                 },
                 {
                   k: "Animate on first paint only",
@@ -1037,7 +1016,7 @@ export default function DesignSystemDataViz() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>

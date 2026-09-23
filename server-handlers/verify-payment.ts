@@ -125,7 +125,7 @@ async function sendPaymentEmail(
           preview: `${planLabel} starts now. Valid until ${end}.`,
           body:
             title("You're", { accentWord: "in." }) +
-            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${tier === "pro" ? "Unlimited interview sessions, full AI coaching feedback, salary negotiation mode and performance analytics, all unlocked." : plan === "single" ? "Your session credit is ready — head to your dashboard to start your mock interview." : "7 interview sessions per week, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
+            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${plan === "single" ? "Your session credit is ready — head to your dashboard to start your mock interview." : "5 interview sessions, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
             dataCard("Receipt", [
               ["Plan", planLabel],
               ["Amount paid", mono(amount)],
@@ -369,12 +369,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: "Subscription is not active", code: "SUBSCRIPTION_INACTIVE" });
       }
       // C-3 (prior audit): Cross-validate that the subscription's Razorpay plan_id
-      // matches the plan key the client claims. Without this check, an attacker
-      // could submit a weekly (Sprint Pack ₹39) subscription_id with plan:"monthly"
-      // and get upgraded to Pro tier without paying for it.
-      // Only enforce when the env vars are configured — skip gracefully in envs
-      // that haven't set RAZORPAY_PLAN_WEEKLY/MONTHLY to avoid false 403s on
-      // existing deploys that aren't using subscription billing yet.
+      // matches the plan key the client claims, so a forged/reused subscription_id
+      // can't be used to claim a plan it wasn't purchased for.
+      // Only enforce when the env var is configured — skip gracefully in envs
+      // that haven't set RAZORPAY_PLAN_WEEKLY to avoid false 403s on existing
+      // deploys that aren't using subscription billing yet.
       const expectedRzpPlanId = RAZORPAY_PLAN_ID_MAP[plan];
       if (expectedRzpPlanId && subData.plan_id && subData.plan_id !== expectedRzpPlanId) {
         console.error("[verify-payment] Subscription plan_id mismatch — possible forgery:", {

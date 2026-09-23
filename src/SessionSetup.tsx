@@ -23,7 +23,7 @@ import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
 import { unlockAudio, prefetchTTS, VOICE_OUTPUT_DISABLED } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { GAP_CTA_MAP } from "./nextMove";
 
 /**
@@ -844,10 +844,7 @@ export default function SessionSetup() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";
   const isStarterUser = user?.subscriptionTier === "starter";
-  const isProUser = user?.subscriptionTier === "pro";
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   // Starter is a "Sprint Pack": 5 sessions counted from subscription_start
   // over a 30-day window, NOT a calendar week — mirror the server gate in
   // _shared.ts checkSessionLimit (and DashboardContext). Anchoring on the
@@ -867,9 +864,7 @@ export default function SessionSetup() {
   const packStartMs = Math.max(starterDerivedStartMs, Date.now() - STARTER_PACK_CLAMP_MS);
   const practiceTimestamps = user?.practiceTimestamps ?? [];
   const sessionsThisWeek = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= packStartMs; } catch { return false; } }).length;
-  const sessionsThisMonth = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; } }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
-  const proRemaining = Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth);
   // Purchased session credits — fetched on mount so users who bought ₹9
   // top-ups aren't falsely blocked by the plan-exhausted check below.
   // SessionSetup lives outside the DashboardProvider scope and can't use
@@ -927,7 +922,6 @@ export default function SessionSetup() {
   const atSessionLimit = creditBalance !== null && (
     (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT && creditBalance === 0)
     || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
-    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0)
   );
   // True when this session will consume a purchased credit (plan quota exhausted
   // but credits are available). Shown as an informational note near the CTA so
@@ -935,7 +929,6 @@ export default function SessionSetup() {
   const usingCredit = creditBalance !== null && creditBalance > 0 && (
     (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT)
     || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
-    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT)
   );
   const { toast } = useToast();
 
@@ -2122,19 +2115,14 @@ export default function SessionSetup() {
             const freeLeft = FREE_SESSION_LIMIT - freeSessionCount;
             const showFree = isFreeUser && freeLeft <= 2;
             const showStarter = isStarterUser && starterRemaining <= 2;
-            const showPro = isProUser && proRemaining <= 5;
-            if (!showFree && !showStarter && !showPro) return null;
-            const isUrgent = (isFreeUser && freeLeft <= 1) || (isStarterUser && starterRemaining === 0) || (isProUser && proRemaining === 0);
+            if (!showFree && !showStarter) return null;
+            const isUrgent = (isFreeUser && freeLeft <= 1) || (isStarterUser && starterRemaining === 0);
             // Don't show the alarming "limit reached" banner when purchased credits
             // cover the shortfall — the plan limit is a soft ceiling, not a hard wall.
             // The non-urgent "N sessions left" nudge is still useful, so only hide
             // the urgent "limit reached" variant when credits are available.
             if (isUrgent && creditBalance !== null && creditBalance > 0) return null;
-            const message = showPro
-              ? proRemaining === 0
-                ? 'Monthly session limit reached — resets 1st of next month.'
-                : `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions left this month.`
-              : showStarter
+            const message = showStarter
               ? starterRemaining === 0
                 ? 'Sprint Pack used up — buy session credits to keep going.'
                 : `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left in your pack.`
@@ -2323,10 +2311,10 @@ export default function SessionSetup() {
               getCreditBalance(user.id).then(b => setCreditBalance(b)).catch(() => {});
             }
             // Sync tier change into in-memory user so the limit check updates.
-            // Subscription purchases return tier="starter"|"pro"; credit
-            // purchases return tier="free" (no tier change) — only upgrade.
+            // Subscription purchases return tier="starter"; credit purchases
+            // return tier="free" (no tier change) — only upgrade.
             if (tier && tier !== "free" && authUpdateUser) {
-              authUpdateUser({ subscriptionTier: tier as "starter" | "pro", subscriptionEnd: end || undefined });
+              authUpdateUser({ subscriptionTier: tier as "starter", subscriptionEnd: end || undefined });
             }
           }}
         />

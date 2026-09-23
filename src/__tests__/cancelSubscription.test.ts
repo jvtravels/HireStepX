@@ -50,7 +50,7 @@ describe("parseSubscriptionProfile", () => {
   });
 
   it("returns the first row object when present", () => {
-    const row = { email: "a@b.com", subscription_tier: "pro", subscription_end: "2026-06-01" };
+    const row = { email: "a@b.com", subscription_tier: "starter", subscription_end: "2026-06-01" };
     expect(parseSubscriptionProfile([row])).toEqual(row);
   });
 });
@@ -78,7 +78,7 @@ describe("formatSubscriptionEndDate", () => {
 describe("buildCancellationEmailHtml", () => {
   const baseParams = {
     userName: "Aarti",
-    tier: "pro",
+    tier: "starter",
     endDateText: "1 June 2026",
     appUrl: "https://hirestepx.vercel.app",
   };
@@ -86,7 +86,7 @@ describe("buildCancellationEmailHtml", () => {
   it("includes name, tier and end date", () => {
     const html = buildCancellationEmailHtml(baseParams);
     expect(html).toContain("Aarti");
-    expect(html).toContain("pro");
+    expect(html).toContain("starter");
     expect(html).toContain("1 June 2026");
   });
 

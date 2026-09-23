@@ -9,7 +9,6 @@ declare const process: { env: Record<string, string | undefined> };
 /* ─── Plan Limits (single source of truth for backend) ─── */
 const FREE_SESSION_LIMIT = 2;
 const STARTER_WEEKLY_LIMIT = 5; // Sprint Pack: 5 sessions per 30-day pack
-const PRO_MONTHLY_LIMIT = 40;
 
 /** Timeout for Supabase auth/profile verification requests (ms) */
 const SUPABASE_TIMEOUT_MS = 5000;
@@ -321,7 +320,7 @@ export async function checkSessionLimit(
           let tier = retryProfiles[0].subscription_tier || "free";
           const subEnd = retryProfiles[0].subscription_end;
           if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
-          if (tier === "team" || tier === "pro" || tier === "starter") return { allowed: true };
+          if (tier === "team" || tier === "starter") return { allowed: true };
           return { allowed: true }; // fail-open for free on transient error
         } catch {
           const failClosed = process.env.SESSION_LIMIT_FAIL_CLOSED === "1";
@@ -343,42 +342,6 @@ export async function checkSessionLimit(
     }
 
     if (tier === "team") { clearTimeout(timer); return { allowed: true }; }
-
-    if (tier === "pro") {
-      // Pro: 40 sessions per month
-      const now2 = new Date();
-      const monthStart = new Date(Date.UTC(now2.getUTCFullYear(), now2.getUTCMonth(), 1));
-      const monthISO = monthStart.toISOString();
-      const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(monthISO)}&select=id`,
-        { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: "count=exact" }, signal: ac.signal },
-      );
-      clearTimeout(timer);
-      if (!sessionsRes.ok) { console.error("Session limit check: sessions fetch failed", sessionsRes.status); return { allowed: false, reason: "Could not verify session limit. Please try again." }; }
-      const range = sessionsRes.headers.get("content-range");
-      const thisMonth = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
-      if (thisMonth >= PRO_MONTHLY_LIMIT) {
-        // Exhausted Pro monthly allotment — allow only if the user holds a
-        // purchased session credit (same credit ledger as free-tier top-ups).
-        // End-of-session callers pass consumeCredit:false — the credit was
-        // already spent at session start, so scoring must not spend a second one.
-        if (!consumeCredit) return { allowed: true };
-        const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
-        if (!consumed) {
-          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT} sessions/month). Buy session credits or wait for next month.` };
-        }
-        return { allowed: true };
-      }
-      // Atomic in-flight check: prevent race where two concurrent session starts
-      // both read thisMonth < PRO_MONTHLY_LIMIT and both slip through.
-      if (consumeCredit) {
-        const inFlight = await incrementInFlightCounter(userId, "pro", INFLIGHT_TTL_SEC);
-        if (inFlight !== null && thisMonth + inFlight > PRO_MONTHLY_LIMIT) {
-          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT} sessions/month). Buy session credits or wait for next month.` };
-        }
-      }
-      return { allowed: true };
-    }
 
     if (tier === "free") {
       // Count total sessions at DB level
@@ -568,15 +531,15 @@ export async function readPriorNegotiationCompanies(
 
 /* ─── Subscription Tier Check ─── */
 
-/** Get the user's current subscription tier, accounting for expiry. Returns "pro" in dev mode. */
-export async function getSubscriptionTier(userId: string): Promise<"free" | "starter" | "pro" | "team"> {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return "pro"; // dev mode — unrestricted
+/** Get the user's current subscription tier, accounting for expiry. Returns "starter" in dev mode. */
+export async function getSubscriptionTier(userId: string): Promise<"free" | "starter" | "team"> {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return "starter"; // dev mode — test paid features locally
 
   // One profile lookup attempt. Distinguishes transient (5xx / network / timeout
   // -> retry once) from definitive (2xx, or 4xx like a real not-found -> trust
   // the answer). Mirrors the transient-vs-permanent handling in verifyAuth so a
   // Supabase blip never silently downgrades a paying user and 403s their save.
-  const attempt = async (): Promise<{ tier: "free" | "starter" | "pro" | "team"; transient: boolean }> => {
+  const attempt = async (): Promise<{ tier: "free" | "starter" | "team"; transient: boolean }> => {
     try {
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
@@ -588,7 +551,7 @@ export async function getSubscriptionTier(userId: string): Promise<"free" | "sta
       if (!res.ok) return { tier: "free", transient: res.status >= 500 };
       const profiles = await res.json();
       if (!Array.isArray(profiles) || profiles.length === 0) return { tier: "free", transient: false };
-      let tier = (profiles[0].subscription_tier || "free") as "free" | "starter" | "pro" | "team";
+      let tier = (profiles[0].subscription_tier || "free") as "free" | "starter" | "team";
       const subEnd = profiles[0].subscription_end;
       if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
       return { tier, transient: false };
@@ -863,7 +826,7 @@ export function sanitizeForLLM(s: unknown, maxLen = 200): string {
 // so a generous daily LLM-call budget only widens the abuse window without helping a
 // genuine free user. 15 covers 2 full sessions of retries comfortably. Paid
 // tiers stay generous.
-const DAILY_LLM_LIMITS: Record<string, number> = { free: 50, starter: 200, pro: 600, team: 2000 };
+const DAILY_LLM_LIMITS: Record<string, number> = { free: 50, starter: 200, team: 2000 };
 
 /** Check if a user has exceeded their daily LLM API call quota for a specific endpoint. */
 export async function checkLLMQuota(userId: string, endpoint: string): Promise<{ allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string }> {

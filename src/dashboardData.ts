@@ -38,7 +38,6 @@ export const FREE_SESSION_LIMIT = 2;
    Keep these constants aligned with the customer-facing promise —
    server-handlers/_shared.ts mirrors the limits for quota enforcement. */
 export const STARTER_WEEKLY_LIMIT = 5; // Sprint Pack: 5 sessions per 30-day pack
-export const PRO_MONTHLY_LIMIT = 40;
 export const SINGLE_SESSION_PRICE = 9; // ₹9 per session
 export const STORAGE_KEY = "hirestepx_dashboard";
 export const RESULTS_KEY = "hirestepx_sessions";

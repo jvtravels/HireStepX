@@ -34,14 +34,13 @@ export type PlanCtaState = {
 
 /**
  * Label for the plan card's primary button. Only states that actually render a
- * button reach this: active Pro shows "Manage Subscription", exhausted Pro is
- * handled separately, and an active Starter with sessions left shows no button.
- * So this covers exhausted-Starter and Free (active or exhausted).
+ * button reach this: an active Starter with sessions left shows no button, so
+ * this covers exhausted-Starter and Free (active or exhausted).
  *
- * A spent Sprint Pack is a pack customer, not a Pro lead — its CTA mirrors the
- * exhausted-Pro "buy sessions" path (the upgrade modal offers another pack or
- * individual sessions) rather than pushing a recurring upgrade. Pushing
- * "Upgrade to Pro" there both misreads intent and misdescribes the modal.
+ * A spent Sprint Pack is a pack customer, not a subscriber to upsell — its CTA
+ * offers "buy more sessions" (the upgrade modal offers another pack or
+ * individual sessions) rather than pushing a recurring upgrade. There is no
+ * Pro tier to push customers toward; it isn't purchasable anywhere in the app.
  */
 export function planCtaLabel(s: PlanCtaState): string {
   if (s.starterExhausted) return "Buy more sessions";

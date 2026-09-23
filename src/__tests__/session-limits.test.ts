@@ -27,7 +27,7 @@ function checkSessionLimit(
     }
   }
 
-  if (effectiveTier === "pro" || effectiveTier === "team") {
+  if (effectiveTier === "team") {
     return { allowed: true };
   }
 
@@ -37,7 +37,7 @@ function checkSessionLimit(
     }
   } else if (effectiveTier === "starter") {
     if (sessionsThisWeek >= STARTER_WEEKLY_LIMIT) {
-      return { allowed: false, reason: "Starter plan limit reached (10/week). Upgrade to Pro for unlimited." };
+      return { allowed: false, reason: "Starter plan limit reached (10/week). Buy another Sprint Pack to continue." };
     }
   }
 
@@ -85,15 +85,6 @@ describe("Session Limit Enforcement", () => {
     });
   });
 
-  describe("Pro tier", () => {
-    const activeEnd = "2099-12-31T23:59:59Z";
-
-    it("allows unlimited sessions", () => {
-      expect(checkSessionLimit("pro", activeEnd, 0, 0).allowed).toBe(true);
-      expect(checkSessionLimit("pro", activeEnd, 1000, 100).allowed).toBe(true);
-    });
-  });
-
   describe("Team tier", () => {
     it("allows unlimited sessions", () => {
       expect(checkSessionLimit("team", "2099-12-31T23:59:59Z", 500, 50).allowed).toBe(true);
@@ -110,8 +101,8 @@ describe("Session Limit Enforcement", () => {
       expect(result.reason).toContain("Free plan limit");
     });
 
-    it("downgrades expired pro to free limits", () => {
-      const result = checkSessionLimit("pro", expiredEnd, 3, 1);
+    it("downgrades expired team to free limits", () => {
+      const result = checkSessionLimit("team", expiredEnd, 3, 1);
       expect(result.allowed).toBe(false);
     });
 
@@ -122,7 +113,7 @@ describe("Session Limit Enforcement", () => {
 
     it("null subscription_end on paid tier is treated as active", () => {
       // Some edge case — paid tier with no end date
-      const result = checkSessionLimit("pro", null, 100, 50);
+      const result = checkSessionLimit("team", null, 100, 50);
       expect(result.allowed).toBe(true);
     });
   });
@@ -142,7 +133,7 @@ describe("Session Limit Enforcement", () => {
     it("subscription expiring today is treated as expired", () => {
       // Set expiry to 1 hour ago
       const justExpired = new Date(Date.now() - 3600_000).toISOString();
-      const result = checkSessionLimit("pro", justExpired, 100, 50);
+      const result = checkSessionLimit("team", justExpired, 100, 50);
       // Should be downgraded to free and blocked
       expect(result.allowed).toBe(false);
     });

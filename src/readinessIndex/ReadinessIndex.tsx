@@ -10,7 +10,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 import { useDashboardSubscription, useDashboardUI } from "../DashboardContext";
-import { ProGate } from "../dashboardComponents";
+import { PaywallGate } from "../dashboardComponents";
 import { authHeaders } from "../supabase";
 import { captureClientEvent } from "../posthogClient";
 import type { Fixture, RangeKeyLocal as RangeKey, Pillar } from "./types";
@@ -307,7 +307,7 @@ export function ReadinessIndex() {
 
   React.useEffect(() => { if (isFree) captureClientEvent("analytics_progate"); }, [isFree]);
 
-  if (isFree) return <ProGate feature="The Readiness Index" onUpgrade={() => setShowUpgradeModal(true)} />;
+  if (isFree) return <PaywallGate feature="The Readiness Index" onUpgrade={() => setShowUpgradeModal(true)} />;
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") return <ErrorState onRetry={reload} />;
   if (state.status === "empty") return <EmptyAnalytics />;

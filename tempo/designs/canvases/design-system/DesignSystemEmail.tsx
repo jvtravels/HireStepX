@@ -1,9 +1,18 @@
 /* HireStepX — Design System / Email
-   Templates for every transactional moment. Editorial, branded,
-   reading-friendly on mobile (which is 70% of email opens). */
+   Templates for every transactional moment. Clean, branded, simple —
+   reading-friendly on mobile (which is 70% of email opens).
+
+   2026-09 SaaS-flat conversion: email headline type stays a little larger
+   and simpler than in-app UI (email clients are inconsistent renderers, so
+   a slightly bigger, plainer heading is the right call there), but the
+   dramatic display-serif treatment and copper-as-decorative-headline-word
+   pattern are retired. Copper now does exactly one job in these templates:
+   the primary CTA button — the standard, correct pattern for transactional
+   email. Ordinary body copy runs on `tokens.inkMuted`. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, type, radius, shadows } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* Email frame — mimics a real email client preview */
 function EmailFrame({
   subject,
@@ -21,7 +30,7 @@ function EmailFrame({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         boxShadow: shadows.card,
         overflow: "hidden",
       }}
@@ -34,24 +43,24 @@ function EmailFrame({
           borderBottom: `1px solid ${t.line}`,
         }}
       >
-        <div style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 500, color: t.coal, letterSpacing: "-0.01em" }}>
+        <div style={{ fontFamily: f.sans, fontSize: type.h4.size, fontWeight: type.h4.weight, color: t.coal }}>
           {subject}
         </div>
-        <div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 12, color: t.inkSoft }}>
+        <div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: type.caption.size, color: t.inkSoft }}>
           <span>
             <b style={{ color: t.coal, fontWeight: 500 }}>{from}</b>
           </span>
           <span style={{ color: t.inkFaint }}>· {preview}</span>
         </div>
       </div>
-      {/* Email body — editorial styled */}
+      {/* Email body */}
       <div
         style={{
-          padding: "40px 48px",
+          padding: "32px 40px",
           maxWidth: 560,
           margin: "0 auto",
           fontFamily: f.sans,
-          fontSize: 15,
+          fontSize: type.bodyLg.size,
           lineHeight: 1.7,
           color: t.coal,
         }}
@@ -59,12 +68,12 @@ function EmailFrame({
         {/* Logo header */}
         <div
           style={{
-            fontFamily: f.serif,
-            fontSize: 18,
-            fontWeight: 500,
+            fontFamily: f.sans,
+            fontSize: type.h4.size,
+            fontWeight: type.h4.weight,
             color: t.coal,
-            marginBottom: 32,
-            paddingBottom: 24,
+            marginBottom: 24,
+            paddingBottom: 20,
             borderBottom: `1px solid ${t.line}`,
           }}
         >
@@ -74,24 +83,24 @@ function EmailFrame({
         {/* Footer */}
         <div
           style={{
-            marginTop: 48,
-            paddingTop: 24,
+            marginTop: 40,
+            paddingTop: 20,
             borderTop: `1px solid ${t.line}`,
-            fontSize: 12,
+            fontSize: type.caption.size,
             color: t.inkSoft,
             lineHeight: 1.7,
           }}
         >
           You're receiving this because you have an account at hirestepx.com.
           <br />
-          <a style={{ color: t.indigo, textDecoration: "none", borderBottom: `1px solid ${t.indigo}` }}>
+          <a style={{ color: t.copper, textDecoration: "none", borderBottom: `1px solid ${t.copperLine}` }}>
             Manage notifications
           </a>{" "}
           ·{" "}
-          <a style={{ color: t.indigo, textDecoration: "none", borderBottom: `1px solid ${t.indigo}` }}>
+          <a style={{ color: t.copper, textDecoration: "none", borderBottom: `1px solid ${t.copperLine}` }}>
             Unsubscribe
           </a>
-          <div style={{ marginTop: 12, color: t.inkFaint, fontSize: 11 }}>
+          <div style={{ marginTop: 12, color: t.inkFaint, fontSize: type.micro.size }}>
             HireStepX · Bengaluru, India
           </div>
         </div>
@@ -100,16 +109,18 @@ function EmailFrame({
   );
 }
 
-/* Reusable button styles for email */
+/* Reusable button styles for email — the ONE spot copper drives primary
+   UI chrome in these templates: the CTA button. Standard, correct
+   transactional-email pattern. */
 const emailBtn: React.CSSProperties = {
   display: "inline-block",
-  background: t.indigo,
+  background: t.copper,
   color: t.white,
   textDecoration: "none",
   padding: "12px 24px",
-  borderRadius: 10,
+  borderRadius: radius.md,
   fontWeight: 600,
-  fontSize: 14,
+  fontSize: type.body.size,
   marginTop: 8,
 };
 
@@ -118,52 +129,25 @@ export default function DesignSystemEmail() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "80px 56px 120px",
+          padding: "48px 48px 96px",
           fontFamily: f.sans,
           color: t.coal,
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Email, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>occasion</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            Every transactional email rendered as a designed surface.
-            Editorial layout, generous whitespace, one CTA. 70% of email
-            opens are mobile — every template stays readable at 320px wide.
-          </p>
-        </header>
+        <PageHeader
+          title="Email, by occasion."
+          description="Every transactional email rendered as a designed surface. Clean layout, one clear CTA. 70% of email opens are mobile — every template stays readable at 320px wide."
+        />
 
         {/* 01 — SUBJECT LINE VOICE */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="01"
             title="Subject line voice"
@@ -173,7 +157,7 @@ export default function DesignSystemEmail() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -247,7 +231,7 @@ export default function DesignSystemEmail() {
         </section>
 
         {/* 02 — WELCOME EMAIL */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="02"
             title="Welcome"
@@ -260,26 +244,23 @@ export default function DesignSystemEmail() {
           >
             <h1
               style={{
-                fontFamily: f.serif,
-                fontSize: 32,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.15,
+                fontFamily: f.sans,
+                fontSize: 24,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.25,
                 margin: "0 0 20px",
+                color: t.coal,
               }}
             >
-              Welcome,{" "}
-              <em style={{ fontStyle: "italic", color: t.copper, fontWeight: 500 }}>
-                Arjun
-              </em>
-              .
+              Welcome, Arjun.
             </h1>
             <p style={{ margin: "0 0 16px" }}>
               Glad you're here. You've got three free practice interviews —
               that's enough to find your weakest area and fix one of them.
             </p>
             <p style={{ margin: "0 0 16px" }}>Three things to know:</p>
-            <ol style={{ margin: "0 0 28px", paddingLeft: 20, color: t.indigoGray }}>
+            <ol style={{ margin: "0 0 28px", paddingLeft: 20, color: t.inkMuted }}>
               <li style={{ marginBottom: 10 }}>
                 Your AI interviewer adapts to your resume. The more honest your
                 resume, the better the questions.
@@ -297,13 +278,12 @@ export default function DesignSystemEmail() {
               style={{
                 margin: "32px 0 0",
                 fontSize: 14,
-                color: t.indigoGray,
-                fontStyle: "italic",
+                color: t.inkMuted,
               }}
             >
               Reply to this email if anything's unclear. I read every one.
             </p>
-            <p style={{ margin: "24px 0 0", color: t.indigoGray }}>
+            <p style={{ margin: "24px 0 0", color: t.inkMuted }}>
               — Jay
               <br />
               <span style={{ fontSize: 13, color: t.inkSoft }}>Founder, HireStepX</span>
@@ -312,7 +292,7 @@ export default function DesignSystemEmail() {
         </section>
 
         {/* 03 — VERIFICATION */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="03"
             title="Email verification"
@@ -325,19 +305,16 @@ export default function DesignSystemEmail() {
           >
             <h1
               style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.2,
+                fontFamily: f.sans,
+                fontSize: 22,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.3,
                 margin: "0 0 20px",
+                color: t.coal,
               }}
             >
-              Verify your{" "}
-              <em style={{ fontStyle: "italic", color: t.copper, fontWeight: 500 }}>
-                email
-              </em>
-              .
+              Verify your email.
             </h1>
             <p style={{ margin: "0 0 24px" }}>
               We just need to confirm this address is yours. One click, then
@@ -350,7 +327,7 @@ export default function DesignSystemEmail() {
               style={{
                 margin: "32px 0 0",
                 fontSize: 13,
-                color: t.indigoGray,
+                color: t.inkMuted,
                 lineHeight: 1.6,
               }}
             >
@@ -362,11 +339,11 @@ export default function DesignSystemEmail() {
         </section>
 
         {/* 04 — PAYMENT RECEIPT */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="04"
             title="Payment receipt"
-            desc="Calm confirmation. Numbers prominent. Editorial, never accountant-tone."
+            desc="Calm confirmation. Numbers prominent, tone plain — never accountant-cold."
           />
           <EmailFrame
             subject="₹149 received · receipt inside"
@@ -375,19 +352,16 @@ export default function DesignSystemEmail() {
           >
             <h1
               style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.2,
+                fontFamily: f.sans,
+                fontSize: 22,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.3,
                 margin: "0 0 16px",
+                color: t.coal,
               }}
             >
-              You're{" "}
-              <em style={{ fontStyle: "italic", color: t.copper, fontWeight: 500 }}>
-                in
-              </em>
-              .
+              You're in.
             </h1>
             <p style={{ margin: "0 0 28px", fontSize: 15 }}>
               Pro plan starts now. Unlimited interviews, AI feedback, salary
@@ -417,15 +391,15 @@ export default function DesignSystemEmail() {
                 Receipt
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 13 }}>
-                <span style={{ color: t.indigoGray }}>Plan</span>
+                <span style={{ color: t.inkMuted }}>Plan</span>
                 <span style={{ color: t.coal, textAlign: "right", fontWeight: 500 }}>Pro · monthly</span>
-                <span style={{ color: t.indigoGray }}>Amount</span>
+                <span style={{ color: t.inkMuted }}>Amount</span>
                 <span style={{ color: t.coal, textAlign: "right", fontFamily: f.mono }}>₹149.00</span>
-                <span style={{ color: t.indigoGray }}>GST included</span>
+                <span style={{ color: t.inkMuted }}>GST included</span>
                 <span style={{ color: t.coal, textAlign: "right", fontFamily: f.mono }}>₹22.73</span>
-                <span style={{ color: t.indigoGray }}>Renews</span>
+                <span style={{ color: t.inkMuted }}>Renews</span>
                 <span style={{ color: t.coal, textAlign: "right" }}>15 June 2026</span>
-                <span style={{ color: t.indigoGray }}>Razorpay ID</span>
+                <span style={{ color: t.inkMuted }}>Razorpay ID</span>
                 <span
                   style={{
                     color: t.coal,
@@ -442,7 +416,7 @@ export default function DesignSystemEmail() {
             <a href="#" style={emailBtn}>
               View dashboard →
             </a>
-            <p style={{ margin: "24px 0 0", fontSize: 13, color: t.indigoGray, lineHeight: 1.6 }}>
+            <p style={{ margin: "24px 0 0", fontSize: 13, color: t.inkMuted, lineHeight: 1.6 }}>
               Need a GST invoice for your company? Reply to this email and
               we'll send a tax-compliant version within an hour.
             </p>
@@ -450,11 +424,11 @@ export default function DesignSystemEmail() {
         </section>
 
         {/* 05 — WEEKLY RECAP */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="05"
             title="Weekly recap"
-            desc="The marquee email. Editorial-styled like a Substack post. Proves the brand every Sunday."
+            desc="The marquee email — the one that proves the brand every Sunday, clean and skimmable."
           />
           <EmailFrame
             subject="Your week, in interview reps"
@@ -464,19 +438,16 @@ export default function DesignSystemEmail() {
             <MonoLabel color={t.copper}>Week of 12-18 May 2026</MonoLabel>
             <h1
               style={{
-                fontFamily: f.serif,
-                fontSize: 32,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.15,
+                fontFamily: f.sans,
+                fontSize: 24,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.25,
                 margin: "12px 0 24px",
+                color: t.coal,
               }}
             >
-              You're{" "}
-              <em style={{ fontStyle: "italic", color: t.copper, fontWeight: 500 }}>
-                sharper
-              </em>{" "}
-              than last week.
+              You're sharper than last week.
             </h1>
 
             {/* Stat row */}
@@ -509,12 +480,12 @@ export default function DesignSystemEmail() {
                   </div>
                   <div
                     style={{
-                      fontFamily: f.serif,
-                      fontSize: 32,
-                      fontWeight: 500,
-                      color: t.copper,
+                      fontFamily: f.sans,
+                      fontSize: 22,
+                      fontWeight: 600,
+                      color: t.coal,
                       marginTop: 4,
-                      letterSpacing: "-0.02em",
+                      letterSpacing: "-0.01em",
                     }}
                   >
                     {kpi.val}
@@ -525,11 +496,11 @@ export default function DesignSystemEmail() {
 
             <h3
               style={{
-                fontFamily: f.serif,
-                fontSize: 20,
-                fontWeight: 500,
+                fontFamily: f.sans,
+                fontSize: 17,
+                fontWeight: 600,
                 margin: "0 0 12px",
-                letterSpacing: "-0.01em",
+                color: t.coal,
               }}
             >
               What stood out
@@ -544,7 +515,7 @@ export default function DesignSystemEmail() {
               The next push: <b style={{ color: t.coal, fontWeight: 600 }}>quantified outcomes</b>.
               Your stories are landing, but they're missing the "and that
               led to a 23% improvement" line at the end. Try{" "}
-              <a style={{ color: t.indigo, textDecoration: "none", borderBottom: `1px solid ${t.indigo}` }}>
+              <a style={{ color: t.copper, textDecoration: "none", borderBottom: `1px solid ${t.copperLine}` }}>
                 this prompt set
               </a>{" "}
               this week.
@@ -553,14 +524,14 @@ export default function DesignSystemEmail() {
             <a href="#" style={emailBtn}>
               Practice this →
             </a>
-            <p style={{ margin: "32px 0 0", fontSize: 13, color: t.indigoGray, fontStyle: "italic" }}>
+            <p style={{ margin: "32px 0 0", fontSize: 13, color: t.inkMuted }}>
               See you next Sunday.
             </p>
           </EmailFrame>
         </section>
 
         {/* 06 — RE-ENGAGEMENT */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="06"
             title="Re-engagement"
@@ -573,19 +544,16 @@ export default function DesignSystemEmail() {
           >
             <h1
               style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.2,
+                fontFamily: f.sans,
+                fontSize: 22,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.3,
                 margin: "0 0 20px",
+                color: t.coal,
               }}
             >
-              It's been{" "}
-              <em style={{ fontStyle: "italic", color: t.copper, fontWeight: 500 }}>
-                14 days
-              </em>
-              .
+              It's been 14 days.
             </h1>
             <p style={{ margin: "0 0 16px" }}>
               No judgment — life happens. Just a reminder that interview
@@ -599,10 +567,10 @@ export default function DesignSystemEmail() {
             <a href="#" style={emailBtn}>
               Practice in 15 minutes →
             </a>
-            <p style={{ margin: "32px 0 0", fontSize: 13, color: t.indigoGray, lineHeight: 1.6 }}>
+            <p style={{ margin: "32px 0 0", fontSize: 13, color: t.inkMuted, lineHeight: 1.6 }}>
               Or, if you've moved on or aren't job-hunting right now, that's
               fine too. You can{" "}
-              <a style={{ color: t.indigo, textDecoration: "none", borderBottom: `1px solid ${t.indigo}` }}>
+              <a style={{ color: t.copper, textDecoration: "none", borderBottom: `1px solid ${t.copperLine}` }}>
                 pause notifications
               </a>{" "}
               and we'll be here when you're back.
@@ -611,7 +579,7 @@ export default function DesignSystemEmail() {
         </section>
 
         {/* 07 — DESIGN TOKENS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <SectionHead
             num="07"
             title="Email design tokens"
@@ -621,7 +589,7 @@ export default function DesignSystemEmail() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -629,11 +597,11 @@ export default function DesignSystemEmail() {
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 14 }}>
               {[
                 { k: "Width", v: "Body container max 600px. Mobile reflows to 100% with 24px padding." },
-                { k: "Font stack", v: "Instrument Serif for headers (with Georgia fallback). Satoshi for body (with system-ui fallback). Web fonts often blocked by email clients — fallbacks must look good." },
+                { k: "Font stack", v: "AF Sobremesa for headers and body (with Georgia/system-ui fallback). Web fonts often blocked by email clients — fallbacks must look good." },
                 { k: "Background", v: "Pure white #FFFFFF for body. Cream surface only as accents (receipt blocks). Email clients sometimes invert colors." },
                 { k: "Buttons", v: "Inline <a> styled as block. NOT real buttons — Outlook strips them. Use bulletproof button HTML for cross-client safety." },
                 { k: "Images", v: "Avoid where possible. If used, host on a CDN with absolute URLs. Always include alt text. Never load fonts via image-as-text." },
-                { k: "Links", v: "Indigo with bottom-border underline. No `text-decoration: underline` (renders inconsistently across clients)." },
+                { k: "Links", v: "Copper with bottom-border underline. No `text-decoration: underline` (renders inconsistently across clients)." },
                 { k: "Dark mode", v: "Test in Apple Mail dark mode. Avoid #000 backgrounds; cream survives inversion better than pure white." },
                 { k: "CTA placement", v: "One primary CTA, above the fold (320×480px viewport). Secondary actions only as text links at the bottom." },
               ].map((row) => (
@@ -654,7 +622,7 @@ export default function DesignSystemEmail() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -662,7 +630,7 @@ export default function DesignSystemEmail() {
         </section>
 
         {/* FOOTER */}
-        <Footer section="Section" tagline="One CTA. Editorial layout. Mobile-readable." />
+        <Footer section="Section" tagline="One CTA. Clean layout. Mobile-readable." />
       </div>
     </>
   );

@@ -1,10 +1,12 @@
 /* HireStepX — Design System / Motion
    Easings · Durations · Recipes · Choreography
    Five named easings. Six duration tiers. Live demos.
-   The discipline: motion conveys meaning. Never decoration. */
+   The discipline: motion conveys meaning, fast. Crisp, subtle, purposeful
+   SaaS-style transitions — never decorative or cinematic. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, radius, type } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* Easing curve — draws an SVG path that visualizes the cubic-bezier */
 function EasingCurve({ p1x, p1y, p2x, p2y }: { p1x: number; p1y: number; p2x: number; p2y: number }) {
   const W = 200,
@@ -113,7 +115,7 @@ function EasingCard({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: 28,
         boxShadow: shadows.card,
       }}
@@ -126,15 +128,16 @@ function EasingCard({
           marginBottom: 8,
         }}
       >
-        <MonoLabel color={t.copper}>{name}</MonoLabel>
+        <MonoLabel>{name}</MonoLabel>
       </div>
       <h3
         style={{
-          fontFamily: f.serif,
-          fontSize: 22,
-          fontWeight: 400,
+          fontFamily: f.sans,
+          fontSize: type.h3.size,
+          fontWeight: type.h3.weight,
+          lineHeight: type.h3.lineHeight,
           margin: "8px 0 4px",
-          letterSpacing: "-0.01em",
+          color: t.coal,
         }}
       >
         {curve}
@@ -143,11 +146,11 @@ function EasingCard({
         style={{
           fontFamily: f.mono,
           fontSize: 11,
-          color: t.indigo,
+          color: t.inkSoft,
           marginBottom: 16,
           background: t.creamSoft,
           padding: "4px 10px",
-          borderRadius: 4,
+          borderRadius: radius.sm,
           display: "inline-block",
         }}
       >
@@ -160,7 +163,7 @@ function EasingCard({
       <p
         style={{
           fontSize: 12,
-          color: t.indigoGray,
+          color: t.inkMuted,
           marginTop: 14,
           marginBottom: 0,
           lineHeight: 1.55,
@@ -178,8 +181,7 @@ export default function DesignSystemMotion() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -191,53 +193,11 @@ export default function DesignSystemMotion() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header
-          style={{
-            borderBottom: `1px solid ${t.line}`,
-            paddingBottom: 40,
-            marginBottom: 64,
-          }}
-        >
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Motion, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>meaning</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            Five named easings. Six duration tiers. Every animation conveys
-            meaning — never decoration. Respects{" "}
-            <code
-              style={{
-                fontFamily: f.mono,
-                background: t.creamSoft,
-                padding: "1px 6px",
-                borderRadius: 3,
-                fontSize: 13,
-              }}
-            >
-              prefers-reduced-motion
-            </code>{" "}
-            by default.
-          </p>
-        </header>
+        {/* HEADER */}
+        <PageHeader
+          title="Motion"
+          description="Five named easings, six duration tiers. Every animation is quick, subtle, and answers 'why' — never decorative or cinematic. Respects prefers-reduced-motion by default."
+        />
 
         {/* 01 — EASINGS (LIVE) */}
         <section style={{ marginBottom: 80 }}>
@@ -403,9 +363,10 @@ export default function DesignSystemMotion() {
                 </div>
                 <div
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 24,
-                    color: t.copper,
+                    fontFamily: f.sans,
+                    fontSize: type.h3.size,
+                    fontWeight: 600,
+                    color: t.coal,
                     letterSpacing: "-0.01em",
                   }}
                 >
@@ -417,7 +378,7 @@ export default function DesignSystemMotion() {
                   <div
                     style={{
                       fontSize: 12,
-                      color: t.indigoGray,
+                      color: t.inkMuted,
                       marginTop: 4,
                       lineHeight: 1.5,
                     }}
@@ -486,15 +447,16 @@ export default function DesignSystemMotion() {
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 10,
+                  borderRadius: radius.md,
                   padding: 24,
                 }}
               >
                 <h4
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: 18,
-                    fontWeight: 500,
+                    fontFamily: f.sans,
+                    fontSize: type.h4.size,
+                    fontWeight: type.h4.weight,
+                    lineHeight: type.h4.lineHeight,
                     margin: "0 0 6px",
                     color: t.coal,
                   }}
@@ -503,7 +465,7 @@ export default function DesignSystemMotion() {
                 </h4>
                 <p
                   style={{
-                    color: t.indigoGray,
+                    color: t.inkMuted,
                     fontSize: 13,
                     margin: "0 0 14px",
                     lineHeight: 1.55,
@@ -518,7 +480,7 @@ export default function DesignSystemMotion() {
                     color: t.coal,
                     background: t.creamSoft,
                     padding: "10px 14px",
-                    borderRadius: 6,
+                    borderRadius: radius.sm,
                     lineHeight: 1.6,
                   }}
                 >
@@ -540,7 +502,7 @@ export default function DesignSystemMotion() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -594,7 +556,7 @@ export default function DesignSystemMotion() {
                     style={{
                       fontFamily: f.mono,
                       fontSize: 11,
-                      color: t.copper,
+                      color: t.inkSoft,
                       fontWeight: 500,
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
@@ -603,7 +565,7 @@ export default function DesignSystemMotion() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -621,7 +583,7 @@ export default function DesignSystemMotion() {
             style={{
               background: t.coal,
               color: "#d8d2c0",
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "28px 32px",
               fontFamily: f.mono,
               fontSize: 13,
@@ -631,11 +593,11 @@ export default function DesignSystemMotion() {
               whiteSpace: "pre-wrap",
             }}
           >
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* HireStepX — Motion tokens */\n"}
             </span>
             {":root {\n"}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"  /* Easings */\n"}
             </span>
             <span style={{ color: "#c4a8ff" }}>{"  --ease-out-expo"}</span>:{" "}
@@ -653,7 +615,7 @@ export default function DesignSystemMotion() {
             <span style={{ color: "#c4a8ff" }}>{"  --ease-error"}</span>:{" "}
             <span style={{ color: "#f4d4a8" }}>cubic-bezier(0.36, 0.07, 0.19, 0.97)</span>
             ;{"\n\n"}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"  /* Durations */\n"}
             </span>
             <span style={{ color: "#c4a8ff" }}>{"  --t-instant"}</span>:{" "}
@@ -668,7 +630,7 @@ export default function DesignSystemMotion() {
             <span style={{ color: "#f4d4a8" }}>400ms</span>;{"\n"}
             <span style={{ color: "#c4a8ff" }}>{"  --t-reveal"}</span>:{"  "}
             <span style={{ color: "#f4d4a8" }}>600ms</span>;{"\n}\n\n"}
-            <span style={{ color: "#6b6660", fontStyle: "italic" }}>
+            <span style={{ color: "#6b6660" }}>
               {"/* Reduced motion */\n"}
             </span>
             {"@media (prefers-reduced-motion: reduce) {\n"}

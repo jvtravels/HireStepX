@@ -665,8 +665,8 @@ export function useInterviewEngine() {
       // Don't fall back to static questions (that would let them bypass the
       // gate). Navigate back to the dashboard where they can buy credits or
       // upgrade. The ?upgrade=1 param tells the dashboard to open the modal.
-      // Server sends: "Free plan limit reached", "Pro plan limit reached",
-      // "Starter plan limit reached" — all contain "limit reached".
+      // Server sends: "Free plan limit reached", "Starter plan limit reached"
+      // — all contain "limit reached".
       if (msg.toLowerCase().includes("limit reached")) {
         toast("Session limit reached — redirecting to dashboard.", "info");
         setLlmLoading(false);
@@ -3928,8 +3928,8 @@ export function useInterviewEngine() {
     track("interview_completed", { type: interviewType, questionsAnswered: currentQuestionNum, duration: elapsed });
     // PostHog: per-focus completion signal — terminal node of the
     // selected → started → completed funnel. Score / duration / question
-    // count let the dashboard build "Pro plan engagement by focus" or
-    // "fallback rate by focus" insights without joining elsewhere.
+    // count let the dashboard build "engagement by focus" or "fallback
+    // rate by focus" insights without joining elsewhere.
     // Snapshot COGS accumulators before any cleanup resets them.
     const sessionTtsChars = ttsCharsRef.current;
     const sessionSttSeconds = Math.round(sttAudioSecondsRef.current * 10) / 10;

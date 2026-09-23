@@ -34,7 +34,13 @@ export default function TemplateCanvas() {
         id="Example"
         name="Storyboard 1 (canvas-local example)"
         component={Storyboard1}
-        layout={{ x: 0, y: 0, width: 480, height: 320 }}
+        layout={{
+          x: 0,
+          y: 0,
+          width: 480,
+          height: 320,
+          intrinsicSizing: "root-element",
+        }}
       />
       {/* Example of projecting a REAL component from your app onto the canvas.
           Uncomment after adding the import above and having that component in

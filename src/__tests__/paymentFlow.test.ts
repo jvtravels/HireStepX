@@ -23,20 +23,17 @@ describe("plan configuration", () => {
   it("has correct paise amounts (not rupees)", () => {
     expect(PLAN_AMOUNT.single).toBe(900);   // ₹9
     expect(PLAN_AMOUNT.weekly).toBe(3900);  // ₹39
-    expect(PLAN_AMOUNT.monthly).toBe(14900); // ₹149
   });
 
   it("maps plans to correct tiers", () => {
     expect(PLAN_TIER.single).toBe("free");
     expect(PLAN_TIER.weekly).toBe("starter");
-    expect(PLAN_TIER.monthly).toBe("pro");
   });
 
   it("weekly plan grants 30 days (not 7)", () => {
     // PLAN_DAYS.weekly = 30 — the product grants a 30-day sprint pack even
     // though it's called "weekly" in the checkout UI.
     expect(PLAN_DAYS.weekly).toBe(30);
-    expect(PLAN_DAYS.monthly).toBe(30);
   });
 });
 
@@ -108,13 +105,6 @@ describe("computeSubscriptionEnd", () => {
     const expectedEnd = new Date("2026-05-01T10:00:00.000Z");
     expect(result!.end.toISOString()).toBe(expectedEnd.toISOString());
     expect(result!.proratedDays).toBe(0);
-  });
-
-  it("monthly plan (fresh subscription) expires 30 days from now", () => {
-    const result = computeSubscriptionEnd({ plan: "monthly", now });
-    expect(result).not.toBeNull();
-    const expectedEnd = new Date("2026-05-01T10:00:00.000Z");
-    expect(result!.end.toISOString()).toBe(expectedEnd.toISOString());
   });
 
   it("renewal (same tier) extends from the current end date, not from now", () => {

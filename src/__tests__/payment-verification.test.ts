@@ -11,7 +11,7 @@ import { createHmac } from "crypto";
 // Import canonical plan constants from the production code so tests break when
 // prices change rather than silently passing against a stale local copy.
 import { PLAN_AMOUNT, PLAN_TIER } from "../../server-handlers/_payment-verification";
-const PLAN_DURATION: Record<string, number> = { weekly: 7, monthly: 30 };
+const PLAN_DURATION: Record<string, number> = { weekly: 30 };
 
 describe("Payment Verification Logic", () => {
   describe("HMAC-SHA256 signature verification", () => {
@@ -81,13 +81,10 @@ describe("Payment Verification Logic", () => {
       expect(PLAN_TIER["weekly"]).toBe("starter");
     });
 
-    it("maps monthly plan to pro tier", () => {
-      expect(PLAN_TIER["monthly"]).toBe("pro");
-    });
-
     it("rejects invalid plan IDs", () => {
       expect(PLAN_TIER["invalid"]).toBeUndefined();
       expect(PLAN_TIER["yearly"]).toBeUndefined();
+      expect(PLAN_TIER["monthly"]).toBeUndefined();
       expect(PLAN_TIER["free"]).toBeUndefined();
     });
 
@@ -95,60 +92,41 @@ describe("Payment Verification Logic", () => {
       expect(PLAN_AMOUNT["weekly"]).toBe(3900);
     });
 
-    it("monthly plan costs ₹149 (14900 paise)", () => {
-      expect(PLAN_AMOUNT["monthly"]).toBe(14900);
-    });
-
-    it("weekly plan lasts 7 days", () => {
-      expect(PLAN_DURATION["weekly"]).toBe(7);
-    });
-
-    it("monthly plan lasts 30 days", () => {
-      expect(PLAN_DURATION["monthly"]).toBe(30);
+    it("weekly plan (Sprint Pack) lasts 30 days", () => {
+      expect(PLAN_DURATION["weekly"]).toBe(30);
     });
   });
 
   describe("Plan/amount mismatch detection", () => {
     it("detects amount mismatch for weekly plan", () => {
       const claimedPlan = "weekly";
-      const orderAmount = 14900; // monthly amount, not weekly
-      expect(orderAmount).not.toBe(PLAN_AMOUNT[claimedPlan]);
-    });
-
-    it("detects amount mismatch for monthly plan", () => {
-      const claimedPlan = "monthly";
-      const orderAmount = 4900; // weekly amount, not monthly
+      const orderAmount = 900; // single-session amount, not weekly
       expect(orderAmount).not.toBe(PLAN_AMOUNT[claimedPlan]);
     });
 
     it("accepts correct amount for weekly", () => {
       expect(PLAN_AMOUNT["weekly"]).toBe(3900);
     });
-
-    it("accepts correct amount for monthly", () => {
-      expect(PLAN_AMOUNT["monthly"]).toBe(14900);
-    });
   });
 
   describe("Tier ranking for upgrade prevention", () => {
-    const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, team: 3 };
+    const tierRank: Record<string, number> = { free: 0, starter: 1, team: 3 };
 
-    it("free < starter < pro < team", () => {
+    it("free < starter < team", () => {
       expect(tierRank["free"]).toBeLessThan(tierRank["starter"]);
-      expect(tierRank["starter"]).toBeLessThan(tierRank["pro"]);
-      expect(tierRank["pro"]).toBeLessThan(tierRank["team"]);
+      expect(tierRank["starter"]).toBeLessThan(tierRank["team"]);
     });
 
-    it("prevents downgrade from pro to starter", () => {
-      const currentTier = "pro";
+    it("prevents downgrade from team to starter", () => {
+      const currentTier = "team";
       const newTier = "starter";
       const isDowngrade = tierRank[currentTier] >= tierRank[newTier];
       expect(isDowngrade).toBe(true);
     });
 
-    it("allows upgrade from starter to pro", () => {
+    it("allows upgrade from starter to team", () => {
       const currentTier = "starter";
-      const newTier = "pro";
+      const newTier = "team";
       const isDowngrade = tierRank[currentTier] >= tierRank[newTier];
       expect(isDowngrade).toBe(false);
     });
@@ -162,17 +140,10 @@ describe("Payment Verification Logic", () => {
   });
 
   describe("Subscription date calculation", () => {
-    it("weekly subscription ends 7 days from now", () => {
+    it("weekly subscription (Sprint Pack) ends 30 days from now", () => {
       const now = new Date("2026-04-03T12:00:00Z");
       const end = new Date(now);
       end.setDate(end.getDate() + PLAN_DURATION["weekly"]);
-      expect(end.toISOString()).toBe("2026-04-10T12:00:00.000Z");
-    });
-
-    it("monthly subscription ends 30 days from now", () => {
-      const now = new Date("2026-04-03T12:00:00Z");
-      const end = new Date(now);
-      end.setDate(end.getDate() + PLAN_DURATION["monthly"]);
       expect(end.toISOString()).toBe("2026-05-03T12:00:00.000Z");
     });
   });

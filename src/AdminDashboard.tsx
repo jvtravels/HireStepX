@@ -449,7 +449,7 @@ const MiniBarChart = memo(function MiniBarChart({ data, color = c.gilt, height =
 /* ─── Tier Badge ─── */
 
 function TierBadge({ tier }: { tier: string }) {
-  const colors: Record<string, string> = { free: c.stone, starter: c.slate, pro: c.gilt, team: c.sage };
+  const colors: Record<string, string> = { free: c.stone, starter: c.slate, team: c.sage };
   return (
     <span style={{
       display: "inline-block", padding: "2px 8px", borderRadius: 100,
@@ -3166,8 +3166,8 @@ export default function AdminDashboard() {
                           <span style={{
                             display: "inline-block", padding: "1px 6px", borderRadius: 8,
                             fontSize: 10, fontWeight: 600, fontFamily: font.ui,
-                            background: m.plan_tier === "pro" ? "rgba(49,46,129,0.2)" : "rgba(100,100,100,0.12)",
-                            color: m.plan_tier === "pro" ? "#a5b4fc" : c.stone,
+                            background: m.plan_tier === "team" ? "rgba(49,46,129,0.2)" : "rgba(100,100,100,0.12)",
+                            color: m.plan_tier === "team" ? "#a5b4fc" : c.stone,
                             marginRight: 4,
                           }}>{m.plan_tier}</span>
                         ) : null}

@@ -43,9 +43,9 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const tier = await getSubscriptionTier(auth.userId);
-  if (tier !== "pro" && tier !== "team") {
+  if (tier !== "starter" && tier !== "team") {
     return new Response(
-      JSON.stringify({ error: "Google Calendar sync is a Pro feature. Upgrade to connect your calendar.", upgradeRequired: true }),
+      JSON.stringify({ error: "Google Calendar sync is included with any paid plan. Upgrade to connect your calendar.", upgradeRequired: true }),
       { status: 403, headers },
     );
   }

@@ -1,215 +1,216 @@
 /* HireStepX — Design System / Components · Advanced
    Modals · Tables · Navigation · Dropdowns · Breadcrumbs · Tabs · Pagination
-   The composition layer above buttons + inputs. */
+   The composition layer above buttons + inputs. Restrained neutral grays
+   carry the surface; copper is the one accent — reserved for the primary
+   action and the active/selected state, never spread across hover states
+   or highlights as a second co-primary hue. Real shadcn/ui primitives from
+   src/components/ui — never a canvas-local fork. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
-function StatePanel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 14,
-        padding: "28px 32px",
-        boxShadow: shadows.card,
-      }}
-    >
-      <MonoLabel color={t.copper}>{title}</MonoLabel>
-      <div style={{ marginTop: 20 }}>{children}</div>
-    </div>
-  );
-}
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, type, radius, shadows, shadcnTheme } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, StatePanel, PageShell, PageHeader } from "./_atoms";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Kbd } from "@/components/ui/kbd";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 
 /* ─── Main ─── */
 export default function DesignSystemComponentsAdvanced() {
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
-      `}</style>
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "80px 56px 120px",
-          fontFamily: f.sans,
-          color: t.coal,
-          background: t.cream,
-        }}
-      >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Components,{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>composed</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            Modals, tables, navigation. The composition layer that sits above
-            atomic buttons and inputs. Built from the same tokens — never
-            invented.
-          </p>
-        </header>
+    <PageShell>
+      <PageHeader
+        eyebrow="Design System · v1.0"
+        title="Components, composed."
+        description="Modals, tables, navigation. The composition layer that sits above atomic buttons and inputs. Built from the same tokens — never invented."
+      />
 
+      <div style={shadcnTheme}>
         {/* 01 — MODALS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="01"
             title="Modals & dialogs"
             desc="Three sizes. Always centered. Always with one primary action and one escape."
           />
-          <div style={{ display: "grid", gap: 16 }}>
-            {[
-              {
-                size: "sm",
-                width: 380,
-                title: "Delete this session?",
-                body: "Your transcript and score will be removed. This can't be undone.",
-                primary: "Delete",
-                primaryColor: t.error,
-              },
-              {
-                size: "md",
-                width: 480,
-                title: "End interview early?",
-                body: "You've answered 3 of 5 questions. We'll score what you've completed, but the report won't reflect your full readiness.",
-                primary: "End and score",
-                primaryColor: t.indigo,
-              },
-              {
-                size: "lg",
-                width: 600,
-                title: "Upgrade to Pro",
-                body: "Unlock unlimited interviews, salary negotiation mode, and full analytics. ₹149/month, cancel anytime.",
-                primary: "Continue to payment",
-                primaryColor: t.indigo,
-              },
-            ].map((m) => (
-              <div
-                key={m.size}
-                style={{
-                  background: "rgba(14, 12, 8, 0.04)",
-                  border: `1px solid ${t.line}`,
-                  borderRadius: 14,
-                  padding: 32,
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <div style={{ position: "absolute", top: 28, left: 32, zIndex: 0 }}>
-                  <MonoLabel color={t.copper}>
-                    Modal · {m.size} · {m.width}px
-                  </MonoLabel>
-                </div>
-                <div
-                  style={{
-                    width: m.width,
-                    background: t.white,
-                    borderRadius: 14,
-                    boxShadow: shadows.modal,
-                    overflow: "hidden",
-                    marginTop: 24,
-                    border: `1px solid ${t.line}`,
-                  }}
-                >
-                  <div style={{ padding: "32px 36px 24px" }}>
-                    <h3
-                      style={{
-                        fontFamily: f.serif,
-                        fontSize: 24,
-                        fontWeight: 500,
-                        margin: "0 0 12px",
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {m.title}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 14,
-                        color: t.indigoGray,
-                        margin: 0,
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {m.body}
-                    </p>
-                  </div>
-                  <div
-                    style={{
-                      padding: "16px 24px",
-                      background: t.creamSoft,
-                      borderTop: `1px solid ${t.line}`,
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 10,
-                    }}
-                  >
-                    <button
-                      style={{
-                        background: t.white,
-                        color: t.coal,
-                        border: `1px solid ${t.lineStrong}`,
-                        padding: "10px 18px",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        fontFamily: f.sans,
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      style={{
-                        background: m.primaryColor,
-                        color: t.white,
-                        border: "none",
-                        padding: "10px 18px",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        fontFamily: f.sans,
-                      }}
-                    >
-                      {m.primary}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <div
+              style={{
+                background: "rgba(14, 12, 8, 0.04)",
+                border: `1px solid ${t.line}`,
+                borderRadius: radius.lg,
+                padding: 32,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                alignItems: "center",
+              }}
+            >
+              <MonoLabel color={t.copper}>AlertDialog · sm · 380px</MonoLabel>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    Delete session…
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Your transcript and score will be removed. This can't be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(14, 12, 8, 0.04)",
+                border: `1px solid ${t.line}`,
+                borderRadius: radius.lg,
+                padding: 32,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                alignItems: "center",
+              }}
+            >
+              <MonoLabel color={t.copper}>Dialog · md · 480px</MonoLabel>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    End interview early…
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>End interview early?</DialogTitle>
+                    <DialogDescription>
+                      You've answered 3 of 5 questions. We'll score what you've completed, but the
+                      report won't reflect your full readiness.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline" size="sm">
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button size="sm">End and score</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(14, 12, 8, 0.04)",
+                border: `1px solid ${t.line}`,
+                borderRadius: radius.lg,
+                padding: 32,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                alignItems: "center",
+              }}
+            >
+              <MonoLabel color={t.copper}>Dialog · lg · 600px</MonoLabel>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm">Upgrade to Pro…</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Upgrade to Pro</DialogTitle>
+                    <DialogDescription>
+                      Unlock unlimited interviews, salary negotiation mode, and full analytics.
+                      ₹149/month, cancel anytime.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline" size="sm">
+                        Not now
+                      </Button>
+                    </DialogClose>
+                    <Button size="sm">Continue to payment</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
-          <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
+          <p style={{ marginTop: 16, fontSize: type.small.size, color: t.inkSoft, lineHeight: 1.6 }}>
             <b style={{ color: t.coal, fontWeight: 600 }}>Rules:</b> max 3
             sizes (380 / 480 / 600px) · always two actions (cancel + primary)
-            · destructive actions get ember-red primary, never indigo · always
-            trap focus inside · ESC closes · backdrop click closes (unless
-            mid-form).
+            · destructive actions get red primary, everything else uses the
+            same copper Default button · always trap focus inside · ESC
+            closes · backdrop click closes (unless mid-form).
           </p>
         </section>
 
         {/* 02 — TABLES */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="02"
             title="Tables"
@@ -219,37 +220,23 @@ export default function DesignSystemComponentsAdvanced() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               boxShadow: shadows.card,
               overflow: "hidden",
             }}
           >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
                   {["Date", "Type", "Difficulty", "Duration", "Score", ""].map((h, i) => (
-                    <th
-                      key={i}
-                      style={{
-                        padding: "14px 24px",
-                        textAlign: i === 4 ? "right" : "left",
-                        fontFamily: f.mono,
-                        fontSize: 10,
-                        fontWeight: 500,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
-                        color: t.inkSoft,
-                      }}
-                    >
+                    <TableHead key={i} className={i === 4 ? "text-right" : undefined}>
                       {h}
-                      {i < 4 && (
-                        <span style={{ marginLeft: 6, color: t.inkFaint, fontSize: 10 }}>↕</span>
-                      )}
-                    </th>
+                      {i < 4 && <span style={{ marginLeft: 6, color: t.inkFaint, fontSize: 10 }}>↕</span>}
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {[
                   { date: "14 May 2026", type: "Behavioral", diff: "Standard", dur: "15 min", score: 78, delta: "+6" },
                   { date: "11 May 2026", type: "Salary negotiation", diff: "Intense", dur: "20 min", score: 62, delta: "−4" },
@@ -257,31 +244,20 @@ export default function DesignSystemComponentsAdvanced() {
                   { date: "05 May 2026", type: "Behavioral", diff: "Warmup", dur: "10 min", score: 68, delta: "+2" },
                   { date: "02 May 2026", type: "Behavioral", diff: "Standard", dur: "15 min", score: 66, delta: null },
                 ].map((row, i) => (
-                  <tr
-                    key={i}
-                    style={{
-                      borderBottom: `1px solid ${t.line}`,
-                      transition: "background 0.18s",
-                    }}
-                  >
-                    <td style={{ padding: "16px 24px", fontFamily: f.mono, fontSize: 12, color: t.inkSoft }}>
+                  <TableRow key={i}>
+                    <TableCell style={{ fontFamily: f.mono, fontSize: 12, color: t.inkSoft }}>
                       {row.date}
-                    </td>
-                    <td style={{ padding: "16px 24px", fontSize: 14, color: t.coal, fontWeight: 500 }}>
-                      {row.type}
-                    </td>
-                    <td style={{ padding: "16px 24px", fontSize: 13, color: t.indigoGray }}>
-                      {row.diff}
-                    </td>
-                    <td style={{ padding: "16px 24px", fontSize: 13, color: t.indigoGray }}>{row.dur}</td>
-                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                    </TableCell>
+                    <TableCell style={{ fontSize: 14, color: t.coal, fontWeight: 500 }}>{row.type}</TableCell>
+                    <TableCell style={{ fontSize: 13, color: t.inkMuted }}>{row.diff}</TableCell>
+                    <TableCell style={{ fontSize: 13, color: t.inkMuted }}>{row.dur}</TableCell>
+                    <TableCell className="text-right">
                       <span
                         style={{
-                          fontFamily: f.serif,
-                          fontSize: 22,
-                          fontWeight: 500,
+                          fontFamily: f.sans,
+                          fontSize: type.h3.size,
+                          fontWeight: 600,
                           color: t.copper,
-                          letterSpacing: "-0.01em",
                         }}
                       >
                         {row.score}
@@ -299,11 +275,11 @@ export default function DesignSystemComponentsAdvanced() {
                           {row.delta}
                         </span>
                       )}
-                    </td>
-                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                    </TableCell>
+                    <TableCell className="text-right">
                       <a
                         style={{
-                          color: t.indigo,
+                          color: t.inkMuted,
                           fontSize: 13,
                           fontWeight: 500,
                           textDecoration: "none",
@@ -313,11 +289,11 @@ export default function DesignSystemComponentsAdvanced() {
                       >
                         View →
                       </a>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             {/* Table footer · pagination */}
             <div
               style={{
@@ -332,66 +308,33 @@ export default function DesignSystemComponentsAdvanced() {
               }}
             >
               <span>Showing 5 of 12</span>
-              <div style={{ display: "flex", gap: 6 }}>
-                <button
-                  style={{
-                    width: 30,
-                    height: 30,
-                    border: `1px solid ${t.lineStrong}`,
-                    background: t.white,
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    color: t.coal,
-                    fontSize: 12,
-                  }}
-                >
-                  ←
-                </button>
-                {[1, 2, 3].map((p) => (
-                  <button
-                    key={p}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      border: `1px solid ${p === 1 ? t.indigo : t.lineStrong}`,
-                      background: p === 1 ? t.indigo : t.white,
-                      color: p === 1 ? t.white : t.coal,
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      fontSize: 12,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {p}
-                  </button>
-                ))}
-                <button
-                  style={{
-                    width: 30,
-                    height: 30,
-                    border: `1px solid ${t.lineStrong}`,
-                    background: t.white,
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    color: t.coal,
-                    fontSize: 12,
-                  }}
-                >
-                  →
-                </button>
-              </div>
+              <Pagination className="mx-0 w-auto">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious href="#" />
+                  </PaginationItem>
+                  {[1, 2, 3].map((p) => (
+                    <PaginationItem key={p}>
+                      <PaginationLink href="#" isActive={p === 1}>{p}</PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext href="#" />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           </div>
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
             <b style={{ color: t.coal, fontWeight: 600 }}>Rules:</b> rows
             48-56px tall · zebra-striping NOT used (cream surface is enough) ·
-            score column always right-aligned with copper Instrument Serif · sortable
+            score column always right-aligned, copper, weight 600 · sortable
             headers get ↕ glyph · pagination at the foot, not the head.
           </p>
         </section>
 
         {/* 03 — TOP NAV */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="03"
             title="Top navigation"
@@ -401,7 +344,7 @@ export default function DesignSystemComponentsAdvanced() {
             style={{
               background: t.cream,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               overflow: "hidden",
               boxShadow: shadows.card,
             }}
@@ -437,7 +380,7 @@ export default function DesignSystemComponentsAdvanced() {
                     style={{
                       fontSize: 14,
                       fontWeight: 500,
-                      color: item.active ? t.coal : t.indigoGray,
+                      color: item.active ? t.coal : t.inkMuted,
                       textDecoration: "none",
                       paddingBottom: 4,
                       borderBottom: item.active ? `2px solid ${t.copper}` : "2px solid transparent",
@@ -453,7 +396,7 @@ export default function DesignSystemComponentsAdvanced() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: t.indigoGray,
+                    color: t.inkMuted,
                     cursor: "pointer",
                     padding: 6,
                   }}
@@ -486,17 +429,17 @@ export default function DesignSystemComponentsAdvanced() {
         </section>
 
         {/* 04 — SIDEBAR */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="04"
             title="Sidebar navigation"
-            desc="For dense apps. Coal background · cream-tinted active state · icon + label."
+            desc="For dense apps. Coal background · cream-tinted active state · icon + label. See Layout & Navigation for the real shadcn Sidebar primitive."
           />
           <div
             style={{
               background: t.cream,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: 24,
               boxShadow: shadows.card,
             }}
@@ -505,7 +448,7 @@ export default function DesignSystemComponentsAdvanced() {
               <aside
                 style={{
                   background: t.coal,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                   padding: 20,
                   display: "flex",
                   flexDirection: "column",
@@ -542,7 +485,7 @@ export default function DesignSystemComponentsAdvanced() {
                       fontSize: 14,
                       fontWeight: 500,
                       color: item.active ? t.cream : "rgba(250,247,240,.65)",
-                      background: item.active ? "rgba(180,83,9,.16)" : "transparent",
+                      background: item.active ? "rgba(187,77,0,.16)" : "transparent",
                       cursor: "pointer",
                       borderLeft: item.active ? `2px solid ${t.copper}` : "2px solid transparent",
                       paddingLeft: item.active ? 12 : 14,
@@ -590,14 +533,13 @@ export default function DesignSystemComponentsAdvanced() {
               <div
                 style={{
                   background: t.cream,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                   padding: "32px 36px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: t.inkSoft,
                   fontSize: 13,
-                  fontStyle: "italic",
                 }}
               >
                 Main content area
@@ -607,266 +549,117 @@ export default function DesignSystemComponentsAdvanced() {
         </section>
 
         {/* 05 — TABS + BREADCRUMBS */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="05"
             title="Tabs & breadcrumbs"
             desc="Two ways to show hierarchy. Tabs for siblings, breadcrumbs for ancestry."
           />
           <div style={{ display: "grid", gap: 16 }}>
-            <StatePanel title="Tabs · underline · default style">
-              <div
-                style={{
-                  display: "flex",
-                  gap: 32,
-                  borderBottom: `1px solid ${t.line}`,
-                }}
-              >
-                {[
-                  { label: "Overview", active: true },
-                  { label: "Skills", active: false },
-                  { label: "Transcript", active: false },
-                  { label: "Coaching tips", active: false },
-                ].map((tab) => (
-                  <a
-                    key={tab.label}
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 500,
-                      color: tab.active ? t.coal : t.indigoGray,
-                      textDecoration: "none",
-                      padding: "12px 0",
-                      borderBottom: tab.active ? `2px solid ${t.copper}` : "2px solid transparent",
-                      cursor: "pointer",
-                      marginBottom: -1,
-                    }}
-                  >
-                    {tab.label}
-                  </a>
-                ))}
-              </div>
+            <StatePanel title="Tabs · shadcn/ui Tabs primitive">
+              <Tabs defaultValue="overview">
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="skills">Skills</TabsTrigger>
+                  <TabsTrigger value="transcript">Transcript</TabsTrigger>
+                  <TabsTrigger value="coaching">Coaching tips</TabsTrigger>
+                </TabsList>
+                <TabsContent value="overview">Session overview goes here.</TabsContent>
+                <TabsContent value="skills">Skill-by-skill breakdown goes here.</TabsContent>
+                <TabsContent value="transcript">Full transcript goes here.</TabsContent>
+                <TabsContent value="coaching">Coaching tips go here.</TabsContent>
+              </Tabs>
             </StatePanel>
 
-            <StatePanel title="Tabs · pill · alt style for filters">
-              <div
-                style={{
-                  display: "flex",
-                  gap: 6,
-                  background: t.creamSoft,
-                  padding: 4,
-                  borderRadius: 999,
-                  width: "fit-content",
-                }}
-              >
-                {[
-                  { label: "All", active: true },
-                  { label: "Behavioral", active: false },
-                  { label: "Technical", active: false },
-                  { label: "Salary", active: false },
-                ].map((tab) => (
-                  <button
-                    key={tab.label}
-                    style={{
-                      background: tab.active ? t.white : "transparent",
-                      color: tab.active ? t.coal : t.indigoGray,
-                      border: "none",
-                      padding: "8px 14px",
-                      borderRadius: 999,
-                      fontSize: 13,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      fontFamily: f.sans,
-                      boxShadow: tab.active ? "0 1px 2px rgba(20,17,10,.08)" : "none",
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+            <StatePanel title="Tabs · filter row">
+              <Tabs defaultValue="all">
+                <TabsList>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="behavioral">Behavioral</TabsTrigger>
+                  <TabsTrigger value="technical">Technical</TabsTrigger>
+                  <TabsTrigger value="salary">Salary</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </StatePanel>
 
-            <StatePanel title="Breadcrumbs">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 13,
-                  color: t.indigoGray,
-                }}
-              >
-                {["Sessions", "Behavioral · 14 May", "Skills"].map((crumb, i, arr) => (
-                  <React.Fragment key={i}>
-                    {i === arr.length - 1 ? (
-                      <span style={{ color: t.coal, fontWeight: 500 }}>{crumb}</span>
-                    ) : (
-                      <a
-                        style={{
-                          color: t.indigo,
-                          textDecoration: "none",
-                          cursor: "pointer",
-                          borderBottom: `1px solid transparent`,
-                        }}
-                      >
-                        {crumb}
-                      </a>
-                    )}
-                    {i < arr.length - 1 && (
-                      <span style={{ color: t.inkFaint, fontSize: 12 }}>/</span>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
+            <StatePanel title="Breadcrumb · shadcn/ui Breadcrumb primitive">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="#">Sessions</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="#">Behavioral · 14 May</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Skills</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
             </StatePanel>
           </div>
         </section>
 
         {/* 06 — DROPDOWN / SELECT */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="06"
-            title="Dropdown · select · menu"
-            desc="Coal-text on white surface. Indigo highlight on hover. Soft shadow."
+            title="Select"
+            desc="Real Radix Select — coal text on white, copper focus ring, soft shadow on the open listbox."
           />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <StatePanel title="Select field · closed">
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  marginBottom: 6,
-                  color: t.coal,
-                }}
-              >
+            <StatePanel title="Select · shadcn/ui Select primitive">
+              <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: t.coal }}>
                 Interview type
               </label>
-              <div
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  border: `1px solid ${t.lineStrong}`,
-                  borderRadius: 10,
-                  fontSize: 14,
-                  color: t.coal,
-                  background: t.white,
-                  cursor: "pointer",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span>Behavioral · Standard</span>
-                <span style={{ color: t.inkSoft, fontSize: 12 }}>▼</span>
-              </div>
+              <Select defaultValue="behavioral-standard">
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="behavioral-warmup">Behavioral · Warmup</SelectItem>
+                  <SelectItem value="behavioral-standard">Behavioral · Standard</SelectItem>
+                  <SelectItem value="behavioral-intense">Behavioral · Intense</SelectItem>
+                  <SelectItem value="technical-leadership">Technical leadership</SelectItem>
+                  <SelectItem value="salary-negotiation">Salary negotiation</SelectItem>
+                </SelectContent>
+              </Select>
             </StatePanel>
 
-            <StatePanel title="Select field · open">
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  marginBottom: 6,
-                  color: t.coal,
-                }}
-              >
-                Interview type
+            <StatePanel title="Select · difficulty">
+              <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: t.coal }}>
+                Difficulty
               </label>
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                }}
-              >
-                <div
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    border: `1px solid ${t.indigo}`,
-                    boxShadow: `0 0 0 3px ${t.indigoRing}`,
-                    borderRadius: 10,
-                    fontSize: 14,
-                    color: t.coal,
-                    background: t.white,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span>Behavioral · Standard</span>
-                  <span style={{ color: t.indigo, fontSize: 12 }}>▲</span>
-                </div>
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 6px)",
-                    left: 0,
-                    right: 0,
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 10,
-                    boxShadow: shadows.modal,
-                    overflow: "hidden",
-                    zIndex: 10,
-                  }}
-                >
-                  {[
-                    { label: "Behavioral · Warmup", check: false },
-                    { label: "Behavioral · Standard", check: true },
-                    { label: "Behavioral · Intense", check: false },
-                    { label: "Technical leadership", check: false },
-                    { label: "Salary negotiation", check: false },
-                  ].map((opt, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: "10px 14px",
-                        fontSize: 13,
-                        color: opt.check ? t.indigo : t.coal,
-                        background: opt.check ? t.indigo100 : t.white,
-                        fontWeight: opt.check ? 500 : 400,
-                        cursor: "pointer",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span>{opt.label}</span>
-                      {opt.check && <span style={{ color: t.indigo, fontSize: 14 }}>✓</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{ height: 200 }} />
+              <Select defaultValue="standard">
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="warmup">Warmup</SelectItem>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="intense">Intense</SelectItem>
+                </SelectContent>
+              </Select>
             </StatePanel>
           </div>
         </section>
 
         {/* 07 — SEARCH */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="07"
             title="Search & command"
-            desc="Header search · in-page filter · Cmd-K command palette."
+            desc="Header search · Cmd-K command palette. Both real, keyboard-operable primitives."
           />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <StatePanel title="Header search · default">
+            <StatePanel title="Header search · Input + Kbd">
               <div style={{ position: "relative" }}>
-                <input
+                <Input
                   type="text"
                   placeholder="Search sessions, skills, companies…"
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px 12px 40px",
-                    border: `1px solid ${t.lineStrong}`,
-                    borderRadius: 10,
-                    fontSize: 14,
-                    background: t.white,
-                    color: t.coal,
-                    fontFamily: f.sans,
-                    outline: "none",
-                  }}
+                  className="pl-10 pr-14"
                 />
                 <span
                   style={{
@@ -882,257 +675,167 @@ export default function DesignSystemComponentsAdvanced() {
                     <path d="M21 21l-4.35-4.35" />
                   </svg>
                 </span>
-                <kbd
-                  style={{
-                    position: "absolute",
-                    right: 12,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontFamily: f.mono,
-                    fontSize: 11,
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    background: t.creamSoft,
-                    border: `1px solid ${t.line}`,
-                    color: t.inkSoft,
-                  }}
-                >
+                <Kbd style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
                   ⌘K
-                </kbd>
+                </Kbd>
               </div>
             </StatePanel>
 
-            <StatePanel title="Command palette · open">
-              <div
-                style={{
-                  background: t.white,
-                  border: `1px solid ${t.line}`,
-                  borderRadius: 10,
-                  boxShadow: shadows.modal,
-                  overflow: "hidden",
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Type a command or search…"
-                  style={{
-                    width: "100%",
-                    padding: "16px 20px",
-                    border: "none",
-                    borderBottom: `1px solid ${t.line}`,
-                    fontSize: 14,
-                    color: t.coal,
-                    fontFamily: f.sans,
-                    outline: "none",
-                    background: "transparent",
-                  }}
-                />
-                <div style={{ padding: "6px 0" }}>
-                  {[
-                    { icon: "▶", label: "Start practice session", shortcut: "⌘N" },
-                    { icon: "≡", label: "View all sessions", shortcut: null, active: true },
-                    { icon: "▲", label: "Open analytics", shortcut: null },
-                    { icon: "✎", label: "Update resume", shortcut: null },
-                  ].map((cmd, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: "10px 20px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 14,
-                        background: cmd.active ? t.creamSoft : "transparent",
-                        cursor: "pointer",
-                        fontSize: 13,
-                      }}
-                    >
-                      <span style={{ color: t.inkSoft, fontSize: 14 }}>{cmd.icon}</span>
-                      <span style={{ flex: 1, color: t.coal, fontWeight: cmd.active ? 500 : 400 }}>
-                        {cmd.label}
-                      </span>
-                      {cmd.shortcut && (
-                        <kbd
-                          style={{
-                            fontFamily: f.mono,
-                            fontSize: 10,
-                            padding: "2px 6px",
-                            borderRadius: 3,
-                            background: t.creamSoft,
-                            border: `1px solid ${t.line}`,
-                            color: t.inkSoft,
-                          }}
-                        >
-                          {cmd.shortcut}
-                        </kbd>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <StatePanel title="Command palette · real cmdk primitive">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="border-input bg-background flex h-9 w-full items-center gap-2 rounded-md border px-3 text-sm text-muted-foreground shadow-xs"
+                  >
+                    <span className="flex-1 text-left">Type a command or search…</span>
+                    <Kbd>⌘K</Kbd>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="p-0 sm:max-w-[440px]" showCloseButton={false}>
+                  <Command>
+                    <CommandInput placeholder="Type a command or search…" />
+                    <CommandList>
+                      <CommandEmpty>No results found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem>Start practice session</CommandItem>
+                        <CommandItem>View all sessions</CommandItem>
+                        <CommandItem>Open analytics</CommandItem>
+                        <CommandItem>Update resume</CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </DialogContent>
+              </Dialog>
             </StatePanel>
           </div>
         </section>
 
         {/* 08 — POPOVER + DROPDOWN MENU */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 56 }}>
           <SectionHead
             num="08"
-            title="Popover · context menu"
-            desc="When triggered by an action button. Lifted with shadow-modal. Indigo highlight on hover."
+            title="Dropdown menu · popover"
+            desc="Triggered by an action button. Neutral rows; copper only on the item that carries real emphasis (e.g. plan tier); destructive actions get the red row treatment."
           />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <StatePanel title="Avatar dropdown">
-              <div style={{ position: "relative", display: "flex", justifyContent: "flex-end" }}>
-                <div style={{ position: "relative" }}>
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      background: t.copper100,
-                      color: t.copper,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    JV
-                  </div>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 8px)",
-                      right: 0,
-                      width: 220,
-                      background: t.white,
-                      border: `1px solid ${t.line}`,
-                      borderRadius: 10,
-                      boxShadow: shadows.modal,
-                      overflow: "hidden",
-                      zIndex: 10,
-                    }}
-                  >
-                    <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: t.coal }}>Jay Vyas</div>
-                      <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 2 }}>jay@hirestepx.com</div>
-                    </div>
-                    {[
-                      { label: "Profile", icon: "○" },
-                      { label: "Settings", icon: "✦" },
-                      { label: "Billing · Pro", icon: "₹", indigo: true },
-                      { label: "Help & support", icon: "?" },
-                    ].map((item, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 13,
-                          color: t.coal,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                        }}
-                      >
-                        <span style={{ color: item.indigo ? t.copper : t.inkSoft, width: 14 }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </div>
-                    ))}
-                    <div
-                      style={{
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        color: t.error,
-                        cursor: "pointer",
-                        borderTop: `1px solid ${t.line}`,
-                      }}
-                    >
-                      Sign out
-                    </div>
-                  </div>
-                </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <StatePanel title="Avatar dropdown · DropdownMenu">
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className="cursor-pointer">
+                      <Avatar>
+                        <AvatarFallback className="bg-[var(--copper)]/12 text-[var(--copper)]">JV</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div style={{ fontWeight: 600 }}>Jay Vyas</div>
+                      <div style={{ fontWeight: 400, color: t.inkSoft, fontSize: 11 }}>jay@hirestepx.com</div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                    <DropdownMenuItem className="text-[var(--copper)]">Billing · Pro</DropdownMenuItem>
+                    <DropdownMenuItem>Help &amp; support</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive">Sign out</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div style={{ height: 200 }} />
             </StatePanel>
 
-            <StatePanel title="Row context menu (•••)">
-              <div style={{ position: "relative", display: "flex", justifyContent: "flex-end" }}>
-                <div style={{ position: "relative" }}>
-                  <button
-                    style={{
-                      background: t.white,
-                      border: `1px solid ${t.line}`,
-                      borderRadius: 8,
-                      width: 32,
-                      height: 32,
-                      cursor: "pointer",
-                      color: t.coal,
-                      fontSize: 16,
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    •••
-                  </button>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 6px)",
-                      right: 0,
-                      width: 180,
-                      background: t.white,
-                      border: `1px solid ${t.line}`,
-                      borderRadius: 10,
-                      boxShadow: shadows.modal,
-                      overflow: "hidden",
-                      zIndex: 10,
-                    }}
-                  >
-                    {[
-                      { label: "View report", default: true },
-                      { label: "Re-analyze", default: false },
-                      { label: "Share link", default: false },
-                      { label: "Export PDF", default: false },
-                    ].map((item, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 13,
-                          color: t.coal,
-                          cursor: "pointer",
-                          background: item.default ? t.creamSoft : "transparent",
-                        }}
-                      >
-                        {item.label}
-                      </div>
-                    ))}
-                    <div
-                      style={{
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        color: t.error,
-                        cursor: "pointer",
-                        borderTop: `1px solid ${t.line}`,
-                      }}
-                    >
-                      Delete session
-                    </div>
-                  </div>
-                </div>
+            <StatePanel title="Row context menu (•••) · DropdownMenu">
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" aria-label="Row actions">
+                      •••
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem>View report</DropdownMenuItem>
+                    <DropdownMenuItem>Re-analyze</DropdownMenuItem>
+                    <DropdownMenuItem>Share link</DropdownMenuItem>
+                    <DropdownMenuItem>Export PDF</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive">Delete session</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div style={{ height: 200 }} />
+            </StatePanel>
+
+            <StatePanel title="Filter popover · Popover primitive">
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Filter
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64">
+                    <div style={{ fontSize: 12, fontWeight: 600, color: t.coal, marginBottom: 8 }}>
+                      Show sessions
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {["Behavioral", "Technical leadership", "Salary negotiation"].map((label) => (
+                        <label key={label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: t.inkMuted }}>
+                          <input type="checkbox" defaultChecked />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </StatePanel>
           </div>
         </section>
 
-        {/* FOOTER */}
-        <Footer section="Section" tagline="One primary action · ESC closes · Coal text · Copper accents." />
+        {/* 09 — ACCORDION */}
+        <section style={{ marginBottom: 56 }}>
+          <SectionHead
+            num="09"
+            title="Accordion"
+            desc="Collapsible disclosure for FAQ-shaped content. Real Radix Accordion primitive — keyboard-navigable, one item open by default."
+          />
+          <div style={{ maxWidth: 640 }}>
+            <StatePanel title="Accordion · shadcn/ui Accordion primitive">
+              <div style={{ ...shadcnTheme }} className="[color-scheme:light]">
+                <Accordion type="single" defaultValue="item-1" collapsible>
+                  <AccordionItem value="item-1">
+                    <AccordionTrigger>How is my score calculated?</AccordionTrigger>
+                    <AccordionContent>
+                      Each answer is scored against the STAR rubric (Situation, Task, Action,
+                      Result) by the same model that ran your interview, then normalized against
+                      role and seniority benchmarks.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger>Can I redo a session?</AccordionTrigger>
+                    <AccordionContent>
+                      Yes — reruns don't count against your streak, and only your best-scored
+                      attempt is kept on your readiness index.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-3">
+                    <AccordionTrigger>What happens to my recordings?</AccordionTrigger>
+                    <AccordionContent>
+                      Audio is transcribed for scoring and deleted after 30 days. Transcripts stay
+                      so you can review coaching tips later.
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            </StatePanel>
+          </div>
+        </section>
+
       </div>
-    </>
+
+      {/* FOOTER */}
+      <Footer section="Section" tagline="One primary action · ESC closes · Coal text · Copper accents." />
+    </PageShell>
   );
 }

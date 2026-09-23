@@ -146,7 +146,7 @@ function cacheTier(
   } catch { /* storage unavailable */ }
 }
 function getCachedTier(userId: string): {
-  tier: "free" | "starter" | "pro" | "team";
+  tier: "free" | "starter" | "team";
   subscriptionEnd?: string;
   practiceTimestamps?: string[];
   targetRole?: string;
@@ -489,7 +489,7 @@ export interface User {
    * on resume removal.
    */
   resumeVersionId?: string | null;
-  subscriptionTier?: "free" | "starter" | "pro" | "team";
+  subscriptionTier?: "free" | "starter" | "team";
   subscriptionStart?: string;
   subscriptionEnd?: string;
   cancelAtPeriodEnd?: boolean;
@@ -557,7 +557,7 @@ export function profileToUser(profile: Profile, session: Session): User {
     resumeData: (profile.resume_data as StoredResume | null | undefined) || undefined,
     resumeVersionId: (profile.resume_version_id as string | null | undefined) || null,
     subscriptionTier: (() => {
-      const tier = (profile.subscription_tier as "free" | "starter" | "pro" | "team") || "free";
+      const tier = (profile.subscription_tier as "free" | "starter" | "team") || "free";
       // Auto-downgrade expired subscriptions
       if (tier !== "free" && profile.subscription_end) {
         if (new Date(profile.subscription_end) < new Date()) {
@@ -762,7 +762,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // When getProfile times out (extension-blocked fetch), we set a basic
     // user from the JWT alone — missing subscriptionTier, resumeData, etc.
-    // That makes Pro users briefly see "Free Plan" in the sidebar until a
+    // That makes paid-plan users briefly see "Free Plan" in the sidebar until a
     // hard refresh re-fetches the profile. Retry in the background with
     // exponential backoff so the UI self-corrects without user action.
     const retryProfileInBackground = (sess: Session) => {

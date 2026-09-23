@@ -18,7 +18,7 @@ let mockUser: any = {
   targetRole: "Head of Design",
   targetCompany: "Google",
   industry: "Technology",
-  subscriptionTier: "pro" as const,
+  subscriptionTier: "starter" as const,
   subscriptionStart: "2025-01-01",
   subscriptionEnd: "2025-12-31",
   hasCompletedOnboarding: true,

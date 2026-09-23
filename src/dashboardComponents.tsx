@@ -115,8 +115,8 @@ const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
 // Rank used to determine if a plan card is "below" the user's current subscription.
 // Cards at a lower rank show a non-interactive indicator instead of a checkout button
-// so a Pro user never sees "Start free →" or "Go weekly →" while managing their plan.
-const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, team: 3 };
+// so a Team user never sees "Start free →" or "Go weekly →" while managing their plan.
+const TIER_RANK: Record<string, number> = { free: 0, starter: 1, team: 2 };
 
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, starterExhausted, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; starterExhausted?: boolean; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
@@ -439,8 +439,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
-            {currentTier === "pro" || currentTier === "team"
-              ? "Add sessions — your Pro plan stays active."
+            {currentTier === "team"
+              ? "Add sessions — your Team plan stays active."
               : currentTier === "starter"
               ? "Sprint Pack sessions expire with the pack. Grab another to keep going."
               : "No subscription — pay for one session or a five-session pack."}
@@ -640,7 +640,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             }
             const isCurrent = plan.tier === currentTier;
             // True when this card represents a lower tier than the user already has.
-            // e.g. Free cards are "lower" for a Pro user.
+            // e.g. Free cards are "lower" for a Team user.
             // Sprint Pack (weekly) is ALWAYS repurchasable — it's a consumable top-up,
             // not a subscription step, so we bypass isCurrent and isLowerTier for it.
             const isRepurchasable = plan.id === "weekly";
@@ -759,19 +759,18 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   );
 });
 
-/* ─── Pro Feature Gate ─── */
+/* ─── Paywall Feature Gate ─── */
 const featureHighlights: Record<string, { icon: string; items: string[] }> = {
   "Performance Analytics": { icon: "chart", items: ["Readiness score tracking", "Skill radar & velocity charts", "Score trends over time", "AI-generated insights", "Date range comparisons"] },
   "The Readiness Index": { icon: "chart", items: ["Target-specific 0-100 readiness score", "Five weighted pillars with evidence", "Skill-decay refresh queue", "Blind spots & likely follow-ups", "RI trajectory and projection"] },
   "Interview Calendar": { icon: "calendar", items: ["Month grid view", "Interview countdown timers", "Google Calendar sync", ".ics file export", "Prep reminders before interviews"] },
 };
 
-/* Per-feature gate copy. Most features are Pro-only, so the default (below)
-   pitches Pro. The Interview Calendar is unlocked by ANY paid plan (a ₹39
-   Sprint Pack works, not just Pro), so it gets honest copy — telling a free
-   user to "Upgrade to Pro" there over-sells when the cheaper pack suffices.
-   Note the Pro-only footnote is a Pro price, NOT "₹9/session": per-session
-   credits and packs do NOT unlock Analytics / Readiness. */
+/* Per-feature gate copy. Every PaywallGate call site is gated on `isFree`
+   (DashboardContext.tsx) — i.e. unlocked by ANY paid plan (the ₹39 Sprint
+   Pack included). There is no Pro-only tier to upsell into, so copy must
+   never pitch "Upgrade to Pro" — that plan isn't purchasable anywhere in
+   the app. Default copy below mirrors the honest "Interview Calendar" case. */
 type GateCopy = { body: string; cta: string; footnote: string };
 const gateCopy: Record<string, GateCopy> = {
   "Interview Calendar": {
@@ -781,12 +780,12 @@ const gateCopy: Record<string, GateCopy> = {
   },
 };
 
-export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
+export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
   const highlights = featureHighlights[feature];
   const copy: GateCopy = gateCopy[feature] ?? {
-    body: `Upgrade to access ${feature.toLowerCase()}. Unlock full analytics, calendar tools, and unlimited sessions with the Pro plan.`,
-    cta: "Upgrade to Pro",
-    footnote: "Pro from ₹149 / 30 days",
+    body: `Upgrade to unlock ${feature.toLowerCase()}. Included with any paid plan — Sprint Pack starts at ₹39.`,
+    cta: "See plans",
+    footnote: "On any paid plan · Sprint Pack from ₹39",
   };
   return (
     <div style={{ position: "relative", minHeight: "calc(100dvh - 160px)", overflow: "hidden" }}>

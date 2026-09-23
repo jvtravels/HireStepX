@@ -4,18 +4,18 @@
 
 export const tokens = {
   // Surface
-  cream: "#FAF7F0",
-  white: "#FFFFFF",
-  creamSoft: "#F4EFE3",
+  cream: "oklch(1 0 0)",
+  white: "oklch(1 0 0)",
+  creamSoft: "oklch(0.967 0.001 286.375)",
   // Warmer raised surface — a hair lighter than cream, sits above it for
   // settings/dashboard cards. Was inlined as `graphite: "#FDFCF7"` in three
   // dashboard components.
-  creamRaised: "#FDFCF7",
+  creamRaised: "oklch(0.987 0.002 197.1)",
 
   // Ink
-  coal: "#0E0C08",
-  indigoGray: "#3E3A6E",
-  inkSoft: "#6E6759",
+  coal: "oklch(0.148 0.004 228.8)",
+  indigoGray: "oklch(0.379 0.087 284.954)",
+  inkSoft: "oklch(0.56 0.021 213.5)",
   // Was #A39C8B — failed WCAG AA at ~2.4:1 on cream #FAF7F0. Darkened
   // to #736B5D so body-text usages (spam-folder hint, password-meter
   // labels, footer legal, marketing eyebrow labels) clear AA 4.5:1 on
@@ -24,50 +24,56 @@ export const tokens = {
   // 4.59:1 on creamSoft, 4.92:1 on #FAF7F0, 5.26:1 on white; still
   // lighter than inkSoft (#6E6759) so the text hierarchy is preserved.
   // Decorative-only uses can drop back to inkFaintWeak.
-  inkFaint: "#736B5D",
-  inkFaintWeak: "#A39C8B",
+  inkFaint: "oklch(0.45 0.017 213.2)",
+  inkFaintWeak: "oklch(0.72 0.019 213.9)",
 
   // Brand — interactive
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  indigoRing: "rgba(49, 46, 129, 0.20)",
+  indigo: "oklch(0.359 0.135 278.697)",
+  indigoDeep: "oklch(0.257 0.086 281.288)",
+  indigo100: "oklch(0.920 0.022 294.573)",
+  indigoRing: "oklch(0.359 0.135 278.697 / 0.20)",
 
   // Brand — editorial
-  copper: "#B45309",
-  copperDark: "#923F07",
-  copperSoft: "rgba(180, 83, 9, 0.12)",
-  copper100: "#F4E5D8",
+  copper: "oklch(0.555 0.163 48.998)",
+  copperDark: "oklch(0.468 0.146 48.998)",
+  copperSoft: "oklch(0.555 0.163 48.998 / 0.12)",
+  copper100: "oklch(0.94 0.03 58.318)",
 
   // Copper alpha scale — replaces 16 inline rgba(180,83,9,0.x) literals
   // scattered across Interview, Dashboard, and Setup. Pick from coarsest
   // to most opaque; never inline a copper rgba again.
-  copperWash:   "rgba(180, 83, 9, 0.06)",
-  copperTint:   "rgba(180, 83, 9, 0.10)",
-  copperMid:    "rgba(180, 83, 9, 0.18)",
-  copperBorder: "rgba(180, 83, 9, 0.25)",
-  copperRing:   "rgba(180, 83, 9, 0.40)",
+  copperWash:   "oklch(0.555 0.163 48.998 / 0.06)",
+  copperTint:   "oklch(0.555 0.163 48.998 / 0.10)",
+  copperMid:    "oklch(0.555 0.163 48.998 / 0.18)",
+  copperBorder: "oklch(0.555 0.163 48.998 / 0.25)",
+  copperRing:   "oklch(0.555 0.163 48.998 / 0.40)",
 
   // Status
-  success: "#15803D",
-  success100: "#DCFCE7",
+  success: "oklch(0.527 0.137 150.069)",
+  success100: "oklch(0.962 0.043 156.743)",
   // Darker success text shade for AA contrast on light/cream surfaces
   // (~7:1 on success100). Was inlined as "#166534" in the credits-balance
   // rows of settingsSections + DashboardLayout.
-  successInk: "#166534",
-  error: "#B91C1C",
-  error100: "#FEE2E2",
-  warning: "#A16207",
-  warning100: "#FEF3C7",
+  successInk: "oklch(0.448 0.108 151.328)",
+  error: "oklch(0.505 0.190 27.518)",
+  error100: "oklch(0.936 0.031 17.717)",
+  warning: "oklch(0.554 0.121 66.442)",
+  warning100: "oklch(0.962 0.058 95.617)",
   // Promoted from a dashboard-local literal during the 2026-06 audit.
   // warningInk is the AA-passing text shade on warning100 (~6.7:1).
   // warningLine is the alpha sibling for borders on warning surfaces.
-  warningInk: "#7C4A03",
-  warningLine: "rgba(124, 74, 3, 0.20)",
+  warningInk: "oklch(0.457 0.100 66.296)",
+  warningLine: "oklch(0.457 0.100 66.296 / 0.20)",
+
+  // Fourth stage/status hue (interviewing-stage pipelines, "in progress"
+  // states distinct from indigo/copper/success/warning/error). Mirrors the
+  // existing status-color pattern: base + light tint for pill/dot fills.
+  violet: "oklch(0.491 0.241 292.581)",
+  violet100: "oklch(0.943 0.028 294.588)",
 
   // Lines
-  line: "#EBE5D2",
-  lineStrong: "#D6CDB5",
+  line: "oklch(0.922 0.026 92.405)",
+  lineStrong: "oklch(0.849 0.034 89.869)",
 
   // Overlays / faded surfaces (used in marketing-v2)
   coalOverlay: "rgba(14, 12, 8, 0.55)",
@@ -92,9 +98,9 @@ export const tokens = {
   successMist: "rgba(34, 197, 94, 0.14)",
 
   // Blog-infographic level badge colors (beginner / intermediate / advanced)
-  levelBeginner:    "#2C6E44",
-  levelIntermediate: "#C98B2A",
-  levelAdvanced:    "#B8551F",
+  levelBeginner:    "oklch(0.484 0.096 153.009)",
+  levelIntermediate: "oklch(0.683 0.131 73.442)",
+  levelAdvanced:    "oklch(0.565 0.143 45.402)",
 } as const;
 
 /* Satoshi is the primary UI font, loaded from Fontshare CDN via a <link>
