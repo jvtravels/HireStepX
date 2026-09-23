@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { tokens as t, fonts } from "../../src/auth/_tokens";
+import { Button } from "@/components/ui/button";
 
 /* Marketing error boundary. Catches uncaught render errors inside the
  * (marketing) route group and renders an on-brand fallback. Reset
@@ -44,38 +45,12 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         {error.message || "Reload the page or head back home. If it keeps happening, write to hello@hirestepx.com."}
       </p>
       <div style={{ display: "flex", gap: 12 }}>
-        <button
-          onClick={reset}
-          style={{
-            padding: "12px 22px",
-            fontSize: 15,
-            fontWeight: 600,
-            color: t.cream,
-            background: t.coal,
-            border: "none",
-            borderRadius: 999,
-            cursor: "pointer",
-            fontFamily: fonts.sans,
-          }}
-        >
+        <Button onClick={reset} size="lg" style={{ fontFamily: fonts.sans }}>
           Try again
-        </button>
-        <a
-          href="/"
-          style={{
-            padding: "12px 22px",
-            fontSize: 15,
-            fontWeight: 600,
-            color: t.coal,
-            background: "transparent",
-            border: `1px solid ${t.lineStrong}`,
-            borderRadius: 999,
-            textDecoration: "none",
-            fontFamily: fonts.sans,
-          }}
-        >
-          Go home
-        </a>
+        </Button>
+        <Button asChild variant="outline" size="lg" style={{ fontFamily: fonts.sans }}>
+          <a href="/">Go home</a>
+        </Button>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import { t, f, shadows, radius } from "../tokens";
 import type { Question } from "../types";
 import { SectionEyebrow } from "./sr-JumpNav";
 import { QuestionDetail } from "./sr-QuestionDetail";
+import { Button } from "@/components/ui/button";
 
 const BAND_META: Record<Question["band"], { label: string; color: string }> = {
   weak:     { label: "Weak",     color: t.error },
@@ -68,13 +69,15 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
           Per-Question Review <span style={{ color: t.inkFaint, fontSize: 16, marginLeft: 6 }}>({questions.length} answered)</span>
         </h2>
         {showAll ? (
-          <button
+          <Button
             type="button"
+            variant="link"
+            size="sm"
             onClick={() => setOpenIdx(null)}
-            style={{ background: "transparent", border: "none", color: t.indigo, fontFamily: f.sans, fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+            style={{ color: t.indigo, fontFamily: f.sans, height: "auto" }}
           >
             Collapse all
-          </button>
+          </Button>
         ) : null}
       </header>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -84,12 +87,25 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
           const panelId = `ir-q-panel-${q.index}`;
           return (
             <li key={q.index} style={{ borderTop: `1px solid ${t.line}` }}>
-              <button
+              <Button
                 type="button"
-                className="ir-q-card-trigger"
+                variant="ghost"
                 aria-expanded={open}
                 aria-controls={panelId}
                 onClick={() => setOpenIdx(open ? null : idx)}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  justifyContent: "flex-start",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                  color: "inherit",
+                  borderRadius: 0,
+                }}
               >
                 <span
                   style={{
@@ -181,7 +197,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                 >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
-              </button>
+              </Button>
               <div id={panelId} role="region" hidden={!open}>
                 {open && <QuestionDetail q={q} onTryQuestionAgain={onTryQuestionAgain} />}
               </div>
@@ -203,9 +219,9 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
           <p style={{ margin: 0, fontSize: 12, color: t.inkFaint }}>
             Showing top {visible.length} of {questions.length} questions
           </p>
-          <button
+          <Button
             type="button"
-            className="ir-cta-ghost"
+            variant="outline"
             onClick={handleExpandAll}
             aria-label={`Show all ${questions.length} questions (${hiddenCount} more)`}
           >
@@ -213,7 +229,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="6 9 12 15 18 9" />
             </svg>
-          </button>
+          </Button>
         </div>
       )}
     </section>

@@ -8,6 +8,7 @@ import { captureClientEvent } from "../posthogClient";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { CopyEmailLink } from "../_CopyEmailLink";
 import { HeroV2 } from "./Hero";
+import { Button } from "@/components/ui/button";
 export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
@@ -609,26 +610,16 @@ export function NavV2() {
               </>
             )}
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               className="mv2-nav-burger mv2-tap-44"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
               aria-controls="mv2-mobile-menu"
               onClick={() => setMenuOpen((v) => !v)}
-              style={{
-                display: "none",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 44,
-                height: 44,
-                marginRight: -8,
-                padding: 0,
-                border: "none",
-                background: "transparent",
-                color: t.coal,
-                cursor: "pointer",
-              }}
+              style={{ display: "none", marginRight: -8, color: t.coal }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {menuOpen ? (
@@ -644,7 +635,7 @@ export function NavV2() {
                   </>
                 )}
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -2658,12 +2649,15 @@ export function PricingV2() {
                       <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, fontWeight: 600 }}>₹{SINGLE_PRICE * singleQty} total</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <button
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
                         onClick={() => setSingleQty(q => Math.max(1, q - 1))}
                         disabled={singleQty <= 1}
                         aria-label="Remove one session"
-                        style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty <= 1 ? t.line : t.lineStrong}`, background: "transparent", color: singleQty <= 1 ? t.inkFaint : t.coal, cursor: singleQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty <= 1 ? 0.3 : 1, transition: "opacity 0.15s" }}
-                      >−</button>
+                        style={{ flexShrink: 0, fontWeight: 300 }}
+                      >−</Button>
                       <input
                         type="range" min={1} max={10} step={1}
                         value={singleQty}
@@ -2673,12 +2667,15 @@ export function PricingV2() {
                         className="pricing-session-slider"
                         style={{ flex: 1, "--fill": `${((singleQty - 1) / 9) * 100}%` } as React.CSSProperties}
                       />
-                      <button
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
                         onClick={() => setSingleQty(q => Math.min(10, q + 1))}
                         disabled={singleQty >= 10}
                         aria-label="Add one session"
-                        style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty >= 10 ? t.line : t.copper}`, background: singleQty >= 10 ? "transparent" : "rgba(180,83,9,0.08)", color: singleQty >= 10 ? t.inkFaint : t.copper, cursor: singleQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty >= 10 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s, background 0.15s" }}
-                      >+</button>
+                        style={{ flexShrink: 0, fontWeight: 300 }}
+                      >+</Button>
                     </div>
                     <p style={{ margin: 0, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, textAlign: "center" }}>
                       {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
@@ -3632,30 +3629,16 @@ function HiredDirectlyNotifyForm() {
           color: t.coal,
         }}
       />
-      <button
+      <Button
         type="submit"
+        size="lg"
         disabled={status === "loading"}
         className="mv2-tap-44"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          background: t.coal,
-          color: t.cream,
-          fontFamily: fonts.sans,
-          fontSize: 14.5,
-          fontWeight: 700,
-          border: "none",
-          borderRadius: 999,
-          padding: "0 24px",
-          whiteSpace: "nowrap" as const,
-          cursor: status === "loading" ? "default" : "pointer",
-          opacity: status === "loading" ? 0.7 : 1,
-        }}
+        style={{ fontFamily: fonts.sans, fontSize: 14.5, fontWeight: 700, whiteSpace: "nowrap" as const }}
       >
         {status === "loading" ? "Joining…" : "Notify me"}
         {status !== "loading" && <span aria-hidden>→</span>}
-      </button>
+      </Button>
       {status === "error" && (
         <div role="alert" style={{ width: "100%", fontFamily: fonts.sans, fontSize: 13, color: t.copperDark }}>
           {error}

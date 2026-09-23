@@ -16,27 +16,25 @@ import {
   RiGauge, Trajectory, Spark, SkillBar, StarChips, EvidenceQuote,
   scoreColor, TONE_FG, HIRE_META, BAND_META, COPPER_LINE, SUCCESS_LINE,
 } from "./ui";
+import { EmptyState as SharedEmptyState } from "../components/EmptyState";
+import { Button } from "@/components/ui/button";
 
 /* ── shared small bits ─────────────────────────────────────────── */
 
+/* Consolidated onto the shared shadcn-backed EmptyState (src/components/EmptyState.tsx) —
+   this local wrapper just adapts the `need` prop name this file's call sites use to the
+   shared component's `description` prop, and picks up the Empty primitive's default
+   (vertical) layout in place of the old horizontal icon+text row. */
 export function EmptyState({ title, need }: { title: string; need: string }) {
-  return (
-    <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 16px", border: `1px dashed ${t.lineStrong}`, borderRadius: 12, background: t.cream }}>
-      <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: f.mono, fontSize: 13, color: t.inkSoft, flexShrink: 0 }}>+</span>
-      <div>
-        <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>{title}</div>
-        <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 1 }}>{need}</div>
-      </div>
-    </div>
-  );
+  return <SharedEmptyState title={title} description={need} />;
 }
 
 function DisclosureBtn({ open, onClick, label }: { open: boolean; onClick: () => void; label: string }) {
   return (
-    <button type="button" onClick={onClick} aria-expanded={open} className="rix-btn rix-focus rix-tap"
-      style={{ padding: "4px 2px", background: "none", border: "none", cursor: "pointer", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
+    <Button type="button" variant="link" size="sm" onClick={onClick} aria-expanded={open}
+      style={{ padding: "4px 2px", height: "auto", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
       {open ? "Hide evidence" : label} <span aria-hidden="true">{open ? "▲" : "→"}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -214,10 +212,10 @@ function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pil
       </div>
       <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45 }}>{p.blurb}</p>
       {lever && <span style={{ fontFamily: f.mono, fontSize: 10, fontWeight: 600, color: t.copper, letterSpacing: 0.4, textTransform: "uppercase" }}>◆ Biggest lever</span>}
-      <button type="button" onClick={onOpen} aria-expanded={active} className="rix-btn rix-focus rix-tap"
-        style={{ marginTop: "auto", alignSelf: "flex-start", padding: "4px 2px", background: "none", border: "none", cursor: "pointer", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
+      <Button type="button" variant="link" size="sm" onClick={onOpen} aria-expanded={active}
+        style={{ marginTop: "auto", alignSelf: "flex-start", padding: "4px 2px", height: "auto", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
         {active ? "Hide evidence ▲" : "Open evidence →"}
-      </button>
+      </Button>
     </Card>
   );
 }
@@ -433,10 +431,10 @@ export function BlindSpots({ d }: { d: Fixture }) {
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
                 <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
               </div>
-              <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
-                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Practice ${b.competency}`}
+                style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans }}>
                 Practice
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -794,8 +792,8 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
                 <span style={{ flex: 1, minWidth: 0, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
-                <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
-                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
+                <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Refresh ${r.skill}`}
+                  style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans }}>Refresh</Button>
               </li>
             ))}
           </ul>
@@ -815,10 +813,10 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
               <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, lineHeight: 1.5, flex: 1 }}>
                 Fixing this one flag is your fastest RI gain. It appeared in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
               </p>
-              <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap"
-                style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${t.indigo}`, background: t.white, color: t.indigoDeep, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)}
+                style={{ borderColor: t.indigo, color: t.indigoDeep, fontFamily: f.sans, flexShrink: 0 }}>
                 Practice now →
-              </button>
+              </Button>
             </div>
           </>
         ) : (
@@ -852,8 +850,8 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
               <div style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.45 }}>{q.question}</div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
-            <button type="button" onClick={() => router.push(practiceUrl)} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
-              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
+            <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Drill: ${q.question}`}
+              style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans, flexShrink: 0 }}>Drill</Button>
           </li>
         ))}
       </ol>

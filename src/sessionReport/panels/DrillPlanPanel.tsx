@@ -1,5 +1,6 @@
 import type { NegotiationOutcome } from "../derivations";
 import { PanelShell, EyebrowLabel, t, f } from "./_primitives";
+import { Button } from "@/components/ui/button";
 
 export function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcome; onLaunchDrill?: (slug: string) => void }) {
   if (!outcome.drills || outcome.drills.length === 0) return null;
@@ -26,13 +27,13 @@ export function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: Negotiatio
             </div>
             <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, flex: 1 }}>{d.goal}</div>
             {onLaunchDrill && d.slug && (
-              <button
-                className="nfr-btn-primary"
+              <Button
+                type="button"
                 style={{ marginTop: 4, width: "100%" }}
                 onClick={() => onLaunchDrill(d.slug!)}
               >
                 Start drill →
-              </button>
+              </Button>
             )}
           </div>
         ))}

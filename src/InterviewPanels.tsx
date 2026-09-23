@@ -13,6 +13,19 @@ import type { PanelMember } from "./InterviewComponents";
 import { PaceMeter } from "./InterviewRobustness";
 import { stripProsodyMarkup } from "./_prosody";
 import { computeCampusReadiness, type CpChipState } from "./_campus-readiness";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* Bridge aliases removed — all inline-style call sites now reference
    `e.*` and `ef.*` directly from interviewTokens.ts. The rebrand is
@@ -145,20 +158,9 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
             </div>
           )}
           {!llmLoading && saveWarning && saveWarning.includes("retry") && currentStep <= 1 && onRetry && (
-            <button
-              onClick={onRetry}
-              style={{
-                fontFamily: ef.sans, fontSize: 10, fontWeight: 600,
-                color: e.copper, background: "rgba(180,83,9,0.16)",
-                border: "1px solid rgba(180,83,9,0.25)", borderRadius: 6,
-                padding: "4px 10px", cursor: "pointer",
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(180,83,9,0.24)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "rgba(180,83,9,0.16)")}
-            >
+            <Button variant="secondary" size="xs" onClick={onRetry}>
               Retry personalized
-            </button>
+            </Button>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "done" ? e.inkSoft : e.success, animation: phase !== "done" ? "recordPulse 1.5s ease-in-out infinite" : "none" }} />
@@ -285,20 +287,11 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
         </div>
       )}
       {phase === "speaking" && (
-        <button onClick={skipSpeaking} style={{
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-          background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-          // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
-          // before, too small for reliable tap on mobile.
-          borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
-        onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
+        // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch.
+        <Button variant="outline" size="lg" className="min-h-11" style={{ marginTop: 4 }} onClick={skipSpeaking}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Continue · Enter
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -434,20 +427,10 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
 
       {/* Skip button */}
       {phase === "speaking" && (
-        <button onClick={skipSpeaking} style={{
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-          background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-          // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
-          // before, too small for reliable tap on mobile.
-          borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
-        onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
+        <Button variant="outline" size="lg" className="min-h-11" style={{ marginTop: 4 }} onClick={skipSpeaking}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Continue · Enter
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -614,14 +597,12 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, fontStyle: "italic" }}>
             Tip: If speech recognition misses a word, tap &lsquo;Edit&rsquo; to correct it before moving on.
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={() => { hintDismissed.current = true; setShowHint(false); }}
             aria-label="Dismiss tip"
-            style={{
-              fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, background: "transparent",
-              border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1,
-            }}
-          >&times;</button>
+          >&times;</Button>
         </div>
       )}
       {/* role="log" already implies aria-live="polite" — explicitly
@@ -646,17 +627,16 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleNextQuestion(); } }}
             />
-            <button onClick={() => { setSpeechUnavailable(false); setMicError(""); noSpeechCountRef.current = 0; }}
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ marginTop: 4 }}
+              onClick={() => { setSpeechUnavailable(false); setMicError(""); noSpeechCountRef.current = 0; }}
               aria-label="Switch to speaking"
-              style={{
-                fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.success,
-                background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
-                borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
-                display: "inline-flex", alignItems: "center", gap: 5, transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-              }}>
+            >
               <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
               Switch to speaking
-            </button>
+            </Button>
           </>
         ) : (
           <>
@@ -674,16 +654,14 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                       resize: "none", padding: 0, margin: 0,
                     }}
                   />
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    style={{ marginTop: 4 }}
                     onClick={() => setIsEditingTranscript(false)}
-                    style={{
-                      fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.success,
-                      background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
-                      borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
-                      display: "inline-flex", alignItems: "center", gap: 5, transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-                    }}>
+                  >
                     Done editing
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.coal, lineHeight: 1.7, margin: 0, opacity: 0.9 }}>
@@ -697,32 +675,27 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               </p>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-              <button onClick={() => { setSpeechUnavailable(true); setMicError(""); }}
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => { setSpeechUnavailable(true); setMicError(""); }}
                 aria-label="Type instead"
-                style={{
-                  fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.inkSoft,
-                  background: "transparent", border: "none", padding: "4px 0", cursor: "pointer",
-                  display: "inline-flex", alignItems: "center", gap: 5, transition: "color 0.2s",
-                }}
-                onMouseEnter={(ev) => { ev.currentTarget.style.color = e.coal; }}
-                onMouseLeave={(ev) => { ev.currentTarget.style.color = e.inkSoft; }}>
+              >
                 <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M8 16h8"/></svg>
                 Prefer typing? Switch to text
-              </button>
+              </Button>
               {currentTranscript && !isEditingTranscript && (
-                <button
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-muted-foreground"
                   onClick={() => setIsEditingTranscript(true)}
                   aria-label="Edit transcript"
-                  style={{
-                    fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.inkSoft,
-                    background: "transparent", border: "none", padding: "4px 0", cursor: "pointer",
-                    display: "inline-flex", alignItems: "center", gap: 5, transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(ev) => { ev.currentTarget.style.color = e.coal; }}
-                  onMouseLeave={(ev) => { ev.currentTarget.style.color = e.inkSoft; }}>
+                >
                   <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Edit
-                </button>
+                </Button>
               )}
             </div>
           </>
@@ -796,24 +769,16 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
       <div style={{ marginTop: 10 }}>
         <PaceMeter seconds={answerSeconds} />
       </div>
-      <button
+      <Button
         ref={nextBtnRef}
+        size="lg"
+        className="w-full"
+        style={{ marginTop: 8 }}
         onClick={handleNextQuestion}
-        style={{
-          fontFamily: ef.sans, fontSize: 13, fontWeight: 600, width: "100%",
-          padding: "12px 24px", borderRadius: 10, marginTop: 8,
-          background: `linear-gradient(135deg, ${e.copper}, ${"#92400E"})`,
-          border: "none", color: e.cream, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-          transition: "all 0.2s ease",
-          boxShadow: "0 4px 16px rgba(180,83,9,0.24)",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(180,83,9,0.30)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(180,83,9,0.24)"; }}
       >
         {currentStep < interviewScriptLength - 1 ? "Next Question" : "Finish"}
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+      </Button>
     </div>
   );
 });
@@ -885,65 +850,26 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
           </video>
         </div>
       )}
-      <button
+      <Button
+        size="lg"
+        className="w-full"
+        style={{ marginTop: 12 }}
         onClick={handleEnd}
         disabled={evaluating}
         aria-label={evaluating ? "Loading your feedback" : "View your interview feedback"}
-        style={{
-          // Use editorial indigo CTA so it reads unambiguously as the
-          // primary action — copper would clash with the editorial
-          // "copper-is-accent-not-CTA" rule.
-          fontFamily: ef.sans, fontSize: 14, fontWeight: 500, width: "100%",
-          padding: "13px 24px", borderRadius: 999, marginTop: 12,
-          background: evaluating ? e.lineStrong : e.indigo,
-          border: "none", color: e.cream,
-          cursor: evaluating ? "wait" : "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms ease",
-          // Strong shadow so the button reads as elevated and clickable —
-          // QA bug 33 reported it looked flat / non-interactive.
-          boxShadow: evaluating
-            ? "none"
-            : "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)",
-        }}
-        onMouseEnter={(ev) => {
-          if (evaluating) return;
-          ev.currentTarget.style.transform = "translateY(-1px)";
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.20), 0 12px 28px -4px rgba(49,46,129,.55)";
-        }}
-        onMouseLeave={(ev) => {
-          if (evaluating) return;
-          ev.currentTarget.style.transform = "translateY(0)";
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)";
-        }}
-        onMouseDown={(ev) => {
-          if (evaluating) return;
-          ev.currentTarget.style.transform = "translateY(0)";
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.20) inset";
-        }}
-        onFocus={(ev) => {
-          ev.currentTarget.style.boxShadow = `0 0 0 4px ${e.indigoRing}, 0 8px 20px -4px rgba(49,46,129,.42)`;
-        }}
-        onBlur={(ev) => {
-          if (evaluating) { ev.currentTarget.style.boxShadow = "none"; return; }
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)";
-        }}
       >
         {evaluating ? (
           <>
-            <span style={{ width: 14, height: 14, border: `2px solid rgba(250,247,240,0.30)`, borderTopColor: e.cream, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <Spinner className="text-current" />
             Generating your report…
           </>
         ) : (
           <>
             View feedback
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1)" }}>
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
           </>
         )}
-      </button>
+      </Button>
     </div>
   );
 });
@@ -1276,24 +1202,19 @@ const TranscriptFilters = memo(function TranscriptFilters({ panelMembers, active
 }) {
   const filters = [{ label: "All", value: "all", color: e.coal }, ...panelMembers.map(m => ({ label: m.name.split(" ")[0], value: m.title, color: m.color }))];
   return (
-    <div style={{ display: "flex", gap: 6, padding: "10px 20px", borderBottom: `1px solid ${e.line}`, overflow: "auto" }}>
-      {filters.map(f => {
-        const isActive = activeFilter === f.value;
-        return (
-          <button key={f.value} onClick={() => setActiveFilter(f.value)} style={{
-            fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
-            padding: "4px 12px", borderRadius: 999,
-            border: `1px solid ${isActive ? `${f.color}55` : e.line}`,
-            background: isActive ? `${f.color}14` : e.white,
-            color: isActive ? f.color : e.inkSoft,
-            cursor: "pointer", whiteSpace: "nowrap",
-            transition: "all 160ms ease",
-          }}>
-            {f.label}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      value={activeFilter}
+      onValueChange={(v) => { if (v) setActiveFilter(v); }}
+      style={{ padding: "10px 20px", borderBottom: `1px solid ${e.line}`, overflow: "auto" }}
+    >
+      {filters.map(f => (
+        <ToggleGroupItem key={f.value} value={f.value} aria-label={f.label}>
+          {f.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 });
 
@@ -1371,21 +1292,15 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
               Live transcript · audio is never recorded
             </span>
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="icon-lg"
+            className="rounded-full"
             onClick={() => setShowTranscript(false)}
             aria-label="Close transcript"
-            style={{
-              background: e.white, border: `1px solid ${e.line}`,
-              borderRadius: 999, width: 44, height: 44,
-              color: e.inkSoft, cursor: "pointer",
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              transition: "background 160ms ease, color 160ms ease",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; ev.currentTarget.style.color = e.coal; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = e.white; ev.currentTarget.style.color = e.inkSoft; }}
           >
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          </Button>
         </div>
         {/* Panel filter buttons */}
         {panelMembers && panelMembers.length > 0 && (
@@ -1475,91 +1390,33 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
   // a fully-answered 5-question session read "5 of 8". Fall back to
   // totalQuestions only in the degenerate baseQuestionCount===0 case.
   const questionTotal = baseQuestionCount || totalQuestions;
-  const closeFocus = () => { setShowEndModal(false); endModalTriggerRef.current?.querySelector("button")?.focus(); };
+  // endModalTriggerRef is retained in the prop signature for call-site
+  // compatibility, but AlertDialog (Radix) restores focus to whatever
+  // element was focused when the dialog opened on its own, so the manual
+  // querySelector-based focus-return this used to need is no longer read.
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- dialog needs click/keyboard handlers for dismissal and focus trap
-    <div
-      role="dialog" aria-modal="true" aria-labelledby="end-modal-title" tabIndex={-1}
-      onClick={(e) => { if (e.target === e.currentTarget) { e.stopPropagation(); closeFocus(); } }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeFocus(); return; }
-        if (e.key === "Tab") {
-          const modal = e.currentTarget.querySelector("[data-modal-content]") as HTMLElement;
-          if (!modal) return;
-          const focusable = modal.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
-          if (focusable.length === 0) return;
-          const first = focusable[0]; const last = focusable[focusable.length - 1];
-          if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
-          else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
-        }
-      }}
-      ref={(el) => { if (el) { const btn = el.querySelector("button"); if (btn) btn.focus(); } }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 100,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(14,12,8,0.70)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
-        animation: "fadeUp 0.15s ease",
-      }}>
-      <div data-modal-content className="hsx-end-modal" style={{
-        background: e.cream, borderRadius: 20, border: `1px solid ${e.line}`,
-        padding: "28px 28px 24px", maxWidth: 460, width: "92%",
-        boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
-      }}>
-        <style>{`
-          /* Narrow-viewport rescue: under 380px the two side-by-side modal
-             buttons overflow the cream card. Stack vertically and pull
-             padding in so the modal still breathes on a 320-360px phone. */
-          @media (max-width: 400px) {
-            .hsx-end-modal { padding: 16px !important; }
-            .hsx-end-modal .hsx-end-modal-actions { flex-direction: column-reverse !important; }
-            .hsx-end-modal .hsx-end-modal-actions button { width: 100% !important; }
-          }
-        `}</style>
-        <h3 id="end-modal-title" style={{
-          margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
-          lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
-        }}>
-          End the interview <em style={{ color: e.copper, fontStyle: "italic" }}>now</em>?
-        </h3>
-        <p style={{
-          margin: "10px 0 22px", fontFamily: ef.sans, fontSize: 14,
-          lineHeight: 1.55, color: e.inkSoft,
-        }}>
-          You&rsquo;ve answered <strong style={{ color: e.coal, fontWeight: 600 }}>{Math.min(currentQuestionNum, questionTotal)} of {questionTotal}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
-        </p>
+    <AlertDialog open onOpenChange={(open) => { if (!open) setShowEndModal(false); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            End the interview <em style={{ color: e.copper, fontStyle: "italic" }}>now</em>?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            You&rsquo;ve answered <strong>{Math.min(currentQuestionNum, questionTotal)} of {questionTotal}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         {isOffline && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.20)", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.20)" }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/></svg>
             <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline — AI evaluation may fail. Your answers will be saved locally.</span>
           </div>
         )}
-        <div className="hsx-end-modal-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={closeFocus}
-            style={{
-              fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,
-              background: "transparent", border: `1px solid ${e.line}`,
-              borderRadius: 999, padding: "10px 18px", cursor: "pointer",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; }}
-          >
-            Keep going
-          </button>
-          <button onClick={handleEnd}
-            style={{
-              fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.cream,
-              background: e.copper, border: "none",
-              borderRadius: 999, padding: "10px 18px", cursor: "pointer",
-              boxShadow: "0 4px 12px -4px rgba(180,83,9,0.45)",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.filter = "brightness(1.10)"; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.filter = "brightness(1)"; }}
-          >
-            End and see report
-          </button>
-        </div>
-      </div>
-    </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setShowEndModal(false)}>Keep going</AlertDialogCancel>
+          <AlertDialogAction onClick={handleEnd}>End and see report</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 });
 
@@ -1605,20 +1462,14 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
               panel which lands them on results immediately. */}
           {evalElapsed >= 10 && (
             <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => { setUsedFallbackScore(true); }}
-                style={{
-                  fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-                  background: "transparent", border: `1px solid ${e.line}`,
-                  borderRadius: 999, padding: "7px 16px", cursor: "pointer",
-                  transition: "background 160ms ease, border-color 160ms ease",
-                }}
-                onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(14,12,8,0.06)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
-                onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = e.line; }}
               >
                 Skip and use estimated score
-              </button>
+              </Button>
               <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, opacity: 0.7 }}>
                 You&rsquo;ll get a basic score now. Detailed AI feedback can take longer on slow connections.
               </span>
@@ -1640,32 +1491,18 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
           </p>
           <div style={{ display: "flex", gap: 12 }}>
             {canRetry && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => { retryCountRef.current++; setEvalTimedOut(false); setUsedFallbackScore(false); setEvaluating(false); interviewEndedRef.current = false; handleEnd(); }}
-              style={{
-                fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,
-                background: "rgba(180,83,9,0.16)", border: "1px solid rgba(180,83,9,0.24)",
-                borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.24)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.16)"; }}
             >
               Retry Evaluation{retryCountRef.current > 0 ? ` (${maxRetries - retryCountRef.current} left)` : ""}
-            </button>
+            </Button>
             )}
-            <button
+            <Button
               onClick={() => { setEvaluating(false); if (lastSessionId) navigate.push(`/session/${lastSessionId}`); else navigate.push("/dashboard"); }}
-              style={{
-                fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.cream,
-                background: `linear-gradient(135deg, ${e.copper}, ${"#92400E"})`,
-                border: "none", borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(180,83,9,0.24)", transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
             >
               View Results
-            </button>
+            </Button>
           </div>
         </>
       )}

@@ -7,6 +7,8 @@
 import { useState } from "react";
 import { t, f, radius, space } from "../tokens";
 import type { AnswerSpan, HighlightKind, Question } from "../types";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 function StarChip({ active, letter, label }: { active: boolean; letter: string; label: string }) {
   return (
@@ -136,48 +138,17 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
   const coachColor = isStrong ? t.success : t.copper;
   const coachBg = isStrong ? t.successWash : t.leanHireWash;
   const coachBorder = isStrong ? t.successAccent : t.copper100;
-  const idBase = `ir-tab-${q.index}`;
   return (
     <div style={{ padding: "0 18px 18px" }}>
-      <div role="tablist" aria-label={`Question ${q.index} answer views`} style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16 }}>
-        <button
-          type="button"
-          role="tab"
-          id={`${idBase}-answer-tab`}
-          aria-selected={tab === "answer"}
-          aria-controls={`${idBase}-answer-panel`}
-          tabIndex={tab === "answer" ? 0 : -1}
-          className="ir-tab-btn"
-          onClick={() => setTab("answer")}
-        >
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+      <TabsList variant="line" aria-label={`Question ${q.index} answer views`} style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16, width: "100%", justifyContent: "flex-start" }}>
+        <TabsTrigger value="answer">
           Your Answer
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={`${idBase}-restructured-tab`}
-          aria-selected={tab === "restructured"}
-          aria-controls={`${idBase}-restructured-panel`}
-          tabIndex={tab === "restructured" ? 0 : -1}
-          className="ir-tab-btn"
-          onClick={() => setTab("restructured")}
-          disabled={!q.restructured}
-          style={!q.restructured ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="restructured" disabled={!q.restructured}>
           Restructured (STAR)
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={`${idBase}-exemplar-tab`}
-          aria-selected={tab === "exemplar"}
-          aria-controls={`${idBase}-exemplar-panel`}
-          tabIndex={tab === "exemplar" ? 0 : -1}
-          className="ir-tab-btn"
-          onClick={() => setTab("exemplar")}
-          disabled={!q.topPerformerAnswer}
-          style={!q.topPerformerAnswer ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="exemplar" disabled={!q.topPerformerAnswer}>
           Top Performer Answer
           <span
             style={{
@@ -194,20 +165,18 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
           >
             EXEMPLAR
           </span>
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
 
       <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div>
-          {tab === "answer" && (
-            <div role="tabpanel" id={`${idBase}-answer-panel`} aria-labelledby={`${idBase}-answer-tab`}>
-              <AnswerBody spans={q.answer} />
-              <HighlightLegend />
-            </div>
-          )}
-          {tab === "restructured" && q.restructured && (
-            <div role="tabpanel" id={`${idBase}-restructured-panel`} aria-labelledby={`${idBase}-restructured-tab`}>
+          <TabsContent value="answer">
+            <AnswerBody spans={q.answer} />
+            <HighlightLegend />
+          </TabsContent>
+          {q.restructured && (
+            <TabsContent value="restructured">
               <div style={{ position: "relative" }}>
                 <CornerBadge bg={t.indigo100} color={t.indigo}>AI-RESTRUCTURED</CornerBadge>
                 <AnswerBody spans={q.restructured} bg={t.white} border={t.line} />
@@ -215,10 +184,10 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
                 Same content as your answer, reorganized into clean STAR. Save this as your reference version.
               </p>
-            </div>
+            </TabsContent>
           )}
-          {tab === "exemplar" && q.topPerformerAnswer && (
-            <div role="tabpanel" id={`${idBase}-exemplar-panel`} aria-labelledby={`${idBase}-exemplar-tab`}>
+          {q.topPerformerAnswer && (
+            <TabsContent value="exemplar">
               <div style={{ position: "relative" }}>
                 <CornerBadge bg={t.successTint} color={t.success}>EXEMPLAR</CornerBadge>
                 <AnswerBody
@@ -245,7 +214,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
                   </ul>
                 </>
               )}
-            </div>
+            </TabsContent>
           )}
         </div>
 
@@ -389,15 +358,16 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               </p>
             </div>
           )}
-          <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start", marginTop: "auto" }} onClick={() => onTryQuestionAgain?.(q.index)}>
+          <Button type="button" style={{ alignSelf: "flex-start", marginTop: "auto" }} onClick={() => onTryQuestionAgain?.(q.index)}>
             Try this question again
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="23 4 23 10 17 10" />
               <path d="M20.49 15A9 9 0 1 1 5.64 5.64L1 10" />
             </svg>
-          </button>
+          </Button>
         </div>
       </div>
+      </Tabs>
     </div>
   );
 }

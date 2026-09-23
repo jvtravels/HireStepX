@@ -15,6 +15,7 @@ import {
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
 import { LiveCaptions } from "./InterviewComponents";
+import { Button } from "@/components/ui/button";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio, clearAutoplayBlock } from "./tts";
@@ -646,25 +647,13 @@ function InterviewInner() {
         )}
 
         {phase === "speaking" && (
-          <button
-            type="button"
-            onClick={skipSpeaking}
-            style={{
-              fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.inkSoft,
-              background: e.white, border: `1px solid ${e.line}`,
-              borderRadius: 999, padding: "8px 16px", minHeight: 36,
-              cursor: "pointer", transition: "all 160ms ease",
-              display: "inline-flex", alignItems: "center", gap: 6,
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = e.white; }}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={skipSpeaking}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <polygon points="5 4 15 12 5 20 5 4" />
               <line x1="19" y1="5" x2="19" y2="19" />
             </svg>
             Continue — Enter
-          </button>
+          </Button>
         )}
 
         {(phase === "thinking" || phase === "speaking") && (
@@ -686,22 +675,15 @@ function InterviewInner() {
             cancels the pending follow-up, drops the last user message,
             and reverts phase=listening. */}
         {phase === "thinking" && transcript.some(t => t.speaker === "user") && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               captureClientEvent("interview_retake_answer", {});
               retakeLastAnswer();
             }}
             aria-label="Retake the answer you just sent"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.copper,
-              background: "transparent", border: `1px solid rgba(180,83,9,0.35)`,
-              borderRadius: 999, padding: "7px 14px", cursor: "pointer",
-              transition: "background 160ms ease",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(180,83,9,0.08)"; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; }}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -709,7 +691,7 @@ function InterviewInner() {
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
             </svg>
             Actually, let me redo that
-          </button>
+          </Button>
         )}
 
         {phase === "done" && (

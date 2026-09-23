@@ -6,24 +6,18 @@ import { t, f, radius } from "../tokens";
 import type { DeliveryMetric } from "../types";
 import { SrSectionShell } from "./_primitives";
 import { MetricBand } from "./sr-HeroSection";
+import { Button } from "@/components/ui/button";
 
 export function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
   const howButton = (
-    <button
+    <Button
       type="button"
-      style={{
-        background: "transparent",
-        border: "none",
-        fontFamily: f.sans,
-        fontSize: 12,
-        color: t.indigo,
-        cursor: "pointer",
-        padding: 0,
-        fontWeight: 500,
-      }}
+      variant="link"
+      size="sm"
+      style={{ fontFamily: f.sans, color: t.indigo, height: "auto", padding: 0 }}
     >
       How are these calculated?
-    </button>
+    </Button>
   );
   return (
     <SrSectionShell

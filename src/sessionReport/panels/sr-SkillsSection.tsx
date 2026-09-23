@@ -5,6 +5,7 @@
 import { t, f, radius } from "../tokens";
 import type { Skill } from "../types";
 import { SrSectionShell } from "./_primitives";
+import { Button } from "@/components/ui/button";
 
 export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill[]; weakest: { name: string; tip: string }; onDrillSkill?: (skillName: string) => void }) {
   const max = 100;
@@ -104,13 +105,13 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.5, margin: "0 0 14px" }}>
             {weakest.tip}
           </p>
-          <button type="button" className="ir-cta-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => onDrillSkill?.(weakest.name)}>
+          <Button type="button" style={{ width: "100%", justifyContent: "center" }} onClick={() => onDrillSkill?.(weakest.name)}>
             Drill this skill
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
-          </button>
+          </Button>
         </aside>
       </div>
     </SrSectionShell>

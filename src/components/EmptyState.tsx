@@ -1,14 +1,22 @@
 "use client";
 import type { ReactNode, CSSProperties } from "react";
-import { c, font, radius } from "../tokens";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
 
 /* ─── Shared EmptyState primitive ─────────────────────────────────────
-   Generic, neutral "no data here yet" surface used across the admin and
-   dashboard surfaces. Aesthetic matches the AdminDashboard card system
-   (graphite background, hairline border, ivory headline, stone copy) so
-   it drops into any panel without restyling.
+   Generic "no data here yet" surface used across the admin, dashboard,
+   and session-report surfaces. Built on top of the shadcn `Empty`
+   primitive (default vertical layout — icon over title over description
+   over action) rather than a hand-rolled card, per the shadcn migration.
 
-   Centered vertically + horizontally inside its parent card. Pass any of:
+   Pass any of:
      • icon        — decorative leading glyph (svg/element)
      • title       — required headline
      • description — supporting copy (optional)
@@ -16,9 +24,8 @@ import { c, font, radius } from "../tokens";
                      (lets callers pass a custom button cluster)
      • className   — for callers that need to layer extra styles
 
-   Previously the AdminDashboard had a local inline `EmptyState({ message })`
-   that bypassed the layout token; that copy lived in 17 call sites. This
-   primitive replaces it without behavior change. */
+   Previously this duplicated a second inline EmptyState in
+   readinessIndex/sections.tsx; both now consolidate onto this one. */
 
 export interface EmptyStateAction {
   label: string;
@@ -41,79 +48,24 @@ function isActionShape(a: unknown): a is EmptyStateAction {
 
 export function EmptyState({ icon, title, description, action, className, style }: EmptyStateProps) {
   return (
-    <div
-      className={className}
-      style={{
-        background: c.graphite,
-        border: `1px solid ${c.border}`,
-        borderRadius: radius.lg,
-        padding: "60px 24px",
-        textAlign: "center",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        ...style,
-      }}
-    >
-      {icon && (
-        <div aria-hidden style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: c.gilt, marginBottom: 4 }}>
-          {icon}
-        </div>
-      )}
-      <p
-        style={{
-          fontFamily: font.ui,
-          fontSize: 16,
-          fontWeight: 500,
-          color: c.ivory,
-          margin: 0,
-          lineHeight: 1.4,
-        }}
-      >
-        {title}
-      </p>
-      {description && (
-        <p
-          style={{
-            fontFamily: font.ui,
-            fontSize: 13,
-            color: c.stone,
-            margin: 0,
-            maxWidth: 440,
-            lineHeight: 1.55,
-          }}
-        >
-          {description}
-        </p>
-      )}
+    <Empty className={className} style={style}>
+      <EmptyHeader>
+        {icon && <EmptyMedia variant="icon">{icon}</EmptyMedia>}
+        <EmptyTitle>{title}</EmptyTitle>
+        {description && <EmptyDescription>{description}</EmptyDescription>}
+      </EmptyHeader>
       {action && (
-        <div style={{ marginTop: 8 }}>
+        <EmptyContent>
           {isActionShape(action) ? (
-            <button
-              type="button"
-              onClick={action.onClick}
-              style={{
-                fontFamily: font.ui,
-                fontSize: 13,
-                fontWeight: 500,
-                padding: "9px 20px",
-                borderRadius: 8,
-                border: "none",
-                background: c.gilt,
-                color: c.obsidian,
-                cursor: "pointer",
-              }}
-            >
+            <Button type="button" onClick={action.onClick}>
               {action.label}
-            </button>
+            </Button>
           ) : (
             action
           )}
-        </div>
+        </EmptyContent>
       )}
-    </div>
+    </Empty>
   );
 }
 

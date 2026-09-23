@@ -24,6 +24,7 @@
 
 import * as React from "react";
 import { t, f } from "./tokens";
+import { Button } from "@/components/ui/button";
 import type {
   BehavioralFullReportData,
   BehavioralStarRow,
@@ -985,21 +986,18 @@ export default function BehavioralFullReport({
         }}
       >
         <div style={{ fontSize: 13, color: t.inkSoft }}>{data.ctaSubcopy}</div>
-        <button
+        <Button
           type="button"
+          size="lg"
           style={{
             background: t.indigo,
             color: t.white,
-            border: "none",
-            borderRadius: 10,
-            padding: "12px 22px",
             fontSize: 14,
             fontWeight: 600,
-            cursor: "pointer",
           }}
         >
           {data.ctaPrimaryLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );

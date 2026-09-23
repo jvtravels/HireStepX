@@ -6,6 +6,7 @@ import { NavV2, MobileStickyCTA } from "./HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { captureClientEvent } from "../posthogClient";
 import { CopyEmailLink } from "../_CopyEmailLink";
+import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing pages v2
@@ -1334,19 +1335,15 @@ export function ContactV2() {
                   </ContactField>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", paddingTop: 4 }}>
-                    <button
+                    <Button
                       type="submit"
+                      size="lg"
                       disabled={status === "sending" || status === "sent"}
                       className="mv2-tap-44"
-                      style={{
-                        ...ctaPrimary("lg"),
-                        opacity: status === "sending" || status === "sent" ? 0.6 : 1,
-                        cursor: status === "sending" || status === "sent" ? "default" : "pointer",
-                        flexShrink: 0,
-                      }}
+                      style={{ flexShrink: 0 }}
                     >
                       {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : "Send message"}
-                    </button>
+                    </Button>
                     <p
                       id="contact-form-status"
                       role="status"

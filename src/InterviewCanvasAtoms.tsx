@@ -19,6 +19,8 @@
 */
 import React from "react";
 import { e, ef } from "./interviewTokens";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 
 /* ─── Wordmark — split spans for the italic X, but exposes a single
      "HireStepX" accessible name so screen readers don't say "Hire Step X"
@@ -132,18 +134,13 @@ export function CanvasAvatar({ initials = "You" }: { initials?: string }) {
 /* ─── MuteToggle (topbar) ─── */
 export function CanvasMuteToggle({ muted, onClick }: { muted: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick}
-      aria-pressed={muted}
+    <Toggle
+      pressed={muted}
+      onPressedChange={() => onClick()}
+      variant="outline"
       aria-label={muted ? "Unmute (Alt+M)" : "Mute (Alt+M)"}
       title={muted ? "Muted — click to unmute (Alt+M)" : "Mute (Alt+M)"}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 8, height: 34, padding: "0 12px",
-        background: muted ? "rgba(180,83,9,0.10)" : e.white,
-        border: `1px solid ${muted ? "rgba(180,83,9,0.30)" : e.line}`,
-        borderRadius: 999, cursor: "pointer",
-        fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-        color: muted ? e.copper : e.inkSoft, transition: "all 160ms ease",
-      }}>
+    >
       {muted ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <line x1="2" y1="2" x2="22" y2="22" />
@@ -160,25 +157,20 @@ export function CanvasMuteToggle({ muted, onClick }: { muted: boolean; onClick: 
         </svg>
       )}
       <span>{muted ? "Muted" : "Mic on"}</span>
-    </button>
+    </Toggle>
   );
 }
 
 /* ─── CameraToggle (topbar) ─── */
 export function CanvasCameraToggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick}
-      aria-pressed={on}
+    <Toggle
+      pressed={on}
+      onPressedChange={() => onClick()}
+      variant="outline"
       aria-label={on ? "Turn camera off" : "Turn camera on"}
       title={on ? "Camera on — click to turn off" : "Camera off — click to turn on"}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 8, height: 34, padding: "0 12px",
-        background: on ? e.indigo100 : e.white,
-        border: `1px solid ${on ? "rgba(49,46,129,0.30)" : e.line}`,
-        borderRadius: 999, cursor: "pointer",
-        fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-        color: on ? e.indigo : e.inkSoft, transition: "all 160ms ease",
-      }}>
+    >
       {on ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <polygon points="23 7 16 12 23 17 23 7" />
@@ -192,7 +184,7 @@ export function CanvasCameraToggle({ on, onClick }: { on: boolean; onClick: () =
         </svg>
       )}
       <span>{on ? "Camera on" : "Camera off"}</span>
-    </button>
+    </Toggle>
   );
 }
 
@@ -367,31 +359,17 @@ export function CanvasKeycapButton({ state, label, hint, onClick, kbd = "Space" 
   };
   const finalLabel = label ?? labels[state];
   const isInteractive = state === "ready" || state === "active";
-  const bg = state === "active" ? e.indigo : e.white;
-  const color = state === "active" ? e.cream : e.coal;
-  const border = state === "active" ? e.indigo : e.line;
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="lg"
         onClick={onClick}
         disabled={!isInteractive}
         aria-pressed={state === "active"}
-        className="hsx-iv-keycap"
+        className="hsx-iv-keycap rounded-full"
         data-state={state}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 12,
-          fontFamily: ef.sans, fontSize: 13, fontWeight: 500,
-          color, background: bg, border: `1px solid ${border}`,
-          borderRadius: 999, padding: "10px 18px 10px 12px",
-          cursor: isInteractive ? "pointer" : "not-allowed",
-          opacity: state === "disabled" ? 0.55 : 1,
-          transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease",
-          transform: state === "active" ? "scale(1.02)" : "scale(1)",
-          boxShadow: state === "active"
-            ? "0 6px 20px -6px rgba(49, 46, 129, 0.4)"
-            : "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
-        }}
       >
         <kbd aria-hidden style={{
           display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -404,7 +382,7 @@ export function CanvasKeycapButton({ state, label, hint, onClick, kbd = "Space" 
           {kbd}
         </kbd>
         <span>{finalLabel}</span>
-      </button>
+      </Button>
       {hint && <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkFaint }}>{hint}</span>}
     </div>
   );
@@ -418,30 +396,17 @@ export function CanvasTextLink({ children, onClick, variant = "muted" }: {
 }) {
   const color = variant === "indigo" ? e.indigo : e.inkSoft;
   return (
-    <button type="button" onClick={onClick}
-      style={{
-        background: "transparent", border: "none", padding: 0, cursor: "pointer",
-        fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color,
-        textDecoration: "none",
-      }}>
+    <Button type="button" variant="link" className="p-0 h-auto" style={{ color }} onClick={onClick}>
       <span className="hsx-link-indigo" style={{ color }}>{children}</span>
-    </button>
+    </Button>
   );
 }
 
 /* ─── SkipLink ─── */
 export function CanvasSkipLink({ onClick }: { onClick?: () => void }) {
   return (
-    <button type="button" onClick={onClick}
+    <Button type="button" variant="link" size="sm" className="p-0 h-auto" style={{ color: e.copper }} onClick={onClick}
       aria-label="Skip this question"
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        background: "transparent", border: "none", padding: "4px 6px", cursor: "pointer",
-        fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.copper,
-        opacity: 0.85, transition: "opacity 160ms ease",
-      }}
-      onMouseEnter={(ev) => (ev.currentTarget.style.opacity = "1")}
-      onMouseLeave={(ev) => (ev.currentTarget.style.opacity = "0.85")}
     >
       <span>Skip question</span>
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -449,7 +414,7 @@ export function CanvasSkipLink({ onClick }: { onClick?: () => void }) {
         <polyline points="13 17 18 12 13 7" />
         <polyline points="6 17 11 12 6 7" />
       </svg>
-    </button>
+    </Button>
   );
 }
 
@@ -484,23 +449,14 @@ export function CanvasMetaRow({ elapsedSec, exchanges }: { elapsedSec: number; e
 /* ─── EndButton (footer right) ─── */
 export function CanvasEndButton({ onClick }: { onClick?: () => void }) {
   return (
-    <button type="button" onClick={onClick}
-      aria-label="End interview"
-      className="iv-canvas-endbtn"
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.copper,
-        background: "transparent", border: `1px solid ${e.line}`,
-        borderRadius: 999, padding: "8px 14px", cursor: "pointer",
-        transition: "all 160ms ease",
-      }}>
+    <Button type="button" variant="outline" size="sm" onClick={onClick} aria-label="End interview">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <line x1="18" y1="6" x2="6" y2="18" />
         <line x1="6" y1="6" x2="18" y2="18" />
       </svg>
       End interview
-    </button>
+    </Button>
   );
 }
 

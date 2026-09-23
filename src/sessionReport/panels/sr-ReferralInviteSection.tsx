@@ -15,6 +15,7 @@ import { useState, type CSSProperties } from "react";
 import { t, f, brand } from "../tokens";
 import { useAuth, referralSignupUrl } from "../../AuthContext";
 import { captureClientEvent } from "../../posthogClient";
+import { Button } from "@/components/ui/button";
 
 /** Show the invite when the candidate has done reasonably well — broadened from
  *  70 to 50 so most free users see the referral CTA and can earn a free session. */
@@ -60,8 +61,7 @@ export function ReferralInviteSection({
   };
 
   const btnBase: CSSProperties = {
-    fontFamily: f.sans, fontSize: 13, fontWeight: 600,
-    padding: "10px 18px", borderRadius: 10, cursor: "pointer",
+    fontFamily: f.sans, fontWeight: 600,
     display: "inline-flex", alignItems: "center", gap: 8,
   };
 
@@ -86,17 +86,17 @@ export function ReferralInviteSection({
         each get a free practice session — credited instantly, no purchase needed.
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-        <button type="button" onClick={onWhatsApp} style={{ ...btnBase, background: t.copper, color: t.white, border: "none" }}>
+        <Button type="button" onClick={onWhatsApp} style={{ ...btnBase, background: t.copper, color: t.white }}>
           Share on WhatsApp
-        </button>
+        </Button>
         {/* LinkedIn share — opens the sharing dialog pre-populated with
             the report URL (or referral link as fallback). Opens in a new
             tab per LinkedIn's recommended share-offsite pattern. */}
-        <button
+        <Button
           type="button"
           onClick={onLinkedIn}
           aria-label="Share on LinkedIn"
-          style={{ ...btnBase, background: brand.linkedIn, color: t.white, border: "none" }}
+          style={{ ...btnBase, background: brand.linkedIn, color: t.white }}
         >
           <svg
             width="16"
@@ -108,10 +108,10 @@ export function ReferralInviteSection({
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
           </svg>
           Share on LinkedIn
-        </button>
-        <button type="button" onClick={onCopy} style={{ ...btnBase, background: "transparent", color: t.copper, border: `1px solid ${t.copperBorder}` }}>
+        </Button>
+        <Button type="button" variant="outline" onClick={onCopy} style={{ ...btnBase, color: t.copper, borderColor: t.copperBorder }}>
           {copied ? "Link copied!" : "Copy link"}
-        </button>
+        </Button>
       </div>
     </section>
   );

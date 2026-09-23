@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { NegotiationOutcome } from "../derivations";
 import { SectionHeader, EyebrowLabel, t, f, radius, space } from "./_primitives";
+import { Button } from "@/components/ui/button";
 
 /* Inline glossary — terms in the counter-offer letter that first-time
    negotiators (especially first-job-in-family) won't know. The browser's
@@ -217,8 +218,8 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
         ))}
       </div>
       <div className="nfr-letter-actions">
-        <button
-          className="nfr-btn-primary"
+        <Button
+          type="button"
           onClick={() => {
             if (typeof navigator !== "undefined" && navigator.clipboard) {
               navigator.clipboard.writeText(letter).then(() => {
@@ -230,7 +231,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
           aria-live="polite"
         >
           {copied ? "✓ Copied" : "Copy as email"}
-        </button>
+        </Button>
       </div>
     </div>
   );

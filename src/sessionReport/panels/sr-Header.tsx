@@ -3,6 +3,7 @@
  * Pure presentation. */
 
 import { t, f } from "../tokens";
+import { Button } from "@/components/ui/button";
 
 export function Header({
   onBack,
@@ -25,39 +26,28 @@ export function Header({
         padding: "20px 32px",
       }}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onBack}
-        style={{
-          background: "transparent",
-          border: "none",
-          fontFamily: f.sans,
-          fontSize: 14,
-          fontWeight: 500,
-          color: t.coal,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: 0,
-        }}
+        style={{ fontFamily: f.sans, fontWeight: 500, color: t.coal }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
         {backLabel}
-      </button>
+      </Button>
       <div style={{ display: "flex", gap: 10 }}>
-        <button type="button" className="ir-cta-ghost" onClick={onDownloadPdf}>
+        <Button type="button" variant="outline" onClick={onDownloadPdf}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
           Download PDF
-        </button>
-        <button type="button" className="ir-cta-ghost" onClick={onShare}>
+        </Button>
+        <Button type="button" variant="outline" onClick={onShare}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="18" cy="5" r="3" />
             <circle cx="6" cy="12" r="3" />
@@ -66,7 +56,7 @@ export function Header({
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
           </svg>
           Share Report
-        </button>
+        </Button>
       </div>
     </header>
   );
