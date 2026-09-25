@@ -19,7 +19,7 @@
 */
 import React from "react";
 import { ThinkingOrb, type OrbState } from "thinking-orbs";
-import { e, ef } from "./interviewTokens";
+import { e, ef, resolveOrbColor } from "./interviewTokens";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 
@@ -203,15 +203,7 @@ const VIZ_TO_ORB_STATE: Record<CanvasVizState, OrbState> = {
   warning: "shaping",
 };
 export function CanvasVoiceVisualizer({ state, size = 150 }: { state: CanvasVizState; size?: number }) {
-  const dotColor = (() => {
-    switch (state) {
-      case "idle":          return e.inkFaint;
-      case "ai-speaking":   return e.coal;
-      case "ai-thinking":   return e.copper;
-      case "user-speaking": return e.indigo;
-      case "warning":       return e.warning;
-    }
-  })();
+  const dotColor = resolveOrbColor(e.copper);
   return (
     <div role="presentation" className="hsx-viz"
       aria-label={

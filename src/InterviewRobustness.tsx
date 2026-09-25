@@ -14,7 +14,7 @@
  * InterviewPanels.tsx for backwards-compat with existing imports.
  */
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { e, ef } from "./interviewTokens";
+import { e, ef, resolveOrbColor } from "./interviewTokens";
 import {
   Tooltip,
   TooltipContent,
@@ -182,7 +182,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           boxShadow: "0 4px 16px rgba(20,17,10,0.10)",
         }}
       >
-        <ThinkingOrb state="connecting" size={20} color={e.copper} style={{ width: 14, height: 14, flexShrink: 0 }} />
+        <ThinkingOrb state="connecting" size={20} color={resolveOrbColor(e.copper)} style={{ width: 14, height: 14, flexShrink: 0 }} />
         <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
           Reconnecting… your progress is safe (Q{questionPos} of {questionTotal}).
         </span>
@@ -207,7 +207,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           width: 52, height: 52, borderRadius: "50%", background: "rgba(180,83,9,0.10)",
           display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 16,
         }}>
-          <ThinkingOrb state="connecting" size={32} color={e.copper} style={{ width: 26, height: 26 }} />
+          <ThinkingOrb state="connecting" size={32} color={resolveOrbColor(e.copper)} style={{ width: 26, height: 26 }} />
         </div>
         <h2 id="iv-reconnecting-title" style={{
           margin: 0, fontFamily: ef.serif, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",
