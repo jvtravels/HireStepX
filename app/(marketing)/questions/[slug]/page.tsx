@@ -52,11 +52,35 @@ export async function generateStaticParams() {
    long when the intro itself contains abbreviations or is simply verbose,
    so this trims to the last full word that still fits instead of cutting
    mid-word or blowing past the limit. */
+/* Cutting at the last word boundary can still land right before a
+   conjunction/preposition (e.g. "...its lending and BFS-Direct" → "...its
+   lending and"), leaving a dangling connector in the SERP snippet. Strip
+   any such trailing stopwords after the word-boundary cut. */
+const TRAILING_STOPWORD = /\s+(?:and|or|but|so|for|of|in|on|at|to|with|its|the|a|an|by|from|as)$/i;
+
 function truncateAtWord(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   const cut = text.slice(0, maxLen);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]$/, "");
+  let result = (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]$/, "");
+  let stripped = result.replace(TRAILING_STOPWORD, "");
+  while (stripped !== result) {
+    result = stripped;
+    stripped = result.replace(TRAILING_STOPWORD, "");
+  }
+  return result;
+}
+
+/* Some intros' first sentence still overruns the SERP budget on its own
+   (verbose company-context openers). Cutting at a raw word boundary there
+   still lands mid-clause ("...core Java, Spring."). Prefer the last
+   comma-clause boundary when there is one past 40% of the budget — a
+   full clause reads as a complete (if shorter) thought. */
+function truncateAtClause(text: string, maxLen: number): string {
+  const cut = text.slice(0, maxLen);
+  const lastComma = cut.lastIndexOf(", ");
+  if (lastComma > maxLen * 0.4) return `${cut.slice(0, lastComma)}.`;
+  return `${truncateAtWord(text, maxLen)}.`;
 }
 
 export async function generateMetadata(
@@ -72,10 +96,19 @@ export async function generateMetadata(
   const withSuffix = `${page.searchPhrase} | HireStepX`;
   const title = withSuffix.length <= 60 ? withSuffix : page.searchPhrase;
 
+  /* Forcing the CTA suffix into a fixed ~88-char remainder mangles the
+     intro's first sentence mid-clause on any company with a longer intro
+     (e.g. "...hires engineers for its lending." — dropped its own object).
+     Prefer the full, natural sentence over a shorter but broken one; only
+     drop the CTA suffix, then hard-truncate, when there's genuinely no
+     room even for the sentence on its own. */
   const descSuffix = " Practice with AI voice feedback. 2 free sessions, no credit card.";
   const firstSentence = page.intro.split(". ")[0];
-  const body = truncateAtWord(firstSentence, 155 - descSuffix.length - 1);
-  const description = `${body}.${descSuffix}`;
+  const descWithSuffix = `${firstSentence}.${descSuffix}`;
+  const description =
+    descWithSuffix.length <= 155 ? descWithSuffix
+    : firstSentence.length + 1 <= 155 ? `${firstSentence}.`
+    : truncateAtClause(firstSentence, 154);
 
   return {
     title,

@@ -961,7 +961,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── LTIMindtree ───────────────────────────────────────────────────── */
   {
     slug: "ltimindtree-freshers-interview-questions",
-    searchPhrase: "LTIMindtree Interview Questions for Freshers 2026",
+    searchPhrase: "LTIMindtree Freshers Interview 2026: ₹5.5-12 LPA",
     company: "ltimindtree", roleFamily: "campus", focus: "campus-placement",
     intro: "LTIMindtree (formed from the 2022 merger of Larsen and Toubro Infotech and Mindtree) has unified its fresher hiring with a stronger emphasis on coding ability than most service-company peers. The online assessment is measurably harder than TCS or Wipro: expect 3 coding problems of increasing difficulty rather than 2 easy ones. LTIMindtree specifically looks for engineers who can write production-grade code with clean structure, not just passing pseudocode. The technical interview probes CS fundamentals including OOPS, data structures, and database basics, alongside a walkthrough of your final-year or personal project. LTIMindtree's clients span banking (BFSI), manufacturing, and retail: mentioning interest in any of these verticals during the HR round is a positive signal. The HR round is shorter and more conversational than the TCS or Infosys equivalent.",
     framework: { name: "Code quality focus", summary: "Correct first → readable variable names → edge case handling → time-complexity comment → test mentally before submitting." },
@@ -979,6 +979,10 @@ export const SEO_PAGES: SeoPage[] = [
       {
         q: "Does mentioning specific industry domains help in the LTIMindtree HR round?",
         a: "Yes. LTIMindtree's clients span BFSI (banking, financial services, insurance), manufacturing, and retail. Mentioning genuine interest in any of these verticals during the HR round is a positive signal: it shows awareness of their client base and aligns with where their projects are concentrated. The LTIMindtree HR round is shorter and more conversational than TCS or Infosys equivalents.",
+      },
+      {
+        q: "What is the LTIMindtree fresher salary in India?",
+        a: "LTIMindtree's 2026 fresher software engineer offer falls in the ₹5.5 to 12 LPA range depending on the hiring band and location, per LTIMindtree's own fresher disclosure. Clearing more of the coding assessment and technical rounds moves you toward the higher end of that band.",
       },
     ],
     recruitmentSteps: [
@@ -1032,7 +1036,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Deloitte ──────────────────────────────────────────────────────── */
   {
     slug: "deloitte-analyst-interview-questions",
-    searchPhrase: "Deloitte Analyst Interview Questions India 2026",
+    searchPhrase: "Deloitte Analyst Interview India 2026: ₹8-15 LPA",
     company: "deloitte", roleFamily: "behavioral", focus: "behavioral",
     intro: "Deloitte's analyst interviews (USI, Advisory, Technology) are structured competency assessments. Each question maps to one of Deloitte's PACE principles (Purpose, Aspiration, Commitment, Excellence). The partner or manager interviewing you has a scorecard. Stories with clear professional impact, stakeholder complexity, and personal ownership score highest. The entry gate is the CogniVue aptitude test: harder than most candidates expect, covering numerical reasoning, verbal ability, logical reasoning, and situational judgement. Candidates who clear CogniVue face a group discussion round before the PACE-based panel interview. Consulting and advisory track candidates additionally sit a case interview that tests structured business problem-solving.",
     framework: { name: "PACE stories", summary: "Purpose (why the work mattered) → Aspiration (the target you set for yourself, not just the team) → Commitment (how you stayed engaged when hard) → Excellence (the measurable result)." },
@@ -1050,6 +1054,10 @@ export const SEO_PAGES: SeoPage[] = [
       {
         q: "Do Deloitte analyst interviews include a case study?",
         a: "It depends on the track. Consulting and advisory track candidates at Deloitte additionally sit a case interview (20–25 minutes, interviewer-led) that tests structured business problem-solving. Technology and USI (US India delivery) track candidates may face technical questions instead. The case at Deloitte leans toward operations, large-scale IT transformation, and public sector scenarios: a distinct contrast to McKinsey and BCG's market-entry emphasis. Prepare 2–3 transformation scenarios from India's public sector (government digitisation, healthcare, financial inclusion).",
+      },
+      {
+        q: "What is the Deloitte analyst salary in India?",
+        a: "Deloitte India analyst offers typically fall in the ₹8 to 15 LPA range at entry level, based on 2026 Glassdoor and Indeed reporting. Advisory and consulting track offers tend to land toward the higher end of that band.",
       },
     ],
     recruitmentSteps: [
@@ -3158,7 +3166,7 @@ export const SEO_PAGES: SeoPage[] = [
 
   {
     slug: "hdfc-swe-interview-questions",
-    searchPhrase: "HDFC Software Engineer Interview Questions India 2026",
+    searchPhrase: "HDFC SWE Interview 2026: Java, SQL, Reliability",
     company: "hdfc", roleFamily: "swe", focus: "technical",
     intro: "HDFC Bank's engineering interviews combine core Java and SQL depth with BFSI domain knowledge: expect questions on transaction processing, concurrency, and banking workflows that pure product companies never ask. The process is structured and relatively predictable, running 3 to 4 rounds with a strong emphasis on hands-on coding and system reliability. Unlike fintech startups, HDFC interviewers care about auditability, rollback strategies, and regulatory constraints alongside raw DSA skill.",
     framework: { name: "Reliability-first design", summary: "Lead every system design with failure modes, audit trails, and rollback before discussing throughput or caching." },
@@ -5957,7 +5965,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wave 6: Remaining fintech, GCCs, D2C, SaaS, quant ── */
   {
     slug: "bajaj-finance-software-engineer-interview-questions",
-    searchPhrase: "Bajaj Finance SWE Interview Questions India 2026",
+    searchPhrase: "Bajaj Finance SWE Interview 2026: ₹6-28 LPA",
     company: "bajaj-finance", roleFamily: "swe", focus: "technical",
     intro: "Bajaj Finance (part of the Bajaj Finserv group) hires engineers for its lending and BFS-Direct app platform, so interviews lean on core Java, Spring Boot, microservices, and SQL rather than competitive programming. Expect scenarios grounded in loan origination, EMI schedules, and high-volume transaction processing. Domain awareness of NBFC lending flows and RBI compliance gives you a visible edge in later rounds.",
     framework: { name: "LENDIT", summary: "Loan-domain knowledge, Efficient DSA, Networks and security, Design of microservices, Integration and APIs, Testing and reliability" },
@@ -7435,7 +7443,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "millennium-quant-interview-questions",
-    searchPhrase: "Millennium India Quant Interview Questions 2026",
+    searchPhrase: "Millennium Quant Interview India 2026: Pods",
     company: "millennium", roleFamily: "quant", focus: "technical",
     intro: "Millennium's India quant and technology interviews screen for sharp probability reasoning, clean coding, and a genuine feel for markets. In 2026 expect an early quantitative and coding screen, then rounds on probability, statistics, expected value, and time-series or data-handling problems, often tied to how a strategy would behave in live trading. Because Millennium runs a multi-manager pod model, interviewers care that you can reason precisely about risk and edge, not just recite formulas.",
     framework: { name: "Edge and Rigour", summary: "Pair rigorous probability and statistics with clean, testable code and a clear story for where a trading edge comes from and how it decays" },

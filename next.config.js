@@ -106,6 +106,18 @@ const nextConfig = {
       { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
       { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
       { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      // 7 more blog post pairs found in a 2026-09-26 audit with byte-identical
+      // <title> values (same pattern as the 10 pairs above, generated across the
+      // 2026-06 through 2026-07 content batches). The weaker-linked/thinner post
+      // in each pair was removed from data/blog-posts.ts and src/blog-meta.ts;
+      // redirect it to the stronger surviving post.
+      { source: "/blog/tell-me-about-yourself-answer-fresher-india-2026", destination: "/blog/tell-me-about-yourself-freshers-india-2026", permanent: true },
+      { source: "/blog/data-engineer-interview-spark-kafka-dbt-india-2026", destination: "/blog/data-engineer-interview-questions-india-2026-advanced", permanent: true },
+      { source: "/blog/walmart-global-tech-india-software-engineer-bengaluru-chennai-2026", destination: "/blog/walmart-global-tech-india-interview-questions-2026", permanent: true },
+      { source: "/blog/resume-writing-tips-india-2026", destination: "/blog/resume-tips-software-engineer-india-2026", permanent: true },
+      { source: "/blog/why-should-we-hire-you-examples-freshers-india-2026", destination: "/blog/why-should-we-hire-you-answer-india-2026", permanent: true },
+      { source: "/blog/strengths-and-weaknesses-interview-india-2026", destination: "/blog/strengths-weaknesses-interview-answer-india-2026", permanent: true },
+      { source: "/blog/data-structures-algorithms-interview-dsa-guide-india-2026", destination: "/blog/data-structures-algorithms-interview-india-2026", permanent: true },
       // /salary/sarvam and /salary/sarvam-ai were two separate pages for the
       // same company (SWE-only vs SWE+AI-Engineer roles), splitting rankings
       // across near-identical "sarvam ai salary" queries in GSC. Merged all
