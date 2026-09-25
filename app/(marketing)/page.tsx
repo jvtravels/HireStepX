@@ -1,33 +1,38 @@
 import type { Metadata } from "next";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
 
+// Deliberately NOT titled "AI Mock Interview Practice ... | HireStepX" — that
+// phrase is /ai-mock-interview's exact-match title for the highest-volume
+// non-branded keyword. The homepage owns the brand/category position instead
+// (SEO brief §11: don't make the homepage compete with /ai-mock-interview for
+// the same primary keyword).
 export const metadata: Metadata = {
-  title: "AI Mock Interview Practice India 2026 | HireStepX",
+  title: "HireStepX: AI Interview Practice Platform for India",
   description:
-    "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies. Voice AI scores answers in real time. 2 sessions free.",
+    "HireStepX is India's AI interview practice platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies — voice AI scores your answers. 2 sessions free.",
   keywords: [
-    "AI mock interview India",
+    "AI interview practice platform India",
+    "AI interview coach India",
     "mock interview practice India",
     "interview preparation India 2026",
     "TCS interview practice",
     "Google interview preparation India",
     "campus placement interview practice",
-    "AI interview coach India",
   ].join(", "),
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    title: "HireStepX: AI Mock Interview Practice India 2026",
-    description: "Practice interviews for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers in real time. 2 sessions free.",
+    title: "HireStepX: AI Interview Practice Platform for India",
+    description: "India's AI interview practice platform. Practice for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers in real time. 2 sessions free.",
     url: "https://hirestepx.com",
     siteName: "HireStepX",
     locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX: AI Mock Interview Practice India 2026" }],
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX: AI Interview Practice Platform for India" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Mock Interview Practice India 2026 | HireStepX",
-    description: "Practice for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers. 2 sessions free.",
+    title: "HireStepX: AI Interview Practice Platform for India",
+    description: "India's AI interview practice platform. Practice for TCS, Google, Flipkart, and 200+ companies. 2 sessions free.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
