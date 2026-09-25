@@ -997,42 +997,6 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
 
-  /* ── IBM ───────────────────────────────────────────────────────────── */
-  {
-    slug: "ibm-freshers-interview-questions",
-    searchPhrase: "IBM Interview Questions for Freshers 2026",
-    company: "ibm", roleFamily: "campus", focus: "campus-placement",
-    intro: "IBM's fresher hiring (Application Developer, ₹4.5–6.5 LPA) focuses more on problem-solving attitude than raw coding speed. The interview has a strong written and verbal communication section: IBM is a client-facing consulting and technology firm, and unclear answers are penalised explicitly. IBM specifically asks about 'curiosity and continuous learning,' their cultural cornerstone: candidates with self-learning certifications (IBM Badge, AWS Cloud Practitioner, Google Cloud) stand out significantly over those without. IBM's India offices (Bangalore, Hyderabad, Pune, Delhi NCR, Kolkata) primarily hire freshers for software development, testing, and IT consulting roles. The Cognitive Ability and Technical Assessment filters on coding fundamentals and logical reasoning. Candidates should prepare to discuss one project deeply (architecture, their contribution, one trade-off) and be ready to connect IBM's hybrid-cloud strategy (Red Hat OpenShift, IBM Cloud Pak) to why they want to join.",
-    framework: { name: "THINK for IBM", summary: "Thoughtful problem breakdown → Human impact of solution → Inclusion of edge cases → New learning demonstrated → Knowledge of IBM services." },
-    metaKeywords: ["ibm freshers interview", "ibm application developer interview", "ibm campus placement 2026", "ibm fresher interview india 2026", "ibm hiring freshers 2026"],
-    sitemapPriority: 0.8,
-    faqExtra: [
-      {
-        q: "What does IBM look for in fresher interviews beyond technical skills?",
-        a: "IBM specifically evaluates 'curiosity and continuous learning': their cultural cornerstone. Candidates with self-learning certifications (IBM Badge, AWS Cloud Practitioner, Google Cloud) stand out significantly over those without. IBM is a client-facing consulting and technology firm, so unclear answers are penalised explicitly: communication quality is scored separately from answer quality. Prepare a project you can discuss deeply (architecture, your specific contribution, one trade-off you made) and connect IBM's hybrid-cloud strategy (Red Hat OpenShift, IBM Cloud Pak) to why you want to join.",
-      },
-      {
-        q: "What is the IBM Cognitive Ability + Technical Assessment?",
-        a: "IBM's online assessment covers aptitude (verbal, numerical, abstract reasoning) plus 1–2 coding problems (Python or Java preferred). The aptitude section is harder on logical reasoning than TCS NQT but more predictable in format. IBM does not require competitive programming ability: CS fundamentals at depth (OOP, OS, DBMS, networking basics) and a well-articulated project walkthrough are far more important.",
-      },
-      {
-        q: "What is the salary range for IBM Application Developer freshers in India?",
-        a: "IBM's fresher Application Developer role offers ₹4.5–6.5 LPA depending on the track (GTS vs. GBS) and academic background. IBM's India offices are in Bangalore, Hyderabad, Pune, Delhi NCR, and Kolkata, primarily hiring freshers for software development, testing, and IT consulting roles. The GBS (Global Business Services) consulting track has a slightly higher package ceiling for strong candidates.",
-      },
-    ],
-    recruitmentSteps: [
-      "Online Application + academic filter (typically 65%+)",
-      "Cognitive Ability + Technical Assessment",
-      "Technical Interview: Coding problem, CS fundamentals",
-      "HR Interview: Cultural fit, IBM values, learning mindset",
-    ],
-    interviewRounds: [
-      "Cognitive + Technical Test: Aptitude + 1–2 coding problems (Python or Java preferred).",
-      "Technical Interview: Cloud basics (AWS/Azure/IBM Cloud), OOP, databases, your strongest project.",
-      "HR Interview: Curiosity and continuous learning are IBM's core values: have a story ready.",
-    ],
-  },
-
   /* ── Deloitte ──────────────────────────────────────────────────────── */
   {
     slug: "deloitte-analyst-interview-questions",
@@ -1373,6 +1337,8 @@ export const SEO_PAGES: SeoPage[] = [
       { q: "How many rounds does Nykaa's SWE interview have?", a: "Typically 2-3 technical rounds (a DSA round with project discussion, a low-level design round, and sometimes a high-level design round) followed by a managerial round covering past projects and broader system design." },
       { q: "What kind of system design questions does Nykaa ask?", a: "Nykaa's LLD rounds are usually framed around its own operations: dark-store delivery allocation, multi-outlet inventory with concurrent order handling, or catalog/search consistency during flash sales. HLD rounds have covered designing a scalable stock-portfolio-style manager and campaign-targeting engines." },
       { q: "Does Nykaa ask standard DSA questions too?", a: "Yes. Expect medium-difficulty problems on trees, linked lists, graphs, and string manipulation alongside the design rounds, often paired with a 'where would this actually be useful' follow-up tied to Nykaa's product." },
+      { q: "What programming language does Nykaa prefer?", a: "Java and Python are most common in Nykaa's backend stack. You may use either in interviews; confirm with your recruiter." },
+      { q: "How long does Nykaa's hiring process take?", a: "Most candidates report two to four weeks from online assessment to offer, though timelines vary by team and seniority level." },
     ],
     recruitmentSteps: [
       "Resume screen: e-commerce, D2C, or quick-commerce backend experience preferred",
@@ -1394,7 +1360,7 @@ export const SEO_PAGES: SeoPage[] = [
     slug: "myntra-swe-interview-questions",
     searchPhrase: "Myntra Software Engineer Interview Questions India 2026",
     company: "myntra", roleFamily: "swe", focus: "technical",
-    intro: "Myntra's SWE loop runs an online assessment followed by 3-4 rounds: a DSA/technical-discussion round, a machine-coding or low-level-design round, and (for SDE-2 and above) a high-level design round, closing with an HR conversation. What sets Myntra apart is how consistently its design rounds are grounded in its own fashion-commerce operations: coupon-stacking shopping carts, flash-sale search and catalog under Big Billion Days-scale traffic, and personalisation engines that need to react to a live sale rather than a nightly batch job. DSA rounds lean noticeably toward graphs and backtracking over generic array problems.",
+    intro: "Myntra, part of the Flipkart group, runs an SWE loop with an online assessment followed by 3-4 rounds: a DSA/technical-discussion round, a machine-coding or low-level-design round, and (for SDE-2 and above) a high-level design round, closing with an HR conversation. What sets Myntra apart is how consistently its design rounds are grounded in its own fashion-commerce operations: coupon-stacking shopping carts, flash-sale search and catalog under Big Billion Days-scale traffic, and personalisation engines that need to react to a live sale rather than a nightly batch job. DSA rounds lean noticeably toward graphs and backtracking over generic array problems.",
     framework: { name: "Flash-sale-aware design", summary: "Assume 50x traffic spikes are the normal case, not the edge case: separate read-heavy catalog/search paths from write-heavy inventory paths, and decide upfront what can degrade gracefully versus what must stay strictly consistent." },
     metaKeywords: ["myntra software engineer interview india", "myntra swe interview questions 2026", "myntra machine coding round", "myntra low level design interview", "myntra sde interview process"],
     sitemapPriority: 0.76,
@@ -2416,6 +2382,10 @@ export const SEO_PAGES: SeoPage[] = [
       {
         q: "What does IBM's 'Think' culture mean for behavioral interviews?",
         a: "IBM's 'Think' culture values learning agility. Being able to say 'I don't know this yet but I learn quickly by doing X' is an acceptable and often appreciated answer in IBM interviews, especially when paired with a concrete learning story: a certification completed, a side project started, a new technology adopted within 30 days. This is a distinct contrast to companies that penalise knowledge gaps. IBM interviewers are trained to score curiosity and initiative alongside technical correctness.",
+      },
+      {
+        q: "What is the salary range for IBM Application Developer freshers in India?",
+        a: "IBM's fresher Application Developer role offers ₹4.5–6.5 LPA depending on the track (GTS vs. GBS) and academic background. IBM's India offices are in Bangalore, Hyderabad, Pune, Delhi NCR, and Kolkata, primarily hiring freshers for software development, testing, and IT consulting roles. The GBS (Global Business Services) consulting track has a slightly higher package ceiling for strong candidates.",
       },
     ],
     recruitmentSteps: [
@@ -3542,61 +3512,6 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
   {
-    slug: "nykaa-swe-interview-prep-guide-2026",
-    searchPhrase: "Nykaa SWE Interview Prep: DSA, System Design & HR 2026",
-    company: "nykaa", roleFamily: "swe", focus: "technical",
-    intro: "Nykaa's engineering interviews focus on data structures, algorithms, and backend systems that power its beauty and fashion e-commerce platform. Expect questions around catalogue management, recommendation pipelines, and high-concurrency order flows. The process typically spans three to four rounds conducted over video call for most India-based engineering roles.",
-    framework: { name: "PREP", summary: "Problem restatement, reasoning through edge cases, execution with clean code, and performance analysis" },
-    metaKeywords: ["Nykaa software engineer interview", "Nykaa SDE interview questions India", "Nykaa coding interview 2026", "Nykaa backend interview"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "Does Nykaa use a coding platform for screening?", a: "Yes. Nykaa typically sends a HackerEarth or HackerRank online assessment covering two to three DSA problems before scheduling interviews." },
-      { q: "What programming language does Nykaa prefer?", a: "Java and Python are most common in Nykaa's backend stack. You may use either in interviews; confirm with your recruiter." },
-      { q: "How long does Nykaa's hiring process take?", a: "Most candidates report two to four weeks from OA to offer, though timelines vary by team and seniority level." },
-    ],
-    recruitmentSteps: [
-      "Apply via Nykaa careers portal or LinkedIn",
-      "Recruiter screening call (15 to 20 minutes)",
-      "Online assessment: two to three DSA problems on HackerEarth or HackerRank",
-      "Technical interviews (two rounds) covering DSA, system design, and project deep-dives",
-      "HR round: compensation discussion and offer",
-    ],
-    interviewRounds: [
-      "Online Assessment (60 to 90 min): Two to three medium-difficulty DSA problems; topics include arrays, trees, and dynamic programming.",
-      "Technical Round 1 (45 to 60 min): Data structures and algorithms on a shared editor; expect at least one medium LeetCode-style problem.",
-      "Technical Round 2 (45 to 60 min): System design for an e-commerce feature such as product search or cart service, plus a project discussion.",
-      "HR Round (20 to 30 min): Compensation, notice period, and culture-fit questions.",
-    ],
-  },
-  {
-    slug: "myntra-swe-interview-prep-guide-2026",
-    searchPhrase: "Myntra SWE Interview Prep: DSA, LLD & System Design 2026",
-    company: "myntra", roleFamily: "swe", focus: "technical",
-    intro: "Myntra, part of the Flipkart group, runs a structured SDE interview process with a strong emphasis on data structures, algorithms, and low-level design. Engineers work on high-traffic fashion commerce systems, so interviewers probe your understanding of scalability, caching, and microservices. Most rounds take place on video call and follow a predictable four-stage structure.",
-    framework: { name: "STAR-T", summary: "Situation, Task, Action, Result, and Technology tradeoffs used to discuss past projects" },
-    metaKeywords: ["Myntra software engineer interview", "Myntra SDE interview questions India", "Myntra coding round 2026", "Myntra system design interview"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "What topics does Myntra's coding round cover?", a: "Expect arrays, linked lists, trees, graphs, and dynamic programming. Medium to hard LeetCode difficulty is typical for SDE-2 and above." },
-      { q: "Does Myntra ask low-level design questions?", a: "Yes. LLD questions such as designing a rate limiter or parking lot appear in the second or third technical round for most engineering roles." },
-      { q: "Is there a system design round at Myntra?", a: "Yes, usually for SDE-2 and above. Topics include designing recommendation engines, search, or cart checkout at scale." },
-    ],
-    recruitmentSteps: [
-      "Apply through Myntra careers page or Flipkart referral portal",
-      "Recruiter call to confirm profile fitment",
-      "Online coding assessment on HackerRank",
-      "Two to three technical interview rounds",
-      "HR discussion and offer rollout",
-    ],
-    interviewRounds: [
-      "Online Assessment (60 to 90 min): Two to three DSA problems ranging from medium to hard; standard competitive programming topics.",
-      "Technical Round 1 (45 to 60 min): Live coding on a shared editor; one or two DSA problems with discussion of time and space complexity.",
-      "Technical Round 2 (45 to 60 min): Low-level design and object-oriented principles; you may be asked to design a class hierarchy or service interface.",
-      "Technical Round 3 / Hiring Manager (45 to 60 min): System design discussion and a deep-dive into your past projects and architectural decisions.",
-      "HR Round (20 to 30 min): Compensation, joining timelines, and culture questions.",
-    ],
-  },
-  {
     slug: "dream11-swe-interview-questions",
     searchPhrase: "Dream11 Software Engineer Interview Questions India 2026",
     company: "dream11", roleFamily: "swe", focus: "system-design",
@@ -4083,7 +3998,7 @@ export const SEO_PAGES: SeoPage[] = [
     slug: "bharatpe-swe-interview-questions",
     searchPhrase: "BharatPe Software Engineer Interview Questions India 2026",
     company: "bharatpe", roleFamily: "swe", focus: "technical",
-    intro: "BharatPe's engineering interviews emphasise strong fundamentals in data structures, algorithms, and low-level design for its payments and lending platform. Expect questions grounded in real-world fintech constraints: high throughput, idempotency, and fraud detection. Most candidates in India go through three to four rounds over one to two weeks.",
+    intro: "BharatPe's engineering interviews emphasise strong fundamentals in data structures, algorithms, and low-level design for its payments and lending platform serving millions of small merchants across India. Expect questions grounded in real-world fintech constraints: high throughput, idempotency, and fraud detection. Most candidates in India go through three to four rounds over one to two weeks.",
     framework: { name: "PEDAL", summary: "Problem restatement, Edge-case enumeration, Design walkthrough, Algorithm coding, and Latency analysis" },
     metaKeywords: ["BharatPe interview questions", "BharatPe SWE interview India 2026", "BharatPe coding round", "fintech engineer interview India"],
     sitemapPriority: 0.75,
@@ -4101,7 +4016,7 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "Round 1 - Online Assessment (90 min): Two to three DSA problems covering arrays, strings, and graphs on HackerRank.",
       "Round 2 - Technical Interview (60 min): Live coding on DSA problems plus discussion of time and space complexity.",
-      "Round 3 - Low-Level Design (45-60 min): Design a payments module or wallet system with class diagrams and API contracts.",
+      "Round 3 - Low-Level Design (45-60 min): Design a payments module, wallet system, or merchant settlement/fraud-detection flow handling millions of daily transactions, with class diagrams and API contracts.",
       "Round 4 - HR and Culture Fit (30 min): Behavioural questions aligned to BharatPe's startup pace and ownership culture.",
     ],
   },
@@ -4803,32 +4718,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 2 - Technical Interview (60 min): live coding plus discussion of past projects and database design.",
       "Round 3 - System Design (45-60 min): design a high-throughput order-matching or notification system for a trading platform.",
       "Round 4 - HR (30 min): compensation, joining timeline, and team alignment.",
-    ],
-  },
-  {
-    slug: "bharatpe-swe-interview-prep-guide-2026",
-    searchPhrase: "BharatPe SWE Interview Prep: Backend, Payments & DSA 2026",
-    company: "bharatpe", roleFamily: "swe", focus: "technical",
-    intro: "BharatPe engineers build payment infrastructure and lending products serving millions of small merchants across India. Interviews test core DSA, backend system design, and practical knowledge of distributed systems at scale. The process is competitive and moves quickly, with most candidates completing all rounds within two weeks.",
-    framework: { name: "Backend Depth", summary: "coding screens filter on DSA: design rounds assess microservices, payment flows, and fraud detection at merchant scale" },
-    metaKeywords: ["BharatPe interview questions", "BharatPe SWE interview India 2026", "BharatPe software engineer", "fintech payments interview India"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "What languages does BharatPe prefer in coding interviews?", a: "BharatPe primarily uses Java and Go in production. You can code in any language but demonstrating Java or Go familiarity is a plus for backend roles." },
-      { q: "Does BharatPe test knowledge of payment systems specifically?", a: "Yes. Expect at least one question on designing a payment gateway, reconciliation, or idempotency in financial APIs during the system design round." },
-      { q: "How many technical rounds does BharatPe conduct?", a: "Typically two to three technical rounds: one DSA screen, one coding-plus-design round, and a final engineering manager discussion." },
-    ],
-    recruitmentSteps: [
-      "Apply via BharatPe careers page or a referral from a current employee",
-      "Telephonic or online DSA screen: one to two problems, 45 to 60 minutes",
-      "Technical video rounds: DSA, system design, and behavioral",
-      "Offer and background verification",
-    ],
-    interviewRounds: [
-      "Round 1 - Phone Screen (45 min): one to two DSA problems on arrays, hashmaps, or linked lists with code walkthrough.",
-      "Round 2 - Technical Deep Dive (60 min): medium to hard DSA problem plus discussion of a backend project you have owned end to end.",
-      "Round 3 - System Design (60 min): design a merchant payment settlement or fraud detection system handling millions of daily transactions.",
-      "Round 4 - Engineering Manager (30 min): team culture, ownership mindset, and compensation discussion.",
     ],
   },
   {

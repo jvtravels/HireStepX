@@ -130,6 +130,31 @@ const nextConfig = {
       // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
       // more heavily cross-linked survivor.
       { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // A 2026-09-26 SEO audit flagged 4 /questions/ page pairs sharing the
+      // same company+roleFamily+focus tags, competing for the same query
+      // instead of owning distinct search intent (see the "one primary
+      // intent per URL" rule). Removed the weaker/thinner page in each pair
+      // from data/seo-pages.ts, folding any unique content into the survivor
+      // first; redirect the removed pages here.
+      // ibm-freshers-interview-questions and ibm-campus-placement-interview-questions
+      // both covered IBM fresher/campus hiring for the same query; merged into
+      // the campus-placement page (more complete: covers the GBS/GTS track split).
+      { source: "/questions/ibm-freshers-interview-questions", destination: "/questions/ibm-campus-placement-interview-questions", permanent: true },
+      // nykaa-swe-interview-questions and nykaa-swe-interview-prep-guide-2026
+      // both targeted "nykaa swe interview" queries; merged into the
+      // interview-questions page (more specific to Nykaa's actual dark-store/
+      // inventory-concurrency LLD rounds vs. the prep guide's generic content).
+      { source: "/questions/nykaa-swe-interview-prep-guide-2026", destination: "/questions/nykaa-swe-interview-questions", permanent: true },
+      // myntra-swe-interview-questions and myntra-swe-interview-prep-guide-2026
+      // both targeted "myntra swe interview" queries; merged into the
+      // interview-questions page (more specific to Myntra's flash-sale/Big
+      // Billion Days design rounds vs. the prep guide's generic content).
+      { source: "/questions/myntra-swe-interview-prep-guide-2026", destination: "/questions/myntra-swe-interview-questions", permanent: true },
+      // bharatpe-swe-interview-questions and bharatpe-swe-interview-prep-guide-2026
+      // both targeted "bharatpe swe interview" queries with near-identical
+      // round structure; merged into the interview-questions page (matches
+      // the natural search phrasing used across the rest of the /questions/ tree).
+      { source: "/questions/bharatpe-swe-interview-prep-guide-2026", destination: "/questions/bharatpe-swe-interview-questions", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense

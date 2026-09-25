@@ -1525,7 +1525,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "behavioral-interview-questions-freshers"],
-    practicePageSlugs: [{ label: "Ibm Freshers Interview Questions", slug: "ibm-freshers-interview-questions" }, { label: "Ibm Consultant Interview Questions", slug: "ibm-consultant-interview-questions" }],
+    practicePageSlugs: [{ label: "Ibm Campus Placement Interview Questions", slug: "ibm-campus-placement-interview-questions" }, { label: "Ibm Consultant Interview Questions", slug: "ibm-consultant-interview-questions" }],
     cta: "IBM's behavioral round is the round most candidates are least prepared for, because it's not just STAR: it's STAR answers that explicitly demonstrate IBM's three values. Generic 'I worked hard and delivered results' answers score poorly. HireStepX lets you practice these answers out loud and get specific feedback on whether your answer demonstrates the ownership, innovation, or trust that IBM is actually looking for.",
     relatedLinks: [{ label: "IBM Salary Guide India 2026", href: "/salary/ibm" }],
   },
@@ -2014,7 +2014,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
     relatedSlugs: ["tech-mahindra-interview-questions", "cognizant-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
-    practicePageSlugs: [{ label: "Ibm Freshers Interview Questions", slug: "ibm-freshers-interview-questions" }],
+    practicePageSlugs: [{ label: "Ibm Campus Placement Interview Questions", slug: "ibm-campus-placement-interview-questions" }],
     cta: "Mphasis's BFSI-focused technical rounds test SQL and data analysis more than most IT services interviews. HireStepX lets you practice these SQL-heavy technical rounds with real banking domain scenarios: explaining your approach out loud to an AI interviewer and getting instant feedback on both accuracy and communication clarity.",
     relatedLinks: [
       { label: "Mphasis Salary Guide India 2026", href: "/salary/mphasis" },

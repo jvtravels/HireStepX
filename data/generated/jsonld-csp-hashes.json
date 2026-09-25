@@ -4498,13 +4498,6 @@
     "sha256-8vzxq29JKFz40n/eaQiKOD7n/IkJ/mFE4ng0jHoYjF4=",
     "sha256-6bFA+aVea9HDATNe2n+7y6Vt0O/bwMbifQUgEf+w9RQ="
   ],
-  "/questions/ibm-freshers-interview-questions": [
-    "sha256-d+WWX5tREt92nXTm1KsFbagAQV3Tj6GFazqRz0XxYI8=",
-    "sha256-Q25SwlN/DIf3eDTRbe0vWpH1YGAVPQ4ELTH3YCSspvk=",
-    "sha256-rByRWJ+9d2RpWB9qUfeRIC1MDLwIqSBR6x8W2+HDudQ=",
-    "sha256-Rw7eXDqU/zk5gtUthQdLJoSq3d33bjDuEpuC/zHn9+Y=",
-    "sha256-idiDglQM969xQFmRpVbnKZnnG52Gb/qo8RucTR5TTm0="
-  ],
   "/questions/deloitte-analyst-interview-questions": [
     "sha256-BgXo262tbWTOjGnMZoVochbOqR3wau4xX2dnG+LeZgw=",
     "sha256-xL3tGuoCmsm+hxntrfRLWCwglSEaaWpDCBDqNj6Zscc=",
@@ -4576,7 +4569,7 @@
     "sha256-Q7cauaO+Op2Ef/X9+YqcL9PBz6kcHK62ehBB21NacTE="
   ],
   "/questions/nykaa-swe-interview-questions": [
-    "sha256-d7YDgjazkVgl6UEcDW7DxKx0cprS6Ipq4Go7vkLBsg0=",
+    "sha256-3V1zCefWH3cNoQp0THBUbyVqL8MrQzxzivSWxmFvYPo=",
     "sha256-JG9bBTC65H8dvxEmtuVG1/BMx2gU9jCyDRnwAGmcaRg=",
     "sha256-clk9M14QNRLDUT19NCb7t5ZMnRtHAIcVCAIGq3+Bqeg=",
     "sha256-sHOwRIpOwvnCS5tDPlo6QA7fERahK9hFoyGeuNODVGU=",
@@ -4584,9 +4577,9 @@
   ],
   "/questions/myntra-swe-interview-questions": [
     "sha256-uq6OzmVl6GtO6z0Q1Y+JJCsBihWvSGklTJvpNcuI5xc=",
-    "sha256-qhDBetrkQ4d89VLQKFrsVY5ASPI+pujw8KESrVkVoL4=",
+    "sha256-z11VWwZTFKX/AfhLwq0OUkZDQvmB7QQbuPsxntXuK/E=",
     "sha256-fGSHFo0CVH3T+ZJEoSHrzOg8oyfmu+eFeZgtXKk+fys=",
-    "sha256-plEdiNXUsIJlYtcLoqAsAP8Qc7vypia6AJboCn9Fg0w=",
+    "sha256-ojhIoEbXvl2i5jPjBGt8KoPK7miXh9Wd5GcVDRwj9T8=",
     "sha256-hOpARpEhqsrJlrAiFtOvsB6n/A6HINwYIeH00NXb1kg="
   ],
   "/questions/dream11-swe-system-design-interview-questions": [
@@ -4800,7 +4793,7 @@
     "sha256-0BpvdoeF56zLztcuqAVACaw1AWhaYnXkqDRFXuPIJrk="
   ],
   "/questions/ibm-campus-placement-interview-questions": [
-    "sha256-Ry0edcp/URDnbhwnIyZBcEm/0MiB8LHQ7l/UugqIJfg=",
+    "sha256-7G7SU3wu7J9vXAuYw8jmCQKk8w61NQI3T1Thpu7oGhI=",
     "sha256-6J4BxQuiJZGk0Xr7VS/v1sLc9a7dJR6vJFADt6Zt2Ps=",
     "sha256-saycBdrNsjiPMKejP7X4nAYsGJs5Oxf7ZsPto+UtvFI=",
     "sha256-CoW8XaGYz5TqyshmelvpWGhzBAW3SVqS9zxkUGXPcMI=",
@@ -5072,20 +5065,6 @@
     "sha256-rlBWycTTX1TmTyO9o2TOoO+EnjxXoNuAZqb3s/qBIbU=",
     "sha256-VMIdPJH+VUrR8rxkqJDrx7SW/MjluK/oHj4iF6p9MjA="
   ],
-  "/questions/nykaa-swe-interview-prep-guide-2026": [
-    "sha256-kz7GJsKOU8oDVNBGiCLxq8G3clVrNhQJGXEKnSvIbtM=",
-    "sha256-KUWmKvIS8wTbYNdeuCPT/bkHrINmWotRtfBkRCIzX94=",
-    "sha256-YsycBt9wckLCtenr7JRzpUGcddVK8i89hPEJkCqNJ/U=",
-    "sha256-vNl+ANbcfj1UZWTykDRY4u6bnuOa6r+SLIy7vhLQpm4=",
-    "sha256-uLPIvKz4xlZaJPTsHWfOLE9D+W1yHRhPM5ECe6psKjQ="
-  ],
-  "/questions/myntra-swe-interview-prep-guide-2026": [
-    "sha256-hcOtYQCspqogAIYUGiR2Ok3VCQDdH0lo4XEjj4jniRU=",
-    "sha256-rAg9TUATtSuiUyj5xpkNpk9MKB8eQ2Ptee9NnbKtZlw=",
-    "sha256-3njhIRc0UXo5da+LIQ7ioVAlCjAQS29zHSMQZ8vjpQk=",
-    "sha256-nzXJduZQ7gWVKysXm7P2AGiH+twOHH8DaMDW+hdM2rA=",
-    "sha256-yrchmpWS5/7NstgNVUAjvIwRoR038InOas2sNrbwtog="
-  ],
   "/questions/dream11-swe-interview-questions": [
     "sha256-lD+XEYL7Q1GuUvMWKGOEdWeVU0DcUeSBp3pQXRSV20A=",
     "sha256-P3gIc5erqSgeqNUvO6ok4bxwJdGkb7HsYUfxDAP9auc=",
@@ -5213,10 +5192,10 @@
     "sha256-UAqwzdKpIYYv0gdvslvUsMfCU7Xk6Vry66iYgzYO6Gw="
   ],
   "/questions/bharatpe-swe-interview-questions": [
-    "sha256-ldxmtDasBvEJmLUqlugXx33A6Pbr2fvtpBZLu2r2Z/g=",
-    "sha256-2IYGhh9KHiswbkAcp77oW5LSggPduhCKA8GSP/gAbHQ=",
+    "sha256-PAsr8uDtxZ2fCYC9jbfbYtHspYOll4vC92C4fhPTyeI=",
+    "sha256-IB2f2lHPTV7DQuVNQVnC5qXVc6KzkjuDBU243irCBpo=",
     "sha256-ht5TW5oZ79vHKNB1k1HLMO6I95eYiTZNnfhsJDiW8C0=",
-    "sha256-HXnbtIOQit8sWJF+69wLA0D9qOfNJT4H2H+IRClVjkA=",
+    "sha256-Bosnyjb8PxWc/+YHr4PaLGuTJ/WIzNLyj0u0sVPO9BQ=",
     "sha256-+Ko+/ZIQm+EAxSLtcjnpN0SsDpKWNDGMjB52U9ufGUA="
   ],
   "/questions/groww-swe-interview-questions": [
@@ -5393,13 +5372,6 @@
     "sha256-rmBaKXY4Qaqvo4Xa1pMAlqkDqmrsofzV4PDY4QcLnVE=",
     "sha256-41L+DhFu83OkIaFkH3NnwKeiYe/BJN2vm0zB522dUIs=",
     "sha256-alG9lw1cDD1q7OChHXRQqXA/XyWS9hM4L/KfWAr0imU="
-  ],
-  "/questions/bharatpe-swe-interview-prep-guide-2026": [
-    "sha256-NZNkvdN3hOU9njQNHap+Ca1POUmQlSiLdy0pvrxWrQM=",
-    "sha256-i8BgNFgARoLJzd7MYiYK/XVSVje1StpMZAzYa9BY6UY=",
-    "sha256-xZXXyvyr4eBhktF3EwOx2dQGgeLQ3CsvtjgZP2Ah4Xo=",
-    "sha256-bX1xNXLERE6siw5o8aiF/enyspoZdQ9mulHyMjt8drA=",
-    "sha256-5be/fAkl1PmsJsXapYB2bE8O/pxWKu8X6ZeYDNI9BQ0="
   ],
   "/questions/pine-labs-swe-interview-questions": [
     "sha256-wafrA9WtDf/d0+c+RWx1rYnQqpnTCcn3rqIpPHH0zKs=",
