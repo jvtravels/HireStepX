@@ -50,6 +50,16 @@ if (
 // never decode images under test, so neutralize the side effect at its source
 // on the impl prototype. This is ordering-independent and covers every code
 // path (the `.src` setter and React's setAttribute) in one place.
+// jsdom's HTMLCanvasElement.getContext throws ("Canvas.createCanvas is not a
+// function") rather than returning null when the optional native `canvas`
+// package isn't installed, because it always tries to hand back a real
+// context. Libraries that render into <canvas> (thinking-orbs) already treat
+// a null context as "no rendering available" and bail out cleanly — so stub
+// getContext to return null instead of throwing, matching that contract.
+if (typeof window !== "undefined" && typeof window.HTMLCanvasElement === "function") {
+  window.HTMLCanvasElement.prototype.getContext = () => null;
+}
+
 if (typeof window !== "undefined" && typeof window.HTMLImageElement === "function") {
   try {
     const probe = window.document.createElement("img");

@@ -1238,27 +1238,15 @@ input[type="range"]::-moz-range-thumb {
   h2 { font-size: 18px !important; }
 }
 
-/* ─── Interview canvas visualizer animations ────────────────────────
-   Driven by hsx-viz-${state} className applied by CanvasVoiceVisualizer.
-   Idle = barely-there breath; ai-speaking = gentle outward pulse;
-   ai-thinking = slow rotate ripple; user-speaking = tighter pulse;
-   warning = slow opacity heartbeat. */
+/* ─── Interview canvas visualizer ────────────────────────────────────
+   CanvasVoiceVisualizer renders a thinking-orbs <ThinkingOrb>, which
+   drives its own per-state animation and respects prefers-reduced-motion
+   internally — no CSS keyframes needed here. */
 .hsx-viz {
   display: inline-block; position: relative;
   transform-origin: 50% 50%;
-  will-change: transform, opacity, filter;
 }
-.hsx-viz svg { display: block; }
-@keyframes hsx-viz-breath { 0%,100% { transform: scale(1); opacity: .95; } 50% { transform: scale(1.012); opacity: 1; } }
-.hsx-viz-idle { animation: hsx-viz-breath 5.6s ease-in-out infinite; }
-@keyframes hsx-viz-speak { 0% { transform: scale(1); filter: brightness(1); } 35% { transform: scale(1.06); filter: brightness(1.06); } 70% { transform: scale(.99); filter: brightness(.99); } 100% { transform: scale(1); filter: brightness(1); } }
-.hsx-viz-ai-speaking { animation: hsx-viz-speak 2.4s cubic-bezier(.45,0,.55,1) infinite; }
-@keyframes hsx-viz-think { 0% { transform: rotate(0) scale(1); opacity: .85; } 50% { transform: rotate(180deg) scale(1.02); opacity: 1; } 100% { transform: rotate(360deg) scale(1); opacity: .85; } }
-.hsx-viz-ai-thinking { animation: hsx-viz-think 7.2s linear infinite; }
-@keyframes hsx-viz-listen { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
-.hsx-viz-user-speaking { animation: hsx-viz-listen 1.4s cubic-bezier(.45,0,.55,1) infinite; }
-@keyframes hsx-viz-warn { 0%,100% { opacity: .85; } 50% { opacity: 1; } }
-.hsx-viz-warning { animation: hsx-viz-warn 1.8s ease-in-out infinite; }
+.hsx-viz canvas { display: block; }
 
 /* Halo behind visualizer — color-tinted per state.
    Opacities bumped 1.6× from the original canvas mockup because
@@ -1304,7 +1292,6 @@ input[type="range"]::-moz-range-thumb {
 
 /* Reduced motion — kill animations */
 @media (prefers-reduced-motion: reduce) {
-  .hsx-viz-idle, .hsx-viz-ai-speaking, .hsx-viz-ai-thinking, .hsx-viz-user-speaking, .hsx-viz-warning,
   .hsx-iv-ring, .iv-canvas-stage > * { animation: none !important; }
 }
 
