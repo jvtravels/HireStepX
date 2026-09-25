@@ -28,6 +28,7 @@ const PRODUCT_LINKS: Array<[string, string]> = [
 
 const COMPANY_LINKS: Array<[string, string]> = [
   ["About", "/about"],
+  ["Methodology", "/methodology"],
   ["Contact", "/contact"],
   ["How it works", "/how-it-works"],
   ["Blog", "/blog"],

@@ -33,6 +33,7 @@ import { buildPricingJsonLd } from "../app/(marketing)/pricing/_jsonld";
 import { buildPrivacyJsonLd } from "../app/(marketing)/privacy/_jsonld";
 import { buildReferralJsonLd } from "../app/(marketing)/referral/_jsonld";
 import { buildRefundJsonLd } from "../app/(marketing)/refund/_jsonld";
+import { buildMethodologyJsonLd } from "../app/(marketing)/methodology/_jsonld";
 import { buildSalaryReport2026JsonLd } from "../app/(marketing)/salary-report-2026/_jsonld";
 import { buildTelephonicInterviewJsonLd } from "../app/(marketing)/telephonic-interview-questions/_jsonld";
 import { buildTermsJsonLd } from "../app/(marketing)/terms/_jsonld";
@@ -107,6 +108,7 @@ const staticRoutes: Record<string, { __html: string }[]> = {
   "/privacy": buildPrivacyJsonLd(),
   "/referral": buildReferralJsonLd(),
   "/refund": buildRefundJsonLd(),
+  "/methodology": buildMethodologyJsonLd(),
   "/salary-report-2026": buildSalaryReport2026JsonLd(),
   "/telephonic-interview-questions": buildTelephonicInterviewJsonLd(),
   "/terms": buildTermsJsonLd(),
