@@ -155,6 +155,30 @@ const nextConfig = {
       // round structure; merged into the interview-questions page (matches
       // the natural search phrasing used across the rest of the /questions/ tree).
       { source: "/questions/bharatpe-swe-interview-prep-guide-2026", destination: "/questions/bharatpe-swe-interview-questions", permanent: true },
+      // razorpay-engineering-interview-questions and
+      // razorpay-system-design-interview-questions shared the same
+      // company+roleFamily+focus tags; the engineering page's Technical
+      // Round 2 already covers UPI idempotency/settlement reconciliation
+      // in similar depth. Merged the acquirer-routing content into the
+      // engineering page and redirect the system-design page there.
+      { source: "/questions/razorpay-system-design-interview-questions", destination: "/questions/razorpay-engineering-interview-questions", permanent: true },
+      // swiggy-engineering-interview-questions and
+      // swiggy-system-design-interview-questions both centered their
+      // design content on the same geospatial delivery-assignment/
+      // notification problem with near-identical framing. Merged the
+      // restaurant-discovery-feed content into the engineering page and
+      // redirect the system-design page there.
+      { source: "/questions/swiggy-system-design-interview-questions", destination: "/questions/swiggy-engineering-interview-questions", permanent: true },
+      // uber-swe-interview-questions and uber-system-design-interview-questions
+      // described ride-matching/geospatial/surge-pricing almost verbatim.
+      // Merged the write/read location-path detail into the swe page and
+      // redirect the system-design page there.
+      { source: "/questions/uber-system-design-interview-questions", destination: "/questions/uber-swe-interview-questions", permanent: true },
+      // dream11-swe-interview-questions duplicated dream11-swe-system-design-
+      // interview-questions' intent without its product-specific depth
+      // (team-creation credit cap, live leaderboard recompute). Merged the
+      // backend-stack FAQ into the system-design page and redirect here.
+      { source: "/questions/dream11-swe-interview-questions", destination: "/questions/dream11-swe-system-design-interview-questions", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense

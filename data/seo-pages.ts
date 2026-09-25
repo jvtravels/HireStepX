@@ -162,6 +162,10 @@ export const SEO_PAGES: SeoPage[] = [
         q: "What is the Razorpay SDE-1 salary in India 2026?",
         a: "Razorpay SDE-1 total CTC ranges from approximately ₹10.5L to ₹29.4L in India (2026), including base salary, variable pay, and pre-IPO ESOPs. Negotiation focus at this level is fixed salary plus joining bonus. Source: AmbitionBox and Glassdoor aggregated data.",
       },
+      {
+        q: "Does Razorpay ask about routing transactions across multiple banks?",
+        a: "Yes, for gateway-facing roles. A recurring Technical Round 2 prompt is designing a payment gateway that routes transactions across multiple acquiring banks to maximise success rate: candidates are expected to reason about smart routing based on bank uptime/success-rate signals, not just idempotency and reconciliation.",
+      },
     ],
     recruitmentSteps: [
       "Recruiter screen: background, motivation, and salary expectations (30 min)",
@@ -174,7 +178,7 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "Online Coding Round (60 min): 2 medium-hard DSA problems. Standard filter.",
       "Technical Round 1: DSA + Code Quality (60 min): One harder problem with problem decomposition and code review discussion. Razorpay expects production-readiness thinking: how would this code behave in a payment system?",
-      "Technical Round 2: System Design (60 min, SDE-2+): Payments-specific architecture: UPI failure handling, idempotent payment retries, settlement reconciliation, NPCI rate limiting. 'I'd add caching' is not a sufficient answer: be specific about which cache, what TTL, and what happens on cache stampede.",
+      "Technical Round 2: System Design (60 min, SDE-2+): Payments-specific architecture: UPI failure handling, idempotent payment retries, settlement reconciliation, NPCI rate limiting, and smart routing across multiple acquiring banks to maximise transaction success rate. 'I'd add caching' is not a sufficient answer: be specific about which cache, what TTL, and what happens on cache stampede.",
       "Culture Round (45 min): Genuine ownership stories evaluated on conviction, not keyword alignment. Can you explain a technical choice in terms of what a merchant experiences when a payment fails at checkout?",
     ],
   },
@@ -1398,6 +1402,7 @@ export const SEO_PAGES: SeoPage[] = [
       { q: "What is Dream11's most common system design question?", a: "Designing the HLD for the team-creation feature: users pick 11 players under a credit cap before a match locks, with the database schema and race-condition handling at the deadline as the core of the discussion." },
       { q: "Does Dream11 ask about real-time systems?", a: "Yes. A recurring prompt is designing real-time score and leaderboard updates for millions of concurrent users during a live match, where a single scoring event can affect thousands of leaderboards at once." },
       { q: "How many rounds does the Dream11 SDE interview have?", a: "Typically five: two online DSA rounds, then onsite rounds covering resume/project discussion, low-level design, high-level design, and a hiring-manager plus HR round." },
+      { q: "What backend technologies does Dream11 use?", a: "Dream11's stack includes Go, Java, Kafka, Redis, and Cassandra. Familiarity with at least one of these, and how it would handle a hard match-lock deadline or a burst-fanout scoring event, strengthens your interview performance." },
     ],
     recruitmentSteps: [
       "Online Assessment 1: DSA problems (trees, graphs, DP)",
@@ -1412,7 +1417,7 @@ export const SEO_PAGES: SeoPage[] = [
       "Resume and Projects Round (45 min): detailed walkthrough of past project architecture and technology choices.",
       "Low-Level Design Round (60 min): design a concrete module (e.g. contest or wallet logic) with clean class boundaries and SOLID principles.",
       "High-Level Design Round (60-90 min): design Dream11's team-creation feature, a real-time leaderboard system, or a monitoring/alerting system for match-day traffic; expect a direct question on handling a 50x traffic spike.",
-      "Hiring Manager and HR Round (30-45 min): situational questions, project ownership, and compensation discussion.",
+      "Hiring Manager and HR Round (30-45 min): situational questions, project ownership, how you operate under tight IPL-season deadlines, and compensation discussion.",
     ],
   },
 
@@ -1688,6 +1693,10 @@ export const SEO_PAGES: SeoPage[] = [
         q: "How many rounds does Swiggy engineering interview have?",
         a: "Swiggy's engineering interview loop has 4–5 rounds: Online Assessment (2–3 DSA problems, medium difficulty, 60–90 min) → Technical Round 1 (coding: arrays, graphs, or DP, 45–60 min) → Technical Round 2 (coding + problem decomposition, 45–60 min) → System Design (real-time logistics or notification architecture, 60 min) → Behavioral Round (ownership, speed under uncertainty, 30–45 min).",
       },
+      {
+        q: "Does Swiggy's system design round cover restaurant discovery, not just delivery?",
+        a: "Yes. Alongside order-assignment and notification architecture, Swiggy system design rounds also probe a personalised restaurant-discovery feed: keeping menu availability fresh, ranking signals, and cache invalidation under a sharp dinner-peak load. Separating the write-heavy delivery-partner location-ping path from ETA reads is a related design point interviewers push on.",
+      },
     ],
     recruitmentSteps: [
       "Online assessment: 2–3 DSA coding problems (medium difficulty, 60–90 minutes)",
@@ -1700,7 +1709,7 @@ export const SEO_PAGES: SeoPage[] = [
       "Online Assessment (60–90 min): 2–3 DSA problems at medium difficulty. Standard filter.",
       "Technical Round 1: Coding (45–60 min): Arrays, graphs, or dynamic programming. One problem with full optimisation discussion.",
       "Technical Round 2: Coding + Decomposition (45–60 min): More complex problem with follow-up optimisation and edge-case discussion.",
-      "System Design (60 min): Real-time logistics under adversarial conditions: monsoon outages, restaurant denial cascades, surge demand from cricket finals. Notification delivery under 200ms for 5000 simultaneous orders is a common prompt. Geospatial indexing strategy and push vs pull architecture are key concepts.",
+      "System Design (60 min): Real-time logistics under adversarial conditions: monsoon outages, restaurant denial cascades, surge demand from cricket finals. Notification delivery under 200ms for 5000 simultaneous orders is a common prompt. Geospatial indexing strategy and push vs pull architecture are key concepts. Also covers the personalised restaurant-discovery feed: menu-availability freshness, ranking, and cache invalidation.",
       "Behavioral Round (30–45 min): Ownership, speed under uncertainty, and cross-functional stories. Swiggy's engineering culture rewards moving fast under pressure.",
     ],
   },
@@ -2704,6 +2713,7 @@ export const SEO_PAGES: SeoPage[] = [
       { q: "What system design topics come up in Uber SDE interviews?", a: "Ride matching at scale, real-time driver location tracking, surge pricing calculation, geospatial indexing (H3/quadtrees), and distributed rate limiting. Expect questions on consistency vs availability trade-offs explicitly." },
       { q: "How many rounds does Uber SDE interview have in India?", a: "Typically 4 to 5 rounds: a coding screen, 2 DSA rounds, 1 system design round, and a hiring manager behavioral round. Senior roles may add a second design round." },
       { q: "What DSA topics appear in Uber SDE interviews?", a: "Graphs (BFS, DFS, shortest path), greedy algorithms, heaps and priority queues, and interval problems. Graph questions appear most frequently given Uber's routing and matching domain." },
+      { q: "How should I handle the high write volume of driver location pings in an Uber design?", a: "Ingest location updates through a streaming pipeline into a geospatial index (geohashing or a quadtree) optimised for writes, and serve ETA reads from a separate read-optimised path so write load never blocks queries. Interviewers push on this write/read split as part of the driver-location-service prompt." },
     ],
     recruitmentSteps: [
       "Recruiter screen: role and compensation alignment, 30 min",
@@ -2715,7 +2725,7 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "Coding Screen (45 min): 1 to 2 medium-hard DSA problems, often graph-based. Uber favours problems that reflect real product scenarios like shortest path or scheduling.",
       "DSA Rounds x2 (45 min each): Graphs, heaps, greedy, and dynamic programming. Interviewers ask you to articulate why your approach works before you start coding.",
-      "System Design (60 to 75 min): Design a real-time system at Uber scale. Common prompts: design the driver location service, design surge pricing, design the ride-matching system. Start with the data model and consistency requirements before jumping to components.",
+      "System Design (60 to 75 min): Design a real-time system at Uber scale. Common prompts: design the driver location service, design surge pricing, design the ride-matching system. Start with the data model and consistency requirements before jumping to components. For the location service specifically, separate the write-heavy location-ping ingestion path from ETA reads.",
       "Hiring Manager Round (45 min): Ownership stories, cross-team collaboration, and why Uber. Prepare examples from your last two roles with measurable impact.",
     ],
   },
@@ -3509,35 +3519,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 1 - Online Coding Test (60 min): 2 to 3 problems at easy to medium difficulty covering arrays, strings, and basic OOP; SQL query round may be included.",
       "Round 2 - Technical Interview 1 (45 to 60 min): Core Java, Spring Boot, REST API design, microservices patterns, and one SQL problem on joins or aggregations.",
       "Round 3 - Technical Interview 2 and HR (45 min): High-level system design for an insurance use case (e.g., claims processing API), behavioural questions, and compensation discussion.",
-    ],
-  },
-  {
-    slug: "dream11-swe-interview-questions",
-    searchPhrase: "Dream11 Software Engineer Interview Questions India 2026",
-    company: "dream11", roleFamily: "swe", focus: "system-design",
-    intro: "Dream11 is India's largest fantasy sports platform and its engineering team faces some of the most demanding traffic spikes in the country, particularly during IPL match days. Interviews place heavy weight on distributed systems design, real-time data pipelines, and high-concurrency backend patterns. You should be prepared to discuss trade-offs around consistency, availability, and latency at scale.",
-    framework: { name: "SCALE", summary: "Scope requirements, Choose components, Architect data flow, Load-test assumptions, Evaluate trade-offs" },
-    metaKeywords: ["Dream11 software engineer interview", "Dream11 system design interview India", "Dream11 SDE interview questions 2026", "Dream11 backend interview"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "How important is system design at Dream11?", a: "Very important. Dream11 handles millions of concurrent users during match start times, so system design is weighted at least equally with DSA in senior rounds." },
-      { q: "What backend technologies does Dream11 use?", a: "Dream11's stack includes Go, Java, Kafka, Redis, and Cassandra. Familiarity with at least one of these strengthens your interview performance." },
-      { q: "Does Dream11 have a competitive programming round?", a: "Yes. An online assessment with two to three DSA problems is standard before technical interviews are scheduled." },
-    ],
-    recruitmentSteps: [
-      "Apply on Dream11 careers page or via a referral",
-      "Initial recruiter screen (15 to 20 minutes)",
-      "Online coding assessment",
-      "Two to three technical rounds covering DSA and system design",
-      "Leadership or values round with a senior engineer or manager",
-      "Compensation discussion and offer",
-    ],
-    interviewRounds: [
-      "Online Assessment (60 to 90 min): Two to three DSA problems; medium to hard difficulty with emphasis on optimization.",
-      "Technical Round 1 (45 to 60 min): Data structures and algorithms; expect graph or tree problems along with complexity analysis.",
-      "Technical Round 2 (60 min): System design for a high-scale feature such as a leaderboard, team-locking service, or real-time score feed.",
-      "Technical Round 3 / Deep Dive (45 to 60 min): Past project walkthrough with a focus on scalability decisions, failures, and lessons learned.",
-      "Culture and Leadership Round (30 to 45 min): Values alignment, conflict resolution, and how you operate under tight IPL-season deadlines.",
     ],
   },
   {
@@ -8008,34 +7989,6 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
 
-  /* ── Uber — system design ───────────────────────────────────── */
-  {
-    slug: "uber-system-design-interview-questions",
-    searchPhrase: "Uber System Design Interview Questions 2026",
-    company: "uber", roleFamily: "swe", focus: "system-design",
-    intro: "Uber's system-design rounds are built on its own hard problems: match riders to nearby drivers at city scale, compute surge pricing in near real time, and stream live driver locations and ETAs under heavy write load. In 2026 strong candidates reach for geospatial indexing (geohashing or quadtrees) for proximity search, separate the write-heavy location-ping path from ETA reads, and reason about the dispatch and assignment trade-offs. Interviewers push on latency budgets, hotspot cities, and consistency of the matching state. A generic 'store locations in a database and query' answer gets dismantled fast.",
-    framework: { name: "Geo-Index-and-Dispatch", summary: "Use a geospatial index for proximity search, separate high-write location ingestion from ETA reads, and defend the matching and dispatch trade-offs under latency budgets" },
-    metaKeywords: ["Uber system design interview questions", "Uber SDE system design 2026", "design ride matching interview", "surge pricing system design"],
-    sitemapPriority: 0.72,
-    faqExtra: [
-      { q: "What system-design questions does Uber ask?", a: "Design rider-driver matching, surge pricing computed in near real time, and live location tracking with ETAs, all at city scale with heavy write volume." },
-      { q: "How do I design Uber's ride matching?", a: "Index driver locations with geohashing or a quadtree for fast proximity search, then run a dispatch step that assigns the best driver while accounting for latency, fairness, and in-flight matches." },
-      { q: "How does Uber handle the high write volume of location pings?", a: "Ingest location updates through a streaming pipeline into a spatial index optimised for writes, and serve ETA reads from a separate read-optimised path so the write load never blocks queries." },
-    ],
-    recruitmentSteps: [
-      "Recruiter screen and coding phone screen",
-      "Onsite coding rounds on DSA",
-      "System-design round on a geospatial or real-time service",
-      "Behavioral and hiring-manager round, then offer",
-    ],
-    interviewRounds: [
-      "Round 1 (45 min): coding phone screen on data structures and algorithms.",
-      "Round 2-3 (45 min each): onsite coding rounds.",
-      "Round 4 (45-60 min): system-design round on matching, pricing, or tracking.",
-      "Round 5 (45 min): behavioral round on ownership and impact.",
-    ],
-  },
-
   /* ── JPMorgan Chase — technical ─────────────────────────────── */
   {
     slug: "jpmorgan-technical-interview-questions",
@@ -8115,33 +8068,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 1 (30 min): recruiter screen on fit and why Flipkart.",
       "Round 2 (45-60 min): hiring-manager behavioral round on ownership and pressure.",
       "Round 3 (45 min): cross-functional or bar-raiser round drilling into one story.",
-    ],
-  },
-
-  /* ── Razorpay — system design ───────────────────────────────── */
-  {
-    slug: "razorpay-system-design-interview-questions",
-    searchPhrase: "Razorpay System Design Interview Questions 2026",
-    company: "razorpay", roleFamily: "swe", focus: "system-design",
-    intro: "Razorpay's system-design rounds are payments-native and India-specific. In 2026 expect prompts on a payment gateway that routes transactions across multiple banks to maximise success rate, a settlement system that reconciles and pays out to merchants without losing or double-paying money, and handling UPI callbacks that arrive late, out of order, or twice. Interviewers probe smart routing across acquirers, idempotency, reconciliation, and consistent state transitions under asynchronous, unreliable notifications. Candidates who understand UPI's real-world messiness and design idempotent, reconcilable flows stand out from generic web-scale answers.",
-    framework: { name: "Route-Reconcile-Idempotent", summary: "Route across acquirers to maximise success, make every state transition idempotent, and build reconciliation to guarantee no money is lost or double-paid under async UPI callbacks" },
-    metaKeywords: ["Razorpay system design interview questions", "Razorpay SDE system design 2026", "payment gateway system design", "UPI system design interview"],
-    sitemapPriority: 0.7,
-    faqExtra: [
-      { q: "What system-design questions does Razorpay ask?", a: "Design a multi-bank payment gateway that maximises success rate, a merchant settlement and reconciliation system, and UPI callback handling that tolerates late, duplicate, and out-of-order notifications." },
-      { q: "How do I handle UPI callbacks in a Razorpay design?", a: "Treat callbacks as unreliable: make status updates idempotent, key them by transaction id, and design state transitions that are safe under duplicate, delayed, or out-of-order delivery." },
-      { q: "What makes Razorpay system design distinct?", a: "It is payments-native and India-specific. Interviewers reward understanding of acquirer routing, settlement reconciliation, idempotency, and the real-world messiness of UPI over generic web-scale answers." },
-    ],
-    recruitmentSteps: [
-      "Recruiter or online assessment screen",
-      "Technical coding round on DSA",
-      "System-design round on a payments service",
-      "Hiring-manager round, then offer",
-    ],
-    interviewRounds: [
-      "Round 1 (60 min): coding round on data structures and algorithms.",
-      "Round 2 (60 min): system-design round on gateways, settlement, or UPI flows.",
-      "Round 3 (45-60 min): design deep-dive on correctness and reconciliation plus behavioral.",
     ],
   },
 
@@ -8412,33 +8338,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 1 (45 min each): first-round interviews pairing a case with the PEI.",
       "Round 2 (45 min each): final-round cases and PEI with partners.",
       "The PEI is woven through every round alongside the case.",
-    ],
-  },
-
-  /* ── Swiggy — system design ─────────────────────────────────── */
-  {
-    slug: "swiggy-system-design-interview-questions",
-    searchPhrase: "Swiggy System Design Interview Questions 2026",
-    company: "swiggy", roleFamily: "swe", focus: "system-design",
-    intro: "Swiggy's system-design rounds are built on real-time logistics at dinner-peak scale: assign orders to nearby delivery partners with low latency, stream live location and ETA to customers, and serve a personalised restaurant-discovery feed. In 2026 strong candidates reach for geospatial indexing and batching for the assignment problem, separate the write-heavy location-ping path from ETA reads, and handle the demand spike during peak hours. Interviewers push on freshness of menu availability, ranking signals, and cache invalidation. Generic 'store it in a database and scale horizontally' answers get taken apart by the follow-ups.",
-    framework: { name: "Real-Time-Logistics", summary: "Use geospatial indexing and batching for assignment, separate high-write tracking from reads, and design ranking and caching for a fresh, personalised feed under peak load" },
-    metaKeywords: ["Swiggy system design interview questions", "Swiggy SDE system design 2026", "food delivery system design", "Swiggy order assignment design"],
-    sitemapPriority: 0.72,
-    faqExtra: [
-      { q: "What system-design questions does Swiggy ask?", a: "Design order-to-partner assignment at peak load, live order tracking with ETAs, and a personalised restaurant search and discovery feed." },
-      { q: "How do I design Swiggy's order assignment?", a: "Index delivery-partner locations geospatially for fast proximity search, batch nearby orders for efficiency, and run an assignment step that keeps latency low even during the dinner-peak spike." },
-      { q: "What makes Swiggy system design distinct?", a: "It is real-time logistics under a sharp demand curve. Interviewers reward handling the dinner-peak spike, freshness of menu availability, and the write-heavy location-tracking path." },
-    ],
-    recruitmentSteps: [
-      "Recruiter screen or online assessment",
-      "Technical coding round on DSA",
-      "System-design round on a logistics or discovery service",
-      "Hiring-manager and behavioral round, then offer",
-    ],
-    interviewRounds: [
-      "Round 1 (60 min): coding round on data structures and algorithms.",
-      "Round 2 (60 min): system-design round on assignment, tracking, or discovery.",
-      "Round 3 (45-60 min): design deep-dive plus behavioral on ownership.",
     ],
   },
 
