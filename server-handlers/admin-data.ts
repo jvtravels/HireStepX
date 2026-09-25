@@ -108,6 +108,41 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString();
 }
 
+/* Employer accounts share the `profiles` table with candidates (see
+   contactEmail derivation in the "employers" list case below) — the
+   employer's own id is the profiles row to read for name/email. Best-effort:
+   swallow failures so a Resend hiccup never blocks the approve/reject PATCH
+   that already committed. */
+async function notifyEmployerStatus(employerId: string, status: "approved" | "rejected"): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  try {
+    const [employerRows, profileRows] = await Promise.all([
+      fetchJSON<{ company_name: string }>(`employers?id=eq.${encodeURIComponent(employerId)}&select=company_name&limit=1`),
+      fetchJSON<{ email: string; name: string | null }>(`profiles?id=eq.${encodeURIComponent(employerId)}&select=email,name&limit=1`),
+    ]);
+    const toEmail = profileRows[0]?.email;
+    if (!toEmail) return;
+    const companyName = employerRows[0]?.company_name || "your company";
+    const subject = status === "approved"
+      ? "Your HireStepX employer account is approved"
+      : "Update on your HireStepX employer application";
+    const html = status === "approved"
+      ? `<p>Hi,</p><p>Good news — <strong>${companyName}</strong>'s employer account on HireStepX has been approved. You can now post requirements and browse your matched candidate shortlist.</p><p><a href="https://hirestepx.com/employer">Go to your dashboard</a></p>`
+      : `<p>Hi,</p><p>We weren't able to approve <strong>${companyName}</strong>'s employer application on HireStepX at this time. You're welcome to update your details and resubmit.</p>`;
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: "HireStepX <noreply@hirestepx.com>", to: [toEmail], subject, html }),
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => "");
+      console.error(`[admin-data] employer status email failed: HTTP ${emailRes.status}: ${txt.slice(0, 200)}`);
+    }
+  } catch (err) {
+    console.error(`[admin-data] notifyEmployerStatus threw: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 /* ─── Section Handlers ─── */
 
 async function getOverview() {
@@ -1869,6 +1904,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
           );
           if (!patchRes.ok) return { ok: false, error: `Approve failed: HTTP ${patchRes.status}` };
+          await notifyEmployerStatus(String(body.id), "approved");
           return { ok: true };
         }
         case "reject-employer": {
@@ -1887,6 +1923,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
           );
           if (!patchRes.ok) return { ok: false, error: `Reject failed: HTTP ${patchRes.status}` };
+          await notifyEmployerStatus(String(body.id), "rejected");
           return { ok: true };
         }
         case "unban-user": {

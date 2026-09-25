@@ -16,6 +16,7 @@ import { computeCampusReadiness, type CpChipState } from "./_campus-readiness";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Spinner } from "@/components/ui/spinner";
+import { ThinkingOrb } from "thinking-orbs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1445,7 +1446,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
     }}>
       {!(usedFallbackScore || evalTimedOut) ? (
         <>
-          <div style={{ width: 48, height: 48, border: `3px solid ${e.line}`, borderTopColor: "#312E81", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginBottom: 24 }} />
+          <ThinkingOrb state="searching" size={64} color="#312E81" style={{ width: 48, height: 48, marginBottom: 24 }} />
           <h3 style={{ fontFamily: ef.serif, fontSize: 28, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
           <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft }}>Reading your transcript and drafting per-question coach notes…</p>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, opacity: 0.7, marginTop: 4 }}>

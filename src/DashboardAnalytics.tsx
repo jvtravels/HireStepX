@@ -10,6 +10,7 @@ import { useDashboardSessions, useDashboardCore, useDashboardUI, useDashboardSub
 import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
 import type { ResumeProfile } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
+import { Button } from "@/components/ui/button";
 
 /* ─── Humanize camelCase skill names ─── */
 function humanize(s: string) {
@@ -203,19 +204,15 @@ export default function AnalyticsPage() {
         </div>
         <div role="radiogroup" aria-label="Date range" style={{ display: "flex", gap: 4, background: c.graphite, borderRadius: 8, padding: 3, border: `1px solid ${c.border}` }}>
           {DATE_RANGES.map((r, i) => (
-            <button key={r.label} role="radio" aria-checked={rangeIdx === i} onClick={() => setRangeIdx(i)}
+            <Button key={r.label} variant="ghost" size="sm" role="radio" aria-checked={rangeIdx === i} onClick={() => setRangeIdx(i)}
               style={{
-                fontFamily: font.ui, fontSize: 11, fontWeight: rangeIdx === i ? 600 : 400,
-                padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                fontWeight: rangeIdx === i ? 600 : 400,
                 background: rangeIdx === i ? c.gilt : "transparent",
                 color: rangeIdx === i ? c.obsidian : c.stone,
-                transition: "all 0.2s ease",
               }}
-              onMouseEnter={(e) => { if (rangeIdx !== i) { e.currentTarget.style.color = c.ivory; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; } }}
-              onMouseLeave={(e) => { if (rangeIdx !== i) { e.currentTarget.style.color = c.stone; e.currentTarget.style.background = "transparent"; } }}
             >
               {r.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -237,17 +234,11 @@ export default function AnalyticsPage() {
               </span>
             </div>
           </div>
-          <button onClick={() => startTargeted(typeToUrlParam[weakestType.type])}
-            style={{
-              fontFamily: font.ui, fontSize: 12, fontWeight: 600, padding: "9px 20px", borderRadius: 8,
-              border: "none", cursor: "pointer", background: c.gilt, color: c.obsidian,
-              display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}>
+          <Button size="sm" onClick={() => startTargeted(typeToUrlParam[weakestType.type])}
+            style={{ background: c.gilt, color: c.obsidian, flexShrink: 0 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21"/></svg>
             Start {weakestType.type}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -308,13 +299,11 @@ export default function AnalyticsPage() {
           <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.chalk, marginBottom: 4 }}>{dailyChallenge.label}</span>
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, flex: 1 }}>{dailyChallenge.description}</span>
           {!dailyChallenge.completed && (
-            <button onClick={() => startTargeted(dailyChallenge.type)}
-              style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, padding: "8px 16px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer", marginTop: 12, alignSelf: "flex-start" }}
-              onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
+            <Button size="sm" onClick={() => startTargeted(dailyChallenge.type)}
+              style={{ background: c.gilt, color: c.obsidian, marginTop: 12, alignSelf: "flex-start" }}
             >
               Start Challenge
-            </button>
+            </Button>
           )}
         </div>
       </div>

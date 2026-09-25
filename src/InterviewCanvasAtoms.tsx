@@ -18,6 +18,7 @@
      MetaRow            trustLine            EndButton
 */
 import React from "react";
+import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import { e, ef } from "./interviewTokens";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
@@ -188,8 +189,19 @@ export function CanvasCameraToggle({ on, onClick }: { on: boolean; onClick: () =
   );
 }
 
-/* ─── VoiceVisualizer (dotted hex sphere) ─── */
+/* ─── VoiceVisualizer (thinking-orbs canvas) ───
+   Each engine phase maps to a hand-tuned orb animation: idle breathes,
+   ai-thinking solves (LLM/question-gen wait), ai-speaking composes
+   (TTS playback), user-speaking listens, warning shapes (attention
+   nudge on connection trouble). */
 export type CanvasVizState = "idle" | "ai-speaking" | "ai-thinking" | "user-speaking" | "warning";
+const VIZ_TO_ORB_STATE: Record<CanvasVizState, OrbState> = {
+  idle: "breathing",
+  "ai-speaking": "composing",
+  "ai-thinking": "solving",
+  "user-speaking": "listening",
+  warning: "shaping",
+};
 export function CanvasVoiceVisualizer({ state, size = 150 }: { state: CanvasVizState; size?: number }) {
   const dotColor = (() => {
     switch (state) {
@@ -200,23 +212,8 @@ export function CanvasVoiceVisualizer({ state, size = 150 }: { state: CanvasVizS
       case "warning":       return e.warning;
     }
   })();
-  const step = size / 22;
-  const radius = size / 2;
-  const dots: { cx: number; cy: number; r: number; opacity: number }[] = [];
-  for (let yi = -12; yi <= 12; yi++) {
-    const y = yi * step * 0.866;
-    if (Math.abs(y) > radius) continue;
-    const offset = (yi % 2 === 0 ? 0 : step / 2);
-    for (let xi = -12; xi <= 12; xi++) {
-      const x = xi * step + offset;
-      const dist = Math.sqrt(x * x + y * y);
-      if (dist > radius - step / 2) continue;
-      const edgeFade = Math.max(0, 1 - dist / radius);
-      dots.push({ cx: radius + x, cy: radius + y, r: 1.4, opacity: 0.35 + edgeFade * 0.6 });
-    }
-  }
   return (
-    <div role="presentation" className={`hsx-viz hsx-viz-${state}`}
+    <div role="presentation" className="hsx-viz"
       aria-label={
         state === "ai-speaking" ? "Interviewer is speaking"
         : state === "ai-thinking" ? "Interviewer is thinking"
@@ -224,12 +221,8 @@ export function CanvasVoiceVisualizer({ state, size = 150 }: { state: CanvasVizS
         : state === "warning" ? "Connection warning"
         : "Quiet"
       }
-      style={{ width: size, height: size, position: "relative" }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {dots.map((d, i) => (
-          <circle key={i} cx={d.cx} cy={d.cy} r={d.r} fill={dotColor} opacity={d.opacity} />
-        ))}
-      </svg>
+      style={{ width: size, height: size, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <ThinkingOrb state={VIZ_TO_ORB_STATE[state]} size={64} color={dotColor} style={{ width: size, height: size }} />
     </div>
   );
 }

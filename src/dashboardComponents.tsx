@@ -8,6 +8,7 @@ import { scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import type { DashboardSession } from "./dashboardTypes";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, SINGLE_SESSION_PRICE } from "./dashboardData";
 import { SectionErrorBoundary } from "./ErrorBoundary";
+import { Button } from "@/components/ui/button";
 
 // Cream/indigo/copper results report — ported from the `interview-result`
 // Tempo canvas. Lazy-loaded to keep the dashboard hero bundle slim.
@@ -432,9 +433,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
       <div ref={modalRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)", outline: "none" }}>
-        <button onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
+        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, color: c.stone }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        </Button>
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
@@ -485,12 +486,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 <p style={{ fontFamily: font.ui, fontSize: 11, color: "#92400E", margin: "0 0 12px", fontWeight: 500 }}>
                   ✓ No money was debited from your account.
                 </p>
-                <button
+                <Button
+                  size="sm"
                   onClick={() => { setPaymentFailed(null); handleCheckout(paymentFailed.plan); }}
-                  style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#fff", background: "#D97706", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
+                  style={{ background: "#D97706", color: "#fff" }}
                 >
                   Try again
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -501,9 +503,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, display: "block", marginBottom: 8 }}>{error}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {verifyRetries > 0 && (
-                <button onClick={retryVerification} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.graphite, background: c.ember, border: "none", borderRadius: 10, padding: "5px 14px", cursor: "pointer" }}>Retry Verification</button>
+                <Button size="sm" onClick={retryVerification} style={{ background: c.ember, color: c.graphite }}>Retry Verification</Button>
               )}
-              <button onClick={() => { setError(""); setVerifyRetries(0); }} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "none", border: `1px solid ${c.borderHover}`, borderRadius: 10, padding: "8px 14px", cursor: "pointer", minHeight: 36 }}>Dismiss</button>
+              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: c.gilt, minHeight: 36 }}>Dismiss</Button>
             </div>
           </div>
         )}
@@ -511,9 +513,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* Promo Code — collapsed by default */}
         {!showPromo && !promoResult?.valid && (
           <div style={{ textAlign: "left", marginBottom: 12 }}>
-            <button onClick={() => setShowPromo(true)} style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            <Button variant="link" onClick={() => setShowPromo(true)} style={{ fontSize: 12, color: c.gilt, padding: 0, height: "auto" }}>
               Have a promo code?
-            </button>
+            </Button>
           </div>
         )}
         {(showPromo || promoResult?.valid) && (
@@ -524,7 +526,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               autoFocus
               style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
             />
-            <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {
+            <Button variant="outline" size="sm" disabled={promoLoading || !promoCode.trim()} onClick={async () => {
               setPromoLoading(true); setPromoError("");
               try {
                 const hdrs = await import("./supabase").then(m => m.authHeaders());
@@ -539,12 +541,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
               } catch { setPromoError("Could not validate code"); }
               finally { setPromoLoading(false); }
-            }} style={{
-              fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: c.giltLight,
-              border: `1px solid ${c.borderHover}`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
-            }}>
+            }} style={{ color: c.gilt, background: c.giltLight }}>
               {promoLoading ? "..." : "Apply"}
-            </button>
+            </Button>
           </div>
         )}
         {promoError && <p style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginBottom: 12, marginTop: -4 }}>{promoError}</p>}
@@ -612,26 +611,25 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, fontWeight: 600 }}>&#x20B9;{SINGLE_SESSION_PRICE * singleQty} total</span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <button onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
-                              style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty <= 1 ? c.border : c.borderHover}`, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory, cursor: singleQty <= 1 || !!loading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty <= 1 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s" }}>&#8722;</button>
+                            <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
+                              style={{ flexShrink: 0, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory, fontSize: 18, fontWeight: 300 }}>&#8722;</Button>
                             <input type="range" min={1} max={10} step={1} value={singleQty} onChange={e => setSingleQty(Number(e.target.value))} disabled={!!loading} aria-label="Number of sessions" aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10} className="upgrade-session-slider"
                               style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
-                            <button onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
-                              style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty >= 10 ? c.border : c.gilt}`, background: singleQty >= 10 ? c.carbon : `rgba(180,83,9,0.10)`, color: singleQty >= 10 ? c.stone : c.gilt, cursor: singleQty >= 10 || !!loading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty >= 10 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s, background 0.15s" }}>&#43;</button>
+                            <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
+                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `rgba(180,83,9,0.10)`, color: singleQty >= 10 ? c.stone : c.gilt, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
                           </div>
                           <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center" }}>
                             {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
                             {singleQty >= 10 && <span style={{ color: c.gilt }}> &#xB7; max per order</span>}
                           </p>
                         </div>
-                        <button onClick={() => handleCheckout("single")} disabled={!!loading}
-                          style={{ width: "100%", padding: "12px 18px", borderRadius: 10, border: "none", background: c.slate, color: "#FFFFFF", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== "single" ? 0.5 : 1, boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)", transition: "transform 0.18s ease, box-shadow 0.18s ease", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+                        <Button onClick={() => handleCheckout("single")} disabled={!!loading}
+                          className="w-full"
+                          style={{ background: c.slate, color: "#FFFFFF", opacity: loading && loading !== "single" ? 0.5 : 1 }}
                         >
                           {loading === "single" ? "Opening Razorpay..." : loading === "verifying" ? "Verifying..."
                             : <>{singleQty === 1 ? "Buy 1 session" : `Buy ${singleQty} sessions`} &#xB7; &#x20B9;{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 16 }}>&#8594;</span></>}
-                        </button>
+                        </Button>
                       </>
                     )}
                   </div>
@@ -698,21 +696,17 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     {currentTier === "free" ? "Your current plan" : plan.cta}
                   </div>
                 ) : (
-                  <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
-                    style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: "none",
+                  <Button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
+                    className="w-full"
+                    style={{ marginTop: "auto",
                       background: featured ? c.obsidian : c.slate,
                       color: featured ? c.ivory : "#FFFFFF",
-                      fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer",
                       opacity: loading && loading !== plan.id ? 0.5 : 1,
                       boxShadow: featured ? "0 1px 0 rgba(244,229,216,.08), 0 8px 24px rgba(244,229,216,0.18)" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-                      transition: "transform 0.18s ease, box-shadow 0.18s ease",
-                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                     }}
-                    onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
                   >
                     {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{isRepurchasable && isCurrent ? "Get another Sprint Pack" : plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
-                  </button>
+                  </Button>
                 )}
                 {/* Auto-renewal disclosure — RBI / Indian payment best practice.
                     Free plan has no billing; single-session has no subscription. */}
@@ -831,12 +825,9 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
           </div>
         )}
 
-        <button onClick={onUpgrade} style={{ padding: "12px 28px", borderRadius: 10, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 14, fontWeight: 600, transition: "opacity 0.2s" }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-        >
+        <Button onClick={onUpgrade} style={{ padding: "12px 28px", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian }}>
           {copy.cta}
-        </button>
+        </Button>
         <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
       </div>
     </div>
@@ -941,13 +932,9 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>
             Start Warmup
           </button>
-          <button onClick={onStartCustom}
-            style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "6px 12px", textDecoration: "underline", textUnderlineOffset: 3 }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
-          >
+          <Button variant="link" onClick={onStartCustom} style={{ fontSize: 12, fontWeight: 500, color: c.stone }}>
             or choose your own session
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -1004,13 +991,10 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: font.ui, fontSize: 13, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "0 0 20px" }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
-      >
+      <Button variant="ghost" onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, color: c.stone, padding: "0 0 20px", height: "auto" }}>
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back to Dashboard
-      </button>
+      </Button>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 20 }}>
         <div className="session-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 16 }}>

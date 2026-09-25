@@ -2,14 +2,15 @@
    Page composition. Atoms in _auth-fields, styles in _auth-styles,
    validation in _auth-validation, analytics in _auth-analytics.
 
-   Phase-2 redesign: rebuilt on shadcn/ui primitives (Button, Input, Label,
-   Checkbox, Alert) + Tailwind theme tokens instead of the legacy _tokens.ts
-   palette, with the AF Sobremesa display font on the headline (loaded from
-   tempo/public/fonts/af-sobremesa.css — canvas-host only, never wired into
-   the production app). Scoped to this screen only; Signup/ForgotPassword/
-   ResetPassword are untouched. */
+   Phase-3 redesign: rebuilt on shadcn/ui primitives (Button, Input, Label,
+   Checkbox, Alert) + Tailwind theme tokens. Dropped the AF Sobremesa serif
+   display headline and the bordered card wrapper from Phase 2 — both landed
+   inside the "cream/serif AI-SaaS template" look PRODUCT.md explicitly
+   names as an anti-reference, and tempo/CLAUDE.md retires the editorial
+   serif-display style outright in favor of Linear/Notion/Stripe-style
+   clean sans hierarchy. Structure now comes from type scale, whitespace and
+   a restrained background glow instead of a boxed surface. */
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import "../../../public/fonts/af-sobremesa.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,15 +122,22 @@ export default function Login({
     });
   };
 
-  const isGhost = !canSubmit && !loading;
-
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-background text-foreground">
+      {/* Restrained atmospheric glow — the single focal treatment that gives
+          the page identity in place of the retired cream card surface. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px]"
+      >
+        <div className="absolute top-[-220px] left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-primary/[0.14] blur-[110px]" />
+      </div>
+
       {/* Top bar */}
-      <header className="flex items-center justify-between gap-4 px-6 py-8 sm:px-12">
+      <header className="flex items-center justify-between gap-4 px-6 py-6 sm:px-12">
         <div className="flex items-baseline gap-0 text-xl font-semibold tracking-tight">
           <span>HireStep</span>
-          <span className="text-primary italic">X</span>
+          <span className="text-primary">X</span>
         </div>
         <div className="text-sm text-muted-foreground">
           <span>Don&apos;t have an account? </span>
@@ -143,23 +151,22 @@ export default function Login({
         </div>
       </header>
 
-      {/* Centered hero + form */}
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-8 sm:py-16">
-        <div className="mb-9 w-full max-w-xl text-center">
+      {/* Hero + form, anchored near the top rather than dead-centered */}
+      <main className="flex flex-1 flex-col items-center px-6 pt-10 pb-16 sm:pt-20">
+        <div className="mb-11 w-full max-w-xl text-center">
           <h1
             id="login-heading"
-            className="text-4xl leading-[1.05] font-normal tracking-tight text-balance sm:text-6xl"
-            style={{ fontFamily: "'AF Sobremesa', serif" }}
+            className="text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl"
           >
-            Clarity <em className="text-primary">wins</em> interviews
+            Clarity <span className="text-primary">wins</span> interviews
           </h1>
-          <p className="mt-4 text-base text-muted-foreground text-balance">
+          <p className="mt-4.5 text-base text-muted-foreground text-balance">
             Practise interviews. Improve how you think under pressure. One
             answer at a time.
           </p>
         </div>
 
-        <div className="w-full max-w-[420px]">
+        <div className="w-full max-w-[400px]">
           {/* Google CTA */}
           <Button
             type="button"
@@ -175,7 +182,7 @@ export default function Login({
           </Button>
 
           {/* Divider */}
-          <div className="my-5 flex items-center gap-3.5">
+          <div className="my-6 flex items-center gap-3.5">
             <div className="h-px flex-1 bg-border" />
             <span className="text-xs text-muted-foreground">or</span>
             <div className="h-px flex-1 bg-border" />
@@ -193,7 +200,7 @@ export default function Login({
             onSubmit={handleSubmit}
             aria-labelledby="login-heading"
             aria-describedby={error ? "login-error" : undefined}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-4.5"
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="login-email">Email Address</Label>
@@ -292,17 +299,8 @@ export default function Login({
             <Button
               type="submit"
               size="lg"
-              disabled={!canSubmit}
+              disabled={loading}
               aria-busy={loading || undefined}
-              title={
-                isGhost
-                  ? !emailV.valid
-                    ? "Enter a valid email to continue"
-                    : !passwordV.valid
-                      ? "Enter your password to continue"
-                      : "Complete the form to continue"
-                  : undefined
-              }
               className="mt-2 h-12 gap-2 text-[15px] font-semibold"
             >
               {loading ? (

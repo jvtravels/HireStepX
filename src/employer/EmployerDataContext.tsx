@@ -36,7 +36,7 @@ interface EmployerDataContextValue {
   companyWebsite: string;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
-  submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
+  submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
   addRequirement: (r: {
     title: string;
@@ -58,6 +58,26 @@ interface EmployerDataContextValue {
     targetCompanies?: string[];
     perksAndBenefits?: string[];
   }) => Promise<string | null>;
+  updateRequirement: (id: string, r: {
+    title: string;
+    locations: string[];
+    noticePeriodPref?: string;
+    description?: string;
+    experienceMin?: number;
+    experienceMax?: number;
+    dueDate?: string;
+    budgetMin?: number;
+    budgetMax?: number;
+    openPositions?: number;
+    workMode?: WorkMode;
+    skills?: string[];
+    responsibilities?: string;
+    niceToHave?: string;
+    preferredIndustry?: string;
+    preferredColleges?: string[];
+    targetCompanies?: string[];
+    perksAndBenefits?: string[];
+  }) => Promise<boolean>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
     razorpay_order_id: string;
@@ -142,7 +162,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshRequirements();
   }, [refreshRequirements]);
 
-  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => {
+  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => {
     const res = await apiFetch<{ status: CompanyStatus; companyName?: string; website?: string; logoUrl?: string | null }>("/api/employer-profile", fields, { method: "POST" });
     if (res.ok && res.data) {
       setCompanyStatus(res.data.status);
@@ -185,6 +205,34 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       return res.data.id;
     }
     return null;
+  }, [refreshRequirements]);
+
+  const updateRequirement = useCallback(async (id: string, r: {
+    title: string;
+    locations: string[];
+    noticePeriodPref?: string;
+    description?: string;
+    experienceMin?: number;
+    experienceMax?: number;
+    dueDate?: string;
+    budgetMin?: number;
+    budgetMax?: number;
+    openPositions?: number;
+    workMode?: WorkMode;
+    skills?: string[];
+    responsibilities?: string;
+    niceToHave?: string;
+    preferredIndustry?: string;
+    preferredColleges?: string[];
+    targetCompanies?: string[];
+    perksAndBenefits?: string[];
+  }) => {
+    const res = await apiFetch<{ id: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, r, { method: "PATCH" });
+    if (res.ok && res.data) {
+      refreshRequirements();
+      return true;
+    }
+    return false;
   }, [refreshRequirements]);
 
   const createUnlockOrder = useCallback(async (matchId: string) => {
@@ -234,6 +282,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     submitCompanyProfile,
     resetCompanyProfile,
     addRequirement,
+    updateRequirement,
     createUnlockOrder,
     verifyUnlockPayment,
     fetchRequirementDetail,

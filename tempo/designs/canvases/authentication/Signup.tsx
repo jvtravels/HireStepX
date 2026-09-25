@@ -1,21 +1,26 @@
 /* HireStepX — Authentication / Signup
    Mirrors the Login surface — same shell, same atoms — but tuned for
    first-time users: name field, password strength meter, free-tier
-   value signal, signup-specific copy, marketing-consent checkbox.
-   Discipline rule: Indigo is interactive · Copper is editorial · Never mix. */
+   value signal, signup-specific copy.
+
+   Rebuilt on shadcn/ui primitives (Button, Input, Label, Alert) +
+   Tailwind theme tokens, matching Login's Phase-3 redesign: clean sans
+   hierarchy + a restrained background glow in place of the retired serif
+   headline and cream card surface. No italics per design system rule —
+   emphasis is weight/color only. PasswordStrengthMeter/PasswordChecklist
+   have no shadcn equivalent and stay as bespoke atoms from _auth-fields. */
 import React, { useCallback, useEffect, useState } from "react";
-import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Field,
-  Checkbox,
-  Wordmark,
   GoogleIcon,
   Spinner,
   EyeIcon,
   PasswordStrengthMeter,
   PasswordChecklist,
 } from "./_auth-fields";
-import { AUTH_STYLES } from "./_auth-styles";
 import {
   passwordHasEdgeWhitespace,
   sanitizeEmail,
@@ -120,373 +125,220 @@ export default function Signup({
   };
 
   return (
-    <>
-      <style>{AUTH_STYLES}</style>
+    <div className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-background text-foreground">
       <div
-        style={{
-          background: t.cream,
-          minHeight: "100dvh",
-          fontFamily: f.sans,
-          color: t.coal,
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px]"
       >
-        {/* Top bar */}
-        <header
-          className="hsx-login-topbar"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "32px 48px",
-            gap: 16,
-          }}
-        >
-          <Wordmark />
-          <div
-            className="hsx-login-signup-prompt"
-            style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}
-          >
-            <span className="hsx-login-signup-text">
-              Already have an account?{" "}
-            </span>
-            <a
-              href="#login"
-              className="hsx-link-indigo"
-              style={{
-                color: t.indigo,
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Log in
-            </a>
-          </div>
-        </header>
+        <div className="absolute top-[-220px] left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-primary/[0.14] blur-[110px]" />
+      </div>
 
-        <main
-          className="hsx-login-main"
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "clamp(24px, 4vh, 64px) 24px",
-          }}
-        >
-          {/* Hero — full-width container with one-line headline at desktop.
-              CSS @media in _styles re-enables wrapping below 900px viewport. */}
-          <div
-            className="hsx-login-hero"
-            style={{
-              width: "100%",
-              textAlign: "center",
-              marginBottom: 36,
-            }}
+      {/* Top bar */}
+      <header className="flex items-center justify-between gap-4 px-6 py-6 sm:px-12">
+        <div className="flex items-baseline gap-0 text-xl font-semibold tracking-tight">
+          <span>HireStep</span>
+          <span className="text-primary">X</span>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          <span>Already have an account? </span>
+          <a
+            href="#login"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
           >
-            <h1
-              id="signup-heading"
-              style={{
-                fontFamily: f.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
-                lineHeight: 1.05,
-                fontWeight: 400,
-                letterSpacing: "-0.02em",
-                whiteSpace: "nowrap",
-                margin: 0,
-                color: t.coal,
-              }}
-            >
-              Practise like the{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                real thing
-              </em>
-              .
-            </h1>
-            <p
-              className="hsx-login-subtitle"
-              style={{
-                fontFamily: f.sans,
-                fontSize: 16,
-                lineHeight: 1.55,
-                color: t.inkSoft,
-                marginTop: 18,
-                marginBottom: 0,
-                textWrap: "balance",
-              }}
-            >
-              Start practising. Improve with every answer. One step closer to
-              your next interview.
-            </p>
+            Log in
+          </a>
+        </div>
+      </header>
+
+      <main className="flex flex-1 flex-col items-center px-6 pt-10 pb-16 sm:pt-20">
+        <div className="mb-11 w-full max-w-xl text-center">
+          <h1
+            id="signup-heading"
+            className="text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl"
+          >
+            Practise like the <span className="text-primary">real thing</span>.
+          </h1>
+          <p className="mt-4.5 text-base text-muted-foreground text-balance">
+            Start practising. Improve with every answer. One step closer to
+            your next interview.
+          </p>
+        </div>
+
+        <div className="w-full max-w-[480px]">
+          {/* Google CTA */}
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={handleGoogle}
+            disabled={loading}
+            className="h-12 w-full gap-3 text-[15px] font-medium"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </Button>
+
+          {/* Divider */}
+          <div className="my-6 flex items-center gap-3.5">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
-          <div
-            className="hsx-login-form"
-            style={{ width: "100%", maxWidth: 540 }}
+          {error && (
+            <Alert variant="destructive" id="signup-error" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            aria-labelledby="signup-heading"
+            aria-describedby={error ? "signup-error" : undefined}
+            className="flex flex-col gap-4.5"
           >
-
-            {/* Free tier signal — JetBrains Mono micro-cap, indigo accent */}
-
-            <button
-              type="button"
-              className="hsx-login-google"
-              onClick={handleGoogle}
-              disabled={loading}
-              style={{ width: "100%", fontFamily: f.sans, fontSize: 15, fontWeight: 500, color: t.coal, background: t.white, border: `1px solid ${t.line}`, borderRadius: 10, padding: "14px 18px", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, boxShadow: shadows.card, opacity: loading ? 0.7 : 1, whiteSpace: "nowrap" }}
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-
-            <div
-              className="hsx-login-divider"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                margin: "20px 0",
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-              <span
-                style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}
-              >or</span>
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-            </div>
-
-            {error && (
-              <div
-                role="alert"
-                id="signup-error"
-                className="hsx-error-banner"
-                style={{
-                  background: t.error100,
-                  border: `1px solid ${t.error}`,
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                  marginBottom: 16,
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                  color: t.error,
-                  lineHeight: 1.4,
-                }}
-              >
-                {error}
-              </div>
-            )}
-
-            <form
-              onSubmit={handleSubmit}
-              aria-labelledby="signup-heading"
-              aria-describedby={error ? "signup-error" : undefined}
-              className="hsx-login-form-fields"
-              style={{ display: "flex", flexDirection: "column", gap: 18 }}
-            >
-              <Field
-                label="Your name"
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="signup-name">Your name</Label>
+              <Input
+                id="signup-name"
                 type="text"
                 name="name"
                 value={name}
-                onChange={(v) => setName(v)}
+                onChange={(e) => setName(e.target.value)}
                 onFocus={() => setNameTouched(true)}
-                onAutofill={() => setNameTouched(true)}
                 autoComplete="name"
                 placeholder="Rahul Sharma"
                 autoFocus={shouldAutoFocus}
                 enterKeyHint="next"
                 maxLength={NAME_MAX_LENGTH}
-                invalid={!!error || (nameTouched && !!nameV.message)}
-                errorMessage={nameError}
+                aria-invalid={!!error || (nameTouched && !!nameV.message)}
+                className="h-12 px-4 text-[15px]"
               />
-              <Field
-                label="Email Address"
+              {nameError && (
+                <p className="mt-0.5 text-xs text-destructive">{nameError}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="signup-email">Email Address</Label>
+              <Input
+                id="signup-email"
                 type="email"
                 name="email"
                 value={email}
-                onChange={(v) => setEmail(v)}
+                onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => setEmailTouched(true)}
-                onAutofill={() => setEmailTouched(true)}
                 autoComplete="email"
                 placeholder="rahul@example.com"
                 inputMode="email"
                 enterKeyHint="next"
                 maxLength={EMAIL_MAX_LENGTH}
-                invalid={!!error || (emailTouched && !!emailV.message)}
-                errorMessage={emailError}
+                aria-invalid={!!error || (emailTouched && !!emailV.message)}
+                className="h-12 px-4 text-[15px]"
               />
-              <div>
-                <Field
-                  label="Password"
+              {emailError && (
+                <p className="mt-0.5 text-xs text-destructive">{emailError}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="signup-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="signup-password"
                   type={showPassword ? "text" : "password"}
                   name="new-password"
                   value={password}
-                  onChange={(v) => setPassword(v)}
+                  onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setPasswordTouched(true)}
-                  onAutofill={() => setPasswordTouched(true)}
                   autoComplete="new-password"
                   placeholder="At least 8 characters"
                   enterKeyHint="go"
                   maxLength={PASSWORD_MAX_LENGTH}
-                  invalid={
+                  aria-invalid={
                     !!error || (passwordTouched && !!passwordV.message)
                   }
-                  errorMessage={passwordError}
-                  rightSlot={
-                    <button
-                      type="button"
-                      className="hsx-eye-toggle"
-                      onClick={handlePasswordVisibility}
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                      aria-pressed={showPassword}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: t.inkSoft,
-                        cursor: "pointer",
-                        padding: 4,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <EyeIcon open={showPassword} />
-                    </button>
-                  }
+                  className="h-12 px-4 pr-11 text-[15px]"
                 />
-                {password.length > 0 && (
-                  <>
-                    <PasswordStrengthMeter
-                      score={passwordV.score}
-                      label={passwordV.label}
-                    />
-                    <PasswordChecklist checks={passwordV.checks} />
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={handlePasswordVisibility}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
               </div>
+              {passwordError && (
+                <p className="mt-0.5 text-xs text-destructive">
+                  {passwordError}
+                </p>
+              )}
+              {password.length > 0 && (
+                <>
+                  <PasswordStrengthMeter
+                    score={passwordV.score}
+                    label={passwordV.label}
+                  />
+                  <PasswordChecklist checks={passwordV.checks} />
+                </>
+              )}
+            </div>
 
-              {(() => {
-                const isGhost = !canSubmit && !loading;
-                const tooltip = isGhost
-                  ? !nameV.valid
-                    ? "Enter your name to continue"
-                    : !emailV.valid
-                      ? "Enter a valid email to continue"
-                      : !passwordV.valid
-                        ? "Choose a password that meets the requirements"
-                        : "Complete the form to continue"
-                  : undefined;
-                return (
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    aria-busy={loading || undefined}
-                    title={tooltip}
-                    className="hsx-login-cta"
-                    style={{
-                      width: "100%",
-                      fontFamily: f.sans,
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: isGhost ? t.inkFaint : t.cream,
-                      background: isGhost ? t.creamSoft : t.indigo,
-                      border: isGhost
-                        ? `1px solid ${t.line}`
-                        : "1px solid transparent",
-                      borderRadius: 10,
-                      padding: "16px 18px",
-                      cursor: canSubmit ? "pointer" : "not-allowed",
-                      marginTop: 8,
-                      boxShadow: isGhost ? "none" : shadows.cta,
-                      letterSpacing: 0.1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 10,
-                      opacity: loading ? 0.95 : 1,
-                    }}
+            <Button
+              type="submit"
+              size="lg"
+              disabled={loading}
+              aria-busy={loading || undefined}
+              className="mt-2 h-12 gap-2 text-[15px] font-semibold"
+            >
+              {loading ? (
+                <>
+                  <Spinner />
+                  Creating your account…
+                </>
+              ) : (
+                <>
+                  Create your free account
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    {loading ? (
-                      <>
-                        <Spinner />
-                        Creating your account…
-                      </>
-                    ) : (
-                      <>
-                        Create your free account
-                        <svg
-                          className="hsx-login-cta-arrow"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                );
-              })()}
-            </form>
-          </div>
-        </main>
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </>
+              )}
+            </Button>
+          </form>
+        </div>
+      </main>
 
-        <footer
-          className="hsx-login-footer"
-          style={{
-            textAlign: "center",
-            padding: "20px 24px 28px",
-            fontFamily: f.sans,
-            fontSize: 12,
-            color: t.inkFaint,
-            lineHeight: 1.6,
-            maxWidth: 480,
-            margin: "0 auto",
-          }}
+      <footer className="mx-auto max-w-md px-6 pt-5 pb-7 text-center text-xs leading-relaxed text-muted-foreground">
+        By creating an account you agree to our{" "}
+        <a
+          href="#terms"
+          className="font-medium text-primary underline underline-offset-2"
         >
-          By creating an account you agree to our{" "}
-          <a
-            href="#terms"
-            className="hsx-link-muted"
-            style={{
-              color: t.inkSoft,
-              textDecoration: "underline",
-              fontWeight: 500,
-            }}
-          >
-            Terms of Use
-          </a>{" "}
-          and{" "}
-          <a
-            href="#privacy"
-            className="hsx-link-muted"
-            style={{
-              color: t.inkSoft,
-              textDecoration: "underline",
-              fontWeight: 500,
-            }}
-          >
-            Privacy Policy
-          </a>
-          . Your data is encrypted and never sold.
-        </footer>
-      </div>
-    </>
+          Terms of Use
+        </a>{" "}
+        and{" "}
+        <a
+          href="#privacy"
+          className="font-medium text-primary underline underline-offset-2"
+        >
+          Privacy Policy
+        </a>
+        . Your data is encrypted and never sold.
+      </footer>
+    </div>
   );
 }

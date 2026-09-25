@@ -32,14 +32,23 @@ export function getAllowedOrigin(req: Request): string {
   return getAllowedOriginFromString(origin);
 }
 
+function buildMethodList(opts?: { allowGet?: boolean; allowPatch?: boolean }): string {
+  const methods = ["POST"];
+  if (opts?.allowGet) methods.push("GET");
+  if (opts?.allowPatch) methods.push("PATCH");
+  methods.push("OPTIONS");
+  return methods.join(", ");
+}
+
 /** Build CORS response headers for an Edge Function request.
  *
  * Pass `allowGet: true` for endpoints that accept GET requests (e.g. credit-
- * balance) so the Allow-Methods header matches the actual method list.
- * Omitting it (or passing false) keeps the default POST-only list. */
-export function corsHeaders(req: Request, opts?: { allowGet?: boolean }): Record<string, string> {
+ * balance) and/or `allowPatch: true` for endpoints that accept PATCH (e.g.
+ * an in-place edit) so the Allow-Methods header matches the actual method
+ * list. Omitting both keeps the default POST-only list. */
+export function corsHeaders(req: Request, opts?: { allowGet?: boolean; allowPatch?: boolean }): Record<string, string> {
   const origin = getAllowedOrigin(req);
-  const methodList = opts?.allowGet ? "GET, POST, OPTIONS" : "POST, OPTIONS";
+  const methodList = buildMethodList(opts);
   if (!origin) return { "Content-Type": "application/json" };
   return {
     "Content-Type": "application/json",
@@ -51,8 +60,8 @@ export function corsHeaders(req: Request, opts?: { allowGet?: boolean }): Record
 }
 
 /** Handle OPTIONS preflight and reject disallowed methods. Returns Response if handled, null if should continue. */
-export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: boolean }): Response | null {
-  const methodList = opts?.allowGet ? "GET, POST, OPTIONS" : "POST, OPTIONS";
+export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: boolean; allowPatch?: boolean }): Response | null {
+  const methodList = buildMethodList(opts);
   if (req.method === "OPTIONS") {
     const origin = getAllowedOrigin(req);
     return new Response(null, {
@@ -67,7 +76,9 @@ export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: bo
         : {},
     });
   }
-  const allowed = req.method === "POST" || (opts?.allowGet === true && req.method === "GET");
+  const allowed = req.method === "POST"
+    || (opts?.allowGet === true && req.method === "GET")
+    || (opts?.allowPatch === true && req.method === "PATCH");
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -1000,15 +1011,16 @@ export async function withAuthAndRateLimit(
     maxBytes?: number;
     skipOriginCheck?: boolean;
     allowGet?: boolean;
+    allowPatch?: boolean;
   },
 ): Promise<Response | {
   headers: Record<string, string>;
   auth: { authenticated: boolean; userId?: string };
   quota?: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string };
 }> {
-  const early = handleCorsPreflightOrMethod(req, { allowGet: opts.allowGet });
+  const early = handleCorsPreflightOrMethod(req, { allowGet: opts.allowGet, allowPatch: opts.allowPatch });
   if (early) return early;
-  const headers = withRequestId(corsHeaders(req));
+  const headers = withRequestId(corsHeaders(req, { allowGet: opts.allowGet, allowPatch: opts.allowPatch }));
 
   // checkBodySize returns true when the body EXCEEDS the limit, so we 413
   // on the truthy branch — the previous `!checkBodySize` inverted the check

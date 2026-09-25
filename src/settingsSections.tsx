@@ -6,6 +6,7 @@ import { useAuth, referralSignupUrl } from "./AuthContext";
 import { captureClientEvent } from "./posthogClient";
 import { useDashboardSubscription } from "./DashboardContext";
 import { tokens as t } from "./auth/_tokens";
+import { Button } from "@/components/ui/button";
 
 
 /* Cream-mode local tokens — same keys as the old dark `c` so JSX style
@@ -103,6 +104,10 @@ export function Divider() {
 }
 
 export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  // Bespoke pill/knob switch, not a generic button — the sliding-knob
+  // visual (absolute-positioned inner circle + transform animation) has
+  // no shadcn Button equivalent, so this intentionally stays a raw
+  // <button> rather than being forced into the Button component.
   return (
     <button onClick={onToggle} aria-pressed={on} style={{
       width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
@@ -428,7 +433,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             label="Password"
             value="Send a reset link to your email when you need to change it."
             right={
-              <button type="button" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
+              <Button type="button" variant="outline" size="sm" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
                 style={{
                   ...accSubtleBtn,
                   color: resetSent ? c.sage : c.ivory,
@@ -439,7 +444,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
                 }}
               >
                 {resetLoading ? "Sending..." : resetSent ? "Email sent" : "Send reset link"}
-              </button>
+              </Button>
             }
           />
         ) : (
@@ -503,7 +508,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.stone }}>
             {signOutOthersError || "Sign out every device except this one."}
           </div>
-          <button onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
+          <Button type="button" variant="ghost" size="sm" onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
             style={{
               ...accSubtleBtnGhost,
               color: signOutOthersDone ? c.sage : c.indigo,
@@ -512,7 +517,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             }}
           >
             {signOutOthersLoading ? "Signing out..." : signOutOthersDone ? "Signed out" : "Sign out everywhere else"}
-          </button>
+          </Button>
         </div>
       </EditorialCard>
       </div>
@@ -915,23 +920,23 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             {authUser?.cancelAtPeriodEnd ? (
-              <button disabled={cancelLoading} onClick={handleReactivate}
+              <Button type="button" variant="outline" size="sm" disabled={cancelLoading} onClick={handleReactivate}
                 style={{ ...successSubtleBtn, opacity: cancelLoading ? 0.6 : 1 }}>
                 {cancelLoading ? "Reactivating..." : "Reactivate"}
-              </button>
+              </Button>
             ) : !confirmCancel ? (
               <>
-                <button onClick={handlePauseToggle} style={accSubtleBtn} disabled={cancelLoading}>
+                <Button type="button" variant="outline" size="sm" onClick={handlePauseToggle} style={accSubtleBtn} disabled={cancelLoading}>
                   {authUser?.subscriptionPaused ? "Resume" : "Pause"}
-                </button>
-                <button onClick={() => setConfirmCancel(true)} style={dangerSubtleBtn}>Cancel</button>
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmCancel(true)} style={dangerSubtleBtn}>Cancel</Button>
               </>
             ) : (
               <>
-                <button onClick={() => setConfirmCancel(false)} style={accSubtleBtn}>Keep plan</button>
-                <button disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setConfirmCancel(false)} style={accSubtleBtn}>Keep plan</Button>
+                <Button type="button" variant="destructive" size="sm" disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
                   {cancelLoading ? "Cancelling..." : "Yes, cancel"}
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -998,11 +1003,11 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={keyValueLabel}>Export sessions</div>
             <div style={keyValueValue}>CSV of every completed session: questions, your answers, scores, and the resume snapshot used.</div>
           </div>
-          <button type="button" disabled={exporting}
+          <Button type="button" variant="outline" size="sm" disabled={exporting}
             onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
             style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
             {exporting ? "Exporting…" : "Export CSV"}
-          </button>
+          </Button>
         </div>
 
         {/* Sync credits button removed — balance now updates automatically via
@@ -1015,7 +1020,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={keyValueLabel}>Log out</div>
             <div style={keyValueValue}>Sign out on this device. Other devices stay signed in.</div>
           </div>
-          <button type="button" onClick={onLogout} style={accSubtleBtn}>Log out</button>
+          <Button type="button" variant="outline" size="sm" onClick={onLogout} style={accSubtleBtn}>Log out</Button>
         </div>
       </div>
 
@@ -1028,11 +1033,11 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
               <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
               <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
             </div>
-            <button type="button"
+            <Button type="button" variant="destructive" size="sm"
               onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
               style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
               Begin deletion
-            </button>
+            </Button>
           </div>
         ) : (() => {
           const emailMatches = deleteEmailInput.toLowerCase() === (authUser?.email || "").toLowerCase();
@@ -1071,13 +1076,13 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                   }} />
               )}
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
-                <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</button>
-                <button type="button"
+                <Button type="button" variant="outline" size="sm" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</Button>
+                <Button type="button" variant="destructive" size="sm"
                   disabled={submitDisabled}
                   onClick={handleConfirmDelete}
                   style={{ ...dangerSolidBtn, opacity: submitDisabled ? 0.45 : 1 }}>
                   {deleteLoading ? "Deleting…" : "Confirm delete"}
-                </button>
+                </Button>
               </div>
             </div>
             {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
@@ -1207,11 +1212,11 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
               ) : "—"}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
-              <button type="button" onClick={handleCopy} style={indigoPrimaryBtn}>
+              <Button type="button" variant="default" size="sm" onClick={handleCopy} style={indigoPrimaryBtn}>
                 {copied ? "Copied!" : "Copy link"}
-              </button>
-              <button type="button" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</button>
-              <button type="button" onClick={handleShareEmail} style={linkBtn}>Email a friend</button>
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</Button>
+              <Button type="button" variant="link" size="sm" onClick={handleShareEmail} style={linkBtn}>Email a friend</Button>
             </div>
           </div>
 

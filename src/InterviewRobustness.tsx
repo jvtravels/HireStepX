@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { ThinkingOrb } from "thinking-orbs";
 
 /* ─── PaceMeter — sweet-spot bar shown while user is answering ─── */
 
@@ -181,7 +182,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           boxShadow: "0 4px 16px rgba(20,17,10,0.10)",
         }}
       >
-        <div style={{ width: 14, height: 14, border: `2px solid rgba(180,83,9,0.30)`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+        <ThinkingOrb state="connecting" size={20} color={e.copper} style={{ width: 14, height: 14, flexShrink: 0 }} />
         <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
           Reconnecting… your progress is safe (Q{questionPos} of {questionTotal}).
         </span>
@@ -206,7 +207,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           width: 52, height: 52, borderRadius: "50%", background: "rgba(180,83,9,0.10)",
           display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 16,
         }}>
-          <div style={{ width: 26, height: 26, border: `2.5px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <ThinkingOrb state="connecting" size={32} color={e.copper} style={{ width: 26, height: 26 }} />
         </div>
         <h2 id="iv-reconnecting-title" style={{
           margin: 0, fontFamily: ef.serif, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",

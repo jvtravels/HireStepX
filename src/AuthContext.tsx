@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { Button } from "@/components/ui/button";
 import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
   clearSessionStart,
@@ -2111,8 +2112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ⚠️ Your account is scheduled for permanent deletion on{" "}
             <strong>{new Date(new Date(user.deletedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</strong>.
           </span>
-          <button
+          <Button
             type="button"
+            variant="default"
             onClick={restoreAccount}
             disabled={restoring}
             style={{
@@ -2123,7 +2125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }}
           >
             {restoring ? "Restoring..." : "Restore account"}
-          </button>
+          </Button>
         </div>
       )}
       {/* Session expiry banner with Refresh Now action */}
@@ -2138,8 +2140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span style={{ flex: 1 }}>{sessionExpiryWarning}</span>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={refreshSessionNow}
             disabled={refreshing}
             style={{
@@ -2150,7 +2153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }}
           >
             {refreshing ? "Refreshing..." : "Refresh now"}
-          </button>
+          </Button>
         </div>
       )}
       {children}

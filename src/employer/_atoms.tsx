@@ -1,5 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { Button } from "@/components/ui/button";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 
 /** Deterministic evenly-spaced sample, used to show a diverse slice of a
@@ -172,8 +173,9 @@ export function PrimaryCta({
   type?: "button" | "submit";
 }) {
   return (
-    <button
+    <Button
       type={type}
+      variant="default"
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -196,7 +198,7 @@ export function PrimaryCta({
     >
       {children}
       {icon}
-    </button>
+    </Button>
   );
 }
 
@@ -216,8 +218,9 @@ export function OutlineCta({
   tone?: "neutral" | "indigo";
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={onClick}
       style={{
         display: "inline-flex",
@@ -238,7 +241,7 @@ export function OutlineCta({
     >
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 

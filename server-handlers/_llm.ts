@@ -248,7 +248,7 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
-export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string }): Promise<LLMResult> {
+export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number }): Promise<LLMResult> {
   const providers: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }[] = [];
   // Fast calls (opts.fast=true) use Groq llama-3.1-8b-instant — fast, free, not deprecated.
   // Slow/big-model calls use Gemini 2.5 Flash first: free tier (250 req/day = ~125 sessions),
@@ -276,9 +276,30 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // p95 spike and the user pays the Gemini fallback latency. Callers can
   // raise via meta.groqTimeoutMs (still bounded by timeoutMs).
   const groqCap = Math.min(timeoutMs, meta?.groqTimeoutMs ?? 10000);
+
+  // Overall wall-clock ceiling across the WHOLE provider chain, including
+  // retries and failover — opt-in via meta.totalBudgetMs. Without it,
+  // remainingBudget() is always Infinity and every caller's existing
+  // per-provider-timeout behavior is unchanged.
+  //
+  // Why this exists: timeoutMs/groqCap were being read as "the worst case
+  // is timeoutMs × providers", but a provider can also retry once on a
+  // transient (non-timeout) error before failing over, so the REAL worst
+  // case is closer to (timeoutMs + 800ms retry backoff) × providers. For
+  // analyze-resume specifically that chain is 3 deep (gemini → groq →
+  // cerebras) and blew past both the client's fetch timeout and the Vercel
+  // edge function's own execution ceiling — the isolate got killed before
+  // the handler's own catch block could return a graceful "timed out"
+  // response. totalBudgetMs lets a caller cap the chain's real wall-clock
+  // time regardless of how many providers or retries fire.
+  const startedAt = Date.now();
+  const remainingBudget = () => meta?.totalBudgetMs != null
+    ? Math.max(0, meta.totalBudgetMs - (Date.now() - startedAt))
+    : Infinity;
+
   const providerTimeout = (name: string) => {
-    if (name === "groq") return groqCap;
-    return timeoutMs;
+    const base = name === "groq" ? groqCap : timeoutMs;
+    return Math.min(base, remainingBudget());
   };
 
   // Retry classification lives in module-scope isTransientLLMError (above):
@@ -287,8 +308,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   const isTransient = isTransientLLMError;
 
   const callOnce = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }): Promise<LLMResult> => {
+    const budget = providerTimeout(provider.name);
+    if (budget <= 0) throw new Error(`${provider.name} skipped — total LLM budget exhausted`);
     const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), providerTimeout(provider.name));
+    const timer = setTimeout(() => ac.abort(), budget);
     try {
       const result = await provider.call(ac.signal);
       clearTimeout(timer);
@@ -300,9 +323,11 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
 
   const tryProvider = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }, isFallback: boolean): Promise<LLMResult> => {
     let attempt = 0;
-    // up to 2 attempts per provider (1 initial + 1 retry on transient)
+    // up to 2 attempts per provider (1 initial + 1 retry on transient),
+    // but never retry into a budget too small to be worth it.
     while (true) {
       attempt++;
+      if (remainingBudget() <= 0) throw new Error(`${provider.name} skipped — total LLM budget exhausted`);
       try {
         const result = await callOnce(provider);
         await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId });
@@ -312,7 +337,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
         const errName = err instanceof Error ? err.name : "";
         const isTimeout = errName === "AbortError" || msg.includes("aborted") || msg.includes("abort");
         const transient = isTransient(msg);
-        if (attempt < 2 && transient && !isTimeout) {
+        if (attempt < 2 && transient && !isTimeout && remainingBudget() > 800) {
           console.warn(`[LLM] ${provider.name} transient error (${msg.slice(0, 80)}) — retrying after 800ms`);
           await new Promise((r) => setTimeout(r, 800));
           continue;
@@ -325,10 +350,14 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   };
 
   // Walk providers in order (fast: groq→gemini, slow: gemini→groq→cerebras). First success wins.
-  console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")} (timeout: ${timeoutMs}ms)`);
+  console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
   let lastErr: unknown;
   for (let i = 0; i < providers.length; i++) {
     const provider = providers[i];
+    if (remainingBudget() <= 0) {
+      lastErr = new Error("total LLM budget exhausted before all providers were tried");
+      break;
+    }
     try {
       return await tryProvider(provider, i > 0);
     } catch (err) {
