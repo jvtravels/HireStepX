@@ -24,6 +24,7 @@ import {
   edEyebrow,
   ED_PADDING,
 } from "./_editorial";
+import { CopyEmailLink } from "../_CopyEmailLink";
 import { COMPANY_LABEL } from "../../data/company-labels";
 import { getKnownFacts } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
@@ -579,6 +580,21 @@ export function QuestionSetPage({
             </div>
           </section>
         )}
+
+        {/* Sources & methodology: same trust block as the blog template
+            (SEO brief §7/§13) — these questions blend candidate-reported
+            detail with HireStepX-compiled practice questions, and that
+            distinction needs to be stated somewhere on the page. */}
+        <section className="ed-container" style={{ paddingTop: 0, paddingBottom: 40 }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, lineHeight: 1.7, color: t.inkFaint, margin: 0, maxWidth: "68ch", borderTop: `1px solid ${t.line}`, paddingTop: 24 }}>
+            These questions combine candidate-reported interview detail with practice questions compiled by the HireStepX team to help you rehearse — the two aren&apos;t the same thing, and we don&apos;t present a practice question as a verified historical one. See our{" "}
+            <Link href="/methodology" className="ed-link" style={{ color: t.inkSoft, textDecoration: "underline" }}>
+              methodology
+            </Link>{" "}
+            for how we source and label. Spot something outdated or wrong? Email{" "}
+            <CopyEmailLink email="hello@hirestepx.com" style={{ color: t.inkSoft, textDecoration: "underline" }} />.
+          </p>
+        </section>
 
         {/* Closing CTA */}
         <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering.">
