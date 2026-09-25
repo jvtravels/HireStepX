@@ -7,7 +7,7 @@ import {
   isSessionExpiredByPreference,
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
-import { isSlowConnection } from "./_browser-api-guards";
+import { isSlowConnection, sendGtagEvent } from "./_browser-api-guards";
 import { tokens } from "./auth/_tokens";
 import {
   decideDeviceAction,
@@ -1418,6 +1418,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userId) {
         identifyClient(userId, { email, name, signup_method: "email" });
         captureClientEvent("user_signed_up", { method: "email" });
+        sendGtagEvent("sign_up", { method: "email" });
       }
       return { success: true, userId };
     } finally {

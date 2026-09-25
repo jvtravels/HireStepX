@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, memo, Fragment } from "react";
 import { captureClientEvent } from "./posthogClient";
+import { sendGtagEvent } from "./_browser-api-guards";
 import dynamic from "next/dynamic";
 import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
@@ -207,9 +208,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               const purchased = typeof verifyData.quantity === "number" ? verifyData.quantity : null;
               captureClientEvent("payment_success", { plan: "single", quantity: purchased ?? 1 });
               // GA4 ecommerce — revenue visibility independent of PostHog
-              if (typeof window !== "undefined" && (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag) {
-                (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: 9 * (purchased ?? 1), items: [{ item_id: "single_session", item_name: "Single Interview Session", price: 9, quantity: purchased ?? 1 }] });
-              }
+              sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: 9 * (purchased ?? 1), items: [{ item_id: "single_session", item_name: "Single Interview Session", price: 9, quantity: purchased ?? 1 }] });
               setCreditSuccess(purchased);
               setLoading(null);
               // Update sidebar balance immediately from the server's reported new
@@ -226,10 +225,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               plan: pendingVerification?.plan,
             });
             // GA4 ecommerce — revenue visibility independent of PostHog
-            if (typeof window !== "undefined" && (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag) {
+            {
               const planId = pendingVerification?.plan ?? "";
               const planValue = planId === "monthly" ? 149 : 39;
-              (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: planValue, items: [{ item_id: planId, item_name: planId === "monthly" ? "Monthly Plan" : "Sprint Pack", price: planValue, quantity: 1 }] });
+              sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: planValue, items: [{ item_id: planId, item_name: planId === "monthly" ? "Monthly Plan" : "Sprint Pack", price: planValue, quantity: 1 }] });
             }
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
@@ -382,6 +381,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         setLoading(null);
       });
       captureClientEvent("checkout_opened", { plan: planId });
+      sendGtagEvent("checkout_opened", { plan: planId });
       rzp.open();
       // Safety net: clear spinner ONLY if Razorpay never opened. Without
       // the guard, a modal that appears at 7.9s would re-enable the Pay
@@ -787,6 +787,12 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
     cta: "See plans",
     footnote: "On any paid plan · Sprint Pack from ₹39",
   };
+
+  useEffect(() => {
+    captureClientEvent("paywall_shown", { feature });
+    sendGtagEvent("paywall_shown", { feature });
+  }, [feature]);
+
   return (
     <div style={{ position: "relative", minHeight: "calc(100dvh - 160px)", overflow: "hidden" }}>
       {/* Blurred preview background */}

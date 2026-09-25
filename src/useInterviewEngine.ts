@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
+import { sendGtagEvent } from "./_browser-api-guards";
 
 import { useAuth, setInterviewInProgress } from "./AuthContext";
 import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED, SARVAM_FEMALE_VOICES } from "./tts";
@@ -1564,6 +1565,11 @@ export function useInterviewEngine() {
         // single most important PostHog event for measuring whether
         // signup → wow-moment conversion is working.
         is_first_session: (user?.practiceTimestamps?.length ?? 0) === 0,
+      });
+      sendGtagEvent("interview_started", {
+        focus: interviewType,
+        mode: isMiniMode ? "mini" : "full",
+        is_panel: isPanelInterview,
       });
       }
     }
@@ -3958,6 +3964,12 @@ export function useInterviewEngine() {
       stt_audio_seconds: sessionSttSeconds,
       tts_cost_inr_est: ttsCostInr,
       stt_cost_inr_est: sttCostInr,
+    });
+    sendGtagEvent("interview_completed", {
+      focus: interviewType,
+      score,
+      duration_seconds: elapsed,
+      questions_answered: currentQuestionNum,
     });
 
     try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }
