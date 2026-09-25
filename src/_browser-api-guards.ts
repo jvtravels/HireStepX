@@ -67,3 +67,17 @@ export function yieldToMainThread(): Promise<void> {
   if (g.scheduler?.yield) return g.scheduler.yield();
   return new Promise((r) => setTimeout(r, 0));
 }
+
+/* ─── gtag — GA4, only present once the user accepts cookie consent
+ *
+ * ConsentGatedAnalytics/MarketingAnalytics only mount the gtag.js <Script>
+ * after consent, so window.gtag is undefined pre-consent — that's the
+ * gate, not a separate consent check here. */
+
+type GtagFn = (...args: unknown[]) => void;
+
+export function sendGtagEvent(name: string, params?: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  const w = window as Window & { gtag?: GtagFn };
+  w.gtag?.("event", name, params);
+}

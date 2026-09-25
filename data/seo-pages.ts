@@ -162,6 +162,10 @@ export const SEO_PAGES: SeoPage[] = [
         q: "What is the Razorpay SDE-1 salary in India 2026?",
         a: "Razorpay SDE-1 total CTC ranges from approximately ₹10.5L to ₹29.4L in India (2026), including base salary, variable pay, and pre-IPO ESOPs. Negotiation focus at this level is fixed salary plus joining bonus. Source: AmbitionBox and Glassdoor aggregated data.",
       },
+      {
+        q: "Does Razorpay ask about routing transactions across multiple banks?",
+        a: "Yes, for gateway-facing roles. A recurring Technical Round 2 prompt is designing a payment gateway that routes transactions across multiple acquiring banks to maximise success rate: candidates are expected to reason about smart routing based on bank uptime/success-rate signals, not just idempotency and reconciliation.",
+      },
     ],
     recruitmentSteps: [
       "Recruiter screen: background, motivation, and salary expectations (30 min)",
@@ -174,7 +178,7 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "Online Coding Round (60 min): 2 medium-hard DSA problems. Standard filter.",
       "Technical Round 1: DSA + Code Quality (60 min): One harder problem with problem decomposition and code review discussion. Razorpay expects production-readiness thinking: how would this code behave in a payment system?",
-      "Technical Round 2: System Design (60 min, SDE-2+): Payments-specific architecture: UPI failure handling, idempotent payment retries, settlement reconciliation, NPCI rate limiting. 'I'd add caching' is not a sufficient answer: be specific about which cache, what TTL, and what happens on cache stampede.",
+      "Technical Round 2: System Design (60 min, SDE-2+): Payments-specific architecture: UPI failure handling, idempotent payment retries, settlement reconciliation, NPCI rate limiting, and smart routing across multiple acquiring banks to maximise transaction success rate. 'I'd add caching' is not a sufficient answer: be specific about which cache, what TTL, and what happens on cache stampede.",
       "Culture Round (45 min): Genuine ownership stories evaluated on conviction, not keyword alignment. Can you explain a technical choice in terms of what a merchant experiences when a payment fails at checkout?",
     ],
   },
@@ -961,7 +965,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── LTIMindtree ───────────────────────────────────────────────────── */
   {
     slug: "ltimindtree-freshers-interview-questions",
-    searchPhrase: "LTIMindtree Interview Questions for Freshers 2026",
+    searchPhrase: "LTIMindtree Freshers Interview 2026: ₹5.5-12 LPA",
     company: "ltimindtree", roleFamily: "campus", focus: "campus-placement",
     intro: "LTIMindtree (formed from the 2022 merger of Larsen and Toubro Infotech and Mindtree) has unified its fresher hiring with a stronger emphasis on coding ability than most service-company peers. The online assessment is measurably harder than TCS or Wipro: expect 3 coding problems of increasing difficulty rather than 2 easy ones. LTIMindtree specifically looks for engineers who can write production-grade code with clean structure, not just passing pseudocode. The technical interview probes CS fundamentals including OOPS, data structures, and database basics, alongside a walkthrough of your final-year or personal project. LTIMindtree's clients span banking (BFSI), manufacturing, and retail: mentioning interest in any of these verticals during the HR round is a positive signal. The HR round is shorter and more conversational than the TCS or Infosys equivalent.",
     framework: { name: "Code quality focus", summary: "Correct first → readable variable names → edge case handling → time-complexity comment → test mentally before submitting." },
@@ -980,6 +984,10 @@ export const SEO_PAGES: SeoPage[] = [
         q: "Does mentioning specific industry domains help in the LTIMindtree HR round?",
         a: "Yes. LTIMindtree's clients span BFSI (banking, financial services, insurance), manufacturing, and retail. Mentioning genuine interest in any of these verticals during the HR round is a positive signal: it shows awareness of their client base and aligns with where their projects are concentrated. The LTIMindtree HR round is shorter and more conversational than TCS or Infosys equivalents.",
       },
+      {
+        q: "What is the LTIMindtree fresher salary in India?",
+        a: "LTIMindtree's 2026 fresher software engineer offer falls in the ₹5.5 to 12 LPA range depending on the hiring band and location, per LTIMindtree's own fresher disclosure. Clearing more of the coding assessment and technical rounds moves you toward the higher end of that band.",
+      },
     ],
     recruitmentSteps: [
       "Online Assessment: Aptitude + 3 Coding Problems",
@@ -993,46 +1001,10 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
 
-  /* ── IBM ───────────────────────────────────────────────────────────── */
-  {
-    slug: "ibm-freshers-interview-questions",
-    searchPhrase: "IBM Interview Questions for Freshers 2026",
-    company: "ibm", roleFamily: "campus", focus: "campus-placement",
-    intro: "IBM's fresher hiring (Application Developer, ₹4.5–6.5 LPA) focuses more on problem-solving attitude than raw coding speed. The interview has a strong written and verbal communication section: IBM is a client-facing consulting and technology firm, and unclear answers are penalised explicitly. IBM specifically asks about 'curiosity and continuous learning,' their cultural cornerstone: candidates with self-learning certifications (IBM Badge, AWS Cloud Practitioner, Google Cloud) stand out significantly over those without. IBM's India offices (Bangalore, Hyderabad, Pune, Delhi NCR, Kolkata) primarily hire freshers for software development, testing, and IT consulting roles. The Cognitive Ability and Technical Assessment filters on coding fundamentals and logical reasoning. Candidates should prepare to discuss one project deeply (architecture, their contribution, one trade-off) and be ready to connect IBM's hybrid-cloud strategy (Red Hat OpenShift, IBM Cloud Pak) to why they want to join.",
-    framework: { name: "THINK for IBM", summary: "Thoughtful problem breakdown → Human impact of solution → Inclusion of edge cases → New learning demonstrated → Knowledge of IBM services." },
-    metaKeywords: ["ibm freshers interview", "ibm application developer interview", "ibm campus placement 2026", "ibm fresher interview india 2026", "ibm hiring freshers 2026"],
-    sitemapPriority: 0.8,
-    faqExtra: [
-      {
-        q: "What does IBM look for in fresher interviews beyond technical skills?",
-        a: "IBM specifically evaluates 'curiosity and continuous learning': their cultural cornerstone. Candidates with self-learning certifications (IBM Badge, AWS Cloud Practitioner, Google Cloud) stand out significantly over those without. IBM is a client-facing consulting and technology firm, so unclear answers are penalised explicitly: communication quality is scored separately from answer quality. Prepare a project you can discuss deeply (architecture, your specific contribution, one trade-off you made) and connect IBM's hybrid-cloud strategy (Red Hat OpenShift, IBM Cloud Pak) to why you want to join.",
-      },
-      {
-        q: "What is the IBM Cognitive Ability + Technical Assessment?",
-        a: "IBM's online assessment covers aptitude (verbal, numerical, abstract reasoning) plus 1–2 coding problems (Python or Java preferred). The aptitude section is harder on logical reasoning than TCS NQT but more predictable in format. IBM does not require competitive programming ability: CS fundamentals at depth (OOP, OS, DBMS, networking basics) and a well-articulated project walkthrough are far more important.",
-      },
-      {
-        q: "What is the salary range for IBM Application Developer freshers in India?",
-        a: "IBM's fresher Application Developer role offers ₹4.5–6.5 LPA depending on the track (GTS vs. GBS) and academic background. IBM's India offices are in Bangalore, Hyderabad, Pune, Delhi NCR, and Kolkata, primarily hiring freshers for software development, testing, and IT consulting roles. The GBS (Global Business Services) consulting track has a slightly higher package ceiling for strong candidates.",
-      },
-    ],
-    recruitmentSteps: [
-      "Online Application + academic filter (typically 65%+)",
-      "Cognitive Ability + Technical Assessment",
-      "Technical Interview: Coding problem, CS fundamentals",
-      "HR Interview: Cultural fit, IBM values, learning mindset",
-    ],
-    interviewRounds: [
-      "Cognitive + Technical Test: Aptitude + 1–2 coding problems (Python or Java preferred).",
-      "Technical Interview: Cloud basics (AWS/Azure/IBM Cloud), OOP, databases, your strongest project.",
-      "HR Interview: Curiosity and continuous learning are IBM's core values: have a story ready.",
-    ],
-  },
-
   /* ── Deloitte ──────────────────────────────────────────────────────── */
   {
     slug: "deloitte-analyst-interview-questions",
-    searchPhrase: "Deloitte Analyst Interview Questions India 2026",
+    searchPhrase: "Deloitte Analyst Interview India 2026: ₹8-15 LPA",
     company: "deloitte", roleFamily: "behavioral", focus: "behavioral",
     intro: "Deloitte's analyst interviews (USI, Advisory, Technology) are structured competency assessments. Each question maps to one of Deloitte's PACE principles (Purpose, Aspiration, Commitment, Excellence). The partner or manager interviewing you has a scorecard. Stories with clear professional impact, stakeholder complexity, and personal ownership score highest. The entry gate is the CogniVue aptitude test: harder than most candidates expect, covering numerical reasoning, verbal ability, logical reasoning, and situational judgement. Candidates who clear CogniVue face a group discussion round before the PACE-based panel interview. Consulting and advisory track candidates additionally sit a case interview that tests structured business problem-solving.",
     framework: { name: "PACE stories", summary: "Purpose (why the work mattered) → Aspiration (the target you set for yourself, not just the team) → Commitment (how you stayed engaged when hard) → Excellence (the measurable result)." },
@@ -1050,6 +1022,10 @@ export const SEO_PAGES: SeoPage[] = [
       {
         q: "Do Deloitte analyst interviews include a case study?",
         a: "It depends on the track. Consulting and advisory track candidates at Deloitte additionally sit a case interview (20–25 minutes, interviewer-led) that tests structured business problem-solving. Technology and USI (US India delivery) track candidates may face technical questions instead. The case at Deloitte leans toward operations, large-scale IT transformation, and public sector scenarios: a distinct contrast to McKinsey and BCG's market-entry emphasis. Prepare 2–3 transformation scenarios from India's public sector (government digitisation, healthcare, financial inclusion).",
+      },
+      {
+        q: "What is the Deloitte analyst salary in India?",
+        a: "Deloitte India analyst offers typically fall in the ₹8 to 15 LPA range at entry level, based on 2026 Glassdoor and Indeed reporting. Advisory and consulting track offers tend to land toward the higher end of that band.",
       },
     ],
     recruitmentSteps: [
@@ -1365,6 +1341,8 @@ export const SEO_PAGES: SeoPage[] = [
       { q: "How many rounds does Nykaa's SWE interview have?", a: "Typically 2-3 technical rounds (a DSA round with project discussion, a low-level design round, and sometimes a high-level design round) followed by a managerial round covering past projects and broader system design." },
       { q: "What kind of system design questions does Nykaa ask?", a: "Nykaa's LLD rounds are usually framed around its own operations: dark-store delivery allocation, multi-outlet inventory with concurrent order handling, or catalog/search consistency during flash sales. HLD rounds have covered designing a scalable stock-portfolio-style manager and campaign-targeting engines." },
       { q: "Does Nykaa ask standard DSA questions too?", a: "Yes. Expect medium-difficulty problems on trees, linked lists, graphs, and string manipulation alongside the design rounds, often paired with a 'where would this actually be useful' follow-up tied to Nykaa's product." },
+      { q: "What programming language does Nykaa prefer?", a: "Java and Python are most common in Nykaa's backend stack. You may use either in interviews; confirm with your recruiter." },
+      { q: "How long does Nykaa's hiring process take?", a: "Most candidates report two to four weeks from online assessment to offer, though timelines vary by team and seniority level." },
     ],
     recruitmentSteps: [
       "Resume screen: e-commerce, D2C, or quick-commerce backend experience preferred",
@@ -1386,7 +1364,7 @@ export const SEO_PAGES: SeoPage[] = [
     slug: "myntra-swe-interview-questions",
     searchPhrase: "Myntra Software Engineer Interview Questions India 2026",
     company: "myntra", roleFamily: "swe", focus: "technical",
-    intro: "Myntra's SWE loop runs an online assessment followed by 3-4 rounds: a DSA/technical-discussion round, a machine-coding or low-level-design round, and (for SDE-2 and above) a high-level design round, closing with an HR conversation. What sets Myntra apart is how consistently its design rounds are grounded in its own fashion-commerce operations: coupon-stacking shopping carts, flash-sale search and catalog under Big Billion Days-scale traffic, and personalisation engines that need to react to a live sale rather than a nightly batch job. DSA rounds lean noticeably toward graphs and backtracking over generic array problems.",
+    intro: "Myntra, part of the Flipkart group, runs an SWE loop with an online assessment followed by 3-4 rounds: a DSA/technical-discussion round, a machine-coding or low-level-design round, and (for SDE-2 and above) a high-level design round, closing with an HR conversation. What sets Myntra apart is how consistently its design rounds are grounded in its own fashion-commerce operations: coupon-stacking shopping carts, flash-sale search and catalog under Big Billion Days-scale traffic, and personalisation engines that need to react to a live sale rather than a nightly batch job. DSA rounds lean noticeably toward graphs and backtracking over generic array problems.",
     framework: { name: "Flash-sale-aware design", summary: "Assume 50x traffic spikes are the normal case, not the edge case: separate read-heavy catalog/search paths from write-heavy inventory paths, and decide upfront what can degrade gracefully versus what must stay strictly consistent." },
     metaKeywords: ["myntra software engineer interview india", "myntra swe interview questions 2026", "myntra machine coding round", "myntra low level design interview", "myntra sde interview process"],
     sitemapPriority: 0.76,
@@ -1424,6 +1402,7 @@ export const SEO_PAGES: SeoPage[] = [
       { q: "What is Dream11's most common system design question?", a: "Designing the HLD for the team-creation feature: users pick 11 players under a credit cap before a match locks, with the database schema and race-condition handling at the deadline as the core of the discussion." },
       { q: "Does Dream11 ask about real-time systems?", a: "Yes. A recurring prompt is designing real-time score and leaderboard updates for millions of concurrent users during a live match, where a single scoring event can affect thousands of leaderboards at once." },
       { q: "How many rounds does the Dream11 SDE interview have?", a: "Typically five: two online DSA rounds, then onsite rounds covering resume/project discussion, low-level design, high-level design, and a hiring-manager plus HR round." },
+      { q: "What backend technologies does Dream11 use?", a: "Dream11's stack includes Go, Java, Kafka, Redis, and Cassandra. Familiarity with at least one of these, and how it would handle a hard match-lock deadline or a burst-fanout scoring event, strengthens your interview performance." },
     ],
     recruitmentSteps: [
       "Online Assessment 1: DSA problems (trees, graphs, DP)",
@@ -1438,7 +1417,7 @@ export const SEO_PAGES: SeoPage[] = [
       "Resume and Projects Round (45 min): detailed walkthrough of past project architecture and technology choices.",
       "Low-Level Design Round (60 min): design a concrete module (e.g. contest or wallet logic) with clean class boundaries and SOLID principles.",
       "High-Level Design Round (60-90 min): design Dream11's team-creation feature, a real-time leaderboard system, or a monitoring/alerting system for match-day traffic; expect a direct question on handling a 50x traffic spike.",
-      "Hiring Manager and HR Round (30-45 min): situational questions, project ownership, and compensation discussion.",
+      "Hiring Manager and HR Round (30-45 min): situational questions, project ownership, how you operate under tight IPL-season deadlines, and compensation discussion.",
     ],
   },
 
@@ -1714,6 +1693,10 @@ export const SEO_PAGES: SeoPage[] = [
         q: "How many rounds does Swiggy engineering interview have?",
         a: "Swiggy's engineering interview loop has 4–5 rounds: Online Assessment (2–3 DSA problems, medium difficulty, 60–90 min) → Technical Round 1 (coding: arrays, graphs, or DP, 45–60 min) → Technical Round 2 (coding + problem decomposition, 45–60 min) → System Design (real-time logistics or notification architecture, 60 min) → Behavioral Round (ownership, speed under uncertainty, 30–45 min).",
       },
+      {
+        q: "Does Swiggy's system design round cover restaurant discovery, not just delivery?",
+        a: "Yes. Alongside order-assignment and notification architecture, Swiggy system design rounds also probe a personalised restaurant-discovery feed: keeping menu availability fresh, ranking signals, and cache invalidation under a sharp dinner-peak load. Separating the write-heavy delivery-partner location-ping path from ETA reads is a related design point interviewers push on.",
+      },
     ],
     recruitmentSteps: [
       "Online assessment: 2–3 DSA coding problems (medium difficulty, 60–90 minutes)",
@@ -1726,7 +1709,7 @@ export const SEO_PAGES: SeoPage[] = [
       "Online Assessment (60–90 min): 2–3 DSA problems at medium difficulty. Standard filter.",
       "Technical Round 1: Coding (45–60 min): Arrays, graphs, or dynamic programming. One problem with full optimisation discussion.",
       "Technical Round 2: Coding + Decomposition (45–60 min): More complex problem with follow-up optimisation and edge-case discussion.",
-      "System Design (60 min): Real-time logistics under adversarial conditions: monsoon outages, restaurant denial cascades, surge demand from cricket finals. Notification delivery under 200ms for 5000 simultaneous orders is a common prompt. Geospatial indexing strategy and push vs pull architecture are key concepts.",
+      "System Design (60 min): Real-time logistics under adversarial conditions: monsoon outages, restaurant denial cascades, surge demand from cricket finals. Notification delivery under 200ms for 5000 simultaneous orders is a common prompt. Geospatial indexing strategy and push vs pull architecture are key concepts. Also covers the personalised restaurant-discovery feed: menu-availability freshness, ranking, and cache invalidation.",
       "Behavioral Round (30–45 min): Ownership, speed under uncertainty, and cross-functional stories. Swiggy's engineering culture rewards moving fast under pressure.",
     ],
   },
@@ -2409,6 +2392,10 @@ export const SEO_PAGES: SeoPage[] = [
         q: "What does IBM's 'Think' culture mean for behavioral interviews?",
         a: "IBM's 'Think' culture values learning agility. Being able to say 'I don't know this yet but I learn quickly by doing X' is an acceptable and often appreciated answer in IBM interviews, especially when paired with a concrete learning story: a certification completed, a side project started, a new technology adopted within 30 days. This is a distinct contrast to companies that penalise knowledge gaps. IBM interviewers are trained to score curiosity and initiative alongside technical correctness.",
       },
+      {
+        q: "What is the salary range for IBM Application Developer freshers in India?",
+        a: "IBM's fresher Application Developer role offers ₹4.5–6.5 LPA depending on the track (GTS vs. GBS) and academic background. IBM's India offices are in Bangalore, Hyderabad, Pune, Delhi NCR, and Kolkata, primarily hiring freshers for software development, testing, and IT consulting roles. The GBS (Global Business Services) consulting track has a slightly higher package ceiling for strong candidates.",
+      },
     ],
     recruitmentSteps: [
       "Apply via IBM campus recruitment portal or participate in campus drive",
@@ -2726,6 +2713,7 @@ export const SEO_PAGES: SeoPage[] = [
       { q: "What system design topics come up in Uber SDE interviews?", a: "Ride matching at scale, real-time driver location tracking, surge pricing calculation, geospatial indexing (H3/quadtrees), and distributed rate limiting. Expect questions on consistency vs availability trade-offs explicitly." },
       { q: "How many rounds does Uber SDE interview have in India?", a: "Typically 4 to 5 rounds: a coding screen, 2 DSA rounds, 1 system design round, and a hiring manager behavioral round. Senior roles may add a second design round." },
       { q: "What DSA topics appear in Uber SDE interviews?", a: "Graphs (BFS, DFS, shortest path), greedy algorithms, heaps and priority queues, and interval problems. Graph questions appear most frequently given Uber's routing and matching domain." },
+      { q: "How should I handle the high write volume of driver location pings in an Uber design?", a: "Ingest location updates through a streaming pipeline into a geospatial index (geohashing or a quadtree) optimised for writes, and serve ETA reads from a separate read-optimised path so write load never blocks queries. Interviewers push on this write/read split as part of the driver-location-service prompt." },
     ],
     recruitmentSteps: [
       "Recruiter screen: role and compensation alignment, 30 min",
@@ -2737,7 +2725,7 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "Coding Screen (45 min): 1 to 2 medium-hard DSA problems, often graph-based. Uber favours problems that reflect real product scenarios like shortest path or scheduling.",
       "DSA Rounds x2 (45 min each): Graphs, heaps, greedy, and dynamic programming. Interviewers ask you to articulate why your approach works before you start coding.",
-      "System Design (60 to 75 min): Design a real-time system at Uber scale. Common prompts: design the driver location service, design surge pricing, design the ride-matching system. Start with the data model and consistency requirements before jumping to components.",
+      "System Design (60 to 75 min): Design a real-time system at Uber scale. Common prompts: design the driver location service, design surge pricing, design the ride-matching system. Start with the data model and consistency requirements before jumping to components. For the location service specifically, separate the write-heavy location-ping ingestion path from ETA reads.",
       "Hiring Manager Round (45 min): Ownership stories, cross-team collaboration, and why Uber. Prepare examples from your last two roles with measurable impact.",
     ],
   },
@@ -3158,7 +3146,7 @@ export const SEO_PAGES: SeoPage[] = [
 
   {
     slug: "hdfc-swe-interview-questions",
-    searchPhrase: "HDFC Software Engineer Interview Questions India 2026",
+    searchPhrase: "HDFC SWE Interview 2026: Java, SQL, Reliability",
     company: "hdfc", roleFamily: "swe", focus: "technical",
     intro: "HDFC Bank's engineering interviews combine core Java and SQL depth with BFSI domain knowledge: expect questions on transaction processing, concurrency, and banking workflows that pure product companies never ask. The process is structured and relatively predictable, running 3 to 4 rounds with a strong emphasis on hands-on coding and system reliability. Unlike fintech startups, HDFC interviewers care about auditability, rollback strategies, and regulatory constraints alongside raw DSA skill.",
     framework: { name: "Reliability-first design", summary: "Lead every system design with failure modes, audit trails, and rollback before discussing throughput or caching." },
@@ -3531,90 +3519,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 1 - Online Coding Test (60 min): 2 to 3 problems at easy to medium difficulty covering arrays, strings, and basic OOP; SQL query round may be included.",
       "Round 2 - Technical Interview 1 (45 to 60 min): Core Java, Spring Boot, REST API design, microservices patterns, and one SQL problem on joins or aggregations.",
       "Round 3 - Technical Interview 2 and HR (45 min): High-level system design for an insurance use case (e.g., claims processing API), behavioural questions, and compensation discussion.",
-    ],
-  },
-  {
-    slug: "nykaa-swe-interview-prep-guide-2026",
-    searchPhrase: "Nykaa SWE Interview Prep: DSA, System Design & HR 2026",
-    company: "nykaa", roleFamily: "swe", focus: "technical",
-    intro: "Nykaa's engineering interviews focus on data structures, algorithms, and backend systems that power its beauty and fashion e-commerce platform. Expect questions around catalogue management, recommendation pipelines, and high-concurrency order flows. The process typically spans three to four rounds conducted over video call for most India-based engineering roles.",
-    framework: { name: "PREP", summary: "Problem restatement, reasoning through edge cases, execution with clean code, and performance analysis" },
-    metaKeywords: ["Nykaa software engineer interview", "Nykaa SDE interview questions India", "Nykaa coding interview 2026", "Nykaa backend interview"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "Does Nykaa use a coding platform for screening?", a: "Yes. Nykaa typically sends a HackerEarth or HackerRank online assessment covering two to three DSA problems before scheduling interviews." },
-      { q: "What programming language does Nykaa prefer?", a: "Java and Python are most common in Nykaa's backend stack. You may use either in interviews; confirm with your recruiter." },
-      { q: "How long does Nykaa's hiring process take?", a: "Most candidates report two to four weeks from OA to offer, though timelines vary by team and seniority level." },
-    ],
-    recruitmentSteps: [
-      "Apply via Nykaa careers portal or LinkedIn",
-      "Recruiter screening call (15 to 20 minutes)",
-      "Online assessment: two to three DSA problems on HackerEarth or HackerRank",
-      "Technical interviews (two rounds) covering DSA, system design, and project deep-dives",
-      "HR round: compensation discussion and offer",
-    ],
-    interviewRounds: [
-      "Online Assessment (60 to 90 min): Two to three medium-difficulty DSA problems; topics include arrays, trees, and dynamic programming.",
-      "Technical Round 1 (45 to 60 min): Data structures and algorithms on a shared editor; expect at least one medium LeetCode-style problem.",
-      "Technical Round 2 (45 to 60 min): System design for an e-commerce feature such as product search or cart service, plus a project discussion.",
-      "HR Round (20 to 30 min): Compensation, notice period, and culture-fit questions.",
-    ],
-  },
-  {
-    slug: "myntra-swe-interview-prep-guide-2026",
-    searchPhrase: "Myntra SWE Interview Prep: DSA, LLD & System Design 2026",
-    company: "myntra", roleFamily: "swe", focus: "technical",
-    intro: "Myntra, part of the Flipkart group, runs a structured SDE interview process with a strong emphasis on data structures, algorithms, and low-level design. Engineers work on high-traffic fashion commerce systems, so interviewers probe your understanding of scalability, caching, and microservices. Most rounds take place on video call and follow a predictable four-stage structure.",
-    framework: { name: "STAR-T", summary: "Situation, Task, Action, Result, and Technology tradeoffs used to discuss past projects" },
-    metaKeywords: ["Myntra software engineer interview", "Myntra SDE interview questions India", "Myntra coding round 2026", "Myntra system design interview"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "What topics does Myntra's coding round cover?", a: "Expect arrays, linked lists, trees, graphs, and dynamic programming. Medium to hard LeetCode difficulty is typical for SDE-2 and above." },
-      { q: "Does Myntra ask low-level design questions?", a: "Yes. LLD questions such as designing a rate limiter or parking lot appear in the second or third technical round for most engineering roles." },
-      { q: "Is there a system design round at Myntra?", a: "Yes, usually for SDE-2 and above. Topics include designing recommendation engines, search, or cart checkout at scale." },
-    ],
-    recruitmentSteps: [
-      "Apply through Myntra careers page or Flipkart referral portal",
-      "Recruiter call to confirm profile fitment",
-      "Online coding assessment on HackerRank",
-      "Two to three technical interview rounds",
-      "HR discussion and offer rollout",
-    ],
-    interviewRounds: [
-      "Online Assessment (60 to 90 min): Two to three DSA problems ranging from medium to hard; standard competitive programming topics.",
-      "Technical Round 1 (45 to 60 min): Live coding on a shared editor; one or two DSA problems with discussion of time and space complexity.",
-      "Technical Round 2 (45 to 60 min): Low-level design and object-oriented principles; you may be asked to design a class hierarchy or service interface.",
-      "Technical Round 3 / Hiring Manager (45 to 60 min): System design discussion and a deep-dive into your past projects and architectural decisions.",
-      "HR Round (20 to 30 min): Compensation, joining timelines, and culture questions.",
-    ],
-  },
-  {
-    slug: "dream11-swe-interview-questions",
-    searchPhrase: "Dream11 Software Engineer Interview Questions India 2026",
-    company: "dream11", roleFamily: "swe", focus: "system-design",
-    intro: "Dream11 is India's largest fantasy sports platform and its engineering team faces some of the most demanding traffic spikes in the country, particularly during IPL match days. Interviews place heavy weight on distributed systems design, real-time data pipelines, and high-concurrency backend patterns. You should be prepared to discuss trade-offs around consistency, availability, and latency at scale.",
-    framework: { name: "SCALE", summary: "Scope requirements, Choose components, Architect data flow, Load-test assumptions, Evaluate trade-offs" },
-    metaKeywords: ["Dream11 software engineer interview", "Dream11 system design interview India", "Dream11 SDE interview questions 2026", "Dream11 backend interview"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "How important is system design at Dream11?", a: "Very important. Dream11 handles millions of concurrent users during match start times, so system design is weighted at least equally with DSA in senior rounds." },
-      { q: "What backend technologies does Dream11 use?", a: "Dream11's stack includes Go, Java, Kafka, Redis, and Cassandra. Familiarity with at least one of these strengthens your interview performance." },
-      { q: "Does Dream11 have a competitive programming round?", a: "Yes. An online assessment with two to three DSA problems is standard before technical interviews are scheduled." },
-    ],
-    recruitmentSteps: [
-      "Apply on Dream11 careers page or via a referral",
-      "Initial recruiter screen (15 to 20 minutes)",
-      "Online coding assessment",
-      "Two to three technical rounds covering DSA and system design",
-      "Leadership or values round with a senior engineer or manager",
-      "Compensation discussion and offer",
-    ],
-    interviewRounds: [
-      "Online Assessment (60 to 90 min): Two to three DSA problems; medium to hard difficulty with emphasis on optimization.",
-      "Technical Round 1 (45 to 60 min): Data structures and algorithms; expect graph or tree problems along with complexity analysis.",
-      "Technical Round 2 (60 min): System design for a high-scale feature such as a leaderboard, team-locking service, or real-time score feed.",
-      "Technical Round 3 / Deep Dive (45 to 60 min): Past project walkthrough with a focus on scalability decisions, failures, and lessons learned.",
-      "Culture and Leadership Round (30 to 45 min): Values alignment, conflict resolution, and how you operate under tight IPL-season deadlines.",
     ],
   },
   {
@@ -4075,7 +3979,7 @@ export const SEO_PAGES: SeoPage[] = [
     slug: "bharatpe-swe-interview-questions",
     searchPhrase: "BharatPe Software Engineer Interview Questions India 2026",
     company: "bharatpe", roleFamily: "swe", focus: "technical",
-    intro: "BharatPe's engineering interviews emphasise strong fundamentals in data structures, algorithms, and low-level design for its payments and lending platform. Expect questions grounded in real-world fintech constraints: high throughput, idempotency, and fraud detection. Most candidates in India go through three to four rounds over one to two weeks.",
+    intro: "BharatPe's engineering interviews emphasise strong fundamentals in data structures, algorithms, and low-level design for its payments and lending platform serving millions of small merchants across India. Expect questions grounded in real-world fintech constraints: high throughput, idempotency, and fraud detection. Most candidates in India go through three to four rounds over one to two weeks.",
     framework: { name: "PEDAL", summary: "Problem restatement, Edge-case enumeration, Design walkthrough, Algorithm coding, and Latency analysis" },
     metaKeywords: ["BharatPe interview questions", "BharatPe SWE interview India 2026", "BharatPe coding round", "fintech engineer interview India"],
     sitemapPriority: 0.75,
@@ -4093,7 +3997,7 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "Round 1 - Online Assessment (90 min): Two to three DSA problems covering arrays, strings, and graphs on HackerRank.",
       "Round 2 - Technical Interview (60 min): Live coding on DSA problems plus discussion of time and space complexity.",
-      "Round 3 - Low-Level Design (45-60 min): Design a payments module or wallet system with class diagrams and API contracts.",
+      "Round 3 - Low-Level Design (45-60 min): Design a payments module, wallet system, or merchant settlement/fraud-detection flow handling millions of daily transactions, with class diagrams and API contracts.",
       "Round 4 - HR and Culture Fit (30 min): Behavioural questions aligned to BharatPe's startup pace and ownership culture.",
     ],
   },
@@ -4795,32 +4699,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 2 - Technical Interview (60 min): live coding plus discussion of past projects and database design.",
       "Round 3 - System Design (45-60 min): design a high-throughput order-matching or notification system for a trading platform.",
       "Round 4 - HR (30 min): compensation, joining timeline, and team alignment.",
-    ],
-  },
-  {
-    slug: "bharatpe-swe-interview-prep-guide-2026",
-    searchPhrase: "BharatPe SWE Interview Prep: Backend, Payments & DSA 2026",
-    company: "bharatpe", roleFamily: "swe", focus: "technical",
-    intro: "BharatPe engineers build payment infrastructure and lending products serving millions of small merchants across India. Interviews test core DSA, backend system design, and practical knowledge of distributed systems at scale. The process is competitive and moves quickly, with most candidates completing all rounds within two weeks.",
-    framework: { name: "Backend Depth", summary: "coding screens filter on DSA: design rounds assess microservices, payment flows, and fraud detection at merchant scale" },
-    metaKeywords: ["BharatPe interview questions", "BharatPe SWE interview India 2026", "BharatPe software engineer", "fintech payments interview India"],
-    sitemapPriority: 0.75,
-    faqExtra: [
-      { q: "What languages does BharatPe prefer in coding interviews?", a: "BharatPe primarily uses Java and Go in production. You can code in any language but demonstrating Java or Go familiarity is a plus for backend roles." },
-      { q: "Does BharatPe test knowledge of payment systems specifically?", a: "Yes. Expect at least one question on designing a payment gateway, reconciliation, or idempotency in financial APIs during the system design round." },
-      { q: "How many technical rounds does BharatPe conduct?", a: "Typically two to three technical rounds: one DSA screen, one coding-plus-design round, and a final engineering manager discussion." },
-    ],
-    recruitmentSteps: [
-      "Apply via BharatPe careers page or a referral from a current employee",
-      "Telephonic or online DSA screen: one to two problems, 45 to 60 minutes",
-      "Technical video rounds: DSA, system design, and behavioral",
-      "Offer and background verification",
-    ],
-    interviewRounds: [
-      "Round 1 - Phone Screen (45 min): one to two DSA problems on arrays, hashmaps, or linked lists with code walkthrough.",
-      "Round 2 - Technical Deep Dive (60 min): medium to hard DSA problem plus discussion of a backend project you have owned end to end.",
-      "Round 3 - System Design (60 min): design a merchant payment settlement or fraud detection system handling millions of daily transactions.",
-      "Round 4 - Engineering Manager (30 min): team culture, ownership mindset, and compensation discussion.",
     ],
   },
   {
@@ -5957,7 +5835,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wave 6: Remaining fintech, GCCs, D2C, SaaS, quant ── */
   {
     slug: "bajaj-finance-software-engineer-interview-questions",
-    searchPhrase: "Bajaj Finance SWE Interview Questions India 2026",
+    searchPhrase: "Bajaj Finance SWE Interview 2026: ₹6-28 LPA",
     company: "bajaj-finance", roleFamily: "swe", focus: "technical",
     intro: "Bajaj Finance (part of the Bajaj Finserv group) hires engineers for its lending and BFS-Direct app platform, so interviews lean on core Java, Spring Boot, microservices, and SQL rather than competitive programming. Expect scenarios grounded in loan origination, EMI schedules, and high-volume transaction processing. Domain awareness of NBFC lending flows and RBI compliance gives you a visible edge in later rounds.",
     framework: { name: "LENDIT", summary: "Loan-domain knowledge, Efficient DSA, Networks and security, Design of microservices, Integration and APIs, Testing and reliability" },
@@ -7435,7 +7313,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "millennium-quant-interview-questions",
-    searchPhrase: "Millennium India Quant Interview Questions 2026",
+    searchPhrase: "Millennium Quant Interview India 2026: Pods",
     company: "millennium", roleFamily: "quant", focus: "technical",
     intro: "Millennium's India quant and technology interviews screen for sharp probability reasoning, clean coding, and a genuine feel for markets. In 2026 expect an early quantitative and coding screen, then rounds on probability, statistics, expected value, and time-series or data-handling problems, often tied to how a strategy would behave in live trading. Because Millennium runs a multi-manager pod model, interviewers care that you can reason precisely about risk and edge, not just recite formulas.",
     framework: { name: "Edge and Rigour", summary: "Pair rigorous probability and statistics with clean, testable code and a clear story for where a trading edge comes from and how it decays" },
@@ -8111,34 +7989,6 @@ export const SEO_PAGES: SeoPage[] = [
     ],
   },
 
-  /* ── Uber — system design ───────────────────────────────────── */
-  {
-    slug: "uber-system-design-interview-questions",
-    searchPhrase: "Uber System Design Interview Questions 2026",
-    company: "uber", roleFamily: "swe", focus: "system-design",
-    intro: "Uber's system-design rounds are built on its own hard problems: match riders to nearby drivers at city scale, compute surge pricing in near real time, and stream live driver locations and ETAs under heavy write load. In 2026 strong candidates reach for geospatial indexing (geohashing or quadtrees) for proximity search, separate the write-heavy location-ping path from ETA reads, and reason about the dispatch and assignment trade-offs. Interviewers push on latency budgets, hotspot cities, and consistency of the matching state. A generic 'store locations in a database and query' answer gets dismantled fast.",
-    framework: { name: "Geo-Index-and-Dispatch", summary: "Use a geospatial index for proximity search, separate high-write location ingestion from ETA reads, and defend the matching and dispatch trade-offs under latency budgets" },
-    metaKeywords: ["Uber system design interview questions", "Uber SDE system design 2026", "design ride matching interview", "surge pricing system design"],
-    sitemapPriority: 0.72,
-    faqExtra: [
-      { q: "What system-design questions does Uber ask?", a: "Design rider-driver matching, surge pricing computed in near real time, and live location tracking with ETAs, all at city scale with heavy write volume." },
-      { q: "How do I design Uber's ride matching?", a: "Index driver locations with geohashing or a quadtree for fast proximity search, then run a dispatch step that assigns the best driver while accounting for latency, fairness, and in-flight matches." },
-      { q: "How does Uber handle the high write volume of location pings?", a: "Ingest location updates through a streaming pipeline into a spatial index optimised for writes, and serve ETA reads from a separate read-optimised path so the write load never blocks queries." },
-    ],
-    recruitmentSteps: [
-      "Recruiter screen and coding phone screen",
-      "Onsite coding rounds on DSA",
-      "System-design round on a geospatial or real-time service",
-      "Behavioral and hiring-manager round, then offer",
-    ],
-    interviewRounds: [
-      "Round 1 (45 min): coding phone screen on data structures and algorithms.",
-      "Round 2-3 (45 min each): onsite coding rounds.",
-      "Round 4 (45-60 min): system-design round on matching, pricing, or tracking.",
-      "Round 5 (45 min): behavioral round on ownership and impact.",
-    ],
-  },
-
   /* ── JPMorgan Chase — technical ─────────────────────────────── */
   {
     slug: "jpmorgan-technical-interview-questions",
@@ -8218,33 +8068,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 1 (30 min): recruiter screen on fit and why Flipkart.",
       "Round 2 (45-60 min): hiring-manager behavioral round on ownership and pressure.",
       "Round 3 (45 min): cross-functional or bar-raiser round drilling into one story.",
-    ],
-  },
-
-  /* ── Razorpay — system design ───────────────────────────────── */
-  {
-    slug: "razorpay-system-design-interview-questions",
-    searchPhrase: "Razorpay System Design Interview Questions 2026",
-    company: "razorpay", roleFamily: "swe", focus: "system-design",
-    intro: "Razorpay's system-design rounds are payments-native and India-specific. In 2026 expect prompts on a payment gateway that routes transactions across multiple banks to maximise success rate, a settlement system that reconciles and pays out to merchants without losing or double-paying money, and handling UPI callbacks that arrive late, out of order, or twice. Interviewers probe smart routing across acquirers, idempotency, reconciliation, and consistent state transitions under asynchronous, unreliable notifications. Candidates who understand UPI's real-world messiness and design idempotent, reconcilable flows stand out from generic web-scale answers.",
-    framework: { name: "Route-Reconcile-Idempotent", summary: "Route across acquirers to maximise success, make every state transition idempotent, and build reconciliation to guarantee no money is lost or double-paid under async UPI callbacks" },
-    metaKeywords: ["Razorpay system design interview questions", "Razorpay SDE system design 2026", "payment gateway system design", "UPI system design interview"],
-    sitemapPriority: 0.7,
-    faqExtra: [
-      { q: "What system-design questions does Razorpay ask?", a: "Design a multi-bank payment gateway that maximises success rate, a merchant settlement and reconciliation system, and UPI callback handling that tolerates late, duplicate, and out-of-order notifications." },
-      { q: "How do I handle UPI callbacks in a Razorpay design?", a: "Treat callbacks as unreliable: make status updates idempotent, key them by transaction id, and design state transitions that are safe under duplicate, delayed, or out-of-order delivery." },
-      { q: "What makes Razorpay system design distinct?", a: "It is payments-native and India-specific. Interviewers reward understanding of acquirer routing, settlement reconciliation, idempotency, and the real-world messiness of UPI over generic web-scale answers." },
-    ],
-    recruitmentSteps: [
-      "Recruiter or online assessment screen",
-      "Technical coding round on DSA",
-      "System-design round on a payments service",
-      "Hiring-manager round, then offer",
-    ],
-    interviewRounds: [
-      "Round 1 (60 min): coding round on data structures and algorithms.",
-      "Round 2 (60 min): system-design round on gateways, settlement, or UPI flows.",
-      "Round 3 (45-60 min): design deep-dive on correctness and reconciliation plus behavioral.",
     ],
   },
 
@@ -8515,33 +8338,6 @@ export const SEO_PAGES: SeoPage[] = [
       "Round 1 (45 min each): first-round interviews pairing a case with the PEI.",
       "Round 2 (45 min each): final-round cases and PEI with partners.",
       "The PEI is woven through every round alongside the case.",
-    ],
-  },
-
-  /* ── Swiggy — system design ─────────────────────────────────── */
-  {
-    slug: "swiggy-system-design-interview-questions",
-    searchPhrase: "Swiggy System Design Interview Questions 2026",
-    company: "swiggy", roleFamily: "swe", focus: "system-design",
-    intro: "Swiggy's system-design rounds are built on real-time logistics at dinner-peak scale: assign orders to nearby delivery partners with low latency, stream live location and ETA to customers, and serve a personalised restaurant-discovery feed. In 2026 strong candidates reach for geospatial indexing and batching for the assignment problem, separate the write-heavy location-ping path from ETA reads, and handle the demand spike during peak hours. Interviewers push on freshness of menu availability, ranking signals, and cache invalidation. Generic 'store it in a database and scale horizontally' answers get taken apart by the follow-ups.",
-    framework: { name: "Real-Time-Logistics", summary: "Use geospatial indexing and batching for assignment, separate high-write tracking from reads, and design ranking and caching for a fresh, personalised feed under peak load" },
-    metaKeywords: ["Swiggy system design interview questions", "Swiggy SDE system design 2026", "food delivery system design", "Swiggy order assignment design"],
-    sitemapPriority: 0.72,
-    faqExtra: [
-      { q: "What system-design questions does Swiggy ask?", a: "Design order-to-partner assignment at peak load, live order tracking with ETAs, and a personalised restaurant search and discovery feed." },
-      { q: "How do I design Swiggy's order assignment?", a: "Index delivery-partner locations geospatially for fast proximity search, batch nearby orders for efficiency, and run an assignment step that keeps latency low even during the dinner-peak spike." },
-      { q: "What makes Swiggy system design distinct?", a: "It is real-time logistics under a sharp demand curve. Interviewers reward handling the dinner-peak spike, freshness of menu availability, and the write-heavy location-tracking path." },
-    ],
-    recruitmentSteps: [
-      "Recruiter screen or online assessment",
-      "Technical coding round on DSA",
-      "System-design round on a logistics or discovery service",
-      "Hiring-manager and behavioral round, then offer",
-    ],
-    interviewRounds: [
-      "Round 1 (60 min): coding round on data structures and algorithms.",
-      "Round 2 (60 min): system-design round on assignment, tracking, or discovery.",
-      "Round 3 (45-60 min): design deep-dive plus behavioral on ownership.",
     ],
   },
 

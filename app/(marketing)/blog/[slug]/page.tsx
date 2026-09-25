@@ -30,11 +30,22 @@ function slugToTitle(slug: string): string {
 // the ~155-char SERP budget once a post covers several sub-topics — sent
 // through unmodified, Google truncates them mid-word/mid-sentence. Mirror
 // the word-boundary trim already used on /salary/[company].
+/* Cutting at the last word boundary can still land right before a
+   conjunction/preposition, leaving a dangling connector in the SERP
+   snippet (e.g. "...lending and"). Strip trailing stopwords after the cut. */
+const TRAILING_STOPWORD = /\s+(?:and|or|but|so|for|of|in|on|at|to|with|its|the|a|an|by|from|as)$/i;
+
 function truncateAtWord(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   const cut = text.slice(0, maxLen);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:/&-]+$/, "");
+  let result = (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:/&-]+$/, "");
+  let stripped = result.replace(TRAILING_STOPWORD, "");
+  while (stripped !== result) {
+    result = stripped;
+    stripped = result.replace(TRAILING_STOPWORD, "");
+  }
+  return result;
 }
 
 export async function generateMetadata({

@@ -119,10 +119,9 @@ function Sidebar({ active }: { active: string }) {
   const item = (key: string, label: string, icon: React.ReactNode) => {
     const isActive = key === active;
     return (
-      <a
+      <button
         key={key}
-        href="#"
-        onClick={(e) => e.preventDefault()}
+        type="button"
         aria-current={isActive ? "page" : undefined}
         style={{
           display: "flex",
@@ -130,17 +129,20 @@ function Sidebar({ active }: { active: string }) {
           gap: 12,
           padding: "10px 14px",
           borderRadius: 10,
+          border: "none",
+          width: "100%",
+          textAlign: "left",
+          cursor: "pointer",
           fontFamily: f.sans,
           fontSize: 14,
           fontWeight: isActive ? 600 : 500,
           color: isActive ? t.coal : t.inkSoft,
           background: isActive ? t.creamSoft : "transparent",
-          textDecoration: "none",
         }}
       >
         <span style={{ display: "inline-flex", flexShrink: 0 }}>{icon}</span>
         {label}
-      </a>
+      </button>
     );
   };
 

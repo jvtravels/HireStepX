@@ -502,7 +502,26 @@ export default function RequirementDetailPage() {
             </Eyebrow>
             <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
           </div>
-          <StatusChip status={requirement.status} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {requirement.status !== "closed" && (
+              <Link
+                href={`/employer/requirements/${requirement.id}/edit`}
+                style={{
+                  fontFamily: f.sans,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: t.indigo,
+                  textDecoration: "none",
+                  border: `1px solid ${t.line}`,
+                  borderRadius: 8,
+                  padding: "6px 12px",
+                }}
+              >
+                Edit
+              </Link>
+            )}
+            <StatusChip status={requirement.status} />
+          </div>
         </div>
 
         {requirement.description && (

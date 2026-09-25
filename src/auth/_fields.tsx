@@ -564,6 +564,8 @@ export function Wordmark() {
       src="/wordmark.png"
       alt="HireStepX"
       className="hsx-wordmark hsx-login-wordmark"
+      width={115}
+      height={32}
       style={{ height: 32, width: "auto", display: "block" }}
     />
   );

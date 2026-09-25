@@ -13,6 +13,7 @@ import { RoundFlow, SalaryLadder, TierCompare, FrameworkSteps, PrepTimeline, Com
 import type { BlogPost } from "../data/blog-posts";
 import type { BlogMeta } from "./blog-meta";
 import { CATEGORY_BUCKET_MAP, CATEGORY_BUCKETS, bucketToSlug } from "./blog-categories";
+import { CopyEmailLink } from "./_CopyEmailLink";
 
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
@@ -7583,6 +7584,23 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
               </div>
             </section>
           )}
+
+          {/* Sources & methodology: an E-E-A-T trust block on every post, not
+              a per-post hand-edit. Interview-experience posts blend
+              candidate-reported detail with HireStepX-compiled practice
+              questions, and a reader can't tell which is which without this
+              — see the SEO brief's §13 (sources, review signal, correction
+              path are required on every major content page). */}
+          <section style={{ marginTop: 48, paddingTop: 28, borderTop: `1px solid ${t.line}` }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 13, lineHeight: 1.7, color: t.inkFaint, margin: 0 }}>
+              This guide combines candidate-reported interview experiences (from platforms like AmbitionBox and Glassdoor, and direct submissions) with practice questions compiled by the HireStepX team to help you rehearse — the two aren&apos;t the same thing, and we don&apos;t present a practice question as a verified historical one. See our{" "}
+              <Link href="/methodology" className="ed-link" style={{ color: t.inkSoft, textDecoration: "underline" }}>
+                methodology
+              </Link>{" "}
+              for how we source and label. Published {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}. Spot something outdated or wrong? Email{" "}
+              <CopyEmailLink email="hello@hirestepx.com" style={{ color: t.inkSoft, textDecoration: "underline" }} />.
+            </p>
+          </section>
 
           {/* Explore more — practice links, related links, and auto-generated
               contextual links used to render as three separate sections with

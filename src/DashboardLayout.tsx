@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
+import { Button } from "@/components/ui/button";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
@@ -244,22 +245,20 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
             <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
           </Link>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open navigation menu"
             aria-expanded={sidebarOpen}
-            style={{
-              background: "none", border: "none", color: c.ivory,
-              cursor: "pointer", padding: 8, margin: -8,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
+            style={{ color: c.ivory }}
           >
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="12" x2="21" y2="12"/>
               <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
-          </button>
+          </Button>
         </header>
       )}
       <a href="#dashboard-main" style={{
@@ -513,10 +512,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             /* Free upsell or exhausted Starter: label + tooltip follow plan state.
                An exhausted Sprint Pack gets a pack-consistent "Buy more sessions"
                (opens the pack/credit modal), not a mismatched "Upgrade to Pro". */
-            <button onClick={() => setShowUpgradeModal(true)} title={primaryCtaTitle} aria-label={primaryCtaLabel} style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.93)")}
-              onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-            >{primaryCtaLabel}</button>
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => setShowUpgradeModal(true)}
+              title={primaryCtaTitle}
+              aria-label={primaryCtaLabel}
+            >{primaryCtaLabel}</Button>
           )}
         </div>
 
@@ -531,13 +533,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
             </div>
           </div>
-          <button onClick={() => { authLogout(); }} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "6px 0", transition: "color 0.2s", display: "flex", alignItems: "center", gap: 6 }}
-            onMouseEnter={(e) => e.currentTarget.style.color = c.ember}
-            onMouseLeave={(e) => e.currentTarget.style.color = c.stone}
-          >
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { authLogout(); }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Log out
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -557,12 +556,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 {paymentBanner === "success" ? "Payment successful! Your account has been upgraded." : "Payment was not completed. No charges were made — you can try again anytime."}
               </span>
             </div>
-            <button onClick={() => setPaymentBanner(null)} aria-label="Dismiss banner"
-              onMouseEnter={(e) => { e.currentTarget.style.color = paymentBanner === "success" ? c.sage : c.ember; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
-              style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 2, transition: "color 160ms ease" }}>
+            <Button variant="ghost" size="icon-xs" onClick={() => setPaymentBanner(null)} aria-label="Dismiss banner">
               <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+            </Button>
           </div>
         )}
 
@@ -573,12 +569,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</span>
             </div>
-            <button onClick={() => setSyncError("")} aria-label="Dismiss sync error"
-              onMouseEnter={(e) => { e.currentTarget.style.color = c.ember; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
-              style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 2, transition: "color 160ms ease" }}>
+            <Button variant="ghost" size="icon-xs" onClick={() => setSyncError("")} aria-label="Dismiss sync error">
               <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+            </Button>
           </div>
         )}
 
@@ -659,12 +652,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 </div>
                 <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: T.copperDark, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
               </div>
-              <button onClick={() => setHelpOpen(false)} aria-label="Close help panel"
-                style={{ background: "none", border: "none", color: T.copper, cursor: "pointer", padding: 4, borderRadius: 6, lineHeight: 0, transition: "opacity 0.15s" }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.6"}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+              <Button variant="ghost" size="icon-sm" onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ color: T.copper }}>
                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+              </Button>
             </div>
 
             {/* Body */}
@@ -704,19 +694,26 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 ]).map(({ key, label, icon, inactiveBg, inactiveColor, activeBg, activeColor, activeBdr }) => {
                   const active = helpType === key;
                   return (
-                    <button key={key} onClick={() => setHelpType(key)} style={{
-                      display: "flex", alignItems: "center", gap: 7,
-                      padding: "9px 11px", borderRadius: 8, cursor: "pointer",
-                      fontFamily: font.ui, fontSize: 12, fontWeight: active ? 700 : 500,
-                      transition: "all 0.15s", textAlign: "left" as const,
-                      background: active ? activeBg : inactiveBg,
-                      color: active ? activeColor : inactiveColor,
-                      border: active ? activeBdr : `1px solid transparent`,
-                      opacity: active ? 1 : 0.7,
-                    }}>
+                    <Button
+                      key={key}
+                      variant="ghost"
+                      aria-pressed={active}
+                      onClick={() => setHelpType(key)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 7,
+                        justifyContent: "flex-start",
+                        height: "auto", padding: "9px 11px", borderRadius: 8,
+                        fontFamily: font.ui, fontSize: 12, fontWeight: active ? 700 : 500,
+                        transition: "all 0.15s", textAlign: "left" as const,
+                        background: active ? activeBg : inactiveBg,
+                        color: active ? activeColor : inactiveColor,
+                        border: active ? activeBdr : `1px solid transparent`,
+                        opacity: active ? 1 : 0.7,
+                      }}
+                    >
                       {icon}
                       {label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -751,7 +748,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   <p style={{ fontFamily: font.ui, fontSize: 12, color: T.success, margin: 0, fontWeight: 500 }}>Sent! We&apos;ll get back to you soon.</p>
                 </div>
               ) : (
-                <button
+                <Button
+                  className="w-full"
                   disabled={helpSending || !helpFeedback.trim()}
                   onClick={async () => {
                     const msg = helpFeedback.trim();
@@ -778,20 +776,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       setHelpSending(false);
                     }
                   }}
-                  style={{
-                    width: "100%", padding: "10px 0", borderRadius: 8,
-                    cursor: helpSending || !helpFeedback.trim() ? "default" : "pointer",
-                    background: !helpFeedback.trim() ? T.creamSoft : `linear-gradient(135deg, ${T.copper}, ${T.copperDark})`,
-                    border: !helpFeedback.trim() ? `1px solid ${c.border}` : "none",
-                    color: !helpFeedback.trim() ? c.stone : T.white,
-                    fontFamily: font.ui, fontSize: 13, fontWeight: 600,
-                    transition: "opacity 0.15s", opacity: helpSending ? 0.65 : 1,
-                    letterSpacing: "0.01em",
-                  }}
-                  onMouseEnter={(e) => { if (!helpSending && helpFeedback.trim()) e.currentTarget.style.opacity = "0.88"; }}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+                >
                   {helpSending ? "Sending..." : "Send Feedback"}
-                </button>
+                </Button>
               )}
 
               {/* Secondary email fallback */}
@@ -804,22 +791,21 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         )}
 
         {/* FAB button */}
-        <button
+        <Button
+          size="icon-lg"
+          className="rounded-full"
           onClick={() => setHelpOpen(v => !v)}
           aria-label={helpOpen ? "Close help" : "Open help"}
           style={{
-            width: 48, height: 48, borderRadius: "50%", border: `1px solid ${c.border}`,
-            background: c.graphite, color: c.ivory, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: shadow.cta, transition: "border-color 0.2s, transform 0.2s",
+            background: c.graphite, color: c.ivory,
+            boxShadow: shadow.cta,
             marginLeft: "auto",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.gilt; e.currentTarget.style.transform = "scale(1.05)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.transform = "scale(1)"; }}>
+        >
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-        </button>
+        </Button>
       </div>
 
     </div>

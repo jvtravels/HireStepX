@@ -547,12 +547,16 @@ export default function Onboarding() {
             fileName: file.name,
             fileHash: fileHash ?? undefined,
           }),
-          // 25s budget — aligned to the server's worst-case Groq→Gemini
-          // fallback (~10s + 10s + ~3s pre-checks = ~23s). The previous
-          // 40s ceiling let the client surface a "timeout" on requests
-          // the server had actually completed; users saw "timed out"
-          // for analyses that landed successfully in the DB. 25s leaves
-          // a 2s buffer for network jitter on the response path.
+          // 25s budget — the server now hard-caps its whole gemini→groq→
+          // cerebras chain (incl. retries/failover) at an 18s totalBudgetMs
+          // (see analyze-resume.ts), plus ~1-2s of auth/cache pre-checks,
+          // so its real worst case is ~19-20s. 25s leaves 5s+ of margin for
+          // network jitter on the response path. Previously this raced
+          // against a per-provider timeout that undercounted retries, so
+          // the server's real worst case could exceed both this budget
+          // and Vercel's edge execution ceiling — the client would show
+          // "timed out" (or a raw failure) for analyses that were actually
+          // about to succeed server-side.
           new Promise<null>((_, reject) => setTimeout(() => reject(new Error("timeout")), 25000)),
           new Promise<null>((_, reject) => {
             currentAbort.signal.addEventListener("abort", () => reject(new Error("aborted")));

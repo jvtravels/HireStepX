@@ -22,25 +22,25 @@ describe("EndModal — question counter shares one basis", () => {
   };
 
   it("uses baseQuestionCount as the denominator, never the follow-up-inflated total", () => {
-    const { container } = render(
+    const { baseElement } = render(
       <EndModal currentQuestionNum={5} totalQuestions={8} baseQuestionCount={5} {...baseProps} />,
     );
-    expect(container.textContent).toContain("5 of 5");
-    expect(container.textContent).not.toContain("5 of 8");
+    expect(baseElement.textContent).toContain("5 of 5");
+    expect(baseElement.textContent).not.toContain("5 of 8");
   });
 
   it("caps the numerator at the total so it can never overflow the denominator", () => {
-    const { container } = render(
+    const { baseElement } = render(
       <EndModal currentQuestionNum={7} totalQuestions={9} baseQuestionCount={5} {...baseProps} />,
     );
-    expect(container.textContent).toContain("5 of 5");
+    expect(baseElement.textContent).toContain("5 of 5");
   });
 
   it("falls back to totalQuestions only when baseQuestionCount is absent (degenerate script)", () => {
-    const { container } = render(
+    const { baseElement } = render(
       <EndModal currentQuestionNum={2} totalQuestions={3} {...baseProps} />,
     );
-    expect(container.textContent).toContain("2 of 3");
+    expect(baseElement.textContent).toContain("2 of 3");
   });
 });
 

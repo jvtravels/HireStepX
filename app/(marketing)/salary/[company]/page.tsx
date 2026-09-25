@@ -50,11 +50,22 @@ export async function generateStaticParams() {
    from variable-length parts (company label, role names, CTC ranges) that
    can run well past both limits — this trims to the last full word that
    still fits instead of cutting mid-word or blowing past the limit. */
+/* Cutting at the last word boundary can still land right before a
+   conjunction/preposition, leaving a dangling connector in the SERP
+   snippet (e.g. "...lending and"). Strip trailing stopwords after the cut. */
+const TRAILING_STOPWORD = /\s+(?:and|or|but|so|for|of|in|on|at|to|with|its|the|a|an|by|from|as)$/i;
+
 function truncateAtWord(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   const cut = text.slice(0, maxLen);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:/&-]+$/, "");
+  let result = (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:/&-]+$/, "");
+  let stripped = result.replace(TRAILING_STOPWORD, "");
+  while (stripped !== result) {
+    result = stripped;
+    stripped = result.replace(TRAILING_STOPWORD, "");
+  }
+  return result;
 }
 
 // Most metaDescription entries in data/salary-seo.ts are 2-3 sentences

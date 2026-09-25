@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef, memo } from "react";
 import Image from "next/image";
 import { c, font, radius } from "./tokens";
 import { EmptyState } from "./components/EmptyState";
+import { Button } from "./components/ui/button";
 
 /* ─── Token-based auth ─── */
 // Token lives in a React ref (memory only). The HttpOnly admin_token cookie is
@@ -499,20 +500,22 @@ function ServiceStatusBadge({ status }: { status: string }) {
 
 function RefreshButton({ onClick, loading }: { onClick: () => void; loading: boolean }) {
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={onClick}
       disabled={loading}
       title="Refresh data"
       style={{
         background: "none", border: `1px solid ${c.border}`, borderRadius: radius.md,
-        color: c.stone, fontSize: 12, padding: "5px 12px", cursor: loading ? "not-allowed" : "pointer",
+        color: c.stone, fontSize: 12, padding: "5px 12px",
         fontFamily: font.ui, display: "inline-flex", alignItems: "center", gap: 6,
         opacity: loading ? 0.5 : 1,
       }}
     >
       <span style={{ display: "inline-block", animation: loading ? "spin 0.8s linear infinite" : "none" }}>↻</span>
       Refresh
-    </button>
+    </Button>
   );
 }
 
@@ -1155,12 +1158,14 @@ export default function AdminDashboard() {
           ) : (
             <>
               <p style={{ color: c.ember, fontSize: 14, margin: "0 0 12px" }}>Could not load user detail.</p>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => { setSelectedUserId(null); setUserDetail(null); }}
-                style={{ background: "none", border: `1px solid ${c.border}`, color: c.ivory, borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 13, fontFamily: font.ui }}
+                style={{ background: "none", border: `1px solid ${c.border}`, color: c.ivory, borderRadius: 6, padding: "6px 16px", fontSize: 13, fontFamily: font.ui }}
               >
                 ← Back to users
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -1184,11 +1189,13 @@ export default function AdminDashboard() {
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
             {users.length} result{users.length === 1 ? "" : "s"}
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => exportCsv("users.csv", users as unknown as Record<string, unknown>[])}
             style={exportBtn}
             disabled={users.length === 0}
-          >Export CSV</button>
+          >Export CSV</Button>
         </div>
 
         {/* Table */}
@@ -1261,10 +1268,12 @@ export default function AdminDashboard() {
       <div>
         {/* Back nav: prefer back-to-user when we got here from a user detail. */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => { setSelectedSessionId(null); setSessionDetail(null); }}
             style={{ ...exportBtn, color: c.stone, borderColor: c.border }}
-          >← Back</button>
+          >← Back</Button>
           {sessionDetail.profile && (
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
               Viewing session for{" "}
@@ -1354,10 +1363,12 @@ export default function AdminDashboard() {
           <div style={{ ...card, marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <p style={labelStyle}>Interview Transcript ({sessionDetail.qaPairs.length} Q&amp;A pair{sessionDetail.qaPairs.length === 1 ? "" : "s"})</p>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => exportCsv(`session-${s.id.slice(0,8)}-transcript.csv`, sessionDetail.qaPairs as unknown as Record<string, unknown>[])}
                 style={exportBtn}
-              >Export CSV</button>
+              >Export CSV</Button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {sessionDetail.qaPairs.map((qa, i) => (
@@ -1431,15 +1442,17 @@ export default function AdminDashboard() {
 
     return (
       <div>
-        <button
+        <Button
+          variant="link"
           onClick={() => { setSelectedUserId(null); setUserDetail(null); }}
           style={{
-            background: "none", border: "none", color: c.gilt, cursor: "pointer",
+            background: "none", color: c.gilt,
             fontSize: 13, fontFamily: font.ui, marginBottom: 16, padding: 0,
+            height: "auto",
           }}
         >
           &larr; Back to users
-        </button>
+        </Button>
 
         {/* Profile Header */}
         <div style={{ ...card, marginBottom: 20, display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
@@ -1557,7 +1570,8 @@ export default function AdminDashboard() {
                     }}
                   />
                 </div>
-                <button
+                <Button
+                  variant="outline"
                   disabled={qaBusy}
                   onClick={async () => {
                     const days = parseInt(qaExtendDays, 10);
@@ -1587,12 +1601,12 @@ export default function AdminDashboard() {
                     background: "rgba(180,83,9,0.12)", color: "#923F07",
                     border: "1px solid rgba(180,83,9,0.25)", borderRadius: 6,
                     padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
-                    cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                    opacity: qaBusy ? 0.6 : 1,
                     width: "100%",
                   }}
                 >
                   {qaBusy ? "…" : "Apply Plan Change"}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1641,7 +1655,8 @@ export default function AdminDashboard() {
                     }}
                   />
                 </div>
-                <button
+                <Button
+                  variant="outline"
                   disabled={qaBusy}
                   onClick={async () => {
                     const qty = parseInt(qaGrantQty, 10);
@@ -1672,11 +1687,11 @@ export default function AdminDashboard() {
                     background: "rgba(21,128,61,0.12)", color: "#166534",
                     border: "1px solid rgba(21,128,61,0.25)", borderRadius: 6,
                     padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
-                    cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1, width: "100%",
+                    opacity: qaBusy ? 0.6 : 1, width: "100%",
                   }}
                 >
                   {qaBusy ? "…" : "Grant Credits"}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1688,7 +1703,8 @@ export default function AdminDashboard() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button
+                  <Button
+                    variant="outline"
                     disabled={qaBusy}
                     onClick={async () => {
                       setQaBusy(true); setQaStatus(null);
@@ -1704,12 +1720,13 @@ export default function AdminDashboard() {
                       flex: 1, background: "rgba(180,83,9,0.12)", color: "rgb(251,191,36)",
                       border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6,
                       padding: "8px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
-                      cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                      opacity: qaBusy ? 0.6 : 1,
                     }}
                   >
                     Ban
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
                     disabled={qaBusy}
                     onClick={async () => {
                       setQaBusy(true); setQaStatus(null);
@@ -1725,30 +1742,32 @@ export default function AdminDashboard() {
                       flex: 1, background: "rgba(22,101,52,0.12)", color: "rgb(74,222,128)",
                       border: "1px solid rgba(74,222,128,0.25)", borderRadius: 6,
                       padding: "8px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
-                      cursor: qaBusy ? "not-allowed" : "pointer", opacity: qaBusy ? 0.6 : 1,
+                      opacity: qaBusy ? 0.6 : 1,
                     }}
                   >
                     Unban
-                  </button>
+                  </Button>
                 </div>
                 {!qaDeleteConfirm
                   ? (
-                    <button
+                    <Button
+                      variant="destructive"
                       disabled={qaBusy}
                       onClick={() => setQaDeleteConfirm(true)}
                       style={{
                         background: "rgba(127,29,29,0.15)", color: "rgb(248,113,113)",
                         border: "1px solid rgba(248,113,113,0.25)", borderRadius: 6,
                         padding: "8px 10px", fontSize: 13, fontWeight: 600, fontFamily: font.ui,
-                        cursor: "pointer", width: "100%",
+                        width: "100%",
                       }}
                     >
                       Delete Account
-                    </button>
+                    </Button>
                   )
                   : (
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button
+                      <Button
+                        variant="destructive"
                         disabled={qaBusy}
                         onClick={async () => {
                           setQaBusy(true); setQaStatus(null); setQaDeleteConfirm(false);
@@ -1767,20 +1786,21 @@ export default function AdminDashboard() {
                         style={{
                           flex: 1, background: "rgb(127,29,29)", color: "rgb(254,202,202)",
                           border: "none", borderRadius: 6, padding: "8px 10px", fontSize: 12,
-                          fontWeight: 700, fontFamily: font.ui, cursor: "pointer",
+                          fontWeight: 700, fontFamily: font.ui,
                         }}
                       >
                         Yes, delete permanently
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="outline"
                         onClick={() => setQaDeleteConfirm(false)}
                         style={{
                           background: c.obsidian, color: c.stone, border: `1px solid ${c.border}`,
-                          borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: font.ui, cursor: "pointer",
+                          borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: font.ui,
                         }}
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   )
                 }
@@ -1822,7 +1842,7 @@ export default function AdminDashboard() {
                   }}
                 />
               </div>
-              <button
+              <Button
                 disabled={qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()}
                 onClick={async () => {
                   setQaBusy(true); setQaStatus(null);
@@ -1845,13 +1865,12 @@ export default function AdminDashboard() {
                 style={{
                   background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
                   padding: "8px 20px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
-                  cursor: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? "not-allowed" : "pointer",
                   opacity: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? 0.45 : 1,
                   flexShrink: 0, alignSelf: "flex-end",
                 }}
               >
                 {qaBusy ? "Sending…" : "Send Email"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1948,7 +1967,9 @@ export default function AdminDashboard() {
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(p.created_at as string)}</td>
                     <td style={tdStyle}>
                       {(p.razorpay_payment_id as string | undefined) && (p.status === "captured" || p.status === "paid") && (
-                        <button
+                        <Button
+                          variant="outline"
+                          size="xs"
                           disabled={qaBusy}
                           onClick={async () => {
                             if (!window.confirm(`Refund full ₹${((p.amount as number) / 100).toFixed(0)} for payment ${p.razorpay_payment_id}?`)) return;
@@ -1964,11 +1985,11 @@ export default function AdminDashboard() {
                           }}
                           style={{
                             background: "rgba(180,83,9,0.2)", color: "rgb(251,191,36)", border: "1px solid rgba(251,191,36,0.3)",
-                            borderRadius: 4, padding: "3px 10px", fontSize: 11, cursor: qaBusy ? "not-allowed" : "pointer",
+                            borderRadius: 4, padding: "3px 10px", fontSize: 11,
                           }}
                         >
                           Refund
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>
@@ -2137,10 +2158,12 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto", marginBottom: 24 }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Top Customers</p>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => exportCsv("top-customers.csv", financials.topSpenders as unknown as Record<string, unknown>[])}
                 style={exportBtn}
-              >Export CSV</button>
+              >Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -2174,10 +2197,12 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto", marginBottom: 24 }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>All Payments (last 50)</p>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => exportCsv("payments.csv", financials.recent as unknown as Record<string, unknown>[])}
                 style={exportBtn}
-              >Export CSV</button>
+              >Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -2752,12 +2777,14 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Top 30 Most Expensive Sessions (all-time)</p>
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => exportCsv("expensive-sessions.csv", cd.topExpensiveSessions)}
-                style={{ fontSize: 11, color: c.gilt, background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}
+                style={{ fontSize: 11, color: c.gilt, background: "none", border: "none", padding: "2px 6px" }}
               >
                 Export CSV
-              </button>
+              </Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -3129,7 +3156,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Messages — Help &amp; Support widget</p>
-              <button onClick={() => exportCsv("support-messages.csv", supportMessages.recent)} style={exportBtn}>Export CSV</button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("support-messages.csv", supportMessages.recent)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -3207,24 +3234,28 @@ export default function AdminDashboard() {
                       <td style={{ ...tdStyle, whiteSpace: "nowrap" as const }}>
                         <div style={{ display: "flex", gap: 6 }}>
                           {st === "new" && (
-                            <button
+                            <Button
+                              variant="outline"
+                              size="xs"
                               onClick={() => updateStatus(m.id, "seen")}
                               style={{
                                 padding: "3px 8px", borderRadius: 6, border: `1px solid ${c.border}`,
                                 background: "#1a1a1a", color: c.stone,
-                                fontSize: 11, fontFamily: font.ui, cursor: "pointer",
+                                fontSize: 11, fontFamily: font.ui,
                               }}
-                            >Mark seen</button>
+                            >Mark seen</Button>
                           )}
                           {(st === "new" || st === "seen") && (
-                            <button
+                            <Button
+                              variant="outline"
+                              size="xs"
                               onClick={() => updateStatus(m.id, "resolved")}
                               style={{
                                 padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(21,128,61,0.3)",
                                 background: "#1a1a1a", color: c.sage,
-                                fontSize: 11, fontFamily: font.ui, cursor: "pointer",
+                                fontSize: 11, fontFamily: font.ui,
                               }}
-                            >Resolve</button>
+                            >Resolve</Button>
                           )}
                         </div>
                       </td>
@@ -3250,17 +3281,17 @@ export default function AdminDashboard() {
           </p>
           <p style={{ color: c.stone, fontSize: 14, margin: 0 }}>{error}</p>
           {error.includes("expired") && (
-            <button
+            <Button
               onClick={() => { setError(null); handleLogout(); }}
               style={{
                 marginTop: 16, padding: "8px 20px",
                 background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
                 border: "none", borderRadius: radius.md, color: c.obsidian,
-                fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: font.ui,
+                fontSize: 13, fontWeight: 600, fontFamily: font.ui,
               }}
             >
               Sign In Again
-            </button>
+            </Button>
           )}
         </div>
       );
@@ -3326,12 +3357,13 @@ export default function AdminDashboard() {
                     >
                       <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{s.id.slice(0, 8)}…</td>
                       <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>
-                        <button
+                        <Button
+                          variant="link"
                           onClick={(e) => { e.stopPropagation(); setSelectedUserId(s.user_id); setUserDetail(null); setTab("users"); }}
-                          style={{ background: "none", border: "none", color: c.gilt, cursor: "pointer", fontSize: 11, fontFamily: font.mono, padding: 0 }}
+                          style={{ background: "none", color: c.gilt, fontSize: 11, fontFamily: font.mono, padding: 0, height: "auto" }}
                         >
                           {s.user_id.slice(0, 8)}…
-                        </button>
+                        </Button>
                       </td>
                       <td style={tdStyle}>{s.type || "—"}</td>
                       <td style={tdStyle}>{s.difficulty || "—"}</td>
@@ -3691,7 +3723,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Recent Reports</p>
-              <button onClick={() => exportCsv("outcomes.csv", outcomes.recent as unknown as Record<string, unknown>[])} style={exportBtn}>Export CSV</button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("outcomes.csv", outcomes.recent as unknown as Record<string, unknown>[])} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -3777,7 +3809,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Recent Referrals</p>
-              <button onClick={() => exportCsv("referrals.csv", referrals.recent)} style={exportBtn}>Export CSV</button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("referrals.csv", referrals.recent)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -3882,20 +3914,24 @@ export default function AdminDashboard() {
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(e.submittedAt)}</td>
                     <td style={tdStyle}>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => decide(e.id, "approve-employer")}
                           disabled={employerActionBusyId === e.id}
                           style={{ ...exportBtn, background: c.sage, color: c.obsidian, opacity: employerActionBusyId === e.id ? 0.6 : 1 }}
                         >
                           Approve
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => decide(e.id, "reject-employer")}
                           disabled={employerActionBusyId === e.id}
                           style={{ ...exportBtn, background: c.ember, color: c.obsidian, opacity: employerActionBusyId === e.id ? 0.6 : 1 }}
                         >
                           Reject
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -3909,7 +3945,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Reviewed</p>
-              <button onClick={() => exportCsv("employers.csv", decidedRows)} style={exportBtn}>Export CSV</button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("employers.csv", decidedRows)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -3954,7 +3990,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>All Codes</p>
-              <button onClick={() => exportCsv("promo-codes.csv", promoCodes.codes)} style={exportBtn}>Export CSV</button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("promo-codes.csv", promoCodes.codes)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -4021,7 +4057,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Recent Events</p>
-              <button onClick={() => exportCsv("calendar.csv", calendar.recent)} style={exportBtn}>Export CSV</button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("calendar.csv", calendar.recent)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -4115,7 +4151,7 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={loginBusy}
               style={{
@@ -4124,11 +4160,10 @@ export default function AdminDashboard() {
                 border: "none", borderRadius: radius.md,
                 color: loginBusy ? c.stone : c.obsidian,
                 fontSize: 14, fontWeight: 600, fontFamily: font.ui,
-                cursor: loginBusy ? "not-allowed" : "pointer",
               }}
             >
               {loginBusy ? "Verifying..." : "Sign In"}
-            </button>
+            </Button>
           </form>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -4150,16 +4185,18 @@ export default function AdminDashboard() {
           <span style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: c.stone, background: `${c.ember}22`, padding: "3px 10px", borderRadius: 100 }}>Admin</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleLogout}
             style={{
               background: "none", border: `1px solid ${c.border}`, borderRadius: radius.md,
-              color: c.stone, fontSize: 12, padding: "6px 14px", cursor: "pointer",
+              color: c.stone, fontSize: 12, padding: "6px 14px",
               fontFamily: font.ui,
             }}
           >
             Sign Out
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -4201,8 +4238,9 @@ export default function AdminDashboard() {
           borderRight: `1px solid ${c.border}`, background: c.graphite,
         }}>
           {TABS.map(t => (
-            <button
+            <Button
               key={t.key}
+              variant="ghost"
               onClick={() => { setTab(t.key); setSelectedUserId(null); setUserDetail(null); setSelectedSessionId(null); setSessionDetail(null); }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
@@ -4210,13 +4248,15 @@ export default function AdminDashboard() {
                 background: tab === t.key ? c.onyx : "transparent",
                 color: tab === t.key ? c.ivory : c.stone,
                 fontSize: 13, fontFamily: font.ui, fontWeight: tab === t.key ? 600 : 400,
-                cursor: "pointer", transition: "all 0.15s",
+                transition: "all 0.15s",
                 textAlign: "left",
+                justifyContent: "flex-start",
+                height: "auto",
               }}
             >
               <span style={{ fontSize: 16 }}>{t.icon}</span>
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
 

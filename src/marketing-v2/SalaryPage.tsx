@@ -18,6 +18,7 @@ import {
   ctaGhostStyle,
 } from "./_editorial";
 import { FAQItem } from "./MarketingPagesV2";
+import { CopyEmailLink } from "../_CopyEmailLink";
 import { pickVariant } from "../../data/_content-variants";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -936,6 +937,20 @@ export function SalaryCompanyPage({
             </div>
           </div>
         )}
+
+        {/* ── Sources & methodology (SEO brief §9/§13) — the same trust
+              block as the blog/questions templates, since this page makes
+              specific numeric salary claims. ── */}
+        <div className="sal-container" style={{ ...containerNarrow, marginTop: 56 }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, lineHeight: 1.7, color: t.inkFaint, margin: 0, borderTop: `1px solid ${t.line}`, paddingTop: 24 }}>
+            Salary bands here reflect total CTC drawn from reported offers (primarily AmbitionBox, with Glassdoor as a secondary cross-check), supplemented by company disclosures where available — not a single data point. See our{" "}
+            <a href="/methodology" className="ed-link" style={{ color: t.inkSoft, textDecoration: "underline" }}>
+              methodology
+            </a>{" "}
+            for how we source and label pay data. Spot a figure that looks off? Email{" "}
+            <CopyEmailLink email="hello@hirestepx.com" style={{ color: t.inkSoft, textDecoration: "underline" }} />.
+          </p>
+        </div>
 
         {/* ── CTA band ── */}
         <div style={{ marginTop: 64 }}>

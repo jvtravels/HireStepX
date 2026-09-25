@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { Button } from "@/components/ui/button";
 import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
   clearSessionStart,
   isSessionExpiredByPreference,
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
-import { isSlowConnection } from "./_browser-api-guards";
+import { isSlowConnection, sendGtagEvent } from "./_browser-api-guards";
 import { tokens } from "./auth/_tokens";
 import {
   decideDeviceAction,
@@ -1418,6 +1419,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userId) {
         identifyClient(userId, { email, name, signup_method: "email" });
         captureClientEvent("user_signed_up", { method: "email" });
+        sendGtagEvent("sign_up", { method: "email" });
       }
       return { success: true, userId };
     } finally {
@@ -2110,8 +2112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ⚠️ Your account is scheduled for permanent deletion on{" "}
             <strong>{new Date(new Date(user.deletedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</strong>.
           </span>
-          <button
+          <Button
             type="button"
+            variant="default"
             onClick={restoreAccount}
             disabled={restoring}
             style={{
@@ -2122,7 +2125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }}
           >
             {restoring ? "Restoring..." : "Restore account"}
-          </button>
+          </Button>
         </div>
       )}
       {/* Session expiry banner with Refresh Now action */}
@@ -2137,8 +2140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span style={{ flex: 1 }}>{sessionExpiryWarning}</span>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={refreshSessionNow}
             disabled={refreshing}
             style={{
@@ -2149,7 +2153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }}
           >
             {refreshing ? "Refreshing..." : "Refresh now"}
-          </button>
+          </Button>
         </div>
       )}
       {children}

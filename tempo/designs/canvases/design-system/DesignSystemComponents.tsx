@@ -120,7 +120,30 @@ export default function DesignSystemComponents() {
                   <Button size="icon" aria-label="Settings">
                     <Eye />
                   </Button>
+                  <Button size="icon-xs" variant="ghost" aria-label="Dismiss">
+                    <Eye />
+                  </Button>
+                  <Button size="icon-sm" variant="ghost" aria-label="Close">
+                    <Eye />
+                  </Button>
+                  <Button size="icon-lg" className="rounded-full" aria-label="Help">
+                    <Eye />
+                  </Button>
                 </div>
+                <p
+                  style={{
+                    fontSize: type.small.size,
+                    color: t.inkMuted,
+                    marginTop: 16,
+                    marginBottom: 0,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <b>icon-xs / icon-sm / icon-lg</b> round out the icon step —
+                  dismiss controls, panel-close affordances, and a floating
+                  action button all reach for one of these instead of a raw
+                  sized <code>&lt;button&gt;</code>.
+                </p>
               </StatePanel>
 
               <StatePanel title="Button Group">

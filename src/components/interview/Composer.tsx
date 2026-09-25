@@ -7,6 +7,7 @@ import {
 import { RepeatButton, MicQuietBanner, PaceMeter } from "../../InterviewPanels";
 import { detectNegotiationTactic } from "../../_negotiation-tactics";
 import { captureClientEvent } from "../../posthogClient";
+import { Button } from "../ui/button";
 
 /* ─── Interview Composer ───────────────────────────────────────────────
    Action zone for the listening phase: live transcript card → keycap CTA
@@ -71,24 +72,17 @@ function SkipWithReason({
   ];
   return (
     <div ref={containerRef} style={{ position: "relative", display: "inline-block" }}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => { if (canSkip) setOpen((v) => !v); }}
         disabled={!canSkip}
         title={tooltip}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={canSkip ? `Skip this question (${remaining} left)` : "Skip not available"}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: "transparent", border: "none", padding: "4px 6px",
-          cursor: canSkip ? "pointer" : "not-allowed",
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-          color: canSkip ? e.copper : e.inkFaint,
-          opacity: canSkip ? 0.85 : 0.5, transition: "opacity 160ms ease",
-        }}
-        onMouseEnter={(ev) => { if (canSkip) ev.currentTarget.style.opacity = "1"; }}
-        onMouseLeave={(ev) => { ev.currentTarget.style.opacity = canSkip ? "0.85" : "0.5"; }}
+        style={{ color: canSkip ? e.copper : undefined }}
       >
         <span>Skip question{canSkip && skipBudget > 0 ? ` · ${remaining} left` : ""}</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -96,7 +90,7 @@ function SkipWithReason({
           <polyline points="13 17 18 12 13 7" />
           <polyline points="6 17 11 12 6 7" />
         </svg>
-      </button>
+      </Button>
       {open && (
         <div
           role="menu"
@@ -116,41 +110,27 @@ function SkipWithReason({
             Why are you skipping?
           </span>
           {reasons.map((r) => (
-            <button
+            <Button
               key={r.value}
               type="button"
+              variant="ghost"
               role="menuitem"
               onClick={() => { setOpen(false); onConfirm(r.value); }}
-              style={{
-                display: "block", textAlign: "left", width: "100%",
-                background: "transparent", border: "none",
-                padding: "8px 10px", borderRadius: 8, cursor: "pointer",
-                fontFamily: ef.sans, fontSize: 13, color: e.coal,
-                transition: "background 120ms ease",
-              }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.background = e.creamSoft)}
-              onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+              style={{ display: "block", textAlign: "left", width: "100%" }}
             >
               {r.label}
-            </button>
+            </Button>
           ))}
           <div style={{ height: 1, background: e.line, margin: "4px 8px" }} />
-          <button
+          <Button
             type="button"
+            variant="ghost"
             role="menuitem"
             onClick={() => { setOpen(false); onConfirm("no_reason"); }}
-            style={{
-              display: "block", textAlign: "left", width: "100%",
-              background: "transparent", border: "none",
-              padding: "8px 10px", borderRadius: 8, cursor: "pointer",
-              fontFamily: ef.sans, fontSize: 12, color: e.inkSoft,
-              fontStyle: "italic",
-            }}
-            onMouseEnter={(ev) => (ev.currentTarget.style.background = e.creamSoft)}
-            onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+            style={{ display: "block", textAlign: "left", width: "100%", fontStyle: "italic", color: e.inkSoft }}
           >
             Just skip — no reason
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -645,23 +625,16 @@ export function Composer({
             question active so they can re-answer cleanly. */}
         {canSend && (
           <>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setCurrentTranscript("");
                 captureClientEvent("interview_answer_restart", {});
                 if (showTyping) textareaRef.current?.focus();
               }}
               aria-label="Start this answer over"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                background: "transparent", border: "none",
-                padding: "4px 6px", cursor: "pointer",
-                fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-                color: e.inkSoft, transition: "color 160ms ease",
-              }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.color = e.coal)}
-              onMouseLeave={(ev) => (ev.currentTarget.style.color = e.inkSoft)}
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -669,7 +642,7 @@ export function Composer({
                 <polyline points="3 3 3 8 8 8" />
               </svg>
               Start over
-            </button>
+            </Button>
             <span aria-hidden style={{ color: e.inkFaint }}>·</span>
           </>
         )}

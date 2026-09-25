@@ -106,6 +106,18 @@ const nextConfig = {
       { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
       { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
       { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      // 7 more blog post pairs found in a 2026-09-26 audit with byte-identical
+      // <title> values (same pattern as the 10 pairs above, generated across the
+      // 2026-06 through 2026-07 content batches). The weaker-linked/thinner post
+      // in each pair was removed from data/blog-posts.ts and src/blog-meta.ts;
+      // redirect it to the stronger surviving post.
+      { source: "/blog/tell-me-about-yourself-answer-fresher-india-2026", destination: "/blog/tell-me-about-yourself-freshers-india-2026", permanent: true },
+      { source: "/blog/data-engineer-interview-spark-kafka-dbt-india-2026", destination: "/blog/data-engineer-interview-questions-india-2026-advanced", permanent: true },
+      { source: "/blog/walmart-global-tech-india-software-engineer-bengaluru-chennai-2026", destination: "/blog/walmart-global-tech-india-interview-questions-2026", permanent: true },
+      { source: "/blog/resume-writing-tips-india-2026", destination: "/blog/resume-tips-software-engineer-india-2026", permanent: true },
+      { source: "/blog/why-should-we-hire-you-examples-freshers-india-2026", destination: "/blog/why-should-we-hire-you-answer-india-2026", permanent: true },
+      { source: "/blog/strengths-and-weaknesses-interview-india-2026", destination: "/blog/strengths-weaknesses-interview-answer-india-2026", permanent: true },
+      { source: "/blog/data-structures-algorithms-interview-dsa-guide-india-2026", destination: "/blog/data-structures-algorithms-interview-india-2026", permanent: true },
       // /salary/sarvam and /salary/sarvam-ai were two separate pages for the
       // same company (SWE-only vs SWE+AI-Engineer roles), splitting rankings
       // across near-identical "sarvam ai salary" queries in GSC. Merged all
@@ -118,6 +130,55 @@ const nextConfig = {
       // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
       // more heavily cross-linked survivor.
       { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // A 2026-09-26 SEO audit flagged 4 /questions/ page pairs sharing the
+      // same company+roleFamily+focus tags, competing for the same query
+      // instead of owning distinct search intent (see the "one primary
+      // intent per URL" rule). Removed the weaker/thinner page in each pair
+      // from data/seo-pages.ts, folding any unique content into the survivor
+      // first; redirect the removed pages here.
+      // ibm-freshers-interview-questions and ibm-campus-placement-interview-questions
+      // both covered IBM fresher/campus hiring for the same query; merged into
+      // the campus-placement page (more complete: covers the GBS/GTS track split).
+      { source: "/questions/ibm-freshers-interview-questions", destination: "/questions/ibm-campus-placement-interview-questions", permanent: true },
+      // nykaa-swe-interview-questions and nykaa-swe-interview-prep-guide-2026
+      // both targeted "nykaa swe interview" queries; merged into the
+      // interview-questions page (more specific to Nykaa's actual dark-store/
+      // inventory-concurrency LLD rounds vs. the prep guide's generic content).
+      { source: "/questions/nykaa-swe-interview-prep-guide-2026", destination: "/questions/nykaa-swe-interview-questions", permanent: true },
+      // myntra-swe-interview-questions and myntra-swe-interview-prep-guide-2026
+      // both targeted "myntra swe interview" queries; merged into the
+      // interview-questions page (more specific to Myntra's flash-sale/Big
+      // Billion Days design rounds vs. the prep guide's generic content).
+      { source: "/questions/myntra-swe-interview-prep-guide-2026", destination: "/questions/myntra-swe-interview-questions", permanent: true },
+      // bharatpe-swe-interview-questions and bharatpe-swe-interview-prep-guide-2026
+      // both targeted "bharatpe swe interview" queries with near-identical
+      // round structure; merged into the interview-questions page (matches
+      // the natural search phrasing used across the rest of the /questions/ tree).
+      { source: "/questions/bharatpe-swe-interview-prep-guide-2026", destination: "/questions/bharatpe-swe-interview-questions", permanent: true },
+      // razorpay-engineering-interview-questions and
+      // razorpay-system-design-interview-questions shared the same
+      // company+roleFamily+focus tags; the engineering page's Technical
+      // Round 2 already covers UPI idempotency/settlement reconciliation
+      // in similar depth. Merged the acquirer-routing content into the
+      // engineering page and redirect the system-design page there.
+      { source: "/questions/razorpay-system-design-interview-questions", destination: "/questions/razorpay-engineering-interview-questions", permanent: true },
+      // swiggy-engineering-interview-questions and
+      // swiggy-system-design-interview-questions both centered their
+      // design content on the same geospatial delivery-assignment/
+      // notification problem with near-identical framing. Merged the
+      // restaurant-discovery-feed content into the engineering page and
+      // redirect the system-design page there.
+      { source: "/questions/swiggy-system-design-interview-questions", destination: "/questions/swiggy-engineering-interview-questions", permanent: true },
+      // uber-swe-interview-questions and uber-system-design-interview-questions
+      // described ride-matching/geospatial/surge-pricing almost verbatim.
+      // Merged the write/read location-path detail into the swe page and
+      // redirect the system-design page there.
+      { source: "/questions/uber-system-design-interview-questions", destination: "/questions/uber-swe-interview-questions", permanent: true },
+      // dream11-swe-interview-questions duplicated dream11-swe-system-design-
+      // interview-questions' intent without its product-specific depth
+      // (team-creation credit cap, live leaderboard recompute). Merged the
+      // backend-stack FAQ into the system-design page and redirect here.
+      { source: "/questions/dream11-swe-interview-questions", destination: "/questions/dream11-swe-system-design-interview-questions", permanent: true },
       // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
       // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
       // under (marketing) inherits loading.tsx, which wraps it in a Suspense

@@ -276,3 +276,62 @@ describe("jsonMode", () => {
     expect(body.response_format).toBeUndefined();
   });
 });
+
+/* ── totalBudgetMs — whole-chain wall-clock ceiling ──────────────────
+ *
+ * analyze-resume's real worst case (gemini → groq → cerebras, each with
+ * a possible retry) could exceed both the client's fetch timeout and
+ * Vercel's edge execution ceiling, killing the isolate before the
+ * handler's own catch block could return a graceful timeout response.
+ * These tests pin totalBudgetMs so that regression can't come back
+ * silently. Omitting it must leave every other caller's behavior
+ * unchanged (covered by every other test in this file, none of which
+ * pass it). */
+
+describe("totalBudgetMs", () => {
+  it("throws immediately without calling any provider when the budget is already exhausted", async () => {
+    const result = callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 0 });
+    await expect(result).rejects.toThrow(/budget exhausted/);
+    expect(fetchSpy.mock.calls.filter((args: unknown[]) =>
+      String(args[0]).includes("generativelanguage") || String(args[0]).includes("api.groq.com"),
+    )).toHaveLength(0);
+  });
+
+  it("does not change the result when the budget comfortably covers the call", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk('{"score":85}');
+      return new Response("{}", { status: 200 });
+    });
+
+    const result = await callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 20000 });
+
+    expect(result.model).toBe("gemini-2.5-flash");
+    expect(result.fallback).toBe(false);
+  });
+
+  it("skips the fallback provider once the first provider's timeout consumes the whole budget", async () => {
+    // Gemini hangs until its own abort signal fires — never resolves on
+    // its own, so the only way it settles is via the AbortController
+    // callLLM wires up from the (budget-capped) provider timeout.
+    fetchSpy.mockImplementation((url: string, init?: { signal?: AbortSignal }) => {
+      if (String(url).includes("generativelanguage")) {
+        return new Promise((_, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            const err = new Error("The operation was aborted");
+            err.name = "AbortError";
+            reject(err);
+          });
+        });
+      }
+      return Promise.resolve(new Response("{}", { status: 200 }));
+    });
+
+    const promise = callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 3000 });
+    const assertion = expect(promise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    const groqCalls = fetchSpy.mock.calls.filter((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    expect(groqCalls).toHaveLength(0); // budget was gone after Gemini's capped timeout fired
+  });
+});

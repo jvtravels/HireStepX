@@ -2657,7 +2657,7 @@ export function PricingV2() {
                         disabled={singleQty <= 1}
                         aria-label="Remove one session"
                         style={{ flexShrink: 0, fontWeight: 300 }}
-                      >−</Button>
+                      ><span aria-hidden="true">−</span></Button>
                       <input
                         type="range" min={1} max={10} step={1}
                         value={singleQty}
@@ -2675,7 +2675,7 @@ export function PricingV2() {
                         disabled={singleQty >= 10}
                         aria-label="Add one session"
                         style={{ flexShrink: 0, fontWeight: 300 }}
-                      >+</Button>
+                      ><span aria-hidden="true">+</span></Button>
                     </div>
                     <p style={{ margin: 0, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, textAlign: "center" }}>
                       {singleQty === 1 ? "1 session" : `${singleQty} sessions`}

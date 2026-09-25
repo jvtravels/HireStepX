@@ -14,6 +14,7 @@ import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus }
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
+import { Button } from "@/components/ui/button";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 
@@ -590,8 +591,10 @@ function PermissionCard({
       </div>
       <div className="hsx-permission-actions" style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         {status === "idle" && (
-          <button
+          <Button
             type="button"
+            variant="default"
+            size="sm"
             onClick={onRequest}
             style={{
               fontFamily: F.sans, fontSize: 12, fontWeight: 500,
@@ -602,7 +605,7 @@ function PermissionCard({
             }}
           >
             Allow
-          </button>
+          </Button>
         )}
         {status === "requesting" && (
           <span style={{ width: 16, height: 16, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
@@ -613,8 +616,10 @@ function PermissionCard({
           </span>
         )}
         {isGranted && kind === "camera" && onDisable && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onDisable}
             aria-label="Turn camera off for this session"
             style={{
@@ -625,11 +630,13 @@ function PermissionCard({
             }}
           >
             Turn off
-          </button>
+          </Button>
         )}
         {isDenied && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onRequest}
             style={{
               fontFamily: F.sans, fontSize: 12, fontWeight: 500,
@@ -639,11 +646,13 @@ function PermissionCard({
             }}
           >
             Retry
-          </button>
+          </Button>
         )}
         {kind === "camera" && status === "idle" && onSkip && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onSkip}
             style={{
               fontFamily: F.sans, fontSize: 12, fontWeight: 500,
@@ -653,11 +662,13 @@ function PermissionCard({
             }}
           >
             Skip
-          </button>
+          </Button>
         )}
         {isSkipped && onRequest && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onRequest}
             style={{
               fontFamily: F.sans, fontSize: 12, fontWeight: 500,
@@ -667,7 +678,7 @@ function PermissionCard({
             }}
           >
             Enable
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -2149,15 +2160,16 @@ export default function SessionSetup() {
               >
                 <span>{message}</span>
                 {(showFree || showStarter) && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
                     onClick={() => setShowUpgradeModal(true)}
                     style={{ background: 'none', border: 'none', fontWeight: 600,
                              color: 'inherit', cursor: 'pointer', fontSize: 13,
-                             textDecoration: 'underline', padding: 0 }}
+                             textDecoration: 'underline', padding: 0, height: "auto" }}
                   >
                     Upgrade
-                  </button>
+                  </Button>
                 )}
               </div>
             );
@@ -2186,8 +2198,9 @@ export default function SessionSetup() {
                 handleStart();
               };
               return (
-                <button
+                <Button
                   type="button"
+                  variant="default"
                   onClick={onCtaClick}
                   disabled={isHardDisabled}
                   title={ctaTitle}
@@ -2218,7 +2231,7 @@ export default function SessionSetup() {
                   {!starting && (
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                   )}
-                </button>
+                </Button>
               );
             })()}
 

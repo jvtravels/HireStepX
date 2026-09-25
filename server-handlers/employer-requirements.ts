@@ -10,6 +10,10 @@
  *      requirement_matches, and returns the requirement with its final
  *      status (ready/partial/zero/failed).
  *
+ * PATCH /api/employer-requirement-detail?id=<id> reuses the same
+ *      `runMatching` (exported below) to re-score in place after an edit —
+ *      see employer-requirement-detail.ts.
+ *
  * Requires an approved employer row — see employer-profile.ts.
  */
 
@@ -209,21 +213,48 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   }
 }
 
-/** Scores the real candidate pool against a freshly created requirement,
-    persists requirement_matches, and PATCHes the requirement's final
-    status. Returns that status. Any failure here is caught and recorded
-    as a "failed" requirement rather than left stuck on "generating". */
-async function runMatching(requirementId: string, req: { title: string; location: string; description: string }, ownerUserId: string): Promise<string> {
+/** Scores the real candidate pool against a requirement (freshly created, or
+    freshly edited), persists requirement_matches, and PATCHes the
+    requirement's final status. Returns that status. Any failure here is
+    caught and recorded as a "failed" requirement rather than left stuck on
+    "generating".
+
+    Edit-safe: an already-unlocked match represents a real payment
+    (employer-verify-unlock-payment.ts), so it's never rescored or deleted
+    just because the requirement changed — only never-unlocked matches are
+    replaced with a fresh scoring pass. On first creation there are no
+    existing matches, so this is just the create path. */
+export async function runMatching(requirementId: string, req: { title: string; location: string; description: string }, ownerUserId: string): Promise<string> {
   try {
+    const existingRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked`,
+      { headers: serviceHeaders() },
+    );
+    const existing = (await existingRes.json().catch(() => [])) as Array<{
+      id: string; candidate_user_id: string; match_score: number; unlocked: boolean;
+    }>;
+    const unlockedMatches = existing.filter((m) => m.unlocked);
+    const unlockedCandidateIds = new Set(unlockedMatches.map((m) => m.candidate_user_id));
+    const staleMatchIds = existing.filter((m) => !m.unlocked).map((m) => m.id);
+    if (staleMatchIds.length > 0) {
+      const idParam = staleMatchIds.map((id) => encodeURIComponent(id)).join(",");
+      await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${idParam})`, {
+        method: "DELETE",
+        headers: serviceHeaders(),
+      });
+    }
+
     const poolRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?is_discoverable_to_employers=eq.true&id=neq.${encodeURIComponent(ownerUserId)}&select=id,name,target_role,industry,resume_data,practice_timestamps`,
       { headers: serviceHeaders() },
     );
     if (!poolRes.ok) throw new Error(`candidate pool read failed: ${poolRes.status}`);
-    const pool = (await poolRes.json().catch(() => [])) as Array<{
+    const poolRows = (await poolRes.json().catch(() => [])) as Array<{
       id: string; name: string; target_role: string | null; industry: string | null;
       resume_data: unknown; practice_timestamps: string[] | null;
     }>;
+    // Already-unlocked candidates keep their existing (paid-for) match row untouched.
+    const pool = poolRows.filter((p) => !unlockedCandidateIds.has(p.id));
 
     const scores = new Map<string, number>();
     const sessionCounts = new Map<string, number>();
@@ -272,7 +303,10 @@ async function runMatching(requirementId: string, req: { title: string; location
       if (!insertMatchesRes.ok) throw new Error(`requirement_matches insert failed: ${insertMatchesRes.status}`);
     }
 
-    const finalStatus = classifyRequirementStatus(ranked);
+    const finalStatus = classifyRequirementStatus([
+      ...unlockedMatches.map((m) => ({ matchScore: m.match_score })),
+      ...ranked,
+    ]);
     await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },

@@ -22,6 +22,7 @@ import {
   LOGO_CONTENT_TYPE_ALLOWLIST,
   readFileAsDataUrl,
   isPlausibleWebsite,
+  isPlausibleGstin,
 } from "@/employer/_companyProfileHelpers";
 
 function CompanyOnboarding() {
@@ -29,6 +30,8 @@ function CompanyOnboarding() {
   const [companyName, setCompanyName] = useState("");
   const [website, setWebsite] = useState("");
   const [websiteTouched, setWebsiteTouched] = useState(false);
+  const [gstin, setGstin] = useState("");
+  const [gstinTouched, setGstinTouched] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -36,7 +39,8 @@ function CompanyOnboarding() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const nameValid = companyName.trim().length > 1;
   const websiteValid = isPlausibleWebsite(website);
-  const canSubmit = nameValid && websiteValid;
+  const gstinFormatError = gstinTouched && gstin.trim().length > 0 && !isPlausibleGstin(gstin);
+  const canSubmit = nameValid && websiteValid && !gstinFormatError;
   const websiteFormatError = websiteTouched && website.trim().length > 0 && !websiteValid;
 
   const missingFieldsHint = !nameValid && !websiteValid
@@ -106,6 +110,31 @@ function CompanyOnboarding() {
             )}
           </div>
           <div>
+            <FieldLabel>GSTIN (optional)</FieldLabel>
+            <input
+              value={gstin}
+              onChange={(e) => setGstin(e.target.value.toUpperCase())}
+              onBlur={() => setGstinTouched(true)}
+              placeholder="22AAAAA0000A1Z5"
+              maxLength={15}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: `1px solid ${gstinFormatError ? t.error : t.line}`,
+                fontFamily: f.sans,
+                fontSize: 14,
+                boxSizing: "border-box",
+                textTransform: "uppercase",
+              }}
+            />
+            {gstinFormatError ? (
+              <HelpText tone="error">That doesn't look like a valid 15-character GSTIN.</HelpText>
+            ) : (
+              <HelpText>Speeds up review — we verify registered businesses faster.</HelpText>
+            )}
+          </div>
+          <div>
             <FieldLabel>Company logo (optional)</FieldLabel>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div
@@ -171,6 +200,7 @@ function CompanyOnboarding() {
                 const ok = await submitCompanyProfile({
                   companyName,
                   website,
+                  gstin: gstin.trim() || undefined,
                   logoBase64,
                   logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
                 });
