@@ -18,6 +18,7 @@
 
 import { useState } from "react";
 import { c, font } from "../tokens";
+import { tokens as T } from "../auth/_tokens";
 import type { ResumeProfile } from "../dashboardData";
 import type { InterviewType, FitnessBand } from "../resumeFitness";
 import { computeResumeDiff } from "../resumeDiff";
@@ -34,8 +35,9 @@ interface Props {
   onRename: (resumeId: string, newTitle: string) => void | Promise<void>;
 }
 
+// Fitness bands are a resume-match score rubric — copper stays reserved for this.
 const bandColor = (b: FitnessBand) =>
-  b === "excellent" ? c.sage : b === "good" ? c.gilt : b === "fair" ? c.stone : c.ember;
+  b === "excellent" ? c.sage : b === "good" ? T.copper : b === "fair" ? c.stone : c.ember;
 
 const bandLetter: Record<FitnessBand, string> = {
   excellent: "E",
@@ -75,10 +77,10 @@ export default function CatalogueGrid({
         const isConfirmingArchive = archiveConfirmId === r.id;
 
         return (
-          <div key={r.id} style={{ background: c.graphite, border: `1px solid ${r.isActive ? c.gilt : c.border}`, borderRadius: 12, padding: "14px 16px" }}>
+          <div key={r.id} style={{ background: c.graphite, border: `1px solid ${r.isActive ? T.indigo : c.border}`, borderRadius: 12, padding: "14px 16px" }}>
             {/* Header row: domain badge + active/make-active + archive */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, gap: 8 }}>
-              <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.gilt, background: "rgba(212,179,127,0.08)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>{r.domain}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: T.indigo, background: "rgba(49,46,129,0.08)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>{r.domain}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {r.isActive ? (
                   <span
@@ -113,7 +115,7 @@ export default function CatalogueGrid({
                       onMakeActive(r.id, r.latestVersionId, r.latestProfile, r.latestFileName, v?.resumeText ?? null);
                     }}
                     disabled={activatingId === r.id || !r.latestVersionId}
-                    style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.gilt }}
+                    style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: T.indigo }}
                     title="Switch this resume to be the one used for interview sessions"
                   >
                     {activatingId === r.id ? "…" : "Make active"}
@@ -175,14 +177,14 @@ export default function CatalogueGrid({
                     if (e.key === "Enter") { e.preventDefault(); onRename(r.id, renameDraft); setRenamingId(null); }
                     if (e.key === "Escape") setRenamingId(null);
                   }}
-                  style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.obsidian, border: `1px solid ${c.gilt}`, borderRadius: 4, padding: "4px 6px", flex: 1, minWidth: 0 }}
+                  style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.obsidian, border: `1px solid ${T.indigo}`, borderRadius: 4, padding: "4px 6px", flex: 1, minWidth: 0 }}
                 />
                 <Button
                   type="button"
                   size="sm"
                   onMouseDown={(e) => { e.preventDefault(); onRename(r.id, renameDraft); setRenamingId(null); }}
                   title="Save (Enter)"
-                  style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.gilt, color: c.obsidian }}
+                  style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: T.indigo, color: c.obsidian }}
                 >
                   Save
                 </Button>
@@ -272,7 +274,7 @@ export default function CatalogueGrid({
                             size="xs"
                             onClick={() => onMakeActive(r.id, v.id, v.profile, v.fileName, v.resumeText)}
                             disabled={activatingId === r.id}
-                            style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt }}
+                            style={{ fontFamily: font.ui, fontSize: 10, color: T.indigo }}
                           >
                             Restore
                           </Button>

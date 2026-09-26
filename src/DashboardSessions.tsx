@@ -2,6 +2,7 @@
 import { useState, useMemo, memo } from "react";
 import { useRouter } from "next/navigation";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { scoreLabel, scoreLabelColor, sessionTypes } from "./dashboardTypes";
 import type { DashboardSession } from "./dashboardTypes";
 import { useDashboardSessions, useDashboardCore } from "./DashboardContext";
@@ -48,7 +49,7 @@ const SessionRow = memo(function SessionRow({ session, onClick }: { session: Das
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
           <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>{session.type}</span>
-          <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const, color: c.gilt, background: "rgba(180,83,9,0.08)", padding: "2px 8px", borderRadius: 4 }}>{session.role}</span>
+          <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const, color: T.indigo, background: "oklch(0.359 0.135 278.697 / 0.08)", padding: "2px 8px", borderRadius: 4 }}>{session.role}</span>
         </div>
         <div style={{ display: "flex", gap: 16 }}>
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}><span style={{ color: c.sage, fontWeight: 500 }}>{session.topStrength}</span></span>
@@ -111,15 +112,15 @@ export default function DashboardSessions() {
   if (sessions.length === 0) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", margin: "0 auto", textAlign: "center", padding: "20px" }}>
-        <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 24px", background: "rgba(180,83,9,0.06)", border: `1px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 24px", background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
         </div>
         <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>No sessions yet</h2>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, marginBottom: 28 }}>
           Complete your first practice interview and it will show up here with detailed scores, feedback, and a full transcript.
         </p>
         <button onClick={handleStartSession} className="shimmer-btn"
-          style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, padding: "12px 32px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
+          style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, padding: "12px 32px", borderRadius: 8, border: "none", background: T.indigo, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
           onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
         >
@@ -147,7 +148,7 @@ export default function DashboardSessions() {
             Export
           </button>
           <button onClick={handleStartSession} className="shimmer-btn"
-            style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 24px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 24px", borderRadius: 8, border: "none", background: T.indigo, color: c.obsidian, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
             onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
           >
@@ -163,28 +164,28 @@ export default function DashboardSessions() {
           <input type="text" aria-label="Search sessions" placeholder="Search by type, strength, weakness..."
             value={search} onChange={(e) => { setSearch(e.target.value); setShowCount(20); }}
             style={{ width: "100%", padding: "9px 12px 9px 34px", fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8, outline: "none", boxSizing: "border-box" }}
-            onFocus={(e) => e.currentTarget.style.borderColor = c.gilt}
+            onFocus={(e) => e.currentTarget.style.borderColor = T.indigo}
             onBlur={(e) => e.currentTarget.style.borderColor = c.border}
           />
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           {sessionTypes.map(type => (
             <button key={type} onClick={() => { setFilter(type); setShowCount(20); }} aria-pressed={filter === type}
-              style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 14px", borderRadius: 100, cursor: "pointer", background: filter === type ? "rgba(180,83,9,0.1)" : "transparent", border: `1px solid ${filter === type ? c.gilt : c.border}`, color: filter === type ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none", minHeight: 44 }}
-              onMouseEnter={(e) => { if (filter !== type) { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "rgba(180,83,9,0.35)"; } }}
+              style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 14px", borderRadius: 100, cursor: "pointer", background: filter === type ? "oklch(0.359 0.135 278.697 / 0.1)" : "transparent", border: `1px solid ${filter === type ? T.indigo : c.border}`, color: filter === type ? T.indigo : c.stone, transition: "all 0.2s ease", outline: "none", minHeight: 44 }}
+              onMouseEnter={(e) => { if (filter !== type) { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.35)"; } }}
               onMouseLeave={(e) => { if (filter !== type) { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; } }}
             >{type}</button>
           ))}
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <button onClick={() => setSortBy("date")} aria-pressed={sortBy === "date"}
-            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "date" ? "rgba(180,83,9,0.1)" : "transparent", border: `1px solid ${sortBy === "date" ? c.gilt : c.border}`, color: sortBy === "date" ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none", minHeight: 44 }}
-            onMouseEnter={(e) => { if (sortBy !== "date") { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "rgba(180,83,9,0.35)"; } }}
+            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "date" ? "oklch(0.359 0.135 278.697 / 0.1)" : "transparent", border: `1px solid ${sortBy === "date" ? T.indigo : c.border}`, color: sortBy === "date" ? T.indigo : c.stone, transition: "all 0.2s ease", outline: "none", minHeight: 44 }}
+            onMouseEnter={(e) => { if (sortBy !== "date") { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.35)"; } }}
             onMouseLeave={(e) => { if (sortBy !== "date") { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; } }}
           >Recent</button>
           <button onClick={() => setSortBy("score")} aria-pressed={sortBy === "score"}
-            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "score" ? "rgba(180,83,9,0.1)" : "transparent", border: `1px solid ${sortBy === "score" ? c.gilt : c.border}`, color: sortBy === "score" ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none", minHeight: 44 }}
-            onMouseEnter={(e) => { if (sortBy !== "score") { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "rgba(180,83,9,0.35)"; } }}
+            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "score" ? "oklch(0.359 0.135 278.697 / 0.1)" : "transparent", border: `1px solid ${sortBy === "score" ? T.indigo : c.border}`, color: sortBy === "score" ? T.indigo : c.stone, transition: "all 0.2s ease", outline: "none", minHeight: 44 }}
+            onMouseEnter={(e) => { if (sortBy !== "score") { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.35)"; } }}
             onMouseLeave={(e) => { if (sortBy !== "score") { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; } }}
           >Top Score</button>
         </div>
@@ -193,25 +194,25 @@ export default function DashboardSessions() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, margin: "0 auto 16px", background: "rgba(180,83,9,0.06)", border: `1px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <div style={{ width: 48, height: 48, borderRadius: 12, margin: "0 auto 16px", background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             </div>
             <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, marginBottom: 16 }}>
               {search ? `No sessions matching "${search}"` : "No sessions in this category yet."}
             </p>
             {(search || filter !== "All") && (
               <button onClick={() => { setSearch(""); setFilter("All"); }}
-                style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, background: "none", border: "none", cursor: "pointer", marginBottom: 12, textDecoration: "underline", transition: "color 160ms ease" }}
+                style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, background: "none", border: "none", cursor: "pointer", marginBottom: 12, textDecoration: "underline", transition: "color 160ms ease" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = c.gilt; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = T.indigo; }}
               >
                 Clear filters
               </button>
             )}
             <button onClick={handleStartSession}
-              style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.gilt, background: "rgba(180,83,9,0.06)", border: `1px solid rgba(180,83,9,0.15)`, borderRadius: 8, padding: "10px 24px", cursor: "pointer", transition: "all 160ms cubic-bezier(0.2, 0.7, 0.2, 1)" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.12)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.32)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.15)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.indigo, background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, borderRadius: 8, padding: "10px 24px", cursor: "pointer", transition: "all 160ms cubic-bezier(0.2, 0.7, 0.2, 1)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "oklch(0.359 0.135 278.697 / 0.12)"; e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.32)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "oklch(0.359 0.135 278.697 / 0.06)"; e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.15)"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
               Start a {filter !== "All" ? filter : ""} Session
             </button>

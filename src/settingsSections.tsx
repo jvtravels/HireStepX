@@ -9,23 +9,24 @@ import { tokens as t } from "./auth/_tokens";
 import { Button } from "@/components/ui/button";
 
 
-/* Cream-mode local tokens — same keys as the old dark `c` so JSX style
-   values keep compiling. Semantic values reference the shared design
-   tokens (src/auth/_tokens.ts) so the hex-gate has a single source of
-   truth; only the faint tint fills below (no exact token) stay raw. */
+/* Local token aliases — same shape as the shared `T` object so JSX
+   style values keep compiling. Semantic values reference the shared
+   design tokens (src/auth/_tokens.ts) so the hex-gate has a single
+   source of truth; only the faint tint fills below (no exact token)
+   stay raw. `reward`/`rewardDark` are copper by design: this file
+   only uses them for credit-balance/reward visuals, never general
+   interactive accents (those use `indigo`). */
 const c = {
-  obsidian: t.cream,
+  surface: t.cream,
   graphite: t.creamRaised,
   border: t.line,
   borderStrong: t.lineStrong,
-  gilt: t.copper,
-  giltDark: t.copperDark,
-  ivory: t.coal,
-  chalk: t.coal,
-  stone: t.inkSoft,
+  reward: t.copper,
+  rewardDark: t.copperDark,
+  ink: t.coal,
+  inkSoft: t.inkSoft,
   sage: t.success,
   ember: t.error,
-  slate: t.inkSoft,
   indigo: t.indigo,
   indigoDeep: t.indigoDeep,
   indigo100: t.indigo100,
@@ -116,7 +117,7 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
     }}>
       <div style={{
         width: 18, height: 18, borderRadius: "50%",
-        background: on ? c.obsidian : c.stone,
+        background: on ? c.surface : c.inkSoft,
         transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         transform: on ? "translateX(20px)" : "translateX(0)",
         boxShadow: on ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
@@ -197,7 +198,7 @@ function FieldShell({ label, htmlFor, children }: { label: string; htmlFor: stri
         htmlFor={htmlFor}
         style={{
           fontFamily: font.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.12em",
-          color: c.stone, textTransform: "uppercase", display: "block", marginBottom: 8,
+          color: c.inkSoft, textTransform: "uppercase", display: "block", marginBottom: 8,
         }}
       >
         {label}
@@ -208,20 +209,20 @@ function FieldShell({ label, htmlFor, children }: { label: string; htmlFor: stri
 }
 
 const editorialInput: React.CSSProperties = {
-  width: "100%", fontFamily: font.ui, fontSize: 14, color: c.ivory,
+  width: "100%", fontFamily: font.ui, fontSize: 14, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
   padding: "12px 14px", outline: "none", boxSizing: "border-box", minHeight: 44,
   transition: "border-color 0.18s ease, box-shadow 0.18s ease",
 };
 
 export const accSubtleBtn: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
   padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
 export const accSubtleBtnGhost: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.stone,
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft,
   background: "transparent", border: "none", borderRadius: 9,
   padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
@@ -251,7 +252,7 @@ export const indigoPrimaryBtn: React.CSSProperties = {
 };
 
 export const indigoGhostBtn: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`,
   borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
 };
@@ -267,11 +268,11 @@ export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string;
       )}
       <h2 style={{
         fontFamily: font.ui, fontSize: 28, letterSpacing: "-0.02em",
-        color: tone === "danger" ? c.ember : c.ivory, margin: "6px 0", lineHeight: 1.15, fontWeight: 400,
+        color: tone === "danger" ? c.ember : c.ink, margin: "6px 0", lineHeight: 1.15, fontWeight: 400,
       }}>{title}</h2>
       {desc && (
         <p style={{
-          fontFamily: font.ui, fontSize: 14, color: c.stone, margin: 0, lineHeight: 1.55, maxWidth: 620,
+          fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 620,
         }}>{desc}</p>
       )}
     </div>
@@ -292,8 +293,8 @@ export function KeyValue({ label, value, right }: { label: string; value: string
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</div>
-        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>{value}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{label}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>{value}</div>
       </div>
       <div>{right}</div>
     </div>
@@ -350,8 +351,8 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             display: "flex", alignItems: "center", justifyContent: "center", letterSpacing: "0.02em", flexShrink: 0,
           }}>{initial}</div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || "Your name"}</div>
-            <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginTop: 4 }}>
+            <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || "Your name"}</div>
+            <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, marginTop: 4 }}>
               {email}
             </div>
           </div>
@@ -398,7 +399,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
-              <span aria-hidden style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: c.stone, fontFamily: font.mono, fontSize: 11, pointerEvents: "none" }}>▾</span>
+              <span aria-hidden style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: c.inkSoft, fontFamily: font.mono, fontSize: 11, pointerEvents: "none" }}>▾</span>
             </div>
           </FieldShell>
         </div>
@@ -415,7 +416,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           }
         />
 
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 20, gap: 10, fontFamily: font.ui, fontSize: 12, color: c.stone }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 20, gap: 10, fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage }} />
           Saved automatically when you leave a field
         </div>
@@ -436,7 +437,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
               <Button type="button" variant="outline" size="sm" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
                 style={{
                   ...accSubtleBtn,
-                  color: resetSent ? c.sage : c.ivory,
+                  color: resetSent ? c.sage : c.ink,
                   background: resetSent ? c.success100 : c.graphite,
                   borderColor: resetSent ? "rgba(21,128,61,0.3)" : c.borderStrong,
                   cursor: (resetLoading || resetSent) ? "default" : "pointer",
@@ -464,13 +465,13 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
 
       <EditorialCard density="tight">
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Active devices</div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink }}>Active devices</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
             One device at a time. Signing in elsewhere automatically signs out this device.
           </div>
         </div>
         {recentDevices.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "12px 0" }}>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "12px 0" }}>
             No recent sign-ins recorded yet.
           </div>
         ) : (
@@ -486,14 +487,14 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
                 <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
                   <span aria-hidden style={{
                     width: 36, height: 36, borderRadius: 8,
-                    background: c.creamSoft, color: c.stone,
+                    background: c.creamSoft, color: c.inkSoft,
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
                   </span>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-                    <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>
+                    <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+                    <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>
                       {d.isCurrent ? "Active now, this device" : seen}
                     </div>
                   </div>
@@ -505,7 +506,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         )}
 
         <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.stone }}>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.inkSoft }}>
             {signOutOthersError || "Sign out every device except this one."}
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
@@ -546,8 +547,8 @@ function UsageBar({ label, row }: { label: string; row: UsageRow }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</span>
-        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{display}</span>
+        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{label}</span>
+        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.inkSoft }}>{display}</span>
       </div>
       <div style={{ height: 6, borderRadius: 999, background: c.border, overflow: "hidden" }}>
         <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.indigo, transition: "width 0.4s ease" }} />
@@ -580,7 +581,7 @@ const UsageThisMonth = memo(function UsageThisMonth({
 
   if (error) return null; // Fail quiet — usage is decorative, not gating.
   if (!data) {
-    return <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>;
+    return <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>Loading usage…</span>;
   }
   // Label reflects the active plan so users see exactly what they're spending.
   const mockLabel = planName ? `Sessions with ${planName}` : "Mock interviews completed";
@@ -605,7 +606,7 @@ function ExtraSessionsInfoBox() {
       border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : "1px solid rgba(180,83,9,0.18)",
     }}>
       <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-        color: hasCredits ? t.successInk : c.gilt }}>
+        color: hasCredits ? t.successInk : c.reward }}>
         {hasCredits ? (
           <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         ) : (
@@ -614,7 +615,7 @@ function ExtraSessionsInfoBox() {
         Extra sessions available
       </span>
       <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700,
-        color: hasCredits ? c.sage : c.gilt, opacity: hasCredits ? 1 : 0.55 }}>
+        color: hasCredits ? c.sage : c.reward, opacity: hasCredits ? 1 : 0.55 }}>
         {creditBalance}
       </span>
     </div>
@@ -679,10 +680,10 @@ const planCardOuter: React.CSSProperties = {
   boxShadow: shadow.sm,
   padding: "24px 28px",
 };
-const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory };
-const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 };
-const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory };
-const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, marginTop: 2 };
+const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink };
+const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
+const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
+const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
 
 
 function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
@@ -726,17 +727,17 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
       {/* Left: date + purchase detail */}
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600, whiteSpace: "nowrap" }}>{dateLabel}</span>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 500 }}>{purchaseTitle}</span>
+          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 600, whiteSpace: "nowrap" }}>{dateLabel}</span>
+          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</span>
         </div>
         {subLine && (
-          <p style={{ margin: "3px 0 0", fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4 }}>{subLine}</p>
+          <p style={{ margin: "3px 0 0", fontFamily: font.ui, fontSize: 11, color: c.inkSoft, lineHeight: 1.4 }}>{subLine}</p>
         )}
       </div>
 
       {/* Right: amount + badge + receipt */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ivory }}>{amountDisplay}</span>
+        <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</span>
         <div style={{
           fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
           color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
@@ -979,9 +980,9 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           <div style={subHeaderHint}>Every successful Razorpay charge on your account.</div>
         </div>
         {paymentsLoading ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>Loading payment history…</div>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>Loading payment history…</div>
         ) : payments.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>No payments yet.</div>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>No payments yet.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {payments.map((p, i) => (
@@ -1059,7 +1060,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                 aria-label="Confirm email for account deletion"
                 autoComplete="off"
                 style={{
-                  fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
+                  fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
                   border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
                   outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />
@@ -1070,7 +1071,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                   placeholder="Re-enter your password"
                   autoComplete="current-password"
                   style={{
-                    fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
+                    fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
                     border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
                     outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                   }} />
@@ -1171,10 +1172,10 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
     captureClientEvent("referral_invite_sent", { surface: "settings", channel: "email" });
   };
 
-  const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
+  const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.inkSoft, letterSpacing: "0.08em", textTransform: "uppercase" };
 
   const linkBtn: React.CSSProperties = {
-    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
     background: "transparent", border: "none",
     padding: "10px 8px", cursor: "pointer",
   };
@@ -1182,7 +1183,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
   if (loading) {
     return (
       <EditorialCard>
-        <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading referral info...</span>
+        <span style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft }}>Loading referral info...</span>
       </EditorialCard>
     );
   }
@@ -1204,7 +1205,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
               display: "inline-flex", alignItems: "center",
               padding: "14px 18px", borderRadius: 12,
               background: c.creamSoft, border: `1px solid ${c.border}`,
-              fontFamily: font.mono, fontSize: 15, color: c.ivory,
+              fontFamily: font.mono, fontSize: 15, color: c.ink,
               maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {displayLink ? (
@@ -1222,10 +1223,10 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
 
           <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Referral rewards">
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>Free sessions earned</span>
-              <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.gilt }}>{stats.rewarded}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 600 }}>Free sessions earned</span>
+              <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.reward }}>{stats.rewarded}</span>
             </div>
-            <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 10, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 10, lineHeight: 1.5 }}>
               {stats.redeemed} friend{stats.redeemed === 1 ? "" : "s"} joined with your link. You both get a free session the moment they sign up — no purchase needed.
             </div>
           </div>
@@ -1235,13 +1236,13 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
 
       <EditorialCard>
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Your invites</div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink }}>Your invites</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
             We tell you the moment a friend joins with your link.
           </div>
         </div>
         {invites.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "20px 0" }}>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "20px 0" }}>
             No invites yet. Share your link to see them here.
           </div>
         ) : (
@@ -1282,10 +1283,10 @@ function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boo
         fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
       }}>{initials}</div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.name}</div>
-        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.email}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.name}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.email}</div>
       </div>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{ts}</div>
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{ts}</div>
       <div style={{
         fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
         color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,

@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { c, font, shadow } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { useDocTitle } from "./useDocTitle";
 import { useAuth } from "./AuthContext";
 import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
@@ -22,7 +23,7 @@ function ReadinessGauge({ score }: { score: number }) {
   const size = 120, strokeW = 8, r = (size - strokeW) / 2;
   const circumference = 2 * Math.PI * r;
   const progress = (score / 100) * circumference;
-  const color = score >= 75 ? c.sage : score >= 50 ? c.gilt : c.ember;
+  const color = score >= 75 ? c.sage : score >= 50 ? T.copper : c.ember;
   return (
     <div style={{ position: "relative", width: size, height: size }} role="img" aria-label={`Interview readiness score: ${score} out of 100`}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
@@ -40,7 +41,7 @@ function ReadinessGauge({ score }: { score: number }) {
 }
 
 /* ─── Insight type → icon color ─── */
-const insightColor: Record<string, string> = { strength: c.sage, tip: c.gilt, warning: c.ember, focus: c.slate };
+const insightColor: Record<string, string> = { strength: c.sage, tip: T.indigo, warning: c.ember, focus: c.slate };
 
 const DATE_RANGES = [
   { label: "4 weeks", days: 28 },
@@ -112,7 +113,7 @@ export default function AnalyticsPage() {
         </p>
         {handleStartSession && (
           <button onClick={handleStartSession} className="shimmer-btn"
-            style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, padding: "12px 32px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
+            style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, padding: "12px 32px", borderRadius: 8, border: "none", background: T.indigo, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
             onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
           >
@@ -199,7 +200,7 @@ export default function AnalyticsPage() {
       `}</style>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ fontFamily: font.display, fontSize: 32, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "0.01em" }}>Analytics</h2>
+          <h2 style={{ fontFamily: font.ui, fontSize: 32, fontWeight: 600, color: c.ivory, marginBottom: 6, letterSpacing: "0.01em" }}>Analytics</h2>
           <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.5 }}>Your performance insights and interview readiness</p>
         </div>
         <div role="radiogroup" aria-label="Date range" style={{ display: "flex", gap: 4, background: c.graphite, borderRadius: 8, padding: 3, border: `1px solid ${c.border}` }}>
@@ -207,7 +208,7 @@ export default function AnalyticsPage() {
             <Button key={r.label} variant="ghost" size="sm" role="radio" aria-checked={rangeIdx === i} onClick={() => setRangeIdx(i)}
               style={{
                 fontWeight: rangeIdx === i ? 600 : 400,
-                background: rangeIdx === i ? c.gilt : "transparent",
+                background: rangeIdx === i ? T.indigo : "transparent",
                 color: rangeIdx === i ? c.obsidian : c.stone,
               }}
             >
@@ -222,11 +223,11 @@ export default function AnalyticsPage() {
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
           padding: "16px 22px", borderRadius: 12, marginBottom: 20,
-          background: "linear-gradient(135deg, rgba(180,83,9,0.04), rgba(21,128,61,0.04))",
-          border: `1px solid rgba(180,83,9,0.12)`,
+          background: "linear-gradient(135deg, oklch(0.359 0.135 278.697 / 0.04), rgba(21,128,61,0.04))",
+          border: `1px solid oklch(0.359 0.135 278.697 / 0.12)`,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <div>
               <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Practice your weakest area</span>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "block" }}>
@@ -235,7 +236,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <Button size="sm" onClick={() => startTargeted(typeToUrlParam[weakestType.type])}
-            style={{ background: c.gilt, color: c.obsidian, flexShrink: 0 }}>
+            style={{ background: T.indigo, color: c.obsidian, flexShrink: 0 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21"/></svg>
             Start {weakestType.type}
           </Button>
@@ -267,11 +268,11 @@ export default function AnalyticsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Streak */}
           <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "18px 20px", flex: 1, display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(180,83,9,0.08)", border: `1px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M12 2c1 6-4 6-4 12a6 6 0 0012 0c0-6-5-6-4-12"/><path d="M12 22a3 3 0 01-3-3c0-3 3-3 3-6"/></svg>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: T.copperTint, border: `1px solid ${T.copperBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="1.5" strokeLinecap="round"><path d="M12 2c1 6-4 6-4 12a6 6 0 0012 0c0-6-5-6-4-12"/><path d="M12 22a3 3 0 01-3-3c0-3 3-3 3-6"/></svg>
             </div>
             <div>
-              <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: currentStreak > 0 ? c.gilt : c.stone, display: "block", lineHeight: 1 }}>{currentStreak}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: currentStreak > 0 ? T.copper : c.stone, display: "block", lineHeight: 1 }}>{currentStreak}</span>
               <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>day streak</span>
             </div>
           </div>
@@ -290,9 +291,9 @@ export default function AnalyticsPage() {
         {/* Daily Challenge — targeted */}
         <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "22px 24px", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory }}>Today's Challenge</span>
-            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 500, color: c.obsidian, background: dailyChallenge.completed ? c.sage : c.gilt, borderRadius: 4, padding: "2px 6px", marginLeft: "auto" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 500, color: c.obsidian, background: dailyChallenge.completed ? c.sage : T.indigo, borderRadius: 4, padding: "2px 6px", marginLeft: "auto" }}>
               {dailyChallenge.completed ? "Done" : dailyChallenge.difficulty}
             </span>
           </div>
@@ -300,7 +301,7 @@ export default function AnalyticsPage() {
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, flex: 1 }}>{dailyChallenge.description}</span>
           {!dailyChallenge.completed && (
             <Button size="sm" onClick={() => startTargeted(dailyChallenge.type)}
-              style={{ background: c.gilt, color: c.obsidian, marginTop: 12, alignSelf: "flex-start" }}
+              style={{ background: T.indigo, color: c.obsidian, marginTop: 12, alignSelf: "flex-start" }}
             >
               Start Challenge
             </Button>
@@ -315,7 +316,7 @@ export default function AnalyticsPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
             {aiInsights.map((insight, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: c.obsidian, borderRadius: 8, border: `1px solid ${c.border}` }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: insightColor[insight.type] || c.gilt, marginTop: 6, flexShrink: 0 }} />
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: insightColor[insight.type] || T.indigo, marginTop: 6, flexShrink: 0 }} />
                 <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, lineHeight: 1.5 }}>{insight.text}</span>
               </div>
             ))}
@@ -331,7 +332,7 @@ export default function AnalyticsPage() {
         return (
           <div className="analytics-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
             {[
-              { label: "Average Score", value: avgScore.toString(), color: c.gilt, sub: scoreLabel(avgScore), delta: scoreDelta },
+              { label: "Average Score", value: avgScore.toString(), color: T.copper, sub: scoreLabel(avgScore), delta: scoreDelta },
               { label: "Total Sessions", value: sessions.length.toString(), color: c.ivory, sub: `${typeBreakdown.length} type${typeBreakdown.length !== 1 ? "s" : ""} practiced`, delta: countDelta },
               { label: "Skill Growth", value: `${avgImprovement >= 0 ? "+" : ""}${avgImprovement}`, color: avgImprovement >= 0 ? c.sage : c.ember, sub: "avg pts per skill", delta: null },
               { label: "Hours Logged", value: overallStats.hoursLogged.toFixed(1), color: c.slate, sub: "practice time", delta: null },
@@ -440,11 +441,11 @@ export default function AnalyticsPage() {
         <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>Resume Skills vs Interview Performance</h3>
             </div>
             {resumeProfile.resumeScore != null && (
-              <span style={{ fontFamily: font.mono, fontSize: 11, color: resumeProfile.resumeScore >= 65 ? c.sage : c.gilt }}>Resume score: {resumeProfile.resumeScore}/100</span>
+              <span style={{ fontFamily: font.mono, fontSize: 11, color: resumeProfile.resumeScore >= 65 ? c.sage : T.copper }}>Resume score: {resumeProfile.resumeScore}/100</span>
             )}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: resumeProfile.interviewGaps && resumeProfile.interviewGaps.length > 0 ? 14 : 0 }}>
@@ -462,8 +463,8 @@ export default function AnalyticsPage() {
             })}
           </div>
           {resumeProfile.interviewGaps && resumeProfile.interviewGaps.length > 0 && (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", borderRadius: 8, background: "rgba(180,83,9,0.03)", border: `1px solid rgba(180,83,9,0.08)` }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" style={{ marginTop: 1, flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", borderRadius: 8, background: "oklch(0.359 0.135 278.697 / 0.03)", border: `1px solid oklch(0.359 0.135 278.697 / 0.08)` }}>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" style={{ marginTop: 1, flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, lineHeight: 1.5 }}>
                 <strong style={{ color: c.ivory }}>Focus areas from your resume:</strong> {resumeProfile.interviewGaps.slice(0, 3).join(" · ")}
               </span>
@@ -486,7 +487,7 @@ export default function AnalyticsPage() {
                     <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>{g.progress}/{g.total}</span>
                   </div>
                   <div style={{ height: 6, background: c.border, borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${Math.min(100, (g.progress / g.total) * 100)}%`, background: g.progress >= g.total ? c.sage : c.gilt, borderRadius: 3, transition: "width 0.4s ease" }} />
+                    <div style={{ height: "100%", width: `${Math.min(100, (g.progress / g.total) * 100)}%`, background: g.progress >= g.total ? c.sage : T.indigo, borderRadius: 3, transition: "width 0.4s ease" }} />
                   </div>
                 </div>
               ))}
@@ -518,7 +519,7 @@ export default function AnalyticsPage() {
                 <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{Math.round(nextBadge.progress * 100)}%</span>
               </div>
               <div style={{ height: 4, background: c.border, borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${nextBadge.progress * 100}%`, background: c.gilt, borderRadius: 2 }} />
+                <div style={{ height: "100%", width: `${nextBadge.progress * 100}%`, background: T.copper, borderRadius: 2 }} />
               </div>
             </div>
           )}
@@ -531,7 +532,7 @@ export default function AnalyticsPage() {
         <div className="analytics-type-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(typeBreakdown.length, 4)}, 1fr)`, gap: 12 }}>
           {typeBreakdown.map(tb => (
             <div key={tb.type} style={{ background: c.obsidian, borderRadius: 10, border: `1px solid ${c.border}`, padding: "18px 20px", textAlign: "center" }}>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: c.gilt, display: "block", marginBottom: 12 }}>{tb.type}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: T.indigo, display: "block", marginBottom: 12 }}>{tb.type}</span>
               <span style={{ fontFamily: font.mono, fontSize: 32, fontWeight: 600, color: scoreLabelColor(tb.avgScore), display: "block", marginBottom: 4 }}>{tb.avgScore}</span>
               <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{tb.count} session{tb.count !== 1 ? "s" : ""}</span>
               <div style={{ height: 4, background: c.border, borderRadius: 2, marginTop: 12, overflow: "hidden" }}>
@@ -553,7 +554,7 @@ export default function AnalyticsPage() {
               <div style={{
                 width: "100%", borderRadius: 4,
                 height: Math.max(4, (w.sessions / maxWeeklySessions) * 72),
-                background: w.sessions > 0 ? w.sessions >= 3 ? c.sage : w.sessions >= 2 ? c.gilt : "rgba(180,83,9,0.3)" : c.border,
+                background: w.sessions > 0 ? w.sessions >= 3 ? c.sage : w.sessions >= 2 ? T.indigo : "oklch(0.359 0.135 278.697 / 0.3)" : c.border,
                 transition: "height 0.3s ease",
               }} />
               <span style={{ fontFamily: font.mono, fontSize: 8, color: c.stone, whiteSpace: "nowrap" }}>{w.week}</span>
@@ -562,8 +563,8 @@ export default function AnalyticsPage() {
         </div>
         <div style={{ display: "flex", gap: 16, marginTop: 14, justifyContent: "center" }}>
           {[
-            { color: "rgba(180,83,9,0.3)", label: "1 session" },
-            { color: c.gilt, label: "2 sessions" },
+            { color: "oklch(0.359 0.135 278.697 / 0.3)", label: "1 session" },
+            { color: T.indigo, label: "2 sessions" },
             { color: c.sage, label: "3+ sessions" },
           ].map(l => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>

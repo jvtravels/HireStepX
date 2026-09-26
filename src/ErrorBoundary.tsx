@@ -1,5 +1,6 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 
 // Raw error messages can leak stack traces, internal identifiers, or PII into
 // the UI. Show them only in development; production users get the friendly copy.
@@ -135,7 +136,10 @@ export default class ErrorBoundary extends Component<Props, State> {
                 padding: "10px 24px",
                 borderRadius: 8,
                 border: "none",
-                background: c.gilt,
+                // General navigation CTA, not score-related — indigo is the
+                // one brand/interactive color; copper stays reserved for
+                // score/streak/reward visuals.
+                background: T.indigo,
                 color: c.obsidian,
                 fontSize: 13,
                 fontWeight: 600,
@@ -268,7 +272,7 @@ export class SectionErrorBoundary extends Component<{ children: ReactNode; label
         <div role="alert" style={{ padding: "20px 16px", textAlign: "center", borderRadius: 12, background: "rgba(185,28,28,0.04)", border: "1px solid rgba(185,28,28,0.12)" }}>
           <p style={{ fontSize: 13, color: c.stone, margin: 0 }}>
             {this.props.label ? `Could not load ${this.props.label}.` : "This section could not load."}{" "}
-            <button onClick={() => this.setState({ hasError: false })} style={{ fontSize: 13, color: c.gilt, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Retry</button>
+            <button onClick={() => this.setState({ hasError: false })} style={{ fontSize: 13, color: T.indigo, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Retry</button>
           </p>
         </div>
       );

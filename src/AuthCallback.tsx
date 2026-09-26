@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { getSupabase, supabaseConfigured } from "./supabase";
 import { clearSessionStart } from "./auth/_shell";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import LoadingScreen from "./_LoadingScreen";
 
 export default function AuthCallback() {
@@ -192,7 +193,7 @@ export default function AuthCallback() {
             }}
             style={{
               fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-              background: c.gilt, border: "none",
+              background: T.indigo, border: "none",
               borderRadius: 8, padding: "8px 20px", cursor: "pointer",
             }}
           >

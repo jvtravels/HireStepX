@@ -342,7 +342,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         description: data.description,
         order_id: data.orderId,
         prefill: { email: user?.email || "", name: user?.name || "" },
-        theme: { color: c.gilt },
+        theme: { color: T.indigo },
         config: { display: { blocks: { banks: { name: "Pay via UPI / Netbanking", instruments: [{ method: "upi" }, { method: "netbanking" }] } }, sequence: ["block.banks"], preferences: { show_default_blocks: true } } },
         method: { upi: true, card: true, netbanking: true, wallet: true },
         handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
@@ -505,7 +505,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               {verifyRetries > 0 && (
                 <Button size="sm" onClick={retryVerification} style={{ background: c.ember, color: c.graphite }}>Retry Verification</Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: c.gilt, minHeight: 36 }}>Dismiss</Button>
+              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo, minHeight: 36 }}>Dismiss</Button>
             </div>
           </div>
         )}
@@ -513,7 +513,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* Promo Code — collapsed by default */}
         {!showPromo && !promoResult?.valid && (
           <div style={{ textAlign: "left", marginBottom: 12 }}>
-            <Button variant="link" onClick={() => setShowPromo(true)} style={{ fontSize: 12, color: c.gilt, padding: 0, height: "auto" }}>
+            <Button variant="link" onClick={() => setShowPromo(true)} style={{ fontSize: 12, color: T.indigo, padding: 0, height: "auto" }}>
               Have a promo code?
             </Button>
           </div>
@@ -541,7 +541,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
               } catch { setPromoError("Could not validate code"); }
               finally { setPromoLoading(false); }
-            }} style={{ color: c.gilt, background: c.giltLight }}>
+            }} style={{ color: T.indigo, background: T.indigo100 }}>
               {promoLoading ? "..." : "Apply"}
             </Button>
           </div>
@@ -591,7 +591,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     ) : (
                       <>
                         <div>
-                          <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt }}>Per Session</p>
+                          <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: T.indigo }}>Per Session</p>
                           <p style={{ margin: "10px 0 0", fontFamily: font.ui, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                             &#x20B9;{SINGLE_SESSION_PRICE}
                             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone }}>/ session</span>
@@ -601,14 +601,14 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                           {["Voice in & out, all round types", "Full STAR score + coached answer", "Use anytime, no expiry"].map((f) => (
                             <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: c.chalk }}>
-                              <span aria-hidden style={{ color: c.gilt, marginTop: 2, flexShrink: 0 }}>&#8594;</span>{f}
+                              <span aria-hidden style={{ color: T.indigo, marginTop: 2, flexShrink: 0 }}>&#8594;</span>{f}
                             </li>
                           ))}
                         </ul>
                         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
                           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                             <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone }}>How many?</span>
-                            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, fontWeight: 600 }}>&#x20B9;{SINGLE_SESSION_PRICE * singleQty} total</span>
+                            <span style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, fontWeight: 600 }}>&#x20B9;{SINGLE_SESSION_PRICE * singleQty} total</span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
@@ -616,11 +616,11 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                             <input type="range" min={1} max={10} step={1} value={singleQty} onChange={e => setSingleQty(Number(e.target.value))} disabled={!!loading} aria-label="Number of sessions" aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10} className="upgrade-session-slider"
                               style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
-                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : c.gilt, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
+                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : T.indigo, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
                           </div>
                           <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center" }}>
                             {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
-                            {singleQty >= 10 && <span style={{ color: c.gilt }}> &#xB7; max per order</span>}
+                            {singleQty >= 10 && <span style={{ color: T.indigo }}> &#xB7; max per order</span>}
                           </p>
                         </div>
                         <Button onClick={() => handleCheckout("single")} disabled={!!loading}
@@ -658,12 +658,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   <span style={{
                     position: "absolute", top: -12, left: 24,
                     fontFamily: font.ui, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                    color: c.ivory, background: c.giltLight,
+                    color: c.ivory, background: T.indigo100,
                     padding: "4px 10px", borderRadius: 999, border: `1px solid ${c.borderHover}`,
                   }}>{ribbonText}</span>
                 )}
                 <div>
-                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? c.giltLight : c.gilt }}>{plan.name}</p>
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? T.indigo100 : T.indigo }}>{plan.name}</p>
                   {"compareAt" in plan && plan.compareAt && (
                     <p style={{ margin: "6px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textDecoration: "line-through" }}>
                       {plan.compareAt}
@@ -681,13 +681,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {plan.features.map((f) => (
                     <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(250,247,240,0.86)" : c.chalk }}>
-                      <span aria-hidden style={{ color: featured ? c.giltLight : c.gilt, marginTop: 2 }}>→</span>{f}
+                      <span aria-hidden style={{ color: featured ? T.indigo100 : T.indigo, marginTop: 2 }}>→</span>{f}
                     </li>
                   ))}
                 </ul>
 
                 {isCurrent && !isRepurchasable ? (
-                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? c.giltLight : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
+                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? T.indigo100 : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
                 ) : isLowerTier ? (
                   /* User is already on a higher tier — suppress the downgrade CTA */
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${c.border}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 400, color: c.stone, textAlign: "center", opacity: 0.55 }}>Not available on your plan</div>
@@ -725,7 +725,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ display: "flex" }}>
-              {[c.gilt, c.sage, c.ember].map((col, i) => (
+              {[T.indigo, c.sage, c.ember].map((col, i) => (
                 <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: `2px solid ${c.carbon}`, marginLeft: i > 0 ? -6 : 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill={c.graphite} stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
@@ -738,7 +738,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           <div style={{ width: 1, height: 16, background: c.border }} />
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {[1, 2, 3, 4, 5].map(i => (
-              <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={c.gilt} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={T.indigo} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             ))}
             <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, marginLeft: 2 }}>4.8 avg rating</span>
           </div>

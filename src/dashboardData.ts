@@ -1,4 +1,5 @@
 import { c } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { loadEvents, daysUntilEvent, formatEventTime } from "./dashboardHelpers";
 import { supabaseConfigured } from "./supabase";
 import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState, SessionCoaching, SessionFocusMetric } from "./dashboardTypes";
@@ -285,7 +286,7 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
         });
       }
     });
-    const colors = [c.gilt, c.sage, c.ember, c.slate, c.gilt, c.sage];
+    const colors = [T.copper, c.sage, c.ember, c.slate, T.copper, c.sage];
     Object.entries(skillMap).forEach(([name, scores], i) => {
       const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
       const first = scores[0];

@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { c, font, shadow, gradient } from "./tokens";
-import { tokens as rawTokens } from "./auth/_tokens";
+import { tokens as T } from "./auth/_tokens";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -11,9 +11,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 /* ─── Helpers (re-exported for parent) ─── */
 
+// Score-band color: middling band is gamification-domain (session score),
+// so it stays copper — re-sourced from T.copper rather than the legacy
+// c.gilt alias.
 export function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
-  if (score >= 70) return c.gilt;
+  if (score >= 70) return T.copper;
   return c.ember;
 }
 
@@ -43,7 +46,7 @@ export function normalizeType(type: string): string {
 function ratingBadge(rating: string | undefined): { label: string; color: string; bg: string } {
   switch (rating) {
     case "strong": return { label: "Strong", color: c.sage, bg: "rgba(21,128,61,0.1)" };
-    case "good": return { label: "Good", color: c.gilt, bg: "rgba(180,83,9,0.1)" };
+    case "good": return { label: "Good", color: T.copper, bg: "rgba(180,83,9,0.1)" };
     case "partial": return { label: "Partial", color: "#E89B5A", bg: "rgba(232,155,90,0.1)" };
     case "weak": return { label: "Weak", color: c.ember, bg: "rgba(185,28,28,0.1)" };
     default: return { label: "Reviewed", color: c.stone, bg: "rgba(142,137,131,0.1)" };
@@ -162,7 +165,7 @@ export const SessionHeader = memo(function SessionHeader({ type, dateLabel, scor
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </Button>
-        <h1 style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+        <h1 style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 600, color: c.ivory, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
           Analysis Report & Answer Key
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -256,7 +259,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Filler Words</span>
               <span style={{ fontSize: 10, color: c.stone }}>Per Minute</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.fillerPerMin <= 3 ? c.sage : metrics.fillerPerMin <= 6 ? c.gilt : c.ember }}>
+            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.fillerPerMin <= 3 ? c.sage : metrics.fillerPerMin <= 6 ? T.copper : c.ember }}>
               {metrics.fillerPerMin}
             </span>
           </div>
@@ -304,7 +307,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Silence Ratio</span>
               <span style={{ fontSize: 10, color: c.stone }}>Speaking Continuity</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.silenceRatio <= 30 ? c.sage : metrics.silenceRatio <= 50 ? c.gilt : c.ember }}>
+            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.silenceRatio <= 30 ? c.sage : metrics.silenceRatio <= 50 ? T.copper : c.ember }}>
               {metrics.silenceRatio}<span style={{ fontSize: 14 }}>%</span>
             </span>
           </div>
@@ -322,7 +325,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Energy</span>
               <span style={{ fontSize: 10, color: c.stone }}>Voice Dynamics</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.energy >= 70 ? c.sage : metrics.energy >= 50 ? c.gilt : c.ember }}>
+            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.energy >= 70 ? c.sage : metrics.energy >= 50 ? T.copper : c.ember }}>
               {metrics.energy}<span style={{ fontSize: 14, color: c.stone }}>/100</span>
             </span>
           </div>
@@ -340,7 +343,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Pace</span>
               <span style={{ fontSize: 10, color: c.stone }}>Speaking Speed</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.pace >= 130 && metrics.pace <= 180 ? c.sage : c.gilt }}>
+            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.pace >= 130 && metrics.pace <= 180 ? c.sage : T.copper }}>
               {metrics.pace}<span style={{ fontSize: 12, color: c.stone }}> wpm</span>
             </span>
           </div>
@@ -650,7 +653,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {weakest && (
           <Button onClick={() => onNavigate(`/session/new?type=${session.type}&focus=${weakest.name.toLowerCase().replace(/\s+/g, "-")}`)}
-            style={{ fontFamily: font.ui, fontWeight: 600, background: `linear-gradient(135deg, ${c.slate}, ${rawTokens.indigoDeep})`, color: c.obsidian, boxShadow: shadow.sm }}>
+            style={{ fontFamily: font.ui, fontWeight: 600, background: `linear-gradient(135deg, ${c.slate}, ${T.indigoDeep})`, color: c.obsidian, boxShadow: shadow.sm }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
             Practice {weakest.name}
           </Button>
@@ -700,7 +703,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
         <div style={{
           width: 56, height: 56, borderRadius: "50%",
-          background: `conic-gradient(${jdAnalysis.matchScore >= 70 ? c.sage : jdAnalysis.matchScore >= 50 ? c.gilt : c.ember} ${jdAnalysis.matchScore * 3.6}deg, ${c.border} 0deg)`,
+          background: `conic-gradient(${jdAnalysis.matchScore >= 70 ? c.sage : jdAnalysis.matchScore >= 50 ? T.copper : c.ember} ${jdAnalysis.matchScore * 3.6}deg, ${c.border} 0deg)`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <div style={{ width: 44, height: 44, borderRadius: "50%", background: c.graphite, display: "flex", alignItems: "center", justifyContent: "center" }}>

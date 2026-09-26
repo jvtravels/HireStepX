@@ -1,4 +1,5 @@
 import { c } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import type { DashboardSession } from "./dashboardTypes";
 
 export const RESULTS_KEY = "hirestepx_sessions";
@@ -17,9 +18,12 @@ export function extractReason(raw: unknown): string {
 
 /* ─── Helpers ─── */
 
+// Score-band color: green/copper/red thresholds are gamification-domain
+// (session score), so the middle band stays copper — re-sourced from the
+// canonical T.copper rather than the legacy c.gilt alias.
 export function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
-  if (score >= 75) return c.gilt;
+  if (score >= 75) return T.copper;
   return c.ember;
 }
 
@@ -76,7 +80,7 @@ export function normalizeType(type: string): string {
 export function ratingBadge(rating: string | undefined): { label: string; color: string; bg: string } {
   switch (rating) {
     case "strong": return { label: "Strong", color: c.sage, bg: "rgba(122,158,126,0.1)" };
-    case "good": return { label: "Good", color: c.gilt, bg: "rgba(212,179,127,0.1)" };
+    case "good": return { label: "Good", color: T.copper, bg: "rgba(212,179,127,0.1)" };
     case "partial": return { label: "Partial", color: "#E89B5A", bg: "rgba(232,155,90,0.1)" };
     case "weak": return { label: "Weak", color: c.ember, bg: "rgba(196,112,90,0.1)" };
     default: return { label: "Reviewed", color: c.stone, bg: "rgba(142,137,131,0.1)" };

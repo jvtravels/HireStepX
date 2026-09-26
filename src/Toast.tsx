@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { haptic } from "./haptics";
 
 /* ─── Types ─── */
@@ -65,8 +66,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           }}
         >
           {toasts.map((t) => {
-            const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : c.gilt;
-            const borderColor = t.type === "success" ? "rgba(21,128,61,0.25)" : t.type === "error" ? "rgba(185,28,28,0.25)" : "rgba(180,83,9,0.25)";
+            // Info toasts are general notification UI, not a score/reward — indigo, not copper
+            const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : T.indigo;
+            const borderColor = t.type === "success" ? "rgba(21,128,61,0.25)" : t.type === "error" ? "rgba(185,28,28,0.25)" : "rgba(49,46,129,0.25)";
             return (
               <div
                 key={t.id}

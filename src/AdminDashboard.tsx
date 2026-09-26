@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import Image from "next/image";
 import { c, font, radius } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { EmptyState } from "./components/EmptyState";
 import { Button } from "./components/ui/button";
 
@@ -395,7 +396,7 @@ const tdStyle = {
 
 const exportBtn = {
   fontFamily: font.ui, fontSize: 11, fontWeight: 600,
-  color: c.gilt, background: "transparent",
+  color: T.indigo, background: "transparent",
   border: `1px solid rgba(180,83,9,0.3)`,
   borderRadius: 6, padding: "5px 12px", cursor: "pointer",
 } as const;
@@ -404,7 +405,7 @@ const exportBtn = {
 
 function CreditMeter({ label, used, cap, format }: { label: string; used: number; cap: number; format: (n: number) => string }) {
   const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
-  const barColor = pct >= 90 ? c.ember : pct >= 70 ? c.gilt : c.sage;
+  const barColor = pct >= 90 ? c.ember : pct >= 70 ? T.copper : c.sage;
   return (
     <div style={{ flex: "1 1 260px", minWidth: 220 }}>
       <p style={labelStyle}>{label}</p>
@@ -420,7 +421,7 @@ function CreditMeter({ label, used, cap, format }: { label: string; used: number
 
 /* ─── Mini Bar Chart (memoized) ─── */
 
-const MiniBarChart = memo(function MiniBarChart({ data, color = c.gilt, height = 80 }: { data: Record<string, number>; color?: string; height?: number }) {
+const MiniBarChart = memo(function MiniBarChart({ data, color = T.indigo, height = 80 }: { data: Record<string, number>; color?: string; height?: number }) {
   const entries = Object.entries(data);
   const values = entries.map(([, v]) => v);
   const max = Math.max(...values, 1);
@@ -479,7 +480,7 @@ function StatusDot({ ok }: { ok: boolean }) {
 function ServiceStatusBadge({ status }: { status: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
     healthy: { bg: `${c.sage}22`, text: c.sage },
-    degraded: { bg: `${c.gilt}22`, text: c.gilt },
+    degraded: { bg: `${T.indigo}22`, text: T.indigo },
     down: { bg: `${c.ember}22`, text: c.ember },
   };
   const col = colors[status] || colors.healthy;
@@ -1021,7 +1022,7 @@ export default function AdminDashboard() {
           </div>
           <div style={statCard}>
             <p style={labelStyle}>Free → Paid</p>
-            <p style={{ ...bigNum, color: u.conversionRate >= 5 ? c.sage : u.conversionRate >= 2 ? c.gilt : c.ember }}>
+            <p style={{ ...bigNum, color: u.conversionRate >= 5 ? c.sage : u.conversionRate >= 2 ? T.indigo : c.ember }}>
               {u.conversionRate}%
             </p>
             <p style={{ margin: "4px 0 0", fontSize: 12, color: c.stone }}>{u.paidUserCount} paid of {u.total} total</p>
@@ -1090,7 +1091,7 @@ export default function AdminDashboard() {
             <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
               {[
                 { label: "Signed Up", value: activation.signups30d, color: c.stone, pct: 100 },
-                { label: "Completed ≥1 Session", value: activation.activatedCount, color: c.gilt, pct: activation.signups30d > 0 ? Math.round((activation.activatedCount / activation.signups30d) * 100) : 0 },
+                { label: "Completed ≥1 Session", value: activation.activatedCount, color: T.indigo, pct: activation.signups30d > 0 ? Math.round((activation.activatedCount / activation.signups30d) * 100) : 0 },
                 { label: "Converted to Paid", value: activation.convertedCount, color: c.sage, pct: activation.signups30d > 0 ? Math.round((activation.convertedCount / activation.signups30d) * 100) : 0 },
               ].map((step, i) => (
                 <div key={step.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative" }}>
@@ -1105,7 +1106,7 @@ export default function AdminDashboard() {
               ))}
             </div>
             <p style={{ margin: "12px 0 0", fontSize: 11, color: c.stone }}>
-              Activation rate: <strong style={{ color: c.gilt }}>{activation.activationRate}%</strong> of signups started a session ·
+              Activation rate: <strong style={{ color: T.indigo }}>{activation.activationRate}%</strong> of signups started a session ·
               Paid conversion (from activated): <strong style={{ color: c.sage }}>{activation.paidConversionRate}%</strong>
             </p>
           </div>
@@ -1152,7 +1153,7 @@ export default function AdminDashboard() {
         <div style={{ textAlign: "center", padding: 80 }}>
           {userDetailLoading ? (
             <>
-              <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
               <p style={{ color: c.stone, fontSize: 14, margin: 0 }}>Loading user…</p>
             </>
           ) : (
@@ -1237,7 +1238,7 @@ export default function AdminDashboard() {
                   <td style={{ ...tdStyle, fontSize: 12 }}>{timeAgo(u.lastActive)}</td>
                   <td style={{ ...tdStyle, fontSize: 12 }}>
                     {subExpiring != null ? (
-                      <span style={{ color: subExpiring <= 3 ? c.ember : subExpiring <= 7 ? c.gilt : c.stone }}>
+                      <span style={{ color: subExpiring <= 3 ? c.ember : subExpiring <= 7 ? T.indigo : c.stone }}>
                         {subExpiring <= 0 ? "Expired" : `${subExpiring}d`}
                       </span>
                     ) : u.tier === "free" ? <span style={{ color: c.stone }}>—</span> : <span style={{ color: c.stone }}>—</span>}
@@ -1262,7 +1263,7 @@ export default function AdminDashboard() {
     if (!sessionDetail || !sessionDetail.session) return <EmptyState title="Session not found" />;
     const s = sessionDetail.session;
     const skillScores = s.skill_scores && typeof s.skill_scores === "object" ? s.skill_scores as Record<string, unknown> : {};
-    const scoreColor = (score: number) => score >= 65 ? c.sage : score >= 40 ? c.gilt : c.ember;
+    const scoreColor = (score: number) => score >= 65 ? c.sage : score >= 40 ? T.copper : c.ember;
 
     return (
       <div>
@@ -1381,7 +1382,7 @@ export default function AdminDashboard() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{
                         fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: c.gilt, background: "rgba(180,83,9,0.1)", padding: "2px 7px", borderRadius: 3,
+                        color: T.indigo, background: "rgba(180,83,9,0.1)", padding: "2px 7px", borderRadius: 3,
                       }}>Q{i + 1} · Interviewer</span>
                       {qa.questionTime && <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{qa.questionTime}</span>}
                     </div>
@@ -1446,7 +1447,7 @@ export default function AdminDashboard() {
           variant="link"
           onClick={() => { setSelectedUserId(null); setUserDetail(null); }}
           style={{
-            background: "none", color: c.gilt,
+            background: "none", color: T.indigo,
             fontSize: 13, fontFamily: font.ui, marginBottom: 16, padding: 0,
             height: "auto",
           }}
@@ -1458,7 +1459,7 @@ export default function AdminDashboard() {
         <div style={{ ...card, marginBottom: 20, display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{
             width: 56, height: 56, borderRadius: "50%",
-            background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+            background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 22, fontWeight: 700, color: c.obsidian,
           }}>
@@ -1539,7 +1540,7 @@ export default function AdminDashboard() {
             {/* ── Extend / Change Plan ── */}
             <div style={{ padding: "16px 20px", borderRight: `1px solid ${c.border}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <div style={{ width: 3, height: 14, borderRadius: 2, background: c.gilt, flexShrink: 0 }} />
+                <div style={{ width: 3, height: 14, borderRadius: 2, background: T.indigo, flexShrink: 0 }} />
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Change Plan</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1863,7 +1864,7 @@ export default function AdminDashboard() {
                   finally { setQaBusy(false); }
                 }}
                 style={{
-                  background: c.gilt, color: c.obsidian, border: "none", borderRadius: 6,
+                  background: T.indigo, color: c.obsidian, border: "none", borderRadius: 6,
                   padding: "8px 20px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
                   opacity: (qaBusy || !qaEmailSubject.trim() || !qaEmailBody.trim()) ? 0.45 : 1,
                   flexShrink: 0, alignSelf: "flex-end",
@@ -1885,7 +1886,7 @@ export default function AdminDashboard() {
                   <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>{s.id.slice(0, 8)}…</span>
                   <span style={{ fontSize: 12, color: c.chalk, flex: 1 }}>{s.type || "—"}</span>
                   <span style={{ fontSize: 11, color: c.stone }}>{formatDateTime(s.date)}</span>
-                  <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.gilt }}>₹{(s.llmCostInr || 0).toFixed(3)}</span>
+                  <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: T.indigo }}>₹{(s.llmCostInr || 0).toFixed(3)}</span>
                   <span style={{ fontSize: 11, color: c.stone }}>{formatNum((s.promptTokens || 0) + (s.completionTokens || 0))} tok</span>
                 </div>
               ))}
@@ -1923,15 +1924,15 @@ export default function AdminDashboard() {
                   >
                     <td style={tdStyle}>{String(s.type || "—")}</td>
                     <td style={tdStyle}>{String(s.difficulty || "—")}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: (s.score as number) >= 65 ? c.sage : (s.score as number) >= 40 ? c.gilt : c.ember }}>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: (s.score as number) >= 65 ? c.sage : (s.score as number) >= 40 ? T.copper : c.ember }}>
                       {String(s.score ?? "—")}
                     </td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration as number / 60)}m` : "—"}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.llm_cost_inr != null ? c.gilt : c.stone }}>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.llm_cost_inr != null ? T.indigo : c.stone }}>
                       {s.llm_cost_inr != null ? `₹${(s.llm_cost_inr as number).toFixed(3)}` : "—"}
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.created_at as string)}</td>
-                    <td style={{ ...tdStyle, color: c.gilt, fontSize: 11 }}>View →</td>
+                    <td style={{ ...tdStyle, color: T.indigo, fontSize: 11 }}>View →</td>
                   </tr>
                 ))}
               </tbody>
@@ -2088,7 +2089,7 @@ export default function AdminDashboard() {
                   style={{
                     width: "100%",
                     height: `${Math.max(2, (v / monthMax) * 100)}%`,
-                    background: i === monthEntries.length - 1 ? c.gilt : c.sage,
+                    background: i === monthEntries.length - 1 ? T.indigo : c.sage,
                     borderRadius: "3px 3px 0 0",
                     opacity: 0.85,
                     cursor: "default",
@@ -2099,14 +2100,14 @@ export default function AdminDashboard() {
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {monthLabels.map((lbl, i) => (
-              <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 10, color: i === monthLabels.length - 1 ? c.gilt : c.stone, fontFamily: font.mono }}>
+              <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 10, color: i === monthLabels.length - 1 ? T.indigo : c.stone, fontFamily: font.mono }}>
                 {lbl}
               </div>
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: c.stone, fontFamily: font.mono }}>
             <span>Total: {paise(Object.values(financials.perMonth).reduce((a, b) => a + b, 0))}</span>
-            <span style={{ color: c.gilt }}>■ current month</span>
+            <span style={{ color: T.indigo }}>■ current month</span>
           </div>
         </div>
 
@@ -2127,7 +2128,7 @@ export default function AdminDashboard() {
                       <div key={plan} style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: "0 16px", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
                         <span style={{ color: c.chalk, fontSize: 13 }}>{plan}</span>
                         <span style={{ fontFamily: font.mono, color: c.stone, fontSize: 12, textAlign: "right" }}>{count}</span>
-                        <span style={{ fontFamily: font.mono, color: c.gilt, fontWeight: 600, fontSize: 13, textAlign: "right" }}>{paise(revenue)}</span>
+                        <span style={{ fontFamily: font.mono, color: T.indigo, fontWeight: 600, fontSize: 13, textAlign: "right" }}>{paise(revenue)}</span>
                         <span style={{ fontFamily: font.mono, color: c.stone, fontSize: 12, textAlign: "right" }}>{pct}%</span>
                       </div>
                     );
@@ -2135,7 +2136,7 @@ export default function AdminDashboard() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: "0 16px", alignItems: "center", padding: "8px 0", marginTop: 4 }}>
                     <span style={{ color: c.chalk, fontSize: 12, fontWeight: 600 }}>Total</span>
                     <span style={{ fontFamily: font.mono, color: c.chalk, fontSize: 12, textAlign: "right", fontWeight: 600 }}>{financials.totalPayments}</span>
-                    <span style={{ fontFamily: font.mono, color: c.gilt, fontSize: 13, fontWeight: 700, textAlign: "right" }}>{paise(totalRev)}</span>
+                    <span style={{ fontFamily: font.mono, color: T.indigo, fontSize: 13, fontWeight: 700, textAlign: "right" }}>{paise(totalRev)}</span>
                     <span style={{ fontFamily: font.mono, color: c.stone, fontSize: 12, textAlign: "right" }}>100%</span>
                   </div>
                 </>
@@ -2183,7 +2184,7 @@ export default function AdminDashboard() {
                     <td style={tdStyle}>{s.name}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12, color: c.stone }}>{s.email}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono, textAlign: "right" }}>{s.paymentCount}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: c.gilt }}>{paise(s.totalPaise)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: T.indigo }}>{paise(s.totalPaise)}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.lastPayment)}</td>
                   </tr>
                 ))}
@@ -2217,7 +2218,7 @@ export default function AdminDashboard() {
               <tbody>
                 {financials.recent.map((p, i) => (
                   <tr key={i}>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: c.gilt }}>{paise(p.amount)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: T.indigo }}>{paise(p.amount)}</td>
                     <td style={tdStyle}>{p.plan}</td>
                     <td style={tdStyle}><StatusDot ok={p.status === "captured" || p.status === "paid" || p.status === "success"} />{p.status}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11, color: c.stone }}>{p.userId?.slice(0, 8) || "—"}</td>
@@ -2306,12 +2307,12 @@ export default function AdminDashboard() {
 
         {typeOrder.filter(t => grouped[t]).map(type => (
           <div key={type} style={{ marginBottom: 20 }}>
-            <p style={{ ...labelStyle, marginBottom: 12, color: c.gilt }}>{type}</p>
+            <p style={{ ...labelStyle, marginBottom: 12, color: T.indigo }}>{type}</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {grouped[type].map(svc => {
                 const bar = getUsageBar(svc);
                 const pct = bar ? Math.min(100, (bar.usedToday / bar.limit) * 100) : 0;
-                const barColor = pct > 90 ? c.ember : pct > 70 ? c.gilt : c.sage;
+                const barColor = pct > 90 ? c.ember : pct > 70 ? T.copper : c.sage;
 
                 return (
                 <div key={svc.name} style={{ ...card, flex: "1 1 320px", minWidth: 300, maxWidth: 520 }}>
@@ -2645,7 +2646,7 @@ export default function AdminDashboard() {
           </div>
           <div style={statCard}>
             <p style={labelStyle}>Most Expensive Session</p>
-            <p style={{ ...bigNum, color: cd.highestSessionCostInr > 2 ? c.ember : c.gilt }}>₹{cd.highestSessionCostInr.toFixed(3)}</p>
+            <p style={{ ...bigNum, color: cd.highestSessionCostInr > 2 ? c.ember : T.indigo }}>₹{cd.highestSessionCostInr.toFixed(3)}</p>
             <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>Today ₹{cd.todayCostInr.toFixed(2)} · Avg/day ₹{cd.dailyAvgInr.toFixed(2)}</p>
           </div>
           {grossMarginPerSession != null && (
@@ -2698,7 +2699,7 @@ export default function AdminDashboard() {
                       <tr key={focus}>
                         <td style={{ ...tdStyle, fontSize: 12 }}>{focusLabel(focus)}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.sessions}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, color: c.gilt }}>₹{d.totalInr.toFixed(2)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo }}>₹{d.totalInr.toFixed(2)}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono, color: d.avgInr > 1 ? c.ember : c.sage }}>₹{d.avgInr.toFixed(3)}</td>
                       </tr>
                     ))}
@@ -2727,7 +2728,7 @@ export default function AdminDashboard() {
                         <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{ep}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.calls}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(d.tokens)}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, color: c.gilt }}>₹{d.estimatedInr.toFixed(2)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo }}>₹{d.estimatedInr.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2763,7 +2764,7 @@ export default function AdminDashboard() {
                       <div style={{ color: c.stone, fontSize: 10 }}>{u.email}</div>
                     </td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.sessions}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: c.gilt, fontWeight: 700 }}>₹{u.totalLlmInr.toFixed(2)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo, fontWeight: 700 }}>₹{u.totalLlmInr.toFixed(2)}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono, color: u.avgInr > 1 ? c.ember : "inherit" }}>₹{u.avgInr.toFixed(3)}</td>
                   </tr>
                 ))}
@@ -2781,7 +2782,7 @@ export default function AdminDashboard() {
                 variant="ghost"
                 size="xs"
                 onClick={() => exportCsv("expensive-sessions.csv", cd.topExpensiveSessions)}
-                style={{ fontSize: 11, color: c.gilt, background: "none", border: "none", padding: "2px 6px" }}
+                style={{ fontSize: 11, color: T.indigo, background: "none", border: "none", padding: "2px 6px" }}
               >
                 Export CSV
               </Button>
@@ -2811,15 +2812,15 @@ export default function AdminDashboard() {
                   >
                     <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{s.id.slice(0, 8)}…</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{focusLabel(s.focus)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.score >= 65 ? c.sage : s.score >= 40 ? c.gilt : c.ember }}>{s.score}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.score >= 65 ? c.sage : s.score >= 40 ? T.copper : c.ember }}>{s.score}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration / 60)}m` : "—"}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(s.promptTokens)}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(s.completionTokens)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: s.llmCostInr > 1.5 ? c.ember : c.gilt }}>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: s.llmCostInr > 1.5 ? c.ember : T.indigo }}>
                       ₹{s.llmCostInr.toFixed(3)}
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.date)}</td>
-                    <td style={{ ...tdStyle, color: c.gilt, fontSize: 11 }}>View →</td>
+                    <td style={{ ...tdStyle, color: T.indigo, fontSize: 11 }}>View →</td>
                   </tr>
                 ))}
               </tbody>
@@ -2864,7 +2865,7 @@ export default function AdminDashboard() {
               <div key={range} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                 <span style={{ width: 50, fontSize: 11, color: c.stone, fontFamily: font.mono }}>{range}</span>
                 <div style={{ flex: 1, height: 12, background: c.onyx, borderRadius: 6, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${sessions.total > 0 ? (count / sessions.total) * 100 : 0}%`, background: c.gilt, borderRadius: 6, minWidth: count > 0 ? 4 : 0 }} />
+                  <div style={{ height: "100%", width: `${sessions.total > 0 ? (count / sessions.total) * 100 : 0}%`, background: T.copper, borderRadius: 6, minWidth: count > 0 ? 4 : 0 }} />
                 </div>
                 <span style={{ width: 30, fontSize: 11, color: c.stone, fontFamily: font.mono, textAlign: "right" }}>{count}</span>
               </div>
@@ -2903,7 +2904,7 @@ export default function AdminDashboard() {
                 <div key={skill} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <span style={{ flex: 1, fontSize: 12, color: c.chalk }}>{skill}</span>
                   <div style={{ width: 80, height: 8, background: c.onyx, borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${score}%`, background: score >= 65 ? c.sage : score >= 40 ? c.gilt : c.ember, borderRadius: 4 }} />
+                    <div style={{ height: "100%", width: `${score}%`, background: score >= 65 ? c.sage : score >= 40 ? T.copper : c.ember, borderRadius: 4 }} />
                   </div>
                   <span style={{ width: 28, fontSize: 11, fontFamily: font.mono, color: c.stone, textAlign: "right" }}>{score}</span>
                 </div>
@@ -2947,9 +2948,9 @@ export default function AdminDashboard() {
                       )}
                     </td>
                     <td style={tdStyle}>{s.difficulty}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: s.score >= 65 ? c.sage : s.score >= 40 ? c.gilt : c.ember }}>{s.score ?? "—"}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: s.score >= 65 ? c.sage : s.score >= 40 ? T.copper : c.ember }}>{s.score ?? "—"}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration / 60)}m` : "—"}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.llmCostInr != null ? c.gilt : c.stone }}>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.llmCostInr != null ? T.indigo : c.stone }}>
                       {s.llmCostInr != null ? `₹${s.llmCostInr.toFixed(3)}` : "—"}
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.date)}</td>
@@ -2969,7 +2970,7 @@ export default function AdminDashboard() {
     if (!feedback) return <EmptyState title="No feedback data available" />;
 
     const ratingColors: Record<string, string> = {
-      helpful: c.sage, too_harsh: c.ember, too_generous: c.gilt, inaccurate: c.ember,
+      helpful: c.sage, too_harsh: c.ember, too_generous: T.indigo, inaccurate: c.ember,
     };
 
     return (
@@ -3017,7 +3018,7 @@ export default function AdminDashboard() {
                     <td style={tdStyle}>{f.session_type || "—"}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{f.session_score ?? "—"}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(f.created_at)}</td>
-                    <td style={{ ...tdStyle, fontSize: 11, color: c.gilt }}>{f.user_id ? "View user →" : ""}</td>
+                    <td style={{ ...tdStyle, fontSize: 11, color: T.indigo }}>{f.user_id ? "View user →" : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -3034,13 +3035,13 @@ export default function AdminDashboard() {
     if (!supportMessages) return <EmptyState title="No support messages available" />;
 
     const statusColors: Record<string, string> = {
-      new: c.gilt, seen: c.stone, resolved: c.sage,
+      new: T.indigo, seen: c.stone, resolved: c.sage,
     };
     const statusBg: Record<string, string> = {
       new: "rgba(180,83,9,0.12)", seen: "rgba(100,100,100,0.12)", resolved: "rgba(21,128,61,0.12)",
     };
     const typeColors: Record<string, string> = {
-      bug: c.ember, feature: "#7c6ee6", billing: c.gilt, other: c.stone,
+      bug: c.ember, feature: "#7c6ee6", billing: T.indigo, other: c.stone,
     };
     const typeBg: Record<string, string> = {
       bug: "rgba(239,68,68,0.12)", feature: "rgba(124,110,230,0.12)",
@@ -3135,7 +3136,7 @@ export default function AdminDashboard() {
                       title={`${day}: ${v}`}
                       style={{
                         width: "100%", borderRadius: "3px 3px 0 0",
-                        background: v > 0 ? c.gilt : c.border,
+                        background: v > 0 ? T.indigo : c.border,
                         height: `${Math.max(pct, 4)}%`,
                         minHeight: v > 0 ? 6 : 3,
                       }}
@@ -3185,7 +3186,7 @@ export default function AdminDashboard() {
                       <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
                       <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>
                         {m.email
-                          ? <a href={`mailto:${m.email}?subject=Re: Your HireStepX support message`} style={{ color: c.gilt, textDecoration: "none" }} title="Reply via email">{m.email}</a>
+                          ? <a href={`mailto:${m.email}?subject=Re: Your HireStepX support message`} style={{ color: T.indigo, textDecoration: "none" }} title="Reply via email">{m.email}</a>
                           : "—"}
                       </td>
                       <td style={{ ...tdStyle, fontSize: 11, whiteSpace: "nowrap" as const }}>
@@ -3225,7 +3226,7 @@ export default function AdminDashboard() {
                           : (() => {
                               const ageHr = (Date.now() - new Date(m.created_at).getTime()) / 3_600_000;
                               return st === "new"
-                                ? <span style={{ color: ageHr > 48 ? c.ember : c.gilt, fontWeight: ageHr > 48 ? 700 : 400 }}>
+                                ? <span style={{ color: ageHr > 48 ? c.ember : T.indigo, fontWeight: ageHr > 48 ? 700 : 400 }}>
                                     {ageHr > 48 ? "⚠ overdue" : "pending"}
                                   </span>
                                 : <span>—</span>;
@@ -3285,7 +3286,7 @@ export default function AdminDashboard() {
               onClick={() => { setError(null); handleLogout(); }}
               style={{
                 marginTop: 16, padding: "8px 20px",
-                background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
                 border: "none", borderRadius: radius.md, color: c.obsidian,
                 fontSize: 13, fontWeight: 600, fontFamily: font.ui,
               }}
@@ -3299,7 +3300,7 @@ export default function AdminDashboard() {
     if (loading) {
       return (
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
-          <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <p style={{ color: c.stone, fontSize: 14, margin: 0 }}>Loading {tab}...</p>
         </div>
       );
@@ -3360,7 +3361,7 @@ export default function AdminDashboard() {
                         <Button
                           variant="link"
                           onClick={(e) => { e.stopPropagation(); setSelectedUserId(s.user_id); setUserDetail(null); setTab("users"); }}
-                          style={{ background: "none", color: c.gilt, fontSize: 11, fontFamily: font.mono, padding: 0, height: "auto" }}
+                          style={{ background: "none", color: T.indigo, fontSize: 11, fontFamily: font.mono, padding: 0, height: "auto" }}
                         >
                           {s.user_id.slice(0, 8)}…
                         </Button>
@@ -3697,7 +3698,7 @@ export default function AdminDashboard() {
           <div style={statCard}><p style={labelStyle}>Interviewed</p><p style={bigNum}>{outcomes.interviewed}</p></div>
           <div style={statCard}><p style={labelStyle}>Offers</p><p style={{ ...bigNum, color: c.sage }}>{outcomes.offer}</p></div>
           <div style={statCard}><p style={labelStyle}>Accepted</p><p style={{ ...bigNum, color: c.sage }}>{outcomes.accepted}</p></div>
-          <div style={statCard}><p style={labelStyle}>Offer Rate</p><p style={{ ...bigNum, color: c.gilt }}>{outcomes.offerRate}%</p></div>
+          <div style={statCard}><p style={labelStyle}>Offer Rate</p><p style={{ ...bigNum, color: T.indigo }}>{outcomes.offerRate}%</p></div>
         </div>
 
         {outcomes.shareableTestimonials.length > 0 && (
@@ -3866,7 +3867,7 @@ export default function AdminDashboard() {
     };
 
     const statusColors: Record<string, string> = {
-      pending: c.gilt, approved: c.sage, rejected: c.ember,
+      pending: T.indigo, approved: c.sage, rejected: c.ember,
     };
 
     const pendingRows = employers.rows.filter((e) => e.status === "pending");
@@ -3876,7 +3877,7 @@ export default function AdminDashboard() {
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}><p style={labelStyle}>Total Signups</p><p style={bigNum}>{employers.total}</p></div>
-          <div style={statCard}><p style={labelStyle}>Pending Review</p><p style={{ ...bigNum, color: c.gilt }}>{employers.pending}</p></div>
+          <div style={statCard}><p style={labelStyle}>Pending Review</p><p style={{ ...bigNum, color: T.indigo }}>{employers.pending}</p></div>
           <div style={statCard}><p style={labelStyle}>Approved</p><p style={{ ...bigNum, color: c.sage }}>{employers.approved}</p></div>
           <div style={statCard}><p style={labelStyle}>Rejected</p><p style={{ ...bigNum, color: c.ember }}>{employers.rejected}</p></div>
         </div>
@@ -3904,7 +3905,7 @@ export default function AdminDashboard() {
                   <tr key={e.id}>
                     <td style={tdStyle}>{e.companyName}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>
-                      <a href={e.website} target="_blank" rel="noopener noreferrer" style={{ color: c.gilt }}>{e.website}</a>
+                      <a href={e.website} target="_blank" rel="noopener noreferrer" style={{ color: T.indigo }}>{e.website}</a>
                     </td>
                     <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{e.gstin || "—"}</td>
                     <td style={tdStyle}>
@@ -4035,7 +4036,7 @@ export default function AdminDashboard() {
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}><p style={labelStyle}>Total Events</p><p style={bigNum}>{calendar.total}</p></div>
-          <div style={statCard}><p style={labelStyle}>Upcoming</p><p style={{ ...bigNum, color: c.gilt }}>{calendar.upcoming}</p></div>
+          <div style={statCard}><p style={labelStyle}>Upcoming</p><p style={{ ...bigNum, color: T.indigo }}>{calendar.upcoming}</p></div>
           <div style={statCard}><p style={labelStyle}>Last 7 days</p><p style={bigNum}>{calendar.pastWeek}</p></div>
         </div>
 
@@ -4098,7 +4099,7 @@ export default function AdminDashboard() {
     return (
       <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.ui }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <p style={{ color: c.stone, fontSize: 14 }}>Loading...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -4142,10 +4143,10 @@ export default function AdminDashboard() {
             {loginError && (
               <div style={{
                 marginBottom: 16, padding: "10px 14px",
-                background: loginError.includes("Too many") ? `${c.gilt}15` : `${c.ember}15`,
-                border: `1px solid ${loginError.includes("Too many") ? c.gilt : c.ember}33`,
+                background: loginError.includes("Too many") ? `${T.indigo}15` : `${c.ember}15`,
+                border: `1px solid ${loginError.includes("Too many") ? T.indigo : c.ember}33`,
                 borderRadius: radius.md, fontSize: 13,
-                color: loginError.includes("Too many") ? c.gilt : c.ember,
+                color: loginError.includes("Too many") ? T.indigo : c.ember,
               }}>
                 {loginError}
               </div>
@@ -4156,7 +4157,7 @@ export default function AdminDashboard() {
               disabled={loginBusy}
               style={{
                 width: "100%", padding: "12px 0",
-                background: loginBusy ? c.onyx : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                background: loginBusy ? c.onyx : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
                 border: "none", borderRadius: radius.md,
                 color: loginBusy ? c.stone : c.obsidian,
                 fontSize: 14, fontWeight: 600, fontFamily: font.ui,

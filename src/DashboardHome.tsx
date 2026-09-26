@@ -1,9 +1,10 @@
 "use client";
 /* ─── DashboardHome (canvas port, post-audit revision)
-   Cream/copper editorial surface. Wires real streak + sessions from
-   useDashboardCore; mock sections (peer cohort, AI insight, KPIs,
-   milestones, daily goal) are flagged with visible "Demo data" pills
-   and a single top-of-page banner so users are not deceived.
+   Modern indigo/neutral surface (copper reserved for score/streak
+   visuals only). Wires real streak + sessions from useDashboardCore;
+   mock sections (peer cohort, AI insight, KPIs, milestones, daily
+   goal) are flagged with visible "Demo data" pills and a single
+   top-of-page banner so users are not deceived.
 
    Set NEXT_PUBLIC_DASHBOARD_DEMO=1 in env to keep demo sections
    visible without the banner (for screenshots / canvas previews).
@@ -71,7 +72,6 @@ const t = {
 } as const;
 
 const f = {
-  serif: F.serif,
   sans:  F.sans,
   mono:  F.mono,
 } as const;

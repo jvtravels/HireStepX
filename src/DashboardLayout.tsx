@@ -14,31 +14,28 @@ import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
 
 
-/* ─── Cream-mode design tokens (derived) ───────────────────────────────
- * Source of truth lives in src/auth/_tokens.ts. We expose the cream
- * editorial palette under the legacy `c`/`font` aliases so the rest of
- * the file's JSX needs no per-property edits — only the binding changes.
- * If a token like `inkFaint` ever shifts for WCAG, every alias on this
- * page picks it up automatically (no more drift between local copies). */
+/* ─── Design tokens (derived) ───────────────────────────────────────────
+ * Source of truth lives in src/auth/_tokens.ts. Aliased under short
+ * names so the rest of the file's JSX needs no per-property edits —
+ * only the binding changes. If a token like `inkFaint` ever shifts for
+ * WCAG, every alias on this page picks it up automatically (no more
+ * drift between local copies). */
 const c = {
-  obsidian: T.cream,         // page bg → cream
+  surface: T.cream,         // page bg
   graphite: T.white,         // raised cards
   border: T.line,            // hairlines
-  gilt: T.indigo,
-  giltDark: T.indigoDeep,
-  ivory: T.coal,             // primary ink
-  chalk: T.coal,
-  stone: T.inkSoft,          // secondary ink
+  accent: T.indigo,
+  accentDark: T.indigoDeep,
+  ink: T.coal,               // primary text
+  inkSoft: T.inkSoft,        // secondary text
   sage: T.success,
   ember: T.error,
-  slate: T.inkSoft,
   indigo: T.indigo,
   indigo100: T.indigo100,
   cream: T.cream,
   creamSoft: T.creamSoft,
 } as const;
 const font = {
-  display: F.serif,
   ui: F.sans,
   mono: F.mono,
 } as const;
@@ -227,7 +224,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
-    <div style={{ display: "flex", height: "100dvh", minHeight: "100vh", background: c.obsidian, overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100dvh", minHeight: "100vh", background: c.surface, overflow: "hidden" }}>
       {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
       <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
       {/* Mobile sticky header — logo left, hamburger right. Sits below the
@@ -251,7 +248,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             onClick={() => setSidebarOpen(true)}
             aria-label="Open navigation menu"
             aria-expanded={sidebarOpen}
-            style={{ color: c.ivory }}
+            style={{ color: c.ink }}
           >
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
               <line x1="3" y1="6" x2="21" y2="6"/>
@@ -263,7 +260,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       )}
       <a href="#dashboard-main" style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
-        zIndex: 100, padding: "12px 24px", background: c.gilt, color: c.obsidian,
+        zIndex: 100, padding: "12px 24px", background: c.accent, color: c.surface,
         fontFamily: font.ui, fontSize: 14, fontWeight: 600, borderRadius: 8, textDecoration: "none",
       }} onFocus={(e) => { e.currentTarget.style.left = "16px"; e.currentTarget.style.top = "16px"; e.currentTarget.style.width = "auto"; e.currentTarget.style.height = "auto"; }}
         onBlur={(e) => { e.currentTarget.style.left = "-9999px"; e.currentTarget.style.width = "1px"; e.currentTarget.style.height = "1px"; }}>
@@ -337,11 +334,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 display: "flex", alignItems: "center", gap: 12, padding: isMobile ? "10px 12px" : "11px 14px",
                 borderRadius: 10, border: "none", cursor: "pointer",
                 background: activeNav === item.id ? c.creamSoft : "transparent",
-                color: activeNav === item.id ? c.ivory : c.stone,
+                color: activeNav === item.id ? c.ink : c.inkSoft,
                 fontFamily: font.ui, fontSize: 13, fontWeight: activeNav === item.id ? 600 : 500,
                 transition: "background 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "left",
               }}
-              onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${c.gilt}40`}
+              onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${c.accent}40`}
               onBlur={(e) => e.currentTarget.style.boxShadow = "none"}
               onMouseEnter={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = c.creamSoft; prefetchMap[item.id]?.(); }}
               onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
@@ -350,10 +347,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <span style={{ position: "relative" }}>
                 {item.label}
                 {item.id === "calendar" && hasUrgentInterview && (
-                  <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.obsidian}` }} />
+                  <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.surface}` }} />
                 )}
               </span>
-              {activeNav === item.id && <div style={{ width: 3, height: 16, borderRadius: 2, background: c.gilt, marginLeft: "auto" }} />}
+              {activeNav === item.id && <div style={{ width: 3, height: 16, borderRadius: 2, background: c.accent, marginLeft: "auto" }} />}
             </button>
           ))}
         </nav>
@@ -370,11 +367,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
             {isStarter ? (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             ) : (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.accent} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
             )}
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em", color: c.gilt }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em", color: c.accent }}>
               {!tierKnown ? "Loading plan…" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
             {/* Renewal / end date — ember if cancelling, muted stone otherwise */}
@@ -384,7 +381,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
                   : `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                 style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, whiteSpace: "nowrap",
-                  color: user.cancelAtPeriodEnd ? c.ember : c.stone,
+                  color: user.cancelAtPeriodEnd ? c.ember : c.inkSoft,
                   opacity: user.cancelAtPeriodEnd ? 0.9 : 0.65 }}
               >
                 {/* Starter is a one-off Sprint Pack — it expires, it doesn't renew. */}
@@ -411,7 +408,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
             // barFill: matches the "N of N" text — ember when exhausted or low, indigo when healthy.
-            const barFill = (planExhausted || isLow) ? c.ember : c.gilt;
+            const barFill = (planExhausted || isLow) ? c.ember : c.accent;
 
 
             return (
@@ -421,14 +418,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   <p
                     aria-live="polite"
                     style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
-                      color: isLow ? c.ember : c.stone,
+                      color: isLow ? c.ember : c.inkSoft,
                       fontWeight: isLow ? 600 : 400,
                       opacity: planExhausted ? 0.65 : 1 }}
                   >
                     Sessions used
                   </p>
                   <span style={{ fontFamily: font.mono, fontSize: 11,
-                    color: planExhausted ? c.ember : isLow ? c.ember : c.stone,
+                    color: planExhausted ? c.ember : isLow ? c.ember : c.inkSoft,
                     opacity: planExhausted ? 0.75 : 1, fontWeight: planExhausted ? 600 : 400 }}>
                     {planUsed} of {planTotal}
                   </span>
@@ -492,7 +489,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     (exhaustion is already stated by the red usage row + buy
                     CTA), so only render when the footnote is non-empty. */}
                 {isStarter && starterPackFootnote(starterRemaining) && (
-                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
+                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.inkSoft,
                     marginBottom: 10, marginTop: -6 }}>
                     {starterPackFootnote(starterRemaining)}
                   </p>
@@ -526,11 +523,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.indigo100, border: `1px solid ${T.indigoRing}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.gilt }}>{(displayName || "?")[0].toUpperCase()}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.accent }}>{(displayName || "?")[0].toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
+              <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { authLogout(); }}>
@@ -577,8 +574,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {isOffline && (
           <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: c.creamSoft, border: "1px solid rgba(126,141,152,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.slate }}>You're offline — some features may be unavailable</span>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.inkSoft} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You're offline — some features may be unavailable</span>
           </div>
         )}
         <div key={pathname} className="dash-page-enter">
@@ -622,7 +619,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           padding: "10px 20px", zIndex: 100, animation: "slideDown 0.2s ease",
           boxShadow: shadow.cta,
         }}>
-          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory }}>{toast}</span>
+          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ink }}>{toast}</span>
         </div>
       )}
 
@@ -660,7 +657,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             {/* Body */}
             <div style={{ padding: "18px 18px 16px" }}>
               {/* Type label */}
-              <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, margin: "0 0 10px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
+              <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.inkSoft, margin: "0 0 10px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
                 What&apos;s on your mind?
               </p>
 
@@ -688,7 +685,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   {
                     key: "other" as const, label: "Other",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-                    inactiveBg: T.creamSoft, inactiveColor: c.stone,
+                    inactiveBg: T.creamSoft, inactiveColor: c.inkSoft,
                     activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
                   },
                 ]).map(({ key, label, icon, inactiveBg, inactiveColor, activeBg, activeColor, activeBdr }) => {
@@ -728,7 +725,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 style={{
                   width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8,
                   background: T.white, border: `1px solid ${c.border}`,
-                  color: c.ivory, fontFamily: font.ui, fontSize: 13, resize: "none",
+                  color: c.ink, fontFamily: font.ui, fontSize: 13, resize: "none",
                   outline: "none", transition: "border-color 0.15s", lineHeight: 1.55,
                   marginBottom: 10,
                   boxShadow: "inset 0 1px 3px rgba(14,12,8,0.04)",
@@ -782,7 +779,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               )}
 
               {/* Secondary email fallback */}
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center" as const, margin: "10px 0 0" }}>
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, textAlign: "center" as const, margin: "10px 0 0" }}>
                 Or email{" "}
                 <CopyEmailLink email="hello@hirestepx.com" style={{ color: T.indigo, textDecoration: "none", fontWeight: 500 }} />
               </p>
@@ -797,7 +794,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           onClick={() => setHelpOpen(v => !v)}
           aria-label={helpOpen ? "Close help" : "Open help"}
           style={{
-            background: c.graphite, color: c.ivory,
+            background: c.graphite, color: c.ink,
             boxShadow: shadow.cta,
             marginLeft: "auto",
           }}

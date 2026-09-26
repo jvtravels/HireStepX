@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { authHeaders } from "./supabase";
 import { apiFetch } from "./apiClient";
 
@@ -115,7 +116,7 @@ export default function OutcomePromptBanner() {
         </p>
         <button onClick={() => setStage("filling")} style={{
           fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian,
-          background: c.gilt, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
+          background: T.indigo, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
         }}>Retry</button>
       </div>
     );
@@ -138,7 +139,7 @@ export default function OutcomePromptBanner() {
   if (stage === "prompt") {
     return (
       <div style={{
-        background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.22)`,
+        background: `oklch(from ${T.indigo} l c h / 0.04)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.22)`,
         borderRadius: 12, padding: "14px 18px",
         display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
       }}>
@@ -153,7 +154,7 @@ export default function OutcomePromptBanner() {
           }}>Not now</button>
           <button onClick={() => setStage("filling")} style={{
             fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian,
-            background: c.gilt, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
+            background: T.indigo, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
           }}>Share update</button>
         </div>
       </div>
@@ -165,7 +166,7 @@ export default function OutcomePromptBanner() {
     <div style={{
       background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 12, padding: "18px 20px",
     }}>
-      <h3 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+      <h3 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: c.ivory, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
         Quick outcome update
       </h3>
       <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, margin: "0 0 14px" }}>
@@ -208,7 +209,7 @@ export default function OutcomePromptBanner() {
               type="checkbox"
               checked={mayShare}
               onChange={(e) => setMayShare(e.target.checked)}
-              style={{ accentColor: c.gilt }}
+              style={{ accentColor: T.indigo }}
             />
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>
               You may share my first name + role + company with this quote on the website.
@@ -224,7 +225,7 @@ export default function OutcomePromptBanner() {
         }}>Cancel</button>
         <button onClick={onSubmit} disabled={submitting} style={{
           fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-          background: submitting ? "rgba(180,83,9,0.4)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+          background: submitting ? `oklch(from ${T.indigo} l c h / 0.4)` : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
           border: "none", borderRadius: 6, padding: "8px 18px",
           cursor: submitting ? "default" : "pointer",
         }}>
@@ -238,7 +239,7 @@ export default function OutcomePromptBanner() {
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: c.gilt }} />
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: T.indigo }} />
       <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>{label}</span>
     </label>
   );

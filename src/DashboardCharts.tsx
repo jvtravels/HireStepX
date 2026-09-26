@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import type { SkillData, TrendPoint } from "./dashboardTypes";
 
 /* ─── Humanize camelCase skill names ─── */
@@ -29,8 +30,8 @@ export const ScoreTrendChart = memo(function ScoreTrendChart({ data }: { data: T
       >
         <defs>
           <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={c.gilt} stopOpacity="0.2" />
-            <stop offset="100%" stopColor={c.gilt} stopOpacity="0" />
+            <stop offset="0%" stopColor={T.copper} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={T.copper} stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0, 1, 2, 3].map((i) => {
@@ -44,13 +45,13 @@ export const ScoreTrendChart = memo(function ScoreTrendChart({ data }: { data: T
           );
         })}
         <path d={area} fill="url(#trendGrad)" style={{ pointerEvents: "none" }} />
-        <path d={line} fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: "none" }} />
+        <path d={line} fill="none" stroke={T.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: "none" }} />
         {points.map((p, i) => (
           <g key={i}>
             <circle cx={p.x} cy={p.y} r="12" fill="transparent" onMouseEnter={() => setHovered(i)} style={{ cursor: "pointer" }} />
             <circle cx={p.x} cy={p.y} r={hovered === i ? 5 : i === points.length - 1 ? 4 : 2.5}
-              fill={hovered === i || i === points.length - 1 ? c.gilt : c.graphite}
-              stroke={c.gilt} strokeWidth={hovered === i || i === points.length - 1 ? 2 : 1.5} />
+              fill={hovered === i || i === points.length - 1 ? T.copper : c.graphite}
+              stroke={T.copper} strokeWidth={hovered === i || i === points.length - 1 ? 2 : 1.5} />
           </g>
         ))}
         {hovered !== null && (() => {
@@ -88,14 +89,14 @@ export const SkillRadar = memo(function SkillRadar({ skills: s }: { skills: Skil
         <polygon key={v} points={Array.from({ length: n }).map((_, i) => getPoint(i, v)).map(p => `${p.x},${p.y}`).join(" ")} fill="none" stroke={c.border} strokeWidth="0.5" strokeOpacity="0.5" />
       ))}
       {s.map((_, i) => { const p = getPoint(i, 100); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={c.border} strokeWidth="0.5" strokeOpacity="0.5" />; })}
-      <polygon points={prevPolygon} fill="rgba(180,83,9,0.04)" stroke={c.stone} strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
-      <polygon points={polygon} fill="rgba(180,83,9,0.1)" stroke={c.gilt} strokeWidth="1.5" />
+      <polygon points={prevPolygon} fill={`oklch(from ${T.copper} l c h / 0.04)`} stroke={c.stone} strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+      <polygon points={polygon} fill={`oklch(from ${T.copper} l c h / 0.1)`} stroke={T.copper} strokeWidth="1.5" />
       {s.map((sk, i) => {
         const p = getPoint(i, sk.score);
         const lp = getPoint(i, 120);
         return (
           <g key={sk.name}>
-            <circle cx={p.x} cy={p.y} r="3.5" fill={c.gilt} stroke={c.obsidian} strokeWidth="1" />
+            <circle cx={p.x} cy={p.y} r="3.5" fill={T.copper} stroke={c.obsidian} strokeWidth="1" />
             <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
               fontFamily={font.ui} fontSize="7" fontWeight="500" fill={c.stone} letterSpacing="0.02em">
               {humanize(sk.name)}

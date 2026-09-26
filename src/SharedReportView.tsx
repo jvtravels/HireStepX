@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import type { SessionReport } from "./dashboardData";
 
 /**
@@ -48,10 +49,13 @@ function signupCtaHref(referralCode?: string | null): string {
   return `https://hirestepx.com/signup?${params.toString()}`;
 }
 
+// Hire-recommendation band — a scoring gradient (strong hire → strong no
+// hire), so "Lean Hire" stays copper (T.copper) rather than the legacy
+// c.gilt alias; it's gamification/score domain, not general chrome.
 const BAND_META: Record<string, { label: string; color: string; bg: string }> = {
   strongHire:   { label: "Strong Hire",    color: c.sage,  bg: "rgba(21,128,61,0.10)" },
   hire:         { label: "Hire",           color: c.sage,  bg: "rgba(21,128,61,0.06)" },
-  leanHire:     { label: "Lean Hire",      color: c.gilt,  bg: "rgba(180,83,9,0.08)" },
+  leanHire:     { label: "Lean Hire",      color: T.copper, bg: "rgba(180,83,9,0.08)" },
   noHire:       { label: "No Hire",        color: c.ember, bg: "rgba(185,28,28,0.06)" },
   strongNoHire: { label: "Strong No Hire", color: c.ember, bg: "rgba(185,28,28,0.10)" },
 };
@@ -94,7 +98,8 @@ export default function SharedReportView({ token }: { token: string }) {
 
         {loading && (
           <div role="status" aria-live="polite" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14, padding: "48px 32px", textAlign: "center" }}>
-            <div style={{ width: 40, height: 40, border: `3px solid rgba(180,83,9,0.18)`, borderTopColor: c.gilt, borderRadius: "50%", margin: "0 auto 16px", animation: "srspin 0.9s linear infinite" }} />
+            {/* Decorative loading spinner — general chrome, not score-related, so indigo. */}
+            <div style={{ width: 40, height: 40, border: `3px solid rgba(49,46,129,0.18)`, borderTopColor: T.indigo, borderRadius: "50%", margin: "0 auto 16px", animation: "srspin 0.9s linear infinite" }} />
             <style>{`@keyframes srspin { to { transform: rotate(360deg); } }`}</style>
             <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0 }}>Loading report…</p>
           </div>
@@ -102,11 +107,11 @@ export default function SharedReportView({ token }: { token: string }) {
 
         {error && (
           <div role="alert" style={{ background: c.graphite, border: `1px solid rgba(185,28,28,0.25)`, borderRadius: 14, padding: "32px", textAlign: "center" }}>
-            <p style={{ fontFamily: font.display, fontSize: 22, color: c.ivory, margin: "0 0 8px", fontWeight: 400, letterSpacing: "-0.01em" }}>This link isn&apos;t available</p>
+            <p style={{ fontFamily: font.ui, fontSize: 22, color: c.ivory, margin: "0 0 8px", fontWeight: 600, letterSpacing: "-0.01em" }}>This link isn&apos;t available</p>
             <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, margin: 0 }}>{error}</p>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 16 }}>
               Ask the candidate to send a fresh link, or visit{" "}
-              <a href="https://hirestepx.com" style={{ color: c.gilt, textDecoration: "underline" }}>hirestepx.com</a>{" "}
+              <a href="https://hirestepx.com" style={{ color: T.indigo, textDecoration: "underline" }}>hirestepx.com</a>{" "}
               to learn more.
             </p>
           </div>
@@ -145,7 +150,7 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
               letterSpacing: "0.08em", textTransform: "uppercase",
               color: bandMeta.color, background: bandMeta.bg, padding: "4px 10px", borderRadius: 4, marginBottom: 10,
             }}>{bandMeta.label}</span>
-            <h1 style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "0 0 8px", letterSpacing: "-0.02em" }}>
+            <h1 style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 600, color: c.ivory, margin: "0 0 8px", letterSpacing: "-0.02em" }}>
               {meta.candidateName}
             </h1>
             {report.verdict && (
@@ -196,7 +201,9 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {skills.map((s) => {
               const pct = Math.max(0, Math.min(100, s.score));
-              const barColor = pct >= 70 ? c.sage : pct >= 50 ? c.gilt : c.ember;
+              // Skill-score band — gamification/score domain, so the middle
+              // band stays copper (T.copper), not the legacy c.gilt alias.
+              const barColor = pct >= 70 ? c.sage : pct >= 50 ? T.copper : c.ember;
               return (
                 <div key={s.name} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -229,10 +236,13 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
           style={{
             display: "inline-block",
             fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-            background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+            // General acquisition CTA, not score-related — indigo is the
+            // one brand/interactive color; copper stays reserved for
+            // score/streak/reward visuals.
+            background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
             border: "none", borderRadius: 10, padding: "10px 22px",
             textDecoration: "none",
-            boxShadow: "0 6px 18px rgba(180,83,9,0.18)",
+            boxShadow: "0 6px 18px rgba(49,46,129,0.18)",
           }}
         >Practice your own interview →</a>
       </div>
@@ -245,9 +255,11 @@ function WinFixList({ items, label, tone }: {
   label: string;
   tone: "win" | "fix";
 }) {
-  const accent = tone === "win" ? c.sage : c.gilt;
-  const bg = tone === "win" ? "rgba(21,128,61,0.05)" : "rgba(180,83,9,0.05)";
-  const border = tone === "win" ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.18)";
+  // "What to fix" is a general content callout, not a score band — indigo
+  // (not copper) is the correct accent for general chrome/decorative use.
+  const accent = tone === "win" ? c.sage : T.indigo;
+  const bg = tone === "win" ? "rgba(21,128,61,0.05)" : "rgba(49,46,129,0.05)";
+  const border = tone === "win" ? "rgba(21,128,61,0.18)" : "rgba(49,46,129,0.18)";
   return (
     <div style={{
       background: bg, border: `1px solid ${border}`, borderRadius: 10,

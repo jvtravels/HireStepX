@@ -13,6 +13,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { c, font } from "@/tokens";
+import { tokens as T } from "@/auth/_tokens";
 import { CopyEmailLink } from "@/_CopyEmailLink";
 
 const SUPPORT_EMAIL = "hello@hirestepx.com";
@@ -49,10 +50,10 @@ export default function GlobalRouteError({
     >
       <span
         style={{
-          fontFamily: font.display,
+          fontFamily: font.ui,
           fontSize: 80,
-          fontWeight: 400,
-          color: c.gilt,
+          fontWeight: 600,
+          color: T.indigo,
           lineHeight: 1,
           marginBottom: 16,
         }}
@@ -108,7 +109,7 @@ export default function GlobalRouteError({
             fontSize: 14,
             fontWeight: 500,
             color: c.obsidian,
-            background: c.gilt,
+            background: T.indigo,
             padding: "12px 28px",
             borderRadius: 8,
             border: "none",

@@ -104,7 +104,7 @@ function Card({
   );
 }
 
-function Eyebrow({ children, color = c.gilt }: { children: React.ReactNode; color?: string }) {
+function Eyebrow({ children, color = T.indigo }: { children: React.ReactNode; color?: string }) {
   return (
     <span
       style={{
@@ -258,7 +258,7 @@ function nodeVisual(state: NodeState) {
     case "done":
       return { ring: c.sage, fill: c.sageLight, fg: c.sage };
     case "active":
-      return { ring: c.gilt, fill: T.copper100, fg: c.gilt };
+      return { ring: T.indigo, fill: T.indigo100, fg: T.indigo };
     case "anchor":
       return { ring: c.slate, fill: c.slateLight, fg: c.slate };
     default:
@@ -283,11 +283,11 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
       <style>{STYLE}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.lg }}>
         <div style={{ display: "flex", alignItems: "center", gap: sp.sm }}>
-          <span style={{ color: c.gilt, display: "flex" }}>
+          <span style={{ color: T.indigo, display: "flex" }}>
             <Icon size={16}>{I.sparkle}</Icon>
           </span>
-          <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
-          <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder}>
+          <h2 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: c.ivory, margin: 0 }}>Prep Runway</h2>
+          <Pill bg={T.indigo100} fg={T.indigoDeep} bd={T.indigoRing}>
             {scenario.archetype}
           </Pill>
         </div>
@@ -306,7 +306,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
             left: 28,
             right: 28,
             height: 2,
-            background: `linear-gradient(90deg, ${c.sage} 0%, ${c.gilt} 45%, ${c.border} 70%)`,
+            background: `linear-gradient(90deg, ${c.sage} 0%, ${T.indigo} 45%, ${c.border} 70%)`,
             borderRadius: 2,
           }}
         />
@@ -401,7 +401,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
           fontFamily: font.ui,
         }}
       >
-        <span style={{ color: c.gilt, display: "flex" }}>
+        <span style={{ color: T.indigo, display: "flex" }}>
           <Icon size={13}>{I.sparkle}</Icon>
         </span>
         Plan adapts to your scores and skill-decay. Sessions count against your plan quota.
@@ -433,7 +433,7 @@ export function SuggestRunwaySheet() {
     >
       <style>{STYLE}</style>
       <Eyebrow>Suggested for you</Eyebrow>
-      <h2 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, margin: "6px 0 4px" }}>
+      <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, margin: "6px 0 4px" }}>
         Build a Prep Runway for {s.company}?
       </h2>
       <p style={{ fontSize: 13, color: c.chalk, margin: 0, lineHeight: 1.5 }}>
@@ -457,8 +457,8 @@ export function SuggestRunwaySheet() {
                 alignItems: "center",
                 gap: sp.md,
                 textAlign: "left",
-                background: on ? T.copper100Soft : c.graphite,
-                border: `1px solid ${on ? T.copperBorder : c.border}`,
+                background: on ? T.indigoMist : c.graphite,
+                border: `1px solid ${on ? T.indigoRing : c.border}`,
                 borderRadius: radius.md,
                 padding: "11px 14px",
                 cursor: "pointer",
@@ -470,8 +470,8 @@ export function SuggestRunwaySheet() {
                   width: 22,
                   height: 22,
                   borderRadius: radius.sm,
-                  background: on ? c.gilt : "transparent",
-                  border: `1.5px solid ${on ? c.gilt : c.borderHover}`,
+                  background: on ? T.indigo : "transparent",
+                  border: `1.5px solid ${on ? T.indigo : c.borderHover}`,
                   color: c.carbon,
                   display: "flex",
                   alignItems: "center",
@@ -481,7 +481,7 @@ export function SuggestRunwaySheet() {
               >
                 {on && <Icon size={13}>{I.check}</Icon>}
               </span>
-              <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: c.gilt, width: 30 }}>
+              <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: T.indigo, width: 30 }}>
                 {n.tag}
               </span>
               <span style={{ flex: 1 }}>
@@ -548,7 +548,7 @@ function MiniMonth() {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.md }}>
-        <h2 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>June 2026</h2>
+        <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, margin: 0 }}>June 2026</h2>
         <div style={{ display: "flex", gap: 2, color: c.stone }}>
           {[
             { label: "Previous month", d: "M15 6l-6 6 6 6" },
@@ -591,7 +591,7 @@ function MiniMonth() {
         {days.map((d) => {
           const ev = events[d];
           const isToday = d === today;
-          const dot = ev === "interview" ? c.slate : ev === "offer" ? c.gilt : ev === "prep" ? c.sage : null;
+          const dot = ev === "interview" ? c.slate : ev === "offer" ? T.indigo : ev === "prep" ? c.sage : null;
           return (
             <div
               key={d}
@@ -606,7 +606,7 @@ function MiniMonth() {
                 fontSize: 11.5,
                 fontWeight: isToday ? 700 : 400,
                 color: isToday ? c.carbon : ev ? c.ivory : c.chalk,
-                background: isToday ? c.gilt : ev ? T.copper100Soft : "transparent",
+                background: isToday ? T.indigo : ev ? T.indigo100 : "transparent",
                 position: "relative",
                 cursor: "pointer",
               }}
@@ -664,7 +664,7 @@ export default function CalendarPrepRunway() {
       <div className="cpr-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.xl, marginBottom: sp["2xl"] }}>
         <div>
           <Eyebrow>Interview Readiness</Eyebrow>
-          <h1 style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>
+          <h1 style={{ fontFamily: font.ui, fontSize: 30, fontWeight: 600, color: c.ivory, margin: "4px 0 6px" }}>
             Calendar
           </h1>
           <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
@@ -707,7 +707,7 @@ export default function CalendarPrepRunway() {
               minWidth: 320,
             }}
           >
-            <span style={{ color: c.gilt, display: "flex" }}>
+            <span style={{ color: T.indigo, display: "flex" }}>
               <Icon size={14}>{I.sparkle}</Icon>
             </span>
             <span style={{ fontSize: 12.5, color: c.stone, fontFamily: font.ui }}>
@@ -733,7 +733,7 @@ export default function CalendarPrepRunway() {
                 alignItems: "flex-start",
                 gap: 2,
                 background: on ? c.carbon : "transparent",
-                border: `1px solid ${on ? T.copperBorder : c.border}`,
+                border: `1px solid ${on ? T.indigoRing : c.border}`,
                 borderRadius: radius.md,
                 padding: "10px 16px",
                 cursor: "pointer",
@@ -744,7 +744,7 @@ export default function CalendarPrepRunway() {
               <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>
                 {sc.archetype}
               </span>
-              <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? c.gilt : c.stone, letterSpacing: 0.3 }}>
+              <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>
                 {sc.badge}
               </span>
             </button>
@@ -761,8 +761,8 @@ export default function CalendarPrepRunway() {
 
           <Card pad={20}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
-              <Icon size={15} stroke={c.gilt}>{I.bell}</Icon>
-              <h2 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
+              <Icon size={15} stroke={T.indigo}>{I.bell}</Icon>
+              <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, margin: 0 }}>Reminders</h2>
             </div>
             <ReminderRow label="72 hours before" on />
             <ReminderRow label="24 hours before" on />
@@ -791,7 +791,7 @@ export default function CalendarPrepRunway() {
         {/* main column */}
         <div style={{ display: "flex", flexDirection: "column", gap: sp.xl }}>
           {/* interview hero card */}
-          <Card pad={24} style={{ borderColor: T.copperBorder }}>
+          <Card pad={24} style={{ borderColor: T.indigoRing }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.lg }}>
               <div style={{ display: "flex", gap: sp.md }}>
                 <div
@@ -804,9 +804,10 @@ export default function CalendarPrepRunway() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontFamily: font.display,
+                    fontFamily: font.ui,
                     fontSize: 24,
-                    color: c.gilt,
+                    fontWeight: 600,
+                    color: T.indigo,
                     flexShrink: 0,
                   }}
                 >
@@ -814,7 +815,7 @@ export default function CalendarPrepRunway() {
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: 3 }}>
-                    <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>
+                    <h2 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: c.ivory, margin: 0 }}>
                       {s.company} · {s.role}
                     </h2>
                     <Pill bg={c.slateLight} fg={c.slate}>{s.anchorLabel}</Pill>
@@ -822,7 +823,7 @@ export default function CalendarPrepRunway() {
                   <div style={{ fontSize: 13, color: c.chalk, fontFamily: font.ui }}>{s.round}</div>
                 </div>
               </div>
-              <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder} icon={<Icon size={11}>{I.clock}</Icon>}>
+              <Pill bg={T.indigo100} fg={T.indigoDeep} bd={T.indigoRing} icon={<Icon size={11}>{I.clock}</Icon>}>
                 {s.countdown}
               </Pill>
             </div>
@@ -840,7 +841,7 @@ export default function CalendarPrepRunway() {
                 border: `1px solid ${c.borderSubtle}`,
               }}
             >
-              <Icon size={18} stroke={c.gilt}>{I.globe}</Icon>
+              <Icon size={18} stroke={T.indigo}>{I.globe}</Icon>
               <div>
                 <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{s.whenPrimary}</div>
                 <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{s.whenSecondary}</div>
