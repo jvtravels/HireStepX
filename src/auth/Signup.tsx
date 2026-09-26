@@ -1048,7 +1048,7 @@ export default function Signup() {
                   letterSpacing: "0.01em",
                 }}
               >
-                2 sessions free · No card needed · ₹9 per session after
+                2 sessions free · No card needed
               </p>
             </form>
           </div>
