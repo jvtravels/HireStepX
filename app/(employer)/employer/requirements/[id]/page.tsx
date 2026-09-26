@@ -130,7 +130,7 @@ function GeneratingState() {
     <div style={{ textAlign: "center", padding: "80px 0" }}>
       <div style={{ width: 40, height: 40, margin: "0 auto 20px", border: `3px solid ${t.indigo100}`, borderTopColor: t.indigo, borderRadius: "50%", animation: "hsx-emp-spin 0.8s linear infinite" }} />
       <style>{`@keyframes hsx-emp-spin { to { transform: rotate(360deg); } }`}</style>
-      <h2 style={{ fontFamily: f.serif, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching candidates…</h2>
+      <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching candidates…</h2>
       <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft }}>
         We're scoring active candidates against this requirement. This usually takes under a minute.
       </p>
@@ -141,7 +141,7 @@ function GeneratingState() {
 function ZeroMatchState() {
   return (
     <Card style={{ textAlign: "center", padding: 48 }}>
-      <h2 style={{ fontFamily: f.serif, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>No matches yet</h2>
+      <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>No matches yet</h2>
       <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
         No candidates currently practicing on HireStepX match this requirement closely enough to shortlist.
         Try widening the location or notice period, or check back as more candidates practice this week.
@@ -159,7 +159,7 @@ function FailedState() {
       <div style={{ width: 40, height: 40, borderRadius: 10, background: t.error100, color: t.error, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
         <EmployerIcon.Alert />
       </div>
-      <h2 style={{ fontFamily: f.serif, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching failed</h2>
+      <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching failed</h2>
       <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
         Something went wrong generating this shortlist. No charge was made — you can safely try again.
       </p>
@@ -500,7 +500,7 @@ export default function RequirementDetailPage() {
             <Eyebrow tone="indigo">
               {(requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location)} · {requirement.noticePeriodPref} notice
             </Eyebrow>
-            <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
+            <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {requirement.status !== "closed" && (
@@ -633,7 +633,7 @@ export default function RequirementDetailPage() {
 
       {activeTab === "description" && (
         <Card>
-          <h2 style={{ fontFamily: f.serif, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Description</h2>
+          <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Description</h2>
           <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
             {requirement.description || "No description was added for this requirement."}
           </p>
@@ -715,7 +715,7 @@ export default function RequirementDetailPage() {
             <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Target companies</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {requirement.targetCompanies.map((c) => <Pill key={c} tone="copper">{c}</Pill>)}
+                {requirement.targetCompanies.map((c) => <Pill key={c} tone="indigo">{c}</Pill>)}
               </div>
             </div>
           )}

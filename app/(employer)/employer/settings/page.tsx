@@ -69,7 +69,7 @@ export default function EmployerSettingsPage() {
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", width: "100%" }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
+        <h1 style={{ fontFamily: f.sans, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
           Settings
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>

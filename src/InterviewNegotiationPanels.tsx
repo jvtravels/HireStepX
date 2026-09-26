@@ -78,18 +78,18 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
   return (
     <div style={{
       width: "100%", maxWidth: 480, borderRadius: 16,
-      background: "rgba(180,83,9,0.10)",
-      border: "1px solid rgba(180,83,9,0.18)",
+      background: "oklch(0.359 0.135 278.697 / 0.10)",
+      border: "1px solid oklch(0.359 0.135 278.697 / 0.18)",
       padding: "24px", display: "flex", flexDirection: "column", gap: 16,
       animation: "slideUp 0.5s ease",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
-        <span style={{ fontFamily: ef.serif, fontSize: 15, fontWeight: 600, color: e.coal }}>Negotiation Playbook</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 15, fontWeight: 600, color: e.coal }}>Negotiation Playbook</span>
         {negotiationStyle && (
-          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper, padding: "2px 8px", borderRadius: 6, background: "rgba(180,83,9,0.16)", marginLeft: "auto" }}>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.indigo, padding: "2px 8px", borderRadius: 6, background: "oklch(0.359 0.135 278.697 / 0.16)", marginLeft: "auto" }}>
             {styleLabel} Manager
           </span>
         )}
@@ -134,7 +134,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {tips.map(tip => (
           <div key={tip.icon} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 700, color: e.copper, minWidth: 20, height: 20, borderRadius: "50%", background: "rgba(180,83,9,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{tip.icon}</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 700, color: e.indigo, minWidth: 20, height: 20, borderRadius: "50%", background: "oklch(0.359 0.135 278.697 / 0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{tip.icon}</span>
             <div>
               <span style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 600, color: e.coal }}>{tip.title}</span>
               <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: "2px 0 0", lineHeight: 1.4 }}>{tip.desc}</p>
@@ -342,12 +342,12 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
     return (
       <div style={{
         width: "100%", borderRadius: 16,
-        background: "rgba(180,83,9,0.07)",
-        border: "1px solid rgba(180,83,9,0.14)",
+        background: "oklch(0.359 0.135 278.697 / 0.07)",
+        border: "1px solid oklch(0.359 0.135 278.697 / 0.14)",
         padding: "20px", display: "flex", flexDirection: "column", gap: 14,
         animation: "slideUp 0.5s ease",
       }}>
-        <span style={{ fontFamily: ef.serif, fontSize: 14, fontWeight: 600, color: e.coal }}>Negotiation Complete</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 14, fontWeight: 600, color: e.coal }}>Negotiation Complete</span>
         <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, margin: 0, lineHeight: 1.5 }}>
           We couldn't extract specific offer numbers from this session. This can happen when the conversation focused on non-salary aspects or when using fallback questions.
         </p>
@@ -356,7 +356,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
             <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Topics Discussed</p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {benefits.map(b => (
-                <span key={b} style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper, padding: "3px 8px", borderRadius: 6, background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.14)" }}>{b}</span>
+                <span key={b} style={{ fontFamily: ef.sans, fontSize: 11, color: e.indigo, padding: "3px 8px", borderRadius: 6, background: "oklch(0.359 0.135 278.697 / 0.13)", border: "1px solid oklch(0.359 0.135 278.697 / 0.14)" }}>{b}</span>
               ))}
             </div>
           </div>
@@ -378,13 +378,13 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(180,83,9,0.07)",
-      border: "1px solid rgba(180,83,9,0.14)",
+      background: "oklch(0.359 0.135 278.697 / 0.07)",
+      border: "1px solid oklch(0.359 0.135 278.697 / 0.14)",
       padding: "20px", display: "flex", flexDirection: "column", gap: 14,
       animation: "slideUp 0.5s ease",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: ef.serif, fontSize: 14, fontWeight: 600, color: e.coal }}>Deal Summary</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 14, fontWeight: 600, color: e.coal }}>Deal Summary</span>
         <span style={{ fontFamily: ef.sans, fontSize: 22, fontWeight: 700, color: gradeColor }}>{grade}</span>
       </div>
 
@@ -407,7 +407,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
                 value: joiningBonusLpa && joiningBonusLpa > 0
                   ? `₹${finalOffer} LPA + ₹${joiningBonusLpa}L joining`
                   : `₹${finalOffer} LPA`,
-                color: e.copper,
+                color: e.indigo,
               }]
           ),
         ].map(item => (
@@ -449,8 +449,8 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
               <span style={{ color: e.inkSoft }}>Equity face → realistic (ESOP @30%)</span><span>₹{breakdown.equityLpa} → ₹{breakdown.equityRealisticLpa} LPA</span>
               <span style={{ color: e.inkSoft }}>Employee EPF</span><span>−₹{breakdown.employeeEpfLpa} LPA</span>
               <span style={{ color: e.inkSoft }}>Income tax (new regime)</span><span>−₹{breakdown.annualTaxLpa} LPA</span>
-              <span style={{ color: e.copper, fontWeight: 600 }}>Annual take-home</span><span style={{ color: e.copper, fontWeight: 600 }}>₹{breakdown.annualTakeHomeLpa} LPA</span>
-              <span style={{ color: e.copper, fontWeight: 600 }}>All-in realistic (cash + equity)</span><span style={{ color: e.copper, fontWeight: 600 }}>₹{breakdown.totalRealisticLpa} LPA</span>
+              <span style={{ color: e.indigo, fontWeight: 600 }}>Annual take-home</span><span style={{ color: e.indigo, fontWeight: 600 }}>₹{breakdown.annualTakeHomeLpa} LPA</span>
+              <span style={{ color: e.indigo, fontWeight: 600 }}>All-in realistic (cash + equity)</span><span style={{ color: e.indigo, fontWeight: 600 }}>₹{breakdown.totalRealisticLpa} LPA</span>
             </div>
             <p style={{ marginTop: 8, fontFamily: ef.sans, fontSize: 10, color: e.inkFaint, lineHeight: 1.4 }}>
               Heuristics: ESOP discounted to 30% of face (Indian unicorn buyback history); variable at 85% payout factor; tax under new regime FY 2025-26 incl. ₹75k std deduction + 87A rebate up to ₹12L. HRA / 80C deductions not netted.
@@ -477,7 +477,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
           <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Benefits Discussed</p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {benefits.map(b => (
-              <span key={b} style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper, padding: "3px 8px", borderRadius: 6, background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.14)" }}>{b}</span>
+              <span key={b} style={{ fontFamily: ef.sans, fontSize: 11, color: e.indigo, padding: "3px 8px", borderRadius: 6, background: "oklch(0.359 0.135 278.697 / 0.13)", border: "1px solid oklch(0.359 0.135 278.697 / 0.14)" }}>{b}</span>
             ))}
           </div>
         </div>
@@ -496,7 +496,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
                * the raw percentage can exceed 100% ("153%"). Math.max(0,…) on
                * display only prevented negatives but not overflow. */
               const captured = bandRange > 0 ? Math.min(100, Math.round(((finalOffer - negotiationBand.initialOffer) / bandRange) * 100)) : 0;
-              const captureColor = captured >= 70 ? e.success : captured >= 40 ? e.copper : e.error;
+              const captureColor = captured >= 70 ? e.success : captured >= 40 ? e.indigo : e.error;
               return (
                 <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
                   <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Band Captured</p>
@@ -595,7 +595,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
   const styleMap: Record<string, { label: string; color: string; icon: string }> = {
     cooperative: { label: "Friendly", color: e.success, icon: "🤝" },
     aggressive: { label: "Tough", color: e.error, icon: "💪" },
-    defensive: { label: "Evasive", color: e.copper, icon: "🛡" },
+    defensive: { label: "Evasive", color: e.indigo, icon: "🛡" },
   };
   const styleInfo = negotiationStyle ? styleMap[negotiationStyle] || { label: negotiationStyle, color: e.inkSoft, icon: "👤" } : null;
   const phaseLabels: Record<string, string> = {
@@ -614,14 +614,14 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
     "closing-pressure": "Use competing offers or BATNA. Don't fold under deadline pressure.",
     "closing": "Confirm all terms explicitly. Set clear next steps and timelines.",
   };
-  const leverageColor = liveState.leverage >= 70 ? e.success : liveState.leverage >= 40 ? e.copper : e.error;
+  const leverageColor = liveState.leverage >= 70 ? e.success : liveState.leverage >= 40 ? e.indigo : e.error;
   const coveredCount = liveState.topicsCovered.filter(t => t.covered).length;
 
   return (
     <div style={{
       width: "100%", borderRadius: 14,
-      background: "rgba(180,83,9,0.07)",
-      border: "1px solid rgba(180,83,9,0.16)",
+      background: "oklch(0.359 0.135 278.697 / 0.07)",
+      border: "1px solid oklch(0.359 0.135 278.697 / 0.16)",
       padding: "16px", display: "flex", flexDirection: "column", gap: 12,
       animation: "fadeUp 0.3s ease",
     }}>
@@ -632,12 +632,12 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           {Array.from({ length: liveState.totalPhases }).map((_, i) => (
             <div key={i} style={{
               flex: 1, height: 4, borderRadius: 2,
-              background: i <= liveState.phaseIdx ? e.copper : "rgba(20,17,10,0.05)",
+              background: i <= liveState.phaseIdx ? e.indigo : "rgba(20,17,10,0.05)",
               transition: "background 0.3s ease",
             }} />
           ))}
         </div>
-        <span style={{ fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.copper, flexShrink: 0 }}>
+        <span style={{ fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.indigo, flexShrink: 0 }}>
           {phaseLabels[liveState.phase] || liveState.phase}
         </span>
         {/* Phase 5 Session B (2026-05-19) — multi-round badge. Renders
@@ -648,9 +648,9 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
             data-testid="multi-round-badge"
             style={{
               fontFamily: ef.sans, fontSize: 10, fontWeight: 600,
-              color: e.copper, padding: "2px 8px", borderRadius: 999,
-              background: "rgba(180,83,9,0.10)",
-              border: "1px solid rgba(180,83,9,0.24)",
+              color: e.indigo, padding: "2px 8px", borderRadius: 999,
+              background: "oklch(0.359 0.135 278.697 / 0.10)",
+              border: "1px solid oklch(0.359 0.135 278.697 / 0.24)",
               whiteSpace: "nowrap", flexShrink: 0,
             }}
           >
@@ -689,7 +689,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
               </div>
               <div style={{
                 position: "relative", height: 24, borderRadius: 12,
-                background: "linear-gradient(90deg, rgba(185,28,28,0.18), rgba(180,83,9,0.18), rgba(21,128,61,0.18))",
+                background: "linear-gradient(90deg, rgba(185,28,28,0.18), oklch(0.359 0.135 278.697 / 0.18), rgba(21,128,61,0.18))",
               }}>
                 {/* walkAway (red, far left) */}
                 <div
@@ -704,7 +704,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                   data-testid="zopa-initial-offer"
                   style={{
                     position: "absolute", left: `${pct(negotiationBand.initialOffer)}%`, top: 0, bottom: 0,
-                    width: 2, background: e.copper, borderRadius: 1, zIndex: 2,
+                    width: 2, background: e.indigo, borderRadius: 1, zIndex: 2,
                     transform: "translateX(-50%)",
                   }}
                 />
@@ -746,7 +746,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
       )}
 
       {/* Manager Style + Phase Guidance */}
-      <div style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.13)" }}>
+      <div style={{ padding: "8px 10px", borderRadius: 8, background: "oklch(0.359 0.135 278.697 / 0.10)", border: "1px solid oklch(0.359 0.135 278.697 / 0.13)" }}>
         {styleInfo && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
             <span style={{ fontSize: 11 }}>{styleInfo.icon}</span>
@@ -772,7 +772,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
             <div style={{
               position: "absolute", left: 0, top: 0, bottom: 0,
               width: "100%", borderRadius: 10,
-              background: "linear-gradient(90deg, rgba(185,28,28,0.24), rgba(180,83,9,0.24), rgba(21,128,61,0.24))",
+              background: "linear-gradient(90deg, rgba(185,28,28,0.24), oklch(0.359 0.135 278.697 / 0.24), rgba(21,128,61,0.24))",
             }} />
             {/* Highest offer marker */}
             {highestOffer > 0 && (() => {
@@ -781,12 +781,12 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
               return (
                 <div style={{
                   position: "absolute", left: `${pos}%`, top: 0, bottom: 0,
-                  width: 3, background: e.copper, borderRadius: 2,
+                  width: 3, background: e.indigo, borderRadius: 2,
                   transform: "translateX(-50%)", zIndex: 2,
                 }}>
                   <div style={{
                     position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap",
-                    fontFamily: ef.sans, fontSize: 9, fontWeight: 700, color: e.copper,
+                    fontFamily: ef.sans, fontSize: 9, fontWeight: 700, color: e.indigo,
                   }}>₹{highestOffer}</div>
                 </div>
               );
@@ -828,12 +828,12 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
               <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Voice</span>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 700, color: voiceConfidence.score >= 60 ? e.success : voiceConfidence.score >= 35 ? e.copper : e.error }}>{voiceConfidence.score}%</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 700, color: voiceConfidence.score >= 60 ? e.success : voiceConfidence.score >= 35 ? e.indigo : e.error }}>{voiceConfidence.score}%</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
               <div style={{
                 height: "100%", borderRadius: 3, width: `${voiceConfidence.score}%`,
-                background: voiceConfidence.score >= 60 ? e.success : voiceConfidence.score >= 35 ? e.copper : e.error,
+                background: voiceConfidence.score >= 60 ? e.success : voiceConfidence.score >= 35 ? e.indigo : e.error,
                 transition: "width 0.3s ease",
               }} />
             </div>
@@ -956,8 +956,8 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
       padding: "16px", display: "flex", flexDirection: "column", gap: 8,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <span style={{ fontFamily: ef.serif, fontSize: 13, fontWeight: 600, color: e.coal }}>Negotiation Replay</span>
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span style={{ fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.coal }}>Negotiation Replay</span>
         <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, marginLeft: "auto" }}>Click any turn for annotations</span>
       </div>
 
@@ -974,15 +974,15 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
             onKeyDown={(e) => { if (hasAnnotations && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setExpandedTurn(isExpanded ? null : idx); } }}
             style={{
               padding: "8px 12px", borderRadius: 10,
-              background: isUser ? "rgba(180,83,9,0.10)" : "rgba(20,17,10,0.05)",
-              border: `1px solid ${isExpanded ? "rgba(180,83,9,0.24)" : "rgba(20,17,10,0.08)"}`,
+              background: isUser ? "oklch(0.359 0.135 278.697 / 0.10)" : "rgba(20,17,10,0.05)",
+              border: `1px solid ${isExpanded ? "oklch(0.359 0.135 278.697 / 0.24)" : "rgba(20,17,10,0.08)"}`,
               cursor: hasAnnotations ? "pointer" : "default",
               transition: "border-color 0.2s ease",
             }}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
               <span style={{
-                fontFamily: ef.sans, fontSize: 9, fontWeight: 700, color: isUser ? e.copper : e.inkSoft,
+                fontFamily: ef.sans, fontSize: 9, fontWeight: 700, color: isUser ? e.indigo : e.inkSoft,
                 textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginTop: 2,
               }}>
                 {isUser ? "You" : "HR"}

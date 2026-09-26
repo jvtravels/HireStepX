@@ -24,8 +24,8 @@ export default function LoadingScreen({ message }: { message?: string }) {
           style={{
             width: 56,
             height: 56,
-            border: `3px solid ${t.copper100}`,
-            borderTopColor: t.copper,
+            border: `3px solid ${t.indigo100}`,
+            borderTopColor: t.indigo,
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
             margin: "0 auto 24px",

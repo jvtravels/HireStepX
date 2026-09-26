@@ -24,8 +24,8 @@ const c = {
   obsidian: T.cream,         // page bg → cream
   graphite: T.white,         // raised cards
   border: T.line,            // hairlines
-  gilt: T.copper,
-  giltDark: T.copperDark,
+  gilt: T.indigo,
+  giltDark: T.indigoDeep,
   ivory: T.coal,             // primary ink
   chalk: T.coal,
   stone: T.inkSoft,          // secondary ink
@@ -361,7 +361,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {/* Spacer — pushes plan card + user info to bottom */}
         <div style={{ flex: 1 }} />
 
-        {/* Plan Status — white card, copper accents throughout. No tinted backgrounds;
+        {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;
             state (exhausted / low / healthy) is communicated through the usage row
             and dash bar, not the card surface color. */}
         <div style={{ margin: "0 8px 12px", padding: "14px", borderRadius: 12,
@@ -410,7 +410,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const isLow = !planExhausted && (
               (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
-            // barFill: matches the "N of N" text — ember when exhausted or low, copper when healthy.
+            // barFill: matches the "N of N" text — ember when exhausted or low, indigo when healthy.
             const barFill = (planExhausted || isLow) ? c.ember : c.gilt;
 
 
@@ -467,7 +467,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       border: hasCredits ? "1px solid rgba(21,128,61,0.22)" : "1px solid rgba(180,83,9,0.18)",
                       borderRadius: 8 }}>
                       <span style={{ fontFamily: font.ui, fontSize: 11, display: "flex", alignItems: "center", gap: 5,
-                        color: hasCredits ? T.successInk : c.gilt }}>
+                        color: hasCredits ? T.successInk : T.copper }}>
                         {hasCredits ? (
                           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         ) : (
@@ -476,7 +476,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                         Extra sessions available
                       </span>
                       <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 800, letterSpacing: "-0.01em",
-                        color: hasCredits ? c.sage : c.gilt, opacity: hasCredits ? 1 : 0.55 }}>
+                        color: hasCredits ? c.sage : T.copper, opacity: hasCredits ? 1 : 0.55 }}>
                         {creditBalance}
                       </span>
                     </div>
@@ -525,7 +525,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {/* User info */}
         <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.copper100, border: `1px solid rgba(180,83,9,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.indigo100, border: `1px solid ${T.indigoRing}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.gilt }}>{(displayName || "?")[0].toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -635,24 +635,24 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             overflow: "hidden", boxShadow: shadow.modal,
             animation: "slideDown 0.2s ease",
           }}>
-            {/* Header strip — copper tint gives panel immediate identity */}
+            {/* Header strip — indigo tint gives panel immediate identity */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "14px 18px",
-              background: T.copper100, borderBottom: `1px solid ${T.copperBorder}`,
+              background: T.indigo100, borderBottom: `1px solid ${T.indigoRing}`,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                  background: T.copper, display: "flex", alignItems: "center", justifyContent: "center",
+                  background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                   </svg>
                 </div>
-                <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: T.copperDark, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
+                <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: T.indigoDeep, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ color: T.copper }}>
+              <Button variant="ghost" size="icon-sm" onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ color: T.indigo }}>
                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </Button>
             </div>
@@ -682,14 +682,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   {
                     key: "billing" as const, label: "Billing",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-                    inactiveBg: T.copper100, inactiveColor: T.copper,
-                    activeBg: T.copper100, activeColor: T.copper, activeBdr: `1px solid ${T.copperBorder}`,
+                    inactiveBg: T.indigo100, inactiveColor: T.indigo,
+                    activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
                   },
                   {
                     key: "other" as const, label: "Other",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
                     inactiveBg: T.creamSoft, inactiveColor: c.stone,
-                    activeBg: T.copper100, activeColor: T.copper, activeBdr: `1px solid ${T.copperBorder}`,
+                    activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
                   },
                 ]).map(({ key, label, icon, inactiveBg, inactiveColor, activeBg, activeColor, activeBdr }) => {
                   const active = helpType === key;
@@ -733,7 +733,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   marginBottom: 10,
                   boxShadow: "inset 0 1px 3px rgba(14,12,8,0.04)",
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = T.copperBorder}
+                onFocus={(e) => e.currentTarget.style.borderColor = T.indigoRing}
                 onBlur={(e) => e.currentTarget.style.borderColor = c.border}
               />
 
@@ -784,7 +784,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               {/* Secondary email fallback */}
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center" as const, margin: "10px 0 0" }}>
                 Or email{" "}
-                <CopyEmailLink email="hello@hirestepx.com" style={{ color: T.copper, textDecoration: "none", fontWeight: 500 }} />
+                <CopyEmailLink email="hello@hirestepx.com" style={{ color: T.indigo, textDecoration: "none", fontWeight: 500 }} />
               </p>
             </div>
           </div>

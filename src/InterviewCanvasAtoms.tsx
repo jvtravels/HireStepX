@@ -1,6 +1,6 @@
 /* HireStepX — Production canvas atoms
    Port of tempo/designs/canvases/interview/_atoms.tsx into production.
-   Used by Interview.tsx to render the editorial cream/copper interview
+   Used by Interview.tsx to render the cream/indigo interview
    surface with the exact composition designed in Tempo:
 
      ── topbar ───────────────────────────────────────────────
@@ -8,7 +8,7 @@
                                   MuteToggle · CameraToggle ·
                                   Avatar
      ── stage ────────────────────────────────────────────────
-     EditorialHeading (italic-copper accent)
+     EditorialHeading (bold-indigo accent)
      QuestionText
      VoiceVisualizer (dotted hex sphere in soft disc)
      PersonaLabel (Maya · listening)
@@ -32,12 +32,12 @@ export function CanvasWordmark({ size = 18 }: { size?: number }) {
       aria-label="HireStepX"
       style={{
         display: "inline-flex", alignItems: "baseline", gap: 0,
-        fontFamily: ef.serif, fontSize: size, fontWeight: 600,
+        fontFamily: ef.sans, fontSize: size, fontWeight: 600,
         color: e.coal, letterSpacing: -0.4,
       }}
     >
       <span aria-hidden>HireStep</span>
-      <span aria-hidden style={{ fontStyle: "italic", color: e.copper }}>X</span>
+      <span aria-hidden style={{ fontWeight: 700, color: e.indigo }}>X</span>
     </span>
   );
 }
@@ -112,7 +112,7 @@ export function CanvasContextChip({ role, company, focus }: { role: string; comp
         </>
       )}
       <span aria-hidden style={{ color: e.inkFaint }}>·</span>
-      <span style={{ color: e.copper, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{focus}</span>
+      <span style={{ color: e.indigo, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{focus}</span>
     </span>
   );
 }
@@ -125,7 +125,7 @@ export function CanvasAvatar({ initials = "You" }: { initials?: string }) {
       display: "inline-flex", alignItems: "center", justifyContent: "center",
       width: 34, height: 34, borderRadius: 999,
       background: e.indigo100, color: e.indigo,
-      fontFamily: ef.serif, fontSize: 13, fontWeight: 500,
+      fontFamily: ef.sans, fontSize: 13, fontWeight: 500,
     }}>
       {initials}
     </span>
@@ -243,7 +243,7 @@ export function CanvasPersonaLabel({ name, state }: { name: string; state: Canva
   })();
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-      <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: -0.2 }}>
+      <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: -0.2 }}>
         {name}
       </span>
       <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, letterSpacing: 0.05 }}>
@@ -268,13 +268,13 @@ export function CanvasEditorialHeading({ before = "", accent, after = "", traili
          The .iv-question-h1 class lets the compact-desktop media query
          in Interview.tsx widen this on ≤1280px laptops where the 620px
          cap was forcing 5-6 short lines. */
-      fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
+      fontFamily: ef.sans, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
       lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: "0 auto", textWrap: "balance",
       maxWidth: 980,
     }}>
       {before && <>{before} </>}
-      <em style={{ fontStyle: "italic", fontWeight: 400, color: e.copper }}>{accent}</em>
+      <em style={{ fontWeight: 600, color: e.indigo }}>{accent}</em>
       {after && <> {after}</>}
       {trailing}
     </h1>
@@ -290,7 +290,7 @@ export function CanvasPlainHeading({ children }: { children: React.ReactNode }) 
          width of the viewport on desktop and the line lengths read like
          a billboard, not an interview question. See .iv-question-h1
          media-query overrides in Interview.tsx for compact laptops. */
-      fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
+      fontFamily: ef.sans, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
       lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: "0 auto", textWrap: "balance",
       maxWidth: 980,
@@ -398,7 +398,7 @@ export function CanvasTextLink({ children, onClick, variant = "muted" }: {
 /* ─── SkipLink ─── */
 export function CanvasSkipLink({ onClick }: { onClick?: () => void }) {
   return (
-    <Button type="button" variant="link" size="sm" className="p-0 h-auto" style={{ color: e.copper }} onClick={onClick}
+    <Button type="button" variant="link" size="sm" className="p-0 h-auto" style={{ color: e.indigo }} onClick={onClick}
       aria-label="Skip this question"
     >
       <span>Skip question</span>
@@ -502,7 +502,7 @@ export function CanvasSelfViewTile({ videoRef, initials = "You", stream = null }
         <span style={{
           width: 36, height: 36, borderRadius: 999, background: "rgba(255,255,255,0.18)",
           color: e.cream, display: "flex", alignItems: "center", justifyContent: "center",
-          fontFamily: ef.serif, fontSize: 14, fontWeight: 500, opacity: 0.0,
+          fontFamily: ef.sans, fontSize: 14, fontWeight: 500, opacity: 0.0,
         }}>{initials}</span>
       </div>
       {/* Recording badge — high-contrast against either the dark

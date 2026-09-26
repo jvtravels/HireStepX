@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
 
-/* Editorial brand surface — same tokens as auth, onboarding, and the
-   interview surface. Discipline rule:
-   Indigo is interactive · Copper is editorial · Never mix. */
+/* Same tokens as auth, onboarding, and the interview surface. Discipline
+   rule: indigo is the primary interactive/brand color; copper is reserved
+   strictly for score/streak/badge visuals elsewhere in the app — this
+   surface has none, so no copper appears here. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
 import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
@@ -340,7 +341,7 @@ function PermissionCard({
   kind: "mic" | "camera";
   label: string;
   sublabel: string;
-  sublabelTone: "copper" | "muted";
+  sublabelTone: "indigo" | "muted";
   status: "idle" | "requesting" | "granted" | "denied" | "skipped";
   onRequest: () => void;
   onSkip?: () => void;
@@ -517,7 +518,7 @@ function PermissionCard({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal, display: "flex", alignItems: "center", gap: 8 }}>
           <span>{label}</span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: sublabelTone === "copper" ? T.copper : T.inkFaint }}>· {sublabel}</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: sublabelTone === "indigo" ? T.indigo : T.inkFaint }}>· {sublabel}</span>
         </div>
         <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
@@ -531,7 +532,7 @@ function PermissionCard({
               lighting: {
                 checking: { label: "Lighting · checking…", tone: T.inkSoft },
                 pass: { label: "Lighting ✓", tone: T.success },
-                "warn-low": { label: "Lighting · a touch dim", tone: T.copper },
+                "warn-low": { label: "Lighting · a touch dim", tone: T.indigo },
                 "warn-offcenter": { label: "Lighting ✓", tone: T.success },
                 "warn-motion": { label: "Lighting ✓", tone: T.success },
                 "fail-dark": { label: "Add more light", tone: T.error },
@@ -543,7 +544,7 @@ function PermissionCard({
                 checking: { label: "Framing · checking…", tone: T.inkSoft },
                 pass: { label: "Centered ✓", tone: T.success },
                 "warn-low": { label: "Centered ✓", tone: T.success },
-                "warn-offcenter": { label: "Center yourself a bit", tone: T.copper },
+                "warn-offcenter": { label: "Center yourself a bit", tone: T.indigo },
                 "warn-motion": { label: "Centered ✓", tone: T.success },
                 "fail-dark": { label: "Centered ✓", tone: T.success },
                 "fail-bright": { label: "Centered ✓", tone: T.success },
@@ -555,7 +556,7 @@ function PermissionCard({
                 pass: { label: "Sharp ✓", tone: T.success },
                 "warn-low": { label: "Sharp ✓", tone: T.success },
                 "warn-offcenter": { label: "Sharp ✓", tone: T.success },
-                "warn-motion": { label: "Hold a bit steadier", tone: T.copper },
+                "warn-motion": { label: "Hold a bit steadier", tone: T.indigo },
                 "fail-dark": { label: "Sharp ✓", tone: T.success },
                 "fail-bright": { label: "Sharp ✓", tone: T.success },
                 "fail-offcenter": { label: "Sharp ✓", tone: T.success },
@@ -1749,7 +1750,7 @@ export default function SessionSetup() {
             const initials = trimmed.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
             return (
               <div title={trimmed} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.coal }}>
-                <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: T.indigo100, color: T.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: F.serif, fontSize: 13, fontWeight: 400, flexShrink: 0 }}>
+                <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: T.indigo100, color: T.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: F.sans, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
                   {initials || (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -1783,20 +1784,20 @@ export default function SessionSetup() {
                     marginBottom: 20,
                     padding: "14px 18px",
                     borderRadius: 10,
-                    background: T.copper100,
-                    border: `1px solid ${T.copper}`,
+                    background: T.indigo100,
+                    border: `1px solid ${T.indigo}`,
                     display: "flex",
                     alignItems: "flex-start",
                     gap: 12,
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.copper, marginBottom: 4 }}>
+                    <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.indigo, marginBottom: 4 }}>
                       Drilling from your last HR round
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 14, color: T.coal, lineHeight: 1.45 }}>
@@ -1807,9 +1808,9 @@ export default function SessionSetup() {
               )}
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
               <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1 hsx-setup-hero">
-                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
+                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
                   Let&apos;s get you{" "}
-                  <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
+                  <em style={{ fontStyle: "normal", fontWeight: 600, color: T.indigo }}>ready</em>
                 </h1>
                 <p className="hsx-setup-hero-sub" style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
                   Tell us a few things and we&apos;ll personalize the experience for you.
@@ -1817,7 +1818,7 @@ export default function SessionSetup() {
                 {/* Time pill + value-reframe — answers "how long?" and ties
                     the time investment to outcome in one breath. */}
                 <div className="hsx-setup-hero-pillrow" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
-                  <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
+                  <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.indigo100, color: T.indigo, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
@@ -1833,7 +1834,7 @@ export default function SessionSetup() {
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
                       <span>About the role</span>
-                      <span style={{ color: T.copper, fontSize: 12 }}>*</span>
+                      <span style={{ color: T.indigo, fontSize: 12 }}>*</span>
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       We tailor questions to the role and company you're targeting.
@@ -1898,7 +1899,7 @@ export default function SessionSetup() {
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
                       <span>Interview focus</span>
-                      <span style={{ color: T.copper, fontSize: 12 }}>*</span>
+                      <span style={{ color: T.indigo, fontSize: 12 }}>*</span>
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {relevantFocusSet && targetRole.trim()
@@ -2033,7 +2034,7 @@ export default function SessionSetup() {
                       kind="mic"
                       label="Microphone"
                       sublabel={micRequired ? "Required" : "Optional"}
-                      sublabelTone={micRequired ? "copper" : "muted"}
+                      sublabelTone={micRequired ? "indigo" : "muted"}
                       status={micStatus}
                       onRequest={requestMic}
                       level={micLevel}
@@ -2078,8 +2079,8 @@ export default function SessionSetup() {
               <div
                 style={{
                   background: T.warning100,
-                  border: `1px solid rgba(180,83,9,0.18)`,
-                  borderLeft: `3px solid ${T.copper}`,
+                  border: `1px solid oklch(0.359 0.135 278.697 / 0.18)`,
+                  borderLeft: `3px solid ${T.indigo}`,
                   borderRadius: 10,
                   padding: "14px 18px",
                   marginTop: 28,
@@ -2088,7 +2089,7 @@ export default function SessionSetup() {
                   margin: "28px auto 0",
                 }}
               >
-                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.indigo, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.07em" }}>
                   Your resume coaching brief
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: strengths.length > 0 && gaps.length > 0 ? "1fr 1fr" : "1fr", gap: 12 }}>
@@ -2104,7 +2105,7 @@ export default function SessionSetup() {
                   )}
                   {gaps.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.copper, margin: "0 0 4px" }}>⚡ Prepare for these</p>
+                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.indigo, margin: "0 0 4px" }}>⚡ Prepare for these</p>
                       <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
                         {gaps.map((g, i) => (
                           <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{g}</li>
@@ -2145,9 +2146,9 @@ export default function SessionSetup() {
             return (
               <div
                 style={{
-                  background: isUrgent ? 'rgba(185,28,28,0.08)' : 'rgba(180,83,9,0.08)',
-                  color: isUrgent ? T.error : T.copper,
-                  border: `1px solid ${isUrgent ? 'rgba(185,28,28,0.2)' : 'rgba(180,83,9,0.2)'}`,
+                  background: isUrgent ? 'rgba(185,28,28,0.08)' : 'oklch(0.359 0.135 278.697 / 0.08)',
+                  color: isUrgent ? T.error : T.indigo,
+                  border: `1px solid ${isUrgent ? 'rgba(185,28,28,0.2)' : 'oklch(0.359 0.135 278.697 / 0.2)'}`,
                   borderRadius: 10,
                   padding: '10px 16px',
                   marginBottom: 14,
@@ -2279,7 +2280,7 @@ export default function SessionSetup() {
                 animation: "countdownPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}>
                 <span style={{
-                  fontFamily: F.serif, fontSize: 56, fontWeight: 600,
+                  fontFamily: F.sans, fontSize: 56, fontWeight: 600,
                   color: T.indigo, lineHeight: 1,
                   animation: "countdownFade 1s ease",
                 }}>
@@ -2301,7 +2302,7 @@ export default function SessionSetup() {
               }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
               </div>
-              <h2 style={{ fontFamily: F.serif, fontSize: 28, fontWeight: 400, color: T.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontFamily: F.sans, fontSize: 28, fontWeight: 600, color: T.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>
                 Let's go!
               </h2>
             </>

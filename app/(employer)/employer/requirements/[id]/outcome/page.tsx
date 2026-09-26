@@ -64,7 +64,7 @@ export default function OutcomeFeedbackPage() {
   if (sent) {
     return (
       <div style={{ maxWidth: 480, margin: "60px auto", textAlign: "center" }}>
-        <h1 style={{ fontFamily: f.serif, fontSize: 24, color: t.coal, margin: "0 0 8px" }}>Thanks for the feedback</h1>
+        <h1 style={{ fontFamily: f.sans, fontSize: 24, color: t.coal, margin: "0 0 8px" }}>Thanks for the feedback</h1>
         <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
           It's noted against {candidate.name} for {requirement.title}.
         </p>
@@ -76,7 +76,7 @@ export default function OutcomeFeedbackPage() {
   return (
     <div style={{ maxWidth: 520, margin: "0 auto" }}>
       <Eyebrow tone="indigo">Outcome feedback</Eyebrow>
-      <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "8px 0 4px" }}>
+      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "8px 0 4px" }}>
         How did it go with {candidate.name}?
       </h1>
       <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>{requirement.title}</p>

@@ -314,7 +314,7 @@ export default function SettingsPage() {
         boxShadow: `0 8px 12px -10px rgba(0,0,0,0.06)`,
       }}>
         <div style={{ marginBottom: 20 }}>
-          <h2 style={{ fontFamily: font.display, fontSize: "clamp(28px, 5.5vw, 36px)", fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
+          <h2 style={{ fontFamily: font.ui, fontSize: "clamp(28px, 5.5vw, 36px)", fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
           <p className="settings-page-sub" style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 }}>
             Tune HireStepX to match how you practice.
           </p>
@@ -333,7 +333,7 @@ export default function SettingsPage() {
               fontFamily: font.ui, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
               padding: "10px 16px", cursor: "pointer", transition: "all 0.2s ease",
               background: "transparent", borderRadius: 0,
-              border: "none", borderBottom: `2px solid ${activeSection === s.id ? c.gilt : "transparent"}`,
+              border: "none", borderBottom: `2px solid ${activeSection === s.id ? c.indigo : "transparent"}`,
               color: activeSection === s.id ? c.ivory : c.stone,
               display: "flex", alignItems: "center", gap: 8,
               marginBottom: -1,
@@ -341,13 +341,13 @@ export default function SettingsPage() {
             onMouseEnter={(e) => { if (activeSection !== s.id) e.currentTarget.style.color = c.chalk; }}
             onMouseLeave={(e) => { if (activeSection !== s.id) e.currentTarget.style.color = c.stone; }}
           >
-            <span style={{ opacity: activeSection === s.id ? 1 : 0.5, transition: "opacity 0.2s", color: activeSection === s.id ? c.gilt : "currentColor" }}>{s.icon}</span>
+            <span style={{ opacity: activeSection === s.id ? 1 : 0.5, transition: "opacity 0.2s", color: activeSection === s.id ? c.indigo : "currentColor" }}>{s.icon}</span>
             {s.label}
             <kbd aria-hidden="true" style={{
               fontFamily: font.mono, fontSize: 10, fontWeight: 600,
-              color: activeSection === s.id ? c.gilt : c.stone,
-              background: activeSection === s.id ? "rgba(180,83,9,0.08)" : "transparent",
-              border: `1px solid ${activeSection === s.id ? "rgba(180,83,9,0.28)" : c.border}`,
+              color: activeSection === s.id ? c.indigo : c.stone,
+              background: activeSection === s.id ? "oklch(0.359 0.135 278.697 / 0.08)" : "transparent",
+              border: `1px solid ${activeSection === s.id ? "oklch(0.359 0.135 278.697 / 0.28)" : c.border}`,
               borderRadius: 4, padding: "1px 5px", marginLeft: 2,
               lineHeight: 1.2, letterSpacing: 0,
             }}>{i + 1}</kbd>

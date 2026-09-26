@@ -293,7 +293,7 @@ export function FieldLabel({ children, required = false }: { children: React.Rea
   return (
     <label style={{ display: "block", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginBottom: 6 }}>
       {children}
-      {required && <span style={{ color: t.copper }}> *</span>}
+      {required && <span style={{ color: t.indigo }}> *</span>}
     </label>
   );
 }
@@ -761,7 +761,7 @@ export function StatCell({ label, value, unit }: { label: string; value: string;
         {label}
       </dt>
       <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
         {unit && <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{unit}</span>}
       </dd>
     </div>

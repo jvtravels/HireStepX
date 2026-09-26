@@ -61,8 +61,8 @@ export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
 };
 
 export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = "rgba(180,83,9,0.5)";
-  e.currentTarget.style.boxShadow = `0 0 0 3px ${c.copper100}`;
+  e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.5)";
+  e.currentTarget.style.boxShadow = `0 0 0 3px ${c.indigo100}`;
 };
 
 /** Render a Unix-ms timestamp as a relative phrase ("3h ago"). */
@@ -262,11 +262,11 @@ export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string;
       {k && (
         <div style={{
           fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em",
-          color: tone === "danger" ? c.ember : c.gilt, textTransform: "uppercase",
+          color: tone === "danger" ? c.ember : c.indigo, textTransform: "uppercase",
         }}>{k}</div>
       )}
       <h2 style={{
-        fontFamily: font.display, fontSize: 28, letterSpacing: "-0.02em",
+        fontFamily: font.ui, fontSize: 28, letterSpacing: "-0.02em",
         color: tone === "danger" ? c.ember : c.ivory, margin: "6px 0", lineHeight: 1.15, fontWeight: 400,
       }}>{title}</h2>
       {desc && (
@@ -307,7 +307,7 @@ function ThinDivider() {
 function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "success" | "warn" }) {
   const palette =
     tone === "success" ? { bg: c.success100, fg: c.sage } :
-    tone === "warn" ? { bg: c.warning100, fg: c.giltDark } :
+    tone === "warn" ? { bg: c.warning100, fg: c.indigoDeep } :
     { bg: c.indigo100, fg: c.indigo };
   return (
     <span style={{
@@ -346,7 +346,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
           <div aria-hidden="true" style={{
             width: 64, height: 64, borderRadius: "50%",
-            background: c.indigoDeep, color: c.cream, fontFamily: font.display, fontSize: 28,
+            background: c.indigoDeep, color: c.cream, fontFamily: font.ui, fontSize: 28,
             display: "flex", alignItems: "center", justifyContent: "center", letterSpacing: "0.02em", flexShrink: 0,
           }}>{initial}</div>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -550,7 +550,7 @@ function UsageBar({ label, row }: { label: string; row: UsageRow }) {
         <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{display}</span>
       </div>
       <div style={{ height: 6, borderRadius: 999, background: c.border, overflow: "hidden" }}>
-        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.gilt, transition: "width 0.4s ease" }} />
+        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.indigo, transition: "width 0.4s ease" }} />
       </div>
     </div>
   );
@@ -744,7 +744,7 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
         }}>{tone.label}</div>
         {payment.receipt_url && (
           <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, textDecoration: "none", whiteSpace: "nowrap" }}
+            style={{ fontFamily: font.ui, fontSize: 11, color: c.indigo, textDecoration: "none", whiteSpace: "nowrap" }}
             onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
             onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
           >Receipt →</a>
@@ -907,7 +907,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                 <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.error100, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Cancelling</span>
               )}
               {!authUser?.cancelAtPeriodEnd && authUser?.subscriptionPaused && (
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.copper100, color: c.gilt, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Paused</span>
+                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.indigo100, color: c.indigo, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Paused</span>
               )}
             </div>
             <div style={subHeaderHint}>
@@ -1208,7 +1208,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
               maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {displayLink ? (
-                <span style={{ color: c.gilt }}>{displayLink}</span>
+                <span style={{ color: c.indigo }}>{displayLink}</span>
               ) : "—"}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>

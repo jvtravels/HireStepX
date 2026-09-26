@@ -93,7 +93,7 @@ export default function ComparePage() {
   return (
     <div>
       <Eyebrow tone="indigo">Comparing candidates</Eyebrow>
-      <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "6px 0 20px" }}>{requirement.title}</h1>
+      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "6px 0 20px" }}>{requirement.title}</h1>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
         <CompareColumn candidate={a} />
         <CompareColumn candidate={b} />

@@ -291,7 +291,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
       clearInterval(id);
     };
   }, []);
-  const colors = { excellent: e.success, good: e.copper, poor: e.error };
+  const colors = { excellent: e.success, good: e.indigo, poor: e.error };
   const labels = { excellent: "Excellent", good: "Good", poor: "Poor" };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(20,17,10,0.10)", border: `1px solid ${colors[quality]}30` }}>
@@ -344,7 +344,7 @@ export const DotGridVisualizer = React.memo(function DotGridVisualizer({ active,
       {dots.map((scale, i) => (
         <div key={i} style={{
           width: 8, height: 8, borderRadius: "50%",
-          background: e.copper,
+          background: e.indigo,
           opacity: active ? Math.min(0.9, scale) : thinking ? Math.min(0.4, scale + 0.05) : 0.1,
           transform: `scale(${active ? 0.5 + scale * 0.5 : thinking ? 0.5 + scale * 0.3 : 0.6})`,
           transition: active ? "all 0.1s ease" : "all 0.3s ease",
@@ -370,7 +370,7 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} style={{
             flex: 1, borderRadius: 2, height: 4,
-            background: i < current ? e.copper : i === current ? "rgba(180,83,9,0.40)" : "rgba(20,17,10,0.13)",
+            background: i < current ? e.indigo : i === current ? "oklch(0.359 0.135 278.697 / 0.40)" : "rgba(20,17,10,0.13)",
             transition: "all 0.4s ease",
           }} />
         ))}
@@ -386,7 +386,7 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
   actualDuration?: number;
   /** Set to true when TTS voice finishes — triggers fast-complete of remaining text */
   speechEnded?: boolean;
-  /** "card" stamps its own serif/22px (legacy panel layout). "inherit"
+  /** "card" stamps its own sans/22px (legacy panel layout). "inherit"
       defers to the parent — used inside CanvasPlainHeading where the
       h1's clamp() font controls typography. Mismatched type between
       typewriter and final heading is what caused the visible "jerk"
@@ -465,14 +465,14 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
               margin: 0, textWrap: "balance",
             }
           : {
-              fontFamily: ef.serif, fontSize: 22, color: e.coal,
+              fontFamily: ef.sans, fontSize: 22, color: e.coal,
               lineHeight: 1.35, margin: 0, minHeight: 30,
               letterSpacing: "-0.01em", textWrap: "balance",
             }
       }>
         {displayText}
         {isTyping && charIndex < cleanText.length && (
-          <span style={{ display: "inline-block", width: 2, height: 20, background: e.copper, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
+          <span style={{ display: "inline-block", width: 2, height: 20, background: e.indigo, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
         )}
       </p>
     </div>

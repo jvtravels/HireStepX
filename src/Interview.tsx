@@ -187,7 +187,7 @@ function countExchanges(transcript: Array<{ speaker: string }>): number {
 }
 
 /* Canvas-style typewriter wrapper that types the AI's question in sync
-   with TTS audio duration. Inherits the parent <h1>'s serif typography
+   with TTS audio duration. Inherits the parent <h1>'s sans typography
    via variant="inherit". The flicker that previously affected this was
    fixed at the engine level — handleNextQuestion now sets phase=thinking
    in the SAME batched update as setCurrentStep, so the new step never
@@ -458,8 +458,8 @@ function InterviewInner() {
             skipSpeaking={skipSpeaking}
           />
         )}
-        {/* Question heading — heuristic-driven italic-copper accent.
-            During phase=speaking we render plain serif because the
+        {/* Question heading — heuristic-driven bold-indigo accent.
+            During phase=speaking we render plain sans because the
             LiveCaptions typewriter would fight with the inline accent
             mid-stream. Once speech ends and we're listening, the accent
             renders. */}
@@ -527,8 +527,8 @@ function InterviewInner() {
               // you choose…". In salary-neg prose those same words show
               // up incidentally ("how does that *align*", "*what* would
               // it take", "your notice period *situation*") and the
-              // italic-copper highlighting makes the AI look erratic.
-              // Real session: italics on align/what/situation across 3
+              // bold-indigo highlighting makes the AI look erratic.
+              // Real session: emphasis on align/what/situation across 3
               // turns — interpreted by the user as "markdown leak".
               // Suppress the heuristic accent for negotiation; LLM-
               // marked accentSplit (rare in negotiation anyway) still
@@ -742,7 +742,7 @@ function InterviewInner() {
 
         {llmLoading && currentStep <= 1 && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 10, height: 10, border: `1.5px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <div style={{ width: 10, height: 10, border: `1.5px solid ${e.line}`, borderTopColor: e.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
             <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
               {llmSlow ? "Taking a bit longer — almost there…" : "Personalizing questions…"}
             </span>
@@ -861,7 +861,7 @@ function InterviewInner() {
             </svg>
           </span>
           <span style={{
-            fontFamily: ef.serif, fontSize: 24, fontWeight: 500,
+            fontFamily: ef.sans, fontSize: 24, fontWeight: 500,
             letterSpacing: -0.2, color: e.cream,
           }}>
             Tap to enable voice

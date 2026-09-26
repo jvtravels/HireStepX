@@ -153,7 +153,7 @@ export default function CandidateDetailPage() {
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <h1 style={{ fontFamily: f.serif, fontSize: 24, color: t.coal, margin: 0 }}>{displayName}</h1>
+                <h1 style={{ fontFamily: f.sans, fontSize: 24, color: t.coal, margin: 0 }}>{displayName}</h1>
                 <Pill tone="indigo">{candidate.targetRole}</Pill>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
@@ -384,7 +384,7 @@ export default function CandidateDetailPage() {
               {candidate.unlocked ? initials(displayName) : "?"}
             </div>
             <div>
-              <div style={{ fontFamily: f.serif, fontSize: 20, color: t.coal }}>{displayName}</div>
+              <div style={{ fontFamily: f.sans, fontSize: 20, color: t.coal }}>{displayName}</div>
               <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>
                 {resume?.headline || candidate.targetRole}
               </div>

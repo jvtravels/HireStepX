@@ -7,9 +7,10 @@
  * All state, network calls, and side effects live in DashboardResume.tsx.
  * This component takes typed props and renders the four phase variants
  * (idle / extracting / analyzing / error / done) in the cream + indigo
- * + copper palette.
+ * palette.
  *
- * Discipline rule: Indigo is interactive · Copper is editorial · Never mix.
+ * Discipline rule: Indigo is interactive — the sole brand accent. No
+ * editorial copper, no serif, no italics.
  */
 import type { ReactNode, CSSProperties, RefObject } from "react";
 import type { ResumeProfile } from "../dashboardData";
@@ -28,10 +29,10 @@ const t = {
   indigo: T.indigo,
   indigoDeep: T.indigoDeep,
   indigo100: T.indigo100,
-  copper: T.copper,
-  copper100: T.copper100,
-  copperSoft: T.copperSoft,
-  copperLight: "#E8D5AE",            // resume-local — not in canonical palette
+  // Indigo alpha equivalent of the former copper editorial accent, at the
+  // same 0.12 alpha weight copperSoft used — see CLAUDE.md's retirement of
+  // the editorial visual language.
+  indigoSoft: "oklch(0.359 0.135 278.697 / 0.12)",
   successBorder: "rgba(21,128,61,0.22)",
   warningBorder: "rgba(161,98,7,0.22)",
   errorBorder: "rgba(185,28,28,0.22)",
@@ -45,7 +46,6 @@ const t = {
   lineStrong: T.lineStrong,
 } as const;
 const f = {
-  serif: F.serif,
   sans: F.sans,
   mono: F.mono,
 } as const;
@@ -186,7 +186,7 @@ function BandLabel({ text, pre }: { text: string; pre?: string }) {
           fontFamily: f.sans,
           fontSize: 11,
           fontWeight: 700,
-          color: t.copper,
+          color: t.indigo,
           textTransform: "uppercase",
           letterSpacing: "0.12em",
         }}
@@ -237,7 +237,7 @@ function StatTile({ label, value, qualifier, qualifierColor, bar }: StatTileProp
         {label}
       </span>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
+        <span style={{ fontFamily: f.sans, fontSize: 36, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
           {value}
         </span>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: qualifierColor, fontWeight: 600 }}>
@@ -319,8 +319,8 @@ function LoadingState({ phase, fileName }: { phase: "extracting" | "analyzing"; 
             height: 64,
             borderRadius: 16,
             margin: "0 auto 24px",
-            background: t.copper100,
-            border: `1px solid ${t.copperSoft}`,
+            background: t.indigo100,
+            border: `1px solid ${t.indigoSoft}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -330,8 +330,8 @@ function LoadingState({ phase, fileName }: { phase: "extracting" | "analyzing"; 
             style={{
               width: 24,
               height: 24,
-              border: `2.5px solid ${t.copper100}`,
-              borderTopColor: t.copper,
+              border: `2.5px solid ${t.indigo100}`,
+              borderTopColor: t.indigo,
               borderRadius: "50%",
               animation: "spin 0.8s linear infinite",
             }}
@@ -339,7 +339,7 @@ function LoadingState({ phase, fileName }: { phase: "extracting" | "analyzing"; 
         </div>
         <h2
           style={{
-            fontFamily: f.serif,
+            fontFamily: f.sans,
             fontSize: 28,
             fontWeight: 400,
             color: t.coal,
@@ -372,7 +372,7 @@ function LoadingState({ phase, fileName }: { phase: "extracting" | "analyzing"; 
               border: `1px solid ${t.line}`,
             }}
           >
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
               <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
@@ -398,7 +398,7 @@ function ErrorState({
       <header style={{ marginBottom: 20 }}>
         <h1
           style={{
-            fontFamily: f.serif,
+            fontFamily: f.sans,
             fontSize: "clamp(2.25rem, 4vw, 3rem)",
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
@@ -407,7 +407,7 @@ function ErrorState({
             margin: 0,
           }}
         >
-          Your <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>resume</em>
+          Your <span style={{ fontWeight: 600, color: t.indigo }}>resume</span>
         </h1>
       </header>
       <SectionCard style={{ textAlign: "center", padding: "32px 28px" }}>
@@ -485,7 +485,7 @@ function IdleState({
       <header style={{ marginBottom: 24, textAlign: "center" }}>
         <h1
           style={{
-            fontFamily: f.serif,
+            fontFamily: f.sans,
             fontSize: "clamp(2.25rem, 4vw, 3rem)",
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
@@ -494,7 +494,7 @@ function IdleState({
             margin: 0,
           }}
         >
-          Add your <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>resume</em>
+          Add your <span style={{ fontWeight: 600, color: t.indigo }}>resume</span>
         </h1>
         <p
           style={{
@@ -612,14 +612,14 @@ function IdleState({
               height: 64,
               borderRadius: 16,
               margin: "0 auto 14px",
-              background: t.copper100,
-              border: `1px solid ${t.copperSoft}`,
+              background: t.indigo100,
+              border: `1px solid ${t.indigoSoft}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -666,7 +666,7 @@ function IdleState({
                 color: t.inkSoft,
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
                 <polyline points="9 12 11 14 15 10" />
               </svg>
@@ -783,7 +783,7 @@ function DoneState(props: ResumeTabViewProps) {
         <div>
           <h1
             style={{
-              fontFamily: f.serif,
+              fontFamily: f.sans,
               fontSize: "clamp(2.25rem, 4vw, 3rem)",
               lineHeight: 1.05,
               letterSpacing: "-0.02em",
@@ -792,7 +792,7 @@ function DoneState(props: ResumeTabViewProps) {
               margin: 0,
             }}
           >
-            Your <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>resume</em>
+            Your <span style={{ fontWeight: 600, color: t.indigo }}>resume</span>
           </h1>
           <p
             style={{
@@ -834,7 +834,7 @@ function DoneState(props: ResumeTabViewProps) {
       {/* Active resume hero */}
       <div
         style={{
-          background: `linear-gradient(135deg, ${t.white} 0%, ${t.copper100} 160%)`,
+          background: `linear-gradient(135deg, ${t.white} 0%, ${t.indigo100} 160%)`,
           borderRadius: 16,
           border: `1px solid ${t.line}`,
           boxShadow: cardShadow,
@@ -847,7 +847,7 @@ function DoneState(props: ResumeTabViewProps) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2
               style={{
-                fontFamily: f.serif,
+                fontFamily: f.sans,
                 fontSize: 32,
                 color: t.coal,
                 margin: "0 0 10px",
@@ -865,9 +865,9 @@ function DoneState(props: ResumeTabViewProps) {
                     fontFamily: f.sans,
                     fontSize: 11,
                     fontWeight: 600,
-                    color: t.copper,
-                    background: t.copper100,
-                    border: `1px solid ${t.copperSoft}`,
+                    color: t.indigo,
+                    background: t.indigo100,
+                    border: `1px solid ${t.indigoSoft}`,
                     borderRadius: 6,
                     padding: "3px 10px",
                   }}
@@ -1015,8 +1015,8 @@ function DoneState(props: ResumeTabViewProps) {
             style={{
               padding: "10px 14px",
               borderRadius: 10,
-              background: t.copper100,
-              border: `1px solid ${t.copperSoft}`,
+              background: t.indigo100,
+              border: `1px solid ${t.indigoSoft}`,
               marginBottom: 16,
               display: "flex",
               alignItems: "center",
@@ -1024,7 +1024,7 @@ function DoneState(props: ResumeTabViewProps) {
               flexWrap: "wrap",
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -1075,8 +1075,8 @@ function DoneState(props: ResumeTabViewProps) {
             style={{
               padding: "14px 16px",
               borderRadius: 10,
-              background: t.copper100,
-              border: `1px solid ${t.copperSoft}`,
+              background: t.indigo100,
+              border: `1px solid ${t.indigoSoft}`,
               marginBottom: 16,
             }}
           >
@@ -1121,15 +1121,15 @@ function DoneState(props: ResumeTabViewProps) {
                   width: 32,
                   height: 32,
                   borderRadius: 8,
-                  background: t.copper100,
-                  border: `1px solid ${t.copperSoft}`,
+                  background: t.indigo100,
+                  border: `1px solid ${t.indigoSoft}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                   <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
@@ -1172,7 +1172,7 @@ function DoneState(props: ResumeTabViewProps) {
                       width: 12,
                       height: 12,
                       border: `2px solid ${t.line}`,
-                      borderTopColor: t.copper,
+                      borderTopColor: t.indigo,
                       borderRadius: "50%",
                       animation: "spin 0.8s linear infinite",
                     }}
@@ -1373,7 +1373,7 @@ function DoneState(props: ResumeTabViewProps) {
           <SectionHeader
             label="Experience"
             icon={
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                 <rect x="3" y="4" width="18" height="16" rx="2" />
                 <path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
@@ -1399,8 +1399,8 @@ function DoneState(props: ResumeTabViewProps) {
                         width: 12,
                         height: 12,
                         borderRadius: "50%",
-                        background: isCurrent ? t.copper : t.white,
-                        border: `2px solid ${isCurrent ? t.copper : t.lineStrong}`,
+                        background: isCurrent ? t.indigo : t.white,
+                        border: `2px solid ${isCurrent ? t.indigo : t.lineStrong}`,
                         marginTop: 5,
                       }}
                     />
@@ -1468,7 +1468,7 @@ function DoneState(props: ResumeTabViewProps) {
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {exp.topProjects.map((p) => (
                           <div key={p} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                            <span style={{ width: 4, height: 4, borderRadius: "50%", background: t.copper, marginTop: 7, flexShrink: 0 }} />
+                            <span style={{ width: 4, height: 4, borderRadius: "50%", background: t.indigo, marginTop: 7, flexShrink: 0 }} />
                             <span style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.5 }}>{p}</span>
                           </div>
                         ))}
@@ -1583,7 +1583,7 @@ function DoneState(props: ResumeTabViewProps) {
           <SectionHeader
             label="ATS Compliance"
             icon={
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M9 12l2 2 4-4" />
               </svg>
@@ -1706,8 +1706,8 @@ function DoneState(props: ResumeTabViewProps) {
                         fontFamily: f.mono,
                         fontSize: 10,
                         fontWeight: 700,
-                        color: t.copper,
-                        background: t.copper100,
+                        color: t.indigo,
+                        background: t.indigo100,
                         borderRadius: 5,
                         padding: "2px 7px",
                         flexShrink: 0,
@@ -1737,7 +1737,7 @@ function DoneState(props: ResumeTabViewProps) {
           <SectionHeader
             label="Job Description Match"
             icon={
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -1895,7 +1895,7 @@ function DoneState(props: ResumeTabViewProps) {
           <SectionHeader
             label="Interview Coverage"
             icon={
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                 <path d="M12 2v20" />
                 <path d="M2 12h20" />
               </svg>
@@ -1953,7 +1953,7 @@ function DoneState(props: ResumeTabViewProps) {
           <SectionHeader
             label="How to lift your score"
             icon={
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -1989,8 +1989,8 @@ function DoneState(props: ResumeTabViewProps) {
                         fontFamily: f.mono,
                         fontSize: 11,
                         fontWeight: 700,
-                        color: t.copper,
-                        background: t.copper100,
+                        color: t.indigo,
+                        background: t.indigo100,
                         borderRadius: 6,
                         padding: "3px 8px",
                         flexShrink: 0,
@@ -2050,7 +2050,7 @@ function DoneState(props: ResumeTabViewProps) {
                         {polishState.rewrite}
                       </span>
                       {polishState.rationale && (
-                        <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, fontStyle: "italic" }}>
+                        <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft }}>
                           {polishState.rationale}
                         </span>
                       )}
@@ -2117,7 +2117,7 @@ function DoneState(props: ResumeTabViewProps) {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
@@ -2172,9 +2172,9 @@ function DoneState(props: ResumeTabViewProps) {
                           gap: 6,
                           fontFamily: f.sans,
                           fontSize: 12,
-                          color: isPrimary ? t.copper : isExposure ? t.inkSoft : t.coal,
-                          background: isPrimary ? t.copper100 : t.creamSoft,
-                          border: `1px solid ${isPrimary ? t.copperSoft : t.line}`,
+                          color: isPrimary ? t.indigo : isExposure ? t.inkSoft : t.coal,
+                          background: isPrimary ? t.indigo100 : t.creamSoft,
+                          border: `1px solid ${isPrimary ? t.indigoSoft : t.line}`,
                           borderRadius: 999,
                           padding: "5px 6px 5px 12px",
                           fontWeight: isPrimary ? 600 : 500,
@@ -2190,7 +2190,7 @@ function DoneState(props: ResumeTabViewProps) {
                             textTransform: "uppercase",
                             letterSpacing: "0.06em",
                             color: t.white,
-                            background: isPrimary ? t.copper : isExposure ? t.inkFaint : t.inkSoft,
+                            background: isPrimary ? t.indigo : isExposure ? t.inkFaint : t.inkSoft,
                             borderRadius: 999,
                             padding: "2px 7px",
                           }}
@@ -2210,9 +2210,9 @@ function DoneState(props: ResumeTabViewProps) {
                     style={{
                       fontFamily: f.sans,
                       fontSize: 12,
-                      color: i < 3 ? t.copper : t.coal,
-                      background: i < 3 ? t.copper100 : t.creamSoft,
-                      border: `1px solid ${i < 3 ? t.copperSoft : t.line}`,
+                      color: i < 3 ? t.indigo : t.coal,
+                      background: i < 3 ? t.indigo100 : t.creamSoft,
+                      border: `1px solid ${i < 3 ? t.indigoSoft : t.line}`,
                       borderRadius: 999,
                       padding: "5px 12px",
                       fontWeight: i < 3 ? 600 : 500,
@@ -2256,8 +2256,8 @@ function DoneState(props: ResumeTabViewProps) {
                           width: 22,
                           height: 22,
                           borderRadius: 6,
-                          background: t.copper100,
-                          border: `1px solid ${t.copperSoft}`,
+                          background: t.indigo100,
+                          border: `1px solid ${t.indigoSoft}`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -2265,7 +2265,7 @@ function DoneState(props: ResumeTabViewProps) {
                           marginTop: 2,
                         }}
                       >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2.4">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2.4">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       </div>

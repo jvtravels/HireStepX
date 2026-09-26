@@ -127,7 +127,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const c = {
     obsidian: T.cream, graphite: T.creamRaised, carbon: T.creamSoft,
     ivory: T.coal, chalk: "#3F3A33", stone: "#6B655C",
-    gilt: T.copper, giltDark: T.copperDark, giltLight: T.copper100,
+    gilt: T.indigo, giltDark: T.indigoDeep, giltLight: T.indigo100,
     sage: T.success, ember: T.error,
     slate: T.indigo,
     border: T.line, borderHover: T.lineStrong,
@@ -438,7 +438,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         </Button>
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
+          <h2 id="upgrade-modal-title" style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
             {currentTier === "team"
               ? "Add sessions — your Team plan stays active."
@@ -451,15 +451,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* ── Sprint Pack exhausted banner — only shown when sessions are used up */}
         {currentTier === "starter" && starterExhausted && (
           <div style={{ display: "flex", alignItems: "center", gap: 12,
-            background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)",
+            background: "oklch(0.359 0.135 278.697 / 0.06)", border: "1px solid oklch(0.359 0.135 278.697 / 0.18)",
             borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke={T.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              stroke={T.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600,
-                color: T.copper, margin: 0, lineHeight: 1.3 }}>
+                color: T.indigo, margin: 0, lineHeight: 1.3 }}>
                 You&apos;ve used all sessions in your Sprint Pack
               </p>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: "#6B655C",
@@ -581,7 +581,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                         <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#E8F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
-                        <p style={{ margin: 0, fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, textAlign: "center" }}>
+                        <p style={{ margin: 0, fontFamily: font.ui, fontSize: 22, fontWeight: 400, color: c.ivory, textAlign: "center" }}>
                           {creditSuccess === 1 ? "1 session" : `${creditSuccess} sessions`} added
                         </p>
                         <p style={{ margin: 0, fontFamily: font.ui, fontSize: 13, color: c.stone, textAlign: "center" }}>
@@ -592,7 +592,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                       <>
                         <div>
                           <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt }}>Per Session</p>
-                          <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                          <p style={{ margin: "10px 0 0", fontFamily: font.ui, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                             &#x20B9;{SINGLE_SESSION_PRICE}
                             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone }}>/ session</span>
                           </p>
@@ -616,7 +616,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                             <input type="range" min={1} max={10} step={1} value={singleQty} onChange={e => setSingleQty(Number(e.target.value))} disabled={!!loading} aria-label="Number of sessions" aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10} className="upgrade-session-slider"
                               style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
-                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `rgba(180,83,9,0.10)`, color: singleQty >= 10 ? c.stone : c.gilt, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
+                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : c.gilt, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
                           </div>
                           <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center" }}>
                             {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
@@ -669,7 +669,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                       {plan.compareAt}
                     </p>
                   )}
-                  <p style={{ margin: "compareAt" in plan && plan.compareAt ? "2px 0 0" : "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                  <p style={{ margin: "compareAt" in plan && plan.compareAt ? "2px 0 0" : "10px 0 0", fontFamily: font.ui, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     {plan.price}
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(250,247,240,0.7)" : c.stone }}>
                       {plan.unit}
@@ -806,10 +806,10 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
 
       {/* Lock overlay — flex-centered within the full-viewport-height container */}
       <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100dvh - 160px)", textAlign: "center", padding: 40, zIndex: 1 }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(180,83,9,0.06)", border: `1.5px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1.5px solid oklch(0.359 0.135 278.697 / 0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-        <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, marginBottom: 8 }}>{feature}</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 400, color: c.ivory, marginBottom: 8 }}>{feature}</h3>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 360, marginBottom: highlights ? 16 : 24 }}>
           {copy.body}
         </p>
@@ -825,7 +825,7 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
           </div>
         )}
 
-        <Button onClick={onUpgrade} style={{ padding: "12px 28px", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian }}>
+        <Button onClick={onUpgrade} style={{ padding: "12px 28px", background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: c.obsidian }}>
           {copy.cta}
         </Button>
         <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
@@ -902,8 +902,8 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
       {showConfetti && <ConfettiBurst />}
       <style>{`
-        @keyframes warmupPulse { 0%, 100% { box-shadow: 0 8px 32px rgba(180,83,9,0.15); } 50% { box-shadow: 0 8px 40px rgba(180,83,9,0.4); } }
-        @media (prefers-reduced-motion: reduce) { .warmup-pulse-btn { animation: none !important; box-shadow: 0 8px 32px rgba(180,83,9,0.15) !important; } }
+        @keyframes warmupPulse { 0%, 100% { box-shadow: 0 8px 32px oklch(0.359 0.135 278.697 / 0.15); } 50% { box-shadow: 0 8px 40px oklch(0.359 0.135 278.697 / 0.4); } }
+        @media (prefers-reduced-motion: reduce) { .warmup-pulse-btn { animation: none !important; box-shadow: 0 8px 32px oklch(0.359 0.135 278.697 / 0.15) !important; } }
       `}</style>
       <h1 style={{ fontFamily: font.ui, fontSize: isMobile ? 20 : 26, fontWeight: 600, color: c.ivory, marginBottom: 6 }}>
         {timeGreeting}, {firstName}
@@ -912,12 +912,12 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
         {targetRole ? `Let's get you ready for your ${targetRole} interview.` : "Let's get you interview-ready."}
       </p>
 
-      <div style={{ background: `linear-gradient(135deg, rgba(180,83,9,0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(180,83,9,0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.15)", marginBottom: 24 }}>
-          <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.gilt, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
+      <div style={{ background: `linear-gradient(135deg, oklch(0.359 0.135 278.697 / 0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "oklch(0.359 0.135 278.697 / 0.08)", border: "1px solid oklch(0.359 0.135 278.697 / 0.15)", marginBottom: 24 }}>
+          <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: T.indigo, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
           <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Guided Warmup</span>
         </div>
-        <h2 style={{ fontFamily: font.display, fontSize: isMobile ? 22 : 28, fontWeight: 400, color: c.ivory, marginBottom: 10, letterSpacing: "-0.02em" }}>
+        <h2 style={{ fontFamily: font.ui, fontSize: isMobile ? 22 : 28, fontWeight: 400, color: c.ivory, marginBottom: 10, letterSpacing: "-0.02em" }}>
           {targetRole ? `Your ${targetRole} warmup is ready` : "Your warmup session is ready"}
         </h2>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, marginBottom: 28, maxWidth: 440, margin: "0 auto 28px" }}>
@@ -925,7 +925,7 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
         </p>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           <button className="shimmer-btn warmup-pulse-btn" onClick={onStartWarmup}
-            style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 500, padding: "14px 36px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, animation: "warmupPulse 2s ease-in-out infinite" }}
+            style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 500, padding: "14px 36px", borderRadius: 8, border: "none", background: T.indigo, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, animation: "warmupPulse 2s ease-in-out infinite" }}
             onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; e.currentTarget.style.animation = "none"; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; e.currentTarget.style.animation = "warmupPulse 2s ease-in-out infinite"; }}
           >
@@ -940,14 +940,14 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
         {[
-          { step: "1", title: "Warmup", desc: "3 friendly behavioral questions to set your baseline. Personalized from your resume.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>, active: true },
+          { step: "1", title: "Warmup", desc: "3 friendly behavioral questions to set your baseline. Personalized from your resume.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>, active: true },
           { step: "2", title: "Focus", desc: "Targeted practice on your weakest skill from the warmup.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, active: false },
           { step: "3", title: "Challenge", desc: "Full interview simulation tailored to your target role.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, active: false },
         ].map((item) => (
-          <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "rgba(180,83,9,0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
+          <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "oklch(0.359 0.135 278.697 / 0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               {item.icon}
-              <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: item.active ? c.gilt : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: item.active ? T.indigo : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
             </div>
             <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 6 }}>{item.title}</h3>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5 }}>{item.desc}</p>
@@ -963,7 +963,7 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
           { value: "Free", label: "No card needed" },
         ].map((item) => (
           <div key={item.label} style={{ textAlign: "center" }}>
-            <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: c.gilt, display: "block", marginBottom: 2 }}>{item.value}</span>
+            <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: T.indigo, display: "block", marginBottom: 2 }}>{item.value}</span>
             <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{item.label}</span>
           </div>
         ))}
@@ -1000,7 +1000,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         <div className="session-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 16 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "rgba(180,83,9,0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.indigo, background: "oklch(0.359 0.135 278.697 / 0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
               <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>{session.dateLabel} · {session.duration}</span>
             </div>
             <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>{session.role}</h2>
@@ -1064,9 +1064,9 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {session.transcript.map((msg, i) => (
             <div key={i} style={{ display: "flex", gap: 12, flexDirection: msg.speaker === "user" ? "row-reverse" : "row" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: msg.speaker === "ai" ? "rgba(180,83,9,0.1)" : "rgba(21,128,61,0.1)", border: `1px solid ${msg.speaker === "ai" ? "rgba(180,83,9,0.2)" : "rgba(21,128,61,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: msg.speaker === "ai" ? "oklch(0.359 0.135 278.697 / 0.1)" : "rgba(21,128,61,0.1)", border: `1px solid ${msg.speaker === "ai" ? "oklch(0.359 0.135 278.697 / 0.2)" : "rgba(21,128,61,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {msg.speaker === "ai" ? (
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
                 ) : (
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 )}

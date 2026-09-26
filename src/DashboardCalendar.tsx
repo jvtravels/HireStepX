@@ -95,7 +95,7 @@ function Card({ children, pad = 24, style }: { children: React.ReactNode; pad?: 
   );
 }
 
-function Eyebrow({ children, color = c.gilt }: { children: React.ReactNode; color?: string }) {
+function Eyebrow({ children, color = T.indigo }: { children: React.ReactNode; color?: string }) {
   return (
     <span style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 1.1, textTransform: "uppercase", color }}>
       {children}
@@ -116,7 +116,7 @@ function Field({ label, htmlFor, required, children }: { label: string; htmlFor?
   return (
     <div>
       <label htmlFor={htmlFor} style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 7 }}>
-        {label}{required && <span style={{ color: c.gilt }}> *</span>}
+        {label}{required && <span style={{ color: T.indigo }}> *</span>}
       </label>
       {children}
     </div>
@@ -216,7 +216,7 @@ function buildRunway(interview: InterviewEvent, all: InterviewEvent[]): RunwayNo
 function nodeVisual(state: RunwayState) {
   switch (state) {
     case "done": return { ring: c.sage, fill: c.sageLight, fg: c.sage };
-    case "active": return { ring: c.gilt, fill: T.copper100, fg: c.gilt };
+    case "active": return { ring: T.indigo, fill: T.indigo100, fg: T.indigo };
     case "anchor": return { ring: c.slate, fill: c.slateLight, fg: c.slate };
     default: return { ring: c.borderHover, fill: c.graphite, fg: c.stone };
   }
@@ -245,9 +245,9 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
     <div style={{ background: c.carbon, border: `1px solid ${c.border}`, borderRadius: radius.lg, boxShadow: shadow.md, padding: sp["2xl"], fontFamily: font.ui }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.lg, gap: sp.md, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: sp.sm }}>
-          <span style={{ color: c.gilt, display: "flex" }}><Icon size={16}>{I.sparkle}</Icon></span>
-          <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
-          {hasPrep && <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder}>{nodes.length - 1} sessions</Pill>}
+          <span style={{ color: T.indigo, display: "flex" }}><Icon size={16}>{I.sparkle}</Icon></span>
+          <h2 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
+          {hasPrep && <Pill bg={T.indigo100} fg={T.indigoDeep} bd={T.indigoRing}>{nodes.length - 1} sessions</Pill>}
         </div>
         <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, letterSpacing: 0.3 }}>
           Mock-session countdown
@@ -256,7 +256,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
 
       {hasPrep ? (
         <div style={{ position: "relative", display: "flex", gap: sp.md, overflowX: "auto", paddingBottom: 4 }}>
-          <div style={{ position: "absolute", top: 17, left: 28, right: 28, height: 2, background: `linear-gradient(90deg, ${c.sage} 0%, ${c.gilt} 45%, ${c.border} 70%)`, borderRadius: 2 }} />
+          <div style={{ position: "absolute", top: 17, left: 28, right: 28, height: 2, background: `linear-gradient(90deg, ${c.sage} 0%, ${T.indigo} 45%, ${c.border} 70%)`, borderRadius: 2 }} />
           {nodes.map((n) => {
             const v = nodeVisual(n.state);
             return (
@@ -290,7 +290,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
       )}
 
       <div style={{ marginTop: sp.lg, paddingTop: sp.md, borderTop: `1px solid ${c.borderSubtle}`, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: c.stone, fontFamily: font.ui }}>
-        <span style={{ color: c.gilt, display: "flex" }}><Icon size={13}>{I.sparkle}</Icon></span>
+        <span style={{ color: T.indigo, display: "flex" }}><Icon size={13}>{I.sparkle}</Icon></span>
         Plan adapts to your scores and skill-decay. Sessions count against your plan quota.
       </div>
     </div>
@@ -325,7 +325,7 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.md }}>
-        <h2 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>{monthLabel}</h2>
+        <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>{monthLabel}</h2>
         <div style={{ display: "flex", gap: 2 }}>
           {[
             { label: "Previous month", d: "M15 6l-6 6 6 6", go: () => setViewDate(new Date(year, month - 1, 1)) },
@@ -357,7 +357,7 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
                 aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 borderRadius: radius.sm, fontFamily: font.mono, fontSize: 11.5, fontWeight: isToday ? 700 : 400,
                 color: isToday ? c.carbon : hasEvent ? c.ivory : c.chalk,
-                background: isToday ? c.gilt : isFocused ? T.copper100 : hasEvent ? T.copper100Soft : "transparent",
+                background: isToday ? T.indigo : isFocused ? T.indigo100 : hasEvent ? "oklch(0.359 0.135 278.697 / 0.12)" : "transparent",
                 border: "none", cursor: hasEvent ? "pointer" : "default", position: "relative",
               }}>
               {d}
@@ -734,11 +734,11 @@ export default function CalendarPage() {
     transition: "border-color 0.18s ease, box-shadow 0.18s ease",
   };
 
-  // App-standard form focus: copper border + soft copper ring (mirrors the
+  // App-standard form focus: indigo border + soft indigo ring (mirrors the
   // settingsSections focusIn/focusOut treatment used across the product).
   const fieldFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.currentTarget.style.borderColor = T.copper;
-    e.currentTarget.style.boxShadow = `0 0 0 3px ${T.copper100}`;
+    e.currentTarget.style.borderColor = T.indigo;
+    e.currentTarget.style.boxShadow = `0 0 0 3px ${T.indigo100}`;
   };
   const fieldBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     e.currentTarget.style.borderColor = c.borderHover;
@@ -783,7 +783,7 @@ export default function CalendarPage() {
       <div className="cpr-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.xl, marginBottom: sp["2xl"] }}>
         <div>
           <Eyebrow>Interview Readiness</Eyebrow>
-          <h1 style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>Calendar</h1>
+          <h1 style={{ fontFamily: font.ui, fontSize: 30, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>Calendar</h1>
           <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
             Every interview you log becomes a prep plan, not just a date.
           </p>
@@ -801,9 +801,9 @@ export default function CalendarPage() {
           {upcoming.map((ev) => {
             const on = focused?.id === ev.id;
             return (
-              <button key={ev.id} className="cpr-tap" aria-pressed={on} onClick={() => setFocusedId(ev.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, background: on ? c.carbon : "transparent", border: `1px solid ${on ? T.copperBorder : c.border}`, borderRadius: radius.md, padding: "10px 16px", cursor: "pointer", boxShadow: on ? shadow.sm : "none", transition: `background-color 0.15s ${ease.out}, border-color 0.15s ${ease.out}` }}>
+              <button key={ev.id} className="cpr-tap" aria-pressed={on} onClick={() => setFocusedId(ev.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, background: on ? c.carbon : "transparent", border: `1px solid ${on ? T.indigoRing : c.border}`, borderRadius: radius.md, padding: "10px 16px", cursor: "pointer", boxShadow: on ? shadow.sm : "none", transition: `background-color 0.15s ${ease.out}, border-color 0.15s ${ease.out}` }}>
                 <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>{ev.company || ev.title}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? c.gilt : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
               </button>
             );
           })}
@@ -831,7 +831,7 @@ export default function CalendarPage() {
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "24px 28px 18px", borderBottom: `1px solid ${c.borderSubtle}` }}>
               <div>
                 <Eyebrow>{editingId ? "Edit" : "New"}</Eyebrow>
-                <h3 id="cal-modal-title" style={{ fontFamily: font.display, fontSize: 23, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
+                <h3 id="cal-modal-title" style={{ fontFamily: font.ui, fontSize: 23, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
               </div>
               <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} aria-label="Close" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 6, marginTop: 2, display: "flex", borderRadius: radius.sm }}>
                 <Icon size={20}>{I.x}</Icon>
@@ -844,7 +844,7 @@ export default function CalendarPage() {
               {!editingId && (
                 <div>
                   <label htmlFor="cal-quick" style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
-                    <span style={{ color: c.gilt, display: "flex" }}><Icon size={12}>{I.sparkle}</Icon></span> Quick add
+                    <span style={{ color: T.indigo, display: "flex" }}><Icon size={12}>{I.sparkle}</Icon></span> Quick add
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input id="cal-quick" value={formQuickAdd} onChange={(e) => setFormQuickAdd(e.target.value)}
@@ -882,9 +882,9 @@ export default function CalendarPage() {
                     return (
                       <button key={t} className="cpr-tap" aria-pressed={on} onClick={() => setFormType(on ? "" : t)} style={{
                         fontFamily: font.ui, fontSize: 12, fontWeight: 500, padding: "6px 13px", borderRadius: radius.pill, cursor: "pointer",
-                        background: on ? T.copper100Soft : "transparent",
-                        border: `1px solid ${on ? c.gilt : c.border}`,
-                        color: on ? c.gilt : c.stone, transition: `all 0.2s ${ease.out}`,
+                        background: on ? "oklch(0.359 0.135 278.697 / 0.12)" : "transparent",
+                        border: `1px solid ${on ? T.indigo : c.border}`,
+                        color: on ? T.indigo : c.stone, transition: `all 0.2s ${ease.out}`,
                       }}>{t}</button>
                     );
                   })}
@@ -923,7 +923,7 @@ export default function CalendarPage() {
                   the candidate-local equivalent, and warn on awkward home hours */}
               {showDualTime && candidateLocalLabel && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.chalk, background: c.graphite, border: `1px solid ${c.borderSubtle}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui }}>
-                  <Icon size={14} stroke={c.gilt}>{I.globe}</Icon>
+                  <Icon size={14} stroke={T.indigo}>{I.globe}</Icon>
                   That is <strong style={{ color: c.ivory, fontWeight: 600 }}>{candidateLocalLabel}</strong> your time in {timezoneLabel(candidateTz)}.
                 </div>
               )}
@@ -966,7 +966,7 @@ export default function CalendarPage() {
                   interview auto-schedules the mock countdown */}
               {!editingId && (
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11.5, color: c.stone, fontFamily: font.ui, lineHeight: 1.45 }}>
-                  <span style={{ color: c.gilt, display: "flex", marginTop: 1 }}><Icon size={13}>{I.sparkle}</Icon></span>
+                  <span style={{ color: T.indigo, display: "flex", marginTop: 1 }}><Icon size={13}>{I.sparkle}</Icon></span>
                   Saving schedules a Prep Runway: an adaptive countdown of mock sessions mapped back from this date. Sessions count against your plan quota.
                 </div>
               )}
@@ -1003,8 +1003,8 @@ export default function CalendarPage() {
 
           <Card pad={20}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
-              <Icon size={15} stroke={c.gilt}>{I.bell}</Icon>
-              <h2 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
+              <Icon size={15} stroke={T.indigo}>{I.bell}</Icon>
+              <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
             </div>
             {focused ? (
               <>
@@ -1049,15 +1049,15 @@ export default function CalendarPage() {
           {focused ? (
             <>
               {/* interview hero card */}
-              <Card pad={24} style={{ borderColor: T.copperBorder }}>
+              <Card pad={24} style={{ borderColor: T.indigoRing }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.lg, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", gap: sp.md }}>
-                    <div style={{ width: 52, height: 52, borderRadius: radius.md, background: c.graphite, border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.display, fontSize: 24, color: c.gilt, flexShrink: 0 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: radius.md, background: c.graphite, border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.ui, fontSize: 24, color: T.indigo, flexShrink: 0 }}>
                       {(focused.company || focused.title || "?").charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: 3, flexWrap: "wrap" }}>
-                        <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>
+                        <h2 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>
                           {heroName}
                         </h2>
                         <Pill bg={c.slateLight} fg={c.slate}>{heroRound || "Interview"}</Pill>
@@ -1065,16 +1065,16 @@ export default function CalendarPage() {
                       {heroSub && <div style={{ fontSize: 13, color: c.chalk, fontFamily: font.ui }}>{heroSub}</div>}
                     </div>
                   </div>
-                  <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder} icon={<Icon size={11}>{I.clock}</Icon>}>{countdownLabel(focused)}</Pill>
+                  <Pill bg={T.indigo100} fg={T.indigoDeep} bd={T.indigoRing} icon={<Icon size={11}>{I.clock}</Icon>}>{countdownLabel(focused)}</Pill>
                 </div>
 
                 {/* time + zone */}
                 <div style={{ marginTop: sp.lg, display: "flex", alignItems: "center", gap: sp.lg, padding: "14px 16px", background: c.graphite, borderRadius: radius.md, border: `1px solid ${c.borderSubtle}` }}>
-                  <Icon size={18} stroke={c.gilt}>{I.globe}</Icon>
+                  <Icon size={18} stroke={T.indigo}>{I.globe}</Icon>
                   <div>
                     <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>
                       {formatEventDate(focused.date)} · {formatEventTime(focused.time)}
-                      {heroLocalLabel && <span style={{ color: c.gilt, fontWeight: 500 }}> ({heroLocalLabel} your time)</span>}
+                      {heroLocalLabel && <span style={{ color: T.indigo, fontWeight: 500 }}> ({heroLocalLabel} your time)</span>}
                     </div>
                     <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{timezoneLabel(focused.timezone || heroTz)} · {focused.duration} min{focused.location ? ` · ${focused.location}` : ""}</div>
                   </div>
@@ -1119,7 +1119,7 @@ export default function CalendarPage() {
               <div style={{ color: c.stone, display: "flex", justifyContent: "center", marginBottom: 12, opacity: 0.5 }}>
                 <Icon size={40} sw={1.3}>{I.cal}</Icon>
               </div>
-              <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: "0 0 6px" }}>No upcoming interviews</h2>
+              <h2 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 400, color: c.ivory, margin: "0 0 6px" }}>No upcoming interviews</h2>
               <p style={{ fontSize: 13, color: c.chalk, margin: "0 auto 18px", maxWidth: 360, lineHeight: 1.5 }}>
                 Add your interview schedule to get countdown reminders and an adaptive Prep Runway of mock sessions.
               </p>
@@ -1134,7 +1134,7 @@ export default function CalendarPage() {
             <Card pad={20}>
               {past.length > 0 && (
                 <>
-                  <h3 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: "0 0 12px" }}>Past ({past.length})</h3>
+                  <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: "0 0 12px" }}>Past ({past.length})</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: cancelled.length > 0 ? 20 : 0 }}>
                     {past.map((ev) => (
                       <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
@@ -1151,7 +1151,7 @@ export default function CalendarPage() {
               )}
               {cancelled.length > 0 && (
                 <>
-                  <h3 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.stone, margin: "0 0 12px" }}>Cancelled ({cancelled.length})</h3>
+                  <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.stone, margin: "0 0 12px" }}>Cancelled ({cancelled.length})</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {cancelled.map((ev) => (
                       <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${c.borderSubtle}`, opacity: 0.6 }}>

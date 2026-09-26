@@ -198,7 +198,7 @@ function Sidebar({ active }: { active: string }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontFamily: f.serif,
+            fontFamily: f.sans,
             fontSize: 14,
             flexShrink: 0,
           }}
@@ -245,7 +245,7 @@ type Stage = "matching" | "review" | "interviewing" | "hired";
 
 const stageMeta: Record<Stage, { tone: "indigo" | "copper" | "violet" | "success"; label: string }> = {
   matching: { tone: "indigo", label: "Matching" },
-  review: { tone: "copper", label: "Review" },
+  review: { tone: "indigo", label: "Review" },
   interviewing: { tone: "violet", label: "Interviewing" },
   hired: { tone: "success", label: "Hired" },
 };
@@ -455,7 +455,7 @@ export default function OpportunitiesScreen() {
         <main style={{ flex: 1, padding: "32px 32px 40px", background: t.cream }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
             <div>
-              <h1 style={{ fontFamily: f.serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
+              <h1 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
                 Opportunities
               </h1>
               <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "6px 0 0" }}>

@@ -159,7 +159,7 @@ export function RequirementForm({
     <div style={{ maxWidth: 720, margin: "0 auto" }}>
       <Eyebrow tone="indigo">{mode === "create" ? "New requirement" : "Edit requirement"} · step {step} of 2</Eyebrow>
       <StepProgress step={step} />
-      <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 20px" }}>
+      <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "0 0 20px" }}>
         {step === 1 ? "Basic information" : "Preferences & perks"}
       </h1>
       <Card pad={24}>

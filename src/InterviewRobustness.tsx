@@ -36,7 +36,7 @@ export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, m
   const idealEndPct = (ideal.max / ceiling) * 100;
   const zone = seconds < ideal.min ? "early" : seconds <= ideal.max ? "ideal" : seconds <= ceiling ? "late" : "over";
   const labelMap = { early: "Take your time…", ideal: "Good pace", late: "Wrap it up", over: "Cut it short" } as const;
-  const tint = zone === "ideal" ? e.success : zone === "early" ? e.inkSoft : zone === "late" ? e.copper : e.error;
+  const tint = zone === "ideal" ? e.success : zone === "early" ? e.inkSoft : zone === "late" ? e.indigo : e.error;
   return (
     <div role="meter" aria-label="Answer length pace" aria-valuemin={0} aria-valuemax={ceiling} aria-valuenow={Math.round(seconds)} className="iv-pace-meter" style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", maxWidth: 280 }}>
       <div style={{ position: "relative", height: 4, background: "rgba(20,17,10,0.04)", borderRadius: 999, overflow: "hidden" }}>
@@ -105,10 +105,10 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
   return (
     <div role="alert" className="iv-mic-quiet" style={{
       display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 14px",
-      background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.25)",
+      background: "oklch(0.359 0.135 278.697 / 0.13)", border: "1px solid oklch(0.359 0.135 278.697 / 0.25)",
       borderRadius: 12, maxWidth: 460, marginTop: 8,
     }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
         <line x1="12" y1="19" x2="12" y2="23" />
@@ -175,14 +175,14 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           zIndex: 220, maxWidth: 480, width: "min(92%, calc(100vw - 32px))",
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px",
-          background: "rgba(180,83,9,0.14)",
-          border: "1px solid rgba(180,83,9,0.30)",
+          background: "oklch(0.359 0.135 278.697 / 0.14)",
+          border: "1px solid oklch(0.359 0.135 278.697 / 0.30)",
           borderRadius: 10,
           backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           boxShadow: "0 4px 16px rgba(20,17,10,0.10)",
         }}
       >
-        <ThinkingOrb state="connecting" size={20} color={resolveOrbColor(e.copper)} style={{ width: 14, height: 14, flexShrink: 0 }} />
+        <ThinkingOrb state="connecting" size={20} color={resolveOrbColor(e.indigo)} style={{ width: 14, height: 14, flexShrink: 0 }} />
         <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
           Reconnecting… your progress is safe (Q{questionPos} of {questionTotal}).
         </span>
@@ -204,13 +204,13 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
         padding: "32px 28px 24px", textAlign: "center",
       }}>
         <div style={{
-          width: 52, height: 52, borderRadius: "50%", background: "rgba(180,83,9,0.10)",
+          width: 52, height: 52, borderRadius: "50%", background: "oklch(0.359 0.135 278.697 / 0.10)",
           display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 16,
         }}>
-          <ThinkingOrb state="connecting" size={32} color={resolveOrbColor(e.copper)} style={{ width: 26, height: 26 }} />
+          <ThinkingOrb state="connecting" size={32} color={resolveOrbColor(e.indigo)} style={{ width: 26, height: 26 }} />
         </div>
         <h2 id="iv-reconnecting-title" style={{
-          margin: 0, fontFamily: ef.serif, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",
+          margin: 0, fontFamily: ef.sans, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",
         }}>
           Reconnecting…
         </h2>
@@ -227,7 +227,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           borderRadius: 999, fontFamily: ef.mono, fontSize: 10,
           textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft,
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: 999, background: e.copper }} />
+          <span style={{ width: 5, height: 5, borderRadius: 999, background: e.indigo }} />
           Attempt {attempt} of 5
         </div>
         {onPause && (
@@ -335,11 +335,11 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
         <h2
           id="iv-coachmark-title"
           style={{
-            margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
+            margin: 0, fontFamily: ef.sans, fontSize: 28, fontWeight: 400,
             lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
           }}
         >
-          A quick <em style={{ color: e.copper, fontStyle: "italic" }}>three things</em>.
+          A quick <em style={{ color: e.indigo, fontWeight: 600 }}>three things</em>.
         </h2>
         <p style={{
           margin: "8px 0 22px", fontFamily: ef.sans, fontSize: 13,

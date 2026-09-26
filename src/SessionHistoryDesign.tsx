@@ -21,8 +21,8 @@ type Variant = "list" | "detail" | "report" | "empty";
 /* Tokens reference CSS custom properties set at the root of every
    rendered branch. This indirection is the entire theming system:
    `theme="editorial"` paints the original cream-on-coal canvas surface,
-   `theme="hirestepx"` paints the production dark-luxury brand
-   (obsidian / graphite / ivory / gilt + Instrument Serif).
+   `theme="hirestepx"` paints the production clean SaaS brand
+   (indigo + Satoshi, restrained — no serif, no italics).
    The hundreds of `tok.X` / `fonts.X` reads downstream never change. */
 const tok = {
   cream: "var(--hsx-cream)",
@@ -65,8 +65,8 @@ const fonts = {
    Detail used to be 34; demoted to 32 so its real hero (the 72pt
    score numeral) is unambiguously the focal point. */
 const heading = {
-  hero: { fontFamily: fonts.serif, fontSize: 40, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 } as React.CSSProperties,
-  canonical: { fontFamily: fonts.serif, fontSize: 32, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 } as React.CSSProperties,
+  hero: { fontFamily: fonts.ui, fontSize: 40, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 } as React.CSSProperties,
+  canonical: { fontFamily: fonts.ui, fontSize: 32, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 } as React.CSSProperties,
 };
 
 /* Radii are tokenised so cards/buttons/chips/pills don't drift apart.
@@ -1046,33 +1046,33 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
       </div>
 
       {/* Body — identity, signature strip, compact win line, NEXT block. The
-          one-liner ✓ win + → NEXT (copper) treatment is uniform across bands
+          one-liner ✓ win + → NEXT (indigo) treatment is uniform across bands
           (no hero/secondary swap) so the strip stays the measured read and the
           NEXT block stays the prescription. Draft skips the body entirely. */}
       {s.draft ? (
         <div style={{ padding: "16px 22px 18px" }}>
           <div style={{
-            fontFamily: fonts.serif, fontSize: 22, color: tok.coal,
+            fontFamily: fonts.ui, fontSize: 22, color: tok.coal,
             lineHeight: 1.2, letterSpacing: -0.2,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             marginBottom: 8,
           }}>
-            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontStyle: "italic" }}>at</span> {s.company}</>) : null}
+            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontWeight: 600 }}>at</span> {s.company}</>) : null}
           </div>
-          <div style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: tok.inkSoft }}>
+          <div style={{ fontFamily: fonts.ui, fontWeight: 600, fontSize: 15, color: tok.inkSoft }}>
             Saved mid-round, ready to continue.
           </div>
         </div>
       ) : (
         <div style={{ padding: "15px 22px 16px", display: "flex", flexDirection: "column", gap: 13 }}>
-          {/* Identity — the one editorial note. Serif "Role at Company", italic
-              "at" connector. No sub-line; metadata lives in the header strip. */}
+          {/* Identity — "Role at Company", weighted "at" connector. No
+              sub-line; metadata lives in the header strip. */}
           <div style={{
-            fontFamily: fonts.serif, fontSize: 22, color: tok.coal,
+            fontFamily: fonts.ui, fontSize: 22, color: tok.coal,
             lineHeight: 1.15, letterSpacing: -0.2,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
-            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontStyle: "italic" }}>at</span> {s.company}</>) : null}
+            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontWeight: 600 }}>at</span> {s.company}</>) : null}
           </div>
 
           {/* Signature strip — the focus's pinned instrument panel, when the
@@ -1093,15 +1093,15 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
             </div>
           ) : null}
 
-          {/* Next — the single fix in copper. Bold headline + plain-prose
+          {/* Next — the single fix in indigo. Bold headline + plain-prose
               example below. The card's one actionable line. */}
           {gapHeadline ? (
             <div style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: 8 }}>
-              <span aria-hidden style={{ color: tok.copper, fontSize: 13, fontWeight: 700, paddingTop: 1 }}>→</span>
+              <span aria-hidden style={{ color: tok.indigo, fontSize: 13, fontWeight: 700, paddingTop: 1 }}>→</span>
               <div style={{ minWidth: 0 }}>
                 <span style={{
                   fontFamily: fonts.ui, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em",
-                  textTransform: "uppercase", color: tok.copper, marginRight: 8,
+                  textTransform: "uppercase", color: tok.indigo, marginRight: 8,
                 }}>Next</span>
                 <span style={{ fontFamily: fonts.ui, fontSize: 13.5, fontWeight: 700, color: tok.coal }}>{gapHeadline}</span>
                 {gapExample ? (
@@ -1124,7 +1124,7 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
         padding: "13px 22px 15px", borderTop: `1px solid ${tok.line}`, gap: 12,
       }}>
         <span style={{
-          fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.copper,
+          fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.indigo,
           letterSpacing: 0.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           {!s.draft && patternCount && patternCount >= 2
@@ -1265,7 +1265,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
      same coach note twice in a row, so the gap is *recurring*, not
      incidental. The most-recent occurrence is the one to act on;
      older recurrences stay quiet so the list doesn't flood with
-     copper hints. */
+     indigo hints. */
   const dueIds = React.useMemo(() => {
     const due = new Set<string>();
     const byType: Record<string, Session[]> = {};
@@ -1441,8 +1441,8 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
   return (
     <div className="hsx-pad" style={{ padding: "40px 56px", maxWidth: 1200 }}>
       {/* Hero atoms aligned to DashboardHome: mono eyebrow (11px / 500 /
-         letterSpacing 0.8 / inkSoft), serif h1 with the clamp scale and
-         weight 400 the rest of the dashboard uses, copper-italic accent
+         letterSpacing 0.8 / inkSoft), sans h1 with the clamp scale and
+         weight 400 the rest of the dashboard uses, indigo weighted accent
          inside the headline, and 15px body copy capped at 560 to match
          "Welcome back" rhythm. Anything different from that here reads
          as a foreign surface even when the palette matches. */}
@@ -1450,11 +1450,11 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
         <div style={{ minWidth: 0 }}>
           <span style={{ display: "inline-block", fontFamily: fonts.mono, fontSize: 11, fontWeight: 500, color: tok.inkSoft, letterSpacing: 0.8, textTransform: "uppercase" }}>Sessions</span>
           <h1 style={{
-            fontFamily: fonts.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400,
+            fontFamily: fonts.ui, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400,
             lineHeight: 1.1, letterSpacing: "-0.02em", color: tok.coal,
             margin: "8px 0 6px",
           }}>
-            Your <em style={{ fontStyle: "italic", fontWeight: 400, color: tok.copper }}>practice log</em>.
+            Your <em style={{ fontStyle: "normal", fontWeight: 600, color: tok.indigo }}>practice log</em>.
           </h1>
           <p style={{ fontFamily: fonts.ui, fontSize: 15, color: tok.inkSoft, margin: 0, maxWidth: 560, lineHeight: 1.55 }}>
             Every mock interview, scored and stored. Open any row to revisit.
@@ -1509,16 +1509,15 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
           { label: "Practice hours",  value: hours,          hint: "Goal: 8h / month" },
         ]).map(k => (
           /* KPI cell aligned to DashboardHome's stat treatment:
-             mono Eyebrow (11/500/0.8) → serif numeral (editorial,
-             not heavy mono) → 13px hint. Lighter borders, softer
-             rhythm — matches the recent-sessions panel idiom rather
-             than the dark-luxury "metric tile" pattern. */
+             mono Eyebrow (11/500/0.8) → sans numeral → 13px hint.
+             Lighter borders, softer rhythm — matches the recent-sessions
+             panel idiom rather than a heavy "metric tile" pattern. */
           <div key={k.label} style={{
             padding: "16px 18px", background: tok.white,
             border: `1px solid ${tok.line}`, borderRadius: radii.card,
           }}>
             <div style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkSoft, fontWeight: 500, letterSpacing: 0.8, textTransform: "uppercase" }}>{k.label}</div>
-            <div style={{ fontFamily: fonts.serif, fontSize: 30, fontWeight: 400, marginTop: 6, color: tok.coal, lineHeight: 1.05, letterSpacing: "-0.01em" }}>{k.value}</div>
+            <div style={{ fontFamily: fonts.ui, fontSize: 30, fontWeight: 400, marginTop: 6, color: tok.coal, lineHeight: 1.05, letterSpacing: "-0.01em" }}>{k.value}</div>
             <div style={{ fontFamily: fonts.ui, fontSize: 13, color: tok.inkSoft, marginTop: 6, lineHeight: 1.4 }}>{k.hint}</div>
           </div>
         ))}
@@ -1543,9 +1542,9 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             aria-pressed={showDrafts}
             style={{
               borderRadius: radii.chip,
-              background: showDrafts ? tok.copperSoft : "transparent",
-              borderColor: showDrafts ? tok.copper : tok.line,
-              color: showDrafts ? tok.copper : tok.inkSoft,
+              background: showDrafts ? tok.indigo100 : "transparent",
+              borderColor: showDrafts ? tok.indigo : tok.line,
+              color: showDrafts ? tok.indigo : tok.inkSoft,
               fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
             }}>
             {showDrafts ? "Showing" : "Hiding"} {draftCount} draft{draftCount === 1 ? "" : "s"}
@@ -1628,8 +1627,8 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
          showing nothing under the filter bar. */}
       {showingFiltered && filtered.length === 0 && (
         <div style={{ padding: "48px 24px", textAlign: "center", background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card }}>
-          <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>No matches</div>
-          <div style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, color: tok.coal, marginBottom: 6 }}>Nothing here.</div>
+          <div style={{ fontSize: 11, color: tok.indigo, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>No matches</div>
+          <div style={{ fontFamily: fonts.ui, fontWeight: 600, fontSize: 18, color: tok.coal, marginBottom: 6 }}>Nothing here.</div>
           <div style={{ fontSize: 13, color: tok.inkSoft, marginBottom: 14 }}>Drop a filter or clear the search to see more.</div>
           <Button
             type="button"
@@ -1644,7 +1643,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
       {groups.map(g => (
         <section key={g.label} style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 16, color: tok.indigo, fontWeight: 500 }}>{g.label}</span>
+            <span style={{ fontFamily: fonts.ui, fontSize: 16, color: tok.indigo, fontWeight: 600 }}>{g.label}</span>
             <span style={{ height: 1, background: tok.line, flex: 1 }} />
             <span style={{ fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono }}>{g.items.length}</span>
           </div>
@@ -1787,7 +1786,7 @@ function DetailView({
         }}>
           <h1 style={{
             margin: 0,
-            fontFamily: fonts.serif,
+            fontFamily: fonts.ui,
             fontSize: "clamp(30px, 5vw, 44px)",
             fontWeight: 400, lineHeight: 1.1,
             letterSpacing: "-0.02em", color: tok.coal,
@@ -1795,7 +1794,7 @@ function DetailView({
             {s.role}
             {s.company ? (
               <>
-                <em style={{ fontStyle: "italic", color: tok.copper, fontWeight: 400 }}> at </em>
+                <em style={{ fontStyle: "normal", color: tok.indigo, fontWeight: 600 }}> at </em>
                 <span style={{ color: tok.coal }}>{s.company}</span>
               </>
             ) : null}
@@ -1805,7 +1804,7 @@ function DetailView({
             alignItems: "flex-end", gap: 2, flexShrink: 0,
           }}>
             <span style={{
-              fontFamily: fonts.serif, fontSize: 56,
+              fontFamily: fonts.ui, fontSize: 56,
               color: tok.coal, lineHeight: 1, fontWeight: 400,
               fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
             }}>{s.score}</span>
@@ -1824,8 +1823,8 @@ function DetailView({
           gap: 14, flexWrap: "wrap", marginBottom: 22,
         }}>
           <span style={{
-            fontFamily: fonts.serif, fontStyle: "italic",
-            fontSize: 18, color: tok.coal, fontWeight: 400,
+            fontFamily: fonts.ui, fontWeight: 600,
+            fontSize: 18, color: tok.coal,
             display: "inline-flex", alignItems: "center",
           }}>
             {BAND_LABEL[bandOf(s.score)]}
@@ -1964,7 +1963,7 @@ function DetailView({
                   color: tok.inkSoft, letterSpacing: "0.14em", textTransform: "uppercase",
                 }}>{b.label}</span>
                 <span style={{
-                  fontFamily: fonts.serif, fontSize: 22, fontWeight: 400,
+                  fontFamily: fonts.ui, fontSize: 22, fontWeight: 400,
                   color: tok.coal, fontVariantNumeric: "tabular-nums", lineHeight: 1,
                 }}>{b.score}</span>
               </div>
@@ -1981,10 +1980,10 @@ function DetailView({
         </div>
       </header>
 
-      {/* Tabs — copper italic underline on active, no hard coal bar.
-         The active state reads as an editor's mark on the page rather
-         than a dashboard tab pill. Inactive tabs stay in inkSoft mono
-         so they read as catalog labels. */}
+      {/* Tabs — indigo underline on active, no hard coal bar. The active
+         state reads as a quiet current-page mark rather than a dashboard
+         tab pill. Inactive tabs stay in inkSoft mono so they read as
+         catalog labels. */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as DetailTab)}>
       <TabsList variant="line" style={{
         display: "flex", gap: 32, height: "auto", background: "transparent", padding: 0,
@@ -2000,13 +1999,12 @@ function DetailView({
               style={{
                 padding: "12px 0", background: "transparent", boxShadow: "none",
                 borderBottom: isActive
-                  ? `1px solid ${tok.copper}`
+                  ? `1px solid ${tok.indigo}`
                   : "1px solid transparent",
                 marginBottom: -1,
-                fontFamily: isActive ? fonts.serif : fonts.mono,
-                fontStyle: isActive ? "italic" : "normal",
+                fontFamily: isActive ? fonts.ui : fonts.mono,
                 color: isActive ? tok.coal : tok.inkSoft,
-                fontWeight: isActive ? 400 : 600,
+                fontWeight: 600,
                 fontSize: isActive ? 16 : 11,
                 letterSpacing: isActive ? "0" : "0.12em",
                 textTransform: isActive ? "none" : "uppercase",
@@ -2047,7 +2045,7 @@ function DetailView({
                 <div style={{ minWidth: 0 }}>
                   <p style={{
                     margin: 0,
-                    fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
+                    fontFamily: fonts.ui, fontSize: 18, fontWeight: 400,
                     color: tok.coal, lineHeight: 1.35,
                     letterSpacing: "-0.005em",
                     marginBottom: 6,
@@ -2063,7 +2061,7 @@ function DetailView({
                   alignItems: "flex-end", gap: 2, minWidth: 60,
                 }}>
                   <span style={{
-                    fontFamily: fonts.serif, fontSize: 28, fontWeight: 400,
+                    fontFamily: fonts.ui, fontSize: 28, fontWeight: 400,
                     color, lineHeight: 1, fontVariantNumeric: "tabular-nums",
                   }}>{q.score}</span>
                   <span style={{
@@ -2077,9 +2075,9 @@ function DetailView({
         </div>
       ) : tab === "Transcript" && s.transcript && s.transcript.length > 0 ? (
         /* Transcript as chronicle turns: hairline between speakers,
-           mono uppercase speaker tag, serif body so the text reads
-           like a verbatim record. Coach annotation in copper italic
-           under the turn it belongs to. */
+           mono uppercase speaker tag, sans body so the text reads
+           like a verbatim record. Coach annotation in indigo weighted
+           text under the turn it belongs to. */
         <div style={{ display: "flex", flexDirection: "column", maxWidth: "68ch" }}>
           {s.transcript.map((line, i) => (
             <div key={i} style={{
@@ -2095,13 +2093,13 @@ function DetailView({
               </div>
               <p style={{
                 margin: 0,
-                fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
+                fontFamily: fonts.ui, fontSize: 18, fontWeight: 400,
                 color: tok.coal, lineHeight: 1.55,
               }}>{line.text}</p>
               {line.scoreNote && (
                 <p style={{
                   margin: "10px 0 0",
-                  fontFamily: fonts.serif, fontStyle: "italic",
+                  fontFamily: fonts.ui, fontWeight: 600,
                   fontSize: 14, color: tok.copper, lineHeight: 1.5,
                 }}>
                   — {line.scoreNote}
@@ -2111,16 +2109,16 @@ function DetailView({
           ))}
         </div>
       ) : tab === "Coach notes" && s.feedback ? (
-        /* Coach notes as a written column: copper eyebrow, serif body,
+        /* Coach notes as a written column: indigo eyebrow, sans body,
            65ch cap. No card chrome — it's prose, not a UI module. */
         <div style={{ maxWidth: "65ch" }}>
           <div style={{
             fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
-            color: tok.copper, letterSpacing: "0.14em",
+            color: tok.indigo, letterSpacing: "0.14em",
             textTransform: "uppercase", marginBottom: 14,
           }}>Coach notes</div>
           <div style={{
-            fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
+            fontFamily: fonts.ui, fontSize: 18, fontWeight: 400,
             color: tok.coal, lineHeight: 1.7, whiteSpace: "pre-wrap",
           }}>{s.feedback}</div>
         </div>
@@ -2131,11 +2129,11 @@ function DetailView({
         <div style={{ padding: "32px 0 12px", maxWidth: "60ch" }}>
           <div style={{
             fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
-            color: tok.copper, letterSpacing: "0.14em",
+            color: tok.indigo, letterSpacing: "0.14em",
             textTransform: "uppercase", marginBottom: 10,
           }}>Coming next</div>
           <div style={{
-            fontFamily: fonts.serif, fontStyle: "italic",
+            fontFamily: fonts.ui, fontWeight: 600,
             fontSize: 22, color: tok.coal, marginBottom: 10,
             lineHeight: 1.2, letterSpacing: "-0.01em",
           }}>{tab}</div>
@@ -2187,9 +2185,9 @@ function ReportView({ onBack }: { onBack: () => void }) {
       {/* Cover */}
       <div style={{ background: tok.indigoDeep, color: tok.cream, borderRadius: radii.hero, padding: "40px 44px", marginBottom: 24, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 240, height: 240, borderRadius: radii.pill, background: "rgba(244,229,216,0.06)" }} />
-        <div style={{ fontSize: 11, color: tok.copper100, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 14 }}>HireStepX · Session Report</div>
+        <div style={{ fontSize: 11, color: tok.indigo100, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 14 }}>HireStepX · Session Report</div>
         <h1 style={heading.hero}>
-          Arjun is <em style={{ color: tok.copper100, fontStyle: "italic" }}>interview-ready</em><br />for Razorpay PM, round one.
+          Arjun is <em style={{ color: tok.indigo100, fontStyle: "normal", fontWeight: 600 }}>interview-ready</em><br />for Razorpay PM, round one.
         </h1>
         <div style={{ display: "flex", gap: 24, marginTop: 24, alignItems: "end" }}>
           <div>
@@ -2263,8 +2261,8 @@ function ReportView({ onBack }: { onBack: () => void }) {
           </svg>
         </div>
         <div style={{ padding: 24, background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.cardLg }}>
-          <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Coached model answer · Q3 conflict</div>
-          <div style={{ fontFamily: fonts.serif, fontSize: 18, fontStyle: "italic", color: tok.indigo, marginBottom: 14, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 11, color: tok.indigo, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Coached model answer · Q3 conflict</div>
+          <div style={{ fontFamily: fonts.ui, fontSize: 18, fontWeight: 600, color: tok.indigo, marginBottom: 14, lineHeight: 1.4 }}>
             “Frame the disagreement as a goal, not a person.”
           </div>
           <p style={{ fontSize: 14, color: tok.coal, lineHeight: 1.65, marginBottom: 10 }}>
@@ -2282,30 +2280,30 @@ function ReportView({ onBack }: { onBack: () => void }) {
       {/* Next CTA */}
       <div style={{ padding: 22, background: tok.coal, color: tok.cream, borderRadius: radii.cardLg, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontFamily: fonts.serif, fontSize: 22, fontStyle: "italic", lineHeight: 1.2, color: tok.copper100 }}>Next move</div>
+          <div style={{ fontFamily: fonts.ui, fontSize: 22, fontWeight: 600, lineHeight: 1.2, color: tok.indigo100 }}>Next move</div>
           <div style={{ fontSize: 14, marginTop: 4 }}>System Design, Razorpay round 2. Suggested for Friday.</div>
         </div>
-        <Button type="button" style={{ background: tok.copper, color: tok.cream, fontSize: 13, fontWeight: 700 }}>Schedule next session →</Button>
+        <Button type="button" style={{ background: tok.indigo, color: tok.cream, fontSize: 13, fontWeight: 700 }}>Schedule next session →</Button>
       </div>
     </div>
   );
 }
 
 /* ─── Empty state ───
-   Aligned to DashboardHome's hero rhythm: mono Eyebrow → serif clamp
-   h1 weight 400 with copper italic accent → 15px body. Primary CTA
+   Aligned to DashboardHome's hero rhythm: mono Eyebrow → sans clamp
+   h1 weight 400 with indigo weighted accent → 15px body. Primary CTA
    is the indigo brand button (radius 12, weight 600, arrow-right,
    minHeight 44). Secondary lives as a quiet text affordance below. */
 function EmptyView({ onStart }: { onStart: () => void }) {
   return (
     <div className="hsx-pad-empty" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 80px)", padding: "40px 56px", maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-      <div style={{ width: 88, height: 88, borderRadius: radii.pill, background: tok.copperSoft, color: tok.copper, display: "grid", placeItems: "center", fontSize: 36, margin: "0 auto 28px" }}>◷</div>
+      <div style={{ width: 88, height: 88, borderRadius: radii.pill, background: tok.indigo100, color: tok.indigo, display: "grid", placeItems: "center", fontSize: 36, margin: "0 auto 28px" }}>◷</div>
       <span style={{ display: "inline-block", fontFamily: fonts.mono, fontSize: 11, fontWeight: 500, color: tok.inkSoft, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>No sessions yet</span>
       <h1 style={{
-        fontFamily: fonts.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400,
+        fontFamily: fonts.ui, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400,
         lineHeight: 1.1, letterSpacing: "-0.02em", color: tok.coal, margin: "8px 0 6px",
       }}>
-        Your <em style={{ fontStyle: "italic", fontWeight: 400, color: tok.copper }}>practice log</em> starts here.
+        Your <em style={{ fontStyle: "normal", fontWeight: 600, color: tok.indigo }}>practice log</em> starts here.
       </h1>
       <p style={{ fontFamily: fonts.ui, fontSize: 15, color: tok.inkSoft, marginTop: 14, lineHeight: 1.6, maxWidth: 560, marginLeft: "auto", marginRight: "auto" }}>
         Every round you take with HireStepX gets recorded, scored, and turned into a shareable report.
@@ -2383,9 +2381,9 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
         }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sessions</div>
+            <div style={{ fontSize: 11, color: tok.indigo, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sessions</div>
             <DialogTitle asChild>
-              <h2 style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0 }}>
+              <h2 style={{ fontFamily: fonts.ui, fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0 }}>
                 Keys, actions, and bands.
               </h2>
             </DialogTitle>
@@ -2412,7 +2410,7 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {bands.map(b => (
               <div key={b.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 0" }}>
-                <span style={{ fontFamily: fonts.serif, fontSize: 14, color: tok.coal, fontWeight: 600, minWidth: 64 }}>
+                <span style={{ fontFamily: fonts.ui, fontSize: 14, color: tok.coal, fontWeight: 600, minWidth: 64 }}>
                   {BAND_LABEL[b.name]}
                 </span>
                 <span style={{ fontFamily: fonts.mono, fontSize: 11, padding: "2px 8px", background: tok.creamSoft, border: `1px solid ${tok.line}`, borderRadius: radii.chip, color: tok.inkSoft }}>
@@ -2467,8 +2465,8 @@ function UndoToast({ message, onUndo, onDismiss }: { message: string; onUndo: ()
         size="sm"
         onClick={onUndo}
         style={{
-          borderColor: tok.copper,
-          color: tok.copper100, borderRadius: radii.chip,
+          borderColor: tok.indigo,
+          color: tok.indigo100, borderRadius: radii.chip,
           fontWeight: 700, fontSize: 12, fontFamily: fonts.ui,
         }}>Undo</Button>
       <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, minWidth: 16, textAlign: "right" }}>
@@ -2497,8 +2495,8 @@ export interface SessionHistoryDesignProps {
      provides a sidebar — otherwise the user sees two stacked rails. */
   embedded?: boolean;
   /* Theme palette. "editorial" (default) renders the canvas cream-on-
-     coal register; "hirestepx" renders the production dark-luxury
-     brand (obsidian / ivory / gilt + Instrument Serif). The route
+     coal register; "hirestepx" renders the production clean SaaS
+     brand (indigo + Satoshi, no serif, no italics). The route
      wrapper sets "hirestepx" so /sessions matches the rest of the app
      chrome; canvas storyboards keep "editorial". */
   theme?: SessionHistoryTheme;
@@ -2731,7 +2729,7 @@ export function ReportShellWrap({
           <span style={{ color: tok.coal, fontWeight: 600 }}>Report</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" }}>Shareable report</div>
+          <div style={{ fontSize: 11, color: tok.indigo, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" }}>Shareable report</div>
           <div style={{ fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono }}>{sessionLabel}</div>
         </div>
         <div style={{ height: 1, background: tok.line, marginBottom: 0 }} />

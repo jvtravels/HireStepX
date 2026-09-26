@@ -193,7 +193,7 @@ export default function EmployerJobsPage() {
       {requirementsLoading ? (
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
-            <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
+            <h1 style={{ fontFamily: f.sans, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
               Jobs
             </h1>
             <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
@@ -207,7 +207,7 @@ export default function EmployerJobsPage() {
       ) : requirements.length === 0 ? (
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
-            <h1 style={{ fontFamily: f.serif, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
+            <h1 style={{ fontFamily: f.sans, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0 }}>
               Jobs
             </h1>
             <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
@@ -223,7 +223,7 @@ export default function EmployerJobsPage() {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
-            <h1 style={{ fontFamily: f.serif, fontSize: "clamp(20px, 4vw, 28px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0, marginRight: 4 }}>
+            <h1 style={{ fontFamily: f.sans, fontSize: "clamp(20px, 4vw, 28px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: 0, marginRight: 4 }}>
               Jobs
             </h1>
             <Pill tone="neutral">{filtersActive ? `${filtered.length} of ${requirements.length}` : requirements.length}</Pill>

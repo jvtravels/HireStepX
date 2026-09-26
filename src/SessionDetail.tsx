@@ -56,7 +56,7 @@ function LoadingScreen() {
             animation: "ir-spin 800ms linear infinite",
           }}
         />
-        <p style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, color: "#0E0C08", margin: 0, fontWeight: 400 }}>
+        <p style={{ fontFamily: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 22, color: "#0E0C08", margin: 0, fontWeight: 400 }}>
           Loading your session…
         </p>
       </div>
@@ -69,7 +69,7 @@ function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetr
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 400 }}>
+        <h1 style={{ fontFamily: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 600 }}>
           Couldn&apos;t load this session
         </h1>
         <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 8px", lineHeight: 1.55 }}>
@@ -104,7 +104,7 @@ function NotFoundScreen({ onBack }: { onBack: () => void }) {
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 400 }}>
+        <h1 style={{ fontFamily: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 600 }}>
           Session not found
         </h1>
         <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 24px", lineHeight: 1.55 }}>

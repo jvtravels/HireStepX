@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import { c, font, shadow, gradient } from "./tokens";
+import { tokens as rawTokens } from "./auth/_tokens";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -133,7 +134,7 @@ export const SessionNotFound = memo(function SessionNotFound({ onNavigate }: { o
     <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: font.ui }}>
       <p style={{ fontSize: 18, color: c.ivory, marginBottom: 8 }}>Session not found</p>
       <p style={{ fontSize: 13, color: c.stone, marginBottom: 24 }}>This session may have been deleted or the link is invalid.</p>
-      <Button onClick={onNavigate} style={{ background: c.gilt, color: c.obsidian, fontWeight: 600 }}>
+      <Button onClick={onNavigate} style={{ background: c.slate, color: c.obsidian, fontWeight: 600 }}>
         Back to Sessions
       </Button>
     </div>
@@ -245,7 +246,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
   return (
     <Section animIndex={0}>
       <SectionTitle icon={
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2" strokeLinecap="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
       }>Core Objective Metrics</SectionTitle>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
         {/* Filler Words */}
@@ -285,7 +286,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
                 <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
                   {metrics.fillerBreakdown.map(({ word, count }) => (
                     <div key={word} style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-                      <span style={{ color: c.stone, fontStyle: "italic" }}>"{word}"</span>
+                      <span style={{ color: c.stone, fontWeight: 600 }}>"{word}"</span>
                       <span style={{ fontFamily: font.mono, color: c.chalk, fontWeight: 600 }}>{count}x</span>
                     </div>
                   ))}
@@ -370,19 +371,19 @@ export const ResponseAnalysis = memo(function ResponseAnalysis({ items }: { item
   return (
     <Section animIndex={2}>
       <SectionTitle icon={
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2" strokeLinecap="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
       }>Response Analysis</SectionTitle>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {items.map((item, i) => {
           const badge = ratingBadge(item.rating);
           return (
             <div key={i} style={{ borderRadius: 14, border: `1px solid ${c.border}`, overflow: "hidden" }}>
-              <div style={{ padding: "16px 20px", background: "rgba(180,83,9,0.03)", borderBottom: `1px solid ${c.border}`, display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, marginTop: 2, background: "rgba(180,83,9,0.08)", border: `1px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: c.gilt }}>Q{i + 1}</span>
+              <div style={{ padding: "16px 20px", background: "oklch(0.359 0.135 278.697 / 0.03)", borderBottom: `1px solid ${c.border}`, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, marginTop: 2, background: "oklch(0.359 0.135 278.697 / 0.08)", border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: c.slate }}>Q{i + 1}</span>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: c.gilt, display: "block", marginBottom: 4 }}>Interview Question</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 4 }}>Interview Question</span>
                   <p style={{ fontSize: 14, fontWeight: 500, color: c.ivory, lineHeight: 1.5, margin: 0 }}>{item.question}</p>
                 </div>
               </div>
@@ -451,7 +452,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
   return (
     <Section className="session-detail-card" animIndex={3}>
       <SectionTitle icon={
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
       }>AI Coach Summary</SectionTitle>
       {strengths.length === 0 && improvements.length === 0 ? (
         <p style={{ fontSize: 14, color: c.chalk, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{feedback}</p>
@@ -480,19 +481,19 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
             </div>
           )}
           {nextSteps && nextSteps.length > 0 && (
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, borderLeft: `3px solid ${c.gilt}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, display: "block", marginBottom: 8 }}>Next Steps</span>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, borderLeft: `3px solid ${c.slate}` }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 8 }}>Next Steps</span>
               {nextSteps.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
-                  <span style={{ fontFamily: font.mono, color: c.gilt, fontSize: 11, marginTop: 1 }}>{i + 1}.</span>
+                  <span style={{ fontFamily: font.mono, color: c.slate, fontSize: 11, marginTop: 1 }}>{i + 1}.</span>
                   <p style={{ fontSize: 13, color: c.chalk, lineHeight: 1.6, margin: 0 }}>{s}</p>
                 </div>
               ))}
             </div>
           )}
           {tips.length > 0 && (
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, borderLeft: `3px solid ${c.gilt}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, display: "block", marginBottom: 8 }}>Tips</span>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, borderLeft: `3px solid ${c.slate}` }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 8 }}>Tips</span>
               {tips.map((s, i) => <p key={i} style={{ fontSize: 13, color: c.chalk, lineHeight: 1.6, margin: i > 0 ? "4px 0 0" : 0 }}>{s}</p>)}
             </div>
           )}
@@ -520,7 +521,7 @@ export const TranscriptSection = memo(function TranscriptSection({ transcript, s
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       >
         <h3 style={{ fontSize: 16, fontWeight: 600, color: c.ivory, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Full Transcript
           <span style={{ fontSize: 11, color: c.stone, fontWeight: 400 }}>({transcript.length} messages)</span>
         </h3>
@@ -535,12 +536,12 @@ export const TranscriptSection = memo(function TranscriptSection({ transcript, s
             <div key={i} style={{ display: "flex", gap: 12, flexDirection: msg.speaker === "user" ? "row-reverse" : "row" }}>
               <div style={{
                 width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                background: msg.speaker === "ai" ? "rgba(180,83,9,0.08)" : "rgba(21,128,61,0.08)",
-                border: `1px solid ${msg.speaker === "ai" ? "rgba(180,83,9,0.15)" : "rgba(21,128,61,0.15)"}`,
+                background: msg.speaker === "ai" ? "oklch(0.359 0.135 278.697 / 0.08)" : "rgba(21,128,61,0.08)",
+                border: `1px solid ${msg.speaker === "ai" ? "oklch(0.359 0.135 278.697 / 0.15)" : "rgba(21,128,61,0.15)"}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 {msg.speaker === "ai"
-                  ? <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><circle cx="12" cy="12" r="3"/></svg>
+                  ? <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2"><circle cx="12" cy="12" r="3"/></svg>
                   : <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
               </div>
               <div style={{ maxWidth: "75%", minWidth: 0 }}>
@@ -595,7 +596,7 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
               <ToggleGroupItem key={rating} value={rating}
                 style={{
                   fontFamily: font.ui, fontSize: 11, fontWeight: 500,
-                  color: isSelected ? c.gilt : c.stone,
+                  color: isSelected ? c.slate : c.stone,
                 }}>
                 <span>{icons[rating]}</span>{labels[rating]}
               </ToggleGroupItem>
@@ -609,11 +610,11 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
             aria-label="Feedback details (optional)"
             placeholder="Any details? (optional)" maxLength={500}
             style={{ flex: 1, fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", outline: "none" }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(180,83,9,0.3)"; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.3)"; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = c.border; }}
             onKeyDown={(e) => { if (e.key === "Enter") onSubmitComment(); }}
           />
-          <Button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.gilt, color: c.obsidian }}>
+          <Button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.slate, color: c.obsidian }}>
             Save
           </Button>
         </div>
@@ -639,7 +640,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
   const nextDifficulty = session.score >= 85 ? "intense" : session.score < 70 ? "warmup" : "standard";
 
   return (
-    <div className="sd-anim" style={{ background: `linear-gradient(135deg, rgba(180,83,9,0.05) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(180,83,9,0.1)`, padding: "28px 32px", marginBottom: 16, animationDelay: "0.5s" }}>
+    <div className="sd-anim" style={{ background: `linear-gradient(135deg, oklch(0.359 0.135 278.697 / 0.05) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, padding: "28px 32px", marginBottom: 16, animationDelay: "0.5s" }}>
       <h3 style={{ fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>What's Next?</h3>
       {weakest && (
         <p style={{ fontSize: 13, color: c.stone, lineHeight: 1.5, marginBottom: 16 }}>
@@ -649,7 +650,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {weakest && (
           <Button onClick={() => onNavigate(`/session/new?type=${session.type}&focus=${weakest.name.toLowerCase().replace(/\s+/g, "-")}`)}
-            style={{ fontFamily: font.ui, fontWeight: 600, background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, boxShadow: shadow.sm }}>
+            style={{ fontFamily: font.ui, fontWeight: 600, background: `linear-gradient(135deg, ${c.slate}, ${rawTokens.indigoDeep})`, color: c.obsidian, boxShadow: shadow.sm }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
             Practice {weakest.name}
           </Button>
@@ -664,10 +665,10 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
         </Button>
       </div>
       {isFreeUser && (
-        <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontSize: 12, color: c.stone }}>Unlock unlimited sessions & detailed analytics</span>
           <Button variant="outline" size="sm" onClick={() => { window.location.href = "/#pricing"; }}
-            style={{ fontFamily: font.ui, fontWeight: 600, borderColor: "rgba(180,83,9,0.2)", color: c.gilt, whiteSpace: "nowrap" }}>
+            style={{ fontFamily: font.ui, fontWeight: 600, borderColor: "oklch(0.359 0.135 278.697 / 0.2)", color: c.slate, whiteSpace: "nowrap" }}>
             Upgrade
           </Button>
         </div>
@@ -691,7 +692,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
 
   return (
     <Section animIndex={7}>
-      <SectionTitle icon={<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}>
+      <SectionTitle icon={<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}>
         Job Description Match
       </SectionTitle>
 
@@ -739,10 +740,10 @@ export const JDCoverageSection = memo(function JDCoverageSection({
       {/* Interview Tips */}
       {jdAnalysis.interviewTips.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, marginBottom: 8 }}>Preparation Tips for This Role</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.slate, marginBottom: 8 }}>Preparation Tips for This Role</div>
           {jdAnalysis.interviewTips.map((tip, i) => (
             <div key={i} style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, position: "relative" as const }}>
-              <span style={{ position: "absolute" as const, left: 0, color: c.gilt }}>&#x2022;</span>
+              <span style={{ position: "absolute" as const, left: 0, color: c.slate }}>&#x2022;</span>
               {tip}
             </div>
           ))}
@@ -751,9 +752,9 @@ export const JDCoverageSection = memo(function JDCoverageSection({
 
       {/* Suggested Focus */}
       {jdAnalysis.suggestedFocus && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.15)", marginTop: 8 }}>
+        <div style={{ padding: "10px 14px", borderRadius: 8, background: "oklch(0.359 0.135 278.697 / 0.08)", border: "1px solid oklch(0.359 0.135 278.697 / 0.15)", marginTop: 8 }}>
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Recommended next session: </span>
-          <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt }}>{jdAnalysis.suggestedFocus}</span>
+          <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.slate }}>{jdAnalysis.suggestedFocus}</span>
         </div>
       )}
     </Section>

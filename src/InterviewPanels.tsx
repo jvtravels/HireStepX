@@ -49,9 +49,9 @@ export { NegotiationCoachingCard, DealSummaryCard, NegotiationLiveDashboard, Ann
    otherwise each render creates new style object references and memo is useless. */
 
 const stStackStyle: React.CSSProperties = { position: "fixed", top: "max(12px, env(safe-area-inset-top, 0px))", left: "50%", transform: "translateX(-50%)", zIndex: 100, display: "flex", flexDirection: "column", gap: 8, maxWidth: 500, width: "min(90%, calc(100vw - 32px))" };
-const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(180,83,9,0.14)", border: "1px solid rgba(180,83,9,0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
+const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.14)", border: "1px solid oklch(0.359 0.135 278.697 / 0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 const stOfflineToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.18)", border: "1px solid rgba(185,28,28,0.30)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
-const stGiltText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.copper };
+const stGiltText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.indigo };
 const stEmberText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.error };
 /* Persistent TTS-failed banner — distinct from the auto-clearing ttsError
    toast. Non-dismissable because the failure is permanent until page reload. */
@@ -77,7 +77,7 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
     <div style={stStackStyle}>
       {tabConflict && (
         <div role="alert" style={stTabToast}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span style={stGiltText}>Interview is open in another tab</span>
         </div>
       )}
@@ -89,7 +89,7 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
       )}
       {showTts && (
         <div role="status" style={stTabToast}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           <span style={stGiltText}>{ttsError}</span>
         </div>
       )}
@@ -148,13 +148,13 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
               role + focus drop out. Both still appear in the score report. */}
           <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal }}>{displayRole}</span>
           <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>·</span>
-          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper }}>{displayFocus}</span>
+          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.indigo }}>{displayFocus}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <NetworkIndicator />
           {llmLoading && currentStep <= 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, border: "1.5px solid rgba(180,83,9,0.30)", borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <div style={{ width: 10, height: 10, border: "1.5px solid oklch(0.359 0.135 278.697 / 0.30)", borderTopColor: e.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
               <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions...</span>
             </div>
           )}
@@ -175,7 +175,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
             {/* The numeric "X%" indicator that lived here was redundant with
                 the visible pip fill below — pure visual noise. The pips ARE
                 the percentage; reading both takes longer than reading either. */}
-            <span style={{ fontFamily: ef.sans, fontSize: isSalaryNegotiation ? 13 : 12, fontWeight: 600, color: isCurrentFollowUp ? e.copper : e.coal }}>
+            <span style={{ fontFamily: ef.sans, fontSize: isSalaryNegotiation ? 13 : 12, fontWeight: 600, color: isCurrentFollowUp ? e.indigo : e.coal }}>
               {isSalaryNegotiation
                 ? `${getNegPhaseLabel(currentQuestionNum)} · Round ${Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)} of ${baseQuestionCount || totalQuestions}`
                 : isCurrentFollowUp
@@ -188,9 +188,9 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
               <div key={i} style={{
                 flex: 1, borderRadius: 2, height: 3,
                 background: i < Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
-                  ? e.copper
+                  ? e.indigo
                   : i === Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
-                    ? "rgba(180,83,9,0.40)"
+                    ? "oklch(0.359 0.135 278.697 / 0.40)"
                     : "rgba(20,17,10,0.05)",
                 /* Animate just `background` — the only thing that actually changes
                    between fill states. `transition: all` would force the browser to
@@ -242,14 +242,14 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           : phase === "listening"
           ? "radial-gradient(closest-side, rgba(229,226,242,0.6), rgba(255,255,255,0.3) 70%, transparent 100%)"
           : "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.3) 70%, transparent 100%)",
-        border: `1px solid ${phase === "speaking" ? "rgba(180,83,9,0.20)" : phase === "listening" ? e.indigoRing : e.line}`,
+        border: `1px solid ${phase === "speaking" ? "oklch(0.359 0.135 278.697 / 0.20)" : phase === "listening" ? e.indigoRing : e.line}`,
         display: "flex", alignItems: "center", justifyContent: "center",
         /* Avatar halo cross-fades between phases — animate the visual properties
            that actually change (background, border, shadow) and let layout
            settle without `all`-induced re-interpolation. */
         transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
         boxShadow: phase === "speaking"
-          ? "0 0 32px -8px rgba(180,83,9,0.18)"
+          ? "0 0 32px -8px oklch(0.359 0.135 278.697 / 0.18)"
           : phase === "listening"
           ? "0 0 32px -8px rgba(49,46,129,0.18)"
           : "none",
@@ -257,10 +257,10 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
         <DotGridVisualizer active={phase === "speaking"} thinking={phase === "thinking"} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-        <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
         <span aria-live="polite" aria-atomic="true" role="status" style={{
           fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-          color: phase === "speaking" ? e.copper : phase === "listening" ? e.indigo : e.inkSoft,
+          color: phase === "speaking" ? e.indigo : phase === "listening" ? e.indigo : e.inkSoft,
         }}>
           {/* Active-voice labels with the interviewer's first name —
               "Priya is preparing…" reads as a person doing work, not
@@ -357,7 +357,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                 ) : (
                   /* Initials for inactive panelists */
                   <span style={{
-                    fontFamily: ef.serif, fontSize: size * 0.28, fontWeight: 600,
+                    fontFamily: ef.sans, fontSize: size * 0.28, fontWeight: 600,
                     color: `${member.color}80`,
                     letterSpacing: "0.02em",
                   }}>
@@ -379,7 +379,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{
-                  fontFamily: isActive ? ef.serif : ef.sans,
+                  fontFamily: ef.sans,
                   fontSize: isActive ? (isMobile ? 13 : 15) : (isMobile ? 10 : 11),
                   fontWeight: isActive ? 500 : 500,
                   letterSpacing: isActive ? "-0.01em" : 0,
@@ -459,9 +459,9 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
        changes do. */
     <div aria-live="polite" aria-atomic="true" aria-relevant="text" style={{
       width: "100%", background: e.white, borderRadius: 16,
-      border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "rgba(180,83,9,0.22)" : e.line}`,
-      /* The card cross-fades its border tint between phases (cream → copper
-         when AI speaks, copper → cream when listening). Animate only the
+      border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "oklch(0.359 0.135 278.697 / 0.22)" : e.line}`,
+      /* The card cross-fades its border tint between phases (cream → indigo
+         when AI speaks, indigo → cream when listening). Animate only the
          specific properties that change — `transition: all` would trigger
          repaints on every styled child too. */
       padding: "22px 26px", transition: "border-color 0.4s ease, opacity 0.4s ease",
@@ -496,10 +496,10 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       {phase === "speaking" ? (
         <LiveCaptions text={step?.aiText || ""} isTyping={true} speakingDuration={step?.speakingDuration} actualDuration={actualDuration} speechEnded={speechEnded} />
       ) : phase === "thinking" ? (
-        <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>Preparing next question…</p>
+        <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0 }}>Preparing next question…</p>
       ) : step?.aiText ? (
         <p style={{
-          fontFamily: ef.serif, fontSize: 22, color: e.coal,
+          fontFamily: ef.sans, fontSize: 22, color: e.coal,
           lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em", textWrap: "balance",
           opacity: phase === "listening" && !showCaptions ? 0.62 : 1,
           transition: "opacity 0.3s ease",
@@ -508,14 +508,14 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
         <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining for this question`} style={{ marginTop: 16, opacity: isSalaryNegotiation ? 0.7 : 1, transition: "opacity 0.3s ease" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontFamily: ef.sans, fontSize: 11, color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.inkSoft }}>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.indigo : e.inkSoft }}>
               {isSalaryNegotiation
                 ? timeRemaining <= 15 ? "Wrapping up..." : "Take your time"
                 : timeRemaining <= 15 ? "Wrapping up..." : timeRemaining <= 30 ? "30s remaining" : "Time remaining"}
             </span>
             <span style={{
               fontFamily: ef.mono, fontSize: 11, fontWeight: 600,
-              color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.coal,
+              color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.indigo : e.coal,
             }}>{formatTime(timeRemaining)}</span>
           </div>
           {/* transform:scaleX instead of width so the browser composites on the
@@ -524,7 +524,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           <div style={{ width: "100%", height: 3, borderRadius: 2, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             <div style={{
               height: "100%", width: "100%", borderRadius: 2,
-              background: timePercent >= 87.5 ? e.error : timePercent >= 75 ? e.copper : e.success,
+              background: timePercent >= 87.5 ? e.error : timePercent >= 75 ? e.indigo : e.success,
               transform: `scaleX(${(100 - timePercent) / 100})`,
               transformOrigin: "left center",
               transition: "transform 1s linear, background 0.5s ease",
@@ -595,7 +595,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           padding: "5px 10px", marginBottom: 8, borderRadius: 8,
           background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.13)",
         }}>
-          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, fontStyle: "italic" }}>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
             Tip: If speech recognition misses a word, tap &lsquo;Edit&rsquo; to correct it before moving on.
           </span>
           <Button
@@ -671,7 +671,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                 </p>
               )
             ) : (
-              <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
+              <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.7, margin: 0 }}>
                 Start speaking — your answer will appear here...
               </p>
             )}
@@ -709,13 +709,13 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           border: "1px solid rgba(20,17,10,0.04)", marginTop: 8,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.wpm > 180 ? e.error : liveMetrics.wpm < 100 ? e.copper : e.success }}>
+            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.wpm > 180 ? e.error : liveMetrics.wpm < 100 ? e.indigo : e.success }}>
               {liveMetrics.wpm}
             </span>
             <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>WPM</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.fillerCount > 5 ? e.error : liveMetrics.fillerCount > 2 ? e.copper : e.success }}>
+            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.fillerCount > 5 ? e.error : liveMetrics.fillerCount > 2 ? e.indigo : e.success }}>
               {liveMetrics.fillerCount}
             </span>
             <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>fillers</span>
@@ -730,7 +730,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{
                 fontFamily: ef.mono, fontSize: 11, fontWeight: 600,
-                color: liveMetrics.ownership === "we-heavy" ? e.error : liveMetrics.ownership === "i-led" ? e.success : e.copper,
+                color: liveMetrics.ownership === "we-heavy" ? e.error : liveMetrics.ownership === "i-led" ? e.success : e.indigo,
               }}>
                 {liveMetrics.ownership === "we-heavy" ? "we" : liveMetrics.ownership === "i-led" ? "I" : "I/we"}
               </span>
@@ -751,7 +751,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           {liveMetrics.specificityHint && (
             <>
               <div style={{ width: 1, height: 12, background: "rgba(20,17,10,0.05)" }} />
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.error, fontStyle: "italic" }}>
+              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.error }}>
                 {liveMetrics.specificityHint}
               </span>
             </>
@@ -819,10 +819,10 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
         </svg>
       </div>
       <h2 style={{
-        margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
+        margin: 0, fontFamily: ef.sans, fontSize: 28, fontWeight: 400,
         lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
       }}>
-        Session <em style={{ color: e.copper, fontStyle: "italic" }}>complete</em>.
+        Session <em style={{ color: e.indigo, fontWeight: 600 }}>complete</em>.
       </h2>
       <p style={{
         fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, margin: 0,
@@ -831,9 +831,9 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
       </p>
       {(usedFallbackScore || evalTimedOut) && (
         <p style={{
-          fontFamily: ef.sans, fontSize: 12, color: e.copper, margin: 0,
+          fontFamily: ef.sans, fontSize: 12, color: e.indigo, margin: 0,
           padding: "6px 12px", borderRadius: 999,
-          background: e.copperSoft, border: `1px solid rgba(180,83,9,0.20)`,
+          background: e.indigo100, border: `1px solid oklch(0.359 0.135 278.697 / 0.20)`,
         }}>
           {evalTimedOut ? "AI evaluation timed out" : "AI evaluation unavailable"} — score is estimated from session metrics
         </p>
@@ -924,7 +924,7 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <span style={{
           fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
-          letterSpacing: 1.4, color: e.copper,
+          letterSpacing: 1.4, color: e.indigo,
         }}>
           Your last answer
         </span>
@@ -933,11 +933,11 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "4px 10px", borderRadius: 999,
-          background: "rgba(180,83,9,0.10)",
-          border: `1px solid rgba(180,83,9,0.20)`,
-          fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.copper,
+          background: "oklch(0.359 0.135 278.697 / 0.10)",
+          border: `1px solid oklch(0.359 0.135 278.697 / 0.20)`,
+          fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.indigo,
         }}>
-          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="5 4 15 12 5 20 5 4" />
             <line x1="19" y1="5" x2="19" y2="19" />
           </svg>
@@ -945,8 +945,8 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
         </div>
       ) : (
         <p style={{
-          fontFamily: ef.serif, fontSize: 13, color: e.indigoGray,
-          lineHeight: 1.55, margin: 0, fontStyle: "italic",
+          fontFamily: ef.sans, fontSize: 13, color: e.indigoGray,
+          lineHeight: 1.55, margin: 0,
           overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical" as const,
         }}>
@@ -969,15 +969,15 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
           style={{
             marginTop: 8, padding: "5px 10px", borderRadius: 999,
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: isStrong ? "rgba(21,128,61,0.10)" : "rgba(180,83,9,0.10)",
-            border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "rgba(180,83,9,0.20)"}`,
+            background: isStrong ? "rgba(21,128,61,0.10)" : "oklch(0.359 0.135 278.697 / 0.10)",
+            border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "oklch(0.359 0.135 278.697 / 0.20)"}`,
           }}>
-          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.indigo} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             {isStrong ? <polyline points="20 6 9 17 4 12" /> : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>}
           </svg>
           <span style={{
             fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
-            color: isStrong ? e.success : e.copper,
+            color: isStrong ? e.success : e.indigo,
           }}>
             {microFeedback}
           </span>
@@ -1286,7 +1286,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <div>
-            <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
+            <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
               Transcript
             </span>
             <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
@@ -1314,7 +1314,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             would force a re-read of the whole conversation. */}
         <div ref={transcriptRef} role="log" aria-relevant="additions" aria-label="Interview transcript" style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
           {transcript.length === 0 && (
-            <p style={{ fontFamily: ef.serif, fontSize: 14, fontStyle: "italic", color: e.inkSoft, textAlign: "center", padding: "40px 0" }}>
+            <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft, textAlign: "center", padding: "40px 0" }}>
               The conversation will appear here as you talk.
             </p>
           )}
@@ -1325,7 +1325,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             const panelMember = panelMatch
               ? panelMembers!.find(m => m.title.toLowerCase() === panelMatch[1].toLowerCase())
               : null;
-            const speakerColor = isAi ? (panelMember?.color ?? e.copper) : e.indigo;
+            const speakerColor = isAi ? (panelMember?.color ?? e.indigo) : e.indigo;
             const speakerName = isAi ? (panelMember?.name ?? interviewerName) : "You";
             // Strip the leading [Title] panel-tag for AI rows in panel mode
             // before rendering. Then strip prosody markup ([pause], _emph_)
@@ -1361,7 +1361,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
                     <span style={{ fontFamily: ef.mono, fontSize: 10, color: e.inkFaint }}>{msg.time}</span>
                   </div>
                   <p style={{
-                    fontFamily: isAi ? ef.serif : ef.sans,
+                    fontFamily: ef.sans,
                     fontSize: 13.5, color: e.coal, lineHeight: 1.55,
                     margin: 0, wordBreak: "break-word", overflowWrap: "break-word",
                   }}>
@@ -1400,7 +1400,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            End the interview <em style={{ color: e.copper, fontStyle: "italic" }}>now</em>?
+            End the interview <em style={{ color: e.indigo, fontWeight: 600 }}>now</em>?
           </AlertDialogTitle>
           <AlertDialogDescription>
             You&rsquo;ve answered <strong>{Math.min(currentQuestionNum, questionTotal)} of {questionTotal}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
@@ -1447,13 +1447,13 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
       {!(usedFallbackScore || evalTimedOut) ? (
         <>
           <ThinkingOrb state="searching" size={64} color="#312E81" style={{ width: 48, height: 48, marginBottom: 24 }} />
-          <h3 style={{ fontFamily: ef.serif, fontSize: 28, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
+          <h3 style={{ fontFamily: ef.sans, fontSize: 28, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
           <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft }}>Reading your transcript and drafting per-question coach notes…</p>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, opacity: 0.7, marginTop: 4 }}>
             {evalElapsed < 10 ? "This usually takes 10\u201330 seconds." : evalElapsed < 25 ? `Almost there… (${evalElapsed}s)` : `Taking longer than usual… (${evalElapsed}s)`}
           </p>
           <div style={{ width: 200, height: 3, borderRadius: 2, background: e.line, marginTop: 16, overflow: "hidden" }}>
-            <div style={{ height: "100%", borderRadius: 2, background: e.copper, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />
+            <div style={{ height: "100%", borderRadius: 2, background: e.indigo, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />
           </div>
           {/* Escape hatch surfaced at 10s (was 20s) so users with a
               flaky LLM provider don't sit staring at an indeterminate
@@ -1479,8 +1479,8 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
         </>
       ) : (
         <>
-          <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: "oklch(0.359 0.135 278.697 / 0.10)", border: "1px solid oklch(0.359 0.135 278.697 / 0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h3 style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 600, color: e.coal, marginBottom: 8 }}>
             {evalTimedOut ? "Evaluation timed out" : "AI evaluation unavailable"}

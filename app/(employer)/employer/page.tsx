@@ -68,7 +68,7 @@ function CompanyOnboarding() {
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <h1 style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: 0 }}>
+        <h1 style={{ fontFamily: f.sans, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: 0 }}>
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
@@ -223,7 +223,7 @@ function CompanyOnboarding() {
 
       <div style={{ marginTop: 48 }}>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <Eyebrow tone="copper">What happens next</Eyebrow>
+          <Eyebrow tone="indigo">What happens next</Eyebrow>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {[
@@ -267,14 +267,14 @@ function CompanyPending() {
       <div style={{ width: 48, height: 48, borderRadius: 12, background: t.indigo100, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: t.indigoDeep }}>
         <EmployerIcon.Clock />
       </div>
-      <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>Your profile is under review</h1>
+      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>Your profile is under review</h1>
       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "0 0 20px" }}>
         We typically approve genuine employers within one business day. You'll be able to post a requirement as
         soon as you're approved — this page will update automatically.
       </p>
       <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
         Made a mistake in your details, or been waiting longer than a day?{" "}
-        <CopyEmailLink email="support@hirestepx.com" style={{ color: t.copper, fontWeight: 600 }} />
+        <CopyEmailLink email="support@hirestepx.com" style={{ color: t.indigo, fontWeight: 600 }} />
       </p>
     </div>
   );
@@ -287,7 +287,7 @@ function CompanyRejected() {
       <div style={{ width: 48, height: 48, borderRadius: 12, background: t.error100, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: t.error }}>
         <EmployerIcon.Alert />
       </div>
-      <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>We couldn't approve this profile</h1>
+      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>We couldn't approve this profile</h1>
       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, marginBottom: 20 }}>
         We couldn't verify this as a genuine hiring company from the details provided. You're welcome to
         resubmit with more information.
@@ -324,8 +324,8 @@ function EmployerDashboard() {
       {/* ─── Main stage ─── */}
       <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
         <section>
-          <h1 style={{ fontFamily: f.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
-            Welcome <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>back</em>, {user?.name || "there"}.
+          <h1 style={{ fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
+            Welcome <em style={{ fontWeight: 600, color: t.indigo }}>back</em>, {user?.name || "there"}.
           </h1>
           <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
             {openRequirements.length > 0
@@ -337,8 +337,8 @@ function EmployerDashboard() {
         <Card pad={28}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <Eyebrow tone="copper">Your next move</Eyebrow>
-              <p style={{ fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
+              <Eyebrow tone="indigo">Your next move</Eyebrow>
+              <p style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
                 Post a requirement
               </p>
               <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>

@@ -250,9 +250,9 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
     <div role="status" style={{
       display: "flex", alignItems: "center", gap: 12,
       padding: "12px 14px", marginBottom: 12,
-      background: t.copperSoft, border: `1px solid ${t.copperBorder}`, borderRadius: 10,
+      background: "oklch(0.359 0.135 278.697 / 0.12)", border: `1px solid oklch(0.359 0.135 278.697 / 0.25)`, borderRadius: 10,
     }}>
-      <span style={{ color: t.copper, flexShrink: 0, display: "inline-flex" }} aria-hidden>{Icons.clock}</span>
+      <span style={{ color: t.indigo, flexShrink: 0, display: "inline-flex" }} aria-hidden>{Icons.clock}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0, lineHeight: 1.3 }}>
           Your resume is {fresh.days} days old.
@@ -695,11 +695,11 @@ export default function DashboardHome() {
               <span suppressHydrationWarning>{todayLabel ?? " "}</span>
             </Eyebrow>
             <h1 id="dh-hero" className="hsx-dh-hero" style={{
-              fontFamily: f.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1,
+              fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1,
               letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px",
             }}>
               Welcome{" "}
-              <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>back</em>
+              <em style={{ fontStyle: "normal", fontWeight: 600, color: t.indigo }}>back</em>
               , {displayName}.
             </h1>
             <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
@@ -716,7 +716,7 @@ export default function DashboardHome() {
             }}>
               <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ color: t.copper, display: "inline-flex", alignSelf: "center" }}>{Icons.flame}</span>
-                <span style={{ fontFamily: f.serif, fontSize: 28, fontWeight: 400, color: t.coal, letterSpacing: -0.4, lineHeight: 1 }}>
+                <span style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, color: t.coal, letterSpacing: -0.4, lineHeight: 1 }}>
                   {realStreak}
                 </span>
                 <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
@@ -731,9 +731,9 @@ export default function DashboardHome() {
           <Card pad={28} labelledBy="dh-next">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <Eyebrow tone="copper" as="h2"><span id="dh-next">Your next move</span></Eyebrow>
+                <Eyebrow tone="indigo" as="h2"><span id="dh-next">Your next move</span></Eyebrow>
                 <p className="hsx-dh-next-heading" style={{
-                  fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
+                  fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
                   letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px",
                 }}>
                   {isFirstTimerWithoutResume
@@ -748,7 +748,7 @@ export default function DashboardHome() {
                     margin: "8px 0 0",
                     fontFamily: f.sans,
                     fontSize: 12,
-                    color: t.copper,
+                    color: t.indigo,
                     fontWeight: 600,
                     letterSpacing: "0.01em",
                   }}>
@@ -832,7 +832,7 @@ export default function DashboardHome() {
           <section aria-labelledby="dh-recent">
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
               <div>
-                <h2 id="dh-recent" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+                <h2 id="dh-recent" style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
                   Recent sessions
                 </h2>
                 <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
@@ -875,7 +875,7 @@ export default function DashboardHome() {
             <section aria-labelledby="dh-miles">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
                 <div>
-                  <h2 id="dh-miles" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+                  <h2 id="dh-miles" style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
                     Milestones
                   </h2>
                   <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
@@ -900,7 +900,7 @@ export default function DashboardHome() {
                 <SampleDataPill />
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>72</span>
+                <span style={{ fontFamily: f.sans, fontSize: 36, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>72</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5 }}>percent of cohort</span>
               </div>
               <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.5 }}>
@@ -952,16 +952,16 @@ export default function DashboardHome() {
           box-shadow: 0 1px 2px rgba(20,17,10,.10);
           transition-duration: 80ms;
         }
-        /* Outline — tint bg copper-wash, darken border, gentle lift. */
+        /* Outline — tint bg indigo-wash, darken border, gentle lift. */
         .hsx-dh-root .hsx-dh-cta-outline:hover {
-          background: rgba(180, 83, 9, 0.06);
-          border-color: ${t.copper};
-          color: ${t.copper};
+          background: oklch(0.359 0.135 278.697 / 0.06);
+          border-color: ${t.indigo};
+          color: ${t.indigo};
           transform: translateY(-1px);
         }
         .hsx-dh-root .hsx-dh-cta-outline:active {
           transform: translateY(0) scale(0.99);
-          background: rgba(180, 83, 9, 0.10);
+          background: oklch(0.359 0.135 278.697 / 0.10);
           transition-duration: 80ms;
         }
         /* Text-link "View all" — bg-tint + arrow shift. */
@@ -976,7 +976,7 @@ export default function DashboardHome() {
           transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
         }
         .hsx-dh-root .hsx-dh-btn:focus-visible {
-          outline: 2px solid ${t.copper};
+          outline: 2px solid ${t.indigo};
           outline-offset: 3px;
           border-radius: 12px;
         }
@@ -1111,7 +1111,7 @@ function StatCell({ label, value, unit }: { label: string; value: string; unit: 
         {label}
       </dt>
       <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
         {unit && <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{unit}</span>}
       </dd>
     </div>
@@ -1130,7 +1130,7 @@ function DailyGoalRibbonInline() {
       flexWrap: "wrap",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 200 }}>
-        <span style={{ color: t.copper, display: "inline-flex" }}>{Icons.target}</span>
+        <span style={{ color: t.indigo, display: "inline-flex" }}>{Icons.target}</span>
         <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
           Today: <span style={{ color: t.coal, fontWeight: 600 }}>{p.sessionsDone}/{p.sessionsGoal}</span> sessions,{" "}
           <span style={{ color: t.coal, fontWeight: 600 }}>{p.minutesDone}/{p.minutesGoal}</span> min
@@ -1144,7 +1144,7 @@ function DailyGoalRibbonInline() {
              aria-label="Today's overall goal progress">
           <div className="hsx-dh-progress-fill" style={{
             position: "absolute", inset: 0,
-            background: t.copper,
+            background: t.indigo,
             transform: `scaleX(${overall / 100})`, transformOrigin: "left center",
             transition: "transform 600ms cubic-bezier(.16,1,.3,1)",
           }} />
@@ -1339,7 +1339,7 @@ function MilestoneTimeline() {
         }}>{Icons.lock}</span>
         <div style={{ flex: 1, minWidth: 200 }}>
           <Eyebrow as="h3" tone="ink">Next up</Eyebrow>
-          <div style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: "4px 0 8px" }}>
+          <div style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: "4px 0 8px" }}>
             {next.label}
           </div>
           <div style={{ position: "relative", height: 4, borderRadius: 999, background: t.line, overflow: "hidden" }}

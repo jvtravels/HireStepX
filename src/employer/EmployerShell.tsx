@@ -116,7 +116,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontFamily: f.serif,
+                  fontFamily: f.sans,
                   fontSize: 13,
                 }}
               >
@@ -265,7 +265,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
             >
               {item.icon}
               <span>{item.label}</span>
-              {active && <div style={{ width: 3, height: 16, borderRadius: 2, background: t.copper, marginLeft: "auto" }} />}
+              {active && <div style={{ width: 3, height: 16, borderRadius: 2, background: t.indigo, marginLeft: "auto" }} />}
             </Link>
           );
         })}
@@ -276,8 +276,8 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       {/* User info — mirrors the candidate dashboard's footer block */}
       <div style={{ borderTop: `1px solid ${t.line}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.copper100, border: "1px solid rgba(180,83,9,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.copper }}>{(user?.name || "?")[0].toUpperCase()}</span>
+          <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.indigo100, border: `1px solid ${t.indigoRing}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.indigo }}>{(user?.name || "?")[0].toUpperCase()}</span>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
