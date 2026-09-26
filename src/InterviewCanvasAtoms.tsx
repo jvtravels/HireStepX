@@ -203,7 +203,15 @@ const VIZ_TO_ORB_STATE: Record<CanvasVizState, OrbState> = {
   warning: "shaping",
 };
 export function CanvasVoiceVisualizer({ state, size = 150 }: { state: CanvasVizState; size?: number }) {
-  const dotColor = resolveOrbColor(e.copper);
+  const dotColor = resolveOrbColor((() => {
+    switch (state) {
+      case "idle":          return e.inkFaint;
+      case "ai-speaking":   return e.coal;
+      case "ai-thinking":   return e.copper;
+      case "user-speaking": return e.indigo;
+      case "warning":       return e.warning;
+    }
+  })());
   return (
     <div role="presentation" className="hsx-viz"
       aria-label={
