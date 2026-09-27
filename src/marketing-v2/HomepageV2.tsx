@@ -14,7 +14,7 @@ export { FinalCTAFooterV2 };
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing Homepage v2 (brand-aligned)
    Cream + indigo + copper editorial system, matching the production
-   auth/onboarding surfaces. Instrument Serif display + Satoshi UI.
+   auth/onboarding surfaces. Instrument Serif display + Geist Sans UI.
    ════════════════════════════════════════════════════════════════════ */
 
 const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -825,7 +825,7 @@ export function InterviewFocusV2() {
       icon: (
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <text x="32" y="48" textAnchor="middle" fontSize="48"
-            fontFamily='"Satoshi", "Inter", system-ui, sans-serif'
+            fontFamily='"Geist Sans", "Inter", system-ui, sans-serif'
             fontWeight="500" fill={G}>₹</text>
         </svg>
       ),
@@ -2993,7 +2993,8 @@ function StructuredData() {
 /* ─────────────────────────── PERSONALIZED REPORTS ─────────────────────────── */
 
 const rpt_STYLES = `
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+/* Geist Sans is already loaded globally (self-hosted via next/font in
+   app/layout.tsx) — no per-section CDN import needed. */
 
 /* Fan card showcase — responsive containment */
 @media (max-width: 640px) {
@@ -3020,7 +3021,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
     { key: "A", label: "Action",     score: 71, c: t.copper },
     { key: "R", label: "Result",     score: 42, c: t.error },
   ];
-  const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
+  const rptF = { sans: "'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'Geist Mono', 'Fira Code', monospace" };
   /* Arc length for 82% of a semicircle: π × r × 0.82 = π × 33 × 0.82 ≈ 85 */
   const arcLen = 85;
   return (
@@ -3097,7 +3098,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
     { n: 2, label: "Justified with market data" },
     { n: 3, label: "Closed at ₹48L target" },
   ];
-  const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
+  const rptF = { sans: "'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
   /* Arc length for 84% of a semicircle: π × r × 0.84 = π × 37 × 0.84 ≈ 98 */
   const arcLen = 98;
   return (
@@ -3300,7 +3301,7 @@ export function PersonalizedReportsV2() {
         {/* Left card — outer: position + reveal; inner: hover */}
         <div className="mv2-rpt-side" style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
           <div style={{ transformOrigin: "bottom center", transform: lActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(-10deg) translateY(6px) scale(0.86)" : "rotate(-8deg)", opacity: anyHov && !lActive ? 0.65 : 1, filter: anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Behavioral · 82/100<br />Razorpay Senior PD
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
             </div>
@@ -3311,7 +3312,7 @@ export function PersonalizedReportsV2() {
         {/* Center card */}
         <div style={{ position: "absolute", left: "50%", bottom: 60, zIndex: cActive ? 12 : anyHov ? 4 : 5, transform: revealed ? "translateX(-50%) translateY(0px)" : "translateX(-50%) translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(1) }}>
           <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : anyHov ? "translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Salary Neg · ₹48L landed<br />PhonePe Senior EM
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
             </div>
@@ -3322,7 +3323,7 @@ export function PersonalizedReportsV2() {
         {/* Right card */}
         <div className="mv2-rpt-side" style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
           <div style={{ transformOrigin: "bottom center", transform: rActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(10deg) translateY(6px) scale(0.86)" : "rotate(8deg)", opacity: anyHov && !rActive ? 0.65 : 1, filter: anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Campus · 58/100<br />Infosys SWE Fresher
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
             </div>
@@ -3342,7 +3343,7 @@ export function PersonalizedReportsV2() {
         <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 5.4vw, 72px)", fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: t.copper, margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
           every interview
         </h2>
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Geist Sans', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
           STAR scores, bias flags, engagement bars, and a coached rewrite of
           your weakest answer. Ready before you close the tab.
         </p>
@@ -3752,12 +3753,12 @@ export function VideoCtaV2({
           {headingPlain} <span style={{ fontStyle: "italic" }}>{headingItalic}</span>
         </h2>
 
-        <p style={{ fontSize: 15, lineHeight: 1.65, color: "#ffffff", margin: "0 auto 40px", maxWidth: 520, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
+        <p style={{ fontSize: 15, lineHeight: 1.65, color: "#ffffff", margin: "0 auto 40px", maxWidth: 520, fontFamily: "'Geist Sans', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
           {body}
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", ...fadeUp(400) }}>
-          <a href={ctaHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
+          <a href={ctaHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Geist Sans', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
             {ctaLabel}
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </a>

@@ -233,7 +233,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
               fontSize: 20,
               fontWeight: 700,
               color: valueColor,
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              fontFamily: "'Geist Mono', 'Fira Code', monospace",
             }}
           >
             {banner.headlineMetric.value}
@@ -270,7 +270,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
                 fontSize: 20,
                 fontWeight: 700,
                 color: t.copper,
-                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                fontFamily: "'Geist Mono', 'Fira Code', monospace",
               }}
             >
               {daysUntilInterview}d

@@ -133,8 +133,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   };
   const font = {
     display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-    ui: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    mono: "'JetBrains Mono', 'SF Mono', monospace",
+    ui: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    mono: "'Geist Mono', 'SF Mono', monospace",
   };
   const PLANS = PLANS_MONTHLY;
   // Exclude the "single" plan from the regular card loop — the null slot below

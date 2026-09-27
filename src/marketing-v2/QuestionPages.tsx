@@ -8,7 +8,7 @@
  * no client-side JS, fast LCP, and max crawlability.
  *
  * Visual language: cream background, coal ink, copper accents, Instrument
- * Serif for display + Satoshi for UI — same token stack as the rest of the
+ * Serif for display + Geist Sans for UI — same token stack as the rest of the
  * marketing site. No raw hex values; all colours from src/auth/_tokens.ts.
  */
 

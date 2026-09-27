@@ -5,11 +5,11 @@
 
 export const AUTH_STYLES = `
   /* Webfont fallback — only loads if the host page hasn't already.
-     Instrument Serif + JetBrains Mono: kept here as a guard for any
-     standalone render path. Satoshi is loaded globally via layout.tsx
-     <link rel="stylesheet"> so its @import is omitted here to avoid a
+     Instrument Serif + Geist Mono: kept here as a guard for any
+     standalone render path. Geist Sans is loaded globally via layout.tsx
+     self-hosted next/font so its @import is omitted here to avoid a
      redundant CDN fetch on every auth page load. */
-  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap');
 
   /* ─── Animations ─── */
   @keyframes hsx-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

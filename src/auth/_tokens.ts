@@ -140,13 +140,14 @@ export const tokens = {
   levelAdvanced:    "oklch(0.565 0.143 45.402)",
 } as const;
 
-/* Satoshi is the primary UI font, loaded from Fontshare CDN via a <link>
- * in app/layout.tsx. --font-ui is defined in src/index.css :root so all
- * var(--font-ui) references resolve to Satoshi. Inter has been removed. */
+/* Geist Sans is the primary UI font, self-hosted via next/font/local in
+ * app/layout.tsx (also registered as a literal @font-face in src/index.css
+ * for the call sites below that hardcode the family name instead of
+ * var(--font-ui)). Geist Mono replaces JetBrains Mono the same way. */
 export const fonts = {
   serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Satoshi', system-ui, -apple-system, sans-serif",
-  mono: "'JetBrains Mono', monospace",
+  sans: "'Geist Sans', system-ui, -apple-system, sans-serif",
+  mono: "'Geist Mono', monospace",
 } as const;
 
 /* Typography scale — mirrors the --text-* CSS custom properties in index.css.

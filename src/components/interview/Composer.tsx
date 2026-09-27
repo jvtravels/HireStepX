@@ -434,7 +434,7 @@ export function Composer({
             maxLength={3000}
             style={{
               width: "100%", minHeight: 120, padding: "14px 16px",
-              // Sans-serif (Satoshi/Inter) for the user's answer — typed
+              // Sans-serif (Geist Sans/Inter) for the user's answer — typed
               // text reads cleaner in sans, and it visually separates the
               // candidate's voice from the AI's serif question.
               fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,

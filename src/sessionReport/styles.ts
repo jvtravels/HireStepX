@@ -118,7 +118,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .nfr-tldr-eyebrow {
     font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase; font-family: 'Geist Mono', monospace;
     color: #B45309;
     margin-bottom: 14px;
   }
@@ -143,7 +143,7 @@ export const SESSION_REPORT_STYLES = `
     font-size: 12px; color: #5A5448; line-height: 1.4;
   }
   .nfr-tldr-evidence-value {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
     white-space: nowrap;
   }
@@ -159,7 +159,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-time-pill {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; background: #E5E2F2; color: #312E81;
-    border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    border-radius: 5px; font-family: 'Geist Mono', monospace;
     font-size: 11px; font-weight: 600;
     border: 1px solid #E5E2F2;
   }
@@ -192,7 +192,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-table td { padding: 11px 14px; font-size: 13px; color: #0E0C08; }
   .nfr-table tr { border-top: 1px solid #EBE5D2; }
   .nfr-table tr:first-child { border-top: none; }
-  .nfr-mono { font-family: 'JetBrains Mono', monospace; }
+  .nfr-mono { font-family: 'Geist Mono', monospace; }
   .nfr-pill {
     display: inline-block; padding: 3px 10px;
     font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
@@ -246,7 +246,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-eyebrow {
     font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     color: #5A5448;
   }
   .nfr-quote {
@@ -489,7 +489,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-jump-link:hover { color: #312E81; background: #E5E2F2; }
   .ir-jump-link-num {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     color: #888070;
     font-weight: 700;
@@ -507,7 +507,7 @@ export const SESSION_REPORT_STYLES = `
     margin-bottom: 16px;
   }
   .ir-section-num {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 11px;
     font-weight: 700;
     color: #B45309;
@@ -531,14 +531,14 @@ export const SESSION_REPORT_STYLES = `
     background: rgba(49,46,129,0.05);
     border: 1px solid rgba(49,46,129,0.12);
     border-radius: 8px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
     color: #312E81;
     line-height: 1.4;
   }
   .ir-calibration-bands {
     color: #5A5448;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 11px;
   }
 
@@ -555,7 +555,7 @@ export const SESSION_REPORT_STYLES = `
     background: rgba(180,83,9,0.08);
     color: #B45309;
     border: 1px dashed rgba(180,83,9,0.40);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -577,7 +577,7 @@ export const SESSION_REPORT_STYLES = `
     flex-wrap: wrap;
   }
   .ir-trend-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     font-weight: 700;
     color: #B45309;
@@ -588,14 +588,14 @@ export const SESSION_REPORT_STYLES = `
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
     color: #2A241B;
   }
   .ir-trend-item-label { color: #5A5448; font-size: 12px; }
-  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-flat { color: #888070; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'Geist Mono', monospace; font-size: 12px; }
+  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'Geist Mono', monospace; font-size: 12px; }
+  .ir-trend-delta-flat { color: #888070; font-weight: 600; font-family: 'Geist Mono', monospace; font-size: 12px; }
 
   /* ─── Per-Q inline pills (frequency + length verdict) ─── */
   .ir-q-meta-pill {
@@ -603,7 +603,7 @@ export const SESSION_REPORT_STYLES = `
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -625,7 +625,7 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 999px;
     background: rgba(196,112,90,0.10);
     color: #B91C1C;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -639,7 +639,7 @@ export const SESSION_REPORT_STYLES = `
     background: rgba(196,112,90,0.05);
     border-left: 2px solid #B91C1C;
     border-radius: 4px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
     line-height: 1.45;
     color: #2A241B;
@@ -654,14 +654,14 @@ export const SESSION_REPORT_STYLES = `
     background: rgba(49,46,129,0.05);
     border: 1px solid rgba(49,46,129,0.15);
     border-radius: 8px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
     color: #312E81;
     line-height: 1.5;
   }
   .ir-likely-followup-eyebrow {
     display: block;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -674,7 +674,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-strong-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; }
   .ir-strong-list-item {
     display: flex; gap: 8px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
     color: #2A241B;
     line-height: 1.5;
@@ -701,7 +701,7 @@ export const SESSION_REPORT_STYLES = `
     padding: 14px 16px;
   }
   .ir-coach-note-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.10em;
@@ -717,7 +717,7 @@ export const SESSION_REPORT_STYLES = `
     margin: 0 0 6px;
   }
   .ir-coach-note-body {
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
     color: #5A5448;
     line-height: 1.55;
@@ -740,7 +740,7 @@ export const SESSION_REPORT_STYLES = `
     border: 1px dashed #D6CDB5;
     border-radius: 8px;
     padding: 8px 14px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
     color: #5A5448;
     cursor: pointer;
@@ -761,7 +761,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-thought-legend {
     display: flex; gap: 18px; flex-wrap: wrap;
     margin-top: 10px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
     color: #5A5448;
   }
@@ -791,28 +791,28 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-bias-card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .ir-bias-count {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 18px; font-weight: 700; color: #312E81; line-height: 1;
   }
   .ir-bias-label {
-    font-family: 'Satoshi', system-ui, sans-serif;
+    font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 13px; color: #2A241B; font-weight: 600;
   }
   .ir-bias-example {
     display: block;
-    font-family: 'Satoshi', system-ui, sans-serif;
+    font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 11px; color: #5A5448; font-style: italic;
     margin: 4px 0 6px;
   }
   .ir-bias-tip {
-    font-family: 'Satoshi', system-ui, sans-serif;
+    font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 12px; color: #312E81; line-height: 1.4;
   }
 
   /* ─── Trust + useful dual polls (footer) ─── */
   .ir-poll-row {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    font-family: 'Satoshi', system-ui, sans-serif;
+    font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 12px; color: #5A5448;
   }
   .ir-poll-yes, .ir-poll-no {

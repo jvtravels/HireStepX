@@ -304,7 +304,7 @@ export function CanvasPlainHeading({ children }: { children: React.ReactNode }) 
 export function CanvasQuestionText({ children }: { children: React.ReactNode }) {
   return (
     <p style={{
-      // User-requested: scoreNote / competency subtitle in Satoshi (sans),
+      // User-requested: scoreNote / competency subtitle in Geist Sans (sans),
       // not the editorial serif. The serif treatment was clashing with
       // the question heading above; sans gives a clear hierarchy.
       fontFamily: ef.sans, fontSize: 13, fontStyle: "normal", fontWeight: 400,

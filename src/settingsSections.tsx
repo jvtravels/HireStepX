@@ -39,8 +39,8 @@ const c = {
 };
 const font = {
   display: "'Instrument Serif', Georgia, serif",
-  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', monospace",
+  ui: "'Geist Sans', -apple-system, system-ui, sans-serif",
+  mono: "'Geist Mono', monospace",
 };
 const shadow = {
   sm: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",

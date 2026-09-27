@@ -1008,7 +1008,7 @@ export default function DashboardResume() {
           borderRadius: 10,
           background: notice.kind === "ok" ? "#15803D" : "#B91C1C",
           color: "#FFFFFF",
-          fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif",
+          fontFamily: "'Geist Sans', -apple-system, system-ui, sans-serif",
           fontSize: 12,
           fontWeight: 500,
           display: "flex",

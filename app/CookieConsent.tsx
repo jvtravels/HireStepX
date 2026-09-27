@@ -78,7 +78,7 @@ export default function CookieConsent() {
         padding: "18px 20px",
         boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
         color: "#0E0C08",
-        fontFamily: "'Satoshi', system-ui, sans-serif",
+        fontFamily: "'Geist Sans', system-ui, sans-serif",
         display: "flex",
         gap: 16,
         alignItems: "center",

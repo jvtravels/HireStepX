@@ -20,17 +20,13 @@ const instrumentSerif = Instrument_Serif({
   fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
-/* JetBrains Mono — self-hosted via next/font/local. Previously loaded via
- * next/font/google, which fetches from fonts.gstatic.com at build time —
- * Google rotates font-file hashes without notice, and a stale Vercel build
- * cache holding an old hash turns into a hard Turbopack build failure
- * ("Module not found ... internal/font/google/font") instead of a runtime
- * fallback. Self-hosting removes that build-time CDN dependency entirely,
- * same rationale as the Satoshi migration below. */
-const jetbrainsMono = localFont({
+/* Geist Mono — self-hosted via next/font/local (variable woff2, from the
+ * `geist` npm package's bundled font files, copied into public/fonts/ so
+ * the build has no runtime dependency on that package). Replaces JetBrains
+ * Mono to match Geist Sans below. */
+const geistMono = localFont({
   src: [
-    { path: "../public/fonts/jetbrains-mono-var.woff2", weight: "400", style: "normal" },
-    { path: "../public/fonts/jetbrains-mono-var.woff2", weight: "600", style: "normal" },
+    { path: "../public/fonts/geist-mono-var.woff2", weight: "400 700", style: "normal" },
   ],
   variable: "--font-mono",
   display: "swap",
@@ -38,16 +34,13 @@ const jetbrainsMono = localFont({
   fallback: ["SF Mono", "Consolas", "Menlo", "monospace"],
 });
 
-/* ── Satoshi — self-hosted via next/font/local ──
- * Previously loaded from Fontshare CDN (render-blocking, third-party, no
- * size-adjusted fallback → CLS). Self-hosting eliminates the CDN dependency,
- * enables preload, and gives next/font the adjustFontFallback CLS fix.
- * WOFF2 files in public/fonts/ (~25KB each × 3 weights = 75KB total). */
-const satoshi = localFont({
+/* ── Geist Sans — self-hosted via next/font/local ──
+ * Replaces Satoshi. Same self-hosting rationale: no CDN/build-time fetch
+ * dependency, enables preload, gives next/font the adjustFontFallback CLS
+ * fix. Variable woff2 from the `geist` npm package's bundled font files. */
+const geistSans = localFont({
   src: [
-    { path: "../public/fonts/satoshi-400.woff2", weight: "400", style: "normal" },
-    { path: "../public/fonts/satoshi-500.woff2", weight: "500", style: "normal" },
-    { path: "../public/fonts/satoshi-700.woff2", weight: "700", style: "normal" },
+    { path: "../public/fonts/geist-sans-var.woff2", weight: "400 700", style: "normal" },
   ],
   variable: "--font-ui",
   display: "swap",
@@ -162,7 +155,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      className={`${instrumentSerif.variable} ${geistMono.variable}`}
     >
       <head>
         {/*
@@ -172,7 +165,7 @@ export default function RootLayout({
           but only the /interview route actually uses those services. We now
           preconnect from Interview.tsx with useEffect-injected links.
         */}
-        {/* Satoshi is self-hosted via next/font/local (public/fonts/satoshi-*.woff2).
+        {/* Geist Sans is self-hosted via next/font/local (public/fonts/geist-sans-var.woff2).
             The CDN preconnects and stylesheet link are no longer needed. */}
         <meta name="google-adsense-account" content="ca-pub-7810403590527236" />
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
@@ -185,7 +178,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://us.i.posthog.com" />
       </head>
-      <body className={`bg-background text-foreground ${satoshi.variable}`}>
+      <body className={`bg-background text-foreground ${geistSans.variable}`}>
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
         {/* Route change announcer for screen readers */}
         <div

@@ -1,6 +1,6 @@
 /* HireStepX — Blog infographics
    Inline visual components for structured blog data.
-   Brand: copper/cream/coal palette, Satoshi + Instrument Serif.
+   Brand: copper/cream/coal palette, Geist Sans + Instrument Serif.
    No external deps — pure React JSX with inline styles. */
 
 import { tokens as t, fonts } from "../auth/_tokens";

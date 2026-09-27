@@ -16,7 +16,7 @@ import { CATEGORY_BUCKET_MAP, CATEGORY_BUCKETS, bucketToSlug } from "./blog-cate
 import { CopyEmailLink } from "./_CopyEmailLink";
 
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
-   editorial brand (cream surface, Instrument Serif + Satoshi, copper
+   editorial brand (cream surface, Instrument Serif + Geist Sans, copper
    accents, shared Nav + Footer + mobile sticky CTA). */
 function BlogShell({ children, afterContent }: { children: ReactNode; afterContent?: ReactNode }) {
   return (

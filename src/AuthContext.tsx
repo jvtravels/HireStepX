@@ -2108,7 +2108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           padding: "12px 20px",
           background: "rgba(196,112,90,0.12)", borderBottom: "1px solid rgba(196,112,90,0.3)",
           backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-          fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#E5A590",
+          fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: "#E5A590",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap",
         }}>
           <span>
@@ -2138,7 +2138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           padding: "10px 16px 10px 20px", borderRadius: 10, maxWidth: 480,
           background: "rgba(212,179,127,0.15)", border: "1px solid rgba(212,179,127,0.3)",
           backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#C9A96E",
+          fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: "#C9A96E",
           display: "flex", alignItems: "center", gap: 12,
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2228,7 +2228,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.18)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: 16, height: 16, border: `2px solid ${tokens.indigoRing}`, borderTopColor: tokens.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
-      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
+      <span style={{ fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -2270,7 +2270,7 @@ export function RequireAuthOnly({ children }: { children: ReactNode }) {
       <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.18)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: 16, height: 16, border: `2px solid ${tokens.indigoRing}`, borderTopColor: tokens.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
-      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
+      <span style={{ fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

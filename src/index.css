@@ -2,15 +2,32 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* ─── Font custom property — Satoshi replaces Inter as the primary UI font.
-   --font-ui was previously injected by next/font/google (Inter); now it is
-   defined here so all var(--font-ui) call sites resolve to Satoshi without
-   any per-component changes. Satoshi is loaded in app/layout.tsx via
-   <link rel="stylesheet" href="https://api.fontshare.com/...">. ─── */
+/* ─── Font custom property — Geist Sans replaces Satoshi as the primary UI
+   font (and Geist Mono replaces JetBrains Mono). --font-ui/--font-mono are
+   set on <body>/<html> from next/font/local in app/layout.tsx (self-hosted
+   from public/fonts/geist-*-var.woff2); the values below are the :root
+   fallback only. The @font-face rules further down register the literal
+   'Geist Sans' / 'Geist Mono' family names for the handful of call sites
+   that hardcode a font-family string instead of var(--font-ui). ─── */
+
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('/fonts/geist-sans-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geist-mono-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @custom-variant dark (&:is(.dark *));
 :root {
-  --font-ui: 'Satoshi', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: 'Geist Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* ── Typography scale (8 stops) ──────────────────────────────────────────
    * Ratio ≈ 1.25 (major third). Use these for NEW code; existing hardcoded
@@ -37,7 +54,7 @@
   --text-3xl:  28px;
 
   /* shadcn components render through Tailwind's font-sans utility class —
-     point it at the app's existing Satoshi stack instead of shipping a new
+     point it at the app's existing Geist Sans stack instead of shipping a new
      font (Geist). --font-ui is set from next/font in app/layout.tsx. */
   --font-sans: var(--font-ui);
 
@@ -143,7 +160,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   padding: 12px 24px;
   background: var(--primary);
   color: var(--primary-foreground);
-  font-family: "Satoshi", system-ui, sans-serif;
+  font-family: "Geist Sans", system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   border-radius: 10px;
@@ -172,7 +189,7 @@ html {
 
 body {
   margin: 0;
-  font-family: "Satoshi", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Geist Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--background);
@@ -207,7 +224,7 @@ body {
   padding: 12px 24px;
   background: var(--primary);
   color: var(--primary-foreground);
-  font-family: "Satoshi", system-ui, sans-serif;
+  font-family: "Geist Sans", system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   border-radius: 0 0 8px 8px;
@@ -653,7 +670,7 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid oklch(from var(--background) l c h / 0.06);
   border-radius: 10px;
   color: var(--foreground);
-  font-family: "Satoshi", system-ui, sans-serif;
+  font-family: "Geist Sans", system-ui, sans-serif;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .glass-input:focus {
