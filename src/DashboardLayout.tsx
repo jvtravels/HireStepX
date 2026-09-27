@@ -510,7 +510,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* User info — bordered white card matching Figma's sidebar footer;
             the chevrons-up-down trigger opens Log out as a menu item. */}
-        <div className="px-3 group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
+        <div className="group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

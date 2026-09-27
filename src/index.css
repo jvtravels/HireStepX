@@ -103,6 +103,14 @@ input[type="range"]:focus-visible {
   outline-offset: 4px;
 }
 
+/* ─── Pointer cursor on clickable elements ───
+   Native <button> and role="button" default to the browser's arrow cursor,
+   not a pointer, unless a component opts in explicitly — inconsistent across
+   the app depending on whether that component happened to set cursor-pointer. */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
