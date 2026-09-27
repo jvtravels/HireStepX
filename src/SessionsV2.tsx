@@ -16,6 +16,7 @@ import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { useDashboardSessions } from "./DashboardContext";
 import type { DashboardSession } from "./dashboardTypes";
+import { captureClientEvent } from "./posthogClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -455,6 +456,7 @@ function SessionsTable({
   onRowsPerPageChange,
   onPageChange,
   onClearFilters,
+  onOpenSession,
 }: {
   rows: FlatRow[];
   totalCount: number;
@@ -467,6 +469,7 @@ function SessionsTable({
   onRowsPerPageChange: (rowsPerPage: number) => void;
   onPageChange: (page: number) => void;
   onClearFilters: () => void;
+  onOpenSession: (id: string) => void;
 }) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
@@ -515,7 +518,21 @@ function SessionsTable({
             </TableRow>
           ) : (
             rows.map((row) => (
-              <TableRow key={row.id} style={{ height: 64, borderBottom: `1px solid ${T.line}` }}>
+              <TableRow
+                key={row.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenSession(row.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpenSession(row.id);
+                  }
+                }}
+                style={{ height: 64, borderBottom: `1px solid ${T.line}`, cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
                 <TableCell style={{ width: "28%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
                   <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.coal, margin: 0 }}>
                     {row.title}{row.company ? ` · ${row.company}` : ""}
@@ -665,9 +682,11 @@ function SessionsLoadingSkeleton() {
 function SessionsWorkspace({
   rows,
   onStartSession,
+  onOpenSession,
 }: {
   rows: FlatRow[];
   onStartSession: () => void;
+  onOpenSession: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -749,6 +768,7 @@ function SessionsWorkspace({
           onRowsPerPageChange={(v) => { setRowsPerPage(v); setPage(1); }}
           onPageChange={setPage}
           onClearFilters={clearFilters}
+          onOpenSession={onOpenSession}
         />
       </div>
     </>
@@ -772,6 +792,17 @@ export default function SessionsV2Screen() {
      would look like it silently breaks. */
   const onStartSession = () => router.push("/session/new");
 
+  const onOpenSession = (id: string) => {
+    const s = recentSessions.find((r) => r.id === id);
+    captureClientEvent("dashboard_session_clicked", {
+      session_id: id,
+      score: s?.score,
+      type: s?.type,
+      surface: "sessions-table",
+    });
+    router.push(`/session/${id}`);
+  };
+
   let body: React.ReactNode;
   let showPageHeader = true;
   if (sessionsLoading) {
@@ -782,7 +813,7 @@ export default function SessionsV2Screen() {
     // WorkspaceHeader already embeds the title + CTA into its own row —
     // rendering PageHeader above it here would duplicate both.
     showPageHeader = false;
-    body = <SessionsWorkspace rows={rows} onStartSession={onStartSession} />;
+    body = <SessionsWorkspace rows={rows} onStartSession={onStartSession} onOpenSession={onOpenSession} />;
   }
 
   return (
