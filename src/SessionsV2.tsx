@@ -282,7 +282,7 @@ function FilterPill<V extends string>({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 6, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 44, gap: 8, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
@@ -314,7 +314,7 @@ function SortPill({ sort, onChange }: { sort: Sort; onChange: (sort: Sort) => vo
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 6, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 44, gap: 8, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
@@ -417,7 +417,7 @@ function ScoreCell({ score, band }: { score: number; band: ScoreBand }) {
           color: bandColor[band].text,
           background: bandColor[band].bg,
           height: "auto",
-          padding: "3px 8px",
+          padding: "4px 8px",
         }}
       >
         {bandLabel[band]}
@@ -444,7 +444,7 @@ function ProgressCell({ progress }: { progress: number }) {
           color: text,
           background: bg,
           height: "auto",
-          padding: "3px 8px",
+          padding: "4px 8px",
         }}
       >
         {sign}{progress}
@@ -458,7 +458,7 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {points.map((p, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
           <span style={{ width: 6, height: 6, borderRadius: 3, marginTop: 6, flexShrink: 0, background: p.tone === "good" ? T.success : T.warning }} />
           <span style={{ fontFamily: font.ui, fontSize: 13, color: p.tone === "good" ? T.coal : T.inkFaint, whiteSpace: "normal", lineHeight: 1.4 }}>
             {p.tone === "next" ? "Next: " : ""}{p.text}
@@ -491,32 +491,38 @@ function GroupDivider({ label, count }: { label: string; count: number }) {
 function SortableHead({
   column,
   width,
+  minWidth,
   sort,
   onSortChange,
   children,
 }: {
   column: SortColumn;
-  width?: number;
+  width?: number | string;
+  minWidth?: number;
   sort: Sort;
   onSortChange: (sort: Sort) => void;
   children: React.ReactNode;
 }) {
   const active = sort.column === column;
+  // Idle underline mirrors the toolbar pills' visible border, so a sortable
+  // header reads as clearly clickable instead of plain text: the active
+  // column keeps a permanent accent underline, others reveal one on hover.
+  const idleShadow = `inset 0 -2px 0 0 ${active ? T.coal : "transparent"}`;
   return (
-    <TableHead style={{ width, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
+    <TableHead style={{ width, minWidth, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
       <button
         type="button"
         onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : column === "title" ? "asc" : "desc" })}
         aria-label={`Sort by ${COLUMN_LABEL[column]}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-        style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", height: 40, padding: "0 20px", background: "transparent", border: "none", boxShadow: idleShadow, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}, box-shadow ${dur.instant} ${ease.snap}` }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; if (!active) e.currentTarget.style.boxShadow = `inset 0 -2px 0 0 ${T.inkFaint}`; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.boxShadow = idleShadow; }}
       >
         {children}
         {active ? (
-          sort.direction === "asc" ? <ChevronUpIcon size={13} aria-hidden="true" /> : <ChevronDownIcon size={13} aria-hidden="true" />
+          sort.direction === "asc" ? <ChevronUpIcon size={14} aria-hidden="true" /> : <ChevronDownIcon size={14} aria-hidden="true" />
         ) : (
-          <ChevronsUpDownIcon size={13} color={T.inkFaint} aria-hidden="true" />
+          <ChevronsUpDownIcon size={14} color={T.inkSoft} aria-hidden="true" />
         )}
       </button>
     </TableHead>
@@ -571,11 +577,11 @@ function SessionsTable({
       <Table aria-label="Practice session history">
         <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
           <TableRow style={{ background: T.rowTint, height: 40 }}>
-            <SortableHead column="title" width={260} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
-            <SortableHead column="score" width={160} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
-            <SortableHead column="progress" width={150} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
-            <SortableHead column="date" width={150} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
-            <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
+            <SortableHead column="title" width="26%" minWidth={200} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
+            <SortableHead column="score" width="13%" minWidth={110} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
+            <SortableHead column="progress" width="15%" minWidth={140} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
+            <SortableHead column="date" width="13%" minWidth={100} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
+            <TableHead style={{ width: "33%", minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -608,7 +614,7 @@ function SessionsTable({
                 {group.label && <GroupDivider label={group.label} count={group.count} />}
                 {group.rows.map((row) => (
                   <TableRow key={row.id} style={{ height: 64 }}>
-                    <TableCell style={{ width: 260, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
+                    <TableCell style={{ width: "26%", minWidth: 200, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
                       <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>
                         {row.title}{row.company ? ` · ${row.company}` : ""}
                       </p>
@@ -616,16 +622,16 @@ function SessionsTable({
                         {row.category} · {row.questionCount} questions
                       </p>
                     </TableCell>
-                    <TableCell style={{ width: 160, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: "13%", minWidth: 110, height: 56, padding: "0 20px" }}>
                       <ScoreCell score={row.score} band={row.band} />
                     </TableCell>
-                    <TableCell style={{ width: 150, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: "15%", minWidth: 140, height: 56, padding: "0 20px" }}>
                       <ProgressCell progress={row.progress} />
                     </TableCell>
-                    <TableCell style={{ width: 150, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: "13%", minWidth: 100, height: 56, padding: "0 20px" }}>
                       <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkSoft }}>{row.date}</span>
                     </TableCell>
-                    <TableCell style={{ height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
+                    <TableCell style={{ width: "33%", height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
                       <TakeawayCell points={row.takeaways} />
                     </TableCell>
                   </TableRow>
