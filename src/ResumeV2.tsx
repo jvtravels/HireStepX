@@ -12,7 +12,7 @@
    dashboard's data is still loading or no resume has been uploaded yet. */
 
 import { useMemo } from "react";
-import { tokens as T, fonts as F, textSize as S, shadows } from "./auth/_tokens";
+import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDashboardUI } from "./DashboardContext";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
@@ -115,7 +115,6 @@ function SectionCard({
         border: `1px solid ${T.line}`,
         borderRadius: 12,
         padding,
-        boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
         gap: 16,
@@ -430,7 +429,7 @@ export default function ResumeV2Screen() {
 
           {/* Metric cards — three independent stat cards in one row. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            <SectionCard style={{ flex: "1 1 220px", minWidth: 220, boxShadow: "none" }}>
+            <SectionCard style={{ flex: "1 1 220px", minWidth: 220 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <BarChart3Icon size={18} color={T.coal} aria-hidden="true" />
@@ -448,7 +447,7 @@ export default function ResumeV2Screen() {
                 <ProgressBar value={qualityScore} max={100} color={metricColor[qualityTone].bar} label={`Resume quality: ${qualityScore} out of 100`} />
               </div>
             </SectionCard>
-            <SectionCard style={{ flex: "1 1 220px", minWidth: 220, boxShadow: "none" }}>
+            <SectionCard style={{ flex: "1 1 220px", minWidth: 220 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <FilterIcon size={15} color={T.inkFaint} aria-hidden="true" />
@@ -466,7 +465,7 @@ export default function ResumeV2Screen() {
                 <ProgressBar value={atsResult?.score ?? 0} max={100} color={metricColor[atsTone].bar} label={`ATS readiness: ${atsResult?.score ?? 0} out of 100`} />
               </div>
             </SectionCard>
-            <SectionCard style={{ flex: "1 1 220px", minWidth: 220, boxShadow: "none" }}>
+            <SectionCard style={{ flex: "1 1 220px", minWidth: 220 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <MicIcon size={15} color={T.inkFaint} aria-hidden="true" />
