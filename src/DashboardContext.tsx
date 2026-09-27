@@ -82,7 +82,7 @@ export interface SessionsContextValue {
   sessionVersion: number;
 }
 
-interface SubscriptionContextValue {
+export interface SubscriptionContextValue {
   isFree: boolean;
   isStarter: boolean;
   atSessionLimit: boolean;
@@ -123,7 +123,7 @@ export interface UIContextValue {
   setCreditBalanceDirect: (newBalance: number) => void;
 }
 
-interface CoreContextValue {
+export interface CoreContextValue {
   persisted: PersistedState;
   updatePersisted: (updates: Partial<PersistedState>) => void;
   displayName: string;
@@ -157,9 +157,13 @@ interface CoreContextValue {
  *  `<SessionsContext.Provider value={...}>` — the real DashboardProvider
  *  performs live Supabase network calls unsuitable for canvas mode. */
 export const SessionsContext = createContext<SessionsContextValue | null>(null);
-const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<SubscriptionContext.Provider value={...}>` — see SessionsContext above. */
+export const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 export const UIContext = createContext<UIContextValue | null>(null);
-const CoreContext = createContext<CoreContextValue | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<CoreContext.Provider value={...}>` — see SessionsContext above. */
+export const CoreContext = createContext<CoreContextValue | null>(null);
 
 /* ─── Focused hooks ─── */
 

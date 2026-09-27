@@ -4,9 +4,9 @@
    SessionsV2 component. AuthProvider/DashboardProvider perform live
    Supabase network calls (unsuitable for canvas mode), so we supply the
    raw context values directly instead of rendering those providers. */
-import type { DashboardSession } from "@/dashboardTypes";
+import type { DashboardSession, PersistedState } from "@/dashboardTypes";
 import type { AuthContextType, User } from "@/AuthContext";
-import type { SessionsContextValue } from "@/DashboardContext";
+import type { SessionsContextValue, SubscriptionContextValue, UIContextValue, CoreContextValue } from "@/DashboardContext";
 
 export const MOCK_USER: User = {
   id: "canvas-user-1",
@@ -53,6 +53,74 @@ const BASE_SESSIONS_VALUE: SessionsContextValue = {
 export function mockSessionsValue(overrides: Partial<SessionsContextValue>): SessionsContextValue {
   return { ...BASE_SESSIONS_VALUE, ...overrides };
 }
+
+/* DashboardLayout (the real production sidebar shell) also reads
+   Subscription/UI/Core — mocked here purely so the sidebar and its plan
+   card / user footer render, not because SessionsV2 itself needs them. */
+export const MOCK_SUBSCRIPTION_VALUE: SubscriptionContextValue = {
+  isFree: false,
+  isStarter: true,
+  atSessionLimit: false,
+  sessionsUsed: 6,
+  sessionsRemaining: 0,
+  starterRemaining: 3,
+  sessionsThisWeek: 2,
+  sessionsThisMonth: 6,
+  creditBalance: 2,
+  creditsLoaded: true,
+};
+
+export const MOCK_UI_VALUE: UIContextValue = {
+  showUpgradeModal: false,
+  setShowUpgradeModal: () => {},
+  dataLoading: false,
+  isMobile: false,
+  paymentBanner: null,
+  setPaymentBanner: () => {},
+  syncError: "",
+  setSyncError: () => {},
+  toast: null,
+  showToast: () => {},
+  refreshCreditBalance: () => {},
+  setCreditBalanceDirect: () => {},
+};
+
+const MOCK_PERSISTED_STATE: PersistedState = {
+  hasCompletedFirstSession: true,
+  dismissedNotifs: [],
+  userName: MOCK_USER.name,
+  targetRole: MOCK_USER.targetRole ?? "Staff Engineer",
+  resumeFileName: MOCK_USER.resumeFileName ?? null,
+  interviewDate: "",
+};
+
+export const MOCK_CORE_VALUE: CoreContextValue = {
+  persisted: MOCK_PERSISTED_STATE,
+  updatePersisted: () => {},
+  displayName: MOCK_USER.name,
+  isNewUser: false,
+  daysLeft: 0,
+  aiInsights: [],
+  notifications: [],
+  upcomingGoals: [],
+  returnContext: null,
+  smartSchedule: null,
+  prepPlan: null,
+  companyReadiness: null,
+  curriculumState: null,
+  badges: [],
+  dailyChallenge: { id: "canvas-daily", label: "Practice a behavioral round", description: "", type: "behavioral", difficulty: "Medium", completed: false },
+  practiceReminder: null,
+  googleSyncStatus: "idle",
+  googleSyncError: null,
+  hasGoogleToken: false,
+  syncGoogleCalendar: async () => {},
+  handleStartSession: () => {},
+  handleExport: () => {},
+  handleDownload: () => {},
+  handleExportCSV: () => {},
+  handleExportPDF: () => {},
+};
 
 export const FEW_DASHBOARD_SESSIONS: DashboardSession[] = [
   {
