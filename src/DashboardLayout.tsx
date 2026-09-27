@@ -508,42 +508,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           )}
         </div>
 
-        {/* Secondary nav — Settings is a route like the primary items above,
-            pinned above the user profile card per shadcn's sidebar-07 footer
-            order (NavUser is always the last, bottom-most footer element). */}
-        <div className="px-3" style={{ marginBottom: 4 }}>
-          <SidebarMenu className="gap-1">
-            {secondaryNavItems.map((item) => (
-              <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
-                {activeNav === item.id && (
-                  <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
-                )}
-                <SidebarMenuButton
-                  isActive={activeNav === item.id}
-                  aria-current={activeNav === item.id ? "page" : undefined}
-                  onClick={() => nav.push(item.path)}
-                  onMouseEnter={(e) => { prefetchMap[item.id]?.(); if (activeNav !== item.id) e.currentTarget.style.background = c.border; }}
-                  onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
-                  aria-label={item.label}
-                  tooltip={item.label}
-                  style={{
-                    height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
-                    fontWeight: activeNav === item.id ? 600 : 500,
-                    color: activeNav === item.id ? c.accent : c.inkSoft,
-                    background: activeNav === item.id ? c.surface : "transparent",
-                    border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
-                    borderRadius: 8,
-                    transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
-                  }}
-                >
-                  <NavIcon id={item.id} />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </div>
-
         {/* User info — bordered white card matching Figma's sidebar footer;
             the chevrons-up-down trigger opens Log out as a menu item. */}
         <div className="px-3 group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
@@ -592,6 +556,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => nav.push("/settings")}>
+                  <SettingsIcon size={14} aria-hidden="true" />
+                  Settings
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => nav.push("/settings")}>
                   <BadgeCheckIcon size={14} aria-hidden="true" />
                   Account
