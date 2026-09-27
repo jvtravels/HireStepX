@@ -646,21 +646,17 @@ export default function ResumeV2Screen() {
                   {atsResult.suggestions.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {atsResult.suggestions.map((s, i) => (
-                        <div key={i} style={{ background: T.warning100, borderRadius: 12, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <LightbulbIcon size={10} color={T.warningInk} aria-hidden="true" />
-                          </div>
-                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.warningInk, margin: 0, flex: 1 }}>{s}</p>
+                        <div key={i} style={{ background: T.white, border: `1px solid ${T.warningLine}`, borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                          <LightbulbIcon size={14} color={T.warningInk} aria-hidden="true" style={{ flexShrink: 0 }} />
+                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.coal, margin: 0, flex: 1 }}>{s}</p>
                         </div>
                       ))}
                     </div>
                   )}
                   {atsResult.missing.length > 0 && (
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, background: T.error100, borderRadius: 12, padding: 16 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                        <AlertCircleIcon size={10} color={T.errorInk} aria-hidden="true" />
-                      </div>
-                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.errorInk, margin: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.white, border: `1px solid ${T.errorLine}`, borderRadius: 8, padding: "10px 14px" }}>
+                      <AlertCircleIcon size={14} color={T.errorInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.coal, margin: 0, flex: 1 }}>
                         Missing: {atsResult.missing.join(", ")}
                       </p>
                     </div>
