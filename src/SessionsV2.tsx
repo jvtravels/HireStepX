@@ -5,10 +5,10 @@
    sectioned data table, and footer pagination — wired to real session
    history via useDashboardSessions() (recentSessions, sessionsLoading),
    with search/filter/sort/pagination running against the mapped rows
-   client-side. "Open report" pushes a real route; "Start session" hands
-   off to /interview. Delete-a-session and the richer report-detail
-   affordances (radar/percentile) have no backing API yet, so those stay
-   disabled stubs — see the comments at each site. */
+   client-side. "Start session" hands off to /interview. Delete-a-session
+   and the richer report-detail affordances (radar/percentile) have no
+   backing API yet, so those stay disabled stubs — see the comments at
+   each site. */
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ import {
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -40,7 +41,6 @@ import {
   PlusIcon,
   SearchIcon,
   SearchXIcon,
-  ArrowRightIcon,
   Loader2Icon,
   MicIcon,
 } from "lucide-react";
@@ -196,6 +196,14 @@ const SORT_PRESETS: { value: Sort; label: string }[] = [
   { value: { column: "title", direction: "desc" }, label: "Session (Z–A)" },
 ];
 
+/* Presets mix 3 unrelated axes (date/score/progress/title) in one flat
+   list — a divider before each new axis lets a user scanning for e.g.
+   "most improved" skip past the irrelevant date/score options instead
+   of reading every label. */
+function isNewSortGroup(index: number): boolean {
+  return index > 0 && SORT_PRESETS[index].value.column !== SORT_PRESETS[index - 1].value.column;
+}
+
 function sortLabel(sort: Sort): string {
   const preset = SORT_PRESETS.find((p) => p.value.column === sort.column && p.value.direction === sort.direction);
   if (preset) return preset.label;
@@ -228,7 +236,7 @@ function parseRowDate(date: string): number {
 
 function PageHeader({ onStartSession }: { onStartSession: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", flexWrap: "wrap", gap: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <div>
         <h1 style={{ fontFamily: font.ui, fontSize: 26, fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Sessions</h1>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: T.inkFaint, margin: "2px 0 0" }}>
@@ -246,7 +254,7 @@ function PageHeader({ onStartSession }: { onStartSession: () => void }) {
           gap: 8,
           fontSize: 15,
           fontWeight: 600,
-          boxShadow: "0px 2px 4px rgba(49,46,129,0.2)",
+          boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
         }}
       >
         <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
@@ -319,10 +327,13 @@ function SortPill({ sort, onChange }: { sort: Sort; onChange: (sort: Sort) => vo
           const preset = SORT_PRESETS.find((p) => sortKey(p.value) === v);
           if (preset) onChange(preset.value);
         }}>
-          {SORT_PRESETS.map((preset) => (
-            <DropdownMenuRadioItem key={sortKey(preset.value)} value={sortKey(preset.value)}>
-              {preset.label}
-            </DropdownMenuRadioItem>
+          {SORT_PRESETS.map((preset, i) => (
+            <Fragment key={sortKey(preset.value)}>
+              {isNewSortGroup(i) && <DropdownMenuSeparator />}
+              <DropdownMenuRadioItem value={sortKey(preset.value)}>
+                {preset.label}
+              </DropdownMenuRadioItem>
+            </Fragment>
           ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
@@ -424,7 +435,7 @@ function ProgressCell({ progress }: { progress: number }) {
         : { bg: T.neutral100, text: T.neutralInk };
   const sign = progress > 0 ? "+" : "";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <Badge
         style={{
           fontFamily: font.ui,
@@ -433,7 +444,7 @@ function ProgressCell({ progress }: { progress: number }) {
           color: text,
           background: bg,
           height: "auto",
-          padding: "3px 7px",
+          padding: "3px 8px",
         }}
       >
         {sign}{progress}
@@ -462,13 +473,16 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
    of that group's rows on the current page — a page boundary falling
    mid-group must not undercount it. */
 function GroupDivider({ label, count }: { label: string; count: number }) {
+  // No background tint and a shorter height than the (tinted, 40px) column
+  // header row above it — otherwise the two read as the same bar and a user
+  // scrolling past a divider mistakes it for a repeated header.
   return (
-    <TableRow style={{ background: T.rowTintStrong, height: 40 }}>
-      <TableCell colSpan={6} style={{ padding: "8px 16px" }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: T.coal }}>
+    <TableRow style={{ height: 32 }}>
+      <TableCell colSpan={5} style={{ padding: "4px 20px" }}>
+        <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 700, color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
           {label}
         </span>{" "}
-        <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>{count} sessions</span>
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: T.inkFaint }}>{count} sessions</span>
       </TableCell>
     </TableRow>
   );
@@ -489,12 +503,12 @@ function SortableHead({
 }) {
   const active = sort.column === column;
   return (
-    <TableHead style={{ width, borderLeft: `1px solid ${T.line}`, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
+    <TableHead style={{ width, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
       <button
         type="button"
         onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : column === "title" ? "asc" : "desc" })}
         aria-label={`Sort by ${COLUMN_LABEL[column]}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-        style={{ display: "flex", alignItems: "center", gap: 4, width: "100%", height: 40, padding: "0 16px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+        style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
         onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
         onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       >
@@ -537,7 +551,6 @@ function SessionsTable({
   rowsPerPage,
   onRowsPerPageChange,
   onPageChange,
-  onOpenReport,
   onClearFilters,
 }: {
   groups: { label: string; rows: FlatRow[]; count: number }[];
@@ -550,12 +563,8 @@ function SessionsTable({
   rowsPerPage: number;
   onRowsPerPageChange: (rowsPerPage: number) => void;
   onPageChange: (page: number) => void;
-  onOpenReport: (row: FlatRow) => void;
   onClearFilters: () => void;
 }) {
-  // Route push is a network round trip on a slow connection — without this
-  // the button gives zero feedback between click and the next page painting.
-  const [openingId, setOpeningId] = useState<string | null>(null);
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
@@ -566,10 +575,7 @@ function SessionsTable({
             <SortableHead column="score" width={160} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
             <SortableHead column="progress" width={150} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
             <SortableHead column="date" width={150} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
-            <TableHead style={{ borderLeft: `1px solid ${T.line}`, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
-            <TableHead style={{ width: 130, borderLeft: `1px solid ${T.line}` }}>
-              <span className="sr-only">Actions</span>
-            </TableHead>
+            <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -580,7 +586,7 @@ function SessionsTable({
                   horizontally underneath it — without `sticky` this content,
                   centered in the full row width, sits out past the initial
                   scroll position and never becomes visible. */}
-              <TableCell colSpan={6} style={{ padding: "56px 16px" }}>
+              <TableCell colSpan={5} style={{ padding: "56px 20px" }}>
                 <div style={{ position: "sticky", left: 0, width: "max-content", maxWidth: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                   <SearchXIcon size={22} color={T.inkFaint} aria-hidden="true" />
                   <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>No sessions match your filters</p>
@@ -589,7 +595,7 @@ function SessionsTable({
                     variant="outline"
                     size="sm"
                     onClick={onClearFilters}
-                    style={{ marginTop: 4, height: 36, borderRadius: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
+                    style={{ height: 36, borderRadius: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
                   >
                     Clear filters
                   </Button>
@@ -602,7 +608,7 @@ function SessionsTable({
                 {group.label && <GroupDivider label={group.label} count={group.count} />}
                 {group.rows.map((row) => (
                   <TableRow key={row.id} style={{ height: 64 }}>
-                    <TableCell style={{ width: 260, height: 56, whiteSpace: "normal" }}>
+                    <TableCell style={{ width: 260, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
                       <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>
                         {row.title}{row.company ? ` · ${row.company}` : ""}
                       </p>
@@ -610,35 +616,17 @@ function SessionsTable({
                         {row.category} · {row.questionCount} questions
                       </p>
                     </TableCell>
-                    <TableCell style={{ width: 160, height: 56, borderLeft: `1px solid ${T.line}` }}>
+                    <TableCell style={{ width: 160, height: 56, padding: "0 20px" }}>
                       <ScoreCell score={row.score} band={row.band} />
                     </TableCell>
-                    <TableCell style={{ width: 150, height: 56, borderLeft: `1px solid ${T.line}` }}>
+                    <TableCell style={{ width: 150, height: 56, padding: "0 20px" }}>
                       <ProgressCell progress={row.progress} />
                     </TableCell>
-                    <TableCell style={{ width: 150, height: 56, borderLeft: `1px solid ${T.line}` }}>
+                    <TableCell style={{ width: 150, height: 56, padding: "0 20px" }}>
                       <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkSoft }}>{row.date}</span>
                     </TableCell>
-                    <TableCell style={{ height: 56, borderLeft: `1px solid ${T.line}`, whiteSpace: "normal", minWidth: 260 }}>
+                    <TableCell style={{ height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
                       <TakeawayCell points={row.takeaways} />
-                    </TableCell>
-                    <TableCell style={{ width: 130, height: 56, borderLeft: `1px solid ${T.line}` }}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={openingId !== null}
-                        onClick={() => { setOpeningId(row.id); onOpenReport(row); }}
-                        style={{ width: 117, height: 44, borderRadius: 6, gap: 4, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
-                      >
-                        {openingId === row.id ? (
-                          <Loader2Icon size={13} className="animate-spin" aria-hidden="true" />
-                        ) : (
-                          <>
-                            Open report
-                            <ArrowRightIcon size={12} aria-hidden="true" />
-                          </>
-                        )}
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -649,7 +637,7 @@ function SessionsTable({
       </Table>
       </div>
 
-      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
         <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>
           {filteredCount === totalCount
             ? `${totalCount} session${totalCount === 1 ? "" : "s"} total`
@@ -730,8 +718,8 @@ function SessionsTable({
 function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
-      <div style={{ maxWidth: 420, display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}>
-        <div style={{ width: 56, height: 56, borderRadius: 14, background: T.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ maxWidth: 420, display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
+        <div style={{ width: 56, height: 56, borderRadius: 12, background: T.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <MicIcon size={24} color={T.indigo} aria-hidden="true" />
         </div>
         <h2 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 700, color: T.coal, margin: 0 }}>No sessions yet</h2>
@@ -753,14 +741,17 @@ function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) 
 }
 
 function SessionsLoadingSkeleton() {
+  // No wrapping card here — the screen's own root card (SessionsV2Screen)
+  // is the only bordered/rounded container in any data state, so loading,
+  // empty, and populated all share one consistent shape.
   return (
-    <div role="status" aria-label="Loading sessions" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+    <div role="status" aria-label="Loading sessions" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 16, padding: 20 }}>
       <div style={{ display: "flex", gap: 12 }}>
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="skeleton rounded-xl" style={{ flex: 1, height: 68, border: `1px solid ${T.line}` }} />
         ))}
       </div>
-      <div style={{ flex: 1, borderRadius: 12, background: T.white, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Loader2Icon size={24} color={T.indigo} className="animate-spin" aria-hidden="true" />
       </div>
     </div>
@@ -772,10 +763,8 @@ function SessionsLoadingSkeleton() {
    rows. */
 function SessionsWorkspace({
   rows,
-  onOpenReport,
 }: {
   rows: FlatRow[];
-  onOpenReport: (row: FlatRow) => void;
 }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -856,7 +845,12 @@ function SessionsWorkspace({
 
   return (
     <>
-      <div style={{ flex: 1, minHeight: 0, background: T.white, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* No border/radius/background of its own — the screen's root card
+          (SessionsV2Screen) is the only card in the whole hierarchy. A
+          second bordered box here would double the chrome around one
+          visual unit. Toolbar/Table each own an internal border only
+          where they act as a real section divider (borderBottom/Top). */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
         <Toolbar
           search={search}
           onSearchChange={(v) => { setSearch(v); setPage(1); }}
@@ -881,7 +875,6 @@ function SessionsWorkspace({
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(v) => { setRowsPerPage(v); setPage(1); }}
           onPageChange={setPage}
-          onOpenReport={onOpenReport}
           onClearFilters={clearFilters}
         />
       </div>
@@ -905,7 +898,6 @@ export default function SessionsV2Screen() {
      ?new=1) immediately bounces back to /dashboard, so the button
      would look like it silently breaks. */
   const onStartSession = () => router.push("/session/new");
-  const onOpenReport = (row: FlatRow) => router.push(`/session/${row.id}`);
 
   let body: React.ReactNode;
   if (sessionsLoading) {
@@ -913,14 +905,14 @@ export default function SessionsV2Screen() {
   } else if (rows.length === 0) {
     body = <SessionsEmptyState onStartSession={onStartSession} />;
   } else {
-    body = <SessionsWorkspace rows={rows} onOpenReport={onOpenReport} />;
+    body = <SessionsWorkspace rows={rows} />;
   }
 
   return (
     <TooltipProvider>
       <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0 }}>
         <PageHeader onStartSession={onStartSession} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "0 16px 16px", flex: 1, minHeight: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {body}
         </div>
       </div>

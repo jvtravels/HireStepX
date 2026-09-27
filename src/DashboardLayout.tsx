@@ -20,14 +20,24 @@ import {
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   LayoutDashboardIcon,
   ClipboardListIcon,
@@ -36,12 +46,12 @@ import {
   FileTextIcon,
   BriefcaseIcon,
   SettingsIcon,
-  MailIcon,
   BellIcon,
   ChevronsUpDownIcon,
   LogOutIcon,
   BadgeCheckIcon,
   CreditCardIcon,
+  SearchIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -245,18 +255,20 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     return;
   }, [syncError, setSyncError]);
 
-  // Keyboard shortcut: ⌘B / Ctrl+B opens the plan/billing modal from anywhere
+  // Keyboard shortcut: ⌘K / Ctrl+K opens the command palette from anywhere.
+  // (⌘B is reserved by SidebarProvider for sidebar toggle — see sidebar.tsx —
+  // so billing no longer shares that binding; it's reachable via the palette.)
+  const [paletteOpen, setPaletteOpen] = useState(false);
   useEffect(() => {
-    if (!tierKnown) return;
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setShowUpgradeModal(true);
+        setPaletteOpen((v) => !v);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [tierKnown, setShowUpgradeModal]);
+  }, []);
 
   // Determine active nav from current route
   const activeNav = (() => {
@@ -602,18 +614,37 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           <Breadcrumb style={{ flex: 1 }}>
             <BreadcrumbList style={{ fontFamily: font.ui, fontSize: 13 }}>
               <BreadcrumbItem>
-                <BreadcrumbPage style={{ fontSize: 15, fontWeight: 600, color: c.ink }}>
-                  {allNavItems.find((item) => item.id === activeNav)?.label || "HireStepX"}
+                <BreadcrumbLink onClick={() => nav.push("/dashboard")} style={{ color: c.inkSoft, cursor: "pointer" }}>
+                  HireStepX
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
+                  {allNavItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <Button variant="ghost" size="icon" aria-label="Messages" aria-disabled="true" title="Not wired yet">
-            <MailIcon size={24} aria-hidden="true" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Notifications" aria-disabled="true" title="Not wired yet">
-            <BellIcon size={24} aria-hidden="true" />
-          </Button>
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            aria-label="Search and commands"
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "6px 10px", borderRadius: 8,
+              background: c.surface, border: `1px solid ${c.border}`,
+              color: c.inkSoft, fontFamily: font.ui, fontSize: 13,
+              cursor: "pointer",
+              transition: `background ${dur.instant} ${ease.snap}`,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = c.border; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = c.surface; }}
+          >
+            <SearchIcon size={14} aria-hidden="true" />
+            <span>Search…</span>
+            <kbd style={{ fontFamily: font.mono, fontSize: 11, color: c.inkSoft, opacity: 0.7, marginLeft: 8 }}>⌘K</kbd>
+          </button>
         </header>
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
@@ -664,6 +695,36 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </div>
         </div>
       </SidebarInset>
+
+      {/* Command palette — ⌘K from anywhere, or the header's Search button */}
+      <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
+        <CommandInput placeholder="Jump to a page or action…" />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Pages">
+            {navItems.map((item) => (
+              <CommandItem
+                key={item.id}
+                onSelect={() => { setPaletteOpen(false); nav.push(item.path); }}
+                onMouseEnter={() => prefetchMap[item.id]?.()}
+              >
+                <NavIcon id={item.id} />
+                {item.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Actions">
+            <CommandItem onSelect={() => { setPaletteOpen(false); nav.push("/settings"); }}>
+              <SettingsIcon size={16} aria-hidden="true" />
+              Settings
+            </CommandItem>
+            <CommandItem onSelect={() => { setPaletteOpen(false); setShowUpgradeModal(true); }}>
+              <CreditCardIcon size={16} aria-hidden="true" />
+              Plans & billing
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
 
       {/* Upgrade modal */}
       {showUpgradeModal && (
