@@ -118,6 +118,16 @@ function normalizeResumeProfile(profile: Record<string, unknown>): Record<string
     } else {
       profile.totalYearsExperience = 0;
     }
+
+    // The legacy field itself is rendered directly by older UI call sites
+    // (e.g. ResumeV2.tsx's "{profile.yearsExperience}+ Years") with no
+    // clamp of its own — apply the same 0..50 bound here so a hallucinated
+    // negative or triple-digit value never reaches the client raw.
+    if (typeof profile.yearsExperience === "number" && Number.isFinite(profile.yearsExperience)) {
+      profile.yearsExperience = Math.max(0, Math.min(50, Math.round(profile.yearsExperience)));
+    } else if (profile.yearsExperience != null) {
+      profile.yearsExperience = null;
+    }
   }
 
   // ─── domainYearsExperience — { domain: years } map ─────────────────
@@ -459,10 +469,17 @@ CRITICAL RULES:
     if (breakdown) {
       profile.scoreBreakdown = breakdown;
       profile.resumeScore = breakdown.total;
-    } else if (typeof profile.resumeScore !== "number") {
-      // Fallback path: LLM didn't emit either scoreBreakdown or
-      // resumeScore. Set null so the UI can surface "score unavailable"
-      // rather than a confusing 0.
+    } else if (typeof profile.resumeScore === "number" && Number.isFinite(profile.resumeScore)) {
+      // Fallback path: LLM emitted a top-level resumeScore but no usable
+      // scoreBreakdown. Unlike the breakdown.total branch above, this
+      // number never passed through clampSubscore — clamp it the same
+      // way so a hallucinated 150 or -20 never renders as "150/100" on
+      // ResumeV2.tsx / DashboardAnalytics.tsx, which display it verbatim.
+      profile.resumeScore = Math.max(0, Math.min(100, Math.round(profile.resumeScore)));
+    } else {
+      // LLM didn't emit either scoreBreakdown or a usable resumeScore.
+      // Set null so the UI can surface "score unavailable" rather than
+      // a confusing 0.
       profile.resumeScore = null;
     }
 
