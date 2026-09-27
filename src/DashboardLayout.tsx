@@ -26,6 +26,11 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Textarea } from "@/components/ui/textarea";
 import {
   LayoutDashboardIcon,
   ClipboardListIcon,
@@ -58,6 +63,7 @@ import { daysUntilEvent } from "./dashboardHelpers";
 import { CopyEmailLink } from "./_CopyEmailLink";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
+import { dur, ease } from "./_motion";
 
 
 /* ─── Design tokens (derived) ───────────────────────────────────────────
@@ -322,13 +328,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
                   {activeNav === item.id && (
-                    <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent }} />
+                    <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
                   )}
                   <SidebarMenuButton
                     isActive={activeNav === item.id}
                     aria-current={activeNav === item.id ? "page" : undefined}
                     onClick={() => nav.push(item.path)}
-                    onMouseEnter={() => prefetchMap[item.id]?.()}
+                    onMouseEnter={(e) => { prefetchMap[item.id]?.(); if (activeNav !== item.id) e.currentTarget.style.background = c.border; }}
+                    onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
                     aria-label={item.label}
                     tooltip={item.label}
                     style={{
@@ -338,6 +345,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       background: activeNav === item.id ? c.graphite : "transparent",
                       border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
                       borderRadius: 8,
+                      transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
                     }}
                   >
                     <NavIcon id={item.id} />
@@ -356,38 +364,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </SidebarContent>
 
         <SidebarFooter className="gap-2">
-        {/* Secondary nav — Settings is a route like the primary items above. */}
-        <div className="px-3" style={{ marginBottom: 4 }}>
-          <SidebarMenu className="gap-1">
-            {secondaryNavItems.map((item) => (
-              <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
-                {activeNav === item.id && (
-                  <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent }} />
-                )}
-                <SidebarMenuButton
-                  isActive={activeNav === item.id}
-                  aria-current={activeNav === item.id ? "page" : undefined}
-                  onClick={() => nav.push(item.path)}
-                  onMouseEnter={() => prefetchMap[item.id]?.()}
-                  aria-label={item.label}
-                  tooltip={item.label}
-                  style={{
-                    height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
-                    fontWeight: activeNav === item.id ? 600 : 500,
-                    color: activeNav === item.id ? c.accent : c.inkSoft,
-                    background: activeNav === item.id ? c.surface : "transparent",
-                    border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
-                    borderRadius: 8,
-                  }}
-                >
-                  <NavIcon id={item.id} />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </div>
-
         {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;
             state (exhausted / low / healthy) is communicated through the usage row
             and dash bar, not the card surface color. Hidden in the icon-only
@@ -463,24 +439,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 </div>
 
                 {/* ── Smooth progress bar — always visible ── */}
-                <div
-                  role="progressbar"
+                <Progress
+                  value={pct}
                   aria-label={planExhausted
                     ? `All ${planTotal} sessions used ${periodLabel}`
                     : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
-                  aria-valuenow={Math.round(pct)}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  style={{ height: 4, borderRadius: 2, background: c.border, marginBottom: 10, marginTop: 6, overflow: "hidden" }}
-                >
-                  <div style={{
-                    height: "100%",
-                    width: `${pct}%`,
-                    borderRadius: 2,
-                    background: barFill,
-                    transition: "width 0.4s ease",
-                  }} />
-                </div>
+                  className="h-1 rounded-sm [&_[data-slot=progress-indicator]]:bg-[var(--bar-fill)]"
+                  style={{ background: c.border, marginBottom: 10, marginTop: 6, "--bar-fill": barFill } as React.CSSProperties}
+                />
 
                 {/* ── Extra sessions available — always visible ──
                     Green + bold when credits exist. Muted with 0 when none —
@@ -563,12 +529,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   width: "100%", display: "flex", alignItems: "center",
                   gap: 8, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
                   cursor: "pointer", textAlign: "left",
+                  transition: `background ${dur.instant} ${ease.snap}, border-color ${dur.instant} ${ease.snap}`,
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = c.border; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = c.graphite; }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                  <span style={{ width: 32, height: 32, borderRadius: 4, background: T.copper, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.white }}>{(displayName || "?")[0].toUpperCase()}</span>
-                  </span>
+                  <Avatar className="rounded-md size-8 shrink-0">
+                    <AvatarFallback className="rounded-md" style={{ background: T.copper, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 500 }}>
+                      {(displayName || "?")[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="group-data-[collapsible=icon]:hidden" style={{ minWidth: 0 }}>
                     <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
                     <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
@@ -580,9 +551,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <DropdownMenuContent align="start" side="top" style={{ width: 240 }}>
               <DropdownMenuLabel className="p-0 font-normal">
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
-                  <span style={{ width: 32, height: 32, borderRadius: 4, background: T.copper, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.white }}>{(displayName || "?")[0].toUpperCase()}</span>
-                  </span>
+                  <Avatar className="rounded-md size-8 shrink-0">
+                    <AvatarFallback className="rounded-md" style={{ background: T.copper, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 500 }}>
+                      {(displayName || "?")[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <span style={{ minWidth: 0 }}>
                     <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{displayName}</p>
                     <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{user?.email}</p>
@@ -611,6 +584,41 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
+
+        {/* Secondary nav — Settings is a route like the primary items above,
+            pinned below the user profile card per the Figma footer order. */}
+        <div className="px-3" style={{ marginBottom: 4 }}>
+          <SidebarMenu className="gap-1">
+            {secondaryNavItems.map((item) => (
+              <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
+                {activeNav === item.id && (
+                  <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
+                )}
+                <SidebarMenuButton
+                  isActive={activeNav === item.id}
+                  aria-current={activeNav === item.id ? "page" : undefined}
+                  onClick={() => nav.push(item.path)}
+                  onMouseEnter={(e) => { prefetchMap[item.id]?.(); if (activeNav !== item.id) e.currentTarget.style.background = c.border; }}
+                  onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
+                  aria-label={item.label}
+                  tooltip={item.label}
+                  style={{
+                    height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
+                    fontWeight: activeNav === item.id ? 600 : 500,
+                    color: activeNav === item.id ? c.accent : c.inkSoft,
+                    background: activeNav === item.id ? c.surface : "transparent",
+                    border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
+                    borderRadius: 8,
+                    transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
+                  }}
+                >
+                  <NavIcon id={item.id} />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </div>
         </SidebarFooter>
         </aside>
@@ -650,41 +658,45 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
         {/* Payment success/cancel banner */}
         {paymentBanner && (
-          <div role="alert" style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 10, background: paymentBanner === "success" ? T.success100 : T.error100, border: `1px solid ${paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Alert
+            variant={paymentBanner === "success" ? "default" : "destructive"}
+            className="mb-4 flex flex-row items-center justify-between"
+            style={{ background: paymentBanner === "success" ? T.success100 : T.error100, borderColor: paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)", animation: "slideDown 0.2s ease" }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {paymentBanner === "success" ? (
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               ) : (
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
               )}
-              <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: paymentBanner === "success" ? c.sage : c.ember }}>
+              <AlertDescription style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: paymentBanner === "success" ? c.sage : c.ember }}>
                 {paymentBanner === "success" ? "Payment successful! Your account has been upgraded." : "Payment was not completed. No charges were made — you can try again anytime."}
-              </span>
+              </AlertDescription>
             </div>
             <Button variant="ghost" size="icon-xs" onClick={() => setPaymentBanner(null)} aria-label="Dismiss banner">
               <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </Button>
-          </div>
+          </Alert>
         )}
 
         {/* Sync error banner */}
         {syncError && (
-          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: T.error100, border: "1px solid rgba(185,28,28,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Alert variant="destructive" className="mb-4 flex flex-row items-center justify-between" style={{ background: T.error100, borderColor: "rgba(185,28,28,0.2)", animation: "slideDown 0.2s ease" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</span>
+              <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</AlertDescription>
             </div>
             <Button variant="ghost" size="icon-xs" onClick={() => setSyncError("")} aria-label="Dismiss sync error">
               <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </Button>
-          </div>
+          </Alert>
         )}
 
         {isOffline && (
-          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: c.creamSoft, border: "1px solid rgba(126,141,152,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+          <Alert className="mb-4 flex flex-row items-center gap-2" style={{ background: c.creamSoft, borderColor: "rgba(126,141,152,0.2)", animation: "slideDown 0.2s ease" }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.inkSoft} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You're offline — some features may be unavailable</span>
-          </div>
+            <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You&apos;re offline — some features may be unavailable</AlertDescription>
+          </Alert>
         )}
         <div key={pathname} className="dash-page-enter" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           {children}
@@ -771,7 +783,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </p>
 
               {/* Type selector — 2×2 icon+label grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
+              <ToggleGroup
+                type="single"
+                value={helpType}
+                onValueChange={(v) => { if (v) setHelpType(v as typeof helpType); }}
+                className="grid grid-cols-2 gap-1.5 mb-3.5"
+              >
                 {([
                   {
                     key: "bug" as const, label: "Bug report",
@@ -800,15 +817,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 ]).map(({ key, label, icon, inactiveBg, inactiveColor, activeBg, activeColor, activeBdr }) => {
                   const active = helpType === key;
                   return (
-                    <Button
+                    <ToggleGroupItem
                       key={key}
-                      variant="ghost"
-                      aria-pressed={active}
-                      onClick={() => setHelpType(key)}
+                      value={key}
+                      className="h-auto justify-start gap-1.5 rounded-lg px-2.5 py-2 data-[state=on]:text-inherit"
                       style={{
-                        display: "flex", alignItems: "center", gap: 7,
-                        justifyContent: "flex-start",
-                        height: "auto", padding: "9px 11px", borderRadius: 8,
                         fontFamily: font.ui, fontSize: 12, fontWeight: active ? 700 : 500,
                         transition: "all 0.15s", textAlign: "left" as const,
                         background: active ? activeBg : inactiveBg,
@@ -816,31 +829,29 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                         border: active ? activeBdr : `1px solid transparent`,
                         opacity: active ? 1 : 0.7,
                       }}
+                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.opacity = "1"; }}
+                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.opacity = "0.7"; }}
                     >
                       {icon}
                       {label}
-                    </Button>
+                    </ToggleGroupItem>
                   );
                 })}
-              </div>
+              </ToggleGroup>
 
               {/* Textarea */}
-              <textarea
+              <Textarea
                 rows={3}
                 placeholder={helpType === "bug" ? "What happened? What did you expect?" : helpType === "feature" ? "Describe the feature you'd like..." : helpType === "billing" ? "Describe your billing question..." : "How can we help?"}
                 value={helpFeedback}
                 onChange={(e) => { setHelpFeedback(e.target.value); if (helpSent) setHelpSent(false); }}
                 maxLength={500}
+                className="mb-2.5 resize-none"
                 style={{
-                  width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8,
                   background: T.white, border: `1px solid ${c.border}`,
-                  color: c.ink, fontFamily: font.ui, fontSize: 13, resize: "none",
-                  outline: "none", transition: "border-color 0.15s", lineHeight: 1.55,
-                  marginBottom: 10,
+                  color: c.ink, fontFamily: font.ui, fontSize: 13, lineHeight: 1.55,
                   boxShadow: "inset 0 1px 3px rgba(14,12,8,0.04)",
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = T.indigoRing}
-                onBlur={(e) => e.currentTarget.style.borderColor = c.border}
               />
 
               {/* Send / success */}
@@ -906,7 +917,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             background: c.graphite, color: c.ink,
             boxShadow: shadow.cta,
             marginLeft: "auto",
+            transform: helpOpen ? "rotate(90deg)" : "rotate(0deg)",
+            transition: `transform ${dur.medium} ${ease.snap}, box-shadow ${dur.medium} ${ease.snap}, background ${dur.instant} ${ease.snap}`,
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = shadow.modal; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = shadow.cta; }}
         >
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>

@@ -13,6 +13,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tokens as T, fonts as F } from "./auth/_tokens";
+import { dur, ease } from "./_motion";
 import { useDashboardSessions } from "./DashboardContext";
 import type { DashboardSession } from "./dashboardTypes";
 import { Button } from "@/components/ui/button";
@@ -275,7 +276,9 @@ function FilterPill<V extends string>({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 6, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
+          style={{ borderRadius: 8, height: 44, gap: 6, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
           {display}
           <ChevronDownIcon size={12} aria-hidden="true" />
@@ -305,7 +308,9 @@ function SortPill({ sort, onChange }: { sort: Sort; onChange: (sort: Sort) => vo
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 6, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
+          style={{ borderRadius: 8, height: 44, gap: 6, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
           {`Sort: ${sortLabel(sort)}`}
           <ChevronDownIcon size={12} aria-hidden="true" />
@@ -488,7 +493,9 @@ function SortableHead({
         type="button"
         onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : column === "title" ? "asc" : "desc" })}
         aria-label={`Sort by ${COLUMN_LABEL[column]}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-        style={{ display: "flex", alignItems: "center", gap: 4, width: "100%", height: 40, padding: "0 16px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit" }}
+        style={{ display: "flex", alignItems: "center", gap: 4, width: "100%", height: 40, padding: "0 16px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       >
         {children}
         {active ? (
@@ -703,7 +710,9 @@ function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) 
         </p>
         <Button
           onClick={onStartSession}
-          style={{ background: T.indigo, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 600, gap: 8, height: 44, borderRadius: 8 }}
+          style={{ background: T.indigo, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 600, gap: 8, height: 44, borderRadius: 8, transition: `background ${dur.instant} ${ease.snap}` }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = T.indigoDeep; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = T.indigo; }}
         >
           <PlusIcon size={16} aria-hidden="true" />
           Start session
@@ -718,7 +727,7 @@ function SessionsLoadingSkeleton() {
     <div role="status" aria-label="Loading sessions" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", gap: 12 }}>
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{ flex: 1, height: 68, borderRadius: 12, background: T.white, border: `1px solid ${T.line}` }} />
+          <div key={i} className="skeleton rounded-xl" style={{ flex: 1, height: 68, border: `1px solid ${T.line}` }} />
         ))}
       </div>
       <div style={{ flex: 1, borderRadius: 12, background: T.white, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
