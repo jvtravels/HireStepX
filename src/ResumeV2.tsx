@@ -750,9 +750,7 @@ export default function ResumeV2Screen() {
   return (
     <TooltipProvider>
       <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: font.ui }}>
-        <div style={{ padding: "0 16px 16px" }}>
-          {body}
-        </div>
+        {body}
       </div>
     </TooltipProvider>
   );
