@@ -71,8 +71,16 @@ export const tokens = {
   // (~7:1 on success100). Was inlined as "#166534" in the credits-balance
   // rows of settingsSections + DashboardLayout.
   successInk: "oklch(0.448 0.108 151.328)",
+  // Alpha sibling for borders on success surfaces — mirrors warningLine.
+  successLine: "oklch(0.448 0.108 151.328 / 0.20)",
   error: "oklch(0.505 0.190 27.518)",
   error100: "oklch(0.936 0.031 17.717)",
+  // Darker error text shade for AA contrast on error100 (mirrors successInk /
+  // warningInk's darken-and-desaturate pattern). Base T.error was previously
+  // used directly as text on error100 — same mistake successInk/warningInk
+  // were introduced to fix elsewhere, just never applied to error.
+  errorInk: "oklch(0.405 0.152 27.518)",
+  errorLine: "oklch(0.405 0.152 27.518 / 0.20)",
   warning: "oklch(0.554 0.121 66.442)",
   warning100: "oklch(0.962 0.058 95.617)",
   // Promoted from a dashboard-local literal during the 2026-06 audit.

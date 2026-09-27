@@ -51,9 +51,9 @@ const font = { ui: F.sans, mono: F.mono };
 type MetricTone = "good" | "warning" | "error";
 
 const metricColor: Record<MetricTone, { chipBg: string; chipText: string; bar: string; chipBorder: string }> = {
-  good: { chipBg: T.success100, chipText: T.successInk, bar: T.success, chipBorder: `color-mix(in oklch, ${T.success} 25%, transparent)` },
-  warning: { chipBg: T.warning100, chipText: T.warningInk, bar: T.warning, chipBorder: `color-mix(in oklch, ${T.warning} 25%, transparent)` },
-  error: { chipBg: T.error100, chipText: T.error, bar: T.error, chipBorder: `color-mix(in oklch, ${T.error} 25%, transparent)` },
+  good: { chipBg: T.success100, chipText: T.successInk, bar: T.success, chipBorder: T.successLine },
+  warning: { chipBg: T.warning100, chipText: T.warningInk, bar: T.warning, chipBorder: T.warningLine },
+  error: { chipBg: T.error100, chipText: T.errorInk, bar: T.error, chipBorder: T.errorLine },
 };
 
 const SKILLS_COLLAPSE_THRESHOLD = 12;
@@ -347,7 +347,7 @@ export default function ResumeV2Screen() {
                   size="sm"
                   onClick={triggerUpload}
                   disabled={phase === "extracting" || phase === "analyzing"}
-                  style={{ background: T.indigo100, borderColor: T.indigo, color: T.indigo, fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6 }}
+                  style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6, minHeight: 44 }}
                 >
                   <UploadIcon size={14} aria-hidden="true" />
                   Replace
@@ -356,9 +356,10 @@ export default function ResumeV2Screen() {
                   <div role="group" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint }}>Delete?</span>
                     <Button
+                      variant="destructive"
                       size="sm"
                       onClick={() => { handleRemove(); setConfirmDelete(false); }}
-                      style={{ background: T.error, color: T.white, fontFamily: font.ui, fontSize: S.sm, fontWeight: 500 }}
+                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44 }}
                     >
                       Yes
                     </Button>
@@ -366,7 +367,7 @@ export default function ResumeV2Screen() {
                       variant="outline"
                       size="sm"
                       onClick={() => setConfirmDelete(false)}
-                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint }}
+                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44 }}
                     >
                       No
                     </Button>
@@ -378,6 +379,7 @@ export default function ResumeV2Screen() {
                     aria-label="Delete resume"
                     title="Remove resume"
                     onClick={() => setConfirmDelete(true)}
+                    style={{ minHeight: 44, minWidth: 44 }}
                   >
                     <Trash2Icon size={14} color={T.error} aria-hidden="true" />
                   </Button>
@@ -441,7 +443,7 @@ export default function ResumeV2Screen() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 40, fontWeight: 700, color: T.coal }}>{qualityScore}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{qualityScore}</span>
                   <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ 100</span>
                 </div>
                 <ProgressBar value={qualityScore} max={100} color={metricColor[qualityTone].bar} label={`Resume quality: ${qualityScore} out of 100`} />
@@ -494,7 +496,7 @@ export default function ResumeV2Screen() {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {scoreBreakdownRows.map((row) => (
                   <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
-                    <p title={row.label} style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: "0 1 180px", minWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label}</p>
+                    <p title={row.label} style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: 0, flex: "0 1 180px", minWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label}</p>
                     <div style={{ flex: 1 }}>
                       <ProgressBar value={row.value} max={row.max} color={metricColor[row.tone].bar} trackColor={T.creamSoft} label={`${row.label}: ${row.value} out of ${row.max}`} />
                     </div>
@@ -527,7 +529,7 @@ export default function ResumeV2Screen() {
                       <div style={{ width: 24, height: 24, borderRadius: 12, background: T.creamSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                         <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
                       </div>
-                      <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkSoft, margin: 0, flex: 1 }}>{text}</p>
+                      <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
                     </div>
                     {i < profile.improvements!.length - 1 && <div style={{ height: 1, background: T.creamSoft }} />}
                   </div>
@@ -657,9 +659,9 @@ export default function ResumeV2Screen() {
                   {atsResult.missing.length > 0 && (
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12, background: T.error100, borderRadius: 12, padding: 16 }}>
                       <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                        <AlertCircleIcon size={10} color={T.error} aria-hidden="true" />
+                        <AlertCircleIcon size={10} color={T.errorInk} aria-hidden="true" />
                       </div>
-                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.error, margin: 0, flex: 1 }}>
+                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.errorInk, margin: 0, flex: 1 }}>
                         Missing: {atsResult.missing.join(", ")}
                       </p>
                     </div>
@@ -691,7 +693,7 @@ export default function ResumeV2Screen() {
                     {(skillsExpanded ? coreSkills : coreSkills.slice(0, SKILLS_COLLAPSE_THRESHOLD)).map((skill) => (
                       <div key={skill.name} style={{ display: "flex", alignItems: "center", gap: 8, background: T.white, border: `1px solid ${T.line}`, borderRadius: 999, padding: "6px 10px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkSoft }}>{skill.name}</span>
+                          <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint }}>{skill.name}</span>
                           {skill.yearsUsed != null && <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>{skill.yearsUsed}Y</span>}
                         </div>
                         <div style={{ background: T.indigo100, borderRadius: 999, padding: "3px 6px" }}>
@@ -718,7 +720,7 @@ export default function ResumeV2Screen() {
                     {profile.keyAchievements.map((text, i) => (
                       <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.creamSoft, borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ width: 24, height: 24, borderRadius: 12, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkSoft }}>{i + 1}</span>
+                          <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
                         </div>
                         <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
                       </div>
@@ -753,7 +755,7 @@ export default function ResumeV2Screen() {
                     return (
                       <div key={track.type} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ width: 8, height: 8, borderRadius: 4, background: metricColor[tone].bar, flexShrink: 0 }} />
-                        <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: 1 }}>{track.label}</p>
+                        <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: 0, flex: 1 }}>{track.label}</p>
                         <Badge style={{ background: metricColor[tone].chipBg, color: metricColor[tone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.sm, padding: "4px 8px" }}>
                           {track.score}
                         </Badge>
