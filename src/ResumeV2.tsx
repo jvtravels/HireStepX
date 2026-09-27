@@ -428,10 +428,9 @@ export default function ResumeV2Screen() {
             </SectionCard>
           )}
 
-          {/* Metric cards — one hero (Resume quality) + a compact stat pair,
-              not three identical boxes: see impeccable audit P0 finding. */}
+          {/* Metric cards — three independent stat cards in one row. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            <SectionCard style={{ flex: "1 1 260px", minWidth: 220, boxShadow: "none" }}>
+            <SectionCard style={{ flex: "1 1 220px", minWidth: 220, boxShadow: "none" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <BarChart3Icon size={18} color={T.coal} aria-hidden="true" />
@@ -449,37 +448,38 @@ export default function ResumeV2Screen() {
                 <ProgressBar value={qualityScore} max={100} color={metricColor[qualityTone].bar} label={`Resume quality: ${qualityScore} out of 100`} />
               </div>
             </SectionCard>
-            <SectionCard style={{ flex: "1 1 260px", minWidth: 220, gap: 14, boxShadow: "none" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <FilterIcon size={15} color={T.inkFaint} aria-hidden="true" />
-                    <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>ATS readiness</p>
-                  </div>
-                  <Badge style={{ background: metricColor[atsTone].chipBg, color: metricColor[atsTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                    {atsResult ? scoreChipLabel(atsTone) : "Unavailable"}
-                  </Badge>
+            <SectionCard style={{ flex: "1 1 220px", minWidth: 220, boxShadow: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <FilterIcon size={15} color={T.inkFaint} aria-hidden="true" />
+                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>ATS readiness</p>
                 </div>
+                <Badge style={{ background: metricColor[atsTone].chipBg, color: metricColor[atsTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
+                  {atsResult ? scoreChipLabel(atsTone) : "Unavailable"}
+                </Badge>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal }}>{atsResult?.score ?? "–"}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>/ 100</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{atsResult?.score ?? "–"}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ 100</span>
                 </div>
                 <ProgressBar value={atsResult?.score ?? 0} max={100} color={metricColor[atsTone].bar} label={`ATS readiness: ${atsResult?.score ?? 0} out of 100`} />
               </div>
-              <Divider />
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <MicIcon size={15} color={T.inkFaint} aria-hidden="true" />
-                    <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Interview coverage</p>
-                  </div>
-                  <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                    {coverageChip}
-                  </Badge>
+            </SectionCard>
+            <SectionCard style={{ flex: "1 1 220px", minWidth: 220, boxShadow: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <MicIcon size={15} color={T.inkFaint} aria-hidden="true" />
+                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Interview coverage</p>
                 </div>
+                <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
+                  {coverageChip}
+                </Badge>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal }}>{coveredCount}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>/ {coverageRows.length}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{coveredCount}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ {coverageRows.length}</span>
                 </div>
                 <ProgressBar value={coveredCount} max={coverageRows.length} color={metricColor[coverageTone].bar} label={`Interview coverage: ${coveredCount} out of ${coverageRows.length}`} />
               </div>
