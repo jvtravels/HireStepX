@@ -599,7 +599,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </Sidebar>
 
       {/* Main Content */}
-      <SidebarInset id="dashboard-main" tabIndex={-1} className="dash-main" style={{ padding: isMobile ? "0 16px" : "0 16px 0 16px", display: "flex", flexDirection: "column", height: "100dvh", minHeight: "100vh", overflow: "hidden", background: c.surface }}>
+      <SidebarInset id="dashboard-main" tabIndex={-1} className="dash-main" style={{ padding: isMobile ? "0 16px" : "0 16px 0 8px", display: "flex", flexDirection: "column", height: "100dvh", minHeight: "100vh", overflow: "hidden", background: c.surface }}>
 
         {/* Top bar — sidebar toggle + current page label */}
         <header style={{
