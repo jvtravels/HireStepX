@@ -10,7 +10,7 @@
    affordances (radar/percentile) have no backing API yet, so those stay
    disabled stubs — see the comments at each site. */
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
@@ -178,6 +178,7 @@ const SCORE_OPTIONS: { value: "All" | ScoreBand; label: string }[] = [
 type SortColumn = "title" | "score" | "progress" | "date";
 type SortDirection = "asc" | "desc";
 type Sort = { column: SortColumn; direction: SortDirection };
+const DEFAULT_SORT: Sort = { column: "date", direction: "desc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
   title: "Session",
@@ -751,9 +752,20 @@ function SessionsWorkspace({
   const [typeFilter, setTypeFilter] = useState("All");
   const [scoreFilter, setScoreFilter] = useState<"All" | ScoreBand>("All");
   const [dateFilter, setDateFilter] = useState("All");
-  const [sort, setSort] = useState<Sort>({ column: "date", direction: "desc" });
+  const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
+
+  // `rows` gets a new array identity each time refreshSessions() refetches
+  // (tab refocus, layout remount) even when the underlying data is
+  // unchanged. A user-picked sort shouldn't survive that refresh — reset
+  // to the default order, but skip the initial mount so it doesn't fight
+  // the useState initializer.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return; }
+    setSort(DEFAULT_SORT);
+  }, [rows]);
 
   const typeOptions = useMemo(
     () => ["All", ...Array.from(new Set(rows.map((r) => r.category)))],
