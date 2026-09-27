@@ -378,7 +378,7 @@ export default function ResumeV2Screen() {
               </p>
             )}
             {profile.careerTrajectory && (
-              <div style={{ background: T.indigo100, border: `1px solid ${T.indigoRing}`, borderRadius: 10, padding: "12px 16px 16px" }}>
+              <div style={{ background: T.indigo100, borderRadius: 10, padding: "12px 16px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                   <div style={{ width: 16, height: 16, borderRadius: 8, background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <TargetIcon size={10} color={T.white} aria-hidden="true" />
@@ -412,7 +412,7 @@ export default function ResumeV2Screen() {
           )}
 
           {/* Metric cards */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <SectionCard style={{ flex: "1 1 160px", minWidth: 160 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -476,10 +476,10 @@ export default function ResumeV2Screen() {
                 <BarChart3Icon size={16} color={T.coal} aria-hidden="true" />
                 <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Score Breakdown</h2>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {scoreBreakdownRows.map((row) => (
                   <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
-                    <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, width: 180, flexShrink: 0 }}>{row.label}</p>
+                    <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: "0 1 180px", minWidth: 100 }}>{row.label}</p>
                     <div style={{ flex: 1 }}>
                       <ProgressBar value={row.value} max={row.max} color={metricColor[row.tone].bar} trackColor={T.creamSoft} label={`${row.label}: ${row.value} out of ${row.max}`} />
                     </div>
@@ -542,7 +542,7 @@ export default function ResumeV2Screen() {
                         {job.title}{job.company ? ` · ${job.company}` : ""}
                       </h3>
                       <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.inkFaint, margin: 0, whiteSpace: "nowrap" }}>
-                        {job.start || job.end ? `${job.start || "?"} - ${job.end || "Present"}` : ""}
+                        {job.start || job.end ? `${job.start || "Earlier"} - ${job.end || "Present"}` : ""}
                       </p>
                     </div>
                     {(job.scope || (job.topProjects && job.topProjects.length > 0)) && (
@@ -580,7 +580,7 @@ export default function ResumeV2Screen() {
           )}
 
           {/* ATS readiness */}
-          <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, boxShadow: shadows.card, width: "100%", overflow: "hidden" }}>
+          <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 12, boxShadow: shadows.card, width: "100%", overflow: "hidden" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -593,7 +593,7 @@ export default function ResumeV2Screen() {
                   </div>
                 </div>
                 {atsResult && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: metricColor[atsTone].chipBg, border: `1px solid ${T.warningLine}`, borderRadius: 999, padding: "6px 12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: metricColor[atsTone].chipBg, border: `1px solid color-mix(in oklch, ${metricColor[atsTone].bar} 25%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>
                     <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: metricColor[atsTone].chipText }}>{atsResult.score}</span>
                     <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: metricColor[atsTone].chipText }}>/ 100</span>
                   </div>
@@ -636,7 +636,7 @@ export default function ResumeV2Screen() {
                           <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <LightbulbIcon size={10} color={T.warningInk} aria-hidden="true" />
                           </div>
-                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: 1 }}>{s}</p>
+                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.warningInk, margin: 0, flex: 1 }}>{s}</p>
                         </div>
                       ))}
                     </div>
@@ -646,7 +646,7 @@ export default function ResumeV2Screen() {
                       <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                         <AlertCircleIcon size={10} color={T.error} aria-hidden="true" />
                       </div>
-                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: 1 }}>
+                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.error, margin: 0, flex: 1 }}>
                         Missing: {atsResult.missing.join(", ")}
                       </p>
                     </div>
