@@ -88,20 +88,20 @@ type SessionRow = {
    divider rows can be rebuilt after filtering. */
 type FlatRow = SessionRow;
 
-// Figma "Session History" spec (node 711:344) calls "Developing" out as its
-// own info-blue token pair, distinct from the violet used elsewhere for
-// "interviewing-stage" states.
-const bandColor: Record<ScoreBand, { bg: string; text: string }> = {
-  developing: { bg: T.info100, text: T.info },
-  needsFocus: { bg: T.error100, text: T.error },
-  good: { bg: T.success100, text: T.successInk },
-};
-
 const bandLabel: Record<ScoreBand, string> = {
   developing: "Developing",
   needsFocus: "Needs focus",
   good: "Good",
 };
+
+// Band badges used to carry a full traffic-light palette (red/blue/green)
+// on every single row — since "Needs focus" is the majority default, not an
+// outlier, that red stopped signaling anything and just became wallpaper.
+// One neutral pill now covers the default case; color is reserved for the
+// one case that's a genuine outlier worth a second look — a sub-50 score —
+// mirroring a restrained "single accent used sparingly" palette rather than
+// a color per category.
+const ALARM_SCORE = 50;
 
 // Same 85/75 breakpoints as the app's canonical scoreLabel()/
 // scoreLabelColor() (src/dashboardTypes.ts) — reused rather than
@@ -368,44 +368,47 @@ function Toolbar({
 }) {
   const dateOptions = ["All", ...GROUP_ORDER];
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 220, maxWidth: 400 }}>
-          <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
-          <SearchIcon
-            size={14}
-            color={T.inkFaint}
-            aria-hidden="true"
-            style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
-          />
-          <Input
-            id="sessions-search"
-            placeholder="Search sessions..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            style={{ paddingLeft: 34, height: 44, borderRadius: 8, background: T.white }}
-          />
-        </div>
-        <FilterPill
-          label="Type"
-          value={typeFilter}
-          options={typeOptions.map((t) => ({ value: t, label: t }))}
-          onChange={onTypeFilterChange}
+    // All controls cluster left (search, filters, sort) rather than pinning
+    // Sort to the far right with space-between — at narrower desktop widths
+    // that split left a wide dead gap in the middle of the toolbar, the same
+    // "left heavy, right empty" imbalance as the table columns.
+    <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 8 }}>
+      <div style={{ position: "relative", flex: "1 1 220px", minWidth: 220, maxWidth: 400 }}>
+        <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
+        <SearchIcon
+          size={14}
+          color={T.inkFaint}
+          aria-hidden="true"
+          style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
         />
-        <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
-        <FilterPill
-          label="Date"
-          value={dateFilter}
-          options={dateOptions.map((d) => ({ value: d, label: d }))}
-          onChange={onDateFilterChange}
+        <Input
+          id="sessions-search"
+          placeholder="Search sessions..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          style={{ paddingLeft: 34, height: 44, borderRadius: 8, background: T.white }}
         />
       </div>
+      <FilterPill
+        label="Type"
+        value={typeFilter}
+        options={typeOptions.map((t) => ({ value: t, label: t }))}
+        onChange={onTypeFilterChange}
+      />
+      <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
+      <FilterPill
+        label="Date"
+        value={dateFilter}
+        options={dateOptions.map((d) => ({ value: d, label: d }))}
+        onChange={onDateFilterChange}
+      />
       <SortPill sort={sort} onChange={onSortChange} />
     </div>
   );
 }
 
 function ScoreCell({ score, band }: { score: number; band: ScoreBand }) {
+  const alarming = score < ALARM_SCORE;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700, color: T.coal }}>{score}</span>
@@ -414,8 +417,8 @@ function ScoreCell({ score, band }: { score: number; band: ScoreBand }) {
           fontFamily: font.ui,
           fontSize: 13,
           fontWeight: 500,
-          color: bandColor[band].text,
-          background: bandColor[band].bg,
+          color: alarming ? T.error : T.neutralInk,
+          background: alarming ? T.error100 : T.neutral100,
           height: "auto",
           padding: "4px 8px",
         }}
@@ -426,40 +429,39 @@ function ScoreCell({ score, band }: { score: number; band: ScoreBand }) {
   );
 }
 
+// The one place color stays load-bearing: whether a session actually got
+// better or worse since last time. Kept as plain colored text + a small
+// arrow rather than a filled badge, so it reads as a lightweight signal
+// (like a single accent) instead of another competing pill next to Score's.
 function ProgressCell({ progress }: { progress: number }) {
-  const { bg, text } =
+  const { text, glyph } =
     progress > 0
-      ? { bg: T.success100, text: T.successInk }
+      ? { text: T.successInk, glyph: "▲" }
       : progress < 0
-        ? { bg: T.error100, text: T.error }
-        : { bg: T.neutral100, text: T.neutralInk };
+        ? { text: T.error, glyph: "▼" }
+        : { text: T.inkFaint, glyph: "" };
   const sign = progress > 0 ? "+" : "";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <Badge
-        style={{
-          fontFamily: font.ui,
-          fontSize: 13,
-          fontWeight: 600,
-          color: text,
-          background: bg,
-          height: "auto",
-          padding: "4px 8px",
-        }}
-      >
+      <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: text, display: "inline-flex", alignItems: "center", gap: 4 }}>
+        {glyph && <span aria-hidden="true" style={{ fontSize: 9 }}>{glyph}</span>}
         {sign}{progress}
-      </Badge>
+      </span>
       <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>vs last session</span>
     </div>
   );
 }
 
 function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
+  // Both takeaway lines now share one muted-gray dot instead of a green/
+  // amber pair — "strength" vs. "next step" is already carried by the
+  // "Next: " prefix and the (single) bolder-vs-muted text weight below, so
+  // the dot no longer needs to duplicate that distinction in color.
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {points.map((p, i) => (
         <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: 3, marginTop: 6, flexShrink: 0, background: p.tone === "good" ? T.success : T.warning }} />
+          <span style={{ width: 6, height: 6, borderRadius: 3, marginTop: 6, flexShrink: 0, background: T.inkFaintWeak }} />
           <span style={{ fontFamily: font.ui, fontSize: 13, color: p.tone === "good" ? T.coal : T.inkFaint, whiteSpace: "normal", lineHeight: 1.4 }}>
             {p.tone === "next" ? "Next: " : ""}{p.text}
           </span>
@@ -574,14 +576,23 @@ function SessionsTable({
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-      <Table aria-label="Practice session history">
+      <Table aria-label="Practice session history" className="table-fixed">
         <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
           <TableRow style={{ background: T.rowTint, height: 40 }}>
-            <SortableHead column="title" width="26%" minWidth={200} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
-            <SortableHead column="score" width="13%" minWidth={110} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
-            <SortableHead column="progress" width="15%" minWidth={140} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
-            <SortableHead column="date" width="13%" minWidth={100} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
-            <TableHead style={{ width: "33%", minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
+            {/* Session and Key Takeaway hold free-form text that benefits from
+                extra room on a wide screen, so they get the flexible share of
+                the table (Takeaway is left unset — the only flexible column
+                in a fixed-layout table absorbs whatever's left). Score/
+                Progress/Date hold fixed-length content (a badge, a short
+                date) that never needs more room on a wider screen — giving
+                them a % share stretched those cells into wide empty boxes at
+                narrower desktop widths, which read as "unbalanced". Pinning
+                them to a content-sized px width fixes that. */}
+            <SortableHead column="title" width="36%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
+            <SortableHead column="score" width={170} minWidth={170} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
+            <SortableHead column="progress" width={210} minWidth={210} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
+            <SortableHead column="date" width={130} minWidth={130} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
+            <TableHead style={{ minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -614,7 +625,7 @@ function SessionsTable({
                 {group.label && <GroupDivider label={group.label} count={group.count} />}
                 {group.rows.map((row) => (
                   <TableRow key={row.id} style={{ height: 64 }}>
-                    <TableCell style={{ width: "26%", minWidth: 200, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
+                    <TableCell style={{ width: "36%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
                       <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>
                         {row.title}{row.company ? ` · ${row.company}` : ""}
                       </p>
@@ -622,16 +633,16 @@ function SessionsTable({
                         {row.category} · {row.questionCount} questions
                       </p>
                     </TableCell>
-                    <TableCell style={{ width: "13%", minWidth: 110, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: 170, minWidth: 170, height: 56, padding: "0 20px" }}>
                       <ScoreCell score={row.score} band={row.band} />
                     </TableCell>
-                    <TableCell style={{ width: "15%", minWidth: 140, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: 210, minWidth: 210, height: 56, padding: "0 20px" }}>
                       <ProgressCell progress={row.progress} />
                     </TableCell>
-                    <TableCell style={{ width: "13%", minWidth: 100, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: 130, minWidth: 130, height: 56, padding: "0 20px" }}>
                       <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkSoft }}>{row.date}</span>
                     </TableCell>
-                    <TableCell style={{ width: "33%", height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
+                    <TableCell style={{ height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
                       <TakeawayCell points={row.takeaways} />
                     </TableCell>
                   </TableRow>
