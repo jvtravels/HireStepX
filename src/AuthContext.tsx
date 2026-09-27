@@ -503,7 +503,7 @@ export interface User {
   isDiscoverableToEmployers?: boolean;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   loading: boolean;
@@ -515,7 +515,10 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<AuthContext.Provider value={...}>` — the real AuthProvider performs
+ *  live Supabase network calls unsuitable for canvas mode. */
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function profileToUser(profile: Profile, session: Session): User {
   // Completion signals, strongest to weakest:

@@ -45,7 +45,7 @@ function cardCoachingFromWinsFixes(
 
 /* ─── Sub-context types ─── */
 
-interface SessionsContextValue {
+export interface SessionsContextValue {
   recentSessions: DashboardSession[];
   scoreTrend: TrendPoint[];
   skills: SkillData[];
@@ -102,7 +102,7 @@ interface SubscriptionContextValue {
   creditsLoaded: boolean;
 }
 
-interface UIContextValue {
+export interface UIContextValue {
   showUpgradeModal: boolean;
   setShowUpgradeModal: (v: boolean) => void;
   dataLoading: boolean;
@@ -153,9 +153,12 @@ interface CoreContextValue {
 
 /* ─── Contexts ─── */
 
-const SessionsContext = createContext<SessionsContextValue | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<SessionsContext.Provider value={...}>` — the real DashboardProvider
+ *  performs live Supabase network calls unsuitable for canvas mode. */
+export const SessionsContext = createContext<SessionsContextValue | null>(null);
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
-const UIContext = createContext<UIContextValue | null>(null);
+export const UIContext = createContext<UIContextValue | null>(null);
 const CoreContext = createContext<CoreContextValue | null>(null);
 
 /* ─── Focused hooks ─── */

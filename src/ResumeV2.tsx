@@ -12,7 +12,6 @@
    dashboard's data is still loading or no resume has been uploaded yet. */
 
 import { useMemo } from "react";
-import Image from "next/image";
 import { tokens as T, fonts as F, textSize as S, shadows } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDashboardUI } from "./DashboardContext";
@@ -21,32 +20,12 @@ import { computeATSScore } from "./resumeAts";
 import { computeAllFitness, type InterviewType, type FitnessBand } from "./resumeFitness";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  LayoutDashboardIcon,
-  ClipboardListIcon,
-  CalendarIcon,
-  TrendingUpIcon,
   FileTextIcon,
   BriefcaseIcon,
-  HelpCircleIcon,
-  SettingsIcon,
-  SparklesIcon,
-  UserCircleIcon,
-  CreditCardIcon,
   BellIcon,
   MailIcon,
-  LogOutIcon,
-  ChevronsUpDownIcon,
   TargetIcon,
   ShieldCheckIcon,
   MessageCircleIcon,
@@ -65,53 +44,12 @@ import {
   Trash2Icon,
   Loader2Icon,
   FileUpIcon,
+  SparklesIcon,
 } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useState } from "react";
 
 const font = { ui: F.sans, mono: F.mono };
-
-/* ── Nav shell (unchanged from the concept) ── */
-
-const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "sessions", label: "Sessions" },
-  { id: "calendar", label: "Calendar" },
-  { id: "analytics", label: "Analytics" },
-  { id: "resume", label: "Resume" },
-  { id: "jobs", label: "Jobs" },
-] as const;
-
-function NavIcon({ id }: { id: string }) {
-  switch (id) {
-    case "dashboard":
-      return <LayoutDashboardIcon size={18} aria-hidden="true" />;
-    case "sessions":
-      return <ClipboardListIcon size={18} aria-hidden="true" />;
-    case "calendar":
-      return <CalendarIcon size={18} aria-hidden="true" />;
-    case "analytics":
-      return <TrendingUpIcon size={18} aria-hidden="true" />;
-    case "resume":
-      return <FileTextIcon size={18} aria-hidden="true" />;
-    case "jobs":
-      return <BriefcaseIcon size={18} aria-hidden="true" />;
-    default:
-      return null;
-  }
-}
 
 type MetricTone = "good" | "warning" | "error";
 
@@ -159,159 +97,6 @@ const DEPTH_LABEL: Record<string, string> = {
   secondary: "Secondary",
   exposure: "Exposure",
 };
-
-/* ── Shell ── */
-
-function AppSidebar({ name, email }: { name: string; email: string }) {
-  const { logout } = useAuth();
-  const initial = (name.trim()[0] || email.trim()[0] || "U").toUpperCase();
-
-  return (
-    <Sidebar collapsible="icon" className="border-none">
-      <SidebarHeader className="px-3 pt-4 pb-3">
-        <div className="flex items-center gap-2 overflow-hidden px-2">
-          <div className="hidden shrink-0 items-center justify-center group-data-[collapsible=icon]:flex">
-            <Image src="/favicon.svg" alt="HireStepX" width={28} height={28} style={{ width: 24, height: 24, borderRadius: 6 }} />
-          </div>
-          <Image
-            src="/wordmark.png"
-            alt="HireStepX"
-            width={387}
-            height={108}
-            className="group-data-[collapsible=icon]:hidden"
-            style={{ height: 22, width: "auto" }}
-          />
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarMenu className="gap-1.5">
-            {NAV_ITEMS.map((item) => {
-              const active = item.id === "resume";
-              return (
-                <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
-                  {active && (
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        position: "absolute",
-                        left: -12,
-                        top: 4,
-                        width: 4,
-                        height: 32,
-                        borderRadius: "0 4px 4px 0",
-                        background: T.indigo,
-                      }}
-                    />
-                  )}
-                  <SidebarMenuButton
-                    isActive={active}
-                    tooltip={item.label}
-                    style={{
-                      height: 40,
-                      gap: 10,
-                      background: active ? T.white : "transparent",
-                      border: active ? `1px solid ${T.line}` : "1px solid transparent",
-                      color: active ? T.indigo : T.inkFaint,
-                      fontFamily: font.ui,
-                      fontSize: S.md,
-                      fontWeight: active ? 600 : 500,
-                    }}
-                  >
-                    <NavIcon id={item.id} />
-                    <span className="truncate group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="gap-2">
-        <SidebarMenu className="gap-1.5">
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Help & Support" style={{ height: 40, gap: 10, color: T.inkFaint, fontFamily: font.ui, fontSize: S.md, fontWeight: 500 }}>
-              <HelpCircleIcon size={18} aria-hidden="true" />
-              <span className="truncate group-data-[collapsible=icon]:hidden">Help & Support</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings" style={{ height: 40, gap: 10, color: T.inkFaint, fontFamily: font.ui, fontSize: S.md, fontWeight: 500 }}>
-              <SettingsIcon size={18} aria-hidden="true" />
-              <span className="truncate group-data-[collapsible=icon]:hidden">Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex w-full items-center gap-2.5 rounded-xl border p-2.5 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0"
-              style={{ borderColor: T.line, background: T.white, cursor: "pointer" }}
-            >
-              <Avatar style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0 }}>
-                <AvatarFallback style={{ borderRadius: 8, background: T.indigo, fontFamily: font.ui, fontSize: S.md, fontWeight: 700, color: T.white }}>{initial}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 600, color: T.coal, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</p>
-                <p style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{email}</p>
-              </div>
-              <ChevronsUpDownIcon
-                className="shrink-0 group-data-[collapsible=icon]:hidden"
-                size={14}
-                color={T.inkFaint}
-                aria-hidden="true"
-              />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" style={{ width: 232, fontFamily: font.ui }}>
-            <DropdownMenuLabel style={{ padding: "6px 8px" }}>
-              <div className="flex items-center gap-2.5">
-                <Avatar style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0 }}>
-                  <AvatarFallback style={{ borderRadius: 8, background: T.indigo, fontFamily: font.ui, fontSize: S.md, fontWeight: 700, color: T.white }}>{initial}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 600, color: T.coal, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</p>
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 400, color: T.inkFaint, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{email}</p>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {/* Upgrade / Account / Billing / Notifications have no target
-                surface yet on this screen (no pricing/account page wired
-                into ResumeV2) — left as clearly-disabled stubs, same as
-                the rest of the app's not-yet-built chrome. */}
-            <DropdownMenuItem aria-disabled="true" title="Not wired in this preview" style={{ padding: "8px", fontSize: S.base, color: T.coal }}>
-              <SparklesIcon size={15} aria-hidden="true" />
-              Upgrade to Pro
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem aria-disabled="true" title="Not wired in this preview" style={{ padding: "8px", fontSize: S.base, color: T.coal }}>
-              <UserCircleIcon size={15} aria-hidden="true" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem aria-disabled="true" title="Not wired in this preview" style={{ padding: "8px", fontSize: S.base, color: T.coal }}>
-              <CreditCardIcon size={15} aria-hidden="true" />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem aria-disabled="true" title="Not wired in this preview" style={{ padding: "8px", fontSize: S.base, color: T.coal }}>
-              <BellIcon size={15} aria-hidden="true" />
-              Notifications
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { void logout(); }} style={{ padding: "8px", fontSize: S.base, color: T.coal, cursor: "pointer" }}>
-              <LogOutIcon size={15} aria-hidden="true" />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarFooter>
-    </Sidebar>
-  );
-}
 
 function TopBar() {
   return (
@@ -517,9 +302,6 @@ export default function ResumeV2Screen() {
       score: fits[type].score,
     }));
   }, [profile]);
-
-  const name = user?.name || "Your account";
-  const email = user?.email || "";
 
   let body: React.ReactNode;
   if (dataLoading) {
@@ -1002,15 +784,12 @@ export default function ResumeV2Screen() {
 
   return (
     <TooltipProvider>
-      <SidebarProvider style={{ width: "100%", maxWidth: 1728, height: "100vh", background: T.creamSoft, fontFamily: font.ui }}>
-        <AppSidebar name={name} email={email} />
-        <SidebarInset style={{ background: T.creamSoft, minHeight: 0 }}>
-          <TopBar />
-          <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "0 16px 16px" }}>
-            {body}
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%", background: T.creamSoft, fontFamily: font.ui }}>
+        <TopBar />
+        <div style={{ padding: "0 16px 16px" }}>
+          {body}
+        </div>
+      </div>
     </TooltipProvider>
   );
 }

@@ -4,6 +4,28 @@ import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  LayoutDashboardIcon,
+  ClipboardListIcon,
+  CalendarIcon,
+  TrendingUpIcon,
+  FileTextIcon,
+  BriefcaseIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
@@ -53,14 +75,28 @@ const prefetchMap: Record<string, () => void> = {
 
 /* ─── Sidebar Nav Items ─── */
 const navItems = [
-  { id: "dashboard", path: "/dashboard", label: "Dashboard", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
-  { id: "sessions", path: "/sessions", label: "Sessions", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg> },
-  { id: "calendar", path: "/calendar", label: "Calendar", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-  { id: "analytics", path: "/analytics", label: "Analytics", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
-  { id: "resume", path: "/resume", label: "Resume", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg> },
-  { id: "jobs", path: "/jobs", label: "Jobs", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
-  { id: "settings", path: "/settings", label: "Settings", icon: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
+  { id: "dashboard", path: "/dashboard", label: "Dashboard" },
+  { id: "sessions", path: "/sessions", label: "Sessions" },
+  { id: "calendar", path: "/calendar", label: "Calendar" },
+  { id: "analytics", path: "/analytics", label: "Analytics" },
+  { id: "resume", path: "/resume", label: "Resume" },
+  { id: "jobs", path: "/jobs", label: "Jobs" },
+  { id: "settings", path: "/settings", label: "Settings" },
 ];
+
+function NavIcon({ id }: { id: string }) {
+  const props = { size: 18, "aria-hidden": true as const };
+  switch (id) {
+    case "dashboard": return <LayoutDashboardIcon {...props} />;
+    case "sessions": return <ClipboardListIcon {...props} />;
+    case "calendar": return <CalendarIcon {...props} />;
+    case "analytics": return <TrendingUpIcon {...props} />;
+    case "resume": return <FileTextIcon {...props} />;
+    case "jobs": return <BriefcaseIcon {...props} />;
+    case "settings": return <SettingsIcon {...props} />;
+    default: return null;
+  }
+}
 
 export default function DashboardLayout({ children }: { children?: React.ReactNode }) {
   const nav = useRouter();
@@ -133,7 +169,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     [calendarEvents]
   );
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpFeedback, setHelpFeedback] = useState("");
   const [helpType, setHelpType] = useState<"bug" | "feature" | "billing" | "other">("other");
@@ -194,15 +229,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     return () => window.removeEventListener("keydown", handler);
   }, [tierKnown, setShowUpgradeModal]);
 
-  // Prevent body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (isMobile && sidebarOpen) {
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
-    }
-    return;
-  }, [isMobile, sidebarOpen]);
-
   // Determine active nav from current route
   const activeNav = (() => {
     const path = pathname;
@@ -224,40 +250,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
-    <div style={{ display: "flex", height: "100dvh", minHeight: "100vh", background: c.surface, overflow: "hidden" }}>
+    <SidebarProvider style={{ height: "100dvh", minHeight: "100vh", background: c.surface, overflow: "hidden" }}>
       {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
       <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
-      {/* Mobile sticky header — logo left, hamburger right. Sits below the
-          sidebar overlay (z:19) and sidebar itself (z:20) so the drawer
-          slides over it. Replaces the old inline "≡ Menu" content button. */}
-      {isMobile && (
-        <header style={{
-          position: "fixed", top: 0, left: 0, right: 0, height: 56,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 20px",
-          background: c.cream,
-          borderBottom: `1px solid ${c.border}`,
-          zIndex: 18,
-        }}>
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open navigation menu"
-            aria-expanded={sidebarOpen}
-            style={{ color: c.ink }}
-          >
-            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-          </Button>
-        </header>
-      )}
       <a href="#dashboard-main" style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
         zIndex: 100, padding: "12px 24px", background: c.accent, color: c.surface,
@@ -287,81 +282,57 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         }
       `}</style>
 
-      {isMobile && sidebarOpen && <div role="button" aria-label="Close navigation menu" tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSidebarOpen(false); }} style={{ position: "fixed", inset: 0, background: "rgba(14,12,8,0.45)", zIndex: 19 }} />}
+      {/* Sidebar — shadcn shell shared across every (dashboard) route */}
+      <Sidebar className="border-none">
+        <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <SidebarHeader className="px-3 pt-4 pb-3">
+          <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 6 }}>
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
+          </Link>
+        </SidebarHeader>
 
-      {/* Sidebar */}
-      <aside aria-label="Navigation sidebar" inert={isMobile && !sidebarOpen ? true : undefined} aria-hidden={isMobile && !sidebarOpen} style={{
-        width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "0 14px 0" : "20px 18px 0",
-        display: "flex", flexDirection: "column", position: "fixed", top: 0, bottom: 0,
-        background: c.cream,
-        zIndex: 20, overflow: "hidden",
-        transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
-        transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-      }}>
-        {/* Sidebar wordmark — mobile gets a full-bleed header row; desktop gets a compact top block */}
-        {isMobile ? (
-          <div style={{
-            height: 56,
-            display: "flex", alignItems: "center",
-            borderBottom: `1px solid ${c.border}`,
-            marginBottom: 8,
-            marginLeft: -14, marginRight: -14,
-            paddingLeft: 20, paddingRight: 20,
-            flexShrink: 0,
-          }}>
-            <Link
-              href="/"
-              onClick={() => setSidebarOpen(false)}
-              style={{ textDecoration: "none", display: "flex", alignItems: "center" }}
-            >
-              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
-            </Link>
-          </div>
-        ) : (
-          <div style={{ paddingBottom: 20, flexShrink: 0 }}>
-            <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 14 }}>
-              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
-            </Link>
-          </div>
-        )}
-        <nav aria-label="Main navigation" style={{ display: "flex", flexDirection: "column", gap: 2, flex: "0 0 auto" }}>
-          {navItems.map((item) => (
-            <button key={item.id}
-              aria-current={activeNav === item.id ? "page" : undefined}
-              aria-label={item.label}
-              onClick={() => { nav.push(item.path); if (isMobile) setSidebarOpen(false); }}
-              style={{
-                display: "flex", alignItems: "center", gap: 12, padding: isMobile ? "10px 12px" : "11px 14px",
-                borderRadius: 10, border: "none", cursor: "pointer",
-                background: activeNav === item.id ? c.creamSoft : "transparent",
-                color: activeNav === item.id ? c.ink : c.inkSoft,
-                fontFamily: font.ui, fontSize: 13, fontWeight: activeNav === item.id ? 600 : 500,
-                transition: "background 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "left",
-              }}
-              onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${c.accent}40`}
-              onBlur={(e) => e.currentTarget.style.boxShadow = "none"}
-              onMouseEnter={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = c.creamSoft; prefetchMap[item.id]?.(); }}
-              onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
-            >
-              {item.icon}
-              <span style={{ position: "relative" }}>
-                {item.label}
-                {item.id === "calendar" && hasUrgentInterview && (
-                  <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.surface}` }} />
-                )}
-              </span>
-              {activeNav === item.id && <div style={{ width: 3, height: 16, borderRadius: 2, background: c.accent, marginLeft: "auto" }} />}
-            </button>
-          ))}
-        </nav>
+        <SidebarContent>
+          <SidebarGroup>
+            <nav aria-label="Main navigation">
+            <SidebarMenu className="gap-1">
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
+                  {activeNav === item.id && (
+                    <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent }} />
+                  )}
+                  <SidebarMenuButton
+                    isActive={activeNav === item.id}
+                    aria-current={activeNav === item.id ? "page" : undefined}
+                    onClick={() => nav.push(item.path)}
+                    onMouseEnter={() => prefetchMap[item.id]?.()}
+                    aria-label={item.label}
+                    style={{
+                      height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
+                      fontWeight: activeNav === item.id ? 600 : 500,
+                      color: activeNav === item.id ? c.accent : c.inkSoft,
+                      background: activeNav === item.id ? T.indigo100 : "transparent",
+                    }}
+                  >
+                    <NavIcon id={item.id} />
+                    <span style={{ position: "relative" }}>
+                      {item.label}
+                      {item.id === "calendar" && hasUrgentInterview && (
+                        <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.surface}` }} />
+                      )}
+                    </span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+            </nav>
+          </SidebarGroup>
+        </SidebarContent>
 
-        {/* Spacer — pushes plan card + user info to bottom */}
-        <div style={{ flex: 1 }} />
-
+        <SidebarFooter className="gap-2">
         {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;
             state (exhausted / low / healthy) is communicated through the usage row
             and dash bar, not the card surface color. */}
-        <div style={{ margin: "0 8px 12px", padding: "14px", borderRadius: 12,
+        <div style={{ padding: "14px", borderRadius: 12,
           background: c.graphite,
           border: `1px solid ${c.border}`,
           flexShrink: 0 }}>
@@ -535,10 +506,24 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             Log out
           </Button>
         </div>
-      </aside>
+        </SidebarFooter>
+        </aside>
+      </Sidebar>
 
       {/* Main Content */}
-      <main id="dashboard-main" tabIndex={-1} className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 20px max(60px, env(safe-area-inset-bottom))" : "20px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(20px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(20px, env(safe-area-inset-right))" : undefined }}>
+      <SidebarInset id="dashboard-main" tabIndex={-1} className="dash-main" style={{ padding: "0 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh" }}>
+
+        {/* Top bar — sidebar toggle + current page label */}
+        <header style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: isMobile ? "16px 20px" : "20px 0 16px",
+          position: "sticky", top: 0, zIndex: 10, background: c.surface,
+        }}>
+          <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
+          <h1 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ink, margin: 0 }}>
+            {navItems.find((item) => item.id === activeNav)?.label || "HireStepX"}
+          </h1>
+        </header>
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (
@@ -581,7 +566,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <div key={pathname} className="dash-page-enter">
           {children}
         </div>
-      </main>
+      </SidebarInset>
 
       {/* Upgrade modal */}
       {showUpgradeModal && (
@@ -805,6 +790,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </Button>
       </div>
 
-    </div>
+    </SidebarProvider>
   );
 }
