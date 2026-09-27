@@ -11,6 +11,11 @@ export const tokens = {
   // settings/dashboard cards. Was inlined as `graphite: "#FDFCF7"` in three
   // dashboard components.
   creamRaised: "oklch(0.987 0.002 197.1)",
+  // App-shell canvas behind the sidebar + main content (Figma #FAFAFA,
+  // node 711:345/711:411) — a hair darker than pure white so the white
+  // header/card surfaces read as distinct raised cards instead of
+  // blending into the page.
+  pageBg: "oklch(0.9851 0 89.9)",
 
   // Ink
   coal: "oklch(0.148 0.004 228.8)",
@@ -71,9 +76,30 @@ export const tokens = {
   violet: "oklch(0.491 0.241 292.581)",
   violet100: "oklch(0.943 0.028 294.588)",
 
+  // Fifth stage hue — Figma's "Developing" score-band badge (info/blue),
+  // distinct from success/warning/error/violet.
+  info: "oklch(0.478 0.147 240.79)",
+  info100: "oklch(0.967 0.017 236.6)",
+
+  // Neutral badge pair — zero-delta / no-change states, distinct from ink.
+  neutralInk: "oklch(0.373 0.017 261.4)",
+  neutral100: "oklch(0.968 0.003 264.5)",
+
   // Lines
-  line: "oklch(0.922 0.026 92.405)",
+  // Figma Border/Default (#EAECF0) — a neutral cool-gray hairline. The prior
+  // value here carried a warm hue (92°) left over from the retired editorial
+  // cream palette; the copper→indigo sweep missed borders. Corrected to match
+  // the audited Sessions spec (node 711:344), which is representative of the
+  // shared hairline used across cards/sidebar/tables app-wide.
+  line: "oklch(0.943 0.006 265.3)",
   lineStrong: "oklch(0.849 0.034 89.869)",
+
+  // Neutral table-row tints (zebra/group-label rows, distinct shades).
+  // rowTint = Figma #F7F8FA (table header), rowTintStrong = Figma #F9FAFB
+  // (group-divider row) — values were swapped in an earlier pass; corrected
+  // via precise sRGB->OKLCH conversion against node 711:344.
+  rowTint: "oklch(0.9789 0.0029 264.5)",
+  rowTintStrong: "oklch(0.9846 0.0017 247.8)",
 
   // Overlays / faded surfaces (used in marketing-v2)
   coalOverlay: "rgba(14, 12, 8, 0.55)",

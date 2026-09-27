@@ -1,15 +1,14 @@
 "use client";
 
 /* HireStepX 2.0 — Sessions screen.
-   Sidebar shell, top bar, page header, KPI strip, filter/sort toolbar,
-   grouped/sectioned data table, and footer pagination — wired to real
-   session history via useDashboardSessions() (recentSessions,
-   sessionsLoading), with search/filter/sort/pagination running against
-   the mapped rows client-side. "Open report" and "Practice again" push
-   real routes; "Start session" hands off to /interview. Delete-a-session
-   and the richer report-detail affordances (radar/percentile) have no
-   backing API yet, so those stay disabled stubs — see the comments at
-   each site. */
+   Sidebar shell, top bar, page header, filter/sort toolbar, grouped/
+   sectioned data table, and footer pagination — wired to real session
+   history via useDashboardSessions() (recentSessions, sessionsLoading),
+   with search/filter/sort/pagination running against the mapped rows
+   client-side. "Open report" pushes a real route; "Start session" hands
+   off to /interview. Delete-a-session and the richer report-detail
+   affordances (radar/percentile) have no backing API yet, so those stay
+   disabled stubs — see the comments at each site. */
 
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,19 +40,10 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   ChevronsUpDownIcon,
-  ClipboardListIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
-  GaugeIcon,
-  TrophyIcon,
-  HelpCircleIcon,
-  BellIcon,
-  MailIcon,
   PlusIcon,
   SearchIcon,
   SearchXIcon,
   ArrowRightIcon,
-  RotateCcwIcon,
   Loader2Icon,
   MicIcon,
 } from "lucide-react";
@@ -65,11 +55,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-const BASE = T.creamSoft;
-const font = { ui: "'Geist', 'Satoshi', system-ui, -apple-system, sans-serif", mono: F.mono };
+const font = { ui: F.sans, mono: F.mono };
 
 type ScoreBand = "developing" | "needsFocus" | "good";
 
@@ -97,11 +85,11 @@ type SessionRow = {
    divider rows can be rebuilt after filtering. */
 type FlatRow = SessionRow;
 
-// Re-uses the app's existing status/stage tokens rather than inventing new
-// literals: violet is already reserved for "interviewing-stage / in
-// progress" states (see auth/_tokens.ts), which fits "developing" exactly.
+// Figma "Session History" spec (node 711:344) calls "Developing" out as its
+// own info-blue token pair, distinct from the violet used elsewhere for
+// "interviewing-stage" states.
 const bandColor: Record<ScoreBand, { bg: string; text: string }> = {
-  developing: { bg: T.violet100, text: T.violet },
+  developing: { bg: T.info100, text: T.info },
   needsFocus: { bg: T.error100, text: T.error },
   good: { bg: T.success100, text: T.successInk },
 };
@@ -234,38 +222,6 @@ function parseRowDate(date: string): number {
   return Number.isNaN(t) ? 0 : t;
 }
 
-function TopBar() {
-  return (
-    <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", padding: "8px 16px", width: "100%" }}>
-      <div
-        style={{
-          height: 62,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 16px",
-          background: T.white,
-          border: `1px solid ${T.line}`,
-          borderRadius: 8,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <SidebarTrigger style={{ color: T.coal }} />
-          <span style={{ fontFamily: font.ui, fontSize: 14, color: T.coal }}>Sessions</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Button variant="ghost" size="icon" aria-label="Messages" aria-disabled="true" title="Not wired in this preview">
-            <MailIcon size={20} aria-hidden="true" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Notifications" aria-disabled="true" title="Not wired in this preview">
-            <BellIcon size={20} aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PageHeader({ onStartSession }: { onStartSession: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
@@ -292,71 +248,6 @@ function PageHeader({ onStartSession }: { onStartSession: () => void }) {
         <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
         Start session
       </Button>
-    </div>
-  );
-}
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  tone,
-  tooltip,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tone?: "positive" | "negative";
-  tooltip?: string;
-}) {
-  return (
-    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: T.white, border: `1px solid ${T.line}`, borderRadius: 12 }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: T.creamSoft, display: "flex", alignItems: "center", justifyContent: "center", color: T.inkFaint, flexShrink: 0 }}>
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontFamily: font.ui, fontSize: 12, color: T.inkFaint, margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
-          {label}
-          {tooltip && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" aria-label={tooltip} style={{ display: "inline-flex", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: T.inkFaint }}>
-                  <HelpCircleIcon size={12} aria-hidden="true" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{tooltip}</TooltipContent>
-            </Tooltip>
-          )}
-        </p>
-        <p
-          style={{
-            fontFamily: font.mono,
-            fontSize: 20,
-            fontWeight: 700,
-            color: tone === "positive" ? T.successInk : tone === "negative" ? T.error : T.coal,
-            margin: "2px 0 0",
-          }}
-        >
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function KpiStrip({ count, avg, best, avgDelta }: { count: number; avg: number; best: number; avgDelta: number }) {
-  return (
-    <div style={{ display: "flex", gap: 12 }}>
-      <KpiCard icon={<ClipboardListIcon size={18} aria-hidden="true" />} label="Sessions" value={String(count)} />
-      <KpiCard icon={<GaugeIcon size={18} aria-hidden="true" />} label="Average score" value={String(avg)} />
-      <KpiCard icon={<TrophyIcon size={18} aria-hidden="true" />} label="Best score" value={String(best)} />
-      <KpiCard
-        icon={avgDelta < 0 ? <TrendingDownIcon size={18} aria-hidden="true" /> : <TrendingUpIcon size={18} aria-hidden="true" />}
-        label="Avg. score change"
-        tooltip="Average of each session's score change vs. that same session's own previous attempt — not a trend across the sessions shown here."
-        value={`${avgDelta > 0 ? "+" : ""}${avgDelta}`}
-        tone={avgDelta > 0 ? "positive" : avgDelta < 0 ? "negative" : undefined}
-      />
     </div>
   );
 }
@@ -522,7 +413,7 @@ function ProgressCell({ progress }: { progress: number }) {
       ? { bg: T.success100, text: T.successInk }
       : progress < 0
         ? { bg: T.error100, text: T.error }
-        : { bg: T.creamSoft, text: T.inkSoft };
+        : { bg: T.neutral100, text: T.neutralInk };
   const sign = progress > 0 ? "+" : "";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -561,7 +452,7 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
 
 function GroupDivider({ label, count }: { label: string; count: number }) {
   return (
-    <TableRow style={{ background: T.creamSoft, height: 40 }}>
+    <TableRow style={{ background: T.rowTintStrong, height: 40 }}>
       <TableCell colSpan={6} style={{ padding: "8px 16px" }}>
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: T.coal }}>
           {label}
@@ -617,7 +508,6 @@ function SessionsTable({
   onRowsPerPageChange,
   onPageChange,
   onOpenReport,
-  onRerun,
 }: {
   groups: { label: string; rows: FlatRow[] }[];
   totalCount: number;
@@ -630,20 +520,19 @@ function SessionsTable({
   onRowsPerPageChange: (rowsPerPage: number) => void;
   onPageChange: (page: number) => void;
   onOpenReport: (row: FlatRow) => void;
-  onRerun: (row: FlatRow) => void;
 }) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
       <Table aria-label="Practice session history">
         <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
-          <TableRow style={{ background: T.creamSoft, height: 40 }}>
+          <TableRow style={{ background: T.rowTint, height: 40 }}>
             <SortableHead column="title" width={260} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
             <SortableHead column="score" width={160} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
             <SortableHead column="progress" width={150} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
             <SortableHead column="date" width={150} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
             <TableHead style={{ borderLeft: `1px solid ${T.line}`, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
-            <TableHead style={{ width: 190, borderLeft: `1px solid ${T.line}` }} />
+            <TableHead style={{ width: 130, borderLeft: `1px solid ${T.line}` }} />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -681,28 +570,16 @@ function SessionsTable({
                     <TableCell style={{ height: 56, borderLeft: `1px solid ${T.line}`, whiteSpace: "normal", minWidth: 260 }}>
                       <TakeawayCell points={row.takeaways} />
                     </TableCell>
-                    <TableCell style={{ width: 190, height: 56, borderLeft: `1px solid ${T.line}` }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          aria-label="Practice this again"
-                          title="Practice this again"
-                          onClick={() => onRerun(row)}
-                          style={{ width: 36, height: 36, borderRadius: 6, flexShrink: 0 }}
-                        >
-                          <RotateCcwIcon size={14} aria-hidden="true" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onOpenReport(row)}
-                          style={{ width: 117, height: 44, borderRadius: 6, gap: 4, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
-                        >
-                          Open report
-                          <ArrowRightIcon size={12} aria-hidden="true" />
-                        </Button>
-                      </div>
+                    <TableCell style={{ width: 130, height: 56, borderLeft: `1px solid ${T.line}` }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onOpenReport(row)}
+                        style={{ width: 117, height: 44, borderRadius: 6, gap: 4, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
+                      >
+                        Open report
+                        <ArrowRightIcon size={12} aria-hidden="true" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -798,17 +675,15 @@ function SessionsLoadingSkeleton() {
   );
 }
 
-/* Holds all interactive state for the table + KPI strip + toolbar, so
-   filtering/sorting/pagination work end to end against the real, mapped
-   session rows. */
+/* Holds all interactive state for the table + toolbar, so filtering/
+   sorting/pagination work end to end against the real, mapped session
+   rows. */
 function SessionsWorkspace({
   rows,
   onOpenReport,
-  onRerun,
 }: {
   rows: FlatRow[];
   onOpenReport: (row: FlatRow) => void;
-  onRerun: (row: FlatRow) => void;
 }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -856,17 +731,8 @@ function SessionsWorkspace({
     return groups;
   }, [pageRows, showDateGroups]);
 
-  const kpis = useMemo(() => {
-    const count = filtered.length;
-    const avg = count ? Math.round(filtered.reduce((s, r) => s + r.score, 0) / count) : 0;
-    const best = count ? Math.max(...filtered.map((r) => r.score)) : 0;
-    const avgDelta = count ? Math.round(filtered.reduce((s, r) => s + r.progress, 0) / count) : 0;
-    return { count, avg, best, avgDelta };
-  }, [filtered]);
-
   return (
     <>
-      <KpiStrip {...kpis} />
       <div style={{ flex: 1, minHeight: 0, background: T.white, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <Toolbar
           search={search}
@@ -893,7 +759,6 @@ function SessionsWorkspace({
           onRowsPerPageChange={(v) => { setRowsPerPage(v); setPage(1); }}
           onPageChange={setPage}
           onOpenReport={onOpenReport}
-          onRerun={onRerun}
         />
       </div>
     </>
@@ -917,23 +782,6 @@ export default function SessionsV2Screen() {
      would look like it silently breaks. */
   const onStartSession = () => router.push("/session/new");
   const onOpenReport = (row: FlatRow) => router.push(`/session/${row.id}`);
-  /* Mirrors SessionHistoryRoute.tsx's onRerun: build type/focus/role/
-     company/difficulty params and hand off to /session/new so the user
-     confirms setup instead of silently burning a credit on a misclick. */
-  const onRerun = (row: FlatRow) => {
-    const params = new URLSearchParams();
-    if (row.focus && row.focus !== "general") {
-      params.set("type", row.focus === "campus-placement" ? "behavioral" : row.focus);
-      params.set("focus", row.focus);
-    } else if (row.category) {
-      params.set("type", row.category.toLowerCase().replace(/\s+&?\s*/g, "-").replace(/[^a-z0-9-]/g, ""));
-    }
-    if (row.role) params.set("role", row.role);
-    if (row.company) params.set("company", row.company);
-    if (row.difficulty) params.set("difficulty", row.difficulty);
-    const qs = params.toString();
-    router.push(qs ? `/session/new?${qs}` : "/session/new");
-  };
 
   let body: React.ReactNode;
   if (sessionsLoading) {
@@ -941,21 +789,15 @@ export default function SessionsV2Screen() {
   } else if (rows.length === 0) {
     body = <SessionsEmptyState onStartSession={onStartSession} />;
   } else {
-    body = <SessionsWorkspace rows={rows} onOpenReport={onOpenReport} onRerun={onRerun} />;
+    body = <SessionsWorkspace rows={rows} onOpenReport={onOpenReport} />;
   }
 
   return (
     <TooltipProvider>
-      <div style={{ display: "flex", flexDirection: "column", width: "100%", background: BASE, fontFamily: font.ui }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');`}</style>
-        <TopBar />
-        <div style={{ display: "flex", flexDirection: "column", padding: "0 16px 16px" }}>
-          <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <PageHeader onStartSession={onStartSession} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "0 16px 16px" }}>
-              {body}
-            </div>
-          </div>
+      <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0 }}>
+        <PageHeader onStartSession={onStartSession} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "0 16px 16px", flex: 1, minHeight: 0 }}>
+          {body}
         </div>
       </div>
     </TooltipProvider>

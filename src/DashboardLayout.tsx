@@ -25,7 +25,18 @@ import {
   FileTextIcon,
   BriefcaseIcon,
   SettingsIcon,
+  HelpCircleIcon,
+  MailIcon,
+  BellIcon,
+  ChevronsUpDownIcon,
+  LogOutIcon,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
@@ -43,8 +54,8 @@ import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
  * WCAG, every alias on this page picks it up automatically (no more
  * drift between local copies). */
 const c = {
-  surface: T.cream,         // page bg
-  graphite: T.white,         // raised cards
+  surface: T.pageBg,         // app-shell canvas (sidebar + main content)
+  graphite: T.white,         // raised cards (header bar, tables, panels)
   border: T.line,            // hairlines
   accent: T.indigo,
   accentDark: T.indigoDeep,
@@ -73,7 +84,12 @@ const prefetchMap: Record<string, () => void> = {
   settings: () => { import("./DashboardSettings"); },
 };
 
-/* ─── Sidebar Nav Items ─── */
+/* ─── Sidebar Nav Items ───
+ * Matches the Figma sidebar's two clusters: a primary route list, and a
+ * secondary list (Help & Support, Settings) pinned above the plan card.
+ * Figma's active-item color is the old editorial orange; kept indigo
+ * here per the documented copper→indigo
+ * retirement (tempo/CLAUDE.md), not a missed detail. */
 const navItems = [
   { id: "dashboard", path: "/dashboard", label: "Dashboard" },
   { id: "sessions", path: "/sessions", label: "Sessions" },
@@ -81,8 +97,11 @@ const navItems = [
   { id: "analytics", path: "/analytics", label: "Analytics" },
   { id: "resume", path: "/resume", label: "Resume" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
+];
+const secondaryNavItems = [
   { id: "settings", path: "/settings", label: "Settings" },
 ];
+const allNavItems = [...navItems, ...secondaryNavItems];
 
 function NavIcon({ id }: { id: string }) {
   const props = { size: 18, "aria-hidden": true as const };
@@ -94,6 +113,7 @@ function NavIcon({ id }: { id: string }) {
     case "resume": return <FileTextIcon {...props} />;
     case "jobs": return <BriefcaseIcon {...props} />;
     case "settings": return <SettingsIcon {...props} />;
+    case "help": return <HelpCircleIcon {...props} />;
     default: return null;
   }
 }
@@ -233,7 +253,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const activeNav = (() => {
     const path = pathname;
     if (path === "/dashboard" || path === "/dashboard/") return "dashboard";
-    const match = navItems.find(item => item.path !== "/dashboard" && path === item.path);
+    const match = allNavItems.find(item => item.path !== "/dashboard" && path === item.path);
     return match?.id || "dashboard";
   })();
 
@@ -255,7 +275,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
       <a href="#dashboard-main" style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
-        zIndex: 100, padding: "12px 24px", background: c.accent, color: c.surface,
+        zIndex: 100, padding: "12px 24px", background: c.accent, color: c.graphite,
         fontFamily: font.ui, fontSize: 14, fontWeight: 600, borderRadius: 8, textDecoration: "none",
       }} onFocus={(e) => { e.currentTarget.style.left = "16px"; e.currentTarget.style.top = "16px"; e.currentTarget.style.width = "auto"; e.currentTarget.style.height = "auto"; }}
         onBlur={(e) => { e.currentTarget.style.left = "-9999px"; e.currentTarget.style.width = "1px"; e.currentTarget.style.height = "1px"; }}>
@@ -266,20 +286,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ── Responsive padding ─────────────────────────────────────────────
-           Mobile (≤599px) gets 20px inline padding (set inline above).
-           600–767px steps up to 28px; 768–1023px to 36px.
-           Small desktop (1024–1439px) drops from the 52px default to 32px
-           so the content area gains 40px on cramped 13–14" screens. */
-        @media (min-width: 600px) and (max-width: 1023px) {
-          .dash-main { padding-left: 28px !important; padding-right: 28px !important; }
-        }
-        @media (min-width: 768px) and (max-width: 1023px) {
-          .dash-main { padding-left: 36px !important; padding-right: 36px !important; }
-        }
-        @media (min-width: 1024px) and (max-width: 1439px) {
-          .dash-main { padding-left: 32px !important; padding-right: 32px !important; }
-        }
       `}</style>
 
       {/* Sidebar — shadcn shell shared across every (dashboard) route */}
@@ -310,14 +316,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
                       fontWeight: activeNav === item.id ? 600 : 500,
                       color: activeNav === item.id ? c.accent : c.inkSoft,
-                      background: activeNav === item.id ? T.indigo100 : "transparent",
+                      background: activeNav === item.id ? c.graphite : "transparent",
+                      border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
+                      borderRadius: 8,
                     }}
                   >
                     <NavIcon id={item.id} />
                     <span style={{ position: "relative" }}>
                       {item.label}
                       {item.id === "calendar" && hasUrgentInterview && (
-                        <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.surface}` }} />
+                        <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.graphite}` }} />
                       )}
                     </span>
                   </SidebarMenuButton>
@@ -329,6 +337,49 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </SidebarContent>
 
         <SidebarFooter className="gap-2">
+        {/* Secondary nav — Help & Support opens the floating help panel in place;
+            Settings is a route like the primary items above. */}
+        <div className="px-3" style={{ marginBottom: 4 }}>
+          <SidebarMenu className="gap-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setHelpOpen((v) => !v)}
+                aria-label="Help & Support"
+                aria-expanded={helpOpen}
+                style={{ height: 40, gap: 10, fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.inkSoft }}
+              >
+                <NavIcon id="help" />
+                Help &amp; Support
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {secondaryNavItems.map((item) => (
+              <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
+                {activeNav === item.id && (
+                  <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent }} />
+                )}
+                <SidebarMenuButton
+                  isActive={activeNav === item.id}
+                  aria-current={activeNav === item.id ? "page" : undefined}
+                  onClick={() => nav.push(item.path)}
+                  onMouseEnter={() => prefetchMap[item.id]?.()}
+                  aria-label={item.label}
+                  style={{
+                    height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
+                    fontWeight: activeNav === item.id ? 600 : 500,
+                    color: activeNav === item.id ? c.accent : c.inkSoft,
+                    background: activeNav === item.id ? c.surface : "transparent",
+                    border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
+                    borderRadius: 8,
+                  }}
+                >
+                  <NavIcon id={item.id} />
+                  {item.label}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
+
         {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;
             state (exhausted / low / healthy) is communicated through the usage row
             and dash bar, not the card surface color. */}
@@ -490,41 +541,68 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           )}
         </div>
 
-        {/* User info */}
-        <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.indigo100, border: `1px solid ${T.indigoRing}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.accent }}>{(displayName || "?")[0].toUpperCase()}</span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { authLogout(); }}>
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Log out
-          </Button>
+        {/* User info — bordered white card matching Figma's sidebar footer;
+            the chevrons-up-down trigger opens Log out as a menu item. */}
+        <div style={{ marginTop: 8, padding: "0 12px 16px", flexShrink: 0 }}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Account menu"
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  gap: 8, padding: 8, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
+                  cursor: "pointer", textAlign: "left",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <span style={{ width: 32, height: 32, borderRadius: 4, background: T.copper, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.white }}>{(displayName || "?")[0].toUpperCase()}</span>
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
+                    <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
+                  </span>
+                </span>
+                <ChevronsUpDownIcon size={12} aria-hidden="true" style={{ flexShrink: 0, color: c.inkSoft }} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="top" style={{ width: 215 }}>
+              <DropdownMenuItem onClick={() => { authLogout(); }}>
+                <LogOutIcon size={14} aria-hidden="true" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         </SidebarFooter>
         </aside>
       </Sidebar>
 
       {/* Main Content */}
-      <SidebarInset id="dashboard-main" tabIndex={-1} className="dash-main" style={{ padding: "0 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh" }}>
+      <SidebarInset id="dashboard-main" tabIndex={-1} className="dash-main" style={{ padding: isMobile ? "0 16px" : "0 16px 0 0", display: "flex", flexDirection: "column", height: "100dvh", minHeight: "100vh", overflow: "hidden", background: c.surface }}>
 
         {/* Top bar — sidebar toggle + current page label */}
         <header style={{
           display: "flex", alignItems: "center", gap: 12,
-          padding: isMobile ? "16px 20px" : "20px 0 16px",
-          position: "sticky", top: 0, zIndex: 10, background: c.surface,
+          padding: isMobile ? "12px 16px" : "0 16px",
+          height: 62, boxSizing: "border-box", flexShrink: 0,
+          background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
+          marginTop: 8, marginBottom: 16,
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
-          <h1 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ink, margin: 0 }}>
-            {navItems.find((item) => item.id === activeNav)?.label || "HireStepX"}
+          <h1 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ink, margin: 0, flex: 1 }}>
+            {allNavItems.find((item) => item.id === activeNav)?.label || "HireStepX"}
           </h1>
+          <Button variant="ghost" size="icon" aria-label="Messages" aria-disabled="true" title="Not wired yet">
+            <MailIcon size={24} aria-hidden="true" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Notifications" aria-disabled="true" title="Not wired yet">
+            <BellIcon size={24} aria-hidden="true" />
+          </Button>
         </header>
 
+        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
         {/* Payment success/cancel banner */}
         {paymentBanner && (
           <div role="alert" style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 10, background: paymentBanner === "success" ? T.success100 : T.error100, border: `1px solid ${paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -563,8 +641,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You're offline — some features may be unavailable</span>
           </div>
         )}
-        <div key={pathname} className="dash-page-enter">
+        <div key={pathname} className="dash-page-enter" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           {children}
+        </div>
         </div>
       </SidebarInset>
 
