@@ -110,6 +110,25 @@ async function unzip(data: Uint8Array): Promise<{ entries: { filename: string; d
   return { entries };
 }
 
+/* Word/Google Docs export bullet-list glyphs by remapping a symbol font
+ * (Wingdings, Symbol) onto the Private Use Area — pdf.js hands the raw PUA
+ * code point back in item.str, not "•". Left unmapped, every bullet line
+ * loses its marker entirely (extracted text starts with an invisible PUA
+ * char instead of "• "), which made resumeAts.ts's bullet-formatting check
+ * report zero bullets on resumes that were 100% bulleted. Map the common
+ * PUA bullet glyphs to their canonical ASCII/Unicode bullet chars so
+ * downstream text-based checks (and the LLM) see them as real bullets. */
+const BULLET_GLYPH_MAP: Record<string, string> = {
+  "": "•", // Wingdings solid round bullet — most common PDF export bullet
+  "": "▪", // Wingdings solid square bullet
+  "": "▪", // Wingdings alt square/diamond bullet
+  "": "▪", // Wingdings arrow-style list marker
+};
+
+function normalizeBulletGlyph(str: string): string {
+  return BULLET_GLYPH_MAP[str] ?? str;
+}
+
 /** Extract text from a PDF using locally bundled pdf.js */
 async function readPdf(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -145,15 +164,16 @@ async function readPdf(file: File): Promise<string> {
     for (const item of items) {
       if (!("str" in item) || !item.str) continue;
       const y = item.transform ? item.transform[5] : null;
+      const str = normalizeBulletGlyph(item.str);
 
       if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
         // Y position changed significantly = new line
         if (currentLine.trim()) lines.push(currentLine.trim());
-        currentLine = item.str;
+        currentLine = str;
       } else {
         // Same line — add space between items if needed
-        const needsSpace = currentLine.length > 0 && !currentLine.endsWith(" ") && !item.str.startsWith(" ");
-        currentLine += (needsSpace ? " " : "") + item.str;
+        const needsSpace = currentLine.length > 0 && !currentLine.endsWith(" ") && !str.startsWith(" ");
+        currentLine += (needsSpace ? " " : "") + str;
       }
       lastY = y;
     }

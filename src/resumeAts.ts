@@ -16,23 +16,43 @@ export interface ATSResult {
   suggestions: string[];
 }
 
+/* A heading line is short and mostly-just-the-heading — "Skills" or
+ * "Technical Skills" qualifies; "Managed multiple projects at once in a
+ * fast-moving agency" does not, even though it contains the word
+ * "projects". Without this check, `text.includes(keyword)` treated any
+ * mention of the word anywhere in the resume as proof a whole section
+ * existed — e.g. a resume with no Projects section at all still showed
+ * "Projects" as Found because one unrelated bullet used that word. */
+function hasHeadingLine(lines: string[], keywords: string[]): boolean {
+  return lines.some(l => {
+    const t = l.trim().toLowerCase();
+    if (!t || t.length > 40) return false;
+    if (t.split(/\s+/).length > 5) return false;
+    return keywords.some(k => new RegExp(`\\b${k}\\b`).test(t));
+  });
+}
+
 export function computeATSScore(resumeText: string, _targetRole?: string): ATSResult {
   const text = resumeText.toLowerCase();
   const lines = resumeText.split("\n").filter(l => l.trim().length > 0);
 
-  // ATS-required sections — check for clear section headings (not just word mentions)
+  // Contact Info is a field-presence check (email/phone/etc. never need
+  // their own heading), so it stays a plain substring match. The other
+  // sections are real document sections and should only count as "found"
+  // when a short heading-like line actually names them — see
+  // hasHeadingLine() above.
   const requiredSections = [
-    { name: "Contact Info", keywords: ["email", "@", "phone", "linkedin", "github"] },
-    { name: "Work Experience", keywords: ["experience", "employment", "work history", "professional experience"] },
-    { name: "Education", keywords: ["education", "academic", "university", "degree", "college"] },
-    { name: "Skills", keywords: ["skills", "technical skills", "technologies", "competencies", "tools"] },
+    { name: "Contact Info", keywords: ["email", "@", "phone", "linkedin", "github"], heading: false },
+    { name: "Work Experience", keywords: ["experience", "employment", "work history", "professional experience"], heading: true },
+    { name: "Education", keywords: ["education", "academic", "university", "degree", "college"], heading: true },
+    { name: "Skills", keywords: ["skills", "technical skills", "technologies", "competencies", "tools"], heading: true },
   ];
 
   // Bonus sections
   const bonusSections = [
-    { name: "Summary", keywords: ["summary", "objective", "profile", "about"] },
-    { name: "Projects", keywords: ["projects", "portfolio"] },
-    { name: "Certifications", keywords: ["certifications", "certificates", "licenses"] },
+    { name: "Summary", keywords: ["summary", "objective", "profile", "about"], heading: true },
+    { name: "Projects", keywords: ["projects", "portfolio"], heading: true },
+    { name: "Certifications", keywords: ["certifications", "certificates", "licenses"], heading: true },
   ];
 
   // Action verbs — require more for a high score
@@ -50,9 +70,11 @@ export function computeATSScore(resumeText: string, _targetRole?: string): ATSRe
   const hasMetrics = metricsFound > 0;
 
   // Check sections
-  const foundSections = requiredSections.filter(s => s.keywords.some(k => text.includes(k)));
-  const missingSections = requiredSections.filter(s => !s.keywords.some(k => text.includes(k)));
-  const foundBonus = bonusSections.filter(s => s.keywords.some(k => text.includes(k)));
+  const matchesSection = (s: { keywords: string[]; heading: boolean }): boolean =>
+    s.heading ? hasHeadingLine(lines, s.keywords) : s.keywords.some(k => text.includes(k));
+  const foundSections = requiredSections.filter(matchesSection);
+  const missingSections = requiredSections.filter(s => !matchesSection(s));
+  const foundBonus = bonusSections.filter(matchesSection);
 
   // Check action verbs
   const foundVerbs = actionVerbs.filter(v => new RegExp(`\\b${v}\\w*\\b`, "i").test(text));

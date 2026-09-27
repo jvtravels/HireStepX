@@ -20,6 +20,13 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
+// Must match src/resumeParser.ts's extractResumeText() cap. That client-side
+// cap is the real ceiling on how much resume text ever reaches this handler;
+// this constant used to be 6000, silently discarding the back half of any
+// resume over ~1.5 pages (older roles, education, certifications) with no
+// signal to the user about why their analysis looked incomplete.
+const RESUME_LLM_CHAR_CAP = 12000;
+
 /**
  * Coerce an LLM-returned value into a plain string. The model occasionally
  * emits objects like `{change: "...", why: "..."}` for fields the prompt
@@ -300,12 +307,14 @@ export default async function handler(req: Request): Promise<Response> {
           profile: normalizedCached,
           resumeVersionId: cached.id,
           cached: true,
+          truncated: resumeText.length > RESUME_LLM_CHAR_CAP,
         }), { status: 200, headers });
       }
     }
 
     const roleContext = targetRole ? `The candidate is targeting a ${sanitizeForLLM(targetRole, 100)} role.` : "";
-    const resumeForLLM = sanitizeForLLM(resumeText, 6000);
+    const resumeForLLM = sanitizeForLLM(resumeText, RESUME_LLM_CHAR_CAP);
+    const truncated = resumeText.length > RESUME_LLM_CHAR_CAP;
 
     const prompt = `You are a senior career coach and ATS expert. Analyze this resume and return a detailed JSON profile.
 ${roleContext}
@@ -493,6 +502,7 @@ CRITICAL RULES:
           profile: normalizedSibling,
           resumeVersionId: sibling.id,
           cached: true,
+          truncated: resumeText.length > RESUME_LLM_CHAR_CAP,
         }), { status: 200, headers });
       }
     }
@@ -541,7 +551,7 @@ CRITICAL RULES:
       latency_ms: Date.now() - t0,
     }, req);
 
-    return new Response(JSON.stringify({ profile, resumeVersionId, cached: false }), { status: 200, headers });
+    return new Response(JSON.stringify({ profile, resumeVersionId, cached: false, truncated }), { status: 200, headers });
   } catch (err) {
     const totalMs = Date.now() - t0;
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
