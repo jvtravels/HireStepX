@@ -10,7 +10,7 @@
    backing API yet, so those stay disabled stubs — see the comments at
    each site. */
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
@@ -406,25 +406,6 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
   );
 }
 
-/* count is the group's full filtered-set size (all pages), not the number
-   of that group's rows on the current page — a page boundary falling
-   mid-group must not undercount it. */
-function GroupDivider({ label, count }: { label: string; count: number }) {
-  // No background tint and a shorter height than the (tinted, 40px) column
-  // header row above it — otherwise the two read as the same bar and a user
-  // scrolling past a divider mistakes it for a repeated header.
-  return (
-    <TableRow style={{ height: 32, borderBottom: "none" }}>
-      <TableCell colSpan={5} style={{ padding: "4px 20px" }}>
-        <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-          {label}
-        </span>{" "}
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: T.inkFaint }}>{count} sessions</span>
-      </TableCell>
-    </TableRow>
-  );
-}
-
 function SortableHead({
   column,
   width,
@@ -463,7 +444,7 @@ function SortableHead({
 }
 
 function SessionsTable({
-  groups,
+  rows,
   totalCount,
   filteredCount,
   sort,
@@ -475,7 +456,7 @@ function SessionsTable({
   onPageChange,
   onClearFilters,
 }: {
-  groups: { label: string; rows: FlatRow[]; count: number }[];
+  rows: FlatRow[];
   totalCount: number;
   filteredCount: number;
   sort: Sort;
@@ -509,7 +490,7 @@ function SessionsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {groups.length === 0 ? (
+          {rows.length === 0 ? (
             <TableRow>
               {/* The row spans every (fixed-width) column, so on a viewport
                   narrower than their combined width the table scrolls
@@ -533,34 +514,29 @@ function SessionsTable({
               </TableCell>
             </TableRow>
           ) : (
-            groups.map((group, groupIndex) => (
-              <Fragment key={`${group.label || "flat"}-${groupIndex}`}>
-                {group.label && <GroupDivider label={group.label} count={group.count} />}
-                {group.rows.map((row) => (
-                  <TableRow key={row.id} style={{ height: 64, borderBottom: `1px solid ${T.line}` }}>
-                    <TableCell style={{ width: "28%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
-                      <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.coal, margin: 0 }}>
-                        {row.title}{row.company ? ` · ${row.company}` : ""}
-                      </p>
-                      <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: "2px 0 0" }}>
-                        {row.category} · {row.questionCount} questions
-                      </p>
-                    </TableCell>
-                    <TableCell style={{ width: "14%", minWidth: 150, height: 56, padding: "0 20px" }}>
-                      <ScoreCell score={row.score} band={row.band} />
-                    </TableCell>
-                    <TableCell style={{ width: "17%", minWidth: 190, height: 56, padding: "0 20px" }}>
-                      <ProgressCell progress={row.progress} />
-                    </TableCell>
-                    <TableCell style={{ width: "11%", minWidth: 120, height: 56, padding: "0 20px" }}>
-                      <span style={{ fontFamily: font.mono, fontSize: 13, color: T.inkFaint, fontVariantNumeric: "tabular-nums" }}>{row.date}</span>
-                    </TableCell>
-                    <TableCell style={{ width: "30%", height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
-                      <TakeawayCell points={row.takeaways} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </Fragment>
+            rows.map((row) => (
+              <TableRow key={row.id} style={{ height: 64, borderBottom: `1px solid ${T.line}` }}>
+                <TableCell style={{ width: "28%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
+                  <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.coal, margin: 0 }}>
+                    {row.title}{row.company ? ` · ${row.company}` : ""}
+                  </p>
+                  <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: "2px 0 0" }}>
+                    {row.category} · {row.questionCount} questions
+                  </p>
+                </TableCell>
+                <TableCell style={{ width: "14%", minWidth: 150, height: 56, padding: "0 20px" }}>
+                  <ScoreCell score={row.score} band={row.band} />
+                </TableCell>
+                <TableCell style={{ width: "17%", minWidth: 190, height: 56, padding: "0 20px" }}>
+                  <ProgressCell progress={row.progress} />
+                </TableCell>
+                <TableCell style={{ width: "11%", minWidth: 120, height: 56, padding: "0 20px" }}>
+                  <span style={{ fontFamily: font.mono, fontSize: 13, color: T.inkFaint, fontVariantNumeric: "tabular-nums" }}>{row.date}</span>
+                </TableCell>
+                <TableCell style={{ width: "30%", height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
+                  <TakeawayCell points={row.takeaways} />
+                </TableCell>
+              </TableRow>
             ))
           )}
         </TableBody>
@@ -733,9 +709,6 @@ function SessionsWorkspace({
   const page_ = Math.min(page, totalPages);
   const pageRows = filtered.slice((page_ - 1) * rowsPerPage, page_ * rowsPerPage);
 
-  /* Non-date sorts break date-bucket contiguity, so date dividers only
-     render while sorting by date; otherwise the table renders as a single
-     flat, undivided list. */
   const clearFilters = () => {
     setSearch("");
     setTypeFilter("All");
@@ -743,32 +716,6 @@ function SessionsWorkspace({
     setDateFilter("All");
     setPage(1);
   };
-
-  const showDateGroups = sort.column === "date";
-
-  // Bucket counts must reflect the whole filtered result set, not just the
-  // rows that happen to land on the current page — otherwise a bucket that
-  // spans a page boundary shows a truncated count.
-  const groupCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const row of filtered) {
-      counts.set(row.groupLabel, (counts.get(row.groupLabel) ?? 0) + 1);
-    }
-    return counts;
-  }, [filtered]);
-
-  const pageGroups = useMemo(() => {
-    if (!showDateGroups) {
-      return pageRows.length ? [{ label: "", rows: pageRows, count: pageRows.length }] : [];
-    }
-    const groups: { label: string; rows: FlatRow[]; count: number }[] = [];
-    for (const row of pageRows) {
-      const last = groups[groups.length - 1];
-      if (last && last.label === row.groupLabel) last.rows.push(row);
-      else groups.push({ label: row.groupLabel, rows: [row], count: groupCounts.get(row.groupLabel) ?? 0 });
-    }
-    return groups;
-  }, [pageRows, showDateGroups, groupCounts]);
 
   return (
     <>
@@ -791,7 +738,7 @@ function SessionsWorkspace({
           onDateFilterChange={(v) => { setDateFilter(v); setPage(1); }}
         />
         <SessionsTable
-          groups={pageGroups}
+          rows={pageRows}
           totalCount={rows.length}
           filteredCount={filtered.length}
           sort={sort}
