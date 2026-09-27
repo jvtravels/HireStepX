@@ -210,19 +210,20 @@ export default function DashboardJobs() {
   const pageRows = filtered.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage);
 
   const heading = (
-    <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
       <div>
-        <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 6px" }}>Jobs</h1>
-        <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+        <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Jobs</h1>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
           Employers on our talent roster match to your profile and reach out directly — there's nothing to apply to here.
         </p>
       </div>
       <button
         type="button"
         onClick={() => router.push("/interview")}
+        className="hsx-btn hsx-btn-primary"
         style={{
           display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8,
-          border: "none", background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+          fontFamily: f.sans, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
         }}
       >
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
@@ -231,24 +232,30 @@ export default function DashboardJobs() {
     </div>
   );
 
+  const shell = (body: React.ReactNode) => (
+    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
+      {heading}
+      {body}
+    </div>
+  );
+
   if (!loaded) {
-    return <div style={{ maxWidth: 1080 }}>{heading}</div>;
+    return shell(null);
   }
 
   const shortlisted = data?.shortlistedCount ?? 0;
 
-  return (
-    <div style={{ maxWidth: 1080 }}>
-      {heading}
-
-      {shortlisted === 0 ? (
+  const body = shell(
+    shortlisted === 0 ? (
+      <div style={{ padding: 20 }}>
         <div style={{ padding: 20, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 10 }}>
           <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
             No matches yet — we'll surface this the moment a role fits your profile.
           </p>
         </div>
-      ) : (
-        <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, overflow: "hidden" }}>
+      </div>
+    ) : (
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
           <div style={{ padding: "16px 18px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
             <div style={{ position: "relative", flex: "1 1 240px", minWidth: 200 }}>
               <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: t.inkFaint }}>
@@ -440,9 +447,10 @@ export default function DashboardJobs() {
                           type="button"
                           onClick={() => setSelected(r)}
                           aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
+                          className="hsx-btn hsx-btn-icon-outline"
                           style={{
-                            width: 36, height: 36, borderRadius: 8, border: `1px solid ${t.line}`,
-                            background: t.white, color: t.inkSoft, display: "flex", alignItems: "center", justifyContent: "center",
+                            width: 36, height: 36, borderRadius: 8,
+                            display: "flex", alignItems: "center", justifyContent: "center",
                             cursor: "pointer",
                           }}
                         >
@@ -475,35 +483,39 @@ export default function DashboardJobs() {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <button type="button" onClick={() => setPage(1)} disabled={pageSafe <= 1} aria-label="First page" style={pagerBtnStyle(pageSafe <= 1)}>
+              <button type="button" onClick={() => setPage(1)} disabled={pageSafe <= 1} aria-label="First page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe <= 1)}>
                 <PageArrowIcon dir="left" double />
               </button>
-              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={pageSafe <= 1} aria-label="Previous page" style={pagerBtnStyle(pageSafe <= 1)}>
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={pageSafe <= 1} aria-label="Previous page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe <= 1)}>
                 <PageArrowIcon dir="left" />
               </button>
               <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, padding: "0 8px" }}>
                 Page {pageSafe} of {totalPages}
               </span>
-              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={pageSafe >= totalPages} aria-label="Next page" style={pagerBtnStyle(pageSafe >= totalPages)}>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={pageSafe >= totalPages} aria-label="Next page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe >= totalPages)}>
                 <PageArrowIcon dir="right" />
               </button>
-              <button type="button" onClick={() => setPage(totalPages)} disabled={pageSafe >= totalPages} aria-label="Last page" style={pagerBtnStyle(pageSafe >= totalPages)}>
+              <button type="button" onClick={() => setPage(totalPages)} disabled={pageSafe >= totalPages} aria-label="Last page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe >= totalPages)}>
                 <PageArrowIcon dir="right" double />
               </button>
             </div>
           </div>
         </div>
-      )}
+      )
+  );
 
+  return (
+    <>
+      {body}
       {selected && <JobDetailModal job={selected} onClose={() => setSelected(null)} />}
-    </div>
+    </>
   );
 }
 
 function pagerBtnStyle(disabled: boolean): CSSProperties {
   return {
-    width: 30, height: 30, borderRadius: 7, border: `1px solid ${t.line}`,
-    background: t.white, color: disabled ? t.inkFaintWeak : t.inkSoft,
+    width: 30, height: 30, borderRadius: 7,
+    color: disabled ? t.inkFaintWeak : t.inkSoft,
     display: "flex", alignItems: "center", justifyContent: "center",
     cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.6 : 1,
   };
