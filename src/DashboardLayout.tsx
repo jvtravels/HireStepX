@@ -29,8 +29,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Textarea } from "@/components/ui/textarea";
 import {
   LayoutDashboardIcon,
   ClipboardListIcon,
@@ -60,7 +58,6 @@ const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ 
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
-import { CopyEmailLink } from "./_CopyEmailLink";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
@@ -207,11 +204,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     [calendarEvents]
   );
 
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [helpFeedback, setHelpFeedback] = useState("");
-  const [helpType, setHelpType] = useState<"bug" | "feature" | "billing" | "other">("other");
-  const [helpSending, setHelpSending] = useState(false);
-  const [helpSent, setHelpSent] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
@@ -516,6 +508,42 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           )}
         </div>
 
+        {/* Secondary nav — Settings is a route like the primary items above,
+            pinned above the user profile card per shadcn's sidebar-07 footer
+            order (NavUser is always the last, bottom-most footer element). */}
+        <div className="px-3" style={{ marginBottom: 4 }}>
+          <SidebarMenu className="gap-1">
+            {secondaryNavItems.map((item) => (
+              <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
+                {activeNav === item.id && (
+                  <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
+                )}
+                <SidebarMenuButton
+                  isActive={activeNav === item.id}
+                  aria-current={activeNav === item.id ? "page" : undefined}
+                  onClick={() => nav.push(item.path)}
+                  onMouseEnter={(e) => { prefetchMap[item.id]?.(); if (activeNav !== item.id) e.currentTarget.style.background = c.border; }}
+                  onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
+                  aria-label={item.label}
+                  tooltip={item.label}
+                  style={{
+                    height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
+                    fontWeight: activeNav === item.id ? 600 : 500,
+                    color: activeNav === item.id ? c.accent : c.inkSoft,
+                    background: activeNav === item.id ? c.surface : "transparent",
+                    border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
+                    borderRadius: 8,
+                    transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
+                  }}
+                >
+                  <NavIcon id={item.id} />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
+
         {/* User info — bordered white card matching Figma's sidebar footer;
             the chevrons-up-down trigger opens Log out as a menu item. */}
         <div className="px-3 group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
@@ -584,41 +612,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-
-        {/* Secondary nav — Settings is a route like the primary items above,
-            pinned below the user profile card per the Figma footer order. */}
-        <div className="px-3" style={{ marginBottom: 4 }}>
-          <SidebarMenu className="gap-1">
-            {secondaryNavItems.map((item) => (
-              <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
-                {activeNav === item.id && (
-                  <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
-                )}
-                <SidebarMenuButton
-                  isActive={activeNav === item.id}
-                  aria-current={activeNav === item.id ? "page" : undefined}
-                  onClick={() => nav.push(item.path)}
-                  onMouseEnter={(e) => { prefetchMap[item.id]?.(); if (activeNav !== item.id) e.currentTarget.style.background = c.border; }}
-                  onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
-                  aria-label={item.label}
-                  tooltip={item.label}
-                  style={{
-                    height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
-                    fontWeight: activeNav === item.id ? 600 : 500,
-                    color: activeNav === item.id ? c.accent : c.inkSoft,
-                    background: activeNav === item.id ? c.surface : "transparent",
-                    border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
-                    borderRadius: 8,
-                    transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
-                  }}
-                >
-                  <NavIcon id={item.id} />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
         </div>
         </SidebarFooter>
         </aside>
@@ -743,191 +736,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ink }}>{toast}</span>
         </div>
       )}
-
-      {/* Floating help widget */}
-      <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", right: "max(24px, env(safe-area-inset-right))", zIndex: 80 }}>
-        {helpOpen && (
-          <div role="dialog" aria-modal="true" aria-label="Help and support" style={{
-            width: 340, marginBottom: 12,
-            background: T.white, border: `1px solid ${c.border}`, borderRadius: 16,
-            overflow: "hidden", boxShadow: shadow.modal,
-            animation: "slideDown 0.2s ease",
-          }}>
-            {/* Header strip — indigo tint gives panel immediate identity */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "14px 18px",
-              background: T.indigo100, borderBottom: `1px solid ${T.indigoRing}`,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                  background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </div>
-                <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: T.indigoDeep, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
-              </div>
-              <Button variant="ghost" size="icon-sm" onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ color: T.indigo }}>
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </Button>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding: "18px 18px 16px" }}>
-              {/* Type label */}
-              <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.inkSoft, margin: "0 0 10px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
-                What&apos;s on your mind?
-              </p>
-
-              {/* Type selector — 2×2 icon+label grid */}
-              <ToggleGroup
-                type="single"
-                value={helpType}
-                onValueChange={(v) => { if (v) setHelpType(v as typeof helpType); }}
-                className="grid grid-cols-2 gap-1.5 mb-3.5"
-              >
-                {([
-                  {
-                    key: "bug" as const, label: "Bug report",
-                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.5 1.5"/><path d="M14.5 3.5L16 2"/><path d="M9 7.5h6"/><path d="M12 7.5v13"/><path d="M7.5 10.5H4a2 2 0 0 0-2 2v1a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6v-1a2 2 0 0 0-2-2h-3.5"/><path d="M4.5 7.5A3.5 3.5 0 0 1 8 4h8a3.5 3.5 0 0 1 3.5 3.5"/></svg>,
-                    inactiveBg: "rgba(185,28,28,0.06)", inactiveColor: T.error,
-                    activeBg: T.error100, activeColor: T.error, activeBdr: `1px solid rgba(185,28,28,0.3)`,
-                  },
-                  {
-                    key: "feature" as const, label: "Feature idea",
-                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-                    inactiveBg: T.indigo100, inactiveColor: T.indigo,
-                    activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
-                  },
-                  {
-                    key: "billing" as const, label: "Billing",
-                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-                    inactiveBg: T.indigo100, inactiveColor: T.indigo,
-                    activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
-                  },
-                  {
-                    key: "other" as const, label: "Other",
-                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-                    inactiveBg: T.creamSoft, inactiveColor: c.inkSoft,
-                    activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
-                  },
-                ]).map(({ key, label, icon, inactiveBg, inactiveColor, activeBg, activeColor, activeBdr }) => {
-                  const active = helpType === key;
-                  return (
-                    <ToggleGroupItem
-                      key={key}
-                      value={key}
-                      className="h-auto justify-start gap-1.5 rounded-lg px-2.5 py-2 data-[state=on]:text-inherit"
-                      style={{
-                        fontFamily: font.ui, fontSize: 12, fontWeight: active ? 700 : 500,
-                        transition: "all 0.15s", textAlign: "left" as const,
-                        background: active ? activeBg : inactiveBg,
-                        color: active ? activeColor : inactiveColor,
-                        border: active ? activeBdr : `1px solid transparent`,
-                        opacity: active ? 1 : 0.7,
-                      }}
-                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.opacity = "1"; }}
-                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.opacity = "0.7"; }}
-                    >
-                      {icon}
-                      {label}
-                    </ToggleGroupItem>
-                  );
-                })}
-              </ToggleGroup>
-
-              {/* Textarea */}
-              <Textarea
-                rows={3}
-                placeholder={helpType === "bug" ? "What happened? What did you expect?" : helpType === "feature" ? "Describe the feature you'd like..." : helpType === "billing" ? "Describe your billing question..." : "How can we help?"}
-                value={helpFeedback}
-                onChange={(e) => { setHelpFeedback(e.target.value); if (helpSent) setHelpSent(false); }}
-                maxLength={500}
-                className="mb-2.5 resize-none"
-                style={{
-                  background: T.white, border: `1px solid ${c.border}`,
-                  color: c.ink, fontFamily: font.ui, fontSize: 13, lineHeight: 1.55,
-                  boxShadow: "inset 0 1px 3px rgba(14,12,8,0.04)",
-                }}
-              />
-
-              {/* Send / success */}
-              {helpSent ? (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "10px 12px", borderRadius: 8,
-                  background: T.success100, border: `1px solid rgba(21,128,61,0.2)`,
-                }}>
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <p style={{ fontFamily: font.ui, fontSize: 12, color: T.success, margin: 0, fontWeight: 500 }}>Sent! We&apos;ll get back to you soon.</p>
-                </div>
-              ) : (
-                <Button
-                  className="w-full"
-                  disabled={helpSending || !helpFeedback.trim()}
-                  onClick={async () => {
-                    const msg = helpFeedback.trim();
-                    if (!msg) return;
-                    setHelpSending(true);
-                    try {
-                      const { apiFetch } = await import("./apiClient");
-                      const res = await apiFetch("/api/support-feedback", {
-                        message: msg,
-                        email: user?.email || null,
-                        page: typeof window !== "undefined" ? window.location.pathname : null,
-                        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-                        type: helpType,
-                      });
-                      if (!res.ok) throw new Error(res.error || "send failed");
-                      setHelpFeedback("");
-                      setHelpType("other");
-                      setHelpSent(true);
-                    } catch {
-                      // Persisted path failed — fall back to the user's email client
-                      // so the feedback isn't lost.
-                      navigator.clipboard?.writeText("hello@hirestepx.com").catch(() => {});
-                    } finally {
-                      setHelpSending(false);
-                    }
-                  }}
-                >
-                  {helpSending ? "Sending..." : "Send Feedback"}
-                </Button>
-              )}
-
-              {/* Secondary email fallback */}
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, textAlign: "center" as const, margin: "10px 0 0" }}>
-                Or email{" "}
-                <CopyEmailLink email="hello@hirestepx.com" style={{ color: T.indigo, textDecoration: "none", fontWeight: 500 }} />
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* FAB button */}
-        <Button
-          size="icon-lg"
-          className="rounded-full"
-          onClick={() => setHelpOpen(v => !v)}
-          aria-label={helpOpen ? "Close help" : "Open help"}
-          style={{
-            background: c.graphite, color: c.ink,
-            boxShadow: shadow.cta,
-            marginLeft: "auto",
-            transform: helpOpen ? "rotate(90deg)" : "rotate(0deg)",
-            transition: `transform ${dur.medium} ${ease.snap}, box-shadow ${dur.medium} ${ease.snap}, background ${dur.instant} ${ease.snap}`,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = shadow.modal; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = shadow.cta; }}
-        >
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-        </Button>
-      </div>
 
     </SidebarProvider>
     </TooltipProvider>
