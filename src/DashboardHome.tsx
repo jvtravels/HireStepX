@@ -249,7 +249,7 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
   return (
     <div role="status" style={{
       display: "flex", alignItems: "center", gap: 12,
-      padding: "12px 14px", marginBottom: 12,
+      padding: "14px 16px", marginBottom: 12,
       background: "oklch(0.359 0.135 278.697 / 0.12)", border: `1px solid oklch(0.359 0.135 278.697 / 0.25)`, borderRadius: 10,
     }}>
       <span style={{ color: t.indigo, flexShrink: 0, display: "inline-flex" }} aria-hidden>{Icons.clock}</span>
@@ -334,7 +334,7 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
   if (status === "error") {
     return (
       <div style={{
-        padding: "12px 14px", background: t.error100,
+        padding: "14px 16px", background: t.error100,
         border: `1px solid ${t.error}`, borderRadius: 10,
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
       }}>
@@ -353,7 +353,7 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
   if (status === "done") {
     return (
       <div style={{
-        padding: "12px 14px", background: t.success100,
+        padding: "14px 16px", background: t.success100,
         border: `1px solid ${t.success}`, borderRadius: 10,
         display: "flex", alignItems: "center", gap: 10,
       }}>
@@ -675,7 +675,7 @@ export default function DashboardHome() {
           {demoMode && (
             <div role="status" aria-live="polite" style={{
               display: "flex", alignItems: "flex-start", gap: 12,
-              padding: "12px 16px",
+              padding: "14px 16px",
               background: t.warning100, color: t.warningInk,
               border: `1px solid ${t.warningLine}`, borderRadius: 10,
               fontFamily: f.sans, fontSize: 13, lineHeight: 1.5,
@@ -1194,7 +1194,7 @@ function RecentSessionsList({ real, fallback, demoMode, hasResume, hasTargetRole
       return (
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12,
-          padding: "18px 4px",
+          padding: "18px 16px",
         }}>
           <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
             Upload your resume first — AI personalises every question to your background.
@@ -1207,7 +1207,7 @@ function RecentSessionsList({ real, fallback, demoMode, hasResume, hasTargetRole
       return (
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12,
-          padding: "18px 4px",
+          padding: "18px 16px",
         }}>
           <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
             Set your target role for industry-specific questions.
@@ -1219,7 +1219,7 @@ function RecentSessionsList({ real, fallback, demoMode, hasResume, hasTargetRole
     return (
       <div style={{
         display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12,
-        padding: "18px 4px",
+        padding: "18px 16px",
       }}>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
           Your first session takes 15 minutes. You&apos;ll get a score, STAR breakdown,
@@ -1254,7 +1254,7 @@ function SessionRow({ title, date, score, icon, first, onClick }: {
 }) {
   const baseStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", gap: 14, width: "100%",
-    padding: "14px 8px", borderTop: first ? "none" : `1px solid ${t.line}`,
+    padding: "14px 14px", borderTop: first ? "none" : `1px solid ${t.line}`,
     background: "transparent", border: "none", borderRadius: 8,
     textAlign: "left" as const, font: "inherit", color: "inherit",
     minHeight: 44, /* WCAG 2.5.5 touch target */
@@ -1276,7 +1276,7 @@ function SessionRow({ title, date, score, icon, first, onClick }: {
     </>
   );
   if (!onClick) {
-    return <li style={{ ...baseStyle, padding: "14px 4px", minHeight: undefined }}>{inner}</li>;
+    return <li style={{ ...baseStyle, padding: "14px 14px", minHeight: undefined }}>{inner}</li>;
   }
   return (
     <li style={{ borderTop: first ? "none" : `1px solid ${t.line}` }}>

@@ -18,7 +18,6 @@ import { useDashboardSessions } from "./DashboardContext";
 import type { DashboardSession } from "./dashboardTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -409,22 +408,15 @@ function Toolbar({
 
 function ScoreCell({ score, band }: { score: number; band: ScoreBand }) {
   const alarming = score < ALARM_SCORE;
+  const dotColor = alarming ? T.error : T.inkFaint;
+  const textColor = alarming ? T.error : T.inkSoft;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700, color: T.coal }}>{score}</span>
-      <Badge
-        style={{
-          fontFamily: font.ui,
-          fontSize: 13,
-          fontWeight: 500,
-          color: alarming ? T.error : T.neutralInk,
-          background: alarming ? T.error100 : T.neutral100,
-          height: "auto",
-          padding: "4px 8px",
-        }}
-      >
+      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 600, color: T.coal, fontVariantNumeric: "tabular-nums" }}>{score}</span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: textColor }}>
+        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
         {bandLabel[band]}
-      </Badge>
+      </span>
     </div>
   );
 }
@@ -443,7 +435,7 @@ function ProgressCell({ progress }: { progress: number }) {
   const sign = progress > 0 ? "+" : "";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: text, display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: text, display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
         {glyph && <span aria-hidden="true" style={{ fontSize: 9 }}>{glyph}</span>}
         {sign}{progress}
       </span>
@@ -506,19 +498,15 @@ function SortableHead({
   children: React.ReactNode;
 }) {
   const active = sort.column === column;
-  // Idle underline mirrors the toolbar pills' visible border, so a sortable
-  // header reads as clearly clickable instead of plain text: the active
-  // column keeps a permanent accent underline, others reveal one on hover.
-  const idleShadow = `inset 0 -2px 0 0 ${active ? T.coal : "transparent"}`;
   return (
     <TableHead style={{ width, minWidth, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
       <button
         type="button"
         onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : column === "title" ? "asc" : "desc" })}
         aria-label={`Sort by ${COLUMN_LABEL[column]}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", height: 40, padding: "0 20px", background: "transparent", border: "none", boxShadow: idleShadow, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}, box-shadow ${dur.instant} ${ease.snap}` }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; if (!active) e.currentTarget.style.boxShadow = `inset 0 -2px 0 0 ${T.inkFaint}`; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.boxShadow = idleShadow; }}
+        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       >
         {children}
         {active ? (
@@ -640,7 +628,7 @@ function SessionsTable({
                       <ProgressCell progress={row.progress} />
                     </TableCell>
                     <TableCell style={{ width: 130, minWidth: 130, height: 56, padding: "0 20px" }}>
-                      <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkSoft }}>{row.date}</span>
+                      <span style={{ fontFamily: font.mono, fontSize: 13, color: T.inkFaint, fontVariantNumeric: "tabular-nums" }}>{row.date}</span>
                     </TableCell>
                     <TableCell style={{ height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
                       <TakeawayCell points={row.takeaways} />

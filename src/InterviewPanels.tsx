@@ -917,7 +917,7 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
   const isStrong = microFeedback?.includes("Strong") ?? false;
   return (
     <div style={{
-      width: "100%", borderRadius: 14, padding: "12px 16px",
+      width: "100%", borderRadius: 14, padding: "14px 16px",
       background: e.white, border: `1px solid ${e.line}`,
       boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
     }}>
@@ -1061,7 +1061,7 @@ export const CampusReadinessChips = memo(function CampusReadinessChips({ transcr
 
   return (
     <div style={{
-      width: "100%", borderRadius: 14, padding: "12px 16px",
+      width: "100%", borderRadius: 14, padding: "14px 16px",
       background: e.white, border: `1px solid ${e.line}`,
       boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
     }}>

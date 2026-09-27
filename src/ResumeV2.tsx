@@ -378,7 +378,7 @@ export default function ResumeV2Screen() {
               </p>
             )}
             {profile.careerTrajectory && (
-              <div style={{ background: T.indigo100, border: `1px solid ${T.indigoRing}`, borderRadius: 10, padding: "10px 14px 14px" }}>
+              <div style={{ background: T.indigo100, border: `1px solid ${T.indigoRing}`, borderRadius: 10, padding: "12px 16px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                   <div style={{ width: 16, height: 16, borderRadius: 8, background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <TargetIcon size={10} color={T.white} aria-hidden="true" />
@@ -478,7 +478,7 @@ export default function ResumeV2Screen() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {scoreBreakdownRows.map((row) => (
-                  <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
+                  <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
                     <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, width: 180, flexShrink: 0 }}>{row.label}</p>
                     <div style={{ flex: 1 }}>
                       <ProgressBar value={row.value} max={row.max} color={metricColor[row.tone].bar} trackColor={T.creamSoft} label={`${row.label}: ${row.value} out of ${row.max}`} />
@@ -632,7 +632,7 @@ export default function ResumeV2Screen() {
                   {atsResult.suggestions.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {atsResult.suggestions.map((s, i) => (
-                        <div key={i} style={{ background: T.warning100, borderRadius: 12, padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
+                        <div key={i} style={{ background: T.warning100, borderRadius: 12, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
                           <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <LightbulbIcon size={10} color={T.warningInk} aria-hidden="true" />
                           </div>
@@ -642,7 +642,7 @@ export default function ResumeV2Screen() {
                     </div>
                   )}
                   {atsResult.missing.length > 0 && (
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, background: T.error100, borderRadius: 12, padding: 14 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, background: T.error100, borderRadius: 12, padding: 16 }}>
                       <div style={{ width: 18, height: 18, borderRadius: 9, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                         <AlertCircleIcon size={10} color={T.error} aria-hidden="true" />
                       </div>
@@ -694,7 +694,7 @@ export default function ResumeV2Screen() {
                   <p style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint, margin: 0 }}>Key Achievements</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {profile.keyAchievements.map((text, i) => (
-                      <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.creamSoft, borderRadius: 10, padding: "10px 12px" }}>
+                      <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.creamSoft, borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ width: 24, height: 24, borderRadius: 12, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkSoft }}>{i + 1}</span>
                         </div>
