@@ -15,7 +15,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
@@ -302,8 +301,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       {/* Sidebar — shadcn shell shared across every (dashboard) route.
           collapsible="icon" shrinks to an icon-only rail instead of the
           default fully-offscreen slide, matching shadcn's sidebar-07
-          reference; SidebarRail gives the collapsed rail its own drag/
-          click-to-expand affordance. */}
+          reference. SidebarRail (the invisible edge hover-strip for
+          drag/click-to-expand) is intentionally omitted — it produced a
+          stray "Toggle Sidebar" title-tooltip over page content, and the
+          visible SidebarTrigger button already covers the toggle action. */}
       <Sidebar collapsible="icon" className="border-none">
         <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <SidebarHeader className="px-3 pt-4 pb-3">
@@ -583,7 +584,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </div>
         </SidebarFooter>
         </aside>
-        <SidebarRail />
       </Sidebar>
 
       {/* Main Content */}
@@ -598,7 +598,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           marginTop: 8, marginBottom: 16,
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
-          <Separator orientation="vertical" style={{ height: 16 }} />
+          <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
           <Breadcrumb style={{ flex: 1 }}>
             <BreadcrumbList style={{ fontFamily: font.ui, fontSize: 13 }}>
               <BreadcrumbItem>
