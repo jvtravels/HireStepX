@@ -510,7 +510,7 @@ export default function ResumeV2Screen() {
                   <div key={i}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 0" }}>
                       <div style={{ width: 24, height: 24, borderRadius: 12, background: T.creamSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                        <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkSoft }}>{i + 1}</span>
+                        <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
                       </div>
                       <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkSoft, margin: 0, flex: 1 }}>{text}</p>
                     </div>
@@ -624,7 +624,7 @@ export default function ResumeV2Screen() {
                           <div style={{ width: 18, height: 18, borderRadius: 9, background: T.success100, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <CheckIcon size={10} color={T.successInk} aria-hidden="true" />
                           </div>
-                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0 }}>{item}</p>
+                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: 0 }}>{item}</p>
                         </div>
                       ))}
                     </div>
@@ -698,7 +698,7 @@ export default function ResumeV2Screen() {
                         <div style={{ width: 24, height: 24, borderRadius: 12, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkSoft }}>{i + 1}</span>
                         </div>
-                        <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkSoft, margin: 0, flex: 1 }}>{text}</p>
+                        <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
                       </div>
                     ))}
                   </div>
