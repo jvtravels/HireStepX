@@ -41,7 +41,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LoadingScreen() {
+export function LoadingScreen() {
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
@@ -65,7 +65,7 @@ function LoadingScreen() {
   );
 }
 
-function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetry: () => void; onBack: () => void }) {
+export function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetry: () => void; onBack: () => void }) {
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
@@ -100,7 +100,7 @@ function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetr
   );
 }
 
-function NotFoundScreen({ onBack }: { onBack: () => void }) {
+export function NotFoundScreen({ onBack }: { onBack: () => void }) {
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>

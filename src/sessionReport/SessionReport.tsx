@@ -99,7 +99,7 @@ function parseDurationSec(s: string | undefined): number {
 
 /* ─── Loading + error UIs — cream surface to match the report ──────── */
 
-function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: string }) {
+export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: string }) {
   // Phase-walking copy mirrors the legacy ProgressiveLoadingState — gives
   // the user something to read while the LLM crunches. Plain rotation;
   // we don't need state-machine choreography here.
@@ -178,7 +178,7 @@ function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: st
    were produced live during the interview and stored, so we can always show
    them even when /api/evaluate-session is unavailable. Shown clearly labeled
    as preliminary, never passed off as the full report. */
-type PreliminarySummary = {
+export type PreliminarySummary = {
   score: number;
   topStrength: string;
   topWeakness: string;
@@ -194,7 +194,7 @@ type PreliminarySummary = {
    would teach the user a false readiness signal right before a real interview.
    We surface the qualitative notes the engine captured (if any) and route hard
    to the retry CTA for the real AI report instead. */
-function PreliminaryCard({ p }: { p: PreliminarySummary }) {
+export function PreliminaryCard({ p }: { p: PreliminarySummary }) {
   return (
     <div
       style={{
@@ -248,7 +248,7 @@ function PreliminaryCard({ p }: { p: PreliminarySummary }) {
   );
 }
 
-function ErrorShell({
+export function ErrorShell({
   message,
   onRetry,
   onBack,

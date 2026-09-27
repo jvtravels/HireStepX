@@ -217,10 +217,14 @@ export default function SessionHistoryRoute() {
       allowReport={false}
       embedded
       theme="hirestepx"
-      /* Hand "New session" + EmptyView CTAs off to the interview
-         route. /interview is the same target the dashboard's
-         primary CTA uses. */
-      onStartSession={() => router.push("/interview")}
+      /* Hand "New session" + EmptyView CTAs off to /session/new so the
+         user configures type/role/company before starting — mirrors
+         the dashboard's primary CTA (DashboardContext.handleStartSession).
+         Pushing straight to /interview skips that config step, and
+         useInterviewEngine's missing-start-intent guard (no ?new=1)
+         immediately bounces back to /dashboard — the button would look
+         like it silently breaks. */
+      onStartSession={() => router.push("/session/new")}
       /* Clicking a session card opens the canonical post-interview
          report at /session/[id] (rendered by SessionDetail →
          SessionReport). Mirrors the dashboard's row-click behavior

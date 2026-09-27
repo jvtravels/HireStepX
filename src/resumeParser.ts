@@ -234,6 +234,27 @@ export function isFallbackResume(r: StoredResume | null | undefined): r is Fallb
   return !!r && r._type === "fallback";
 }
 
+/** Project a regex-fallback resume into the ResumeProfile shape the UI
+ *  expects, so the AI and fallback branches can render through a single
+ *  ResumeProfile path. First experience entry's bullets feed
+ *  keyAchievements; anything missing falls back to a readable default.
+ *  Shared by DashboardResume.tsx and ResumeV2.tsx — both need to render
+ *  a fallback-parsed resume through the same ResumeProfile-shaped UI. */
+export function fallbackToProfile(r: FallbackStoredResume): ResumeProfile {
+  return {
+    headline: r.name || "Resume uploaded",
+    summary: r.summary || "Your resume has been uploaded and will be used to personalize your interview questions.",
+    yearsExperience: null,
+    seniorityLevel: "",
+    topSkills: (r.skills || []).slice(0, 8),
+    keyAchievements: (r.experience || []).flatMap(e => (e as { bullets?: string[] }).bullets || []).slice(0, 5),
+    industries: [],
+    interviewStrengths: [],
+    interviewGaps: [],
+    careerTrajectory: "",
+  };
+}
+
 /* OA-B49: section headers on Hindi/Devanagari resumes. `\b` word boundaries
  * don't apply to Devanagari (no ASCII word chars), so the Devanagari aliases
  * are appended as bare alternatives outside the `\b(...)\b` Latin group. */

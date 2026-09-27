@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import DashboardResume from "@/DashboardResume";
+import ResumeV2 from "@/ResumeV2";
 
 export const metadata: Metadata = {
   title: "Resume | HireStepX",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <DashboardResume />;
+  return <ResumeV2 />;
 }
