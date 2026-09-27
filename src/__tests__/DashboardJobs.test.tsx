@@ -14,7 +14,7 @@ describe("DashboardJobs", () => {
 
   it("fetches the uncapped ?full=1 list", async () => {
     const fetchMock = vi.fn(() =>
-      Promise.resolve({ ok: true, json: async () => ({ discoverable: true, shortlistedCount: 0, unlockedCount: 0, recent: [] }) }),
+      Promise.resolve({ ok: true, json: async () => ({ shortlistedCount: 0, unlockedCount: 0, recent: [] }) }),
     ) as unknown as typeof fetch;
     global.fetch = fetchMock;
     render(<DashboardJobs />);
@@ -22,20 +22,11 @@ describe("DashboardJobs", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/candidate-hiring-activity?full=1", expect.anything());
   });
 
-  it("shows the opt-in nudge when not discoverable", async () => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: async () => ({ discoverable: false }) }),
-    ) as unknown as typeof fetch;
-    render(<DashboardJobs />);
-    await waitFor(() => expect(screen.getByText(/Open Settings/)).toBeInTheDocument());
-  });
-
   it("renders a full table row with search/filter/sort chrome and opens full detail on click", async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: async () => ({
-          discoverable: true,
           shortlistedCount: 1,
           unlockedCount: 0,
           recent: [
@@ -136,7 +127,6 @@ describe("DashboardJobs", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({
-          discoverable: true,
           shortlistedCount: 2,
           unlockedCount: 0,
           recent: [
@@ -161,7 +151,6 @@ describe("DashboardJobs", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({
-          discoverable: true,
           shortlistedCount: 1,
           unlockedCount: 0,
           recent: [
@@ -214,6 +203,6 @@ describe("DashboardJobs", () => {
   it("stays on the loading skeleton and then settles on a fetch rejection", async () => {
     global.fetch = vi.fn(() => Promise.reject(new Error("network down"))) as unknown as typeof fetch;
     render(<DashboardJobs />);
-    await waitFor(() => expect(screen.getByText(/Open Settings/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/No matches yet/)).toBeInTheDocument());
   });
 });

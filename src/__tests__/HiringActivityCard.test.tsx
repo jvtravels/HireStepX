@@ -18,19 +18,11 @@ describe("HiringActivityCard", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows the opt-in nudge when not discoverable", async () => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: async () => ({ discoverable: false }) }),
-    ) as unknown as typeof fetch;
-    render(<HiringActivityCard />);
-    await waitFor(() => expect(screen.getByText(/Open Settings/)).toBeInTheDocument());
-  });
-
-  it("shows a zero-match state when discoverable with no matches", async () => {
+  it("shows a zero-match state when there are no matches", async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
-        json: async () => ({ discoverable: true, shortlistedCount: 0, unlockedCount: 0, recent: [] }),
+        json: async () => ({ shortlistedCount: 0, unlockedCount: 0, recent: [] }),
       }),
     ) as unknown as typeof fetch;
     render(<HiringActivityCard />);
@@ -42,7 +34,6 @@ describe("HiringActivityCard", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({
-          discoverable: true,
           shortlistedCount: 2,
           unlockedCount: 1,
           recent: [
@@ -109,7 +100,7 @@ describe("HiringActivityCard", () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
-        json: async () => ({ discoverable: true, shortlistedCount: 5, unlockedCount: 0, recent }),
+        json: async () => ({ shortlistedCount: 5, unlockedCount: 0, recent }),
       }),
     ) as unknown as typeof fetch;
     render(<HiringActivityCard />);

@@ -1,14 +1,10 @@
 "use client";
 
 /* Dashboard right-rail panel — the candidate-facing half of the employer
-   talent-roster feature. Settings → "Visible to employers" turns matching
-   on; this panel is where a candidate actually sees the effect of that
-   toggle in full: shortlisted/contacted counts, and per-match detail (role,
-   company, comp range, work mode, experience band, matched skills, match
-   score, and when they were matched/contacted) — not just a name and a
-   pill. Fetches /api/candidate-hiring-activity, which returns
-   { discoverable: false } immediately for anyone who hasn't opted in, so
-   this renders a lightweight opt-in nudge rather than empty data. */
+   talent-roster feature: shortlisted/contacted counts, and per-match detail
+   (role, company, comp range, work mode, experience band, matched skills,
+   match score, and when they were matched/contacted) — not just a name and
+   a pill. Fetches /api/candidate-hiring-activity. */
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,7 +33,6 @@ interface HiringMatch {
 const DASHBOARD_TEASER_LIMIT = 3;
 
 interface HiringActivity {
-  discoverable: boolean;
   shortlistedCount?: number;
   unlockedCount?: number;
   recent?: HiringMatch[];
@@ -77,31 +72,6 @@ export default function HiringActivityCard() {
     </p>
   );
 
-  if (!data.discoverable) {
-    return (
-      <div style={boxStyle}>
-        {label}
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: "0 0 8px", lineHeight: 1.5 }}>
-          Turn on "Visible to employers" in Settings to let companies on our talent roster match you to open roles.
-        </p>
-        <p style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, margin: "0 0 12px", lineHeight: 1.5 }}>
-          Once on, employers with a matching role see your resume, skills, and practice history — and can unlock your
-          contact details to reach out directly. You can turn it back off anytime.
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/settings")}
-          style={{
-            padding: "8px 14px", borderRadius: 8, border: `1px solid ${t.lineStrong}`,
-            background: "transparent", color: t.coal, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          Open Settings
-        </button>
-      </div>
-    );
-  }
-
   const shortlisted = data.shortlistedCount ?? 0;
   const unlocked = data.unlockedCount ?? 0;
   const matches = (data.recent || []).slice(0, DASHBOARD_TEASER_LIMIT);
@@ -112,7 +82,7 @@ export default function HiringActivityCard() {
 
       {shortlisted === 0 ? (
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-          You're visible to employers. No matches yet — we'll surface this the moment a role fits your profile.
+          No matches yet — we'll surface this the moment a role fits your profile.
         </p>
       ) : (
         <>

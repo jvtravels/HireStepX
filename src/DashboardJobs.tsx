@@ -51,7 +51,6 @@ export interface JobMatch {
 }
 
 interface HiringActivity {
-  discoverable: boolean;
   shortlistedCount?: number;
   unlockedCount?: number;
   recent?: JobMatch[];
@@ -236,34 +235,7 @@ export default function DashboardJobs() {
     return <div style={{ maxWidth: 1080 }}>{heading}</div>;
   }
 
-  if (!data || !data.discoverable) {
-    return (
-      <div style={{ maxWidth: 760 }}>
-        {heading}
-        <div style={{ padding: 20, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 10 }}>
-          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, margin: "0 0 8px", lineHeight: 1.5 }}>
-            Turn on "Visible to employers" in Settings to let companies on our talent roster match you to open roles.
-          </p>
-          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "0 0 14px", lineHeight: 1.5 }}>
-            Once on, employers with a matching role see your resume, skills, and practice history — and can unlock your
-            contact details to reach out directly. You can turn it back off anytime.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push("/settings")}
-            style={{
-              padding: "8px 14px", borderRadius: 8, border: `1px solid ${t.lineStrong}`,
-              background: "transparent", color: t.coal, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-            }}
-          >
-            Open Settings
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const shortlisted = data.shortlistedCount ?? 0;
+  const shortlisted = data?.shortlistedCount ?? 0;
 
   return (
     <div style={{ maxWidth: 1080 }}>
@@ -272,7 +244,7 @@ export default function DashboardJobs() {
       {shortlisted === 0 ? (
         <div style={{ padding: 20, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 10 }}>
           <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-            You're visible to employers. No matches yet — we'll surface this the moment a role fits your profile.
+            No matches yet — we'll surface this the moment a role fits your profile.
           </p>
         </div>
       ) : (

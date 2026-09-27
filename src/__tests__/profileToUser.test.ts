@@ -33,7 +33,6 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     referral_code: null,
     referred_by: null,
     deleted_at: null,
-    is_discoverable_to_employers: false,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,
   };

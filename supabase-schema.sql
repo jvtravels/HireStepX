@@ -1720,12 +1720,6 @@ drop policy if exists "Candidates view own matches" on requirement_matches;
 create policy "Candidates view own matches" on requirement_matches
   for select using ((auth.uid())::text = candidate_user_id::text);
 
--- Candidate opt-in gate for the real matching pool — mirrors
--- is_profile_public's private-by-default contract. Employers can only ever
--- match against candidates who have explicitly flipped this on from
--- Settings (src/settingsSections.tsx AccountSection).
-alter table profiles add column if not exists is_discoverable_to_employers boolean not null default false;
-
 -- Employer contact-unlock payments (2026-08-09). A dedicated table rather
 -- than reusing `payments`: that table's user_id FK requires a `profiles`
 -- row, which employer accounts never have (see the "Employer talent-roster

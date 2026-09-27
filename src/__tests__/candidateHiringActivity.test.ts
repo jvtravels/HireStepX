@@ -31,21 +31,9 @@ describe("candidate-hiring-activity handler", () => {
     expect(res.status).toBe(401);
   });
 
-  it("short-circuits with discoverable:false without querying matches", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [{ is_discoverable_to_employers: false }],
-    });
-    global.fetch = fetchMock as unknown as typeof fetch;
-    const res = await handler(req());
-    const body = await res.json();
-    expect(body).toEqual({ discoverable: false });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
   it("returns shortlisted/unlocked counts and recent matches, excluding closed non-unlocked ones", async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ is_discoverable_to_employers: true }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ target_role: null, resume_data: null }] })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [
@@ -113,7 +101,6 @@ describe("candidate-hiring-activity handler", () => {
     const res = await handler(req());
     const body = await res.json();
 
-    expect(body.discoverable).toBe(true);
     // m1 (unlocked, closed) counts; m2 (not unlocked, closed) is dropped; m3 (ready) counts.
     expect(body.shortlistedCount).toBe(2);
     expect(body.unlockedCount).toBe(1);

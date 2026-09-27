@@ -1,18 +1,13 @@
 /* Vercel Edge Function — Candidate Hiring Activity
  *
- * GET /api/candidate-hiring-activity → lets a candidate see the concrete
- * effect of opting into the employer talent roster (Settings → "Visible to
- * employers"): how many open requirements they've been matched against, how
- * many employers have unlocked their contact details, and a short recent-
- * activity list (role, company, location, contacted or not).
+ * GET /api/candidate-hiring-activity → lets a candidate see how many open
+ * requirements they've been matched against, how many employers have
+ * unlocked their contact details, and a short recent-activity list (role,
+ * company, location, contacted or not).
  *
  * Reads via the service role (bypasses RLS, same pattern as employer-profile.ts
  * and credit-balance.ts) so a single PostgREST call can embed the parent
  * employer_requirements + employers rows through their foreign keys.
- *
- * Returns { discoverable: false } without querying matches at all when the
- * candidate hasn't opted in — there's nothing to show, and no reason to let
- * a toggled-off candidate probe for match data.
  */
 
 export const config = { runtime: "edge" };
@@ -86,19 +81,14 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=is_discoverable_to_employers,target_role,resume_data`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=target_role,resume_data`,
       { headers: serviceHeaders() },
     );
     if (!profileRes.ok) throw new Error(`profile read failed: ${profileRes.status}`);
     const profileRows = (await profileRes.json().catch(() => [])) as Array<{
-      is_discoverable_to_employers: boolean; target_role: string | null; resume_data: unknown;
+      target_role: string | null; resume_data: unknown;
     }>;
-    const discoverable = !!profileRows[0]?.is_discoverable_to_employers;
     const candidateProfile = { target_role: profileRows[0]?.target_role ?? null, resume_data: profileRows[0]?.resume_data ?? null };
-
-    if (!discoverable) {
-      return new Response(JSON.stringify({ discoverable: false }), { status: 200, headers });
-    }
 
     const matchesRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
@@ -168,7 +158,7 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     return new Response(
-      JSON.stringify({ discoverable: true, shortlistedCount, unlockedCount, recent }),
+      JSON.stringify({ shortlistedCount, unlockedCount, recent }),
       { status: 200, headers },
     );
   } catch (err) {

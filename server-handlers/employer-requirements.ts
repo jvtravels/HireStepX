@@ -4,9 +4,8 @@
  *      (newest first), each with its matched-candidate count.
  * POST /api/employer-requirements { title, location, noticePeriodPref?,
  *      description? } → creates a requirement, then synchronously scores
- *      it against the real, consent-gated candidate pool
- *      (profiles.is_discoverable_to_employers = true) using the
- *      deterministic heuristic in _requirement-match-helpers.ts, persists
+ *      it against the full candidate pool using the deterministic
+ *      heuristic in _requirement-match-helpers.ts, persists
  *      requirement_matches, and returns the requirement with its final
  *      status (ready/partial/zero/failed).
  *
@@ -249,7 +248,7 @@ export async function runMatching(requirementId: string, req: { title: string; l
     }
 
     const poolRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?is_discoverable_to_employers=eq.true&id=neq.${encodeURIComponent(ownerUserId)}&select=id,name,target_role,industry,resume_data,practice_timestamps`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=neq.${encodeURIComponent(ownerUserId)}&select=id,name,target_role,industry,resume_data,practice_timestamps`,
       { headers: serviceHeaders() },
     );
     if (!poolRes.ok) throw new Error(`candidate pool read failed: ${poolRes.status}`);

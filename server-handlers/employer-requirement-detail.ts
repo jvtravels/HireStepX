@@ -5,10 +5,7 @@
  * Returns one requirement owned by the caller plus its scored candidate
  * shortlist. Contact info (email/phone) is only included once the match's
  * `unlocked` DB flag is set (paid via employer-create-unlock-order.ts +
- * employer-verify-unlock-payment.ts) AND the candidate still has
- * `is_discoverable_to_employers = true` at read time — a candidate who
- * revokes discoverability after being unlocked stops surfacing contact
- * info immediately, even though the employer already paid for that match.
+ * employer-verify-unlock-payment.ts).
  *
  * Candidate fields are limited to what the real schema actually backs:
  * target role, resume-derived city/skills, session count, and last-active
@@ -129,16 +126,16 @@ export default async function handler(req: Request): Promise<Response> {
     }>;
 
     const candidateIds = matches.map((m) => m.candidate_user_id);
-    const profileById = new Map<string, { name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[]; is_discoverable_to_employers: boolean }>();
+    const profileById = new Map<string, { name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[] }>();
     if (candidateIds.length > 0) {
       const idParam = candidateIds.map((id) => encodeURIComponent(id)).join(",");
       const profilesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam})&select=id,name,email,target_role,resume_data,practice_timestamps,is_discoverable_to_employers`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam})&select=id,name,email,target_role,resume_data,practice_timestamps`,
         { headers: serviceHeaders() },
       );
       if (profilesRes.ok) {
         const rows = (await profilesRes.json().catch(() => [])) as Array<{
-          id: string; name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[]; is_discoverable_to_employers: boolean;
+          id: string; name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[];
         }>;
         for (const r of rows) profileById.set(r.id, r);
       }
@@ -168,8 +165,7 @@ export default async function handler(req: Request): Promise<Response> {
         { title: requirement.title, location: requirement.location, description: requirement.description || "" },
       );
 
-      const discoverable = profile?.is_discoverable_to_employers === true;
-      const unlocked = m.unlocked && discoverable;
+      const unlocked = m.unlocked;
 
       return {
         id: m.id,
