@@ -127,7 +127,6 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const c = {
     obsidian: T.cream, graphite: T.creamRaised, carbon: T.creamSoft,
     ivory: T.coal, chalk: "#3F3A33", stone: "#6B655C",
-    gilt: T.indigo, giltDark: T.indigoDeep, giltLight: T.indigo100,
     sage: T.success, ember: T.error,
     slate: T.indigo,
     border: T.line, borderHover: T.lineStrong,

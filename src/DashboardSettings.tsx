@@ -22,7 +22,6 @@ const c = {
   graphite: T.creamRaised,     // settings uses a slightly warmer raised surface than dashboard
   border: T.line,
   borderStrong: T.lineStrong,
-  gilt: T.copper,
   ivory: T.coal,
   chalk: T.coal,
   stone: T.inkSoft,

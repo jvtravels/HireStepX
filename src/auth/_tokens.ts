@@ -32,13 +32,24 @@ export const tokens = {
   inkFaint: "oklch(0.45 0.017 213.2)",
   inkFaintWeak: "oklch(0.72 0.019 213.9)",
 
-  // Brand — interactive
+  // Brand — interactive. Use for anything actionable or "in progress":
+  // buttons/CTAs, links, active/selected nav & tab states, focus rings,
+  // brand-identity chrome (panel headers). If a user can click it, or it
+  // marks the thing they're currently on, it's indigo — never copper.
   indigo: "oklch(0.359 0.135 278.697)",
   indigoDeep: "oklch(0.257 0.086 281.288)",
   indigo100: "oklch(0.920 0.022 294.573)",
   indigoRing: "oklch(0.359 0.135 278.697 / 0.20)",
 
-  // Brand — editorial
+  // Brand — editorial. Reserved for score/streak/achievement visuals
+  // ONLY: score chips & rings, the streak flame, milestone/skill-badge
+  // "earned" states. Never use copper for a button, link, or active
+  // state — that's indigo's job. (Two documented exceptions elsewhere:
+  // indigo doubles as a categorical chart-series color in
+  // dashboardComponents.tsx's results charts, and as a neutral
+  // "upcoming/soon" status tint in DashboardHomePanels.tsx's calendar
+  // strip, alongside violet/info for other status hues — both are
+  // deliberate, not drift.)
   copper: "oklch(0.555 0.163 48.998)",
   copperDark: "oklch(0.468 0.146 48.998)",
   copperSoft: "oklch(0.555 0.163 48.998 / 0.12)",
