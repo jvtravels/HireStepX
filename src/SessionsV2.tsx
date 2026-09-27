@@ -458,6 +458,9 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
   );
 }
 
+/* count is the group's full filtered-set size (all pages), not the number
+   of that group's rows on the current page — a page boundary falling
+   mid-group must not undercount it. */
 function GroupDivider({ label, count }: { label: string; count: number }) {
   return (
     <TableRow style={{ background: T.rowTintStrong, height: 40 }}>
@@ -535,8 +538,9 @@ function SessionsTable({
   onRowsPerPageChange,
   onPageChange,
   onOpenReport,
+  onClearFilters,
 }: {
-  groups: { label: string; rows: FlatRow[] }[];
+  groups: { label: string; rows: FlatRow[]; count: number }[];
   totalCount: number;
   filteredCount: number;
   sort: Sort;
@@ -547,6 +551,7 @@ function SessionsTable({
   onRowsPerPageChange: (rowsPerPage: number) => void;
   onPageChange: (page: number) => void;
   onOpenReport: (row: FlatRow) => void;
+  onClearFilters: () => void;
 }) {
   // Route push is a network round trip on a slow connection — without this
   // the button gives zero feedback between click and the next page painting.
@@ -570,18 +575,31 @@ function SessionsTable({
         <TableBody>
           {groups.length === 0 ? (
             <TableRow>
+              {/* The row spans every (fixed-width) column, so on a viewport
+                  narrower than their combined width the table scrolls
+                  horizontally underneath it — without `sticky` this content,
+                  centered in the full row width, sits out past the initial
+                  scroll position and never becomes visible. */}
               <TableCell colSpan={6} style={{ padding: "56px 16px" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <div style={{ position: "sticky", left: 0, width: "max-content", maxWidth: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                   <SearchXIcon size={22} color={T.inkFaint} aria-hidden="true" />
                   <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>No sessions match your filters</p>
                   <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: 0 }}>Try a different search term or clear a filter.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onClearFilters}
+                    style={{ marginTop: 4, height: 36, borderRadius: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
+                  >
+                    Clear filters
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
           ) : (
             groups.map((group, groupIndex) => (
               <Fragment key={`${group.label || "flat"}-${groupIndex}`}>
-                {group.label && <GroupDivider label={group.label} count={group.rows.length} />}
+                {group.label && <GroupDivider label={group.label} count={group.count} />}
                 {group.rows.map((row) => (
                   <TableRow key={row.id} style={{ height: 64 }}>
                     <TableCell style={{ width: 260, height: 56, whiteSpace: "normal" }}>
@@ -802,19 +820,39 @@ function SessionsWorkspace({
   /* Non-date sorts break date-bucket contiguity, so date dividers only
      render while sorting by date; otherwise the table renders as a single
      flat, undivided list. */
+  const clearFilters = () => {
+    setSearch("");
+    setTypeFilter("All");
+    setScoreFilter("All");
+    setDateFilter("All");
+    setPage(1);
+  };
+
   const showDateGroups = sort.column === "date";
+
+  // Bucket counts must reflect the whole filtered result set, not just the
+  // rows that happen to land on the current page — otherwise a bucket that
+  // spans a page boundary shows a truncated count.
+  const groupCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of filtered) {
+      counts.set(row.groupLabel, (counts.get(row.groupLabel) ?? 0) + 1);
+    }
+    return counts;
+  }, [filtered]);
+
   const pageGroups = useMemo(() => {
     if (!showDateGroups) {
-      return pageRows.length ? [{ label: "", rows: pageRows }] : [];
+      return pageRows.length ? [{ label: "", rows: pageRows, count: pageRows.length }] : [];
     }
-    const groups: { label: string; rows: FlatRow[] }[] = [];
+    const groups: { label: string; rows: FlatRow[]; count: number }[] = [];
     for (const row of pageRows) {
       const last = groups[groups.length - 1];
       if (last && last.label === row.groupLabel) last.rows.push(row);
-      else groups.push({ label: row.groupLabel, rows: [row] });
+      else groups.push({ label: row.groupLabel, rows: [row], count: groupCounts.get(row.groupLabel) ?? 0 });
     }
     return groups;
-  }, [pageRows, showDateGroups]);
+  }, [pageRows, showDateGroups, groupCounts]);
 
   return (
     <>
@@ -844,6 +882,7 @@ function SessionsWorkspace({
           onRowsPerPageChange={(v) => { setRowsPerPage(v); setPage(1); }}
           onPageChange={setPage}
           onOpenReport={onOpenReport}
+          onClearFilters={clearFilters}
         />
       </div>
     </>
