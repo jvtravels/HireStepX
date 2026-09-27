@@ -80,10 +80,7 @@ type SessionRow = {
   date: string;
   groupLabel: string;
   takeaways: TakeawayPoint[];
-  focus?: string;
-  role: string;
   company?: string;
-  difficulty?: string;
 };
 
 /* Flattened row used by the table's filter/sort/paginate pipeline —
@@ -147,8 +144,7 @@ function buildTakeaways(d: DashboardSession): TakeawayPoint[] {
 }
 
 /* Map the canonical DashboardSession shape onto this screen's row shape —
-   same toHsx idiom as SessionHistoryRoute.tsx (campus-placement special
-   case, empty-company guard), adapted to SessionsV2's own fields. */
+   campus-placement special case, empty-company guard. */
 function toRow(d: DashboardSession, now: number): FlatRow {
   return {
     id: d.id,
@@ -161,10 +157,7 @@ function toRow(d: DashboardSession, now: number): FlatRow {
     date: formatRowDate(d.date),
     groupLabel: bucketLabel(d.date, now),
     takeaways: buildTakeaways(d),
-    focus: d.focus,
-    role: d.role,
     company: d.company ?? "",
-    difficulty: d.difficulty,
   };
 }
 
@@ -189,14 +182,18 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
 
 /* The "Sort" pill surfaces the same (column, direction) state the column
    headers write to — one source of truth, so clicking a header and picking
-   a pill option can never disagree. Named presets get a friendly label;
-   anything else (e.g. sorting by Session or Progress) falls back to
-   "<Column> (asc/desc)" via sortLabel() below. */
+   a pill option can never disagree. Every sortable column header has a
+   matching pair of presets here so the pill can always reach (and name)
+   whatever state a header click landed on. */
 const SORT_PRESETS: { value: Sort; label: string }[] = [
   { value: { column: "date", direction: "desc" }, label: "Recent" },
   { value: { column: "date", direction: "asc" }, label: "Oldest" },
   { value: { column: "score", direction: "desc" }, label: "Highest score" },
   { value: { column: "score", direction: "asc" }, label: "Lowest score" },
+  { value: { column: "progress", direction: "desc" }, label: "Most improved" },
+  { value: { column: "progress", direction: "asc" }, label: "Least improved" },
+  { value: { column: "title", direction: "asc" }, label: "Session (A–Z)" },
+  { value: { column: "title", direction: "desc" }, label: "Session (Z–A)" },
 ];
 
 function sortLabel(sort: Sort): string {
@@ -231,7 +228,7 @@ function parseRowDate(date: string): number {
 
 function PageHeader({ onStartSession }: { onStartSession: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", flexWrap: "wrap", gap: 12 }}>
       <div>
         <h1 style={{ fontFamily: font.ui, fontSize: 26, fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Sessions</h1>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: T.inkFaint, margin: "2px 0 0" }}>
@@ -362,7 +359,7 @@ function Toolbar({
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <div style={{ position: "relative", width: 400 }}>
+        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 220, maxWidth: 400 }}>
           <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
           <SearchIcon
             size={14}
@@ -551,6 +548,9 @@ function SessionsTable({
   onPageChange: (page: number) => void;
   onOpenReport: (row: FlatRow) => void;
 }) {
+  // Route push is a network round trip on a slow connection — without this
+  // the button gives zero feedback between click and the next page painting.
+  const [openingId, setOpeningId] = useState<string | null>(null);
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
@@ -562,7 +562,9 @@ function SessionsTable({
             <SortableHead column="progress" width={150} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
             <SortableHead column="date" width={150} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
             <TableHead style={{ borderLeft: `1px solid ${T.line}`, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
-            <TableHead style={{ width: 130, borderLeft: `1px solid ${T.line}` }} />
+            <TableHead style={{ width: 130, borderLeft: `1px solid ${T.line}` }}>
+              <span className="sr-only">Actions</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -583,7 +585,9 @@ function SessionsTable({
                 {group.rows.map((row) => (
                   <TableRow key={row.id} style={{ height: 64 }}>
                     <TableCell style={{ width: 260, height: 56, whiteSpace: "normal" }}>
-                      <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>{row.title}</p>
+                      <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>
+                        {row.title}{row.company ? ` · ${row.company}` : ""}
+                      </p>
                       <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: "2px 0 0" }}>
                         {row.category} · {row.questionCount} questions
                       </p>
@@ -604,11 +608,18 @@ function SessionsTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onOpenReport(row)}
+                        disabled={openingId !== null}
+                        onClick={() => { setOpeningId(row.id); onOpenReport(row); }}
                         style={{ width: 117, height: 44, borderRadius: 6, gap: 4, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
                       >
-                        Open report
-                        <ArrowRightIcon size={12} aria-hidden="true" />
+                        {openingId === row.id ? (
+                          <Loader2Icon size={13} className="animate-spin" aria-hidden="true" />
+                        ) : (
+                          <>
+                            Open report
+                            <ArrowRightIcon size={12} aria-hidden="true" />
+                          </>
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -620,7 +631,7 @@ function SessionsTable({
       </Table>
       </div>
 
-      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: `1px solid ${T.line}` }}>
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
         <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>
           {filteredCount === totalCount
             ? `${totalCount} session${totalCount === 1 ? "" : "s"} total`
@@ -778,7 +789,7 @@ function SessionsWorkspace({
       if (typeFilter !== "All" && r.category !== typeFilter) return false;
       if (scoreFilter !== "All" && r.band !== scoreFilter) return false;
       if (dateFilter !== "All" && r.groupLabel !== dateFilter) return false;
-      if (q && !`${r.title} ${r.category}`.toLowerCase().includes(q)) return false;
+      if (q && !`${r.title} ${r.category} ${r.company ?? ""}`.toLowerCase().includes(q)) return false;
       return true;
     });
     return [...filteredRows].sort((a, b) => compareRows(a, b, sort));

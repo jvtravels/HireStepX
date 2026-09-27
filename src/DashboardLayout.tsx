@@ -91,7 +91,7 @@ const font = {
 /* ─── Prefetch route chunks on nav hover ─── */
 const prefetchMap: Record<string, () => void> = {
   dashboard: () => { import("./DashboardHome"); },
-  sessions: () => { import("./DashboardSessions"); },
+  sessions: () => { import("./SessionsV2"); },
   calendar: () => { import("./DashboardCalendar"); },
   analytics: () => { import("./DashboardAnalytics"); },
   resume: () => { import("./DashboardResume"); },
