@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth, getStoredDeviceToken } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, getSupabase, type PaymentRecord } from "./supabase";
@@ -130,9 +131,14 @@ export default function SettingsPage() {
   // Export
   const [exporting, setExporting] = useState(false);
 
-  // Section nav
+  // Section nav — deep-linkable via ?tab= (e.g. the sidebar account menu's
+  // "Billing" item links straight to the Plan & Data tab).
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
   const pillsRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<string>("account");
+  const [activeSection, setActiveSection] = useState<string>(
+    ALL_SECTIONS.some((s) => s.id === requestedTab) ? (requestedTab as string) : "account"
+  );
 
   // Billing history
   const [payments, setPayments] = useState<PaymentRecord[]>([]);

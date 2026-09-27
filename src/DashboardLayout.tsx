@@ -38,11 +38,16 @@ import {
   BellIcon,
   ChevronsUpDownIcon,
   LogOutIcon,
+  BadgeCheckIcon,
+  CreditCardIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
@@ -572,7 +577,34 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 <ChevronsUpDownIcon size={12} aria-hidden="true" className="group-data-[collapsible=icon]:hidden" style={{ flexShrink: 0, color: c.inkSoft }} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" style={{ width: 215 }}>
+            <DropdownMenuContent align="start" side="top" style={{ width: 240 }}>
+              <DropdownMenuLabel className="p-0 font-normal">
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
+                  <span style={{ width: 32, height: 32, borderRadius: 4, background: T.copper, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.white }}>{(displayName || "?")[0].toUpperCase()}</span>
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{displayName}</p>
+                    <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{user?.email}</p>
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => nav.push("/settings")}>
+                  <BadgeCheckIcon size={14} aria-hidden="true" />
+                  Account
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => nav.push("/settings?tab=plan")}>
+                  <CreditCardIcon size={14} aria-hidden="true" />
+                  Billing
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled title="Not wired yet">
+                  <BellIcon size={14} aria-hidden="true" />
+                  Notifications
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => { authLogout(); }}>
                 <LogOutIcon size={14} aria-hidden="true" />
                 Log out

@@ -33,10 +33,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  ChevronsLeftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   ChevronsUpDownIcon,
@@ -56,6 +52,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const font = { ui: F.sans, mono: F.mono };
 
@@ -496,6 +501,23 @@ function SortableHead({
   );
 }
 
+/* Windowed page list for the pagination footer: always shows page 1,
+   the last page, and a run around the current page, collapsing gaps
+   into an ellipsis marker rather than listing every page. */
+function paginationRange(page: number, totalPages: number): (number | "ellipsis")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const pages = new Set([1, totalPages, page - 1, page, page + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+  const result: (number | "ellipsis")[] = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) result.push("ellipsis");
+    result.push(p);
+  });
+  return result;
+}
+
 function SessionsTable({
   groups,
   totalCount,
@@ -614,23 +636,54 @@ function SessionsTable({
               </SelectContent>
             </Select>
           </div>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>
-            Page {page} of {totalPages}
-          </span>
-          <div style={{ display: "flex", gap: 4 }}>
-            <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label="Go to first page" style={{ borderRadius: 6, width: 32, height: 32, padding: 8 }}>
-              <ChevronsLeftIcon size={14} />
-            </Button>
-            <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label="Go to previous page" style={{ borderRadius: 6, width: 32, height: 32, padding: 8 }}>
-              <ChevronLeftIcon size={14} />
-            </Button>
-            <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} aria-label="Go to next page" style={{ borderRadius: 6, width: 32, height: 32, padding: 8 }}>
-              <ChevronRightIcon size={14} />
-            </Button>
-            <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => onPageChange(totalPages)} aria-label="Go to last page" style={{ borderRadius: 6, width: 32, height: 32, padding: 8 }}>
-              <ChevronsRightIcon size={14} />
-            </Button>
-          </div>
+          <Pagination style={{ width: "auto", margin: 0 }}>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  text=""
+                  aria-disabled={page <= 1}
+                  className={page <= 1 ? "pointer-events-none opacity-50" : undefined}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (page > 1) onPageChange(page - 1);
+                  }}
+                />
+              </PaginationItem>
+              {paginationRange(page, totalPages).map((p, i) =>
+                p === "ellipsis" ? (
+                  <PaginationItem key={`ellipsis-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      href="#"
+                      isActive={p === page}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onPageChange(p);
+                      }}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  text=""
+                  aria-disabled={page >= totalPages}
+                  className={page >= totalPages ? "pointer-events-none opacity-50" : undefined}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (page < totalPages) onPageChange(page + 1);
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>
