@@ -27,7 +27,7 @@ export function BetaBanner() {
         position: "relative",
         zIndex: 1,
         background: "#B45309",
-        color: "#FAF7F0",
+        color: "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -45,7 +45,7 @@ export function BetaBanner() {
         <CopyEmailLink
           email="hello@hirestepx.com"
           style={{
-            color: "#FAF7F0",
+            color: "#FFFFFF",
             textUnderlineOffset: "2px",
             fontWeight: 700,
           }}
@@ -63,7 +63,7 @@ export function BetaBanner() {
           transform: "translateY(-50%)",
           background: "none",
           border: "none",
-          color: "#FAF7F0",
+          color: "#FFFFFF",
           cursor: "pointer",
           padding: "4px 6px",
           fontSize: 16,

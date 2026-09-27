@@ -46,12 +46,12 @@ export const ONBOARDING_STYLES = `
     margin: 0 -8px;
     padding: 6px 8px !important;
   }
-  .hsx-onb-track:hover { background: #F4EFE3; }
+  .hsx-onb-track:hover { background: var(--muted); }
   .hsx-onb-track:active { transform: scale(0.99); }
   .hsx-onb-track:focus-visible {
     outline: 2px solid #312E81;
     outline-offset: 2px;
-    background: #F4EFE3;
+    background: var(--muted);
   }
   .hsx-onb-track > span:first-child { transition: background 140ms ease, border-color 140ms ease, transform 140ms cubic-bezier(0.16, 1, 0.3, 1); }
   .hsx-onb-track:active > span:first-child { transform: scale(0.92); }

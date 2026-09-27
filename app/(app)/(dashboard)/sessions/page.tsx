@@ -16,11 +16,11 @@ export const metadata: Metadata = {
 // hydrates on the client.
 const SessionsV2 = dynamic(() => import("@/SessionsV2"), {
   loading: () => (
-    <div style={{ padding: 24, background: "#FAF7F0", minHeight: "100vh", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
-      <div style={{ width: 200, height: 28, background: "#F4EFE3", borderRadius: 6, marginBottom: 24 }} />
+    <div style={{ padding: 24, background: "var(--background)", minHeight: "100vh", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
+      <div style={{ width: 200, height: 28, background: "var(--muted)", borderRadius: 6, marginBottom: 24 }} />
       <div style={{ display: "grid", gap: 12 }}>
         {[1, 2, 3].map(i => (
-          <div key={i} style={{ height: 96, background: "#F4EFE3", borderRadius: 12 }} />
+          <div key={i} style={{ height: 96, background: "var(--muted)", borderRadius: 12 }} />
         ))}
       </div>
     </div>

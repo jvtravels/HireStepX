@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 // renders a lightweight skeleton and the real component hydrates client-side.
 const DashboardSettings = dynamic(() => import("@/DashboardSettings"), {
   loading: () => (
-    <div style={{ padding: 24, background: "#FAF7F0", minHeight: "100vh", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
-      <div style={{ width: 200, height: 28, background: "#F4EFE3", borderRadius: 6, marginBottom: 24 }} />
+    <div style={{ padding: 24, background: "var(--background)", minHeight: "100vh", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
+      <div style={{ width: 200, height: 28, background: "var(--muted)", borderRadius: 6, marginBottom: 24 }} />
       <div style={{ display: "grid", gap: 12 }}>
         {[1, 2, 3].map(i => (
-          <div key={i} style={{ height: 120, background: "#F4EFE3", borderRadius: 12 }} />
+          <div key={i} style={{ height: 120, background: "var(--muted)", borderRadius: 12 }} />
         ))}
       </div>
     </div>

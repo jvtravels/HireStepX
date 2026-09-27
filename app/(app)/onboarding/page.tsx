@@ -15,12 +15,12 @@ export const metadata: Metadata = {
  */
 const Onboarding = dynamic(() => import("@/Onboarding"), {
   loading: () => (
-    <div style={{ minHeight: "100vh", background: "#FAF7F0", padding: "80px 24px", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", padding: "80px 24px", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
       <div style={{ maxWidth: 680, margin: "0 auto" }}>
-        <div style={{ width: 160, height: 14, background: "#F4EFE3", borderRadius: 4, marginBottom: 16 }} />
-        <div style={{ width: 380, height: 36, background: "#F4EFE3", borderRadius: 6, marginBottom: 12 }} />
-        <div style={{ width: 520, height: 16, background: "#F4EFE3", borderRadius: 4, marginBottom: 40 }} />
-        <div style={{ height: 320, background: "#F4EFE3", borderRadius: 14 }} />
+        <div style={{ width: 160, height: 14, background: "var(--muted)", borderRadius: 4, marginBottom: 16 }} />
+        <div style={{ width: 380, height: 36, background: "var(--muted)", borderRadius: 6, marginBottom: 12 }} />
+        <div style={{ width: 520, height: 16, background: "var(--muted)", borderRadius: 4, marginBottom: 40 }} />
+        <div style={{ height: 320, background: "var(--muted)", borderRadius: 14 }} />
       </div>
     </div>
   ),
