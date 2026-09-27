@@ -343,11 +343,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     aria-label={item.label}
                     tooltip={item.label}
                     style={{
-                      height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
-                      fontWeight: activeNav === item.id ? 600 : 500,
+                      height: 36, gap: 10, fontFamily: font.ui, fontSize: 14,
+                      fontWeight: 500,
                       color: activeNav === item.id ? c.accent : c.inkSoft,
-                      background: activeNav === item.id ? c.graphite : "transparent",
-                      border: activeNav === item.id ? `1px solid ${c.border}` : "1px solid transparent",
+                      background: activeNav === item.id ? c.border : "transparent",
                       borderRadius: 8,
                       transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
                     }}

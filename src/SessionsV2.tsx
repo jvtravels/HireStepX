@@ -281,7 +281,7 @@ function FilterPill<V extends string>({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 8, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 36, gap: 8, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
@@ -313,7 +313,7 @@ function SortPill({ sort, onChange }: { sort: Sort; onChange: (sort: Sort) => vo
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 8, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 36, gap: 8, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
@@ -340,7 +340,15 @@ function SortPill({ sort, onChange }: { sort: Sort; onChange: (sort: Sort) => vo
   );
 }
 
-function Toolbar({
+/* Merges the page title + the search/filter/sort toolbar + the primary
+   CTA into one row (previously two separate bordered rows) — saves the
+   height of a whole row on the Sessions screen without moving the CTA
+   into the shared app-shell header, which stays identical across every
+   page. Title stays a plain heading (no controls in its own box); the
+   toolbar cluster is a separate flex group to its right so the two never
+   visually merge into "one big control." */
+function WorkspaceHeader({
+  onStartSession,
   search,
   onSearchChange,
   typeOptions,
@@ -353,6 +361,7 @@ function Toolbar({
   sort,
   onSortChange,
 }: {
+  onStartSession: () => void;
   search: string;
   onSearchChange: (value: string) => void;
   typeOptions: string[];
@@ -367,41 +376,58 @@ function Toolbar({
 }) {
   const dateOptions = ["All", ...GROUP_ORDER];
   return (
-    // All controls cluster left (search, filters, sort) rather than pinning
-    // Sort to the far right with space-between — at narrower desktop widths
-    // that split left a wide dead gap in the middle of the toolbar, the same
-    // "left heavy, right empty" imbalance as the table columns.
-    <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 8 }}>
-      <div style={{ position: "relative", flex: "1 1 220px", minWidth: 220, maxWidth: 400 }}>
-        <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
-        <SearchIcon
-          size={14}
-          color={T.inkFaint}
-          aria-hidden="true"
-          style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
+      <h1 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+        <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180, maxWidth: 320 }}>
+          <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
+          <SearchIcon
+            size={14}
+            color={T.inkFaint}
+            aria-hidden="true"
+            style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
+          />
+          <Input
+            id="sessions-search"
+            placeholder="Search sessions..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            style={{ paddingLeft: 34, height: 36, borderRadius: 8, background: T.white }}
+          />
+        </div>
+        <FilterPill
+          label="Type"
+          value={typeFilter}
+          options={typeOptions.map((t) => ({ value: t, label: t }))}
+          onChange={onTypeFilterChange}
         />
-        <Input
-          id="sessions-search"
-          placeholder="Search sessions..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          style={{ paddingLeft: 34, height: 44, borderRadius: 8, background: T.white }}
+        <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
+        <FilterPill
+          label="Date"
+          value={dateFilter}
+          options={dateOptions.map((d) => ({ value: d, label: d }))}
+          onChange={onDateFilterChange}
         />
+        <SortPill sort={sort} onChange={onSortChange} />
+        <Button
+          onClick={onStartSession}
+          style={{
+            background: T.indigo,
+            color: T.white,
+            borderRadius: 8,
+            padding: "0 16px",
+            height: 36,
+            gap: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            flexShrink: 0,
+            boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
+          }}
+        >
+          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+          Start session
+        </Button>
       </div>
-      <FilterPill
-        label="Type"
-        value={typeFilter}
-        options={typeOptions.map((t) => ({ value: t, label: t }))}
-        onChange={onTypeFilterChange}
-      />
-      <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
-      <FilterPill
-        label="Date"
-        value={dateFilter}
-        options={dateOptions.map((d) => ({ value: d, label: d }))}
-        onChange={onDateFilterChange}
-      />
-      <SortPill sort={sort} onChange={onSortChange} />
     </div>
   );
 }
@@ -412,7 +438,7 @@ function ScoreCell({ score, band }: { score: number; band: ScoreBand }) {
   const textColor = alarming ? T.error : T.inkSoft;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 600, color: T.coal, fontVariantNumeric: "tabular-nums" }}>{score}</span>
+      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 500, color: T.coal, fontVariantNumeric: "tabular-nums" }}>{score}</span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: textColor }}>
         <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
         {bandLabel[band]}
@@ -435,7 +461,7 @@ function ProgressCell({ progress }: { progress: number }) {
   const sign = progress > 0 ? "+" : "";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: text, display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
+      <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 500, color: text, display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
         {glyph && <span aria-hidden="true" style={{ fontSize: 9 }}>{glyph}</span>}
         {sign}{progress}
       </span>
@@ -471,9 +497,9 @@ function GroupDivider({ label, count }: { label: string; count: number }) {
   // header row above it — otherwise the two read as the same bar and a user
   // scrolling past a divider mistakes it for a repeated header.
   return (
-    <TableRow style={{ height: 32 }}>
+    <TableRow style={{ height: 32, borderBottom: "none" }}>
       <TableCell colSpan={5} style={{ padding: "4px 20px" }}>
-        <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 700, color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+        <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
           {label}
         </span>{" "}
         <span style={{ fontFamily: font.ui, fontSize: 12, color: T.inkFaint }}>{count} sessions</span>
@@ -612,9 +638,9 @@ function SessionsTable({
               <Fragment key={`${group.label || "flat"}-${groupIndex}`}>
                 {group.label && <GroupDivider label={group.label} count={group.count} />}
                 {group.rows.map((row) => (
-                  <TableRow key={row.id} style={{ height: 64 }}>
+                  <TableRow key={row.id} style={{ height: 64, borderBottom: `1px solid ${T.rowTint}` }}>
                     <TableCell style={{ width: "36%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
-                      <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>
+                      <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.coal, margin: 0 }}>
                         {row.title}{row.company ? ` · ${row.company}` : ""}
                       </p>
                       <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: "2px 0 0" }}>
@@ -768,8 +794,10 @@ function SessionsLoadingSkeleton() {
    rows. */
 function SessionsWorkspace({
   rows,
+  onStartSession,
 }: {
   rows: FlatRow[];
+  onStartSession: () => void;
 }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -856,7 +884,8 @@ function SessionsWorkspace({
           visual unit. Toolbar/Table each own an internal border only
           where they act as a real section divider (borderBottom/Top). */}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <Toolbar
+        <WorkspaceHeader
+          onStartSession={onStartSession}
           search={search}
           onSearchChange={(v) => { setSearch(v); setPage(1); }}
           typeOptions={typeOptions}
@@ -905,18 +934,22 @@ export default function SessionsV2Screen() {
   const onStartSession = () => router.push("/session/new");
 
   let body: React.ReactNode;
+  let showPageHeader = true;
   if (sessionsLoading) {
     body = <SessionsLoadingSkeleton />;
   } else if (rows.length === 0) {
     body = <SessionsEmptyState onStartSession={onStartSession} />;
   } else {
-    body = <SessionsWorkspace rows={rows} />;
+    // WorkspaceHeader already embeds the title + CTA into its own row —
+    // rendering PageHeader above it here would duplicate both.
+    showPageHeader = false;
+    body = <SessionsWorkspace rows={rows} onStartSession={onStartSession} />;
   }
 
   return (
     <TooltipProvider>
-      <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0 }}>
-        <PageHeader onStartSession={onStartSession} />
+      <div style={{ background: T.white, display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0 }}>
+        {showPageHeader && <PageHeader onStartSession={onStartSession} />}
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {body}
         </div>
