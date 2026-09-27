@@ -25,7 +25,6 @@ import {
   FileTextIcon,
   BriefcaseIcon,
   SettingsIcon,
-  HelpCircleIcon,
   MailIcon,
   BellIcon,
   ChevronsUpDownIcon,
@@ -113,7 +112,6 @@ function NavIcon({ id }: { id: string }) {
     case "resume": return <FileTextIcon {...props} />;
     case "jobs": return <BriefcaseIcon {...props} />;
     case "settings": return <SettingsIcon {...props} />;
-    case "help": return <HelpCircleIcon {...props} />;
     default: return null;
   }
 }
@@ -337,21 +335,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </SidebarContent>
 
         <SidebarFooter className="gap-2">
-        {/* Secondary nav — Help & Support opens the floating help panel in place;
-            Settings is a route like the primary items above. */}
+        {/* Secondary nav — Settings is a route like the primary items above. */}
         <div className="px-3" style={{ marginBottom: 4 }}>
           <SidebarMenu className="gap-1">
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setHelpOpen((v) => !v)}
-                aria-label="Help & Support"
-                aria-expanded={helpOpen}
-                style={{ height: 40, gap: 10, fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.inkSoft }}
-              >
-                <NavIcon id="help" />
-                Help &amp; Support
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             {secondaryNavItems.map((item) => (
               <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
                 {activeNav === item.id && (
