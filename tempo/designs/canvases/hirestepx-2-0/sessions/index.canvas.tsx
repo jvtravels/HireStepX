@@ -35,7 +35,7 @@ export default function SessionsCanvas() {
         id="V2ListPopulated"
         name="SessionsV2 — populated, every score band + campus + no-company row"
         component={V2ListPopulated}
-        layout={{ x: 1800, y: 1050, width: 1728, height: 960, intrinsicSizing: "root-element" }}
+        layout={{ x: 1800, y: 2137, width: 1728, height: 960, intrinsicSizing: "root-element" }}
       />
     </Canvas>
   );

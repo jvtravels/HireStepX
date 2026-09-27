@@ -14,10 +14,9 @@ const instrumentSerif = Instrument_Serif({
   fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
-const jetbrainsMono = localFont({
+const geistMono = localFont({
   src: [
-    { path: "../../public/fonts/jetbrains-mono-var.woff2", weight: "400", style: "normal" },
-    { path: "../../public/fonts/jetbrains-mono-var.woff2", weight: "600", style: "normal" },
+    { path: "../../public/fonts/geist-mono-var.woff2", weight: "400 700", style: "normal" },
   ],
   variable: "--font-mono",
   display: "swap",
@@ -25,11 +24,9 @@ const jetbrainsMono = localFont({
   fallback: ["SF Mono", "Consolas", "Menlo", "monospace"],
 });
 
-const satoshi = localFont({
+const geistSans = localFont({
   src: [
-    { path: "../../public/fonts/satoshi-400.woff2", weight: "400", style: "normal" },
-    { path: "../../public/fonts/satoshi-500.woff2", weight: "500", style: "normal" },
-    { path: "../../public/fonts/satoshi-700.woff2", weight: "700", style: "normal" },
+    { path: "../../public/fonts/geist-sans-var.woff2", weight: "400 700", style: "normal" },
   ],
   variable: "--font-ui",
   display: "swap",
@@ -40,9 +37,9 @@ const satoshi = localFont({
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${instrumentSerif.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${instrumentSerif.variable} ${geistMono.variable}`}>
       <head />
-      <body className={`bg-background text-foreground ${satoshi.variable}`}>{children}</body>
+      <body className={`bg-background text-foreground ${geistSans.variable}`}>{children}</body>
     </html>
   );
 }

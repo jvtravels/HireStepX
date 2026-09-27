@@ -30,13 +30,16 @@ import {
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
   ChevronsUpDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
   PlusIcon,
   SearchIcon,
   SearchXIcon,
@@ -52,15 +55,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 const font = { ui: F.sans, mono: F.mono };
 
@@ -179,40 +173,6 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   date: "Date",
 };
 
-/* The "Sort" pill surfaces the same (column, direction) state the column
-   headers write to — one source of truth, so clicking a header and picking
-   a pill option can never disagree. Every sortable column header has a
-   matching pair of presets here so the pill can always reach (and name)
-   whatever state a header click landed on. */
-const SORT_PRESETS: { value: Sort; label: string }[] = [
-  { value: { column: "date", direction: "desc" }, label: "Recent" },
-  { value: { column: "date", direction: "asc" }, label: "Oldest" },
-  { value: { column: "score", direction: "desc" }, label: "Highest score" },
-  { value: { column: "score", direction: "asc" }, label: "Lowest score" },
-  { value: { column: "progress", direction: "desc" }, label: "Most improved" },
-  { value: { column: "progress", direction: "asc" }, label: "Least improved" },
-  { value: { column: "title", direction: "asc" }, label: "Session (A–Z)" },
-  { value: { column: "title", direction: "desc" }, label: "Session (Z–A)" },
-];
-
-/* Presets mix 3 unrelated axes (date/score/progress/title) in one flat
-   list — a divider before each new axis lets a user scanning for e.g.
-   "most improved" skip past the irrelevant date/score options instead
-   of reading every label. */
-function isNewSortGroup(index: number): boolean {
-  return index > 0 && SORT_PRESETS[index].value.column !== SORT_PRESETS[index - 1].value.column;
-}
-
-function sortLabel(sort: Sort): string {
-  const preset = SORT_PRESETS.find((p) => p.value.column === sort.column && p.value.direction === sort.direction);
-  if (preset) return preset.label;
-  return `${COLUMN_LABEL[sort.column]} (${sort.direction === "asc" ? "low to high" : "high to low"})`;
-}
-
-function sortKey(sort: Sort): string {
-  return `${sort.column}:${sort.direction}`;
-}
-
 function compareRows(a: FlatRow, b: FlatRow, sort: Sort): number {
   switch (sort.column) {
     case "title":
@@ -281,7 +241,7 @@ function FilterPill<V extends string>({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 36, gap: 8, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 36, gap: 8, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
         >
@@ -302,45 +262,7 @@ function FilterPill<V extends string>({
   );
 }
 
-/* Sort pill is its own component (rather than reusing FilterPill<Sort>)
-   because its value is a {column, direction} object, not a plain string,
-   and its label needs the sortLabel() fallback for non-preset states
-   reached via a header click (e.g. sorting by Session or Progress). */
-function SortPill({ sort, onChange }: { sort: Sort; onChange: (sort: Sort) => void }) {
-  const activeKey = sortKey(sort);
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          style={{ borderRadius: 8, height: 36, gap: 8, background: T.white, color: T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, transition: `background ${dur.instant} ${ease.snap}` }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
-        >
-          {`Sort: ${sortLabel(sort)}`}
-          <ChevronDownIcon size={12} aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuRadioGroup value={activeKey} onValueChange={(v) => {
-          const preset = SORT_PRESETS.find((p) => sortKey(p.value) === v);
-          if (preset) onChange(preset.value);
-        }}>
-          {SORT_PRESETS.map((preset, i) => (
-            <Fragment key={sortKey(preset.value)}>
-              {isNewSortGroup(i) && <DropdownMenuSeparator />}
-              <DropdownMenuRadioItem value={sortKey(preset.value)}>
-                {preset.label}
-              </DropdownMenuRadioItem>
-            </Fragment>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-/* Merges the page title + the search/filter/sort toolbar + the primary
+/* Merges the page title + the search/filter toolbar + the primary
    CTA into one row (previously two separate bordered rows) — saves the
    height of a whole row on the Sessions screen without moving the CTA
    into the shared app-shell header, which stays identical across every
@@ -358,8 +280,6 @@ function WorkspaceHeader({
   onScoreFilterChange,
   dateFilter,
   onDateFilterChange,
-  sort,
-  onSortChange,
 }: {
   onStartSession: () => void;
   search: string;
@@ -371,15 +291,13 @@ function WorkspaceHeader({
   onScoreFilterChange: (value: "All" | ScoreBand) => void;
   dateFilter: string;
   onDateFilterChange: (value: string) => void;
-  sort: Sort;
-  onSortChange: (value: Sort) => void;
 }) {
   const dateOptions = ["All", ...GROUP_ORDER];
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
-      <h1 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
-      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
-        <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180, maxWidth: 320 }}>
+      <h1 style={{ fontFamily: font.ui, fontSize: 18, lineHeight: "36px", fontWeight: 600, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", overflowX: "auto" }}>
+        <div style={{ position: "relative", flex: "1 1 160px", minWidth: 140, maxWidth: 280 }}>
           <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
           <SearchIcon
             size={14}
@@ -408,7 +326,6 @@ function WorkspaceHeader({
           options={dateOptions.map((d) => ({ value: d, label: d }))}
           onChange={onDateFilterChange}
         />
-        <SortPill sort={sort} onChange={onSortChange} />
         <Button
           onClick={onStartSession}
           style={{
@@ -545,23 +462,6 @@ function SortableHead({
   );
 }
 
-/* Windowed page list for the pagination footer: always shows page 1,
-   the last page, and a run around the current page, collapsing gaps
-   into an ellipsis marker rather than listing every page. */
-function paginationRange(page: number, totalPages: number): (number | "ellipsis")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-  const pages = new Set([1, totalPages, page - 1, page, page + 1]);
-  const sorted = [...pages].filter((p) => p >= 1 && p <= totalPages).sort((a, b) => a - b);
-  const result: (number | "ellipsis")[] = [];
-  sorted.forEach((p, i) => {
-    if (i > 0 && p - sorted[i - 1] > 1) result.push("ellipsis");
-    result.push(p);
-  });
-  return result;
-}
-
 function SessionsTable({
   groups,
   totalCount,
@@ -593,20 +493,19 @@ function SessionsTable({
       <Table aria-label="Practice session history" className="table-fixed">
         <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
           <TableRow style={{ background: T.rowTint, height: 40 }}>
-            {/* Session and Key Takeaway hold free-form text that benefits from
-                extra room on a wide screen, so they get the flexible share of
-                the table (Takeaway is left unset — the only flexible column
-                in a fixed-layout table absorbs whatever's left). Score/
-                Progress/Date hold fixed-length content (a badge, a short
-                date) that never needs more room on a wider screen — giving
-                them a % share stretched those cells into wide empty boxes at
-                narrower desktop widths, which read as "unbalanced". Pinning
-                them to a content-sized px width fixes that. */}
-            <SortableHead column="title" width="36%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
-            <SortableHead column="score" width={170} minWidth={170} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
-            <SortableHead column="progress" width={210} minWidth={210} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
-            <SortableHead column="date" width={130} minWidth={130} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
-            <TableHead style={{ minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
+            {/* All five columns carry a % width so they scale together
+                proportionally at any viewport, instead of the previous mix of
+                a % title column + fixed-px Score/Progress/Date + an unset
+                Takeaway absorbing the remainder — that mix let Takeaway
+                balloon far past what its two-line content needed while
+                Score/Progress/Date stayed cramped. minWidth still protects
+                each column's content on narrower viewports (the table then
+                scrolls horizontally, per the empty-state note below). */}
+            <SortableHead column="title" width="28%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
+            <SortableHead column="score" width="14%" minWidth={150} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
+            <SortableHead column="progress" width="17%" minWidth={190} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
+            <SortableHead column="date" width="11%" minWidth={120} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
+            <TableHead style={{ width: "30%", minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -638,8 +537,8 @@ function SessionsTable({
               <Fragment key={`${group.label || "flat"}-${groupIndex}`}>
                 {group.label && <GroupDivider label={group.label} count={group.count} />}
                 {group.rows.map((row) => (
-                  <TableRow key={row.id} style={{ height: 64, borderBottom: `1px solid ${T.rowTint}` }}>
-                    <TableCell style={{ width: "36%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
+                  <TableRow key={row.id} style={{ height: 64, borderBottom: `1px solid ${T.line}` }}>
+                    <TableCell style={{ width: "28%", minWidth: 220, height: 56, padding: "0 20px", whiteSpace: "normal" }}>
                       <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.coal, margin: 0 }}>
                         {row.title}{row.company ? ` · ${row.company}` : ""}
                       </p>
@@ -647,16 +546,16 @@ function SessionsTable({
                         {row.category} · {row.questionCount} questions
                       </p>
                     </TableCell>
-                    <TableCell style={{ width: 170, minWidth: 170, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: "14%", minWidth: 150, height: 56, padding: "0 20px" }}>
                       <ScoreCell score={row.score} band={row.band} />
                     </TableCell>
-                    <TableCell style={{ width: 210, minWidth: 210, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: "17%", minWidth: 190, height: 56, padding: "0 20px" }}>
                       <ProgressCell progress={row.progress} />
                     </TableCell>
-                    <TableCell style={{ width: 130, minWidth: 130, height: 56, padding: "0 20px" }}>
+                    <TableCell style={{ width: "11%", minWidth: 120, height: 56, padding: "0 20px" }}>
                       <span style={{ fontFamily: font.mono, fontSize: 13, color: T.inkFaint, fontVariantNumeric: "tabular-nums" }}>{row.date}</span>
                     </TableCell>
-                    <TableCell style={{ height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
+                    <TableCell style={{ width: "30%", height: 56, padding: "0 20px", whiteSpace: "normal", minWidth: 260 }}>
                       <TakeawayCell points={row.takeaways} />
                     </TableCell>
                   </TableRow>
@@ -692,54 +591,49 @@ function SessionsTable({
               </SelectContent>
             </Select>
           </div>
-          <Pagination style={{ width: "auto", margin: 0 }}>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  text=""
-                  aria-disabled={page <= 1}
-                  className={page <= 1 ? "pointer-events-none opacity-50" : undefined}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (page > 1) onPageChange(page - 1);
-                  }}
-                />
-              </PaginationItem>
-              {paginationRange(page, totalPages).map((p, i) =>
-                p === "ellipsis" ? (
-                  <PaginationItem key={`ellipsis-${i}`}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={p}>
-                    <PaginationLink
-                      href="#"
-                      isActive={p === page}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onPageChange(p);
-                      }}
-                    >
-                      {p}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              )}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  text=""
-                  aria-disabled={page >= totalPages}
-                  className={page >= totalPages ? "pointer-events-none opacity-50" : undefined}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (page < totalPages) onPageChange(page + 1);
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkFaint }}>
+              Page {page} of {totalPages}
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label="Go to first page"
+                disabled={page <= 1}
+                onClick={() => onPageChange(1)}
+              >
+                <ChevronsLeftIcon aria-hidden="true" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label="Go to previous page"
+                disabled={page <= 1}
+                onClick={() => onPageChange(page - 1)}
+              >
+                <ChevronLeftIcon aria-hidden="true" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label="Go to next page"
+                disabled={page >= totalPages}
+                onClick={() => onPageChange(page + 1)}
+              >
+                <ChevronRightIcon aria-hidden="true" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label="Go to last page"
+                disabled={page >= totalPages}
+                onClick={() => onPageChange(totalPages)}
+              >
+                <ChevronsRightIcon aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -895,8 +789,6 @@ function SessionsWorkspace({
           onScoreFilterChange={(v) => { setScoreFilter(v); setPage(1); }}
           dateFilter={dateFilter}
           onDateFilterChange={(v) => { setDateFilter(v); setPage(1); }}
-          sort={sort}
-          onSortChange={(v) => { setSort(v); setPage(1); }}
         />
         <SessionsTable
           groups={pageGroups}
@@ -948,7 +840,7 @@ export default function SessionsV2Screen() {
 
   return (
     <TooltipProvider>
-      <div style={{ background: T.white, display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0 }}>
+      <div style={{ background: T.white, display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${T.line}`, overflow: "hidden" }}>
         {showPageHeader && <PageHeader onStartSession={onStartSession} />}
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {body}
