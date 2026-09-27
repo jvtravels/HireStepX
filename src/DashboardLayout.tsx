@@ -15,8 +15,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   LayoutDashboardIcon,
   ClipboardListIcon,
@@ -268,6 +277,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
+    <TooltipProvider delayDuration={0}>
     <SidebarProvider style={{ height: "100dvh", minHeight: "100vh", background: c.surface, overflow: "hidden" }}>
       {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
       <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
@@ -286,12 +296,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
       `}</style>
 
-      {/* Sidebar — shadcn shell shared across every (dashboard) route */}
-      <Sidebar className="border-none">
+      {/* Sidebar — shadcn shell shared across every (dashboard) route.
+          collapsible="icon" shrinks to an icon-only rail instead of the
+          default fully-offscreen slide, matching shadcn's sidebar-07
+          reference; SidebarRail gives the collapsed rail its own drag/
+          click-to-expand affordance. */}
+      <Sidebar collapsible="icon" className="border-none">
         <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <SidebarHeader className="px-3 pt-4 pb-3">
-          <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 6 }}>
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
+          <Link href="/" className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} className="group-data-[collapsible=icon]:hidden" style={{ height: 24, width: "auto" }} />
+            <Image src="/favicon.svg" alt="HireStepX" width={24} height={24} className="hidden group-data-[collapsible=icon]:block" style={{ height: 24, width: 24 }} />
           </Link>
         </SidebarHeader>
 
@@ -310,6 +325,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     onClick={() => nav.push(item.path)}
                     onMouseEnter={() => prefetchMap[item.id]?.()}
                     aria-label={item.label}
+                    tooltip={item.label}
                     style={{
                       height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
                       fontWeight: activeNav === item.id ? 600 : 500,
@@ -320,7 +336,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     }}
                   >
                     <NavIcon id={item.id} />
-                    <span style={{ position: "relative" }}>
+                    <span className="group-data-[collapsible=icon]:hidden" style={{ position: "relative" }}>
                       {item.label}
                       {item.id === "calendar" && hasUrgentInterview && (
                         <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.graphite}` }} />
@@ -349,6 +365,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   onClick={() => nav.push(item.path)}
                   onMouseEnter={() => prefetchMap[item.id]?.()}
                   aria-label={item.label}
+                  tooltip={item.label}
                   style={{
                     height: 40, gap: 10, fontFamily: font.ui, fontSize: 14,
                     fontWeight: activeNav === item.id ? 600 : 500,
@@ -359,7 +376,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   }}
                 >
                   <NavIcon id={item.id} />
-                  {item.label}
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -368,8 +385,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;
             state (exhausted / low / healthy) is communicated through the usage row
-            and dash bar, not the card surface color. */}
-        <div style={{ padding: "14px", borderRadius: 12,
+            and dash bar, not the card surface color. Hidden in the icon-only
+            collapsed rail — there's no room for its text rows. */}
+        <div className="group-data-[collapsible=icon]:hidden" style={{ padding: "14px", borderRadius: 12,
           background: c.graphite,
           border: `1px solid ${c.border}`,
           flexShrink: 0 }}>
@@ -529,15 +547,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* User info — bordered white card matching Figma's sidebar footer;
             the chevrons-up-down trigger opens Log out as a menu item. */}
-        <div style={{ marginTop: 8, padding: "0 12px 16px", flexShrink: 0 }}>
+        <div className="px-3 group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
                 aria-label="Account menu"
+                className="justify-between p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                 style={{
-                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  gap: 8, padding: 8, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
+                  width: "100%", display: "flex", alignItems: "center",
+                  gap: 8, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
                   cursor: "pointer", textAlign: "left",
                 }}
               >
@@ -545,12 +564,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   <span style={{ width: 32, height: 32, borderRadius: 4, background: T.copper, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: T.white }}>{(displayName || "?")[0].toUpperCase()}</span>
                   </span>
-                  <span style={{ minWidth: 0 }}>
+                  <span className="group-data-[collapsible=icon]:hidden" style={{ minWidth: 0 }}>
                     <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
                     <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
                   </span>
                 </span>
-                <ChevronsUpDownIcon size={12} aria-hidden="true" style={{ flexShrink: 0, color: c.inkSoft }} />
+                <ChevronsUpDownIcon size={12} aria-hidden="true" className="group-data-[collapsible=icon]:hidden" style={{ flexShrink: 0, color: c.inkSoft }} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" style={{ width: 215 }}>
@@ -563,6 +582,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </div>
         </SidebarFooter>
         </aside>
+        <SidebarRail />
       </Sidebar>
 
       {/* Main Content */}
@@ -577,9 +597,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           marginTop: 8, marginBottom: 16,
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
-          <h1 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ink, margin: 0, flex: 1 }}>
-            {allNavItems.find((item) => item.id === activeNav)?.label || "HireStepX"}
-          </h1>
+          <Separator orientation="vertical" style={{ height: 16 }} />
+          <Breadcrumb style={{ flex: 1 }}>
+            <BreadcrumbList style={{ fontFamily: font.ui, fontSize: 13 }}>
+              <BreadcrumbItem>
+                <BreadcrumbPage style={{ fontSize: 15, fontWeight: 600, color: c.ink }}>
+                  {allNavItems.find((item) => item.id === activeNav)?.label || "HireStepX"}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           <Button variant="ghost" size="icon" aria-label="Messages" aria-disabled="true" title="Not wired yet">
             <MailIcon size={24} aria-hidden="true" />
           </Button>
@@ -856,5 +883,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </div>
 
     </SidebarProvider>
+    </TooltipProvider>
   );
 }
