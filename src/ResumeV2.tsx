@@ -24,8 +24,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   FileTextIcon,
   BriefcaseIcon,
-  BellIcon,
-  MailIcon,
   TargetIcon,
   ShieldCheckIcon,
   MessageCircleIcon,
@@ -46,7 +44,6 @@ import {
   FileUpIcon,
   SparklesIcon,
 } from "lucide-react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useState } from "react";
 
 const font = { ui: F.sans, mono: F.mono };
@@ -97,38 +94,6 @@ const DEPTH_LABEL: Record<string, string> = {
   secondary: "Secondary",
   exposure: "Exposure",
 };
-
-function TopBar() {
-  return (
-    <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", padding: "8px 16px", width: "100%" }}>
-      <div
-        style={{
-          height: 62,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 16px",
-          background: T.white,
-          border: `1px solid ${T.line}`,
-          borderRadius: 8,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <SidebarTrigger style={{ color: T.coal }} />
-          <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.coal }}>Resume</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Button variant="ghost" size="icon" aria-label="Messages" aria-disabled="true" title="Not wired in this preview">
-            <MailIcon size={20} aria-hidden="true" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Notifications" aria-disabled="true" title="Not wired in this preview">
-            <BellIcon size={20} aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ── Presentational building blocks ── */
 
@@ -784,8 +749,7 @@ export default function ResumeV2Screen() {
 
   return (
     <TooltipProvider>
-      <div style={{ display: "flex", flexDirection: "column", width: "100%", background: T.creamSoft, fontFamily: font.ui }}>
-        <TopBar />
+      <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: font.ui }}>
         <div style={{ padding: "0 16px 16px" }}>
           {body}
         </div>

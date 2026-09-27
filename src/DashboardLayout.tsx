@@ -51,7 +51,6 @@ import {
   LogOutIcon,
   BadgeCheckIcon,
   CreditCardIcon,
-  SearchIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -626,25 +625,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <button
-            type="button"
-            onClick={() => setPaletteOpen(true)}
-            aria-label="Search and commands"
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "6px 10px", borderRadius: 8,
-              background: c.surface, border: `1px solid ${c.border}`,
-              color: c.inkSoft, fontFamily: font.ui, fontSize: 13,
-              cursor: "pointer",
-              transition: `background ${dur.instant} ${ease.snap}`,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = c.border; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = c.surface; }}
-          >
-            <SearchIcon size={14} aria-hidden="true" />
-            <span>Search…</span>
-            <kbd style={{ fontFamily: font.mono, fontSize: 11, color: c.inkSoft, opacity: 0.7, marginLeft: 8 }}>⌘K</kbd>
-          </button>
         </header>
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
