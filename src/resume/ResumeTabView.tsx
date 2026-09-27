@@ -18,6 +18,7 @@ import type { FitnessBand, InterviewType, FitnessScore } from "../resumeFitness"
 
 /* ─── Cream palette (derived from auth/_tokens — single source of truth) */
 import { tokens as T, fonts as F, shadows as S } from "../auth/_tokens";
+import { dur, ease } from "../_motion";
 import { Button } from "@/components/ui/button";
 const t = {
   cream: T.cream,
@@ -444,7 +445,10 @@ function ErrorState({
               fontWeight: 600,
               color: t.white,
               background: t.indigo,
+              transition: `background ${dur.instant} ${ease.snap}`,
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = t.indigoDeep; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
           >
             Try another file
           </Button>
@@ -605,6 +609,8 @@ function IdleState({
             cursor: "pointer",
             transition: "background 160ms ease, border-color 160ms ease",
           }}
+          onMouseEnter={(e) => { if (!isDragging) { e.currentTarget.style.background = t.indigo100; e.currentTarget.style.borderColor = t.indigo; } }}
+          onMouseLeave={(e) => { if (!isDragging) { e.currentTarget.style.background = t.creamSoft; e.currentTarget.style.borderColor = t.lineStrong; } }}
         >
           <div
             style={{
@@ -1045,7 +1051,10 @@ function DoneState(props: ResumeTabViewProps) {
                   fontWeight: 600,
                   color: t.white,
                   background: t.indigo,
+                  transition: `background ${dur.instant} ${ease.snap}`,
                 }}
+                onMouseEnter={(e) => { if (!reanalyzing) e.currentTarget.style.background = t.indigoDeep; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
               >
                 {reanalyzing ? "Analysing…" : "Re-analyse with AI"}
               </Button>
@@ -1061,7 +1070,10 @@ function DoneState(props: ResumeTabViewProps) {
                   color: t.indigo,
                   background: t.white,
                   borderColor: t.indigo,
+                  transition: `background ${dur.instant} ${ease.snap}`,
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = t.indigo100; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
               >
                 Re-upload
               </Button>
@@ -1092,7 +1104,10 @@ function DoneState(props: ResumeTabViewProps) {
                 fontWeight: 600,
                 color: t.white,
                 background: t.indigo,
+                transition: `background ${dur.instant} ${ease.snap}`,
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = t.indigoDeep; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
             >
               Re-upload for AI analysis
             </Button>
@@ -1164,7 +1179,10 @@ function DoneState(props: ResumeTabViewProps) {
                   color: t.coal,
                   background: t.white,
                   borderColor: t.line,
+                  transition: `background ${dur.instant} ${ease.snap}`,
                 }}
+                onMouseEnter={(e) => { if (!reanalyzing) e.currentTarget.style.background = t.creamSoft; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
               >
                 {reanalyzing ? (
                   <div
@@ -1196,7 +1214,10 @@ function DoneState(props: ResumeTabViewProps) {
                   color: t.indigo,
                   background: t.white,
                   borderColor: t.indigo,
+                  transition: `background ${dur.instant} ${ease.snap}`,
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = t.indigo100; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -1221,7 +1242,10 @@ function DoneState(props: ResumeTabViewProps) {
                       color: t.white,
                       fontFamily: f.sans,
                       fontWeight: 600,
+                      transition: `filter ${dur.instant} ${ease.snap}`,
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(0.9)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
                   >
                     Yes
                   </Button>
@@ -1236,7 +1260,10 @@ function DoneState(props: ResumeTabViewProps) {
                       background: t.white,
                       color: t.inkSoft,
                       fontFamily: f.sans,
+                      transition: `background ${dur.instant} ${ease.snap}`,
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = t.creamSoft; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
                   >
                     No
                   </Button>
@@ -1252,7 +1279,10 @@ function DoneState(props: ResumeTabViewProps) {
                   style={{
                     background: t.white,
                     borderColor: t.line,
+                    transition: `background ${dur.instant} ${ease.snap}`,
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = t.error100; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.error} strokeWidth="1.8">
                     <polyline points="3 6 5 6 21 6" />
@@ -1791,7 +1821,10 @@ function DoneState(props: ResumeTabViewProps) {
                   fontWeight: 600,
                   background: jdLoading || jdText.trim().length < 30 ? t.creamSoft : t.indigo,
                   color: jdLoading || jdText.trim().length < 30 ? t.inkSoft : t.white,
+                  transition: `background ${dur.instant} ${ease.snap}`,
                 }}
+                onMouseEnter={(e) => { if (!jdLoading && jdText.trim().length >= 30) e.currentTarget.style.background = t.indigoDeep; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = jdLoading || jdText.trim().length < 30 ? t.creamSoft : t.indigo; }}
               >
                 {jdLoading ? (
                   <>
@@ -2013,7 +2046,10 @@ function DoneState(props: ResumeTabViewProps) {
                         cursor: polishState?.state === "loading" ? "wait" : "pointer",
                         flexShrink: 0,
                         opacity: polishState?.state === "loading" ? 0.7 : 1,
+                        transition: `background ${dur.instant} ${ease.snap}`,
                       }}
+                      onMouseEnter={(e) => { if (polishState?.state !== "loading") e.currentTarget.style.background = t.indigoDeep; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
                     >
                       {polishState?.state === "loading"
                         ? "…"
@@ -2059,7 +2095,9 @@ function DoneState(props: ResumeTabViewProps) {
                           type="button"
                           size="sm"
                           onClick={() => onApplyPolish(i, polishState.rewrite!)}
-                          style={{ fontFamily: f.sans, fontWeight: 600, background: t.success }}
+                          style={{ fontFamily: f.sans, fontWeight: 600, background: t.success, transition: `filter ${dur.instant} ${ease.snap}` }}
+                          onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(0.9)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
                         >
                           Use this
                         </Button>
