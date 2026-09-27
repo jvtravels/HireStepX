@@ -50,11 +50,13 @@ const font = { ui: F.sans, mono: F.mono };
 
 type MetricTone = "good" | "warning" | "error";
 
-const metricColor: Record<MetricTone, { chipBg: string; chipText: string; bar: string }> = {
-  good: { chipBg: T.success100, chipText: T.successInk, bar: T.success },
-  warning: { chipBg: T.warning100, chipText: T.warningInk, bar: T.warning },
-  error: { chipBg: T.error100, chipText: T.error, bar: T.error },
+const metricColor: Record<MetricTone, { chipBg: string; chipText: string; bar: string; chipBorder: string }> = {
+  good: { chipBg: T.success100, chipText: T.successInk, bar: T.success, chipBorder: `color-mix(in oklch, ${T.success} 25%, transparent)` },
+  warning: { chipBg: T.warning100, chipText: T.warningInk, bar: T.warning, chipBorder: `color-mix(in oklch, ${T.warning} 25%, transparent)` },
+  error: { chipBg: T.error100, chipText: T.error, bar: T.error, chipBorder: `color-mix(in oklch, ${T.error} 25%, transparent)` },
 };
+
+const SKILLS_COLLAPSE_THRESHOLD = 12;
 
 function toneForPct(pct: number): MetricTone {
   if (pct >= 75) return "good";
@@ -97,14 +99,22 @@ const DEPTH_LABEL: Record<string, string> = {
 
 /* ── Presentational building blocks ── */
 
-function SectionCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function SectionCard({
+  children,
+  style,
+  padding = 20,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  padding?: number | string;
+}) {
   return (
     <div
       style={{
         background: T.white,
         border: `1px solid ${T.line}`,
         borderRadius: 12,
-        padding: 20,
+        padding,
         boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
@@ -116,6 +126,10 @@ function SectionCard({ children, style }: { children: React.ReactNode; style?: R
       {children}
     </div>
   );
+}
+
+function Divider() {
+  return <div style={{ height: 1, background: T.line }} aria-hidden="true" />;
 }
 
 function ProgressBar({
@@ -250,6 +264,7 @@ export default function ResumeV2Screen() {
     triggerUpload,
   } = useResumeUpload();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [skillsExpanded, setSkillsExpanded] = useState(false);
 
   const atsResult = useMemo(() => {
     const source = resumeText || user?.resumeText || "";
@@ -304,7 +319,7 @@ export default function ResumeV2Screen() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <h1 style={{ fontFamily: font.ui, fontSize: S["2xl"], fontWeight: 700, color: T.coal, margin: 0 }}>
-                  {profile.headline || "Your profile"}
+                  {profile.headline || "Your resume overview"}
                 </h1>
                 {typeof profile.yearsExperience === "number" && (
                   <Badge style={{ background: T.indigo100, color: T.indigoDeep, borderRadius: 16, fontFamily: font.ui, fontWeight: 500, fontSize: S.md, padding: "2px 10px" }}>
@@ -323,7 +338,7 @@ export default function ResumeV2Screen() {
                     <FileTextIcon size={14} color={T.white} aria-hidden="true" />
                   </div>
                   <div>
-                    <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.coal, margin: 0, maxWidth: 160, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fileName || "resume"}</p>
+                    <p title={fileName || "resume"} style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.coal, margin: 0, maxWidth: 160, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fileName || "resume"}</p>
                     <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>Resume file</p>
                   </div>
                 </div>
@@ -332,7 +347,7 @@ export default function ResumeV2Screen() {
                   size="sm"
                   onClick={triggerUpload}
                   disabled={phase === "extracting" || phase === "analyzing"}
-                  style={{ borderColor: T.indigo, color: T.indigo, fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6 }}
+                  style={{ background: T.indigo100, borderColor: T.indigo, color: T.indigo, fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6 }}
                 >
                   <UploadIcon size={14} aria-hidden="true" />
                   Replace
@@ -351,7 +366,7 @@ export default function ResumeV2Screen() {
                       variant="outline"
                       size="sm"
                       onClick={() => setConfirmDelete(false)}
-                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkSoft }}
+                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint }}
                     >
                       No
                     </Button>
@@ -392,7 +407,7 @@ export default function ResumeV2Screen() {
 
           {/* Strengths */}
           {profile.interviewStrengths.length > 0 && (
-            <SectionCard>
+            <SectionCard padding={16}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <ShieldCheckIcon size={16} color={T.coal} aria-hidden="true" />
                 <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Strengths</h2>
@@ -411,58 +426,58 @@ export default function ResumeV2Screen() {
             </SectionCard>
           )}
 
-          {/* Metric cards */}
+          {/* Metric cards — one hero (Resume quality) + a compact stat pair,
+              not three identical boxes: see impeccable audit P0 finding. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            <SectionCard style={{ flex: "1 1 160px", minWidth: 160 }}>
+            <SectionCard style={{ flex: "1 1 260px", minWidth: 220 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BarChart3Icon size={16} color={T.inkFaint} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Resume quality</p>
+                  <BarChart3Icon size={18} color={T.coal} aria-hidden="true" />
+                  <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 600, color: T.coal, margin: 0 }}>Resume quality</p>
                 </div>
                 <Badge style={{ background: metricColor[qualityTone].chipBg, color: metricColor[qualityTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
                   {scoreChipLabel(qualityTone)}
                 </Badge>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 32, fontWeight: 700, color: T.coal }}>{qualityScore}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: 40, fontWeight: 700, color: T.coal }}>{qualityScore}</span>
                   <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ 100</span>
                 </div>
                 <ProgressBar value={qualityScore} max={100} color={metricColor[qualityTone].bar} label={`Resume quality: ${qualityScore} out of 100`} />
               </div>
             </SectionCard>
-            <SectionCard style={{ flex: "1 1 160px", minWidth: 160 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <FilterIcon size={16} color={T.inkFaint} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>ATS readiness</p>
-                </div>
-                <Badge style={{ background: metricColor[atsTone].chipBg, color: metricColor[atsTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                  {atsResult ? scoreChipLabel(atsTone) : "Unavailable"}
-                </Badge>
-              </div>
+            <SectionCard style={{ flex: "1 1 260px", minWidth: 220, gap: 14 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <FilterIcon size={15} color={T.inkFaint} aria-hidden="true" />
+                    <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>ATS readiness</p>
+                  </div>
+                  <Badge style={{ background: metricColor[atsTone].chipBg, color: metricColor[atsTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
+                    {atsResult ? scoreChipLabel(atsTone) : "Unavailable"}
+                  </Badge>
+                </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 32, fontWeight: 700, color: T.coal }}>{atsResult?.score ?? "–"}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ 100</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal }}>{atsResult?.score ?? "–"}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>/ 100</span>
                 </div>
                 <ProgressBar value={atsResult?.score ?? 0} max={100} color={metricColor[atsTone].bar} label={`ATS readiness: ${atsResult?.score ?? 0} out of 100`} />
               </div>
-            </SectionCard>
-            <SectionCard style={{ flex: "1 1 160px", minWidth: 160 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <MicIcon size={16} color={T.inkFaint} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Interview coverage</p>
-                </div>
-                <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                  {coverageChip}
-                </Badge>
-              </div>
+              <Divider />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <MicIcon size={15} color={T.inkFaint} aria-hidden="true" />
+                    <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Interview coverage</p>
+                  </div>
+                  <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
+                    {coverageChip}
+                  </Badge>
+                </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 32, fontWeight: 700, color: T.coal }}>{coveredCount}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ {coverageRows.length}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal }}>{coveredCount}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>/ {coverageRows.length}</span>
                 </div>
                 <ProgressBar value={coveredCount} max={coverageRows.length} color={metricColor[coverageTone].bar} label={`Interview coverage: ${coveredCount} out of ${coverageRows.length}`} />
               </div>
@@ -479,7 +494,7 @@ export default function ResumeV2Screen() {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {scoreBreakdownRows.map((row) => (
                   <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
-                    <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: "0 1 180px", minWidth: 100 }}>{row.label}</p>
+                    <p title={row.label} style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkSoft, margin: 0, flex: "0 1 180px", minWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label}</p>
                     <div style={{ flex: 1 }}>
                       <ProgressBar value={row.value} max={row.max} color={metricColor[row.tone].bar} trackColor={T.creamSoft} label={`${row.label}: ${row.value} out of ${row.max}`} />
                     </div>
@@ -495,7 +510,7 @@ export default function ResumeV2Screen() {
 
           {/* Improvements */}
           {profile.improvements && profile.improvements.length > 0 && (
-            <SectionCard style={{ boxShadow: shadows.card }}>
+            <SectionCard>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: T.creamSoft, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <SparklesIcon size={16} color={T.coal} aria-hidden="true" />
@@ -504,7 +519,7 @@ export default function ResumeV2Screen() {
                   <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Resume improvements ({profile.improvements.length})</h2>
                 </div>
               </div>
-              <div style={{ height: 1, background: T.line }} />
+              <Divider />
               <div>
                 {profile.improvements.map((text, i) => (
                   <div key={i}>
@@ -535,23 +550,21 @@ export default function ResumeV2Screen() {
                 </p>
               </div>
               {experiences.map((job, i) => (
-                <div key={`${job.title}-${i}`} style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 12, padding: 20, boxShadow: shadows.card, width: "100%" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 4 }}>
-                      <h3 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 600, color: T.coal, margin: 0, flex: 1 }}>
-                        {job.title}{job.company ? ` · ${job.company}` : ""}
-                      </h3>
-                      <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.inkFaint, margin: 0, whiteSpace: "nowrap" }}>
-                        {job.start || job.end ? `${job.start || "Earlier"} - ${job.end || "Present"}` : ""}
-                      </p>
-                    </div>
-                    {(job.scope || (job.topProjects && job.topProjects.length > 0)) && (
-                      <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "24px", color: T.inkFaint, margin: 0 }}>
-                        {job.scope || job.topProjects.join("; ")}
-                      </p>
-                    )}
+                <SectionCard key={`${job.title}-${i}`} style={{ gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 4 }}>
+                    <h3 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 600, color: T.coal, margin: 0, flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
+                      {job.title}{job.company ? ` · ${job.company}` : ""}
+                    </h3>
+                    <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.inkFaint, margin: 0, whiteSpace: "nowrap", flexShrink: 0 }}>
+                      {job.start || job.end ? `${job.start || "Earlier"} - ${job.end || "Present"}` : ""}
+                    </p>
                   </div>
-                </div>
+                  {(job.scope || (job.topProjects && job.topProjects.length > 0)) && (
+                    <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "24px", color: T.inkFaint, margin: 0 }}>
+                      {job.scope || job.topProjects.join("; ")}
+                    </p>
+                  )}
+                </SectionCard>
               ))}
             </div>
           )}
@@ -560,7 +573,7 @@ export default function ResumeV2Screen() {
         <div style={{ flex: "1 1 420px", maxWidth: 550, display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Focus areas */}
           {profile.interviewGaps.length > 0 && (
-            <SectionCard>
+            <SectionCard padding={16}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <TargetIcon size={16} color={T.coal} aria-hidden="true" />
                 <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Focus Areas</h2>
@@ -580,7 +593,7 @@ export default function ResumeV2Screen() {
           )}
 
           {/* ATS readiness */}
-          <div style={{ background: T.white, border: `1px solid ${T.line}`, borderRadius: 12, boxShadow: shadows.card, width: "100%", overflow: "hidden" }}>
+          <SectionCard padding={0} style={{ gap: 0, overflow: "hidden" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -593,7 +606,7 @@ export default function ResumeV2Screen() {
                   </div>
                 </div>
                 {atsResult && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: metricColor[atsTone].chipBg, border: `1px solid color-mix(in oklch, ${metricColor[atsTone].bar} 25%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: metricColor[atsTone].chipBg, border: `1px solid ${metricColor[atsTone].chipBorder}`, borderRadius: 999, padding: "6px 12px" }}>
                     <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: metricColor[atsTone].chipText }}>{atsResult.score}</span>
                     <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: metricColor[atsTone].chipText }}>/ 100</span>
                   </div>
@@ -612,13 +625,13 @@ export default function ResumeV2Screen() {
             </div>
             {atsResult && (
               <>
-                <div style={{ height: 1, background: T.line }} />
+                <Divider />
                 <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "16px 20px 20px" }}>
                   <div style={{ background: T.creamSoft, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 700, color: T.coal, margin: 0 }}>Found ({atsResult.found.length})</p>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 1fr))", gap: "12px" }}>
                       {atsResult.found.map((item) => (
                         <div key={item} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ width: 18, height: 18, borderRadius: 9, background: T.success100, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -654,11 +667,11 @@ export default function ResumeV2Screen() {
                 </div>
               </>
             )}
-          </div>
+          </SectionCard>
 
           {/* Skills & achievements */}
           {(coreSkills.length > 0 || profile.keyAchievements.length > 0) && (
-            <SectionCard style={{ padding: "20px 24px", boxShadow: shadows.card }}>
+            <SectionCard padding="20px 24px">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -670,12 +683,12 @@ export default function ResumeV2Screen() {
                   </div>
                 </div>
               </div>
-              <div style={{ height: 1, background: T.line }} />
+              <Divider />
               {coreSkills.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint, margin: 0 }}>Skills</p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {coreSkills.map((skill) => (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                    {(skillsExpanded ? coreSkills : coreSkills.slice(0, SKILLS_COLLAPSE_THRESHOLD)).map((skill) => (
                       <div key={skill.name} style={{ display: "flex", alignItems: "center", gap: 8, background: T.white, border: `1px solid ${T.line}`, borderRadius: 999, padding: "6px 10px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                           <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkSoft }}>{skill.name}</span>
@@ -686,6 +699,15 @@ export default function ResumeV2Screen() {
                         </div>
                       </div>
                     ))}
+                    {coreSkills.length > SKILLS_COLLAPSE_THRESHOLD && (
+                      <button
+                        type="button"
+                        onClick={() => setSkillsExpanded((v) => !v)}
+                        style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.indigo, background: "none", border: "none", padding: "6px 4px", cursor: "pointer" }}
+                      >
+                        {skillsExpanded ? "Show less" : `+${coreSkills.length - SKILLS_COLLAPSE_THRESHOLD} more`}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -722,7 +744,7 @@ export default function ResumeV2Screen() {
                   {coveredCount} / {coverageRows.length} covered
                 </Badge>
               </div>
-              <div style={{ height: 1, background: T.line }} />
+              <Divider />
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.inkFaint, margin: 0 }}>Coverage tracks</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
