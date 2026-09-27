@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
-import { RequirementSummary, Requirement, Candidate, WorkMode } from "./mockData";
+import { RequirementSummary, Requirement, Candidate, WorkMode, EmploymentType } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
@@ -50,6 +50,7 @@ interface EmployerDataContextValue {
     budgetMax?: number;
     openPositions?: number;
     workMode?: WorkMode;
+    employmentType?: EmploymentType;
     skills?: string[];
     responsibilities?: string;
     niceToHave?: string;
@@ -70,6 +71,7 @@ interface EmployerDataContextValue {
     budgetMax?: number;
     openPositions?: number;
     workMode?: WorkMode;
+    employmentType?: EmploymentType;
     skills?: string[];
     responsibilities?: string;
     niceToHave?: string;
@@ -191,6 +193,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     budgetMax?: number;
     openPositions?: number;
     workMode?: WorkMode;
+    employmentType?: EmploymentType;
     skills?: string[];
     responsibilities?: string;
     niceToHave?: string;
@@ -219,6 +222,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     budgetMax?: number;
     openPositions?: number;
     workMode?: WorkMode;
+    employmentType?: EmploymentType;
     skills?: string[];
     responsibilities?: string;
     niceToHave?: string;

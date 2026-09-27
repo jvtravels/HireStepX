@@ -54,6 +54,8 @@ export type RequirementStatus = "generating" | "ready" | "partial" | "zero" | "f
 
 export type WorkMode = "remote" | "onsite" | "hybrid";
 
+export type EmploymentType = "full-time" | "part-time" | "contract" | "internship";
+
 export interface RequirementSummary {
   id: string;
   title: string;
@@ -69,6 +71,7 @@ export interface RequirementSummary {
   openPositions: number | null;
   workMode: WorkMode | null;
   skills: string[];
+  employmentType: EmploymentType | null;
   createdAt: string;
   candidateCount: number;
 }
@@ -95,6 +98,7 @@ export interface Requirement {
   preferredColleges: string[];
   targetCompanies: string[];
   perksAndBenefits: string[];
+  employmentType: EmploymentType | null;
   createdAt: string;
   candidates: Candidate[];
 }

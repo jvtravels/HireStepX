@@ -57,7 +57,7 @@ function intersectionRatio(a: Set<string>, b: Set<string>): number {
 /* resumeData is a StoredResume (see src/resumeParser.ts): fallback-type
    resumes carry a flat `skills` array, ai-type ones carry `topSkills`
    instead — read whichever the stored variant actually has. */
-function extractSkills(resumeData: unknown): string[] {
+export function extractSkills(resumeData: unknown): string[] {
   if (!resumeData || typeof resumeData !== "object") return [];
   const record = resumeData as Record<string, unknown>;
   const skills = Array.isArray(record.skills) ? record.skills : record.topSkills;
@@ -119,6 +119,31 @@ export function explainMatch(candidate: Pick<CandidatePoolRow, "target_role" | "
     skillMatch: Math.round(clamp(skillOverlap, 0, 1) * 100),
     locationMatch: Math.round(clamp(locationFit, 0, 1) * 100),
   };
+}
+
+/** Grounded "why this matched" sentence for the candidate-facing Jobs tab —
+    built only from real inputs (the requirement's actual skill list, the
+    candidate's own resume skills, and the same breakdown explainMatch
+    surfaces to employers), never a fabricated per-row line. */
+export function describeMatch(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  req: RequirementInput,
+  reqSkills: string[],
+): string {
+  const breakdown = explainMatch(candidate, req);
+  const candidateSkills = extractSkills(candidate.resume_data);
+  const reqSkillSet = new Set(reqSkills.map((s) => s.toLowerCase()));
+  const overlapping = candidateSkills.filter((s) => reqSkillSet.has(s.toLowerCase()));
+
+  const parts: string[] = [];
+  if (breakdown.roleMatch >= 50) parts.push("your target role matches this opening");
+  if (overlapping.length > 0) {
+    parts.push(`you share ${overlapping.length} skill${overlapping.length === 1 ? "" : "s"} (${overlapping.slice(0, 3).join(", ")})`);
+  }
+  if (breakdown.locationMatch >= 100) parts.push("it fits your location");
+
+  if (parts.length === 0) return "Matched on your overall profile and practice history.";
+  return `Matched because ${parts.join(" and ")}.`;
 }
 
 export type RequirementMatchStatus = "ready" | "partial" | "zero";

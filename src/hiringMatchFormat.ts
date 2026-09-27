@@ -24,3 +24,10 @@ export function formatExperience(min: number | null, max: number | null): string
 }
 
 export const WORK_MODE_LABEL: Record<string, string> = { remote: "Remote", onsite: "On-site", hybrid: "Hybrid" };
+
+export const EMPLOYMENT_TYPE_LABEL: Record<string, string> = {
+  "full-time": "Full-time",
+  "part-time": "Part-time",
+  contract: "Contract",
+  internship: "Internship",
+};

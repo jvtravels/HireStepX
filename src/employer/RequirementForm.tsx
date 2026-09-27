@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WorkMode, Requirement } from "./mockData";
+import { WorkMode, EmploymentType, Requirement } from "./mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
   AutocompleteInput,
@@ -37,6 +37,13 @@ const WORK_MODES: { value: WorkMode; label: string }[] = [
   { value: "hybrid", label: "Hybrid" },
 ];
 
+const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
+  { value: "full-time", label: "Full-time" },
+  { value: "part-time", label: "Part-time" },
+  { value: "contract", label: "Contract" },
+  { value: "internship", label: "Internship" },
+];
+
 export interface RequirementFormValues {
   title: string;
   locations: string[];
@@ -49,6 +56,7 @@ export interface RequirementFormValues {
   budgetMax?: number;
   openPositions?: number;
   workMode?: WorkMode;
+  employmentType?: EmploymentType;
   skills?: string[];
   responsibilities?: string;
   niceToHave?: string;
@@ -98,6 +106,7 @@ export function RequirementForm({
   const [locations, setLocations] = useState<string[]>(initial?.locations ?? []);
   const [openPositions, setOpenPositions] = useState(initial?.openPositions != null ? String(initial.openPositions) : "");
   const [workMode, setWorkMode] = useState<WorkMode>(initial?.workMode ?? "remote");
+  const [employmentType, setEmploymentType] = useState<EmploymentType>(initial?.employmentType ?? "full-time");
   const [budgetMin, setBudgetMin] = useState(initial?.budgetMin != null ? String(initial.budgetMin) : "");
   const [budgetMax, setBudgetMax] = useState(initial?.budgetMax != null ? String(initial.budgetMax) : "");
   const [experienceMin, setExperienceMin] = useState(initial?.experienceMin != null ? String(initial.experienceMin) : "");
@@ -141,6 +150,7 @@ export function RequirementForm({
       budgetMax: Number.isFinite(parsedBudgetMax) ? parsedBudgetMax : undefined,
       openPositions: Number.isFinite(parsedOpenPositions) ? parsedOpenPositions : undefined,
       workMode,
+      employmentType,
       skills,
       responsibilities: responsibilities.trim() || undefined,
       niceToHave: niceToHave.trim() || undefined,
@@ -187,6 +197,11 @@ export function RequirementForm({
                     <FieldLabel>Open positions</FieldLabel>
                     <input type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={inputStyle} />
                   </div>
+                </div>
+
+                <div>
+                  <FieldLabel>Employment type</FieldLabel>
+                  <SegmentedControl options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
                 </div>
               </FormSection>
 

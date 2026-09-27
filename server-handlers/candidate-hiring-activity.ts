@@ -18,6 +18,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { describeMatch } from "./_requirement-match-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -52,6 +53,7 @@ interface MatchRow {
     perks_and_benefits: string[] | null;
     preferred_industry: string | null;
     due_date: string | null;
+    employment_type: string | null;
     employers: { company_name: string; logo_path: string | null; website: string | null } | null;
   } | null;
 }
@@ -84,12 +86,15 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=is_discoverable_to_employers`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=is_discoverable_to_employers,target_role,resume_data`,
       { headers: serviceHeaders() },
     );
     if (!profileRes.ok) throw new Error(`profile read failed: ${profileRes.status}`);
-    const profileRows = (await profileRes.json().catch(() => [])) as Array<{ is_discoverable_to_employers: boolean }>;
+    const profileRows = (await profileRes.json().catch(() => [])) as Array<{
+      is_discoverable_to_employers: boolean; target_role: string | null; resume_data: unknown;
+    }>;
     const discoverable = !!profileRows[0]?.is_discoverable_to_employers;
+    const candidateProfile = { target_role: profileRows[0]?.target_role ?? null, resume_data: profileRows[0]?.resume_data ?? null };
 
     if (!discoverable) {
       return new Response(JSON.stringify({ discoverable: false }), { status: 200, headers });
@@ -99,7 +104,7 @@ export default async function handler(req: Request): Promise<Response> {
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
         `&select=id,unlocked,unlocked_at,match_score,created_at,` +
         `employer_requirements(title,location,locations,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,` +
-        `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,` +
+        `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
         `employers(company_name,logo_path,website))` +
         `&order=created_at.desc`,
       { headers: serviceHeaders() },
@@ -151,7 +156,11 @@ export default async function handler(req: Request): Promise<Response> {
         preferredIndustry: req?.preferred_industry || null,
         dueDate: req?.due_date || null,
         status: req?.status || null,
+        employmentType: req?.employment_type || null,
         matchScore: m.match_score ?? 0,
+        matchReason: req
+          ? describeMatch(candidateProfile, { title: req.title, location: req.location, description: req.description || "" }, skills)
+          : "Matched on your overall profile and practice history.",
         unlocked: m.unlocked,
         matchedAt: m.created_at.slice(0, 10),
         unlockedAt: m.unlocked_at ? m.unlocked_at.slice(0, 10) : null,

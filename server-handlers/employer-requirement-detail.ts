@@ -42,6 +42,7 @@ import {
   asBoundedBudget,
   asBoundedOpenPositions,
   asBoundedWorkMode,
+  asBoundedEmploymentType,
   isValidRequirementInput,
   type RequirementRow,
 } from "./_employer-requirements-helpers";
@@ -99,7 +100,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -110,6 +111,7 @@ export default async function handler(req: Request): Promise<Response> {
       locations: string[] | null; open_positions: number | null; work_mode: string | null; skills: string[] | null;
       responsibilities: string | null; nice_to_have: string | null; preferred_industry: string | null;
       preferred_colleges: string[] | null; target_companies: string[] | null; perks_and_benefits: string[] | null;
+      employment_type: string | null;
       created_at: string;
     }>;
     const requirement = reqRows[0];
@@ -209,6 +211,7 @@ export default async function handler(req: Request): Promise<Response> {
         preferredColleges: requirement.preferred_colleges ?? [],
         targetCompanies: requirement.target_companies ?? [],
         perksAndBenefits: requirement.perks_and_benefits ?? [],
+        employmentType: requirement.employment_type,
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
       }),
@@ -229,6 +232,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     locations?: unknown; openPositions?: unknown; workMode?: unknown; skills?: unknown;
     responsibilities?: unknown; niceToHave?: unknown; preferredIndustry?: unknown;
     preferredColleges?: unknown; targetCompanies?: unknown; perksAndBenefits?: unknown;
+    employmentType?: unknown;
   };
   try {
     body = await req.json();
@@ -254,6 +258,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   const preferredColleges = asBoundedStringArray(body.preferredColleges, 20, 100);
   const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
   const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
+  const employmentType = asBoundedEmploymentType(body.employmentType) || "full-time";
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
@@ -283,7 +288,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         locations, open_positions: openPositions, work_mode: workMode, skills,
         responsibilities, nice_to_have: niceToHave, preferred_industry: preferredIndustry,
         preferred_colleges: preferredColleges, target_companies: targetCompanies,
-        perks_and_benefits: perksAndBenefits,
+        perks_and_benefits: perksAndBenefits, employment_type: employmentType,
       }),
     });
     if (!patchRes.ok) {
@@ -318,6 +323,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         preferredColleges: requirement.preferred_colleges ?? [],
         targetCompanies: requirement.target_companies ?? [],
         perksAndBenefits: requirement.perks_and_benefits ?? [],
+        employmentType: requirement.employment_type ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

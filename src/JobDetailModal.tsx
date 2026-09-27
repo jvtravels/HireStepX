@@ -9,7 +9,7 @@
 
 import { useEffect, useRef } from "react";
 import { tokens as t, fonts as f, shadows } from "./auth/_tokens";
-import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL } from "./hiringMatchFormat";
+import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import type { JobMatch } from "./DashboardJobs";
 
 export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClose: () => void }) {
@@ -33,6 +33,7 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
   const comp = formatComp(job.budgetMin, job.budgetMax);
   const exp = formatExperience(job.experienceMin, job.experienceMax);
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
+  const jobType = job.employmentType ? EMPLOYMENT_TYPE_LABEL[job.employmentType] || job.employmentType : null;
   const closed = job.status === "closed" || job.status === "failed";
 
   const statLabel = (value: string | null, fallback: string) => (
@@ -120,9 +121,16 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
           )}
         </div>
 
+        {!job.unlocked && (
+          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.5 }}>
+            {job.matchReason}
+          </p>
+        )}
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px", fontFamily: f.sans, fontSize: 13, marginBottom: 18, paddingBottom: 18, borderBottom: `1px solid ${t.line}` }}>
           <div>{statLabel(comp, "Compensation not disclosed")}</div>
           <div>{statLabel(exp ? `${exp} exp` : null, "Experience not specified")}</div>
+          <div>{statLabel(jobType, "Employment type not specified")}</div>
           <div>{statLabel(job.openPositions != null ? `${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}` : null, "Openings not specified")}</div>
           <div>
             <span style={{ color: t.inkFaint, fontStyle: job.noticePeriodPref ? "normal" : "italic" }}>

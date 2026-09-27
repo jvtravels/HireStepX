@@ -25,6 +25,7 @@ export interface RequirementRow {
   preferred_colleges: string[];
   target_companies: string[];
   perks_and_benefits: string[];
+  employment_type: string | null;
   created_at: string;
 }
 
@@ -75,6 +76,14 @@ export function asBoundedWorkMode(v: unknown): "remote" | "onsite" | "hybrid" | 
   return v === "remote" || v === "onsite" || v === "hybrid" ? v : null;
 }
 
+/** Validated read of a client-supplied employment type: must be one of the
+ *  four values the DB check constraint allows. Returns null for anything
+ *  else so the column falls back to its own default rather than storing
+ *  garbage. */
+export function asBoundedEmploymentType(v: unknown): "full-time" | "part-time" | "contract" | "internship" | null {
+  return v === "full-time" || v === "part-time" || v === "contract" || v === "internship" ? v : null;
+}
+
 /** Validated read of a client-supplied years-of-experience field: whole
  *  numbers only, clamped to a plausible 0–40 range. Returns null for
  *  anything else so it stores as a real SQL NULL, not a fabricated 0. */
@@ -123,6 +132,7 @@ export function buildRequirementsListResponse(
   openPositions: number | null;
   workMode: string | null;
   skills: string[];
+  employmentType: string | null;
   createdAt: string;
   candidateCount: number;
 }> {
@@ -141,6 +151,7 @@ export function buildRequirementsListResponse(
     openPositions: r.open_positions ?? null,
     workMode: r.work_mode ?? null,
     skills: r.skills ?? [],
+    employmentType: r.employment_type ?? null,
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
   }));

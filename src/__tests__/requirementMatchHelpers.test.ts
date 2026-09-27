@@ -4,6 +4,8 @@ import {
   classifyRequirementStatus,
   rankAndCap,
   extractResumeLocation,
+  extractSkills,
+  describeMatch,
   type CandidatePoolRow,
 } from "../../server-handlers/_requirement-match-helpers";
 
@@ -121,5 +123,50 @@ describe("extractResumeLocation", () => {
     expect(extractResumeLocation(null)).toBe("");
     expect(extractResumeLocation("not-an-object")).toBe("");
     expect(extractResumeLocation({})).toBe("");
+  });
+});
+
+describe("extractSkills", () => {
+  it("reads a flat skills array", () => {
+    expect(extractSkills({ skills: ["React", "SQL"] })).toEqual(["React", "SQL"]);
+  });
+
+  it("falls back to topSkills for ai-parsed resumes", () => {
+    expect(extractSkills({ topSkills: ["Go"] })).toEqual(["Go"]);
+  });
+
+  it("returns an empty array for malformed resume_data", () => {
+    expect(extractSkills(null)).toEqual([]);
+    expect(extractSkills("nope")).toEqual([]);
+    expect(extractSkills({ skills: "not-an-array" })).toEqual([]);
+  });
+});
+
+describe("describeMatch", () => {
+  it("names the specific overlapping skills when role and skills both line up", () => {
+    const candidate = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React", "TypeScript", "Figma"], location: "Bengaluru" } };
+    const sentence = describeMatch(candidate, req, ["React", "TypeScript", "GraphQL"]);
+    expect(sentence).toContain("your target role matches this opening");
+    expect(sentence).toContain("React");
+    expect(sentence).toContain("TypeScript");
+    expect(sentence).not.toContain("GraphQL");
+  });
+
+  it("mentions location fit only when the requirement is remote or the city matches", () => {
+    const candidate = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React"], location: "Bengaluru" } };
+    const remoteReq = { title: "Senior Frontend Engineer", location: "Remote", description: "" };
+    expect(describeMatch(candidate, remoteReq, ["React"])).toContain("it fits your location");
+  });
+
+  it("falls back to a generic sentence when nothing overlaps", () => {
+    const candidate = { target_role: "Product Designer", resume_data: { skills: ["Figma"], location: "Mumbai" } };
+    const sentence = describeMatch(candidate, req, ["React", "TypeScript"]);
+    expect(sentence).toBe("Matched on your overall profile and practice history.");
+  });
+
+  it("never invents a skill the candidate's resume doesn't list", () => {
+    const candidate = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React"], location: "Bengaluru" } };
+    const sentence = describeMatch(candidate, req, ["React", "Kubernetes"]);
+    expect(sentence).not.toContain("Kubernetes");
   });
 });
