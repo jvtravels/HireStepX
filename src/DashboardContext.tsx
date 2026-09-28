@@ -18,6 +18,7 @@ import {
 } from "./dashboardData";
 import { getCurriculumState, type CurriculumState } from "./curriculum";
 import type { SessionCoaching } from "./dashboardTypes";
+import type { SessionRecord } from "./supabase";
 
 /* S70-B1: session cards that only ever received a deterministic fallback
  * evaluation have coaching=null — the LLM never wrote the pair. The skill_scores
@@ -41,6 +42,51 @@ function cardCoachingFromWinsFixes(
     return clip.slice(0, cut > 15 ? cut : 55).replace(/[.,]$/, "");
   };
   return { strength: { headline: headline(win), meaning: win }, gap: { headline: headline(fix), meaning: fix, example: "" } };
+}
+
+/* Single mapping from the raw Supabase row to the app's RealSession shape —
+ * shared by the initial load and refreshSessions() so a tab-refocus refetch
+ * can't drift from what first paint showed (previously refreshSessions
+ * dropped company/target_role/negotiationMetrics, so a session's company
+ * name would vanish from the card after the user switched tabs and back). */
+function mapSessionRecord(s: SessionRecord): RealSession {
+  return {
+    id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
+    focus: s.focus, duration: s.duration,
+    company: s.target_company ?? undefined,
+    target_role: s.target_role ?? undefined,
+    /* Canonical score = the report's blended-and-anchored overall when a
+       report has been generated (report_json.overallScore), else the
+       quick eval persisted at save time (sessions.score). The report
+       page shows the blended number; without this the list/dashboard
+       showed the quick number for the same session (e.g. 64 vs 51).
+       New reports also write the blended value back into sessions.score
+       (evaluate-session saveCachedReport) — this client-side preference
+       additionally reconciles sessions whose reports were cached before
+       that writeback shipped, without forcing a re-evaluation. */
+    score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score,
+    questions: s.questions,
+    ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
+    /* Plain-language coaching pair. Persisted in report_json.coaching by
+       evaluate-session; synthesized from wins/fixes when coaching=null
+       (S70-B1) so the card never falls back to the degenerate
+       skill_scores pair (contradictory when all values are equal). */
+    coaching: s.report_json?.coaching ??
+      cardCoachingFromWinsFixes(
+        (s.report_json as unknown as { wins?: Array<{text:string}>|null })?.wins,
+        (s.report_json as unknown as { fixes?: Array<{text:string}>|null })?.fixes,
+      ) ?? undefined,
+    /* Per-focus signature strip (mvp-9+), persisted in
+       report_json.focusMetrics. Empty/undefined for older rows → the
+       card renders no instrument strip. */
+    focusMetrics: s.report_json?.focusMetrics ?? undefined,
+    /* Kernel-aware negotiation metrics. The Supabase column type
+       is jsonb so we get an unknown-shaped object back; the
+       RealSession field is strictly typed. Cast is intentional —
+       validateNegotiationMetrics in the report layer is the
+       trust boundary, not this mapping. */
+    negotiationMetrics: (s as { negotiation_metrics?: unknown }).negotiation_metrics as RealSession["negotiationMetrics"] | undefined,
+  };
 }
 
 /* ─── Sub-context types ─── */
@@ -472,43 +518,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     Promise.allSettled([
       getUserSessions(user.id).then(sessions => {
         if (cancelled) return;
-        const mapped = sessions.map(s => ({
-          id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
-          focus: s.focus, duration: s.duration,
-          company: s.target_company ?? undefined,
-          target_role: s.target_role ?? undefined,
-          /* Canonical score = the report's blended-and-anchored overall when a
-             report has been generated (report_json.overallScore), else the
-             quick eval persisted at save time (sessions.score). The report
-             page shows the blended number; without this the list/dashboard
-             showed the quick number for the same session (e.g. 64 vs 51).
-             New reports also write the blended value back into sessions.score
-             (evaluate-session saveCachedReport) — this client-side preference
-             additionally reconciles sessions whose reports were cached before
-             that writeback shipped, without forcing a re-evaluation. */
-          score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score,
-          questions: s.questions,
-          ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
-          /* Plain-language coaching pair. Persisted in report_json.coaching by
-             evaluate-session; synthesized from wins/fixes when coaching=null
-             (S70-B1) so the card never falls back to the degenerate
-             skill_scores pair (contradictory when all values are equal). */
-          coaching: s.report_json?.coaching ??
-            cardCoachingFromWinsFixes(
-              (s.report_json as unknown as { wins?: Array<{text:string}>|null })?.wins,
-              (s.report_json as unknown as { fixes?: Array<{text:string}>|null })?.fixes,
-            ) ?? undefined,
-          /* Per-focus signature strip (mvp-9+), persisted in
-             report_json.focusMetrics. Empty/undefined for older rows → the
-             card renders no instrument strip. */
-          focusMetrics: s.report_json?.focusMetrics ?? undefined,
-          /* Kernel-aware negotiation metrics. The Supabase column type
-             is jsonb so we get an unknown-shaped object back; the
-             RealSession field is strictly typed. Cast is intentional —
-             validateNegotiationMetrics in the report layer is the
-             trust boundary, not this mapping. */
-          negotiationMetrics: (s as { negotiation_metrics?: unknown }).negotiation_metrics as RealSession["negotiationMetrics"] | undefined,
-        }));
+        const mapped = sessions.map(mapSessionRecord);
         setSupabaseSessions(mapped);
         try { localStorage.setItem(sessionsCacheKey, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
       }).catch(() => {
@@ -602,20 +612,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (refreshTimeoutRef.current) return;
     refreshTimeoutRef.current = setTimeout(() => { refreshTimeoutRef.current = null; }, 1000);
     getUserSessions(user.id).then(sessions => {
-      const mapped = sessions.map(s => ({
-        id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
-        /* S54-B7 (2026-07-24) — mirror the report_json.overallScore preference from the
-         * initial-load mapping (line 461) so a refresh doesn't revert to the raw
-         * quick-eval score and re-introduce the +5pt sessions-list vs report gap. */
-        focus: s.focus, duration: s.duration, score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score, questions: s.questions,
-        ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
-        coaching: s.report_json?.coaching ??
-          cardCoachingFromWinsFixes(
-            (s.report_json as unknown as { wins?: Array<{text:string}>|null })?.wins,
-            (s.report_json as unknown as { fixes?: Array<{text:string}>|null })?.fixes,
-          ) ?? undefined,
-        focusMetrics: s.report_json?.focusMetrics ?? undefined,
-      }));
+      const mapped = sessions.map(mapSessionRecord);
       setSupabaseSessions(mapped);
       try { localStorage.setItem(`hirestepx_cache_sessions_${user.id}`, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
     }).catch(() => {});

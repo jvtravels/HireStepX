@@ -389,11 +389,12 @@ export async function saveSession(session: Omit<SessionRecord, "created_at">) {
 
 export async function getUserSessions(userId: string): Promise<SessionRecord[]> {
   const client = await getSupabase();
-  const { data } = await client
+  const { data, error } = await client
     .from("sessions")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
   return data || [];
 }
 
