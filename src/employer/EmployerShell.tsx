@@ -14,45 +14,24 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon } from "lucide-react";
+import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 
-/* Same nav-item shape and shell pattern as src/DashboardLayout.tsx (the
-   candidate-side sidebar) — the two sides are meant to read as one product,
-   not two differently-built consoles. */
-const navItems = [
-  { key: "dashboard", label: "Dashboard", href: "/employer", icon: LayoutDashboardIcon },
-  { key: "jobs", label: "Jobs", href: "/employer/jobs", icon: BriefcaseIcon },
-  { key: "settings", label: "Settings", href: "/employer/settings", icon: SettingsIcon },
+/* The console renders the exact same AppShellFrame as the candidate
+   dashboard (src/DashboardLayout.tsx) — one product, one shell. */
+const navItems: ShellNavItem[] = [
+  { id: "dashboard", label: "Dashboard", path: "/employer", icon: <LayoutDashboardIcon size={18} aria-hidden="true" /> },
+  { id: "jobs", label: "Jobs", path: "/employer/jobs", icon: <BriefcaseIcon size={18} aria-hidden="true" /> },
+  { id: "settings", label: "Settings", path: "/employer/settings", icon: <SettingsIcon size={18} aria-hidden="true" /> },
 ];
+
+/* Candidate pages each own their body card (DashboardHome's grid,
+   DashboardJobs' table shell). Employer routes that render a card
+   themselves are listed here; every other employer page is wrapped in the
+   same white bordered card so the body reads identically across sides. */
+const SELF_CARDED_ROUTES = ["/employer/jobs"];
 
 /* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
    (initials avatar chip + "Signed in as / Log out" dropdown) so the
@@ -178,7 +157,8 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company is even approved. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus } = useEmployerData();
+  const { companyStatus, companyName } = useEmployerData();
+  const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
   const isConsole = companyStatus === "approved";
@@ -215,118 +195,42 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   }
 
   const activeItem = navItems.find((item) =>
-    item.href === "/employer" ? pathname === item.href : pathname === item.href || pathname?.startsWith(`${item.href}/`)
+    item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
   ) ?? navItems[0];
 
-  const displayName = (user?.name || user?.email || "").trim();
-  const initials =
-    displayName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "?";
-
   return (
-    <TooltipProvider delayDuration={0}>
-    <SidebarProvider style={{ minHeight: "100vh", background: t.cream }}>
-      {/* Sidebar — same shadcn shell as src/DashboardLayout.tsx (candidate side):
-          collapsible="icon", SidebarProvider handles the mobile sheet natively. */}
-      <Sidebar collapsible="icon" className="border-none">
-        <SidebarHeader className="px-3 pt-4 pb-3">
-          <Link href="/employer" className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <EmployerWordmark />
-          </Link>
-        </SidebarHeader>
-
-        <SidebarContent>
-          <SidebarGroup>
-            <nav aria-label="Employer navigation">
-              <SidebarMenu className="gap-1">
-                {navItems.map((item) => {
-                  const active = item.key === activeItem.key;
-                  const Icon = item.icon;
-                  return (
-                    <SidebarMenuItem key={item.key}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={active}
-                        aria-current={active ? "page" : undefined}
-                        tooltip={item.label}
-                        style={{
-                          height: 36, gap: 10, fontFamily: f.sans, fontSize: 14, fontWeight: 500,
-                          color: active ? t.indigo : t.inkSoft,
-                          background: active ? t.creamSoft : "transparent",
-                          borderRadius: 8,
-                        }}
-                      >
-                        <Link href={item.href}>
-                          <Icon size={18} aria-hidden="true" />
-                          <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </nav>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg" style={{ background: t.indigo100, color: t.indigo, fontFamily: f.sans, fontWeight: 600 }}>
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                      <span className="truncate font-medium" style={{ fontFamily: f.sans, color: t.coal }}>{user?.name}</span>
-                      <span className="truncate text-xs" style={{ fontFamily: f.sans, color: t.inkSoft }}>{user?.email}</span>
-                    </div>
-                    <ChevronsUpDownIcon className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="top" align="start" className="w-56">
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex flex-col gap-0.5 px-2 py-1.5 text-left text-sm">
-                      <span className="truncate font-medium" style={{ fontFamily: f.sans, color: t.coal }}>Signed in as</span>
-                      <span className="truncate text-xs" style={{ fontFamily: f.sans, color: t.inkSoft }}>{user?.email}</span>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOutIcon className="mr-2 size-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" aria-label="Toggle sidebar" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>{activeItem.label}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <main style={{ padding: 32 }}>
-          <div style={{ maxWidth: 1600, margin: "0 auto" }}>{children}</div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
-    </TooltipProvider>
+    <AppShellFrame
+      homeHref="/employer"
+      navAriaLabel="Employer navigation"
+      navItems={navItems}
+      activeId={activeItem.id}
+      onNavigate={(path) => router.push(path)}
+      account={{
+        name: (user?.name || user?.email || "").trim(),
+        subtitle: companyName || "Employer",
+        email: user?.email,
+      }}
+      accountMenuItems={
+        <DropdownMenuItem onClick={() => router.push("/employer/settings")}>
+          <SettingsIcon size={14} aria-hidden="true" />
+          Settings
+        </DropdownMenuItem>
+      }
+      onLogout={handleLogout}
+      breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
+      pageLabel={activeItem.label}
+      isMobile={isMobile}
+      mainId="employer-main"
+      pageKey={pathname}
+    >
+      {SELF_CARDED_ROUTES.includes(pathname ?? "") ? children : (
+        <div style={{
+          width: "100%", maxWidth: 1280, margin: "0 auto", boxSizing: "border-box",
+          background: t.white, border: `1px solid ${t.line}`, borderRadius: 12, padding: 24,
+        }}>
+          {children}
+        </div>
+      )}
+    </AppShellFrame>
   );
 }

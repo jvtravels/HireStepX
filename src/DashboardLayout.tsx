@@ -1,33 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { Button } from "@/components/ui/button";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -46,20 +20,11 @@ import {
   FileTextIcon,
   BriefcaseIcon,
   SettingsIcon,
-  ChevronsUpDownIcon,
-  LogOutIcon,
   CreditCardIcon,
   UserPlusIcon,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import AppShellFrame from "./AppShellFrame";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
@@ -67,7 +32,6 @@ import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy"
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
-import { dur, ease } from "./_motion";
 
 
 /* ─── Design tokens (derived) ───────────────────────────────────────────
@@ -286,86 +250,19 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const primaryCtaTitle = planCtaTitle(primaryCtaLabel);
 
   return (
-    // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
-    // 60-80px gap at the bottom when the bar collapses. The vh value
-    // is the fallback for pre-iOS 15.4 / Android <108.
-    <TooltipProvider delayDuration={0}>
-    <SidebarProvider style={{ height: "100dvh", minHeight: "100vh", background: c.surface, overflow: "hidden" }}>
-      {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
-      <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
-      <a href="#dashboard-main" style={{
-        position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
-        zIndex: 100, padding: "12px 24px", background: c.accent, color: c.graphite,
-        fontFamily: font.ui, fontSize: 14, fontWeight: 600, borderRadius: 8, textDecoration: "none",
-      }} onFocus={(e) => { e.currentTarget.style.left = "16px"; e.currentTarget.style.top = "16px"; e.currentTarget.style.width = "auto"; e.currentTarget.style.height = "auto"; }}
-        onBlur={(e) => { e.currentTarget.style.left = "-9999px"; e.currentTarget.style.width = "1px"; e.currentTarget.style.height = "1px"; }}>
-        Skip to main content
-      </a>
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-      `}</style>
-
-      {/* Sidebar — shadcn shell shared across every (dashboard) route.
-          collapsible="icon" shrinks to an icon-only rail instead of the
-          default fully-offscreen slide, matching shadcn's sidebar-07
-          reference. SidebarRail (the invisible edge hover-strip for
-          drag/click-to-expand) is intentionally omitted — it produced a
-          stray "Toggle Sidebar" title-tooltip over page content, and the
-          visible SidebarTrigger button already covers the toggle action. */}
-      <Sidebar collapsible="icon" className="border-none">
-        <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        <SidebarHeader className="px-3 pt-4 pb-3">
-          <Link href="/" className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} className="group-data-[collapsible=icon]:hidden" style={{ height: 24, width: "auto" }} />
-            <Image src="/favicon.svg" alt="HireStepX" width={24} height={24} className="hidden group-data-[collapsible=icon]:block" style={{ height: 24, width: 24 }} />
-          </Link>
-        </SidebarHeader>
-
-        <SidebarContent>
-          <SidebarGroup>
-            <nav aria-label="Main navigation">
-            <SidebarMenu className="gap-1">
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
-                  {activeNav === item.id && (
-                    <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
-                  )}
-                  <SidebarMenuButton
-                    isActive={activeNav === item.id}
-                    aria-current={activeNav === item.id ? "page" : undefined}
-                    onClick={() => nav.push(item.path)}
-                    onMouseEnter={(e) => { prefetchMap[item.id]?.(); if (activeNav !== item.id) e.currentTarget.style.background = c.border; }}
-                    onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
-                    aria-label={item.label}
-                    tooltip={item.label}
-                    style={{
-                      height: 36, gap: 10, fontFamily: font.ui, fontSize: 14,
-                      fontWeight: 500,
-                      color: activeNav === item.id ? c.accent : c.inkSoft,
-                      background: activeNav === item.id ? c.border : "transparent",
-                      borderRadius: 8,
-                      transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
-                    }}
-                  >
-                    <NavIcon id={item.id} />
-                    <span className="group-data-[collapsible=icon]:hidden" style={{ position: "relative" }}>
-                      {item.label}
-                      {item.id === "calendar" && hasUrgentInterview && (
-                        <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: c.ember, border: `2px solid ${c.graphite}` }} />
-                      )}
-                    </span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-            </nav>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter className="gap-2">
+    <AppShellFrame
+      homeHref="/"
+      navAriaLabel="Main navigation"
+      navItems={navItems.map((item) => ({
+        ...item,
+        icon: <NavIcon id={item.id} />,
+        alert: item.id === "calendar" && hasUrgentInterview,
+      }))}
+      activeId={activeNav}
+      onNavigate={(path) => nav.push(path)}
+      onNavHover={(id) => prefetchMap[id]?.()}
+      sidebarFooterExtra={
+        <>
         {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;
             state (exhausted / low / healthy) is communicated through the usage row
             and dash bar, not the card surface color. Hidden in the icon-only
@@ -518,110 +415,37 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           )}
         </div>
 
-        {/* User info — bordered white card matching Figma's sidebar footer;
-            the chevrons-up-down trigger opens Log out as a menu item. */}
-        <div className="group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label="Account menu"
-                className="justify-between p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
-                style={{
-                  width: "100%", display: "flex", alignItems: "center",
-                  gap: 8, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
-                  cursor: "pointer", textAlign: "left",
-                  transition: `background ${dur.instant} ${ease.snap}, border-color ${dur.instant} ${ease.snap}`,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = c.border; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = c.graphite; }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                  <Avatar className="rounded-md size-8 shrink-0">
-                    <AvatarFallback className="rounded-md" style={{ background: T.copper, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 500 }}>
-                      {(displayName || "?")[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="group-data-[collapsible=icon]:hidden" style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.ink, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
-                    <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
-                  </span>
-                </span>
-                <ChevronsUpDownIcon size={12} aria-hidden="true" className="group-data-[collapsible=icon]:hidden" style={{ flexShrink: 0, color: c.inkSoft }} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" style={{ width: 240 }}>
-              <DropdownMenuLabel className="p-0 font-normal">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
-                  <Avatar className="rounded-md size-8 shrink-0">
-                    <AvatarFallback className="rounded-md" style={{ background: T.copper, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 500 }}>
-                      {(displayName || "?")[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span style={{ minWidth: 0 }}>
-                    <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{displayName}</p>
-                    <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{user?.email}</p>
-                  </span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => nav.push("/settings")}>
-                  <SettingsIcon size={14} aria-hidden="true" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => nav.push("/settings?tab=plan")}>
-                  <CreditCardIcon size={14} aria-hidden="true" />
-                  Billing
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => nav.push("/settings?tab=referral")}>
-                  <UserPlusIcon size={14} aria-hidden="true" />
-                  Referral
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { authLogout(); }}>
-                <LogOutIcon size={14} aria-hidden="true" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        </SidebarFooter>
-        </aside>
-      </Sidebar>
-
-      {/* Main Content */}
-      <SidebarInset id="dashboard-main" tabIndex={-1} className="dash-main" style={{ padding: isMobile ? "0 16px" : "0 16px 0 8px", display: "flex", flexDirection: "column", height: "100dvh", minHeight: "100vh", overflow: "hidden", background: c.surface }}>
-
-        {/* Top bar — sidebar toggle + current page label */}
-        <header style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: isMobile ? "12px 16px" : "0 16px",
-          height: 62, boxSizing: "border-box", flexShrink: 0,
-          background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
-          marginTop: 8, marginBottom: 16,
-        }}>
-          <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
-          <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
-          <Breadcrumb style={{ flex: 1 }}>
-            <BreadcrumbList style={{ fontFamily: font.ui, fontSize: 13 }}>
-              <BreadcrumbItem>
-                <BreadcrumbLink onClick={() => nav.push("/dashboard")} style={{ color: c.inkSoft, cursor: "pointer" }}>
-                  HireStepX
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
-                  {allNavItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
-                </BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-
-        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
+        </>
+      }
+      account={{
+        name: displayName,
+        subtitle: user?.targetRole || persisted.targetRole || "Set your target role",
+        email: user?.email,
+      }}
+      accountMenuItems={
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => nav.push("/settings")}>
+            <SettingsIcon size={14} aria-hidden="true" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => nav.push("/settings?tab=plan")}>
+            <CreditCardIcon size={14} aria-hidden="true" />
+            Billing
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => nav.push("/settings?tab=referral")}>
+            <UserPlusIcon size={14} aria-hidden="true" />
+            Referral
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      }
+      onLogout={() => { authLogout(); }}
+      breadcrumbRoot={{ label: "HireStepX", path: "/dashboard" }}
+      pageLabel={allNavItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
+      isMobile={isMobile}
+      mainId="dashboard-main"
+      pageKey={pathname}
+      banners={
+        <>
         {/* Payment success/cancel banner */}
         {paymentBanner && (
           <Alert
@@ -664,12 +488,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You&apos;re offline — some features may be unavailable</AlertDescription>
           </Alert>
         )}
-        <div key={pathname} className="dash-page-enter" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          {children}
-        </div>
-        </div>
-      </SidebarInset>
-
+        </>
+      }
+      overlays={
+        <>
+      {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
+      <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
       {/* Command palette — ⌘K from anywhere, or the header's Search button */}
       <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
         <CommandInput placeholder="Jump to a page or action…" />
@@ -740,7 +564,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </div>
       )}
 
-    </SidebarProvider>
-    </TooltipProvider>
+        </>
+      }
+    >
+      {children}
+    </AppShellFrame>
   );
 }
