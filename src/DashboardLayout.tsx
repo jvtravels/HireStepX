@@ -544,8 +544,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     </AvatarFallback>
                   </Avatar>
                   <span className="group-data-[collapsible=icon]:hidden" style={{ minWidth: 0 }}>
-                    <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
-                    <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
+                    <p style={{ margin: 0, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.ink, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
+                    <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{user?.targetRole || persisted.targetRole || "Set your target role"}</p>
                   </span>
                 </span>
                 <ChevronsUpDownIcon size={12} aria-hidden="true" className="group-data-[collapsible=icon]:hidden" style={{ flexShrink: 0, color: c.inkSoft }} />
