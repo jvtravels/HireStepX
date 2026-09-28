@@ -478,17 +478,17 @@ export default function DashboardJobs() {
                           </div>
                         )}
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 500, color: t.coal, whiteSpace: "normal", wordBreak: "break-word" }}>{r.companyName}</div>
+                          <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal, whiteSpace: "normal", wordBreak: "break-word" }}>{r.companyName}</div>
                           {r.preferredIndustry && (
-                            <div style={{ fontSize: textSize.xs, color: t.inkFaint, whiteSpace: "normal", wordBreak: "break-word" }}>{r.preferredIndustry}</div>
+                            <div style={{ fontSize: textSize.sm, color: t.inkFaint, whiteSpace: "normal", wordBreak: "break-word" }}>{r.preferredIndustry}</div>
                           )}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", maxWidth: 260, verticalAlign: "top", whiteSpace: "normal" }}>
-                      <div style={{ fontSize: textSize.base, fontWeight: 600, color: t.coal }}>{r.roleTitle}</div>
+                      <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.roleTitle}</div>
                       {r.description && (
-                        <div style={{ fontSize: textSize.xs, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                        <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                           {r.description}
                         </div>
                       )}
@@ -503,16 +503,16 @@ export default function DashboardJobs() {
                       )}
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top" }}>
-                      <div style={{ fontSize: textSize.base, fontWeight: 500, color: t.coal }}>{r.location || "Not specified"}</div>
-                      {mode && <div style={{ fontSize: textSize.xs, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
+                      <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.location || "Not specified"}</div>
+                      {mode && <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top" }}>
                       {exp || "Not specified"}
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top" }}>
                       {jobType ? <Badge tone="neutral">{jobType}</Badge> : <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top" }}>
                       {comp || "Not disclosed"}
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
@@ -532,9 +532,9 @@ export default function DashboardJobs() {
                           </Badge>
                         )}
                       </div>
-                      <div style={{ fontSize: textSize.xs, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
+                      <div style={{ fontSize: textSize.sm, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.xs, color: t.inkFaint, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.sm, color: t.inkFaint, verticalAlign: "top" }}>
                       {daysAgo(r.matchedAt)}
                       {isNew && (
                         <div style={{ marginTop: 4, width: "fit-content" }}>
