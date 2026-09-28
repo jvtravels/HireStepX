@@ -18,6 +18,12 @@ interface SentryLike {
 let _sentryLoaded = false;
 let _sentry: SentryLike | null = null;
 
+// Specifier kept in a variable, not inlined as a string literal, so bundler
+// static-import scanners (Vite's import-analysis plugin included) don't try
+// to resolve this optional, possibly-not-installed package at build/test
+// time — only /* @vite-ignore */ on a literal isn't enough to stop that.
+const SENTRY_PKG = "@sentry/browser";
+
 async function ensureSentry(): Promise<SentryLike | null> {
   if (!SENTRY_DSN) return null;
   if (_sentryLoaded) return _sentry;
@@ -25,7 +31,7 @@ async function ensureSentry(): Promise<SentryLike | null> {
   try {
     // Dynamic import — only loaded if DSN is set AND package is installed.
     // Package is optional so the app builds without it.
-    const Sentry = (await import(/* @vite-ignore */ /* webpackIgnore: true */ "@sentry/browser" as string).catch(() => null)) as SentryLike | null;
+    const Sentry = (await import(/* @vite-ignore */ /* webpackIgnore: true */ SENTRY_PKG).catch(() => null)) as SentryLike | null;
     if (!Sentry) return null;
     Sentry.init({
       dsn: SENTRY_DSN,
