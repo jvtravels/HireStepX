@@ -471,8 +471,11 @@ export default function EmployerJobsPage() {
           onClick={() => router.push("/employer/requirements/new")}
           style={{
             marginTop: 4, borderRadius: 8, height: 44, gap: 8, padding: "0 22px",
-            background: t.coal, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600,
+            background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600,
+            transition: `background ${dur.instant} ${ease.snap}`,
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = t.indigoDeep; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
         >
           <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
           Create your first listing
@@ -605,7 +608,9 @@ export default function EmployerJobsPage() {
                       </Button>
                       <Button
                         onClick={() => router.push("/employer/requirements/new")}
-                        style={{ borderRadius: 8, height: 40, gap: 6, background: t.coal, color: t.white, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600 }}
+                        style={{ borderRadius: 8, height: 40, gap: 6, background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, transition: `background ${dur.instant} ${ease.snap}` }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = t.indigoDeep; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
                       >
                         <PlusIcon size={14} strokeWidth={2.5} aria-hidden="true" />
                         Create
