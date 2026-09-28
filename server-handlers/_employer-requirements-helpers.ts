@@ -134,11 +134,121 @@ export function asBoundedBudget(v: unknown): number | null {
   return v;
 }
 
-/** Joins requirement rows with their match counts for the GET response,
- *  defaulting to 0 for requirements nothing has matched yet. */
+/** Jobs-table "AI Screening" summary for one requirement — evaluated count,
+ *  score spread, and the strong-match (>= STRONG_MATCH_THRESHOLD) subset
+ *  used for the Top Matches / Strong Match columns. */
+export interface AiScreeningSummary {
+  evaluated: number;
+  scoreLow: number | null;
+  scoreHigh: number | null;
+  topMatches: number;
+  strongAvgScore: number | null;
+  strongMatchInitials: string[];
+  strongMatchExtra: number;
+}
+
+export const EMPTY_AI_SCREENING: AiScreeningSummary = {
+  evaluated: 0,
+  scoreLow: null,
+  scoreHigh: null,
+  topMatches: 0,
+  strongAvgScore: null,
+  strongMatchInitials: [],
+  strongMatchExtra: 0,
+};
+
+/** How many strong-match avatar chips the Jobs table shows before folding
+ *  the rest into a "+N" overflow chip. */
+const STRONG_AVATAR_CAP = 2;
+
+export interface RequirementMatchStats {
+  evaluated: number;
+  scoreLow: number | null;
+  scoreHigh: number | null;
+  topMatches: number;
+  strongAvgScore: number | null;
+  topCandidateIds: string[];
+  strongMatchExtra: number;
+}
+
+/** Groups requirement_matches rows by requirement and reduces each group to
+ *  the stats the Jobs table's AI Screening column needs. Candidate names
+ *  aren't resolved here — callers batch-fetch names for topCandidateIds
+ *  only, then pass the result to buildAiScreeningByRequirement. */
+export function computeMatchStats(
+  matchRows: Array<{ requirement_id: string; candidate_user_id: string; match_score: number }>,
+  strongThreshold: number,
+): Map<string, RequirementMatchStats> {
+  const byRequirement = new Map<string, Array<{ candidate_user_id: string; match_score: number }>>();
+  for (const m of matchRows) {
+    const existing = byRequirement.get(m.requirement_id);
+    if (existing) existing.push(m);
+    else byRequirement.set(m.requirement_id, [m]);
+  }
+
+  const stats = new Map<string, RequirementMatchStats>();
+  for (const [requirementId, rows] of byRequirement) {
+    const scores = rows.map((r) => r.match_score);
+    const strong = rows
+      .filter((r) => r.match_score >= strongThreshold)
+      .sort((a, b) => b.match_score - a.match_score);
+    const strongAvgScore =
+      strong.length > 0 ? Math.round(strong.reduce((sum, r) => sum + r.match_score, 0) / strong.length) : null;
+
+    stats.set(requirementId, {
+      evaluated: rows.length,
+      scoreLow: Math.min(...scores),
+      scoreHigh: Math.max(...scores),
+      topMatches: strong.length,
+      strongAvgScore,
+      topCandidateIds: strong.slice(0, STRONG_AVATAR_CAP).map((r) => r.candidate_user_id),
+      strongMatchExtra: Math.max(0, strong.length - STRONG_AVATAR_CAP),
+    });
+  }
+  return stats;
+}
+
+/** First letters of up to the first two words of a name, for an avatar-chip
+ *  initial — "?" for a blank/unknown name rather than an empty chip. */
+export function nameInitials(name: string): string {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+  return initials || "?";
+}
+
+/** Resolves each requirement's strong-match candidate IDs into display
+ *  initials, once their names have been batch-fetched. */
+export function buildAiScreeningByRequirement(
+  stats: Map<string, RequirementMatchStats>,
+  namesById: Map<string, string>,
+): Map<string, AiScreeningSummary> {
+  const result = new Map<string, AiScreeningSummary>();
+  for (const [requirementId, s] of stats) {
+    result.set(requirementId, {
+      evaluated: s.evaluated,
+      scoreLow: s.scoreLow,
+      scoreHigh: s.scoreHigh,
+      topMatches: s.topMatches,
+      strongAvgScore: s.strongAvgScore,
+      strongMatchInitials: s.topCandidateIds.map((id) => nameInitials(namesById.get(id) || "")),
+      strongMatchExtra: s.strongMatchExtra,
+    });
+  }
+  return result;
+}
+
+/** Joins requirement rows with their match counts and AI-screening summary
+ *  for the GET response, defaulting to 0/empty for requirements nothing has
+ *  matched yet. */
 export function buildRequirementsListResponse(
   rows: RequirementRow[],
   countsByRequirement: Map<string, number>,
+  aiScreeningByRequirement: Map<string, AiScreeningSummary> = new Map(),
 ): Array<{
   id: string;
   title: string;
@@ -158,6 +268,7 @@ export function buildRequirementsListResponse(
   salaryType: string | null;
   createdAt: string;
   candidateCount: number;
+  aiScreening: AiScreeningSummary;
 }> {
   return rows.map((r) => ({
     id: r.id,
@@ -178,6 +289,7 @@ export function buildRequirementsListResponse(
     salaryType: r.salary_type ?? null,
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
+    aiScreening: aiScreeningByRequirement.get(r.id) ?? EMPTY_AI_SCREENING,
   }));
 }
 

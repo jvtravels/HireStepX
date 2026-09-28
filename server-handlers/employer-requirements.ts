@@ -23,6 +23,7 @@ import {
   scoreCandidateMatch,
   classifyRequirementStatus,
   rankAndCap,
+  STRONG_MATCH_THRESHOLD,
   type CandidatePoolRow,
 } from "./_requirement-match-helpers";
 import {
@@ -39,9 +40,12 @@ import {
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
+  computeMatchStats,
+  buildAiScreeningByRequirement,
   averageScoresByUser,
   daysSinceLastActive,
   type RequirementRow,
+  type AiScreeningSummary,
 } from "./_employer-requirements-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -115,19 +119,40 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
     const ids = rows.map((r) => r.id);
     let countsByRequirement = new Map<string, number>();
+    let aiScreeningByRequirement = new Map<string, AiScreeningSummary>();
     if (ids.length > 0) {
       const idParam = ids.map((id) => encodeURIComponent(id)).join(",");
       const matchesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${idParam})&select=requirement_id,match_score`,
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${idParam})&select=requirement_id,candidate_user_id,match_score`,
         { headers: serviceHeaders() },
       );
       if (matchesRes.ok) {
-        const matchRows = (await matchesRes.json().catch(() => [])) as Array<{ requirement_id: string; match_score: number }>;
+        const matchRows = (await matchesRes.json().catch(() => [])) as Array<{
+          requirement_id: string;
+          candidate_user_id: string;
+          match_score: number;
+        }>;
         countsByRequirement = countMatchesByRequirement(matchRows);
+
+        const matchStats = computeMatchStats(matchRows, STRONG_MATCH_THRESHOLD);
+        const topCandidateIds = Array.from(new Set(Array.from(matchStats.values()).flatMap((s) => s.topCandidateIds)));
+        let namesById = new Map<string, string>();
+        if (topCandidateIds.length > 0) {
+          const nameIdParam = topCandidateIds.map((id) => encodeURIComponent(id)).join(",");
+          const namesRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=in.(${nameIdParam})&select=id,name`,
+            { headers: serviceHeaders() },
+          );
+          if (namesRes.ok) {
+            const nameRows = (await namesRes.json().catch(() => [])) as Array<{ id: string; name: string }>;
+            namesById = new Map(nameRows.map((row) => [row.id, row.name]));
+          }
+        }
+        aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, namesById);
       }
     }
 
-    const requirements = buildRequirementsListResponse(rows, countsByRequirement);
+    const requirements = buildRequirementsListResponse(rows, countsByRequirement, aiScreeningByRequirement);
 
     return new Response(JSON.stringify({ requirements }), { status: 200, headers });
   } catch (err) {

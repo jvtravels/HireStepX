@@ -58,6 +58,18 @@ export type EmploymentType = "full-time" | "part-time" | "contract" | "internshi
 
 export type SalaryType = "per-month" | "fixed" | "per-annum";
 
+/** Jobs-table "AI Screening" summary — mirrors AiScreeningSummary in
+ *  server-handlers/_employer-requirements-helpers.ts. */
+export interface AiScreeningSummary {
+  evaluated: number;
+  scoreLow: number | null;
+  scoreHigh: number | null;
+  topMatches: number;
+  strongAvgScore: number | null;
+  strongMatchInitials: string[];
+  strongMatchExtra: number;
+}
+
 export interface RequirementSummary {
   id: string;
   title: string;
@@ -77,6 +89,7 @@ export interface RequirementSummary {
   employmentType: EmploymentType | null;
   createdAt: string;
   candidateCount: number;
+  aiScreening: AiScreeningSummary;
 }
 
 export interface Requirement {

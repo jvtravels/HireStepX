@@ -10,6 +10,10 @@ import {
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
+  computeMatchStats,
+  nameInitials,
+  buildAiScreeningByRequirement,
+  EMPTY_AI_SCREENING,
   averageScoresByUser,
   daysSinceLastActive,
 } from "../../server-handlers/_employer-requirements-helpers";
@@ -120,13 +124,24 @@ describe("buildRequirementsListResponse", () => {
   it("joins requirement rows with their match counts", () => {
     const counts = new Map([["req_1", 4]]);
     expect(buildRequirementsListResponse(rows, counts)).toEqual([
-      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, locations: ["Bengaluru"], openPositions: 2, workMode: "hybrid", employmentType: "full-time", salaryType: "per-annum", skills: ["React", "Node"], createdAt: "2026-08-01", candidateCount: 4 },
-      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, locations: [], openPositions: null, workMode: null, employmentType: null, salaryType: null, skills: [], createdAt: "2026-08-02", candidateCount: 0 },
+      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, locations: ["Bengaluru"], openPositions: 2, workMode: "hybrid", employmentType: "full-time", salaryType: "per-annum", skills: ["React", "Node"], createdAt: "2026-08-01", candidateCount: 4, aiScreening: EMPTY_AI_SCREENING },
+      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, locations: [], openPositions: null, workMode: null, employmentType: null, salaryType: null, skills: [], createdAt: "2026-08-02", candidateCount: 0, aiScreening: EMPTY_AI_SCREENING },
     ]);
   });
 
   it("defaults candidateCount to 0 when the map is empty", () => {
     expect(buildRequirementsListResponse(rows, new Map())[0].candidateCount).toBe(0);
+  });
+
+  it("defaults aiScreening to the empty summary when no match summaries are given", () => {
+    expect(buildRequirementsListResponse(rows, new Map())[0].aiScreening).toEqual(EMPTY_AI_SCREENING);
+  });
+
+  it("uses the given aiScreening summary for a requirement when present", () => {
+    const summary = { evaluated: 5, scoreLow: 42, scoreHigh: 88, topMatches: 2, strongAvgScore: 80, strongMatchInitials: ["AK"], strongMatchExtra: 1 };
+    const result = buildRequirementsListResponse(rows, new Map(), new Map([["req_1", summary]]));
+    expect(result[0].aiScreening).toEqual(summary);
+    expect(result[1].aiScreening).toEqual(EMPTY_AI_SCREENING);
   });
 });
 
@@ -221,6 +236,112 @@ describe("countMatchesByRequirement", () => {
 
   it("returns an empty map for no rows", () => {
     expect(countMatchesByRequirement([]).size).toBe(0);
+  });
+});
+
+describe("computeMatchStats", () => {
+  it("computes evaluated count, score range, and strong-match stats per requirement", () => {
+    const stats = computeMatchStats(
+      [
+        { requirement_id: "req_1", candidate_user_id: "c1", match_score: 90 },
+        { requirement_id: "req_1", candidate_user_id: "c2", match_score: 74 },
+        { requirement_id: "req_1", candidate_user_id: "c3", match_score: 40 },
+      ],
+      60,
+    );
+    const s = stats.get("req_1")!;
+    expect(s.evaluated).toBe(3);
+    expect(s.scoreLow).toBe(40);
+    expect(s.scoreHigh).toBe(90);
+    expect(s.topMatches).toBe(2);
+    expect(s.strongAvgScore).toBe(82);
+    expect(s.topCandidateIds).toEqual(["c1", "c2"]);
+    expect(s.strongMatchExtra).toBe(0);
+  });
+
+  it("caps topCandidateIds at 2 and reports the rest as overflow", () => {
+    const stats = computeMatchStats(
+      [
+        { requirement_id: "req_1", candidate_user_id: "c1", match_score: 95 },
+        { requirement_id: "req_1", candidate_user_id: "c2", match_score: 90 },
+        { requirement_id: "req_1", candidate_user_id: "c3", match_score: 85 },
+        { requirement_id: "req_1", candidate_user_id: "c4", match_score: 80 },
+      ],
+      60,
+    );
+    const s = stats.get("req_1")!;
+    expect(s.topCandidateIds).toEqual(["c1", "c2"]);
+    expect(s.strongMatchExtra).toBe(2);
+  });
+
+  it("reports null strongAvgScore and zero topMatches when nothing clears the threshold", () => {
+    const stats = computeMatchStats([{ requirement_id: "req_1", candidate_user_id: "c1", match_score: 30 }], 60);
+    const s = stats.get("req_1")!;
+    expect(s.topMatches).toBe(0);
+    expect(s.strongAvgScore).toBeNull();
+    expect(s.topCandidateIds).toEqual([]);
+  });
+
+  it("keeps separate stats per requirement", () => {
+    const stats = computeMatchStats(
+      [
+        { requirement_id: "req_1", candidate_user_id: "c1", match_score: 90 },
+        { requirement_id: "req_2", candidate_user_id: "c2", match_score: 50 },
+      ],
+      60,
+    );
+    expect(stats.get("req_1")!.evaluated).toBe(1);
+    expect(stats.get("req_2")!.evaluated).toBe(1);
+    expect(stats.get("req_2")!.topMatches).toBe(0);
+  });
+
+  it("returns an empty map for no rows", () => {
+    expect(computeMatchStats([], 60).size).toBe(0);
+  });
+});
+
+describe("nameInitials", () => {
+  it("takes the first letter of the first two words", () => {
+    expect(nameInitials("Aisha Khan")).toBe("AK");
+  });
+
+  it("uppercases lowercase input", () => {
+    expect(nameInitials("aisha khan")).toBe("AK");
+  });
+
+  it("handles a single-word name", () => {
+    expect(nameInitials("Aisha")).toBe("A");
+  });
+
+  it("returns ? for a blank or empty name", () => {
+    expect(nameInitials("")).toBe("?");
+    expect(nameInitials("   ")).toBe("?");
+  });
+
+  it("ignores extra words beyond the first two", () => {
+    expect(nameInitials("Aisha Rani Khan")).toBe("AR");
+  });
+});
+
+describe("buildAiScreeningByRequirement", () => {
+  it("resolves top candidate ids into initials using the names map", () => {
+    const stats = new Map([
+      ["req_1", { evaluated: 5, scoreLow: 40, scoreHigh: 90, topMatches: 2, strongAvgScore: 82, topCandidateIds: ["c1", "c2"], strongMatchExtra: 0 }],
+    ]);
+    const names = new Map([["c1", "Aisha Khan"], ["c2", "Rahul Sharma"]]);
+    const result = buildAiScreeningByRequirement(stats, names);
+    expect(result.get("req_1")).toEqual({
+      evaluated: 5, scoreLow: 40, scoreHigh: 90, topMatches: 2, strongAvgScore: 82,
+      strongMatchInitials: ["AK", "RS"], strongMatchExtra: 0,
+    });
+  });
+
+  it("falls back to ? initials for candidates missing from the names map", () => {
+    const stats = new Map([
+      ["req_1", { evaluated: 1, scoreLow: 70, scoreHigh: 70, topMatches: 1, strongAvgScore: 70, topCandidateIds: ["c1"], strongMatchExtra: 0 }],
+    ]);
+    const result = buildAiScreeningByRequirement(stats, new Map());
+    expect(result.get("req_1")!.strongMatchInitials).toEqual(["?"]);
   });
 });
 
