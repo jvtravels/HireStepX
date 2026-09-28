@@ -26,6 +26,13 @@ export interface RequirementRow {
   target_companies: string[];
   perks_and_benefits: string[];
   employment_type: string | null;
+  salary_type: string | null;
+  preferred_domain: string | null;
+  work_schedule: string | null;
+  availability: string | null;
+  relevant_experience: string | null;
+  portfolio_required: boolean;
+  custom_skill_sets: string[];
   created_at: string;
 }
 
@@ -84,6 +91,21 @@ export function asBoundedEmploymentType(v: unknown): "full-time" | "part-time" |
   return v === "full-time" || v === "part-time" || v === "contract" || v === "internship" ? v : null;
 }
 
+/** Validated read of a client-supplied salary type: must be one of the
+ *  three values the DB check constraint allows. Returns null for anything
+ *  else so the column falls back to its own default rather than storing
+ *  garbage. */
+export function asBoundedSalaryType(v: unknown): "per-month" | "fixed" | "per-annum" | null {
+  return v === "per-month" || v === "fixed" || v === "per-annum" ? v : null;
+}
+
+/** Validated read of a client-supplied boolean flag (e.g. "portfolio
+ *  required"): anything other than a real boolean is treated as false
+ *  rather than propagating a truthy non-boolean into the column. */
+export function asBoundedBoolean(v: unknown): boolean {
+  return v === true;
+}
+
 /** Validated read of a client-supplied years-of-experience field: whole
  *  numbers only, clamped to a plausible 0–40 range. Returns null for
  *  anything else so it stores as a real SQL NULL, not a fabricated 0. */
@@ -133,6 +155,7 @@ export function buildRequirementsListResponse(
   workMode: string | null;
   skills: string[];
   employmentType: string | null;
+  salaryType: string | null;
   createdAt: string;
   candidateCount: number;
 }> {
@@ -152,6 +175,7 @@ export function buildRequirementsListResponse(
     workMode: r.work_mode ?? null,
     skills: r.skills ?? [],
     employmentType: r.employment_type ?? null,
+    salaryType: r.salary_type ?? null,
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
   }));

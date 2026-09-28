@@ -56,6 +56,8 @@ export type WorkMode = "remote" | "onsite" | "hybrid";
 
 export type EmploymentType = "full-time" | "part-time" | "contract" | "internship";
 
+export type SalaryType = "per-month" | "fixed" | "per-annum";
+
 export interface RequirementSummary {
   id: string;
   title: string;
@@ -67,6 +69,7 @@ export interface RequirementSummary {
   dueDate: string | null;
   budgetMin: number | null; // INR lakhs per annum
   budgetMax: number | null;
+  salaryType: SalaryType | null;
   locations: string[];
   openPositions: number | null;
   workMode: WorkMode | null;
@@ -88,13 +91,20 @@ export interface Requirement {
   dueDate: string | null;
   budgetMin: number | null; // INR lakhs per annum
   budgetMax: number | null;
+  salaryType: SalaryType | null;
   locations: string[];
   openPositions: number | null;
   workMode: WorkMode | null;
   skills: string[];
+  customSkillSets: string[];
   responsibilities: string;
   niceToHave: string;
   preferredIndustry: string;
+  preferredDomain: string;
+  workSchedule: string;
+  availability: string;
+  relevantExperience: string;
+  portfolioRequired: boolean;
   preferredColleges: string[];
   targetCompanies: string[];
   perksAndBenefits: string[];

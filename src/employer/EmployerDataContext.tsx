@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
-import { RequirementSummary, Requirement, Candidate, WorkMode, EmploymentType } from "./mockData";
+import { RequirementSummary, Requirement, Candidate, WorkMode, EmploymentType, SalaryType } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
@@ -58,6 +58,13 @@ interface EmployerDataContextValue {
     preferredColleges?: string[];
     targetCompanies?: string[];
     perksAndBenefits?: string[];
+    salaryType?: SalaryType;
+    preferredDomain?: string;
+    workSchedule?: string;
+    availability?: string;
+    relevantExperience?: string;
+    portfolioRequired?: boolean;
+    customSkillSets?: string[];
   }) => Promise<string | null>;
   updateRequirement: (id: string, r: {
     title: string;
@@ -79,6 +86,13 @@ interface EmployerDataContextValue {
     preferredColleges?: string[];
     targetCompanies?: string[];
     perksAndBenefits?: string[];
+    salaryType?: SalaryType;
+    preferredDomain?: string;
+    workSchedule?: string;
+    availability?: string;
+    relevantExperience?: string;
+    portfolioRequired?: boolean;
+    customSkillSets?: string[];
   }) => Promise<boolean>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
@@ -201,6 +215,13 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     preferredColleges?: string[];
     targetCompanies?: string[];
     perksAndBenefits?: string[];
+    salaryType?: SalaryType;
+    preferredDomain?: string;
+    workSchedule?: string;
+    availability?: string;
+    relevantExperience?: string;
+    portfolioRequired?: boolean;
+    customSkillSets?: string[];
   }) => {
     const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
     if (res.ok && res.data) {
@@ -230,6 +251,13 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     preferredColleges?: string[];
     targetCompanies?: string[];
     perksAndBenefits?: string[];
+    salaryType?: SalaryType;
+    preferredDomain?: string;
+    workSchedule?: string;
+    availability?: string;
+    relevantExperience?: string;
+    portfolioRequired?: boolean;
+    customSkillSets?: string[];
   }) => {
     const res = await apiFetch<{ id: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, r, { method: "PATCH" });
     if (res.ok && res.data) {

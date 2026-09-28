@@ -34,6 +34,8 @@ import {
   asBoundedOpenPositions,
   asBoundedWorkMode,
   asBoundedEmploymentType,
+  asBoundedSalaryType,
+  asBoundedBoolean,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -84,7 +86,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -123,6 +125,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     responsibilities?: unknown; niceToHave?: unknown; preferredIndustry?: unknown;
     preferredColleges?: unknown; targetCompanies?: unknown; perksAndBenefits?: unknown;
     employmentType?: unknown;
+    salaryType?: unknown; preferredDomain?: unknown; workSchedule?: unknown;
+    availability?: unknown; relevantExperience?: unknown; portfolioRequired?: unknown;
+    customSkillSets?: unknown;
   };
   try {
     body = await req.json();
@@ -149,6 +154,13 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
   const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
   const employmentType = asBoundedEmploymentType(body.employmentType) || "full-time";
+  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
+  const preferredDomain = asBoundedString(body.preferredDomain, 120);
+  const workSchedule = asBoundedString(body.workSchedule, 120);
+  const availability = asBoundedString(body.availability, 60);
+  const relevantExperience = asBoundedString(body.relevantExperience, 120);
+  const portfolioRequired = asBoundedBoolean(body.portfolioRequired);
+  const customSkillSets = asBoundedStringArray(body.customSkillSets, 40, 60);
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
@@ -176,6 +188,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         responsibilities, nice_to_have: niceToHave, preferred_industry: preferredIndustry,
         preferred_colleges: preferredColleges, target_companies: targetCompanies,
         perks_and_benefits: perksAndBenefits, employment_type: employmentType,
+        salary_type: salaryType, preferred_domain: preferredDomain, work_schedule: workSchedule,
+        availability, relevant_experience: relevantExperience, portfolio_required: portfolioRequired,
+        custom_skill_sets: customSkillSets,
       }]),
     });
     if (!insertRes.ok) {
@@ -205,6 +220,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         workMode: requirement.work_mode ?? null,
         skills: requirement.skills ?? [],
         employmentType: requirement.employment_type ?? null,
+        salaryType: requirement.salary_type ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

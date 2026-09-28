@@ -40,6 +40,8 @@ import {
   asBoundedOpenPositions,
   asBoundedWorkMode,
   asBoundedEmploymentType,
+  asBoundedSalaryType,
+  asBoundedBoolean,
   isValidRequirementInput,
   type RequirementRow,
 } from "./_employer-requirements-helpers";
@@ -97,7 +99,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -109,6 +111,9 @@ export default async function handler(req: Request): Promise<Response> {
       responsibilities: string | null; nice_to_have: string | null; preferred_industry: string | null;
       preferred_colleges: string[] | null; target_companies: string[] | null; perks_and_benefits: string[] | null;
       employment_type: string | null;
+      salary_type: string | null; preferred_domain: string | null; work_schedule: string | null;
+      availability: string | null; relevant_experience: string | null; portfolio_required: boolean | null;
+      custom_skill_sets: string[] | null;
       created_at: string;
     }>;
     const requirement = reqRows[0];
@@ -201,13 +206,20 @@ export default async function handler(req: Request): Promise<Response> {
         openPositions: requirement.open_positions,
         workMode: requirement.work_mode,
         skills: requirement.skills ?? [],
+        customSkillSets: requirement.custom_skill_sets ?? [],
         responsibilities: requirement.responsibilities || "",
         niceToHave: requirement.nice_to_have || "",
         preferredIndustry: requirement.preferred_industry || "",
+        preferredDomain: requirement.preferred_domain || "",
+        workSchedule: requirement.work_schedule || "",
+        availability: requirement.availability || "",
+        relevantExperience: requirement.relevant_experience || "",
+        portfolioRequired: requirement.portfolio_required ?? false,
         preferredColleges: requirement.preferred_colleges ?? [],
         targetCompanies: requirement.target_companies ?? [],
         perksAndBenefits: requirement.perks_and_benefits ?? [],
         employmentType: requirement.employment_type,
+        salaryType: requirement.salary_type,
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
       }),
@@ -229,6 +241,9 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     responsibilities?: unknown; niceToHave?: unknown; preferredIndustry?: unknown;
     preferredColleges?: unknown; targetCompanies?: unknown; perksAndBenefits?: unknown;
     employmentType?: unknown;
+    salaryType?: unknown; preferredDomain?: unknown; workSchedule?: unknown;
+    availability?: unknown; relevantExperience?: unknown; portfolioRequired?: unknown;
+    customSkillSets?: unknown;
   };
   try {
     body = await req.json();
@@ -255,6 +270,13 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
   const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
   const employmentType = asBoundedEmploymentType(body.employmentType) || "full-time";
+  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
+  const preferredDomain = asBoundedString(body.preferredDomain, 120);
+  const workSchedule = asBoundedString(body.workSchedule, 120);
+  const availability = asBoundedString(body.availability, 60);
+  const relevantExperience = asBoundedString(body.relevantExperience, 120);
+  const portfolioRequired = asBoundedBoolean(body.portfolioRequired);
+  const customSkillSets = asBoundedStringArray(body.customSkillSets, 40, 60);
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
@@ -285,6 +307,9 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         responsibilities, nice_to_have: niceToHave, preferred_industry: preferredIndustry,
         preferred_colleges: preferredColleges, target_companies: targetCompanies,
         perks_and_benefits: perksAndBenefits, employment_type: employmentType,
+        salary_type: salaryType, preferred_domain: preferredDomain, work_schedule: workSchedule,
+        availability, relevant_experience: relevantExperience, portfolio_required: portfolioRequired,
+        custom_skill_sets: customSkillSets,
       }),
     });
     if (!patchRes.ok) {
@@ -313,13 +338,20 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         openPositions: requirement.open_positions ?? null,
         workMode: requirement.work_mode ?? null,
         skills: requirement.skills ?? [],
+        customSkillSets: requirement.custom_skill_sets ?? [],
         responsibilities: requirement.responsibilities ?? "",
         niceToHave: requirement.nice_to_have ?? "",
         preferredIndustry: requirement.preferred_industry ?? "",
+        preferredDomain: requirement.preferred_domain ?? "",
+        workSchedule: requirement.work_schedule ?? "",
+        availability: requirement.availability ?? "",
+        relevantExperience: requirement.relevant_experience ?? "",
+        portfolioRequired: requirement.portfolio_required ?? false,
         preferredColleges: requirement.preferred_colleges ?? [],
         targetCompanies: requirement.target_companies ?? [],
         perksAndBenefits: requirement.perks_and_benefits ?? [],
         employmentType: requirement.employment_type ?? null,
+        salaryType: requirement.salary_type ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

@@ -1687,6 +1687,13 @@ alter table employer_requirements add column if not exists preferred_colleges te
 alter table employer_requirements add column if not exists target_companies text[] not null default '{}';
 alter table employer_requirements add column if not exists perks_and_benefits text[] not null default '{}';
 alter table employer_requirements add column if not exists employment_type text default 'full-time' check (employment_type in ('full-time', 'part-time', 'contract', 'internship'));
+alter table employer_requirements add column if not exists salary_type text default 'per-annum' check (salary_type in ('per-month', 'fixed', 'per-annum'));
+alter table employer_requirements add column if not exists preferred_domain text;
+alter table employer_requirements add column if not exists work_schedule text;
+alter table employer_requirements add column if not exists availability text;
+alter table employer_requirements add column if not exists relevant_experience text;
+alter table employer_requirements add column if not exists portfolio_required boolean not null default false;
+alter table employer_requirements add column if not exists custom_skill_sets text[] not null default '{}';
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 
