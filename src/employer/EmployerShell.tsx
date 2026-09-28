@@ -31,7 +31,14 @@ const navItems: ShellNavItem[] = [
    DashboardJobs' table shell). Employer routes that render a card
    themselves are listed here; every other employer page is wrapped in the
    same white bordered card so the body reads identically across sides. */
-const SELF_CARDED_ROUTES = ["/employer/jobs"];
+const SELF_CARDED_ROUTES = ["/employer/jobs", "/employer/requirements/new"];
+
+/* RequirementForm (create + edit) renders its own header, progress bar,
+   and Card — wrapping it in the generic fallback card too produces a
+   nested double-card look. Edit's path is dynamic (/requirements/:id/edit). */
+function isSelfCardedRoute(pathname: string): boolean {
+  return SELF_CARDED_ROUTES.includes(pathname) || /^\/employer\/requirements\/[^/]+\/edit$/.test(pathname);
+}
 
 /* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
    (initials avatar chip + "Signed in as / Log out" dropdown) so the
@@ -226,7 +233,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       mainId="employer-main"
       pageKey={pathname}
     >
-      {SELF_CARDED_ROUTES.includes(pathname ?? "") ? children : (
+      {isSelfCardedRoute(pathname ?? "") ? children : (
         <div style={{
           width: "100%", maxWidth: 1280, margin: "0 auto", boxSizing: "border-box",
           background: t.white, border: `1px solid ${t.line}`, borderRadius: 12, padding: 24,
