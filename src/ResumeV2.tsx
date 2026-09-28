@@ -306,7 +306,22 @@ export default function ResumeV2Screen() {
     const experiences = profile.experiences ?? [];
 
     body = (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {(phase === "extracting" || phase === "analyzing") && (
+          <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, background: T.creamSoft, border: `1px solid ${T.line}`, borderRadius: 10, padding: "12px 16px" }}>
+            <SparklesIcon size={16} color={T.inkSoft} aria-hidden="true" style={{ flexShrink: 0 }} />
+            <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkSoft, margin: 0 }}>
+              {phase === "extracting" ? "Reading your new resume…" : "Analyzing your new resume — this page will update shortly."}
+            </p>
+          </div>
+        )}
+        {errorMsg && (
+          <div role="alert" style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.error100, border: `1px solid ${T.errorLine}`, borderRadius: 10, padding: "12px 16px" }}>
+            <AlertCircleIcon size={16} color={T.errorInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+            <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.errorInk, margin: 0 }}>{errorMsg}</p>
+          </div>
+        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
         <div style={{ flex: "1 1 640px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Resume summary */}
           <SectionCard>
@@ -762,6 +777,7 @@ export default function ResumeV2Screen() {
               </div>
             </SectionCard>
           )}
+        </div>
         </div>
       </div>
     );

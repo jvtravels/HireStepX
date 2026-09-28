@@ -51,6 +51,13 @@ export function useResumeUpload(): ResumeUploadState {
 
   const analyzingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // True for the whole span of handleFile — extraction through analysis,
+  // success or failure. Guards the hydrate effect below: handleFile's own
+  // updateUser({ resumeText }) call (needed mid-upload, before resumeData is
+  // known) changes a hydrate dependency and would otherwise re-fire hydrate's
+  // own background-reanalysis branch concurrently with handleFile's, running
+  // AI analysis on the same text twice.
+  const uploadingRef = useRef(false);
 
   useEffect(() => () => { abortControllerRef.current?.abort(); }, []);
 
@@ -58,6 +65,7 @@ export function useResumeUpload(): ResumeUploadState {
   // hydrate effect (see src/DashboardResume.tsx) minus the schema-upgrade
   // re-analysis branch, which is a DashboardResume-only migration path.
   useEffect(() => {
+    if (uploadingRef.current) return;
     if (user?.resumeText) setResumeText(user.resumeText);
     if (user?.resumeFileName) setFileName(user.resumeFileName);
 
@@ -138,11 +146,13 @@ export function useResumeUpload(): ResumeUploadState {
       setPhase("error");
       return;
     }
+    uploadingRef.current = true;
+    analyzingRef.current = true;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
     setFileName(file.name);
     setErrorMsg("");
-    setProfile(null);
     setNeedsReupload(false);
-    setAnalysisSource(null);
     setTruncated(false);
     setPhase("extracting");
 
@@ -153,8 +163,13 @@ export function useResumeUpload(): ResumeUploadState {
       updatePersisted({ resumeFileName: file.name });
       updateUser({ resumeFileName: file.name, resumeText: text });
     } catch (err: unknown) {
+      // Extraction failed — leave the previously-loaded profile (if any) on
+      // screen instead of blanking the page; the error banner explains why
+      // the replace didn't go through.
       setErrorMsg(err instanceof Error ? err.message : "Failed to parse resume");
       setPhase("error");
+      uploadingRef.current = false;
+      analyzingRef.current = false;
       return;
     }
 
@@ -208,9 +223,16 @@ export function useResumeUpload(): ResumeUploadState {
       setAnalysisSource("fallback");
       setPhase("done");
     }
+    uploadingRef.current = false;
+    analyzingRef.current = false;
   };
 
   const handleRemove = () => {
+    // Cancel any in-flight extraction/analysis so it can't land after removal
+    // and resurrect a profile the user just deleted.
+    abortControllerRef.current?.abort();
+    uploadingRef.current = false;
+    analyzingRef.current = false;
     setFileName(null);
     setResumeText("");
     setProfile(null);

@@ -22,24 +22,20 @@ async function readDocx(file: File): Promise<string> {
   if (!docEntry) throw new Error("Invalid DOCX: no document.xml found");
 
   const xmlText = new TextDecoder().decode(docEntry.data);
-  // Extract text from <w:t> tags
-  const textParts: string[] = [];
-  const regex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(xmlText)) !== null) {
-    textParts.push(match[1]);
-  }
 
-  // Re-extract with paragraph awareness
+  // Split by paragraph, extract text from each <w:t> run within it.
+  // The tag-name boundary (\s|>|\/) is required so this doesn't also match
+  // other w:t*-prefixed elements like <w:tab/>, <w:tbl>, or <w:tr> — a bare
+  // "w:t" prefix match would swallow everything up to the next real </w:t>
+  // as bogus "text".
   const lines: string[] = [];
-  // Simpler approach: split by paragraph, extract text from each
   const paragraphs = xmlText.split(/<\/w:p>/);
   for (const para of paragraphs) {
     const paraTexts: string[] = [];
-    const tRegex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+    const tRegex = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g;
     let tMatch: RegExpExecArray | null;
     while ((tMatch = tRegex.exec(para)) !== null) {
-      paraTexts.push(tMatch[1]);
+      paraTexts.push(decodeXmlEntities(tMatch[1]));
     }
     if (paraTexts.length > 0) {
       lines.push(paraTexts.join(""));
@@ -47,6 +43,15 @@ async function readDocx(file: File): Promise<string> {
   }
 
   return lines.join("\n").trim();
+}
+
+function decodeXmlEntities(text: string): string {
+  return text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 /** Minimal ZIP reader for DOCX extraction (no dependencies) */
