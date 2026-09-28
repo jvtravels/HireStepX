@@ -24,21 +24,9 @@ import {
   PlusIcon,
   SearchIcon,
   ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-  EyeIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,10 +38,11 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableHead, type Sort } from "@/components/SortableHead";
+import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
@@ -94,14 +83,45 @@ interface HiringActivity {
   recent?: JobMatch[];
 }
 
-const ROWS_PER_PAGE_OPTIONS = [5, 10, 25];
+type SortColumn = "company" | "title" | "location" | "experience" | "jobType" | "salary" | "interest" | "date";
+const DEFAULT_SORT: Sort<SortColumn> = { column: "date", direction: "desc" };
 
-type SortKey = "recent" | "match" | "salary";
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "recent", label: "Most recent" },
-  { value: "match", label: "Highest match" },
-  { value: "salary", label: "Highest salary" },
-];
+const COLUMN_LABEL: Record<SortColumn, string> = {
+  company: "Company",
+  title: "Job title",
+  location: "Location",
+  experience: "Experience",
+  jobType: "Job type",
+  salary: "Salary",
+  interest: "Employer interest",
+  date: "Date",
+};
+
+function jobTypeLabel(m: JobMatch): string {
+  return (m.employmentType ? EMPLOYMENT_TYPE_LABEL[m.employmentType] || m.employmentType : "") || "";
+}
+
+function compareRows(a: JobMatch, b: JobMatch, sort: Sort<SortColumn>): number {
+  const dir = sort.direction === "asc" ? 1 : -1;
+  switch (sort.column) {
+    case "company":
+      return dir * a.companyName.localeCompare(b.companyName);
+    case "title":
+      return dir * a.roleTitle.localeCompare(b.roleTitle);
+    case "location":
+      return dir * (a.location || "").localeCompare(b.location || "");
+    case "experience":
+      return dir * ((a.experienceMin ?? a.experienceMax ?? -1) - (b.experienceMin ?? b.experienceMax ?? -1));
+    case "jobType":
+      return dir * jobTypeLabel(a).localeCompare(jobTypeLabel(b));
+    case "salary":
+      return dir * ((a.budgetMax ?? a.budgetMin ?? 0) - (b.budgetMax ?? b.budgetMin ?? 0));
+    case "interest":
+      return dir * (a.matchScore - b.matchScore);
+    case "date":
+      return dir * (new Date(a.matchedAt).getTime() - new Date(b.matchedAt).getTime());
+  }
+}
 
 function experienceBucket(m: JobMatch): string | null {
   const min = m.experienceMin ?? m.experienceMax;
@@ -160,7 +180,7 @@ export default function DashboardJobs() {
   const [jobTypeFilter, setJobTypeFilter] = useState("");
   const [experienceFilter, setExperienceFilter] = useState("");
   const [industryFilter, setIndustryFilter] = useState("");
-  const [sortBy, setSortBy] = useState<SortKey>("recent");
+  const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -203,7 +223,7 @@ export default function DashboardJobs() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = matches.filter((m) => {
+    const list = matches.filter((m) => {
       if (q && !(`${m.roleTitle} ${m.companyName} ${m.location}`.toLowerCase().includes(q))) return false;
       if (locationFilter && m.location !== locationFilter) return false;
       if (jobTypeFilter && (m.employmentType ? EMPLOYMENT_TYPE_LABEL[m.employmentType] || m.employmentType : null) !== jobTypeFilter) return false;
@@ -211,15 +231,10 @@ export default function DashboardJobs() {
       if (industryFilter && m.preferredIndustry !== industryFilter) return false;
       return true;
     });
-    list = [...list].sort((a, b) => {
-      if (sortBy === "match") return b.matchScore - a.matchScore;
-      if (sortBy === "salary") return (b.budgetMax ?? b.budgetMin ?? 0) - (a.budgetMax ?? a.budgetMin ?? 0);
-      return new Date(b.matchedAt).getTime() - new Date(a.matchedAt).getTime();
-    });
-    return list;
-  }, [matches, search, locationFilter, jobTypeFilter, experienceFilter, industryFilter, sortBy]);
+    return [...list].sort((a, b) => compareRows(a, b, sort));
+  }, [matches, search, locationFilter, jobTypeFilter, experienceFilter, industryFilter, sort]);
 
-  useEffect(() => { setPage(1); }, [search, locationFilter, jobTypeFilter, experienceFilter, industryFilter, sortBy, rowsPerPage]);
+  useEffect(() => { setPage(1); }, [search, locationFilter, jobTypeFilter, experienceFilter, industryFilter, sort, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -296,40 +311,25 @@ export default function DashboardJobs() {
             <FilterPill label="Job type" value={jobTypeFilter} options={jobTypeOptions} onChange={setJobTypeFilter} />
             <FilterPill label="Experience" value={experienceFilter} options={experienceOptions} onChange={setExperienceFilter} />
             <FilterPill label="Industry" value={industryFilter} options={industryOptions} onChange={setIndustryFilter} />
-            <div style={{ marginLeft: "auto" }}>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-                <SelectTrigger size="sm" style={{ borderRadius: 8, fontFamily: f.sans, fontSize: 12.5, color: t.coal }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>Sort: {o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
-          <Table aria-label="Job matches">
+          <Table aria-label="Job matches" className="table-fixed">
             <TableHeader>
-              <TableRow style={{ background: t.rowTint }}>
-                {["Company", "Job title", "Location", "Experience", "Job type", "Salary", "Employer interest", "Date", ""].map((h) => (
-                  <TableHead
-                    key={h || "actions"}
-                    style={{
-                      fontFamily: f.sans, fontSize: 11, letterSpacing: 0.4,
-                      textTransform: "uppercase", color: t.inkFaint, padding: "10px 14px",
-                    }}
-                  >
-                    {h}
-                  </TableHead>
-                ))}
+              <TableRow style={{ background: t.rowTint, height: 40 }}>
+                <SortableHead column="company" columnLabel={COLUMN_LABEL.company} defaultDirection="asc" sort={sort} onSortChange={setSort}>Company</SortableHead>
+                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" sort={sort} onSortChange={setSort}>Job title</SortableHead>
+                <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" sort={sort} onSortChange={setSort}>Location</SortableHead>
+                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+                <SortableHead column="jobType" columnLabel={COLUMN_LABEL.jobType} defaultDirection="asc" sort={sort} onSortChange={setSort}>Job type</SortableHead>
+                <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} sort={sort} onSortChange={setSort}>Salary</SortableHead>
+                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
+                <SortableHead column="date" columnLabel={COLUMN_LABEL.date} sort={sort} onSortChange={setSort}>Date</SortableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageRows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} style={{ padding: "24px 14px", textAlign: "center", fontFamily: f.sans, fontSize: 13, color: t.inkFaint, whiteSpace: "normal" }}>
+                  <TableCell colSpan={8} style={{ padding: "24px 14px", textAlign: "center", fontFamily: f.sans, fontSize: 13, color: t.inkFaint, whiteSpace: "normal" }}>
                     No opportunities match these filters.
                   </TableCell>
                 </TableRow>
@@ -342,7 +342,19 @@ export default function DashboardJobs() {
                 const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
                 const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
                 return (
-                  <TableRow key={i} onClick={() => setSelected(r)} style={{ cursor: "pointer" }}>
+                  <TableRow
+                    key={i}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelected(r)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelected(r);
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {r.companyLogoPath ? (
@@ -449,56 +461,23 @@ export default function DashboardJobs() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top" }}>
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
-                        onClick={(e) => { e.stopPropagation(); setSelected(r); }}
-                      >
-                        <EyeIcon aria-hidden="true" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
 
-          <div style={{ padding: "12px 18px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
-                Showing {filtered.length === 0 ? 0 : (pageSafe - 1) * rowsPerPage + 1}–{Math.min(pageSafe * rowsPerPage, filtered.length)} of {filtered.length} opportunities
-              </span>
-              <Select value={String(rowsPerPage)} onValueChange={(v) => setRowsPerPage(Number(v))}>
-                <SelectTrigger size="sm" style={{ borderRadius: 6, fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROWS_PER_PAGE_OPTIONS.map((n) => (
-                    <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <Button variant="outline" size="icon-sm" aria-label="First page" disabled={pageSafe <= 1} onClick={() => setPage(1)}>
-                <ChevronsLeftIcon aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon-sm" aria-label="Previous page" disabled={pageSafe <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                <ChevronLeftIcon aria-hidden="true" />
-              </Button>
-              <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, padding: "0 8px" }}>
-                Page {pageSafe} of {totalPages}
-              </span>
-              <Button variant="outline" size="icon-sm" aria-label="Next page" disabled={pageSafe >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-                <ChevronRightIcon aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon-sm" aria-label="Last page" disabled={pageSafe >= totalPages} onClick={() => setPage(totalPages)}>
-                <ChevronsRightIcon aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
+          <TablePaginationFooter
+            entityLabel="opportunity"
+            entityLabelPlural="opportunities"
+            totalCount={matches.length}
+            filteredCount={filtered.length}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={setRowsPerPage}
+            page={pageSafe}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )
   );

@@ -80,7 +80,7 @@ describe("DashboardJobs", () => {
     expect(screen.getByRole("button", { name: "Experience" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Industry" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /View details for Backend Engineer at Acme Corp/ }));
+    fireEvent.click(within(table).getByText("Backend Engineer"));
 
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByRole("link", { name: "Acme Corp" })).toHaveAttribute("href", "https://acme.example");
@@ -190,7 +190,7 @@ describe("DashboardJobs", () => {
     await waitFor(() => expect(screen.getByText("ROLE CLOSED")).toBeInTheDocument());
     expect(screen.getByText("Beta Inc")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /View details for SDE II at Beta Inc/ }));
+    fireEvent.click(screen.getByText("SDE II"));
 
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/Location not specified/)).toBeInTheDocument();

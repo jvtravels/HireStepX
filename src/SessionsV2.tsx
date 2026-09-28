@@ -20,13 +20,6 @@ import { captureClientEvent } from "./posthogClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
@@ -35,12 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ChevronDownIcon,
-  ChevronUpIcon,
-  ChevronsUpDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
   PlusIcon,
   SearchIcon,
   SearchXIcon,
@@ -56,6 +43,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SortableHead, type Sort as SharedSort } from "@/components/SortableHead";
+import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 
 const font = { ui: F.sans, mono: F.mono };
 
@@ -163,8 +152,7 @@ const SCORE_OPTIONS: { value: "All" | ScoreBand; label: string }[] = [
 ];
 
 type SortColumn = "title" | "score" | "progress" | "date";
-type SortDirection = "asc" | "desc";
-type Sort = { column: SortColumn; direction: SortDirection };
+type Sort = SharedSort<SortColumn>;
 const DEFAULT_SORT: Sort = { column: "date", direction: "desc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
@@ -407,43 +395,6 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
   );
 }
 
-function SortableHead({
-  column,
-  width,
-  minWidth,
-  sort,
-  onSortChange,
-  children,
-}: {
-  column: SortColumn;
-  width?: number | string;
-  minWidth?: number;
-  sort: Sort;
-  onSortChange: (sort: Sort) => void;
-  children: React.ReactNode;
-}) {
-  const active = sort.column === column;
-  return (
-    <TableHead style={{ width, minWidth, fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
-      <button
-        type="button"
-        onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : column === "title" ? "asc" : "desc" })}
-        aria-label={`Sort by ${COLUMN_LABEL[column]}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-      >
-        {children}
-        {active ? (
-          sort.direction === "asc" ? <ChevronUpIcon size={14} aria-hidden="true" /> : <ChevronDownIcon size={14} aria-hidden="true" />
-        ) : (
-          <ChevronsUpDownIcon size={14} color={T.inkSoft} aria-hidden="true" />
-        )}
-      </button>
-    </TableHead>
-  );
-}
-
 function SessionsTable({
   rows,
   totalCount,
@@ -485,10 +436,10 @@ function SessionsTable({
                 Score/Progress/Date stayed cramped. minWidth still protects
                 each column's content on narrower viewports (the table then
                 scrolls horizontally, per the empty-state note below). */}
-            <SortableHead column="title" width="28%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
-            <SortableHead column="score" width="14%" minWidth={150} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
-            <SortableHead column="progress" width="17%" minWidth={190} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
-            <SortableHead column="date" width="11%" minWidth={120} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
+            <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="28%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
+            <SortableHead column="score" columnLabel={COLUMN_LABEL.score} width="14%" minWidth={150} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
+            <SortableHead column="progress" columnLabel={COLUMN_LABEL.progress} width="17%" minWidth={190} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
+            <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="11%" minWidth={120} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
             <TableHead style={{ width: "30%", minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
@@ -560,75 +511,16 @@ function SessionsTable({
       </Table>
       </div>
 
-      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>
-          {filteredCount === totalCount
-            ? `${totalCount} session${totalCount === 1 ? "" : "s"} total`
-            : `Showing ${filteredCount} of ${totalCount} sessions`}
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>Rows per page</span>
-            <Select value={String(rowsPerPage)} onValueChange={(v) => onRowsPerPageChange(Number(v))}>
-              <SelectTrigger
-                size="sm"
-                style={{ borderRadius: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkFaint }}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="30">30</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkFaint }}>
-              Page {page} of {totalPages}
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label="Go to first page"
-                disabled={page <= 1}
-                onClick={() => onPageChange(1)}
-              >
-                <ChevronsLeftIcon aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label="Go to previous page"
-                disabled={page <= 1}
-                onClick={() => onPageChange(page - 1)}
-              >
-                <ChevronLeftIcon aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label="Go to next page"
-                disabled={page >= totalPages}
-                onClick={() => onPageChange(page + 1)}
-              >
-                <ChevronRightIcon aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label="Go to last page"
-                disabled={page >= totalPages}
-                onClick={() => onPageChange(totalPages)}
-              >
-                <ChevronsRightIcon aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TablePaginationFooter
+        entityLabel="session"
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={onRowsPerPageChange}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }
