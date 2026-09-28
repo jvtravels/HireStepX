@@ -47,19 +47,13 @@ function SegControl({ range, onChange }: { range: RangeKey; onChange: (r: RangeK
 }
 
 /* Pinned header — RI summary that stays put as the page scrolls, plus the
-   range scrubber. The "always know your number" anchor. */
-/* `stickTop` cancels the dashboard <main> scroll container's top padding
-   (20px desktop / 76px mobile in DashboardLayout). A sticky child stuck at
-   top:0 would pin to main's content edge — below its padding — leaving a
-   strip above the header through which scrolling content shows. A negative
-   top equal to that padding pins the header flush to the real viewport top.
-   Over-shooting it (a bigger negative than the padding) pulls the header
-   above the viewport and chops its top — so these MUST equal the actual
-   <main> top padding. Keep them in sync with DashboardLayout's <main>. */
-function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean; stickTop?: number }) {
+   range scrubber. The "always know your number" anchor. Sticks to the top
+   of the page's own scroll container — same plain-flow convention Resume
+   and Sessions use, no dependency on DashboardLayout's internal spacing. */
+function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean }) {
   const band = BAND_META[d.band];
   return (
-    <header style={{ position: "sticky", top: stickTop, zIndex: 10, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
+    <header style={{ position: "sticky", top: 0, zIndex: 10, background: t.white, borderBottom: `1px solid ${t.line}` }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "20px 22px 16px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
@@ -164,10 +158,10 @@ function DesktopShell({ d }: { d: Fixture }) {
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
-    <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls stickTop={-20} />
-      <div style={{ maxWidth: 1360, margin: "0 auto", padding: "22px 28px 64px" }}>
+      <StickyHeader d={d} range={range} onRange={setRange} showControls />
+      <div style={{ padding: "22px 0 64px" }}>
         <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
       </div>
     </div>
@@ -179,9 +173,9 @@ function MobileShell({ d }: { d: Fixture }) {
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
-    <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} stickTop={-76} />
+      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} />
       <div style={{ padding: "14px 0 48px" }}>
         <div style={{ marginBottom: 16 }}><SegControl range={range} onChange={setRange} /></div>
         <AnalyticsBody d={d} narrow range={range} activePillar={activePillar} onPillar={onPillar} />
@@ -194,7 +188,7 @@ function MobileShell({ d }: { d: Fixture }) {
 
 function CenterPane({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 22px", background: t.cream }}>
+    <div style={{ minHeight: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 22px" }}>
       <div style={{ maxWidth: 460, textAlign: "center" }}>{children}</div>
     </div>
   );
@@ -202,9 +196,9 @@ function CenterPane({ children }: { children: React.ReactNode }) {
 
 function LoadingState() {
   return (
-    <div style={{ minHeight: "100%", background: t.cream }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <div style={{ maxWidth: 1360, margin: "0 auto", padding: "22px 28px 64px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ padding: "22px 0 64px", display: "flex", flexDirection: "column", gap: 16 }}>
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="rix-skel" aria-hidden="true"
             style={{ height: i === 0 ? 220 : 150, borderRadius: 16, background: t.creamSoft, border: `1px solid ${t.line}` }} />

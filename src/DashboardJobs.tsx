@@ -474,8 +474,9 @@ export default function DashboardJobs() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
-                      {r.location || "Not specified"}{mode ? <div style={{ fontSize: 11, color: t.inkFaint }}>{mode}</div> : null}
+                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top" }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: t.coal }}>{r.location || "Not specified"}</div>
+                      {mode && <div style={{ fontSize: 11, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
                     </TableCell>
                     <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
                       {exp || "Not specified"}
