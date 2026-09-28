@@ -528,7 +528,7 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
 }
 
 // ─── Verification / Welcome Email Handler ───────────────────────────────────
-async function handleVerify(req: VercelRequest, res: VercelResponse, email: string, name?: string, userId?: string) {
+async function handleVerify(req: VercelRequest, res: VercelResponse, email: string, name?: string, userId?: string, ref?: string) {
   // Rate limit: max 3 welcome emails per IP per hour
   if (await checkRateLimit(req, "email", 3)) {
     return res.status(429).json({ error: "Too many email requests. Try again later." });
@@ -593,9 +593,14 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
     }
   }
 
-  // Generate verification link
+  // Generate verification link. The pending referral code (if any) rides
+  // along as a query param so verify-email.ts can forward it onto the
+  // /login redirect — the email is usually opened in a different browser
+  // context than the one that captured the code via localStorage, so it
+  // wouldn't otherwise survive to the SIGNED_IN handler that applies it.
   const token = generateVerifyToken(email);
-  const verifyUrl = `${APP_URL}/api/verify-email?email=${encodeURIComponent(email)}&token=${token}`;
+  const safeRef = typeof ref === "string" && /^HSX-[A-Z0-9]{4,8}$/.test(ref) ? ref : "";
+  const verifyUrl = `${APP_URL}/api/verify-email?email=${encodeURIComponent(email)}&token=${token}${safeRef ? `&ref=${safeRef}` : ""}`;
   const safeName = escapeHtml(name || "there");
 
   try {
@@ -918,7 +923,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { email, name, userId, action, honeypot, intent } = req.body || {};
+  const { email, name, userId, action, honeypot, intent, ref } = req.body || {};
 
   // Honeypot check: if the hidden field is filled, it's a bot
   if (honeypot) {
@@ -1009,7 +1014,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (action === "signup-attempted-existing") {
     return handleSignupAttemptedExisting(req, res, normalizedEmail, name);
   }
-  return handleVerify(req, res, normalizedEmail, name, userId);
+  return handleVerify(req, res, normalizedEmail, name, userId, ref);
 }
 
 /* ─── handleSignupAttemptedExisting ──────────────────────────────────────

@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "../AuthContext";
+import { storePendingReferralCode, useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -114,6 +114,16 @@ export default function Login() {
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
   const isEmployerFlow = !!nextParam?.startsWith("/employer");
+
+  // Re-capture a referral code forwarded through the verification-email
+  // redirect (verify-email.ts appends ?ref= for us). The signup browser's
+  // localStorage rarely survives the trip through a mail client into this
+  // browser, so this is what lets applyPendingReferral() (fired on the
+  // SIGNED_IN event right after the user logs in below) actually find it.
+  useEffect(() => {
+    const ref = searchParams?.get("ref") ?? null;
+    if (ref) storePendingReferralCode(ref);
+  }, [searchParams]);
 
   const computeRedirect = useCallback(
     () =>

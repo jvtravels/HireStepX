@@ -43,6 +43,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const email = (req.query.email as string || "").trim();
   const token = (req.query.token as string || "").trim();
+  // Forwarded from the verification link (see send-welcome.ts) so the
+  // browser that opens this email link — often a different one than the
+  // signup browser — can re-capture the referral code before login.
+  const rawRef = (req.query.ref as string || "").trim();
+  const refQuery = /^HSX-[A-Z0-9]{4,8}$/.test(rawRef) ? `&ref=${rawRef}` : "";
 
   if (!email || !token) {
     return res.redirect(302, `${APP_URL}/login?error=invalid-link`);
@@ -180,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // If already verified via our custom flow, redirect with success (idempotent)
     if (user.user_metadata?.custom_email_verified === true) {
-      return res.redirect(302, `${APP_URL}/login?verified=already`);
+      return res.redirect(302, `${APP_URL}/login?verified=already${refQuery}`);
     }
 
     // Set email_confirmed_at via admin API AND our custom flag
@@ -207,7 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Redirect to login page — user must log in manually after verification
-    return res.redirect(302, `${APP_URL}/login?verified=true`);
+    return res.redirect(302, `${APP_URL}/login?verified=true${refQuery}`);
   } catch (err) {
     console.error("Email verification error:", err);
     return res.redirect(302, `${APP_URL}/login?error=verification-failed`);

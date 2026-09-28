@@ -1403,10 +1403,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Send verification email via Resend API (don't block signup on failure)
       const userId = data?.user?.id;
       try {
+        // Carry the pending referral code (if any) through the verification
+        // link itself. The email is typically opened in a different browser
+        // context than the one that stored it (mail app webview, a different
+        // device), so localStorage alone never survives the round trip — see
+        // verify-email.ts, which forwards it onto the /login redirect so this
+        // browser's Login page can re-store it before the user signs in.
+        const pendingRef = readPendingReferralCode();
         await fetch("/api/send-welcome", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, name, userId }),
+          body: JSON.stringify({ email, name, userId, ref: pendingRef || undefined }),
         });
       } catch { /* verification email is best-effort */ }
 
