@@ -5,6 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { useAuth, storePendingReferralCode, storePendingNextTarget } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
@@ -486,8 +487,10 @@ export default function Signup() {
                     "Resend link" button on /forgot-password (sent state)
                     so the two transactional-email flows feel consistent.
                     60s cooldown matches the server rate limit. */}
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="lg"
                   onClick={handleResendVerification}
                   disabled={resendCooldown > 0 || resending}
                   aria-busy={resending || undefined}
@@ -496,18 +499,6 @@ export default function Signup() {
                     fontFamily: f.sans,
                     fontSize: 15,
                     fontWeight: 500,
-                    color: t.coal,
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 10,
-                    padding: "14px 18px",
-                    cursor:
-                      resendCooldown > 0 || resending
-                        ? "not-allowed"
-                        : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     gap: 10,
                     boxShadow: shadows.card,
                     opacity: resendCooldown > 0 || resending ? 0.6 : 1,
@@ -525,7 +516,7 @@ export default function Signup() {
                   ) : (
                     <span aria-live="polite">Resend verification email</span>
                   )}
-                </button>
+                </Button>
                 {resendError && (
                   <p
                     role="alert"
@@ -541,25 +532,16 @@ export default function Signup() {
                   </p>
                 )}
 
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => setSignupSent(false)}
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: t.indigo,
-                    background: "transparent",
-                    border: "none",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
+                  style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.indigo }}
                 >
                   <span className="hsx-link-indigo">
                     Wrong email? Change it
                   </span>
-                </button>
+                </Button>
                 <p
                   style={{
                     fontFamily: f.mono,
@@ -700,8 +682,10 @@ export default function Signup() {
             className="hsx-login-form"
             style={{ width: "100%", maxWidth: 540 }}
           >
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               className="hsx-login-google"
               onClick={handleGoogle}
               disabled={googleInFlight || loading}
@@ -711,16 +695,6 @@ export default function Signup() {
                 fontFamily: f.sans,
                 fontSize: 15,
                 fontWeight: 500,
-                color: t.coal,
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 10,
-                padding: "14px 18px",
-                cursor:
-                  googleInFlight || loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 gap: 12,
                 boxShadow: shadows.card,
                 opacity: googleInFlight || loading ? 0.7 : 1,
@@ -728,7 +702,7 @@ export default function Signup() {
             >
               <GoogleIcon />
               {googleInFlight ? "Opening Google…" : "Continue with Google"}
-            </button>
+            </Button>
 
             <div
               className="hsx-login-divider"
@@ -829,14 +803,17 @@ export default function Signup() {
                   }}
                 >
                   Did you mean{" "}
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={() => setEmail(emailSuggestion)}
                     className="hsx-link-indigo"
                     style={{
                       background: "transparent",
                       border: "none",
                       padding: 0,
+                      height: "auto",
                       cursor: "pointer",
                       color: t.indigo,
                       fontWeight: 600,
@@ -845,7 +822,7 @@ export default function Signup() {
                     }}
                   >
                     {emailSuggestion}
-                  </button>
+                  </Button>
                   ?
                 </p>
               )}
@@ -903,26 +880,20 @@ export default function Signup() {
                   }
                   errorMessage={passwordError}
                   rightSlot={
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       className="hsx-eye-toggle"
                       onClick={handlePasswordVisibility}
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
                       }
                       aria-pressed={showPassword}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: t.inkSoft,
-                        cursor: "pointer",
-                        padding: 4,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
+                      style={{ color: t.inkSoft }}
                     >
                       <EyeIcon open={showPassword} />
-                    </button>
+                    </Button>
                   }
                 />
                 {password.length > 0 && (
@@ -981,8 +952,10 @@ export default function Signup() {
                           : "Complete the form to continue"
                   : undefined;
                 return (
-                  <button
+                  <Button
                     type="submit"
+                    variant="default"
+                    size="lg"
                     disabled={!canSubmit}
                     aria-busy={loading ? "true" : "false"}
                     title={tooltip}
@@ -1035,7 +1008,7 @@ export default function Signup() {
                         </svg>
                       </>
                     )}
-                  </button>
+                  </Button>
                 );
               })()}
               {/* Trust strip — mirrors homepage social proof, sets expectation before first session */}

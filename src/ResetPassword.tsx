@@ -16,6 +16,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { tokens as t, fonts as ft, shadows } from "./auth/_tokens";
 import {
   Field,
@@ -963,26 +964,20 @@ export default function ResetPassword() {
                     }
                     errorMessage={passwordError}
                     rightSlot={
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         className="hsx-eye-toggle"
                         onClick={() => setShowPassword((v) => !v)}
                         aria-label={
                           showPassword ? "Hide password" : "Show password"
                         }
                         aria-pressed={showPassword}
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: t.inkSoft,
-                          cursor: "pointer",
-                          padding: 4,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
+                        style={{ color: t.inkSoft }}
                       >
                         <EyeIcon open={showPassword} />
-                      </button>
+                      </Button>
                     }
                   />
 
@@ -1082,8 +1077,10 @@ export default function ResetPassword() {
                             : "Complete the form to continue"
                       : undefined;
                     return (
-                      <button
+                      <Button
                         type="submit"
+                        variant="default"
+                        size="lg"
                         disabled={!canSubmit}
                         aria-busy={loading || undefined}
                         title={tooltip}
@@ -1136,7 +1133,7 @@ export default function ResetPassword() {
                             </svg>
                           </>
                         )}
-                      </button>
+                      </Button>
                     );
                   })()}
 

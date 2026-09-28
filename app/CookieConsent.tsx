@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { captureClientEvent } from "../src/posthogClient";
 
 const CONSENT_KEY = "hirestepx_cookie_consent";
@@ -93,34 +94,36 @@ export default function CookieConsent() {
         .
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => setConsent(false)}
           style={{
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
             color: "#4A4540",
             background: "transparent",
             border: "1px solid #C8C0B4",
-            borderRadius: 8, padding: "8px 14px",
-            cursor: "pointer",
+            padding: "8px 14px",
           }}
         >
           Essential only
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="default"
+          size="sm"
           onClick={() => setConsent(true)}
           style={{
             fontFamily: "inherit", fontSize: 13, fontWeight: 600,
             color: "#FDFAF6",
             background: "#1A1814",
             border: "1px solid #1A1814",
-            borderRadius: 8, padding: "8px 14px",
-            cursor: "pointer",
+            padding: "8px 14px",
           }}
         >
           Accept all
-        </button>
+        </Button>
       </div>
     </div>
     </>

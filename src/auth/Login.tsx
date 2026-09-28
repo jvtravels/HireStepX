@@ -5,6 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { storePendingReferralCode, useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
@@ -475,8 +476,10 @@ export default function Login() {
             className="hsx-login-form"
             style={{ width: "100%", maxWidth: 540 }}
           >
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               className="hsx-login-google"
               onClick={handleGoogle}
               disabled={googleInFlight || loading || isLocked}
@@ -486,18 +489,6 @@ export default function Login() {
                 fontFamily: f.sans,
                 fontSize: 15,
                 fontWeight: 500,
-                color: t.coal,
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 10,
-                padding: "14px 18px",
-                cursor:
-                  googleInFlight || loading || isLocked
-                    ? "not-allowed"
-                    : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 gap: 12,
                 boxShadow: shadows.card,
                 opacity: googleInFlight || loading || isLocked ? 0.7 : 1,
@@ -505,7 +496,7 @@ export default function Login() {
             >
               <GoogleIcon />
               {googleInFlight ? "Opening Google…" : "Continue with Google"}
-            </button>
+            </Button>
 
             <div
               className="hsx-login-divider"
@@ -655,26 +646,20 @@ export default function Login() {
                 }
                 errorMessage={passwordError}
                 rightSlot={
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     className="hsx-eye-toggle"
                     onClick={handlePasswordVisibility}
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
                     aria-pressed={showPassword}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: t.inkSoft,
-                      cursor: "pointer",
-                      padding: 4,
-                      display: "flex",
-                      alignItems: "center",
-                    }}
+                    style={{ color: t.inkSoft }}
                   >
                     <EyeIcon open={showPassword} />
-                  </button>
+                  </Button>
                 }
               />
 
@@ -729,8 +714,10 @@ export default function Login() {
                       : "Complete the form to continue"
                   : undefined;
                 return (
-                  <button
+                  <Button
                     type="submit"
+                    variant="default"
+                    size="lg"
                     disabled={!canSubmit}
                     aria-busy={loading ? "true" : "false"}
                     title={tooltip}
@@ -786,7 +773,7 @@ export default function Login() {
                         </svg>
                       </>
                     )}
-                  </button>
+                  </Button>
                 );
               })()}
             </form>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { font } from "./tokens";
 import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
@@ -963,31 +964,19 @@ export default function Onboarding() {
         >
           <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ot.success} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           <span>{draftToast}</span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={() => setDraftToast(null)}
             aria-label="Dismiss"
-            style={{
-              marginLeft: 4,
-              width: 22, height: 22,
-              border: "none",
-              background: "transparent",
-              color: ot.inkSoft,
-              cursor: "pointer",
-              borderRadius: 6,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = ot.creamSoft; e.currentTarget.style.color = ot.coal; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = ot.inkSoft; }}
+            style={{ marginLeft: 4, color: ot.inkSoft }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="6" y1="18" x2="18" y2="6" />
             </svg>
-          </button>
+          </Button>
         </div>
       )}
 

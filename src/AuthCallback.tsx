@@ -9,6 +9,7 @@
  */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { getSupabase, supabaseConfigured } from "./supabase";
 import { clearSessionStart } from "./auth/_shell";
 import { c, font } from "./tokens";
@@ -173,17 +174,21 @@ export default function AuthCallback() {
           <p style={{ color: c.ember, fontSize: 14, margin: 0 }}>{error}</p>
         </div>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => router.push("/login")}
             style={{
               fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
               background: "transparent", border: `1px solid ${c.border}`,
-              borderRadius: 8, padding: "8px 20px", cursor: "pointer",
+              padding: "8px 20px",
             }}
           >
             Back to Login
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
             onClick={() => {
               setError("");
               router.push("/login");
@@ -193,12 +198,12 @@ export default function AuthCallback() {
             }}
             style={{
               fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-              background: T.indigo, border: "none",
-              borderRadius: 8, padding: "8px 20px", cursor: "pointer",
+              background: T.indigo,
+              padding: "8px 20px",
             }}
           >
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     </div>

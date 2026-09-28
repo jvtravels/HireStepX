@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import { Field, Wordmark, Spinner } from "./_fields";
@@ -304,8 +305,10 @@ export default function ForgotPassword() {
                   </a>
                 )}
 
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="lg"
                   onClick={handleResend}
                   disabled={cooldown > 0 || resending}
                   aria-busy={resending || undefined}
@@ -314,16 +317,6 @@ export default function ForgotPassword() {
                     fontFamily: f.sans,
                     fontSize: 15,
                     fontWeight: 500,
-                    color: t.coal,
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 10,
-                    padding: "14px 18px",
-                    cursor:
-                      cooldown > 0 || resending ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     gap: 10,
                     boxShadow: shadows.card,
                     opacity: cooldown > 0 || resending ? 0.6 : 1,
@@ -341,10 +334,11 @@ export default function ForgotPassword() {
                   ) : (
                     <span aria-live="polite">Resend link</span>
                   )}
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => {
                     setSent(false);
                     setCooldown(0);
@@ -355,19 +349,13 @@ export default function ForgotPassword() {
                     fontSize: 14,
                     fontWeight: 500,
                     color: t.indigo,
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "10px 14px",
-                    textAlign: "center",
-                    textDecoration: "none",
                   }}
                 >
                   {/* Underline scoped to text width, not full button width */}
                   <span className="hsx-link-indigo">
                     Wrong email? Try a different one
                   </span>
-                </button>
+                </Button>
 
                 <div
                   style={{
@@ -528,8 +516,10 @@ export default function ForgotPassword() {
                   {(() => {
                     const isGhost = !canSubmit && !loading;
                     return (
-                      <button
+                      <Button
                         type="submit"
+                        variant="default"
+                        size="lg"
                         disabled={!canSubmit}
                         aria-busy={loading ? "true" : "false"}
                         title={
@@ -586,7 +576,7 @@ export default function ForgotPassword() {
                             </svg>
                           </>
                         )}
-                      </button>
+                      </Button>
                     );
                   })()}
 

@@ -710,13 +710,15 @@ export default function ResumeV2Screen() {
                       </div>
                     ))}
                     {coreSkills.length > SKILLS_COLLAPSE_THRESHOLD && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setSkillsExpanded((v) => !v)}
-                        style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.indigo, background: "none", border: "none", minHeight: 44, padding: "6px 8px", cursor: "pointer" }}
+                        style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.indigo, background: "none", minHeight: 44, padding: "6px 8px" }}
                       >
                         {skillsExpanded ? "Show less" : `+${coreSkills.length - SKILLS_COLLAPSE_THRESHOLD} more`}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>

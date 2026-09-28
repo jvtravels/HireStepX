@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { CopyEmailLink } from "../src/_CopyEmailLink";
 
 const STORAGE_KEY = "hsx_beta_banner_dismissed";
@@ -53,7 +54,9 @@ export function BetaBanner() {
           Share your feedback
         </CopyEmailLink>
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={dismiss}
         aria-label="Dismiss beta banner"
         style={{
@@ -61,18 +64,14 @@ export function BetaBanner() {
           right: 14,
           top: "50%",
           transform: "translateY(-50%)",
-          background: "none",
-          border: "none",
           color: "#FFFFFF",
-          cursor: "pointer",
-          padding: "4px 6px",
           fontSize: 16,
           lineHeight: 1,
           opacity: 0.8,
         }}
       >
         ×
-      </button>
+      </Button>
     </div>
   );
 }
