@@ -119,6 +119,14 @@ input[type="range"]:focus-visible {
   outline: 2px solid oklch(0.555 0.163 48.998);
   outline-offset: 4px;
 }
+/* Design-system components (button.tsx, input.tsx, select.tsx, etc.) already
+   draw their own focus-visible:ring box-shadow — this outline would stack a
+   second, misaligned ring on top of it. Higher specificity than the type
+   selectors above lets legacy plain elements (no data-slot) keep the
+   fallback outline while data-slot components suppress it. */
+[data-slot]:focus-visible {
+  outline: none;
+}
 
 /* ─── Pointer cursor on clickable elements ───
    Native <button> and role="button" default to the browser's arrow cursor,
@@ -126,6 +134,92 @@ input[type="range"]:focus-visible {
    the app depending on whether that component happened to set cursor-pointer. */
 button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
+}
+
+/* ─── Shared button hover/interaction states ───
+   Generalized version of DashboardHome's .hsx-dh-btn pattern (same 160ms
+   cubic-bezier(.2,.7,.2,1) snap timing — see src/_motion.ts) for screens
+   without their own scoped hover <style> block. Buttons that already drive
+   hover via onMouseEnter/Leave (DashboardSettings pills, SessionsV2
+   FilterPill) or the design-system Button component keep their existing
+   treatment untouched. */
+.hsx-btn {
+  transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              box-shadow 160ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              background-color 160ms ease,
+              border-color 160ms ease,
+              color 160ms ease,
+              filter 160ms ease;
+}
+.hsx-btn-primary {
+  background: oklch(0.359 0.135 278.697);
+  color: oklch(1 0 0);
+  border: none;
+}
+.hsx-btn-primary:not(:disabled):hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(20,17,10,.10), 0 10px 22px -6px rgba(49,46,129,.32);
+}
+.hsx-btn-primary:not(:disabled):active {
+  filter: brightness(0.96);
+  transform: translateY(0) scale(0.985);
+  transition-duration: 80ms;
+}
+/* Ghost — icon buttons with no default border (modal close "x", etc). */
+.hsx-btn-icon {
+  background: transparent;
+  border: 1px solid transparent;
+  color: oklch(0.56 0.021 213.5);
+  border-radius: 8px;
+}
+.hsx-btn-icon:not(:disabled):hover {
+  background: oklch(0.359 0.135 278.697 / 0.08);
+  color: oklch(0.359 0.135 278.697);
+  transform: translateY(-1px);
+}
+.hsx-btn-icon:not(:disabled):active {
+  background: oklch(0.359 0.135 278.697 / 0.14);
+  transform: translateY(0) scale(0.96);
+  transition-duration: 80ms;
+}
+/* Outline — icon buttons with a hairline border (table row actions, pagers). */
+.hsx-btn-icon-outline {
+  background: oklch(1 0 0);
+  border: 1px solid oklch(0.943 0.006 265.3);
+  color: oklch(0.56 0.021 213.5);
+  border-radius: 8px;
+}
+.hsx-btn-icon-outline:not(:disabled):hover {
+  background: oklch(0.359 0.135 278.697 / 0.06);
+  border-color: oklch(0.359 0.135 278.697);
+  color: oklch(0.359 0.135 278.697);
+  transform: translateY(-1px);
+}
+.hsx-btn-icon-outline:not(:disabled):active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 80ms;
+}
+.hsx-btn:focus-visible {
+  outline: 2px solid oklch(0.359 0.135 278.697);
+  outline-offset: 3px;
+}
+@media (hover: none), (pointer: coarse) {
+  .hsx-btn-primary:hover, .hsx-btn-icon:hover, .hsx-btn-icon-outline:hover {
+    transform: none !important;
+    filter: none !important;
+    background: inherit;
+    border-color: inherit;
+    color: inherit;
+    box-shadow: inherit;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hsx-btn, .hsx-btn-primary, .hsx-btn-icon, .hsx-btn-icon-outline {
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -139,16 +233,6 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ─── Focus Visible ─── */
-*:focus-visible {
-  outline: 2px solid oklch(0.555 0.163 48.998);
-  outline-offset: 2px;
-}
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid oklch(0.555 0.163 48.998);
-  outline-offset: 2px;
 }
 
 /* ─── Skip to Content ─── */

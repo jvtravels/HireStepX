@@ -208,10 +208,10 @@ function AutocompleteInput({
         }}>
           {filtered.map((s, i) => (
             <button key={s} role="option" aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
+              className={`hsx-option-row${i === selectedIdx ? " hsx-option-row--selected" : ""}`}
               style={{
                 display: "block", width: "100%", padding: "10px 16px", border: "none", textAlign: "left",
                 fontFamily: F.sans, fontSize: 13, cursor: "pointer",
-                background: i === selectedIdx ? "rgba(49,46,129,0.08)" : "transparent",
                 color: i === selectedIdx ? T.coal : T.inkSoft,
               }}>
               {s}
@@ -1623,6 +1623,33 @@ export default function SessionSetup() {
         .hsx-link-indigo:focus-visible {
           outline: none;
           box-shadow: 0 0 0 3px ${T.indigoRing}, 0 1px 2px rgba(20,17,10,.04);
+        }
+
+        /* ─── Hover feedback ─────────────────────────────────────────────
+           transform/filter only — background/border/box-shadow on these
+           elements are already set inline (conditional on selected/disabled
+           state), so a non-!important hover rule can't win against them.
+           Both already carry their own inline transition style prop, so no
+           extra transition declaration is needed here. */
+        .ob-focus-card:not(:disabled):hover {
+          transform: translateY(-2px);
+        }
+        .hsx-setup-cta:not(:disabled):hover {
+          transform: translateY(-1px);
+          filter: brightness(1.06);
+        }
+        .hsx-setup-cta:not(:disabled):active {
+          transform: translateY(0) scale(0.985);
+          filter: brightness(0.94);
+        }
+        .hsx-option-row:hover {
+          background: oklch(0.359 0.135 278.697 / 0.06);
+        }
+        .hsx-option-row--selected {
+          background: oklch(0.359 0.135 278.697 / 0.08);
+        }
+        .hsx-option-row--selected:hover {
+          background: oklch(0.359 0.135 278.697 / 0.10);
         }
 
         /* ─── prefers-reduced-motion ─────────────────────────────────────

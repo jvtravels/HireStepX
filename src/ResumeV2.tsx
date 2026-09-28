@@ -43,6 +43,7 @@ import {
   Loader2Icon,
   FileUpIcon,
   SparklesIcon,
+  XIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -331,54 +332,57 @@ export default function ResumeV2Screen() {
                   </Badge>
                 )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.creamSoft, border: `1px solid ${T.line}`, borderRadius: 8, padding: "6px 12px 6px 10px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", border: `1px solid ${T.line}`, borderRadius: 10, overflow: "hidden", background: T.creamSoft }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", minWidth: 0 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 4, background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <FileTextIcon size={14} color={T.white} aria-hidden="true" />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <p title={fileName || "resume"} style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.coal, margin: 0, maxWidth: 160, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fileName || "resume"}</p>
                     <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>Resume file</p>
                   </div>
                 </div>
+                <div aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: T.line }} />
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={triggerUpload}
                   disabled={phase === "extracting" || phase === "analyzing"}
-                  style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6, minHeight: 44 }}
+                  style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6, minHeight: 44, borderRadius: 0 }}
                 >
                   <UploadIcon size={14} aria-hidden="true" />
                   Replace
                 </Button>
+                <div aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: T.line }} />
                 {confirmDelete ? (
-                  <div role="group" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint }}>Delete?</span>
+                  <div role="group" aria-label="Confirm delete resume" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 4, padding: "0 6px" }}>
                     <Button
                       variant="destructive"
                       size="sm"
+                      aria-label="Confirm delete resume"
                       onClick={() => { handleRemove(); setConfirmDelete(false); }}
-                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44 }}
+                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44, minWidth: 44, padding: "0 12px" }}
                     >
-                      Yes
+                      <CheckIcon size={14} aria-hidden="true" />
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
+                      aria-label="Cancel delete"
                       onClick={() => setConfirmDelete(false)}
-                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44 }}
+                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44, minWidth: 44, padding: "0 12px" }}
                     >
-                      No
+                      <XIcon size={14} aria-hidden="true" />
                     </Button>
                   </div>
                 ) : (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     aria-label="Delete resume"
                     title="Remove resume"
                     onClick={() => setConfirmDelete(true)}
-                    style={{ minHeight: 44, minWidth: 44 }}
+                    style={{ minHeight: 44, minWidth: 44, borderRadius: 0 }}
                   >
                     <Trash2Icon size={14} color={T.error} aria-hidden="true" />
                   </Button>
@@ -628,11 +632,11 @@ export default function ResumeV2Screen() {
               <>
                 <Divider />
                 <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "16px 20px 20px" }}>
-                  <div style={{ background: T.creamSoft, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 700, color: T.coal, margin: 0 }}>Found ({atsResult.found.length})</p>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 1fr))", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "12px" }}>
                       {atsResult.found.map((item) => (
                         <div key={item} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ width: 18, height: 18, borderRadius: 9, background: T.success100, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -700,7 +704,7 @@ export default function ResumeV2Screen() {
                       <button
                         type="button"
                         onClick={() => setSkillsExpanded((v) => !v)}
-                        style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.indigo, background: "none", border: "none", padding: "6px 4px", cursor: "pointer" }}
+                        style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.indigo, background: "none", border: "none", minHeight: 44, padding: "6px 8px", cursor: "pointer" }}
                       >
                         {skillsExpanded ? "Show less" : `+${coreSkills.length - SKILLS_COLLAPSE_THRESHOLD} more`}
                       </button>
@@ -711,13 +715,16 @@ export default function ResumeV2Screen() {
               {profile.keyAchievements.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <p style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint, margin: 0 }}>Key Achievements</p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
                     {profile.keyAchievements.map((text, i) => (
-                      <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.creamSoft, borderRadius: 10, padding: "12px 14px" }}>
-                        <div style={{ width: 24, height: 24, borderRadius: 12, background: T.white, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
+                      <div key={i}>
+                        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 0" }}>
+                          <div style={{ width: 20, height: 20, borderRadius: 10, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                            <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
+                          </div>
+                          <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
                         </div>
-                        <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
+                        {i < profile.keyAchievements.length - 1 && <Divider />}
                       </div>
                     ))}
                   </div>

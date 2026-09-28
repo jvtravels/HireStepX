@@ -64,7 +64,8 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
           type="button"
           onClick={onClose}
           aria-label="Close dialog"
-          style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: t.inkSoft, cursor: "pointer", padding: 4 }}
+          className="hsx-btn hsx-btn-icon"
+          style={{ position: "absolute", top: 14, right: 14, cursor: "pointer", padding: 4 }}
         >
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
