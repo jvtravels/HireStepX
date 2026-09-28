@@ -342,7 +342,7 @@ export default function DashboardJobs() {
                 const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
                 const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
                 return (
-                  <TableRow key={i} style={{ background: r.unlocked ? t.indigo100 : "transparent" }}>
+                  <TableRow key={i}>
                     <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {r.companyLogoPath ? (
