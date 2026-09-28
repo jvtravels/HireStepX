@@ -91,14 +91,14 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
               <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs the {d.cohort.label}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: f.serif, fontSize: 22, color: vsCohort >= 0 ? t.success : t.copper }}>{vsCohort >= 0 ? "+" : ""}{vsCohort}</span>
+                <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: vsCohort >= 0 ? t.success : t.copper }}>{vsCohort >= 0 ? "+" : ""}{vsCohort}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>RI (bar at {d.cohort.ri})</span>
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
               <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs your baseline</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: f.serif, fontSize: 22, color: t.success }}>{vsBaseline >= 0 ? "+" : ""}{vsBaseline}</span>
+                <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.success }}>{vsBaseline >= 0 ? "+" : ""}{vsBaseline}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>since {d.baseline.label}</span>
               </div>
             </div>
@@ -202,7 +202,7 @@ function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pil
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8 }}>
         <span style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.serif, fontSize: 38, lineHeight: 1, color: scoreColor(p.score) }}>{p.score}</span>
+          <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 38, lineHeight: 1, color: scoreColor(p.score) }}>{p.score}</span>
           <DeltaTag value={p.delta} suffix=" this fortnight" />
         </span>
         <Spark points={rangeSliceDated(p.trend, stamps, range, nowMs)} color={scoreColor(p.score)} width={70} height={26} />
@@ -228,7 +228,7 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
         <Eyebrow as="h2" tone="indigo"><span id="rix-pillars">The five pillars · weighted into RI</span></Eyebrow>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>open any pillar for its drivers and the one fix</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(5, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "repeat(5, minmax(0, 1fr))", gap: 14 }}>
         {d.pillars.map((p) => (
           <PillarCard key={p.key} p={p} lever={p.key === leverKey} active={p.key === activeKey} onOpen={() => onOpen(p.key)} range={range} stamps={d.trajectoryStamps} nowMs={d.meta.generatedAtMs} />
         ))}
@@ -249,18 +249,18 @@ export function PillarEvidence({ p }: { p: Pillar }) {
           <Title as="h3" size={24}>{p.label}</Title>
         </div>
         <span style={{ textAlign: "right" }}>
-          <span style={{ fontFamily: f.serif, fontSize: 40, color: scoreColor(p.score), lineHeight: 1 }}>{p.score}</span>
+          <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 40, color: scoreColor(p.score), lineHeight: 1 }}>{p.score}</span>
           <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}> / 100</span>
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, p.drivers.length))}, 1fr)`, gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, p.drivers.length))}, minmax(0, 1fr))`, gap: 14 }}>
         {p.drivers.map((dr) => (
           <MetricStat key={dr.label} label={dr.label} value={dr.value}
             tone={dr.tone === "good" ? "good" : dr.tone === "watch" ? "warn" : dr.tone === "miss" ? "bad" : "ink"}
             hint={dr.hint} meter={dr.meter} />
         ))}
       </div>
-      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 14 }}>
         <div style={{ padding: "14px 16px", background: t.success100, borderRadius: 12 }}>
           <Eyebrow tone="ink"><span style={{ color: t.success }}>Holding well</span></Eyebrow>
           <p style={{ margin: "6px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5 }}>{p.hold}</p>
@@ -316,12 +316,12 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 14 }}>
         <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>RI</span>
-        <span style={{ fontFamily: f.serif, fontSize: 22, color: t.inkSoft }}>{a.ri}</span>
+        <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.inkSoft }}>{a.ri}</span>
         <span aria-hidden="true" style={{ color: t.inkFaint }}>→</span>
-        <span style={{ fontFamily: f.serif, fontSize: 22, color: t.coal }}>{b.ri}</span>
+        <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.coal }}>{b.ri}</span>
         <DeltaTag value={b.ri - a.ri} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(5, 1fr)", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(5, minmax(0, 1fr))", gap: 10 }}>
         {d.pillarLabels.map((label, i) => {
           const delta = b.pillars[i] - a.pillars[i];
           const col = delta > 0 ? t.success : delta < 0 ? t.error : t.inkSoft;
@@ -346,7 +346,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
   const weakest = [...d.skills].sort((a, b) => a.score - b.score)[0];
   const lowSample = d.sessions < 8;
   return (
-    <div id="zone-competence" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.4fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-competence" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "1.4fr minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16, gap: 12 }}>
           <div>
@@ -423,16 +423,16 @@ export function BlindSpots({ d }: { d: Fixture }) {
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>% = frequency {d.target.hasCompany ? `at ${d.target.company}` : "in this role"}</span>
       </div>
       {d.blindSpots.length ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
           {d.blindSpots.map((b) => (
             <li key={b.competency} style={{ display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
-              <span style={{ fontFamily: f.serif, fontSize: 24, color: t.copper, width: 52, flexShrink: 0 }}>{b.frequencyPct}%</span>
-              <div style={{ flex: 1 }}>
+              <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 24, color: t.copper, width: 52, flexShrink: 0 }}>{b.frequencyPct}%</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
                 <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Practice ${b.competency}`}
-                style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans }}>
+                style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans, flexShrink: 0, whiteSpace: "nowrap" }}>
                 Practice
               </Button>
             </li>
@@ -467,7 +467,7 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
       {!hasVoice ? (
         <EmptyState title="No voice delivery read yet" need="Run a session in voice mode so we can measure pace, fillers, latency and energy." />
       ) : (
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(3, minmax(0, 1fr))", gap: 14 }}>
         <MetricStat label="Filler / min" value={`${c.fillerPerMin}`} tone={c.fillerPerMin <= 5 ? "good" : "warn"} meter={{ min: 0, max: 12, lo: 0, hi: 5, value: c.fillerPerMin, lowerBetter: true }} hint="comfortable ≤ 5" />
         <MetricStat label="Pace" value={`${c.paceWpm}`} unit="wpm" tone={c.paceWpm <= 160 ? "good" : "warn"} meter={{ min: 90, max: 200, lo: 120, hi: 160, value: c.paceWpm }} hint="120–160 ideal" />
         <MetricStat label="Silence ratio" value={`${c.silenceRatio}`} unit="%" tone={c.silenceRatio <= 15 ? "good" : "warn"} meter={{ min: 0, max: 40, lo: 0, hi: 15, value: c.silenceRatio, lowerBetter: true }} hint="dead air" />
@@ -576,7 +576,7 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
     { label: "Too long", n: ac.lengthMix.tooLong, color: t.error },
   ];
   return (
-    <div id="zone-craft" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.3fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-craft" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "1.3fr minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <Eyebrow as="h2">Answer craft · per-question verdicts</Eyebrow>
         <Title as="h3" size={20}>Quality across every answer</Title>
@@ -649,7 +649,7 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>pinned per type</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))", gap: 12 }}>
         {d.focusMetrics.map((fm) => (
           <div key={fm.type} style={{ border: `1px solid ${t.line}`, borderRadius: 12, padding: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
@@ -692,7 +692,7 @@ const KIND_META: Record<CrossInsight["kind"], { glyph: string; color: string; la
 
 export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean }) {
   return (
-    <div id="zone-patterns" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.4fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-patterns" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "1.4fr minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <Eyebrow as="h2" tone="indigo">Patterns over time · across sessions</Eyebrow>
         <Title as="h3" size={20}>What's moving, session to session</Title>
@@ -845,8 +845,8 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
       <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
         {d.followUps.map((q, i) => (
           <li key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
-            <span style={{ fontFamily: f.serif, fontSize: 18, color: t.indigo, width: 40, flexShrink: 0 }}>{q.freqPct}%</span>
-            <div style={{ flex: 1 }}>
+            <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 18, color: t.indigo, width: 40, flexShrink: 0 }}>{q.freqPct}%</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.45 }}>{q.question}</div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
@@ -871,7 +871,7 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
   ];
   const vColor = rv.verdict === "strong" ? t.success : rv.verdict === "weak" || rv.verdict === "red flags" ? t.error : t.warning;
   return (
-    <div id="zone-closing" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-closing" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginBottom: 14 }}>
           <div>
@@ -906,7 +906,7 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
             {d.resume.trend.length > 1 && <Spark points={d.resume.trend} color={t.copper} />}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: f.serif, fontSize: 44, lineHeight: 1, color: scoreColor(d.resume.score) }}>{d.resume.score}</span>
+            <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 44, lineHeight: 1, color: scoreColor(d.resume.score) }}>{d.resume.score}</span>
             <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>/ 100</span>
           </div>
           <div role="img" aria-label={`Resume grounding ${d.resume.score} of 100`} style={{ height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden", marginTop: 10 }}>
@@ -930,7 +930,7 @@ export function Coaching({ d, narrow }: { d: Fixture; narrow: boolean }) {
   if (!d.coaching) return null;
   const co = d.coaching;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
       <Card as="section" style={{ background: t.success100, border: `1px solid ${SUCCESS_LINE}` }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.success }}>Your edge</span></Eyebrow>
         <Title as="h3" size={20}>{co.strength.headline}</Title>
@@ -962,11 +962,11 @@ export function NegotiationCard({ d, narrow }: { d: Fixture; narrow: boolean }) 
           <Title as="h3" size={20}>Your negotiation behaviour</Title>
         </div>
         <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.serif, fontSize: 34, lineHeight: 1, color: scoreColor(n.score) }}>{n.score}</span>
+          <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 34, lineHeight: 1, color: scoreColor(n.score) }}>{n.score}</span>
           <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>/ 100</span>
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(4, minmax(0, 1fr))", gap: 12 }}>
         <MetricStat label="Outcome" value={n.outcome === "walked-away" ? "Walked" : n.outcome.charAt(0).toUpperCase() + n.outcome.slice(1)} tone={n.outcome === "accepted" ? "good" : "warn"} />
         <MetricStat label="Anchored at turn" value={`${n.anchorTurn}`} tone={n.anchorTurn <= 1 ? "good" : "warn"} hint="earlier is stronger" />
         <MetricStat label="Band traversed" value={`${n.bandTraversalPct}`} unit="%" tone={n.bandTraversalPct >= 60 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: n.bandTraversalPct }} hint="of negotiable band" />
@@ -1000,12 +1000,12 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
           <Title as="h3" size={20}>How much, how often, on what</Title>
         </div>
         <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.serif, fontSize: 18 }}>{d.cadence.totalSessions}</strong> sessions</span>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.serif, fontSize: 18 }}>{d.cadence.totalHours}</strong> hrs</span>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.serif, fontSize: 18 }}>{d.cadence.questions}</strong> questions</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.sans, fontWeight: 700, fontSize: 18 }}>{d.cadence.totalSessions}</strong> sessions</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.sans, fontWeight: 700, fontSize: 18 }}>{d.cadence.totalHours}</strong> hrs</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.sans, fontWeight: 700, fontSize: 18 }}>{d.cadence.questions}</strong> questions</span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "auto 1fr 1fr", gap: 22, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "auto minmax(0, 1fr) minmax(0, 1fr)", gap: 22, alignItems: "start" }}>
         <div>
           <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 }}>Last {d.cadence.weeks} weeks</div>
           <div role="img" aria-label={heatLabel} style={{ display: "grid", gridTemplateColumns: `14px repeat(${d.cadence.weeks}, 14px)`, gap: 4 }}>

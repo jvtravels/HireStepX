@@ -82,7 +82,7 @@ export function Eyebrow({ children, tone = "copper", as: As = "span" }: { childr
 
 export function Title({ children, as: As = "h3", size = 20 }: { children: React.ReactNode; as?: "h1" | "h2" | "h3"; size?: number }) {
   return (
-    <As style={{ margin: 0, fontFamily: f.serif, fontSize: size, fontWeight: 500, color: t.coal, letterSpacing: -0.3, lineHeight: 1.1 }}>
+    <As style={{ margin: 0, fontFamily: f.sans, fontSize: size, fontWeight: 700, color: t.coal, letterSpacing: -0.3, lineHeight: 1.1 }}>
       {children}
     </As>
   );
@@ -135,7 +135,7 @@ export function MetricStat({ label, value, unit, tone = "ink", hint, meter }: { 
     <div style={{ background: t.creamSoft, borderRadius: 12, padding: "12px 14px" }}>
       <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 6 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 28, color, lineHeight: 1 }}>{value}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{value}</span>
         {unit && <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>{unit}</span>}
       </div>
       {meter && <BandTick meter={meter} color={markerColor} />}
@@ -191,7 +191,7 @@ export function RiGauge({ ri, threshold, band, cohort, size = 220 }: { ri: numbe
         {typeof cohort === "number" && notch(cohort, t.indigo, 6)}
       </svg>
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: f.serif, fontSize: 64, lineHeight: 1, color: t.coal, fontWeight: 500 }}>{ri}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 64, lineHeight: 1, color: t.coal, fontWeight: 700 }}>{ri}</span>
         <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, marginTop: 2 }}>/ 100 · RI now</span>
         <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, marginTop: 8 }}>bar · <strong style={{ color: t.coal }}>{threshold}</strong></span>
       </div>
@@ -274,7 +274,7 @@ export function StarChips({ star }: { star: { S: boolean; T: boolean; A: boolean
    target for red flags, blind spots, and weak verdicts. */
 export function EvidenceQuote({ quote }: { quote: string }) {
   return (
-    <blockquote style={{ margin: "8px 0 0", padding: "8px 12px", borderRadius: 8, background: t.creamSoft, fontFamily: f.serif, fontSize: 14, fontStyle: "italic", color: t.coal, lineHeight: 1.5 }}>
+    <blockquote style={{ margin: "8px 0 0", padding: "8px 12px", borderRadius: 8, background: t.creamSoft, fontFamily: f.sans, fontSize: 14, fontStyle: "italic", color: t.coal, lineHeight: 1.5 }}>
       {quote}
     </blockquote>
   );

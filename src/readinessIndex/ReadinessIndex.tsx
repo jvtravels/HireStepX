@@ -57,7 +57,7 @@ function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "20px 22px 16px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
-            <span style={{ fontFamily: f.serif, fontSize: 30, lineHeight: 1, color: t.coal }}>{d.ri}</span>
+            <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 700, lineHeight: 1, color: t.coal }}>{d.ri}</span>
             <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft }}>RI</span>
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "4px 11px", borderRadius: 999, background: band.bg, color: band.fg, fontFamily: f.sans, fontSize: 12, fontWeight: 600 }}>
@@ -213,7 +213,7 @@ function EmptyAnalytics() {
   const router = useRouter();
   return (
     <CenterPane>
-      <h2 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: 0 }}>Your Readiness Index is waiting</h2>
+      <h2 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 700, color: t.coal, margin: 0 }}>Your Readiness Index is waiting</h2>
       <p style={{ fontFamily: f.sans, fontSize: 14.5, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Complete your first evaluated mock interview and this page fills with your target-specific readiness score, five pillars, blind spots, and a refresh queue.
       </p>
@@ -228,7 +228,7 @@ function EmptyAnalytics() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <CenterPane>
-      <h2 style={{ fontFamily: f.serif, fontSize: 24, color: t.coal, margin: 0 }}>Could not load your analytics</h2>
+      <h2 style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: t.coal, margin: 0 }}>Could not load your analytics</h2>
       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Something went wrong fetching your Readiness Index. This is usually transient. Try again in a moment.
       </p>
