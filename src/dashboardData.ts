@@ -25,6 +25,17 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): 
 export { scoreLabel };
 export type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState };
 
+/* HireStepX's users are ~all IST (UTC+5:30). Every "which calendar day is this
+   session/streak bucket in" check must anchor to IST, not the browser's local
+   timezone or a raw UTC truncation of the stored ISO timestamp — either one
+   drifts a same-day evening session into "yesterday" for roughly 19 of 24
+   hours and produces an off-by-one streak. */
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+export function toISTDateString(when: Date | number = Date.now()): string {
+  const t = typeof when === "number" ? when : when.getTime();
+  return new Date(t + IST_OFFSET_MS).toISOString().split("T")[0];
+}
+
 /* ─── Skill score helper ─── */
 function extractScore(raw: unknown): number {
   if (typeof raw === "number") return raw;
@@ -209,7 +220,7 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
     const durationMin = Math.ceil(rs.duration / 60);
     return {
       id: rs.id,
-      date: rs.date.split("T")[0],
+      date: toISTDateString(new Date(rs.date)),
       dateLabel,
       type,
       role: rs.target_role || targetRole || "Target Role",
@@ -224,12 +235,12 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
          for legacy pre-mvp-8 rows that have skill_scores but no coaching. */
       topStrength: rs.skill_scores
         ? strengthCopy(
-            Object.entries(rs.skill_scores).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0]
+            Object.entries(rs.skill_scores).sort(([, a], [, b]) => extractScore(b) - extractScore(a))[0]?.[0]
           ) || pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score)
         : pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score),
       topWeakness: rs.skill_scores
         ? gapCopy(
-            Object.entries(rs.skill_scores).sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0]
+            Object.entries(rs.skill_scores).sort(([, a], [, b]) => extractScore(a) - extractScore(b))[0]?.[0]
           ) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
         : pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3),
       focus: rs.focus,
@@ -563,7 +574,7 @@ export interface DailyChallenge {
 }
 
 export function getDailyChallenge(sessions: DashboardSession[], sk: SkillData[]): DailyChallenge {
-  const today = new Date().toISOString().split("T")[0];
+  const today = toISTDateString();
   const dayOfWeek = new Date().getDay();
   const weakest = sk.length > 0 ? [...sk].sort((a, b) => a.score - b.score)[0] : null;
 
@@ -593,7 +604,7 @@ export function getDailyChallenge(sessions: DashboardSession[], sk: SkillData[])
 /* ─── Practice Reminder ─── */
 export function getPracticeReminder(sessions: DashboardSession[], streak: number): string | null {
   if (sessions.length === 0) return "Start your first session today — the hardest part is beginning.";
-  const today = new Date().toISOString().split("T")[0];
+  const today = toISTDateString();
   const practicedToday = sessions.some(s => s.date === today);
   if (practicedToday) return null;
   if (streak >= 3) return `Don't break your ${streak}-day streak! Practice today to keep the momentum.`;
@@ -838,20 +849,18 @@ export function computeWeekActivity(sessions: DashboardSession[]): boolean[] {
 }
 
 export function computeStreak(sessions: DashboardSession[]): number {
-  const sorted = [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sessionDates = new Set(sessions.map(s => s.date));
   let streak = 0;
-  const checkDate = new Date();
-  checkDate.setHours(0, 0, 0, 0);
+  let checkTime = Date.now();
 
   for (let i = 0; i < 30; i++) {
-    const dateStr = checkDate.toISOString().split("T")[0];
-    const hasSession = sorted.some(s => s.date === dateStr);
-    if (hasSession) {
+    const dateStr = toISTDateString(checkTime);
+    if (sessionDates.has(dateStr)) {
       streak++;
     } else if (streak > 0) {
       break;
     }
-    checkDate.setDate(checkDate.getDate() - 1);
+    checkTime -= 24 * 60 * 60 * 1000;
   }
   return streak;
 }

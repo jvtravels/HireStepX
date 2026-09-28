@@ -944,6 +944,15 @@ create trigger trg_bump_sessions_lifetime
   after insert on sessions
   for each row execute function bump_sessions_started_lifetime();
 
+-- DB audit (2026-09-28): update-profile.ts's ALLOWED_COLUMNS has permitted
+-- writes to `city` since it was added, and the Settings UI + interview-setup
+-- flow (Onboarding.tsx, DashboardSettings.tsx, useInterviewEngine.ts) have
+-- been reading/writing it as if the column existed — but it was never
+-- actually created here. Every save silently hit update-profile.ts's
+-- column-stripping retry loop, so the value never persisted and every
+-- consumer always saw undefined.
+alter table profiles add column if not exists city text;
+
 -- ═══════════════════════════════════════════════════════
 -- Support messages (Help & Support widget "Send Feedback")
 -- ═══════════════════════════════════════════════════════

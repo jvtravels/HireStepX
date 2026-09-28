@@ -12,10 +12,12 @@
  * scope note in app/(employer) and the schema comment in
  * supabase-schema.sql ("Employer talent-roster feature").
  *
- * Pending rows are reviewed by a human admin via the "Employers" tab in
- * the admin panel (server-handlers/admin-data.ts, actions "employers" /
- * "approve-employer" / "reject-employer") — this handler only ever reads
- * and writes a fresh "pending" row; it never mutates status itself.
+ * Employer signup no longer requires admin approval — a submission is
+ * live ("approved") immediately. The admin panel's "Employers" tab
+ * (server-handlers/admin-data.ts, actions "employers" / "approve-employer" /
+ * "reject-employer") is kept as a post-hoc moderation tool: "reject"
+ * suspends an employer (blocks server-handlers/employer-requirements.ts's
+ * status check) and "approve" reinstates one.
  */
 
 export const config = { runtime: "edge" };
@@ -205,6 +207,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const existing = uploadedLogoPath ? null : await fetchEmployer(userId);
     const logoPath = uploadedLogoPath ?? existing?.logo_path ?? null;
 
+    const now = new Date().toISOString();
     const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" },
@@ -214,9 +217,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         website,
         gstin,
         logo_path: logoPath,
-        status: "pending",
-        submitted_at: new Date().toISOString(),
-        approved_at: null,
+        status: "approved",
+        submitted_at: now,
+        approved_at: now,
       }]),
     });
 
@@ -226,7 +229,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       return new Response(JSON.stringify({ error: "Failed to submit company profile" }), { status: 500, headers });
     }
 
-    return new Response(JSON.stringify({ status: "pending", companyName, website, gstin, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
+    return new Response(JSON.stringify({ status: "approved", companyName, website, gstin, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile POST threw", { code: "employer_profile_post_unexpected_error", error: msg.slice(0, 200), userId });

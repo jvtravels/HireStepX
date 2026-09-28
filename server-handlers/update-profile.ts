@@ -44,6 +44,7 @@ export const ALLOWED_COLUMNS = new Set<string>([
   "interview_focus",
   "session_length",
   "feedback_style",
+  "is_profile_public",
 ]);
 
 export interface ProfileUpdate {

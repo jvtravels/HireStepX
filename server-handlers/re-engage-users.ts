@@ -28,7 +28,7 @@ interface UserRow {
 
 interface SessionRow {
   score: number;
-  skill_scores: Record<string, number> | null;
+  skill_scores: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -56,11 +56,19 @@ function getEmailTier(daysSinceLastSession: number, lastEmailSent: string | null
   return null;
 }
 
-function getWeakestSkill(skillScores: Record<string, number> | null): string | null {
+/* skill_scores values can be a plain number or a legacy { score, reason } wrapper —
+   mirrors src/sessionDetailHelpers.ts's extractScore for the same shape. */
+function extractSkillScore(raw: unknown): number {
+  if (typeof raw === "number") return raw;
+  if (typeof raw === "object" && raw !== null && "score" in raw) return (raw as { score: number }).score;
+  return 0;
+}
+
+function getWeakestSkill(skillScores: Record<string, unknown> | null): string | null {
   if (!skillScores) return null;
   const entries = Object.entries(skillScores);
   if (entries.length === 0) return null;
-  return entries.sort(([, a], [, b]) => a - b)[0][0];
+  return entries.sort(([, a], [, b]) => extractSkillScore(a) - extractSkillScore(b))[0][0];
 }
 
 const FREE_SESSION_LIMIT = 2;

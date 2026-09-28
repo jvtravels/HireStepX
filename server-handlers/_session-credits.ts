@@ -163,28 +163,32 @@ export async function consumeSessionCredit(
   // This is distinct from "balance = 0": if the function were found and ran, it
   // would always return 200 (the boolean return value encodes the balance check).
   // A non-200 means the function is missing or misconfigured — not that the user
-  // is out of credits. Fall back to a direct read-then-PATCH so users with a
-  // real balance can still start sessions despite the RPC misconfiguration.
-  // Non-atomic (rare double-spend if two requests race), but better than
-  // hard-blocking users who legitimately paid.
+  // is out of credits. Fall back to a direct PATCH so users with a real balance
+  // can still start sessions despite the RPC misconfiguration — but keep it a
+  // compare-and-swap (filter on the balance we just read, ask for the updated
+  // row back) so two racing requests can't both decrement the same credit: the
+  // loser's filter matches zero rows once the winner's PATCH lands first, and
+  // that's reported back as an empty array rather than a false "success".
   console.error(
-    `consume_session_credit RPC failed (${res.status}) — falling back to direct PATCH for user ${userId}`,
+    `consume_session_credit RPC failed (${res.status}) — falling back to a CAS PATCH for user ${userId}`,
   );
   const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
   if (current <= 0) return false; // genuinely out of credits
 
   const patchRes = await fetchImpl(
-    `${baseUrl}/rest/v1/session_credits?user_id=eq.${encodeURIComponent(userId)}`,
+    `${baseUrl}/rest/v1/session_credits?user_id=eq.${encodeURIComponent(userId)}&balance=eq.${current}`,
     {
       method: "PATCH",
       headers: authHeaders(serviceKey, {
         "Content-Type": "application/json",
-        Prefer: "return=minimal",
+        Prefer: "return=representation",
       }),
       body: JSON.stringify({ balance: current - 1, updated_at: new Date().toISOString() }),
     },
   );
-  return patchRes.ok;
+  if (!patchRes.ok) return false;
+  const updated = await patchRes.json().catch(() => []);
+  return Array.isArray(updated) && updated.length > 0;
 }
 
 /** Revoke a user's session credits by setting the ledger balance to an absolute

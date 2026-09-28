@@ -104,15 +104,15 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  target_role: string;
-  target_company: string;
-  city: string;
-  industry: string;
-  interview_date: string;
-  experience_level: string;
-  learning_style: string;
-  preferred_session_length: number;
-  interview_types: string[];
+  target_role: string | null;
+  target_company: string | null;
+  city: string | null;
+  industry: string | null;
+  interview_date: string | null;
+  experience_level: string | null;
+  learning_style: string | null;
+  preferred_session_length: number | null;
+  interview_types: string[] | null;
   resume_file_name: string;
   resume_text: string;
   resume_data: Record<string, unknown> | null;
@@ -135,6 +135,16 @@ export interface Profile {
       deletion; profile rows linger for the 30-day grace period. */
   deleted_at: string | null;
   created_at: string;
+  /** Whether the /profile/:id public bio page is reachable for this user. */
+  is_profile_public: boolean;
+  /** Monotonic high-water mark of sessions started, bumped by a DB trigger —
+      never decreases even across refunds/deletes. Gates some quota checks. */
+  sessions_started_lifetime: number;
+  started_session_ids: string[];
+  started_session_ts: string[];
+  /** ISO date of the last re-engagement lifecycle email sent (server-handlers/re-engage-users.ts). */
+  re_engage_sent: string | null;
+  last_summary_email_at: string | null;
 }
 
 export interface SessionRecord {

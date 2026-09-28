@@ -89,6 +89,7 @@ describe("sanitizeUpdate", () => {
       "interview_date",
       "interview_focus",
       "interview_types",
+      "is_profile_public",
       "learning_style",
       "name",
       "practice_timestamps",

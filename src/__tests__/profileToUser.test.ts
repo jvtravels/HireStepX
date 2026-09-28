@@ -34,6 +34,12 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     referred_by: null,
     deleted_at: null,
     created_at: "2026-01-01T00:00:00Z",
+    is_profile_public: false,
+    sessions_started_lifetime: 0,
+    started_session_ids: [],
+    started_session_ts: [],
+    re_engage_sent: null,
+    last_summary_email_at: null,
     ...overrides,
   };
 }

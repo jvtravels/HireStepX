@@ -90,6 +90,7 @@ interface SessionRow {
   created_at: string;
   target_role: string | null;
   target_company: string | null;
+  negotiation_metrics: Record<string, unknown> | null;
 }
 
 interface ProfileRow {
@@ -383,6 +384,7 @@ async function readShare(token: string, headers: Record<string, string>, req?: R
         durationSec: session.duration,
         date: session.created_at,
         skillScores: session.skill_scores,
+        negotiationMetrics: session.negotiation_metrics,
         referralCode: profile?.referral_code || null,
       },
       expiresAt: share.expires_at,

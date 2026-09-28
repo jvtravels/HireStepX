@@ -25,6 +25,7 @@ interface SharedReportPayload {
     durationSec: number;
     date: string;
     skillScores: Record<string, unknown> | null;
+    negotiationMetrics?: Record<string, unknown> | null;
     referralCode?: string | null;
   };
   expiresAt: string;
