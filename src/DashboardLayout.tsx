@@ -66,7 +66,7 @@ const prefetchMap: Record<string, () => void> = {
   sessions: () => { import("./SessionsV2"); },
   calendar: () => { import("./DashboardCalendar"); },
   analytics: () => { import("./DashboardAnalytics"); },
-  resume: () => { import("./DashboardResume"); },
+  resume: () => { import("./ResumeV2"); },
   jobs: () => { import("./DashboardJobs"); },
   settings: () => { import("./DashboardSettings"); },
 };
