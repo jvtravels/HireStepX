@@ -75,10 +75,10 @@ describe("DashboardJobs", () => {
     expect(within(table).getByText("We're growing the payments platform team.")).toBeInTheDocument();
 
     // Filter dropdowns are populated from the real fetched match data.
-    expect(screen.getByRole("combobox", { name: "Location" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Job type" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Experience" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Industry" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Location" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Job type" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Experience" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Industry" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /View details for Backend Engineer at Acme Corp/ }));
 

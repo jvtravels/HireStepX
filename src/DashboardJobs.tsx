@@ -12,12 +12,48 @@
    Search, the column filters, sorting, and pagination below all operate
    client-side over that one fetched list — every filter option and every
    cell value is read straight off real match data, nothing here is
-   fabricated to fill out the table. */
+   fabricated to fill out the table.
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+   Table/toolbar/pagination all reuse the same shadcn primitives as
+   SessionsV2.tsx (Table, Input, Select, DropdownMenu-based FilterPill,
+   Button) rather than hand-rolled table/select/button markup. */
+
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PlusIcon } from "lucide-react";
+import {
+  PlusIcon,
+  SearchIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  EyeIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
@@ -61,6 +97,11 @@ interface HiringActivity {
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25];
 
 type SortKey = "recent" | "match" | "salary";
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "recent", label: "Most recent" },
+  { value: "match", label: "Highest match" },
+  { value: "salary", label: "Highest salary" },
+];
 
 function experienceBucket(m: JobMatch): string | null {
   const min = m.experienceMin ?? m.experienceMax;
@@ -71,67 +112,40 @@ function experienceBucket(m: JobMatch): string | null {
   return "8+ years";
 }
 
-function SearchIcon() {
-  return (
-    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function PageArrowIcon({ dir, double }: { dir: "left" | "right"; double?: boolean }) {
-  const points = dir === "left" ? "15 18 9 12 15 6" : "9 18 15 12 9 6";
-  return (
-    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points={points} />
-      {double && <polyline points={dir === "left" ? "21 18 15 12 21 6" : "3 18 9 12 3 6"} />}
-    </svg>
-  );
-}
-
-const selectStyle: CSSProperties = {
-  fontFamily: f.sans, fontSize: 12.5, color: t.coal, background: t.white,
-  border: `1px solid ${t.line}`, borderRadius: 8, padding: "8px 10px",
-  appearance: "none", cursor: "pointer",
-};
-
-function FilterSelect({ value, onChange, options, placeholder }: {
-  value: string; onChange: (v: string) => void; options: string[]; placeholder: string;
+function FilterPill({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
 }) {
+  const display = value ? `${label}: ${value}` : label;
   return (
-    <div style={{ position: "relative" }}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{ ...selectStyle, paddingRight: 26 }}
-        aria-label={placeholder}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
-        ))}
-      </select>
-      <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: t.inkFaint, pointerEvents: "none" }}>
-        <ChevronDownIcon />
-      </span>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0 }}
+        >
+          {display}
+          <ChevronDownIcon size={12} aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
+          <DropdownMenuRadioItem value="">All</DropdownMenuRadioItem>
+          {options.map((o) => (
+            <DropdownMenuRadioItem key={o} value={o}>
+              {o}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -265,246 +279,224 @@ export default function DashboardJobs() {
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
           <div style={{ padding: "16px 18px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
             <div style={{ position: "relative", flex: "1 1 240px", minWidth: 200 }}>
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: t.inkFaint }}>
-                <SearchIcon />
-              </span>
-              <input
+              <SearchIcon
+                size={14}
+                color={t.inkFaint}
+                aria-hidden="true"
+                style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}
+              />
+              <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by job title, company, or location"
-                style={{
-                  width: "100%", boxSizing: "border-box", padding: "9px 12px 9px 32px", borderRadius: 8,
-                  border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13, color: t.coal,
-                }}
+                style={{ paddingLeft: 32, height: 36, borderRadius: 8, background: t.white }}
               />
             </div>
-            <FilterSelect value={locationFilter} onChange={setLocationFilter} options={locationOptions} placeholder="Location" />
-            <FilterSelect value={jobTypeFilter} onChange={setJobTypeFilter} options={jobTypeOptions} placeholder="Job type" />
-            <FilterSelect value={experienceFilter} onChange={setExperienceFilter} options={experienceOptions} placeholder="Experience" />
-            <FilterSelect value={industryFilter} onChange={setIndustryFilter} options={industryOptions} placeholder="Industry" />
+            <FilterPill label="Location" value={locationFilter} options={locationOptions} onChange={setLocationFilter} />
+            <FilterPill label="Job type" value={jobTypeFilter} options={jobTypeOptions} onChange={setJobTypeFilter} />
+            <FilterPill label="Experience" value={experienceFilter} options={experienceOptions} onChange={setExperienceFilter} />
+            <FilterPill label="Industry" value={industryFilter} options={industryOptions} onChange={setIndustryFilter} />
             <div style={{ marginLeft: "auto" }}>
-              <div style={{ position: "relative" }}>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} style={{ ...selectStyle, paddingRight: 26 }} aria-label="Sort">
-                  <option value="recent">Sort: Most recent</option>
-                  <option value="match">Sort: Highest match</option>
-                  <option value="salary">Sort: Highest salary</option>
-                </select>
-                <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: t.inkFaint, pointerEvents: "none" }}>
-                  <ChevronDownIcon />
-                </span>
-              </div>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+                <SelectTrigger size="sm" style={{ borderRadius: 8, fontFamily: f.sans, fontSize: 12.5, color: t.coal }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>Sort: {o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div style={{ padding: "12px 18px", background: t.indigo100, borderBottom: `1px solid ${t.line}` }}>
-            <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, margin: 0, lineHeight: 1.5 }}>
-              Employers are interested in you! These opportunities are based on your profile, skills, and experience.
-            </p>
-          </div>
-
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: f.sans }}>
-              <thead>
-                <tr>
-                  {["Company", "Job title", "Location", "Experience", "Job type", "Salary", "Employer interest", "Date", ""].map((h) => (
-                    <th
-                      key={h || "actions"}
-                      style={{
-                        textAlign: "left", padding: "10px 14px", fontSize: 11, letterSpacing: 0.4,
-                        textTransform: "uppercase", color: t.inkFaint, background: t.rowTint,
-                        borderBottom: `1px solid ${t.line}`, whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.length === 0 && (
-                  <tr>
-                    <td colSpan={9} style={{ padding: "24px 14px", textAlign: "center", fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
-                      No opportunities match these filters.
-                    </td>
-                  </tr>
-                )}
-                {pageRows.map((r, i) => {
-                  const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
-                  const closed = r.status === "closed" || r.status === "failed";
-                  const comp = formatComp(r.budgetMin, r.budgetMax);
-                  const exp = formatExperience(r.experienceMin, r.experienceMax);
-                  const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
-                  const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
-                  return (
-                    <tr
-                      key={i}
-                      style={{
-                        background: r.unlocked ? t.indigo100 : "transparent",
-                        borderBottom: i < pageRows.length - 1 ? `1px solid ${t.line}` : "none",
-                      }}
-                    >
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {r.companyLogoPath ? (
-                            <img
-                              src={r.companyLogoPath}
-                              alt={`${r.companyName} logo`}
-                              width={30}
-                              height={30}
-                              style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
-                            />
-                          ) : (
-                            <div style={{
-                              width: 30, height: 30, borderRadius: 6, background: t.cream, border: `1px solid ${t.line}`,
-                              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                              fontFamily: f.serif, fontSize: 13, color: t.inkSoft,
-                            }}>
-                              {r.companyName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, color: t.coal, whiteSpace: "nowrap" }}>{r.companyName}</div>
-                            {r.preferredIndustry && (
-                              <div style={{ fontSize: 11, color: t.inkFaint }}>{r.preferredIndustry}</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 14px", maxWidth: 260, verticalAlign: "top" }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 600, color: t.coal }}>{r.roleTitle}</div>
-                        {r.description && (
-                          <div style={{ fontSize: 11.5, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                            {r.description}
-                          </div>
-                        )}
-                        {r.skills.length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                            {r.skills.slice(0, 3).map((s, si) => (
-                              <span key={si} style={{ fontSize: 10.5, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "2px 7px", borderRadius: 999 }}>
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top", whiteSpace: "nowrap" }}>
-                        {r.location || "Not specified"}{mode ? <div style={{ fontSize: 11, color: t.inkFaint }}>{mode}</div> : null}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top", whiteSpace: "nowrap" }}>
-                        {exp || "Not specified"}
-                      </td>
-                      <td style={{ padding: "12px 14px", verticalAlign: "top", whiteSpace: "nowrap" }}>
-                        {jobType ? (
-                          <span style={{
-                            fontFamily: f.sans, fontSize: 11, fontWeight: 600,
-                            color: jobType === "Contract" ? t.warningInk : t.successInk,
-                            background: jobType === "Contract" ? t.warning100 : t.success100,
-                            padding: "3px 9px", borderRadius: 999,
+          <Table aria-label="Job matches">
+            <TableHeader>
+              <TableRow style={{ background: t.rowTint }}>
+                {["Company", "Job title", "Location", "Experience", "Job type", "Salary", "Employer interest", "Date", ""].map((h) => (
+                  <TableHead
+                    key={h || "actions"}
+                    style={{
+                      fontFamily: f.sans, fontSize: 11, letterSpacing: 0.4,
+                      textTransform: "uppercase", color: t.inkFaint, padding: "10px 14px",
+                    }}
+                  >
+                    {h}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pageRows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} style={{ padding: "24px 14px", textAlign: "center", fontFamily: f.sans, fontSize: 13, color: t.inkFaint, whiteSpace: "normal" }}>
+                    No opportunities match these filters.
+                  </TableCell>
+                </TableRow>
+              )}
+              {pageRows.map((r, i) => {
+                const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
+                const closed = r.status === "closed" || r.status === "failed";
+                const comp = formatComp(r.budgetMin, r.budgetMax);
+                const exp = formatExperience(r.experienceMin, r.experienceMax);
+                const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
+                const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
+                return (
+                  <TableRow key={i} style={{ background: r.unlocked ? t.indigo100 : "transparent" }}>
+                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {r.companyLogoPath ? (
+                          <img
+                            src={r.companyLogoPath}
+                            alt={`${r.companyName} logo`}
+                            width={30}
+                            height={30}
+                            style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: 30, height: 30, borderRadius: 6, background: t.cream, border: `1px solid ${t.line}`,
+                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                            fontFamily: f.serif, fontSize: 13, color: t.inkSoft,
                           }}>
-                            {jobType}
+                            {r.companyName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, color: t.coal, whiteSpace: "nowrap" }}>{r.companyName}</div>
+                          {r.preferredIndustry && (
+                            <div style={{ fontSize: 11, color: t.inkFaint }}>{r.preferredIndustry}</div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", maxWidth: 260, verticalAlign: "top", whiteSpace: "normal" }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: t.coal }}>{r.roleTitle}</div>
+                      {r.description && (
+                        <div style={{ fontSize: 11.5, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                          {r.description}
+                        </div>
+                      )}
+                      {r.skills.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                          {r.skills.slice(0, 3).map((s, si) => (
+                            <span key={si} style={{ fontSize: 10.5, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "2px 7px", borderRadius: 999 }}>
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                      {r.location || "Not specified"}{mode ? <div style={{ fontSize: 11, color: t.inkFaint }}>{mode}</div> : null}
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                      {exp || "Not specified"}
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top" }}>
+                      {jobType ? (
+                        <span style={{
+                          fontFamily: f.sans, fontSize: 11, fontWeight: 600,
+                          color: jobType === "Contract" ? t.warningInk : t.successInk,
+                          background: jobType === "Contract" ? t.warning100 : t.success100,
+                          padding: "3px 9px", borderRadius: 999,
+                        }}>
+                          {jobType}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: t.inkFaint }}>—</span>
+                      )}
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.coal, verticalAlign: "top" }}>
+                      {comp || "Not disclosed"}
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
+                        {r.unlocked ? (
+                          <span style={{
+                            fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
+                            background: t.cream, padding: "3px 9px", borderRadius: 999,
+                          }}>
+                            CONTACTED
                           </span>
                         ) : (
-                          <span style={{ fontSize: 12, color: t.inkFaint }}>—</span>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: t.coal, verticalAlign: "top", whiteSpace: "nowrap" }}>
-                        {comp || "Not disclosed"}
-                      </td>
-                      <td style={{ padding: "12px 14px", verticalAlign: "top", maxWidth: 220 }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
-                          {r.unlocked ? (
-                            <span style={{
-                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
-                              background: t.cream, padding: "3px 9px", borderRadius: 999,
-                            }}>
-                              CONTACTED
-                            </span>
-                          ) : (
-                            <span style={{
-                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.successInk,
-                              background: t.success100, padding: "3px 9px", borderRadius: 999,
-                            }}>
-                              {r.matchScore}% INTERESTED
-                            </span>
-                          )}
-                          {closed && !r.unlocked && (
-                            <span style={{
-                              fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
-                              background: t.cream, padding: "2px 8px", borderRadius: 999,
-                            }}>
-                              ROLE CLOSED
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 11, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
-                      </td>
-                      <td style={{ padding: "12px 14px", fontSize: 12, color: t.inkFaint, verticalAlign: "top", whiteSpace: "nowrap" }}>
-                        {daysAgo(r.matchedAt)}
-                        {isNew && (
                           <span style={{
-                            display: "block", marginTop: 4, fontFamily: f.mono, fontSize: 9.5, letterSpacing: 0.4,
-                            color: t.info, background: t.info100, padding: "2px 7px", borderRadius: 999, width: "fit-content",
+                            fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.successInk,
+                            background: t.success100, padding: "3px 9px", borderRadius: 999,
                           }}>
-                            NEW
+                            {r.matchScore}% INTERESTED
                           </span>
                         )}
-                      </td>
-                      <td style={{ padding: "12px 14px", verticalAlign: "top" }}>
-                        <button
-                          type="button"
-                          onClick={() => setSelected(r)}
-                          aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
-                          className="hsx-btn hsx-btn-icon-outline"
-                          style={{
-                            width: 36, height: 36, borderRadius: 8,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <EyeIcon />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {closed && !r.unlocked && (
+                          <span style={{
+                            fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
+                            background: t.cream, padding: "2px 8px", borderRadius: 999,
+                          }}>
+                            ROLE CLOSED
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", fontSize: 12, color: t.inkFaint, verticalAlign: "top" }}>
+                      {daysAgo(r.matchedAt)}
+                      {isNew && (
+                        <span style={{
+                          display: "block", marginTop: 4, fontFamily: f.mono, fontSize: 9.5, letterSpacing: 0.4,
+                          color: t.info, background: t.info100, padding: "2px 7px", borderRadius: 999, width: "fit-content",
+                        }}>
+                          NEW
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top" }}>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
+                        onClick={() => setSelected(r)}
+                      >
+                        <EyeIcon aria-hidden="true" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
 
           <div style={{ padding: "12px 18px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
                 Showing {filtered.length === 0 ? 0 : (pageSafe - 1) * rowsPerPage + 1}–{Math.min(pageSafe * rowsPerPage, filtered.length)} of {filtered.length} opportunities
               </span>
-              <div style={{ position: "relative" }}>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                  style={{ ...selectStyle, paddingRight: 24, fontSize: 12 }}
-                  aria-label="Rows per page"
-                >
+              <Select value={String(rowsPerPage)} onValueChange={(v) => setRowsPerPage(Number(v))}>
+                <SelectTrigger size="sm" style={{ borderRadius: 6, fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {ROWS_PER_PAGE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>{n} / page</option>
+                    <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
                   ))}
-                </select>
-              </div>
+                </SelectContent>
+              </Select>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <button type="button" onClick={() => setPage(1)} disabled={pageSafe <= 1} aria-label="First page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe <= 1)}>
-                <PageArrowIcon dir="left" double />
-              </button>
-              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={pageSafe <= 1} aria-label="Previous page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe <= 1)}>
-                <PageArrowIcon dir="left" />
-              </button>
+              <Button variant="outline" size="icon-sm" aria-label="First page" disabled={pageSafe <= 1} onClick={() => setPage(1)}>
+                <ChevronsLeftIcon aria-hidden="true" />
+              </Button>
+              <Button variant="outline" size="icon-sm" aria-label="Previous page" disabled={pageSafe <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                <ChevronLeftIcon aria-hidden="true" />
+              </Button>
               <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, padding: "0 8px" }}>
                 Page {pageSafe} of {totalPages}
               </span>
-              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={pageSafe >= totalPages} aria-label="Next page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe >= totalPages)}>
-                <PageArrowIcon dir="right" />
-              </button>
-              <button type="button" onClick={() => setPage(totalPages)} disabled={pageSafe >= totalPages} aria-label="Last page" className="hsx-btn hsx-btn-icon-outline" style={pagerBtnStyle(pageSafe >= totalPages)}>
-                <PageArrowIcon dir="right" double />
-              </button>
+              <Button variant="outline" size="icon-sm" aria-label="Next page" disabled={pageSafe >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                <ChevronRightIcon aria-hidden="true" />
+              </Button>
+              <Button variant="outline" size="icon-sm" aria-label="Last page" disabled={pageSafe >= totalPages} onClick={() => setPage(totalPages)}>
+                <ChevronsRightIcon aria-hidden="true" />
+              </Button>
             </div>
           </div>
         </div>
@@ -517,13 +509,4 @@ export default function DashboardJobs() {
       {selected && <JobDetailModal job={selected} onClose={() => setSelected(null)} />}
     </>
   );
-}
-
-function pagerBtnStyle(disabled: boolean): CSSProperties {
-  return {
-    width: 30, height: 30, borderRadius: 7,
-    color: disabled ? t.inkFaintWeak : t.inkSoft,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.6 : 1,
-  };
 }
