@@ -154,7 +154,7 @@ function FilterPill({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 44, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
         >
@@ -386,7 +386,7 @@ export default function DashboardJobs() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by job title, company, or location"
-                style={{ paddingLeft: 32, height: 36, borderRadius: 8, background: t.white }}
+                style={{ paddingLeft: 32, height: 44, borderRadius: 8, background: t.white }}
               />
             </div>
             <FilterPill label="Location" value={locationFilter} options={locationOptions} onChange={setLocationFilter} />
@@ -426,7 +426,7 @@ export default function DashboardJobs() {
                           setExperienceFilter("");
                           setIndustryFilter("");
                         }}
-                        style={{ marginTop: 4, borderRadius: 8, height: 32, fontFamily: f.sans, fontSize: 12.5, fontWeight: 500 }}
+                        style={{ marginTop: 4, borderRadius: 8, height: 44, fontFamily: f.sans, fontSize: 12.5, fontWeight: 500 }}
                       >
                         Clear filters
                       </Button>
@@ -444,21 +444,19 @@ export default function DashboardJobs() {
                 return (
                   <TableRow
                     key={i}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
                     onClick={() => setSelected(r)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelected(r);
-                      }
-                    }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                    style={{ cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
+                    style={{ cursor: "pointer", minHeight: 72, transition: `background ${dur.instant} ${ease.snap}` }}
                   >
                     <TableCell style={{ width: "20%", minWidth: 200, padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
+                      <button
+                        type="button"
+                        className="sr-only"
+                        onClick={() => setSelected(r)}
+                      >
+                        {`View details for ${r.roleTitle} at ${r.companyName}`}
+                      </button>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
                         {r.companyLogoPath ? (
                           <img
@@ -466,6 +464,7 @@ export default function DashboardJobs() {
                             alt={`${r.companyName} logo`}
                             width={32}
                             height={32}
+                            loading="lazy"
                             style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
                           />
                         ) : (
@@ -502,17 +501,17 @@ export default function DashboardJobs() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                       <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.location || "Not specified"}</div>
                       {mode && <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
                       {exp || "Not specified"}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                       {jobType ? <Badge tone="neutral">{jobType}</Badge> : <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
                       {comp || "Not disclosed"}
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
@@ -534,7 +533,7 @@ export default function DashboardJobs() {
                       </div>
                       <div style={{ fontSize: textSize.sm, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
                     </TableCell>
-                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.sm, color: t.inkFaint, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.sm, color: t.inkFaint, verticalAlign: "top", whiteSpace: "normal" }}>
                       {daysAgo(r.matchedAt)}
                       {isNew && (
                         <div style={{ marginTop: 4, width: "fit-content" }}>

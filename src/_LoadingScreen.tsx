@@ -50,7 +50,7 @@ export default function LoadingScreen({
             margin: "0 auto 24px",
           }}
         />
-        <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 30, width: "auto" }} priority />
+        <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ display: "block", height: 30, width: "auto", margin: "0 auto" }} priority />
         {title && (
           <h1 style={{ marginTop: 24, fontSize: 28, color: t.coal, fontWeight: 400, letterSpacing: "-0.02em" }}>{title}</h1>
         )}

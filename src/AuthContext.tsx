@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, ty
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { Button } from "@/components/ui/button";
+import LoadingScreen from "./_LoadingScreen";
 import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
   clearSessionStart,
@@ -9,7 +10,6 @@ import {
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
 import { isSlowConnection, sendGtagEvent } from "./_browser-api-guards";
-import { tokens } from "./auth/_tokens";
 import {
   decideDeviceAction,
   markDeviceGrace,
@@ -2225,15 +2225,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn, loading, user, router, pathname]);
 
-  if (loading || (!isLoggedIn && hasStoredSession())) return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: tokens.cream, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.18)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 16, height: 16, border: `2px solid ${tokens.indigoRing}`, borderTopColor: tokens.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      </div>
-      <span style={{ fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
+  if (loading || (!isLoggedIn && hasStoredSession())) return <LoadingScreen />;
   if (!isLoggedIn) return null;
   if (user && !user.hasCompletedOnboarding && !getLocalOnboardingDone(user.id) && !["/onboarding", "/interview", "/onboarding/complete"].includes(pathname) && !pathname.startsWith("/session/")) return null;
 
@@ -2267,15 +2259,7 @@ export function RequireAuthOnly({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn, loading, router, pathname]);
 
-  if (loading || (!isLoggedIn && hasStoredSession())) return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: tokens.cream, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1px solid oklch(0.359 0.135 278.697 / 0.18)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 16, height: 16, border: `2px solid ${tokens.indigoRing}`, borderTopColor: tokens.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      </div>
-      <span style={{ fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: tokens.inkSoft }}>Loading...</span>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
+  if (loading || (!isLoggedIn && hasStoredSession())) return <LoadingScreen />;
   if (!isLoggedIn) return null;
 
   return <>{children}</>;
