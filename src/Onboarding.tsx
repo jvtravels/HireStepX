@@ -17,6 +17,7 @@ import {
 } from "./onboarding/Panels";
 import { tokens as ot } from "./auth/_tokens";
 import { detectResumeRoleMismatch } from "../server-handlers/_resume-role-match";
+import LoadingScreen from "./_LoadingScreen";
 
 const OB_STEP_KEY = "hirestepx_ob_step";
 const OB_FORM_KEY = "hirestepx_ob_form";
@@ -818,25 +819,7 @@ export default function Onboarding() {
   // section means returning users no longer see a 1-2s flash of
   // onboarding before the redirect fires. Matches /loading.tsx style.
   if (authLoading || shouldRedirectAway) {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-        style={{ minHeight: "100vh", background: ot.cream, display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        <div
-          style={{
-            width: 36, height: 36,
-            border: "2px solid rgba(180,83,9,0.15)",
-            borderTopColor: "#312E81",
-            borderRadius: "50%",
-            animation: "ob-spin 800ms linear infinite",
-          }}
-        />
-        <style>{`@keyframes ob-spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Inline warning when the entered target role doesn't match the resume's

@@ -1,25 +1,44 @@
 import Image from "next/image";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 
-/* The one full-page loading screen for the whole product — every route
-   loading.tsx, dynamic-import fallback, and full-screen "waiting on the
-   server" state renders this instead of a bespoke spinner/skeleton, so a
-   user never sees two different loading treatments in the same session. */
-export default function LoadingScreen({ message }: { message?: string }) {
+/* The one loading animation for the whole product — every route
+   loading.tsx, dynamic-import fallback, and full-page/full-section
+   "waiting on the server" state renders this instead of a bespoke
+   spinner/skeleton, so a user never sees two different loading
+   treatments in the same session.
+
+   `fullScreen` (default true) covers the page itself, e.g. a route's
+   loading.tsx. Pass `false` when embedding inside a shell that already
+   owns the page background/min-height (e.g. a results page with its
+   own back button above the loading state) — it then just centers in
+   whatever space its parent gives it. `title`/`footer` are optional
+   for screens that want more context than a single message line. */
+export default function LoadingScreen({
+  message,
+  title,
+  footer,
+  fullScreen = true,
+}: {
+  message?: string;
+  title?: string;
+  footer?: string;
+  fullScreen?: boolean;
+}) {
   return (
     <div
       role="status"
       aria-live="polite"
       aria-busy="true"
       style={{
-        minHeight: "100vh",
-        background: t.cream,
+        minHeight: fullScreen ? "100vh" : undefined,
+        background: fullScreen ? t.cream : undefined,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: fullScreen ? undefined : "80px 20px",
       }}
     >
-      <div style={{ textAlign: "center" }}>
+      <div style={{ textAlign: "center", maxWidth: 560 }}>
         <div
           style={{
             width: 56,
@@ -32,12 +51,18 @@ export default function LoadingScreen({ message }: { message?: string }) {
           }}
         />
         <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 30, width: "auto" }} priority />
+        {title && (
+          <h1 style={{ marginTop: 24, fontSize: 28, color: t.coal, fontWeight: 400, letterSpacing: "-0.02em" }}>{title}</h1>
+        )}
         {message && (
           <p style={{ marginTop: 14, fontSize: 13, color: t.inkFaint, fontFamily: f.sans }}>{message}</p>
         )}
+        {footer && (
+          <p style={{ marginTop: 20, fontSize: 12, color: t.inkFaint, fontFamily: f.sans }}>{footer}</p>
+        )}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <span className="sr-only">{message || "Loading..."}</span>
+      <span className="sr-only">{title || message || "Loading..."}</span>
     </div>
   );
 }

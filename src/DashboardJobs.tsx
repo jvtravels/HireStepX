@@ -25,11 +25,11 @@ import {
   SearchIcon,
   SearchXIcon,
   ChevronDownIcon,
-  Loader2Icon,
   AlertCircleIcon,
   BriefcaseIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LoadingScreen from "@/_LoadingScreen";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -330,10 +330,8 @@ export default function DashboardJobs() {
 
   if (!loaded) {
     return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "64px 20px", flex: 1 }} role="status" aria-live="polite">
-        <Loader2Icon size={22} color={t.inkFaint} aria-hidden="true" style={{ animation: `spin 0.8s linear infinite` }} />
-        <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkFaint, margin: 0 }}>Loading your matches…</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        <LoadingScreen fullScreen={false} message="Loading your matches…" />
       </div>,
     );
   }

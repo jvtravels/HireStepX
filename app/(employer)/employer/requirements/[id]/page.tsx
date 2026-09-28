@@ -7,6 +7,7 @@ import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
+import LoadingScreen from "@/_LoadingScreen";
 import {
   Card,
   Eyebrow,
@@ -127,14 +128,11 @@ function CandidateAvatar({ name, unlocked }: { name: string; unlocked: boolean }
 
 function GeneratingState() {
   return (
-    <div style={{ textAlign: "center", padding: "80px 0" }}>
-      <div style={{ width: 40, height: 40, margin: "0 auto 20px", border: `3px solid ${t.indigo100}`, borderTopColor: t.indigo, borderRadius: "50%", animation: "hsx-emp-spin 0.8s linear infinite" }} />
-      <style>{`@keyframes hsx-emp-spin { to { transform: rotate(360deg); } }`}</style>
-      <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching candidates…</h2>
-      <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft }}>
-        We're scoring active candidates against this requirement. This usually takes under a minute.
-      </p>
-    </div>
+    <LoadingScreen
+      fullScreen={false}
+      title="Matching candidates…"
+      message="We're scoring active candidates against this requirement. This usually takes under a minute."
+    />
   );
 }
 

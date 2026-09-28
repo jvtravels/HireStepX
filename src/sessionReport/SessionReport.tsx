@@ -43,6 +43,7 @@ import type { OfferNetValueInput } from "./derivations/offerNetValue";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 import { Button } from "@/components/ui/button";
+import LoadingScreen from "../_LoadingScreen";
 
 /* ─── Helpers — small pure functions for transcript shaping + role-
    family inference + duration parsing. Kept local so the entry stays
@@ -139,35 +140,7 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
       >
         ← {backLabel}
       </Button>
-      <div
-        style={{
-          maxWidth: 560,
-          margin: "120px auto 0",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            border: `2px solid ${t.line}`,
-            borderTopColor: t.indigo,
-            margin: "0 auto 24px",
-            animation: "ir-spin 800ms linear infinite",
-          }}
-        />
-        <h1 style={{ fontFamily: f.serif, fontSize: 32, color: t.coal, margin: "0 0 12px", fontWeight: 400, letterSpacing: "-0.02em" }}>
-          Coaching your report
-        </h1>
-        <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.55 }}>
-          {phases[idx]}
-        </p>
-        <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "24px 0 0" }}>
-          Usually takes 15–30 seconds.
-        </p>
-      </div>
-      <style>{`@keyframes ir-spin { to { transform: rotate(360deg); } }`}</style>
+      <LoadingScreen fullScreen={false} title="Coaching your report" message={phases[idx]} footer="Usually takes 15–30 seconds." />
     </div>
   );
 }

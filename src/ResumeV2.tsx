@@ -16,6 +16,7 @@ import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDashboardUI } from "./DashboardContext";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
+import LoadingScreen from "./_LoadingScreen";
 import { computeATSScore } from "./resumeAts";
 import { computeAllFitness, type InterviewType, type FitnessBand } from "./resumeFitness";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,6 @@ import {
   ToolboxIcon,
   UploadIcon,
   Trash2Icon,
-  Loader2Icon,
   FileUpIcon,
   SparklesIcon,
   XIcon,
@@ -207,17 +207,11 @@ function ResumeSkeleton() {
 
 function ResumeAnalyzingCard({ phase }: { phase: ResumePhase }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "80px 16px" }}>
-      <SectionCard style={{ maxWidth: 420, alignItems: "center", textAlign: "center" }}>
-        <Loader2Icon size={28} color={T.indigo} aria-hidden="true" className="animate-spin" />
-        <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>
-          {phase === "extracting" ? "Reading your resume…" : "Analyzing your resume…"}
-        </h2>
-        <p style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint, margin: 0 }}>
-          This usually takes a few seconds.
-        </p>
-      </SectionCard>
-    </div>
+    <LoadingScreen
+      fullScreen={false}
+      title={phase === "extracting" ? "Reading your resume…" : "Analyzing your resume…"}
+      message="This usually takes a few seconds."
+    />
   );
 }
 

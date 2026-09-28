@@ -16,6 +16,7 @@ import { getSessionById } from "./supabase";
 import { loadLocalSession, type LocalSession } from "./sessionDetailHelpers";
 import type { DashboardSession } from "./dashboardTypes";
 import { Button } from "@/components/ui/button";
+import LoadingScreen from "./_LoadingScreen";
 
 // Lazy-load the report so the dashboard route stays slim.
 const SessionReport = dynamic(
@@ -38,30 +39,6 @@ function Shell({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
-  );
-}
-
-export function LoadingScreen() {
-  return (
-    <Shell>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            border: "2px solid #EBE5D2",
-            borderTopColor: "#312E81",
-            margin: "0 auto 24px",
-            animation: "ir-spin 800ms linear infinite",
-          }}
-        />
-        <p style={{ fontFamily: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 22, color: "#0E0C08", margin: 0, fontWeight: 400 }}>
-          Loading your session…
-        </p>
-      </div>
-      <style>{`@keyframes ir-spin { to { transform: rotate(360deg); } }`}</style>
-    </Shell>
   );
 }
 
@@ -276,7 +253,7 @@ export default function SessionDetail() {
   });
   const onBack = () => router.push(backTarget.href);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return <LoadingScreen message="Loading your session…" />;
   if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;
   if (!dashboardSession) return <NotFoundScreen onBack={onBack} />;
 
