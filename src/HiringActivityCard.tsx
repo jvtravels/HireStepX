@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "./supabase";
-import { tokens as t, fonts as f } from "./auth/_tokens";
+import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL } from "./hiringMatchFormat";
 
 interface HiringMatch {
@@ -117,17 +117,17 @@ export default function HiringActivityCard() {
                     </div>
                     {r.unlocked ? (
                       <span style={{
-                        flexShrink: 0, fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.indigoDeep,
-                        background: t.cream, padding: "3px 8px", borderRadius: 999,
+                        flexShrink: 0, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep,
+                        background: t.indigo100, padding: "3px 9px", borderRadius: 999,
                       }}>
-                        CONTACTED
+                        Contacted
                       </span>
                     ) : (
                       <span style={{
-                        flexShrink: 0, fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkSoft,
-                        background: t.cream, padding: "3px 8px", borderRadius: 999,
+                        flexShrink: 0, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk,
+                        background: t.success100, padding: "3px 9px", borderRadius: 999,
                       }}>
-                        {r.matchScore}% MATCH
+                        Interested
                       </span>
                     )}
                   </div>

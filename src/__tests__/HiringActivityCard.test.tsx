@@ -74,8 +74,8 @@ describe("HiringActivityCard", () => {
     render(<HiringActivityCard />);
     await waitFor(() => expect(screen.getByText("Backend Engineer")).toBeInTheDocument());
     expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
-    expect(screen.getByText("CONTACTED")).toBeInTheDocument();
-    expect(screen.getByText("60% MATCH")).toBeInTheDocument();
+    expect(screen.getByText("Contacted")).toBeInTheDocument();
+    expect(screen.getByText("Interested")).toBeInTheDocument();
     expect(screen.getByText("Node.js")).toBeInTheDocument();
     expect(screen.getByText(/₹12–18L/)).toBeInTheDocument();
     expect(screen.getByText(/₹20L/)).toBeInTheDocument();
