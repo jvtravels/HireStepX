@@ -16,6 +16,8 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
@@ -217,18 +219,23 @@ export default function DashboardJobs() {
           Employers on our talent roster match to your profile and reach out directly — there's nothing to apply to here.
         </p>
       </div>
-      <button
-        type="button"
+      <Button
         onClick={() => router.push("/interview")}
-        className="hsx-btn hsx-btn-primary"
         style={{
-          display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8,
-          fontFamily: f.sans, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+          background: t.indigo,
+          color: t.white,
+          borderRadius: 8,
+          padding: "12px 20px",
+          height: 44,
+          gap: 8,
+          fontSize: 15,
+          fontWeight: 600,
+          boxShadow: `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
         }}
       >
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-        New Session
-      </button>
+        <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+        Start session
+      </Button>
     </div>
   );
 
