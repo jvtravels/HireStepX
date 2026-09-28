@@ -21,6 +21,16 @@ import {
   StatCell,
   StatusChip,
 } from "@/employer/_atoms";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -380,7 +390,8 @@ function CandidateTableRow({
 
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
-  const { fetchRequirementDetail } = useEmployerData();
+  const { fetchRequirementDetail, updateRequirement } = useEmployerData();
+  const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -390,6 +401,9 @@ export default function RequirementDetailPage() {
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("match");
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [extendDate, setExtendDate] = useState("");
+  const [extendSaving, setExtendSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -464,6 +478,45 @@ export default function RequirementDetailPage() {
     setCompareIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : prev.length < 2 ? [...prev, id] : prev));
   };
 
+  const openExtendDeadline = () => {
+    setExtendDate(requirement.dueDate || "");
+    setExtendOpen(true);
+  };
+
+  const handleExtendDeadline = async () => {
+    if (!extendDate) return;
+    setExtendSaving(true);
+    const ok = await updateRequirement(requirement.id, {
+      title: requirement.title,
+      locations: requirement.locations.length > 0 ? requirement.locations : [requirement.location],
+      noticePeriodPref: requirement.noticePeriodPref,
+      description: requirement.description,
+      experienceMin: requirement.experienceMin ?? undefined,
+      experienceMax: requirement.experienceMax ?? undefined,
+      dueDate: extendDate,
+      budgetMin: requirement.budgetMin ?? undefined,
+      budgetMax: requirement.budgetMax ?? undefined,
+      openPositions: requirement.openPositions ?? undefined,
+      workMode: requirement.workMode ?? undefined,
+      employmentType: requirement.employmentType ?? undefined,
+      skills: requirement.skills,
+      responsibilities: requirement.responsibilities,
+      niceToHave: requirement.niceToHave,
+      preferredIndustry: requirement.preferredIndustry,
+      preferredColleges: requirement.preferredColleges,
+      targetCompanies: requirement.targetCompanies,
+      perksAndBenefits: requirement.perksAndBenefits,
+    });
+    setExtendSaving(false);
+    if (ok) {
+      toast("Deadline updated — re-matching candidates", "success");
+      setExtendOpen(false);
+      load();
+    } else {
+      toast("Couldn't update the deadline — please try again", "error");
+    }
+  };
+
   const readOnly = requirement.status === "closed";
   const unlockedCount = requirement.candidates.filter((c) => c.unlocked).length;
   const avgMatch = requirement.candidates.length
@@ -502,25 +555,71 @@ export default function RequirementDetailPage() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {requirement.status !== "closed" && (
-              <Link
-                href={`/employer/requirements/${requirement.id}/edit`}
-                style={{
-                  fontFamily: f.sans,
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  color: t.indigo,
-                  textDecoration: "none",
-                  border: `1px solid ${t.line}`,
-                  borderRadius: 8,
-                  padding: "6px 12px",
-                }}
-              >
-                Edit
-              </Link>
+              <>
+                <button
+                  type="button"
+                  onClick={openExtendDeadline}
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: t.indigo,
+                    background: "none",
+                    cursor: "pointer",
+                    border: `1px solid ${t.line}`,
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                  }}
+                >
+                  Extend deadline
+                </button>
+                <Link
+                  href={`/employer/requirements/${requirement.id}/edit`}
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: t.indigo,
+                    textDecoration: "none",
+                    border: `1px solid ${t.line}`,
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                  }}
+                >
+                  Edit
+                </Link>
+              </>
             )}
             <StatusChip status={requirement.status} />
           </div>
         </div>
+
+        <Dialog open={extendOpen} onOpenChange={setExtendOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Extend deadline</DialogTitle>
+              <DialogDescription>
+                Pick a new due date for &ldquo;{requirement.title}&rdquo;. Candidates will be re-scored once it&apos;s saved.
+              </DialogDescription>
+            </DialogHeader>
+            <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
+              <Label htmlFor="extend-due-date">New due date</Label>
+              <Input
+                id="extend-due-date"
+                type="date"
+                value={extendDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setExtendDate(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <OutlineCta onClick={() => setExtendOpen(false)}>Cancel</OutlineCta>
+              <PrimaryCta onClick={handleExtendDeadline} disabled={!extendDate || extendSaving}>
+                {extendSaving ? "Saving…" : "Save new deadline"}
+              </PrimaryCta>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {requirement.description && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
