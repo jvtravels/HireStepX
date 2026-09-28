@@ -187,7 +187,7 @@ describe("DashboardJobs", () => {
       }),
     ) as unknown as typeof fetch;
     render(<DashboardJobs />);
-    await waitFor(() => expect(screen.getByText("ROLE CLOSED")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Role closed")).toBeInTheDocument());
     expect(screen.getByText("Beta Inc")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("SDE II"));

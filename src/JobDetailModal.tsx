@@ -9,7 +9,7 @@
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
-import { tokens as t, fonts as f } from "./auth/_tokens";
+import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import type { JobMatch } from "./DashboardJobs";
 
@@ -78,17 +78,17 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
 
         <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
           {job.unlocked ? (
-            <span style={{ fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep, background: t.indigo100, padding: "4px 10px", borderRadius: 999 }}>
-              CONTACTED
+            <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, padding: "4px 10px", borderRadius: 999 }}>
+              Contacted
             </span>
           ) : (
-            <span style={{ fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.inkSoft, background: t.cream, padding: "4px 10px", borderRadius: 999 }}>
-              {job.matchScore}% MATCH
+            <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk, background: t.success100, padding: "4px 10px", borderRadius: 999 }}>
+              Interested
             </span>
           )}
           {closed && !job.unlocked && (
-            <span style={{ fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.inkFaint, background: t.cream, padding: "4px 10px", borderRadius: 999 }}>
-              ROLE CLOSED
+            <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, padding: "4px 10px", borderRadius: 999 }}>
+              Role closed
             </span>
           )}
         </div>

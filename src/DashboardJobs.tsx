@@ -48,7 +48,7 @@ import {
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { authHeaders } from "./supabase";
-import { tokens as t, fonts as f } from "./auth/_tokens";
+import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import JobDetailModal from "./JobDetailModal";
@@ -173,6 +173,36 @@ function FilterPill({
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// One pill treatment for every status/category badge in this table, so
+// "employer interest", "job type", and "role closed" read as the same
+// visual language instead of five hand-tuned one-offs (mono vs sans,
+// five different font sizes, a green success color used for a neutral
+// job-type label). Color is reserved for genuine state (Interested,
+// Contacted, New); job type is a category, not a state, so it stays
+// neutral per the design system's "accent for state, not decoration" rule.
+type BadgeTone = "neutral" | "success" | "brand" | "info";
+const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
+  neutral: { color: t.inkSoft, background: t.creamSoft },
+  success: { color: t.successInk, background: t.success100 },
+  brand: { color: t.indigoDeep, background: t.indigo100 },
+  info: { color: t.info, background: t.info100 },
+};
+
+function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; children: React.ReactNode }) {
+  const { color, background } = BADGE_TONE[tone];
+  return (
+    <span
+      title={title}
+      style={{
+        fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background,
+        padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -430,7 +460,7 @@ export default function DashboardJobs() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     style={{ cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
                   >
-                    <TableCell style={{ width: "20%", minWidth: 200, padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                    <TableCell style={{ width: "20%", minWidth: 200, padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
                         {r.companyLogoPath ? (
                           <img
@@ -452,95 +482,66 @@ export default function DashboardJobs() {
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 500, color: t.coal, whiteSpace: "normal", wordBreak: "break-word" }}>{r.companyName}</div>
                           {r.preferredIndustry && (
-                            <div style={{ fontSize: 11, color: t.inkFaint, whiteSpace: "normal", wordBreak: "break-word" }}>{r.preferredIndustry}</div>
+                            <div style={{ fontSize: textSize.xs, color: t.inkFaint, whiteSpace: "normal", wordBreak: "break-word" }}>{r.preferredIndustry}</div>
                           )}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", maxWidth: 260, verticalAlign: "top", whiteSpace: "normal" }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: t.coal }}>{r.roleTitle}</div>
+                    <TableCell style={{ padding: "12px 20px", maxWidth: 260, verticalAlign: "top", whiteSpace: "normal" }}>
+                      <div style={{ fontSize: textSize.base, fontWeight: 600, color: t.coal }}>{r.roleTitle}</div>
                       {r.description && (
-                        <div style={{ fontSize: 11.5, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                        <div style={{ fontSize: textSize.xs, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                           {r.description}
                         </div>
                       )}
                       {r.skills.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
                           {r.skills.slice(0, 3).map((s, si) => (
-                            <span key={si} style={{ fontSize: 10.5, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "2px 7px", borderRadius: 999 }}>
+                            <span key={si} style={{ fontSize: textSize.xs, color: t.inkSoft, background: t.creamSoft, padding: "2px 7px", borderRadius: 999 }}>
                               {s}
                             </span>
                           ))}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top" }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: t.coal }}>{r.location || "Not specified"}</div>
-                      {mode && <div style={{ fontSize: 11, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
+                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top" }}>
+                      <div style={{ fontSize: textSize.base, fontWeight: 500, color: t.coal }}>{r.location || "Not specified"}</div>
+                      {mode && <div style={{ fontSize: textSize.xs, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
                       {exp || "Not specified"}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top" }}>
-                      {jobType ? (
-                        <span style={{
-                          fontFamily: f.sans, fontSize: 11, fontWeight: 600,
-                          color: jobType === "Contract" ? t.warningInk : t.successInk,
-                          background: jobType === "Contract" ? t.warning100 : t.success100,
-                          padding: "3px 9px", borderRadius: 999,
-                        }}>
-                          {jobType}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 12, color: t.inkFaint }}>—</span>
-                      )}
+                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top" }}>
+                      {jobType ? <Badge tone="neutral">{jobType}</Badge> : <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.coal, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
                       {comp || "Not disclosed"}
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
+                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
                         {r.unlocked ? (
-                          <span
-                            title="This employer has unlocked your profile and can reach out directly"
-                            style={{
-                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
-                              background: t.cream, padding: "3px 9px", borderRadius: 999,
-                            }}>
-                            CONTACTED
-                          </span>
+                          <Badge tone="brand" title="This employer has unlocked your profile and can reach out directly">
+                            Contacted
+                          </Badge>
                         ) : (
-                          <span
-                            title="This employer has shown interest in your profile"
-                            style={{
-                              fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.successInk,
-                              background: t.success100, padding: "3px 10px", borderRadius: 999,
-                            }}>
+                          <Badge tone="success" title="This employer has shown interest in your profile">
                             Interested
-                          </span>
+                          </Badge>
                         )}
                         {closed && !r.unlocked && (
-                          <span
-                            title="This role is no longer accepting candidates"
-                            style={{
-                              fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
-                              background: t.cream, padding: "2px 8px", borderRadius: 999,
-                            }}>
-                            ROLE CLOSED
-                          </span>
+                          <Badge tone="neutral" title="This role is no longer accepting candidates">
+                            Role closed
+                          </Badge>
                         )}
                       </div>
-                      <div style={{ fontSize: 11, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
+                      <div style={{ fontSize: textSize.xs, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
                     </TableCell>
-                    <TableCell style={{ padding: "12px 14px", fontSize: 12, color: t.inkFaint, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.xs, color: t.inkFaint, verticalAlign: "top" }}>
                       {daysAgo(r.matchedAt)}
                       {isNew && (
-                        <span style={{
-                          display: "block", marginTop: 4, fontFamily: f.mono, fontSize: 9.5, letterSpacing: 0.4,
-                          color: t.info, background: t.info100, padding: "2px 7px", borderRadius: 999, width: "fit-content",
-                        }}>
-                          NEW
-                        </span>
+                        <div style={{ marginTop: 4, width: "fit-content" }}>
+                          <Badge tone="info">New</Badge>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
