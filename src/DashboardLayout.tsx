@@ -46,11 +46,10 @@ import {
   FileTextIcon,
   BriefcaseIcon,
   SettingsIcon,
-  BellIcon,
   ChevronsUpDownIcon,
   LogOutIcon,
-  BadgeCheckIcon,
   CreditCardIcon,
+  UserPlusIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -571,17 +570,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   <SettingsIcon size={14} aria-hidden="true" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => nav.push("/settings")}>
-                  <BadgeCheckIcon size={14} aria-hidden="true" />
-                  Account
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => nav.push("/settings?tab=plan")}>
                   <CreditCardIcon size={14} aria-hidden="true" />
                   Billing
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled title="Not wired yet">
-                  <BellIcon size={14} aria-hidden="true" />
-                  Notifications
+                <DropdownMenuItem onClick={() => nav.push("/settings?tab=referral")}>
+                  <UserPlusIcon size={14} aria-hidden="true" />
+                  Referral
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
