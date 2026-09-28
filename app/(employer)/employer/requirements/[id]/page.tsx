@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -556,8 +557,9 @@ export default function RequirementDetailPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {requirement.status !== "closed" && (
               <>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={openExtendDeadline}
                   style={{
                     fontFamily: f.sans,
@@ -565,14 +567,14 @@ export default function RequirementDetailPage() {
                     fontWeight: 600,
                     color: t.indigo,
                     background: "none",
-                    cursor: "pointer",
                     border: `1px solid ${t.line}`,
                     borderRadius: 8,
                     padding: "6px 12px",
+                    height: "auto",
                   }}
                 >
                   Extend deadline
-                </button>
+                </Button>
                 <Link
                   href={`/employer/requirements/${requirement.id}/edit`}
                   style={{
@@ -638,13 +640,14 @@ export default function RequirementDetailPage() {
             >
               {requirement.description}
             </p>
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={() => setDescExpanded((v) => !v)}
-              style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, cursor: "pointer" }}
+              style={{ padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto" }}
             >
               {descExpanded ? "Show less" : "Read more"}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -895,13 +898,14 @@ export default function RequirementDetailPage() {
                   ))}
                 </select>
                 {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
                     onClick={() => { setSearch(""); setContactFilter("all"); setLocationFilter("all"); }}
-                    style={{ ...toolbarInputStyle, background: "transparent", border: "none", color: t.indigo, fontWeight: 600, cursor: "pointer" }}
+                    style={{ ...toolbarInputStyle, background: "transparent", border: "none", fontWeight: 600, height: "auto" }}
                   >
                     Clear filters
-                  </button>
+                  </Button>
                 )}
               </div>
 

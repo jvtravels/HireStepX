@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   Divider,
@@ -160,13 +161,14 @@ export default function CandidateDetailPage() {
                 <ScoreChip score={candidate.matchScore} />
                 <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>match score</span>
                 {candidate.matchBreakdown && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
                     onClick={() => setShowBreakdown((v) => !v)}
-                    style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo, background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline" }}
+                    style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: 0, height: "auto", textDecoration: "underline" }}
                   >
                     {showBreakdown ? "Hide why" : "Why this score?"}
-                  </button>
+                  </Button>
                 )}
                 <span style={{ color: t.line }}>·</span>
                 <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{candidate.city}</span>

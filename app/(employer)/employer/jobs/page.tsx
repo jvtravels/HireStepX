@@ -109,7 +109,7 @@ const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
 
 const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
 
-type SortColumn = "title" | "location" | "experience" | "status" | "dueDate" | "matches" | "posted";
+type SortColumn = "title" | "location" | "experience" | "status" | "dueDate" | "matches" | "topMatches" | "posted";
 const DEFAULT_SORT: Sort<SortColumn> = { column: "posted", direction: "desc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
@@ -118,7 +118,8 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   experience: "Experience",
   status: "Status",
   dueDate: "Due date",
-  matches: "Matches",
+  matches: "AI Screening",
+  topMatches: "Top Matches",
   posted: "Posted",
 };
 
@@ -137,7 +138,9 @@ function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<So
     case "dueDate":
       return dir * (due(a) - due(b));
     case "matches":
-      return dir * (a.candidateCount - b.candidateCount);
+      return dir * (a.aiScreening.evaluated - b.aiScreening.evaluated);
+    case "topMatches":
+      return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches);
     case "posted":
       return dir * a.createdAt.localeCompare(b.createdAt);
   }
@@ -230,6 +233,47 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
       <div style={{ marginTop: 4, width: "fit-content" }}>
         <Badge tone={tone}>{label}</Badge>
       </div>
+    </div>
+  );
+}
+
+/** "Strong Match" cell — overlapping avatar-initial chips for the candidates
+    scoring at/above STRONG_MATCH_THRESHOLD, plus the group's average score. */
+function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
+  if (aiScreening.evaluated === 0) return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>;
+  if (aiScreening.strongMatchInitials.length === 0) {
+    return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>;
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        {aiScreening.strongMatchInitials.map((initials, i) => (
+          <span
+            key={i}
+            style={{
+              width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
+              marginLeft: i === 0 ? 0 : -8,
+            }}
+          >
+            {initials}
+          </span>
+        ))}
+        {aiScreening.strongMatchExtra > 0 && (
+          <span
+            style={{
+              width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 10, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
+              marginLeft: -8,
+            }}
+          >
+            +{aiScreening.strongMatchExtra}
+          </span>
+        )}
+      </div>
+      {aiScreening.strongAvgScore != null && (
+        <div style={{ fontSize: textSize.xs, color: t.successInk }}>{aiScreening.strongAvgScore}% avg evidence score</div>
+      )}
     </div>
   );
 }
@@ -566,13 +610,14 @@ export default function EmployerJobsPage() {
           {activeChips.map((c) => (
             <FilterChip key={c.label} label={c.label} onRemove={c.remove} />
           ))}
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={clearFilters}
-            style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, background: "transparent", border: "none", cursor: "pointer", padding: "2px 4px" }}
+            style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, padding: "2px 4px", height: "auto" }}
           >
             Clear all
-          </button>
+          </Button>
         </div>
       )}
 
@@ -580,20 +625,22 @@ export default function EmployerJobsPage() {
         <Table aria-label="Posted jobs" className="table-fixed">
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="24%" minWidth={220} sort={sort} onSortChange={setSort}>Job title</SortableHead>
-              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="13%" minWidth={120} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={90} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-              <SortableHead column="status" columnLabel={COLUMN_LABEL.status} defaultDirection="asc" width="12%" minWidth={120} sort={sort} onSortChange={setSort}>Status</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="12%" minWidth={110} sort={sort} onSortChange={setSort}>Due date</SortableHead>
-              <SortableHead column="matches" columnLabel={COLUMN_LABEL.matches} width="9%" minWidth={80} sort={sort} onSortChange={setSort}>Matches</SortableHead>
-              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="13%" minWidth={100} sort={sort} onSortChange={setSort}>Posted</SortableHead>
-              <TableHead style={{ width: "8%", minWidth: 64, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, textAlign: "right", paddingRight: 20 }}>Actions</TableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="19%" minWidth={200} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="status" columnLabel={COLUMN_LABEL.status} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Status</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
+              <SortableHead column="matches" columnLabel={COLUMN_LABEL.matches} width="13%" minWidth={140} sort={sort} onSortChange={setSort}>AI Screening</SortableHead>
+              <SortableHead column="topMatches" columnLabel={COLUMN_LABEL.topMatches} width="8%" minWidth={90} sort={sort} onSortChange={setSort}>Top Matches</SortableHead>
+              <TableHead style={{ width: "11%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Strong Match</TableHead>
+              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="9%" minWidth={90} sort={sort} onSortChange={setSort}>Posted</SortableHead>
+              <TableHead style={{ width: "7%", minWidth: 64, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, textAlign: "right", paddingRight: 20 }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {pageRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} style={{ padding: "40px 14px" }}>
+                <TableCell colSpan={10} style={{ padding: "40px 14px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                     <SearchXIcon size={22} color={t.inkFaint} aria-hidden="true" />
                     <p style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, margin: 0 }}>
@@ -640,9 +687,11 @@ export default function EmployerJobsPage() {
                       {`View ${r.title}`}
                     </button>
                     <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.title}</div>
-                    {(budget || jobType) && (
+                    {(budget || jobType || r.openPositions != null) && (
                       <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 2 }}>
-                        {[jobType, budget].filter(Boolean).join(" · ")}
+                        {[jobType, budget, r.openPositions != null ? `${r.openPositions} ${r.openPositions === 1 ? "opening" : "openings"}` : null]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </div>
                     )}
                     {r.skills.length > 0 && (
@@ -669,12 +718,32 @@ export default function EmployerJobsPage() {
                     <DueCell dueDate={r.dueDate} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.candidateCount}</div>
-                    {r.openPositions != null && (
-                      <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>
-                        {r.openPositions} {r.openPositions === 1 ? "opening" : "openings"}
-                      </div>
+                    {r.status === "generating" ? (
+                      <Badge tone="brand">Finding candidates</Badge>
+                    ) : r.aiScreening.evaluated === 0 ? (
+                      <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.aiScreening.evaluated} evaluated</div>
+                        {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
+                          <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>
+                            Score range {r.aiScreening.scoreLow}–{r.aiScreening.scoreHigh}%
+                          </div>
+                        )}
+                      </>
                     )}
+                  </TableCell>
+                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    {r.aiScreening.evaluated === 0 ? (
+                      <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>
+                    ) : r.aiScreening.topMatches > 0 ? (
+                      <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
+                    ) : (
+                      <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>
+                    )}
+                  </TableCell>
+                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    <StrongMatchCell aiScreening={r.aiScreening} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", fontSize: textSize.sm, color: t.inkFaint, verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.createdAt}
