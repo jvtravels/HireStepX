@@ -464,15 +464,15 @@ export default function DashboardJobs() {
                           <img
                             src={r.companyLogoPath}
                             alt={`${r.companyName} logo`}
-                            width={30}
-                            height={30}
-                            style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
+                            width={32}
+                            height={32}
+                            style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
                           />
                         ) : (
                           <div style={{
-                            width: 30, height: 30, borderRadius: 6, background: t.cream, border: `1px solid ${t.line}`,
+                            width: 32, height: 32, borderRadius: "50%", background: t.creamSoft, border: `1px solid ${t.line}`,
                             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                            fontFamily: f.serif, fontSize: 13, color: t.inkSoft,
+                            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft,
                           }}>
                             {r.companyName.charAt(0).toUpperCase()}
                           </div>

@@ -50,13 +50,13 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
               alt={`${job.companyName} logo`}
               width={44}
               height={44}
-              style={{ borderRadius: 10, objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
+              style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
             />
           ) : (
             <div style={{
-              width: 44, height: 44, borderRadius: 10, background: t.cream, border: `1px solid ${t.line}`,
+              width: 44, height: 44, borderRadius: "50%", background: t.creamSoft, border: `1px solid ${t.line}`,
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              fontFamily: f.serif, fontSize: 18, color: t.inkSoft,
+              fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 600, color: t.inkSoft,
             }}>
               {job.companyName.charAt(0).toUpperCase()}
             </div>
