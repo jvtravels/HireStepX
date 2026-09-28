@@ -286,18 +286,28 @@ export default function EmployerJobsPage() {
 
   if (requirements.length === 0) {
     return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "56px 24px", flex: 1, textAlign: "center" }}>
-        <BriefcaseIcon size={26} color={t.inkFaint} aria-hidden="true" />
-        <p style={{ fontFamily: f.sans, fontSize: 14.5, fontWeight: 600, color: t.coal, margin: 0 }}>No jobs posted yet</p>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, lineHeight: 1.5, maxWidth: 380 }}>
-          Post a requirement and we'll score candidates who are actively practicing on HireStepX against it, usually in under a minute.
-        </p>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "72px 24px", flex: 1, textAlign: "center" }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+          border: `1.5px dashed ${t.line}`, background: t.creamSoft,
+        }}>
+          <BriefcaseIcon size={24} color={t.inkFaint} aria-hidden="true" />
+        </div>
+        <div>
+          <p style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>No job listings yet</p>
+          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkFaint, margin: "6px 0 0", lineHeight: 1.5, maxWidth: 380 }}>
+            Post your first requirement and we'll score candidates who are actively practicing on HireStepX against it, usually in under a minute.
+          </p>
+        </div>
         <Button
           onClick={() => router.push("/employer/requirements/new")}
-          variant="outline"
-          style={{ marginTop: 4, borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
+          style={{
+            marginTop: 4, borderRadius: 8, height: 44, gap: 8, padding: "0 22px",
+            background: t.coal, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600,
+          }}
         >
-          Post your first requirement
+          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+          Create your first listing
         </Button>
       </div>,
     );
