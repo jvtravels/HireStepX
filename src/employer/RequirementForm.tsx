@@ -6,7 +6,6 @@ import { WorkMode, EmploymentType, SalaryType, Requirement } from "./mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
   AutocompleteInput,
-  Card,
   Checkbox,
   CheckboxGroup,
   Eyebrow,
@@ -371,12 +370,14 @@ export function RequirementForm({
 
   if (mode === "edit") {
     return (
-      <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
+      <form onSubmit={handleSubmit}>
+        <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
             <div>
               <Eyebrow tone="indigo">Edit opportunity</Eyebrow>
-              <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{initial?.title || "Edit opportunity"}</h1>
+              <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" }}>
+                {initial?.title || "Edit opportunity"}
+              </h1>
             </div>
             <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
               <OutlineCta onClick={() => router.back()}>Cancel</OutlineCta>
@@ -385,58 +386,56 @@ export function RequirementForm({
               </PrimaryCta>
             </div>
           </div>
-          <Card pad={24}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-              {basicInfoFields}
-              {preferencesFields}
-              {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
-              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
-                Saving re-scores your shortlist against the current candidate pool. Candidates you've already unlocked stay unlocked.
-              </p>
-            </div>
-          </Card>
-        </form>
-      </div>
+          <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 26 }}>
+            {basicInfoFields}
+            {preferencesFields}
+            {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
+            <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
+              Saving re-scores your shortlist against the current candidate pool. Candidates you've already unlocked stay unlocked.
+            </p>
+          </div>
+        </div>
+      </form>
     );
   }
 
   return (
-    <div style={{ maxWidth: 880, margin: "0 auto" }}>
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-          <div>
-            <Eyebrow tone="indigo">New requirement · step {step} of 2</Eyebrow>
-            <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>
-              {step === 1 ? "Basic information" : "Preferences & perks"}
-            </h1>
+    <form onSubmit={handleSubmit}>
+      <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <Eyebrow tone="indigo">New requirement · step {step} of 2</Eyebrow>
+              <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" }}>
+                {step === 1 ? "Basic information" : "Preferences & perks"}
+              </h1>
+            </div>
+            <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+              <OutlineCta onClick={() => router.back()}>Cancel</OutlineCta>
+              {step === 1 ? (
+                <PrimaryCta type="button" disabled={!basicInfoValid} onClick={() => setStep(2)}>
+                  Continue
+                </PrimaryCta>
+              ) : (
+                <PrimaryCta type="submit" disabled={submitting}>
+                  {submitting ? "Posting job…" : "Post job"}
+                </PrimaryCta>
+              )}
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-            <OutlineCta onClick={() => router.back()}>Cancel</OutlineCta>
-            {step === 1 ? (
-              <PrimaryCta type="button" disabled={!basicInfoValid} onClick={() => setStep(2)}>
-                Continue
-              </PrimaryCta>
-            ) : (
-              <PrimaryCta type="submit" disabled={submitting}>
-                {submitting ? "Posting job…" : "Post job"}
-              </PrimaryCta>
-            )}
-          </div>
+          <StepProgress step={step} />
         </div>
-        <StepProgress step={step} />
-        <Card pad={24}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-            {step === 1 && basicInfoFields}
-            {step === 2 && preferencesFields}
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 26 }}>
+          {step === 1 && basicInfoFields}
+          {step === 2 && preferencesFields}
 
-            {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
+          {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
 
-            {step === 2 && (
-              <OutlineCta onClick={() => setStep(1)}>Back</OutlineCta>
-            )}
-          </div>
-        </Card>
-      </form>
-    </div>
+          {step === 2 && (
+            <OutlineCta onClick={() => setStep(1)}>Back</OutlineCta>
+          )}
+        </div>
+      </div>
+    </form>
   );
 }

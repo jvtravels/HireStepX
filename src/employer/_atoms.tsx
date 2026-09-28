@@ -155,6 +155,10 @@ export function Card({
   );
 }
 
+/* PrimaryCta/OutlineCta wrap the shared shadcn Button — same component,
+   sizing, and radius as the rest of the app (e.g. Jobs page's "Post a
+   requirement" / outline filter buttons) so employer CTAs read as one
+   product, not a bespoke button system. */
 export function PrimaryCta({
   children,
   onClick,
@@ -184,16 +188,13 @@ export function PrimaryCta({
         justifyContent: "center",
         gap: 8,
         width: full ? "100%" : undefined,
-        padding: size === "sm" ? "10px 18px" : "14px 22px",
-        borderRadius: 12,
-        border: "none",
-        background: disabled ? t.inkFaint : t.indigo,
-        color: t.white,
+        height: size === "sm" ? 36 : 44,
+        padding: size === "sm" ? "0 18px" : "0 20px",
+        borderRadius: 8,
         fontFamily: f.sans,
-        fontSize: size === "sm" ? 13 : 14,
+        fontSize: size === "sm" ? 13 : 15,
         fontWeight: 600,
-        boxShadow: disabled ? "none" : shadows.cta,
-        cursor: disabled ? "not-allowed" : "pointer",
+        boxShadow: disabled ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
       }}
     >
       {children}
@@ -228,15 +229,13 @@ export function OutlineCta({
         justifyContent: "center",
         gap: 8,
         width: full ? "100%" : undefined,
-        padding: size === "sm" ? "9px 16px" : "13px 20px",
-        borderRadius: 12,
-        border: `1px solid ${tone === "indigo" ? t.indigo : t.lineStrong}`,
-        background: tone === "indigo" ? t.indigo100 : "transparent",
-        color: tone === "indigo" ? t.indigoDeep : t.coal,
+        height: size === "sm" ? 36 : 44,
+        padding: size === "sm" ? "0 16px" : "0 20px",
+        borderRadius: 8,
         fontFamily: f.sans,
         fontSize: size === "sm" ? 13 : 14,
         fontWeight: 600,
-        cursor: "pointer",
+        ...(tone === "indigo" ? { background: t.indigo100, color: t.indigoDeep, borderColor: t.indigo } : {}),
       }}
     >
       {icon}

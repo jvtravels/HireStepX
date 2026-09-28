@@ -183,7 +183,7 @@ export default function AppShellFrame({
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 aria-label="Account menu"
                 className="justify-between p-2 h-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                 style={{
