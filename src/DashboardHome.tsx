@@ -667,6 +667,8 @@ export default function DashboardHome() {
            media query below. */
         gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
         gap: 32, maxWidth: 1280, margin: "0 auto",
+        background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+        padding: 24, boxSizing: "border-box",
       }}>
         {/* ─── Main stage ─── */}
         <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
