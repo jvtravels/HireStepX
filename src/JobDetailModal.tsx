@@ -1,35 +1,19 @@
 "use client";
 
 /* Full-detail dialog opened by clicking a row in the Jobs tab table
-   (DashboardJobs.tsx). Mirrors the modal pattern established by
-   UpgradeModal (dashboardComponents.tsx): fixed backdrop + centered
-   card, Escape/backdrop-click/close-button all wired to the same
-   onClose, and a Tab focus trap so keyboard users can't tab out to
-   the page behind it. */
+   (DashboardJobs.tsx). Built on the shared shadcn Dialog (Radix) instead
+   of a hand-rolled backdrop/focus-trap, so Escape, outside-click, and
+   focus trapping come from the same primitive every other dialog in the
+   app uses. */
 
-import { useEffect, useRef } from "react";
-import { tokens as t, fonts as f, shadows } from "./auth/_tokens";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { XIcon } from "lucide-react";
+import { tokens as t, fonts as f } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import type { JobMatch } from "./DashboardJobs";
 
 export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClose: () => void }) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return; }
-      if (e.key !== "Tab" || !modalRef.current) return;
-      const focusable = modalRef.current.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
-      if (focusable.length === 0) return;
-      const first = focusable[0], last = focusable[focusable.length - 1];
-      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
-      else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    modalRef.current?.focus();
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   const comp = formatComp(job.budgetMin, job.budgetMax);
   const exp = formatExperience(job.experienceMin, job.experienceMax);
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
@@ -41,36 +25,23 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
   );
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog backdrop dismissal
-    <div
-      style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)", padding: 20 }}
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="job-detail-title"
-    >
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
-      <div
-        ref={modalRef}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent
+        showCloseButton={false}
         style={{
+          display: "block",
           background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 16,
           padding: "28px 26px", maxWidth: 640, width: "100%", maxHeight: "88vh", overflowY: "auto",
-          position: "relative", boxShadow: shadows.modal, outline: "none",
         }}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close dialog"
-          className="hsx-btn hsx-btn-icon"
-          style={{ position: "absolute", top: 14, right: 14, cursor: "pointer", padding: 4 }}
-        >
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+        <DialogDescription className="sr-only">
+          Full role details for {job.roleTitle} at {job.companyName}
+        </DialogDescription>
+        <DialogClose asChild>
+          <Button variant="ghost" size="icon-sm" aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14 }}>
+            <XIcon aria-hidden="true" />
+          </Button>
+        </DialogClose>
 
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16, paddingRight: 24 }}>
           {job.companyLogoPath ? (
@@ -91,9 +62,9 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
             </div>
           )}
           <div style={{ minWidth: 0 }}>
-            <h2 id="job-detail-title" style={{ fontFamily: f.sans, fontSize: 19, fontWeight: 700, color: t.coal, margin: 0 }}>
+            <DialogTitle style={{ fontFamily: f.sans, fontSize: 19, fontWeight: 700, color: t.coal, margin: 0 }}>
               {job.roleTitle}
-            </h2>
+            </DialogTitle>
             <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginTop: 3 }}>
               {job.companyWebsite ? (
                 <a href={job.companyWebsite} target="_blank" rel="noopener noreferrer" style={{ color: t.inkSoft, textDecoration: "underline" }}>
@@ -199,7 +170,7 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
             ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
             : `Matched ${daysAgo(job.matchedAt)}`}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
