@@ -194,9 +194,12 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     );
   }
 
-  const activeItem = navItems.find((item) =>
-    item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
-  ) ?? navItems[0];
+  const activeItem =
+    navItems.find((item) =>
+      item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
+    ) ??
+    (pathname?.startsWith("/employer/requirements/") ? navItems.find((item) => item.id === "jobs") : undefined) ??
+    navItems[0];
 
   return (
     <AppShellFrame
@@ -206,8 +209,8 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       activeId={activeItem.id}
       onNavigate={(path) => router.push(path)}
       account={{
-        name: (user?.name || user?.email || "").trim(),
-        subtitle: companyName || "Employer",
+        name: companyName || "Employer",
+        subtitle: "Employer account",
         email: user?.email,
       }}
       accountMenuItems={
