@@ -14,48 +14,45 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
 
+/* Same nav-item shape and shell pattern as src/DashboardLayout.tsx (the
+   candidate-side sidebar) — the two sides are meant to read as one product,
+   not two differently-built consoles. */
 const navItems = [
-  {
-    key: "dashboard",
-    label: "Dashboard",
-    href: "/employer",
-    icon: (
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-      </svg>
-    ),
-  },
-  {
-    key: "jobs",
-    label: "Jobs",
-    href: "/employer/jobs",
-    icon: (
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><line x1="2" y1="12" x2="22" y2="12" />
-      </svg>
-    ),
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    href: "/employer/settings",
-    icon: (
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-      </svg>
-    ),
-  },
+  { key: "dashboard", label: "Dashboard", href: "/employer", icon: LayoutDashboardIcon },
+  { key: "jobs", label: "Jobs", href: "/employer/jobs", icon: BriefcaseIcon },
+  { key: "settings", label: "Settings", href: "/employer/settings", icon: SettingsIcon },
 ];
-
-const SIDEBAR_WIDTH = 220;
 
 /* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
    (initials avatar chip + "Signed in as / Log out" dropdown) so the
@@ -185,17 +182,6 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   const router = useRouter();
   const pathname = usePathname();
   const isConsole = companyStatus === "approved";
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches
-  );
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  React.useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
-    const onChange = () => setIsMobile(mql.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -228,161 +214,119 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     );
   }
 
-  const sidebarBody = (
-    <>
-      <div style={{ paddingBottom: 20, flexShrink: 0 }}>
-        <Link href="/employer" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 14 }}>
-          <EmployerWordmark />
-        </Link>
-      </div>
-      <nav aria-label="Employer navigation" style={{ display: "flex", flexDirection: "column", gap: 2, flex: "0 0 auto" }}>
-        {navItems.map((item) => {
-          const active = item.href === "/employer"
-            ? pathname === item.href
-            : pathname === item.href || pathname?.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              onClick={() => setSidebarOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 14px",
-                borderRadius: 10,
-                fontFamily: f.sans,
-                fontSize: 13,
-                fontWeight: active ? 600 : 500,
-                color: active ? t.coal : t.inkSoft,
-                background: active ? t.creamSoft : "transparent",
-                textDecoration: "none",
-                transition: "background 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = t.creamSoft; }}
-              onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-              {active && <div style={{ width: 3, height: 16, borderRadius: 2, background: t.indigo, marginLeft: "auto" }} />}
-            </Link>
-          );
-        })}
-      </nav>
+  const activeItem = navItems.find((item) =>
+    item.href === "/employer" ? pathname === item.href : pathname === item.href || pathname?.startsWith(`${item.href}/`)
+  ) ?? navItems[0];
 
-      <div style={{ flex: 1 }} />
-
-      {/* User info — mirrors the candidate dashboard's footer block */}
-      <div style={{ borderTop: `1px solid ${t.line}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.indigo100, border: `1px solid ${t.indigoRing}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.indigo }}>{(user?.name || "?")[0].toUpperCase()}</span>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
-            <p style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</p>
-          </div>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={handleLogout}
-          style={{ fontFamily: f.sans, color: t.inkSoft, justifyContent: "flex-start", width: "100%" }}
-        >
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Log out
-        </Button>
-      </div>
-    </>
-  );
+  const displayName = (user?.name || user?.email || "").trim();
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "?";
 
   return (
-    <div style={{ minHeight: "100vh", background: t.cream }}>
-      {isMobile && (
-        <header
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 56,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 16px",
-            borderBottom: `1px solid ${t.line}`,
-            background: t.white,
-            zIndex: 21,
-          }}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Open navigation menu"
-            aria-expanded={sidebarOpen}
-            onClick={() => setSidebarOpen((v) => !v)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="1.75" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </Button>
-          <EmployerWordmark />
-          <div style={{ width: 32 }} />
+    <TooltipProvider delayDuration={0}>
+    <SidebarProvider style={{ minHeight: "100vh", background: t.cream }}>
+      {/* Sidebar — same shadcn shell as src/DashboardLayout.tsx (candidate side):
+          collapsible="icon", SidebarProvider handles the mobile sheet natively. */}
+      <Sidebar collapsible="icon" className="border-none">
+        <SidebarHeader className="px-3 pt-4 pb-3">
+          <Link href="/employer" className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+            <EmployerWordmark />
+          </Link>
+        </SidebarHeader>
+
+        <SidebarContent>
+          <SidebarGroup>
+            <nav aria-label="Employer navigation">
+              <SidebarMenu className="gap-1">
+                {navItems.map((item) => {
+                  const active = item.key === activeItem.key;
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.key}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        aria-current={active ? "page" : undefined}
+                        tooltip={item.label}
+                        style={{
+                          height: 36, gap: 10, fontFamily: f.sans, fontSize: 14, fontWeight: 500,
+                          color: active ? t.indigo : t.inkSoft,
+                          background: active ? t.creamSoft : "transparent",
+                          borderRadius: 8,
+                        }}
+                      >
+                        <Link href={item.href}>
+                          <Icon size={18} aria-hidden="true" />
+                          <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </nav>
+          </SidebarGroup>
+        </SidebarContent>
+
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarFallback className="rounded-lg" style={{ background: t.indigo100, color: t.indigo, fontFamily: f.sans, fontWeight: 600 }}>
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                      <span className="truncate font-medium" style={{ fontFamily: f.sans, color: t.coal }}>{user?.name}</span>
+                      <span className="truncate text-xs" style={{ fontFamily: f.sans, color: t.inkSoft }}>{user?.email}</span>
+                    </div>
+                    <ChevronsUpDownIcon className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="start" className="w-56">
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex flex-col gap-0.5 px-2 py-1.5 text-left text-sm">
+                      <span className="truncate font-medium" style={{ fontFamily: f.sans, color: t.coal }}>Signed in as</span>
+                      <span className="truncate text-xs" style={{ fontFamily: f.sans, color: t.inkSoft }}>{user?.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOutIcon className="mr-2 size-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" aria-label="Toggle sidebar" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>{activeItem.label}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </header>
-      )}
-
-      {isMobile ? (
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent
-            side="left"
-            aria-label="Employer navigation sidebar"
-            style={{ width: SIDEBAR_WIDTH, padding: "20px 18px 0", background: t.cream }}
-            className="flex flex-col gap-0"
-          >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Employer navigation</SheetTitle>
-              <SheetDescription>Jump to dashboard, jobs, or settings.</SheetDescription>
-            </SheetHeader>
-            {sidebarBody}
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <aside
-          aria-label="Employer navigation sidebar"
-          style={{
-            width: SIDEBAR_WIDTH,
-            borderRight: `1px solid ${t.line}`,
-            padding: "20px 18px 0",
-            display: "flex",
-            flexDirection: "column",
-            position: "fixed",
-            top: 0,
-            bottom: 0,
-            left: 0,
-            background: t.cream,
-            zIndex: 20,
-          }}
-        >
-          {sidebarBody}
-        </aside>
-      )}
-
-      <main
-        style={{
-          marginLeft: isMobile ? 0 : SIDEBAR_WIDTH,
-          padding: isMobile ? "76px 20px 40px" : "40px 32px",
-        }}
-      >
-        <div style={{ maxWidth: 1600, margin: "0 auto" }}>{children}</div>
-      </main>
-    </div>
+        <main style={{ padding: 32 }}>
+          <div style={{ maxWidth: 1600, margin: "0 auto" }}>{children}</div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+    </TooltipProvider>
   );
 }
