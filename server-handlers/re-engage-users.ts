@@ -24,6 +24,8 @@ interface UserRow {
   practice_timestamps: string[] | null;
   target_role: string | null;
   re_engage_sent: string | null; // ISO date of last re-engagement email
+  has_completed_onboarding: boolean;
+  created_at: string;
 }
 
 interface SessionRow {
@@ -163,6 +165,40 @@ function buildEmail(
   const cardRows: [string, string][] = [["Last score", `${score}/100`]];
   if (showCard && weakest) cardRows.push(["Focus area", escapeHtml(weakest)]);
 
+  // Onboarded but never started a single session — "continue where you left
+  // off" copy is false for this segment (audit, 2026-09: this cron's
+  // candidate query required practice_timestamps.length > 0, so these users
+  // — onboarded, zero sessions — were never emailed at all). Swap in
+  // first-session framing for the day1/day3/day7 cadence instead of adding
+  // new tiers.
+  const neverStarted = sessionsUsed === 0 && lastSession === null;
+  if (neverStarted && (tier === "day1" || tier === "day3" || tier === "day7")) {
+    const firstSessionSubjects: Record<"day1" | "day3" | "day7", string> = {
+      day1: `${user.name?.split(" ")[0] || "Hey"}, your first practice session is ready`,
+      day3: `Your ${role} questions are still waiting`,
+      day7: "Your free sessions haven't been used yet",
+    };
+    const firstSessionHero: Record<"day1" | "day3" | "day7", string> = {
+      day1: `Hi ${name}, you're all set up but haven't started a session yet. Your resume-tailored ${role} questions are ready whenever you are, it takes about 15 minutes.`,
+      day3: `Hi ${name}, your first mock interview is still waiting. Most candidates see the value after just one 15-minute session.`,
+      day7: `Hi ${name}, your ${b("2 free mock interviews")} haven't been used yet. No card needed, just pick a time and start.`,
+    };
+    const firstSessionFooter: Record<"day1" | "day3" | "day7", string> = {
+      day1: "Two free sessions are waiting, no card needed.",
+      day3: "Still free, still waiting, no card needed.",
+      day7: "This is our last reminder. Your account and free sessions will always be here when you're ready.",
+    };
+    const html = emailShell({
+      preview: firstSessionFooter[tier],
+      body:
+        title(titles[tier], { accentWord: accents[tier] }) +
+        para(firstSessionHero[tier]) +
+        button("Start my first session", sessionUrl) +
+        para(firstSessionFooter[tier], { small: true, muted: true }),
+    });
+    return { subject: firstSessionSubjects[tier], html };
+  }
+
   const html = emailShell({
     preview: footerText[tier],
     body:
@@ -194,7 +230,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // get different copy (see buildEmail) since they need value-justification,
     // not upgrade prompts.
     const profilesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?or=(subscription_tier.eq.free,subscription_tier.eq.starter)&select=id,name,email,subscription_tier,practice_timestamps,target_role,re_engage_sent&limit=500`,
+      `${SUPABASE_URL}/rest/v1/profiles?or=(subscription_tier.eq.free,subscription_tier.eq.starter)&select=id,name,email,subscription_tier,practice_timestamps,target_role,re_engage_sent,has_completed_onboarding,created_at&limit=500`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -215,9 +251,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Filter to users who have practiced but not recently.
     // Free tier: 1-14 day window. Paid tier: longer window (paid users have
     // higher tolerance; nag too early and they churn).
+    //
+    // Also admit onboarded free-tier users who never started a single
+    // session — the day1/day3/day7 cadence still applies, just measured
+    // from signup (created_at) instead of last-practice date, since there
+    // is no practice_timestamps entry to measure from. Paid users are
+    // never in this bucket (you can't subscribe without starting first).
     const candidates = profiles.filter(p => {
-      if (!p.email || !p.practice_timestamps || p.practice_timestamps.length === 0) return false;
-      const lastPractice = new Date(p.practice_timestamps[p.practice_timestamps.length - 1]);
+      if (!p.email) return false;
+      const neverStarted = !p.practice_timestamps || p.practice_timestamps.length === 0;
+      if (neverStarted) {
+        if (p.subscription_tier === "starter" || !p.has_completed_onboarding || !p.created_at) return false;
+        const daysSince = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000);
+        return daysSince >= 1 && daysSince < 14;
+      }
+      const lastPractice = new Date(p.practice_timestamps![p.practice_timestamps!.length - 1]);
       const daysSince = Math.floor((Date.now() - lastPractice.getTime()) / 86400000);
       const isPaid = p.subscription_tier === "starter";
       if (isPaid) {
@@ -235,8 +283,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     type Eligible = { user: UserRow; tier: EmailTier };
     const eligible: Eligible[] = [];
     for (const user of candidates) {
-      const lastPractice = new Date(user.practice_timestamps![user.practice_timestamps!.length - 1]);
-      const daysSince = Math.floor((Date.now() - lastPractice.getTime()) / 86400000);
+      const neverStarted = !user.practice_timestamps || user.practice_timestamps.length === 0;
+      const daysSince = neverStarted
+        ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+        : Math.floor((Date.now() - new Date(user.practice_timestamps![user.practice_timestamps!.length - 1]).getTime()) / 86400000);
       const isPaid = user.subscription_tier === "starter";
       const tier = getEmailTier(daysSince, user.re_engage_sent, isPaid);
       if (!tier) { skipped++; continue; }
