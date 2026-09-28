@@ -9,6 +9,7 @@ import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { CopyEmailLink } from "../_CopyEmailLink";
 import { HeroV2 } from "./Hero";
 import { Button } from "@/components/ui/button";
+import { LazyBandVideo } from "./_editorial-lazy-video";
 export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3724,14 +3725,10 @@ export function VideoCtaV2({
   return (
     <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
 
-      {/* Background video */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="none"
-        crossOrigin="anonymous"
+      {/* Background video — only fetched once this section nears the viewport,
+          same lazy-mount as DarkBand elsewhere (_editorial-lazy-video.tsx) */}
+      <LazyBandVideo
+        src="/cta.mp4"
         style={{
           position: "absolute", inset: 0, width: "100%", height: "100%",
           objectFit: "cover", objectPosition: "center 75%",
@@ -3739,9 +3736,7 @@ export function VideoCtaV2({
           transform: revealed ? "scale(1)" : "scale(1.06)",
           transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
         }}
-      >
-        <source src="/cta.mp4" type="video/mp4" />
-      </video>
+      />
 
       {/* Dark gradient — top to transparent */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />

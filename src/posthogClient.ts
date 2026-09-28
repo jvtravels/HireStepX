@@ -128,6 +128,15 @@ export async function initPostHog(
   return _initPromise;
 }
 
+/* Founder/dogfooding account(s) that generate disproportionate real traffic
+   and skew every funnel/cohort view unless explicitly excluded (production
+   audit, 2026-09: this one account held 154 of 199 sessions ever created).
+   Tagged as a person property in identifyClient() below so any PostHog
+   insight/dashboard can filter `is_internal_test_account != true`. */
+const INTERNAL_TEST_USER_IDS = new Set<string>([
+  "00b0c97d-ecbc-480d-a43a-5dee38f7c290",
+]);
+
 type Props = Record<string, string | number | boolean | null | undefined>;
 
 export function captureClientEvent(event: string, properties: Props = {}): void {
@@ -148,7 +157,10 @@ export function captureClientEvent(event: string, properties: Props = {}): void 
 
 export function identifyClient(distinctId: string, properties: Props = {}): void {
   try {
-    _instance?.identify(distinctId, properties);
+    _instance?.identify(distinctId, {
+      ...properties,
+      is_internal_test_account: INTERNAL_TEST_USER_IDS.has(distinctId),
+    });
   } catch {
     /* never throw from telemetry */
   }

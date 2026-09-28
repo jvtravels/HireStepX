@@ -25,6 +25,7 @@ async function freshModule() {
   const mod = await import("../posthogClient");
   const ph = (await import("posthog-js")).default as unknown as {
     capture: ReturnType<typeof vi.fn>;
+    identify: ReturnType<typeof vi.fn>;
   };
   return { mod, ph };
 }
@@ -75,5 +76,38 @@ describe("posthogClient buffering + initial pageview", () => {
     const mod = await import("../posthogClient");
     expect(() => mod.captureClientEvent("x")).not.toThrow();
     await expect(mod.initPostHog("memory")).resolves.toBeNull();
+  });
+});
+
+/* The founder/dogfooding account holds 154 of 199 sessions ever created
+ * (production audit, 2026-09) and skews every funnel unless dashboards
+ * exclude it. Tagging it as a person property is cheaper than trusting every
+ * future PostHog view to remember a hardcoded id filter. */
+describe("identifyClient — internal test account tagging", () => {
+  it("tags the known founder/dogfooding account id as internal", async () => {
+    const { mod, ph } = await freshModule();
+    await mod.initPostHog("localStorage+cookie");
+    mod.identifyClient("00b0c97d-ecbc-480d-a43a-5dee38f7c290", { email: "founder@example.com" });
+    expect(ph.identify).toHaveBeenCalledWith(
+      "00b0c97d-ecbc-480d-a43a-5dee38f7c290",
+      expect.objectContaining({ email: "founder@example.com", is_internal_test_account: true }),
+    );
+  });
+
+  it("tags every other user id as not internal", async () => {
+    const { mod, ph } = await freshModule();
+    await mod.initPostHog("localStorage+cookie");
+    mod.identifyClient("some-real-user-id", { email: "user@example.com" });
+    expect(ph.identify).toHaveBeenCalledWith(
+      "some-real-user-id",
+      expect.objectContaining({ email: "user@example.com", is_internal_test_account: false }),
+    );
+  });
+
+  it("never throws even if the underlying SDK call fails", async () => {
+    const { mod, ph } = await freshModule();
+    await mod.initPostHog("localStorage+cookie");
+    ph.identify.mockImplementationOnce(() => { throw new Error("boom"); });
+    expect(() => mod.identifyClient("x")).not.toThrow();
   });
 });
