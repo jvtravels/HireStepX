@@ -52,6 +52,27 @@ function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
 }
 
+/** Appends one row to employer_requirement_activity — the "History" action
+ *  on the Jobs table's per-row menu reads this back via
+ *  employer-requirement-activity.ts. Best-effort: a logging failure never
+ *  fails the create/edit/archive/reopen it's attached to. */
+export async function logRequirementActivity(
+  requirementId: string,
+  employerId: string,
+  action: "created" | "updated" | "archived" | "reopened",
+  detail?: string,
+): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirement_activity`, {
+      method: "POST",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify([{ requirement_id: requirementId, employer_id: employerId, action, detail: detail ?? null }]),
+    });
+  } catch (err) {
+    slog.error("requirement activity log failed", { code: "requirement_activity_log_failed", error: err instanceof Error ? err.message : String(err), requirementId, action });
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders(req, { allowGet: true }) });
@@ -202,6 +223,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const requirement = inserted[0];
 
     const finalStatus = await runMatching(requirement.id, { title, location, description }, userId);
+    await logRequirementActivity(requirement.id, userId, "created");
 
     return new Response(
       JSON.stringify({

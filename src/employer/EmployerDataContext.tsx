@@ -28,6 +28,13 @@ export interface UnlockOrder {
   description: string;
 }
 
+export interface RequirementActivity {
+  id: string;
+  action: "created" | "updated" | "archived" | "reopened";
+  detail: string | null;
+  createdAt: string;
+}
+
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
@@ -101,6 +108,9 @@ interface EmployerDataContextValue {
     razorpay_signature: string;
   }) => Promise<{ name: string; contact: { email: string } } | null>;
   fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
+  archiveRequirement: (id: string) => Promise<boolean>;
+  reopenRequirement: (id: string) => Promise<boolean>;
+  fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   refreshRequirements: () => Promise<void>;
 }
 
@@ -303,6 +313,36 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const archiveRequirement = useCallback(async (id: string) => {
+    const res = await apiFetch<{ status: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { action: "archive" }, { method: "PATCH" });
+    if (res.ok) {
+      refreshRequirements();
+      return true;
+    }
+    return false;
+  }, [refreshRequirements]);
+
+  const reopenRequirement = useCallback(async (id: string) => {
+    const res = await apiFetch<{ status: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { action: "reopen" }, { method: "PATCH" });
+    if (res.ok) {
+      refreshRequirements();
+      return true;
+    }
+    return false;
+  }, [refreshRequirements]);
+
+  const fetchRequirementActivity = useCallback(async (id: string): Promise<RequirementActivity[] | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`/api/employer-requirement-activity?id=${encodeURIComponent(id)}`, { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.activity) return null;
+      return data.activity as RequirementActivity[];
+    } catch {
+      return null;
+    }
+  }, []);
+
   const value: EmployerDataContextValue = {
     companyStatus,
     companyStatusLoading,
@@ -318,6 +358,9 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     createUnlockOrder,
     verifyUnlockPayment,
     fetchRequirementDetail,
+    archiveRequirement,
+    reopenRequirement,
+    fetchRequirementActivity,
     refreshRequirements,
   };
 

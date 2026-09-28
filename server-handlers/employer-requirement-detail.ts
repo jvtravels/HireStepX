@@ -23,6 +23,15 @@
  * `runMatching` (employer-requirements.ts) against the current candidate
  * pool. Already-unlocked matches (real payments) are preserved untouched;
  * every other match is rescored fresh so the shortlist reflects the edit.
+ *
+ * PATCH /api/employer-requirement-detail?id=<requirementId>
+ * { action: "archive" | "reopen" }
+ * Lightweight status-only transition used by the Jobs table's row menu —
+ * doesn't require the full edit-form body. "archive" sets status to
+ * "closed" (blocking further edits, per the isValidRequirementInput guard
+ * below); "reopen" flips a closed requirement back to "generating" and
+ * re-runs matching, same as a normal edit. Both are logged to
+ * employer_requirement_activity for the "History" menu item.
  */
 
 export const config = { runtime: "edge" };
@@ -30,7 +39,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { extractResumeLocation, explainMatch } from "./_requirement-match-helpers";
 import { extractResumeDetail } from "./_resume-detail-helpers";
-import { runMatching } from "./employer-requirements";
+import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
   asBoundedString,
   asBoundedStringArray,
@@ -232,8 +241,59 @@ export default async function handler(req: Request): Promise<Response> {
   }
 }
 
+async function handleStatusAction(
+  requirementId: string,
+  userId: string,
+  action: "archive" | "reopen",
+  headers: Record<string, string>,
+): Promise<Response> {
+  try {
+    const existingRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description`,
+      { headers: serviceHeaders() },
+    );
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null }>;
+    if (!existingRes.ok || !existingRows[0]) {
+      return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
+    }
+    const current = existingRows[0];
+    if (action === "archive" && current.status === "closed") {
+      return new Response(JSON.stringify({ error: "Already archived" }), { status: 409, headers });
+    }
+    if (action === "reopen" && current.status !== "closed") {
+      return new Response(JSON.stringify({ error: "Requirement isn't archived" }), { status: 409, headers });
+    }
+
+    const nextStatus = action === "archive" ? "closed" : "generating";
+    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+      method: "PATCH",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ status: nextStatus }),
+    });
+    if (!patchRes.ok) {
+      const t = await patchRes.text().catch(() => "");
+      slog.error("employer-requirement-detail status action failed", { code: "employer_requirement_status_action_failed", httpStatus: patchRes.status, body: t.slice(0, 200), userId, requirementId, action });
+      return new Response(JSON.stringify({ error: "Failed to update requirement" }), { status: 500, headers });
+    }
+    const updated = (await patchRes.json()) as Array<{ id: string; status: string }>;
+    await logRequirementActivity(requirementId, userId, action === "archive" ? "archived" : "reopened");
+
+    let finalStatus = updated[0]?.status ?? nextStatus;
+    if (action === "reopen") {
+      finalStatus = await runMatching(requirementId, { title: current.title, location: current.location, description: current.description || "" }, userId);
+    }
+
+    return new Response(JSON.stringify({ id: requirementId, status: finalStatus }), { status: 200, headers });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirement-detail status action threw", { code: "employer_requirement_status_action_unexpected_error", error: msg.slice(0, 200), userId, requirementId, action });
+    return new Response(JSON.stringify({ error: "Failed to update requirement" }), { status: 500, headers });
+  }
+}
+
 async function handlePatch(req: Request, requirementId: string, userId: string, headers: Record<string, string>): Promise<Response> {
   let body: {
+    action?: unknown;
     title?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
     budgetMin?: unknown; budgetMax?: unknown;
@@ -249,6 +309,10 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     body = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers });
+  }
+
+  if (body.action === "archive" || body.action === "reopen") {
+    return handleStatusAction(requirementId, userId, body.action, headers);
   }
 
   const title = asBoundedString(body.title, 200);
@@ -321,6 +385,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const requirement = updated[0];
 
     const finalStatus = await runMatching(requirementId, { title, location, description }, userId);
+    await logRequirementActivity(requirementId, userId, "updated");
 
     return new Response(
       JSON.stringify({

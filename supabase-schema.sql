@@ -1702,6 +1702,25 @@ drop policy if exists "Employers manage own requirements" on employer_requiremen
 create policy "Employers manage own requirements" on employer_requirements
   for all using ((auth.uid())::text = employer_id::text) with check ((auth.uid())::text = employer_id::text);
 
+-- Requirement activity log (2026-09-29) — backs the "History" action on the
+-- Jobs table's per-row menu. Written server-side only (service role, via
+-- logRequirementActivity in employer-requirements.ts) on create/edit/
+-- archive/reopen; no client insert policy is needed.
+create table if not exists employer_requirement_activity (
+  id uuid primary key default gen_random_uuid(),
+  requirement_id uuid references employer_requirements(id) on delete cascade not null,
+  employer_id uuid references employers(id) on delete cascade not null,
+  action text not null check (action in ('created', 'updated', 'archived', 'reopened')),
+  detail text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_employer_requirement_activity_requirement on employer_requirement_activity(requirement_id, created_at desc);
+
+alter table employer_requirement_activity enable row level security;
+drop policy if exists "Employers view own requirement activity" on employer_requirement_activity;
+create policy "Employers view own requirement activity" on employer_requirement_activity
+  for select using ((auth.uid())::text = employer_id::text);
+
 create table if not exists requirement_matches (
   id uuid primary key default gen_random_uuid(),
   requirement_id uuid references employer_requirements(id) on delete cascade not null,
