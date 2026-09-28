@@ -430,8 +430,8 @@ export default function DashboardJobs() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     style={{ cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
                   >
-                    <TableCell style={{ width: "16%", minWidth: 160, padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    <TableCell style={{ width: "20%", minWidth: 200, padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
                         {r.companyLogoPath ? (
                           <img
                             src={r.companyLogoPath}
@@ -450,9 +450,9 @@ export default function DashboardJobs() {
                           </div>
                         )}
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 500, color: t.coal, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.companyName}</div>
+                          <div style={{ fontWeight: 500, color: t.coal, whiteSpace: "normal", wordBreak: "break-word" }}>{r.companyName}</div>
                           {r.preferredIndustry && (
-                            <div style={{ fontSize: 11, color: t.inkFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.preferredIndustry}</div>
+                            <div style={{ fontSize: 11, color: t.inkFaint, whiteSpace: "normal", wordBreak: "break-word" }}>{r.preferredIndustry}</div>
                           )}
                         </div>
                       </div>
