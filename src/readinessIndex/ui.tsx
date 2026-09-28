@@ -4,7 +4,7 @@
    canonical brand source (src/auth/_tokens). */
 
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { tokens as t, fonts as f } from "../auth/_tokens";
 import type { Band, HireBand, Tone, Meter, Skill } from "./types";
 
 /* Alpha-border siblings of the status/brand colors, for borders on tinted
@@ -90,7 +90,7 @@ export function Title({ children, as: As = "h3", size = 20 }: { children: React.
 
 export function Card({ children, pad = 22, style, className, as: As = "div", id }: { children: React.ReactNode; pad?: number; style?: React.CSSProperties; className?: string; as?: "div" | "section" | "article"; id?: string }) {
   return (
-    <As id={id} className={className} style={{ background: t.white, borderRadius: 16, padding: pad, boxShadow: shadows.card, ...style }}>
+    <As id={id} className={className} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: pad, ...style }}>
       {children}
     </As>
   );

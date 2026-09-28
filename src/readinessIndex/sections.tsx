@@ -8,7 +8,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { tokens as t, fonts as f } from "../auth/_tokens";
 import type { Fixture, Pillar, CrossInsight, TypedFlag, RangeKeyLocal as RangeKey, Attention } from "./types";
 import { rangeSliceDated, rangeStartIndex, RANGE_LABEL } from "./types";
 import {
@@ -190,8 +190,8 @@ function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pil
     <Card as="article" className="rix-pillar" pad={18}
       style={{
         display: "flex", flexDirection: "column", gap: 8, minHeight: 196,
-        border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${COPPER_LINE}` : "none",
-        boxShadow: active ? `0 0 0 3px ${t.indigo100}, ${shadows.card}` : shadows.card,
+        border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${COPPER_LINE}` : `1px solid ${t.line}`,
+        boxShadow: active ? `0 0 0 3px ${t.indigo100}` : "none",
       }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
@@ -242,7 +242,7 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
    hold/fix narration. The inline drill target for the pillar grid. */
 export function PillarEvidence({ p }: { p: Pillar }) {
   return (
-    <Card as="section" pad={22} style={{ border: `1px solid ${t.indigo}`, boxShadow: `0 0 0 3px ${t.indigo100}, ${shadows.card}` }}>
+    <Card as="section" pad={22} style={{ border: `1px solid ${t.indigo}`, boxShadow: `0 0 0 3px ${t.indigo100}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
         <div>
           <Eyebrow as="h2" tone="indigo">Pillar evidence</Eyebrow>
