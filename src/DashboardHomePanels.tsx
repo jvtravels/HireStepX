@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { c, font, sp, radius, shadow } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { daysUntilEvent, formatEventDate, formatEventTime } from "./dashboardHelpers";
@@ -96,15 +97,13 @@ export function DraftBanner({ type, savedAt, onResume, onDismiss }: DraftBannerP
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 2 }}>You have an unfinished interview</span>
         <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{type.charAt(0).toUpperCase() + type.slice(1)} · saved {relativeTime(new Date(savedAt).toISOString())}</span>
       </div>
-      <button onClick={onResume}
-        style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, padding: "8px 18px", borderRadius: 8, border: "none", background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: c.obsidian, cursor: "pointer", whiteSpace: "nowrap", transition: "filter 0.15s" }}
-        onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.1)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}>
+      <Button onClick={onResume}
+        style={{ fontFamily: font.ui, fontSize: 12, padding: "8px 18px", height: "auto", whiteSpace: "nowrap" }}>
         Resume
-      </button>
-      <button onClick={onDismiss} aria-label="Dismiss draft" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
+      </Button>
+      <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label="Dismiss draft" style={{ color: c.stone }}>
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      </Button>
     </div>
   );
 }
@@ -136,15 +135,13 @@ export function NotificationsList({ notifications, onAction, onDismiss }: Notifi
           </svg>
           <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{notif.text}</span>
           {notif.action && (
-            <button onClick={() => onAction(notif.action!)} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.sage, background: "rgba(21,128,61,0.08)", border: `1px solid rgba(21,128,61,0.2)`, borderRadius: 10, padding: "6px 14px", cursor: "pointer", whiteSpace: "nowrap" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(21,128,61,0.15)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(21,128,61,0.08)"; }}
-            >{notif.action}</button>
+            <Button onClick={() => onAction(notif.action!)} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, background: "rgba(21,128,61,0.08)", border: `1px solid rgba(21,128,61,0.2)`, borderRadius: 10, whiteSpace: "nowrap" }}
+            >{notif.action}</Button>
           )}
           {notif.dismissible && (
-            <button onClick={() => onDismiss(notif.id)} aria-label="Dismiss" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, flexShrink: 0 }}>
+            <Button variant="ghost" size="icon-sm" onClick={() => onDismiss(notif.id)} aria-label="Dismiss" style={{ color: c.stone, flexShrink: 0 }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+            </Button>
           )}
         </div>
       ))}
@@ -159,10 +156,8 @@ export function PracticeReminderBanner({ text, onStart }: { text: string; onStar
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: `oklch(from ${T.indigo} l c h / 0.03)`, borderLeft: `3px solid ${T.indigo}`, marginBottom: sp.xl }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{text}</span>
-      <button onClick={onStart} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: T.indigo, background: `oklch(from ${T.indigo} l c h / 0.08)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.2)`, borderRadius: 10, padding: "6px 14px", cursor: "pointer", whiteSpace: "nowrap" }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = `oklch(from ${T.indigo} l c h / 0.15)`; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = `oklch(from ${T.indigo} l c h / 0.08)`; }}
-      >Practice Now</button>
+      <Button onClick={onStart} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, background: `oklch(from ${T.indigo} l c h / 0.08)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.2)`, borderRadius: 10, whiteSpace: "nowrap" }}
+      >Practice Now</Button>
     </div>
   );
 }
@@ -249,10 +244,8 @@ export function UpcomingInterviews({ events, isMobile, onNavigate }: { events: C
     <div style={{ ...card, padding: "24px 28px", marginBottom: sp["3xl"] }} className="gradient-border-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         {sectionTitle("Upcoming Interviews", 18)}
-        <button onClick={() => onNavigate("/calendar")}
-          onMouseEnter={(e) => { e.currentTarget.style.textUnderlineOffset = "4px"; e.currentTarget.style.filter = "brightness(1.15)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.textUnderlineOffset = "2px"; e.currentTarget.style.filter = "brightness(1)"; }}
-          style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.indigo, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, transition: "text-underline-offset 160ms ease, filter 160ms ease" }}>View all</button>
+        <Button variant="link" onClick={() => onNavigate("/calendar")}
+          style={{ fontFamily: font.ui, fontSize: 13, color: T.indigo }}>View all</Button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : `repeat(${Math.min(upcomingEvents.length, 3)}, 1fr)`, gap: 12 }}>
         {upcomingEvents.map(ev => {
@@ -358,7 +351,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               </svg>
               <div style={{ position: "absolute", inset: 0, background: "rgba(250,247,240,0.85)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
                 <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, marginBottom: 12 }}>Complete your first session to see your trend</p>
-                <button onClick={onStartSession} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian, background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, border: "none", borderRadius: radius.sm, padding: "8px 20px", cursor: "pointer", transition: "all 0.2s ease" }}>Start a Session</button>
+                <Button onClick={onStartSession} style={{ fontFamily: font.ui, fontSize: 13, height: "auto", padding: "8px 20px" }}>Start a Session</Button>
               </div>
             </div>
           )}
@@ -405,7 +398,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               </div>
               <div style={{ position: "absolute", inset: 0, background: "rgba(250,247,240,0.85)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
                 <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.5, textAlign: "center", maxWidth: 220, marginBottom: 10 }}>Complete a session to unlock your skill breakdown</p>
-                <button onClick={onStartSession} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian, background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, border: "none", borderRadius: radius.sm, padding: "7px 16px", cursor: "pointer" }}>Get Started</button>
+                <Button onClick={onStartSession} size="sm" style={{ fontFamily: font.ui, fontSize: 12, height: "auto", padding: "7px 16px" }}>Get Started</Button>
               </div>
             </div>
           )}

@@ -21,6 +21,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -180,18 +181,15 @@ export default function AppShellFrame({
         <div className="group-data-[collapsible=icon]:px-0.5" style={{ marginTop: 8, paddingBottom: 16, flexShrink: 0 }}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 aria-label="Account menu"
-                className="justify-between p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
+                className="justify-between p-2 h-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                 style={{
                   width: "100%", display: "flex", alignItems: "center",
-                  gap: 8, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
-                  cursor: "pointer", textAlign: "left",
-                  transition: `background ${dur.instant} ${ease.snap}, border-color ${dur.instant} ${ease.snap}`,
+                  gap: 8, textAlign: "left",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = c.border; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = c.graphite; }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                   <Avatar className="rounded-md size-8 shrink-0">
@@ -205,7 +203,7 @@ export default function AppShellFrame({
                   </span>
                 </span>
                 <ChevronsUpDownIcon size={12} aria-hidden="true" className="group-data-[collapsible=icon]:hidden" style={{ flexShrink: 0, color: c.inkSoft }} />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" style={{ width: 240 }}>
               <DropdownMenuLabel className="p-0 font-normal">

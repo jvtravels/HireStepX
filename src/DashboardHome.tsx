@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 import { pickNextMove } from "./nextMove";
@@ -188,18 +189,16 @@ function PrimaryCta({ children, onClick, icon, fullWidth, size = "md" }: {
   const pad = size === "sm" ? "10px 18px" : "14px 22px";
   const fs  = size === "sm" ? 13 : 14;
   return (
-    <button type="button" onClick={onClick} className="hsx-dh-btn hsx-dh-cta-primary" style={{
+    <Button type="button" onClick={onClick} className="hsx-dh-btn hsx-dh-cta-primary" style={{
       display: "inline-flex", alignItems: "center", gap: 10,
-      padding: pad, borderRadius: 12, border: "none", cursor: "pointer",
-      background: t.indigo, color: t.white,
-      fontFamily: f.sans, fontSize: fs, fontWeight: 600, letterSpacing: 0.1,
-      boxShadow: shadows.cta, minHeight: 44,
+      padding: pad, borderRadius: 12, fontFamily: f.sans, fontSize: fs, letterSpacing: 0.1,
+      boxShadow: shadows.cta, minHeight: 44, height: "auto",
       width: fullWidth ? "100%" : undefined,
       justifyContent: fullWidth ? "center" : undefined,
     }}>
       <span>{children}</span>
       {icon ?? Icons.arrow}
-    </button>
+    </Button>
   );
 }
 
@@ -208,13 +207,11 @@ function OutlineCta({ children, onClick, size = "md" }: {
 }) {
   const pad = size === "sm" ? "9px 16px" : "13px 20px";
   return (
-    <button type="button" onClick={onClick} className="hsx-dh-btn hsx-dh-cta-outline" style={{
+    <Button type="button" variant="outline" onClick={onClick} className="hsx-dh-btn hsx-dh-cta-outline" style={{
       display: "inline-flex", alignItems: "center", gap: 8,
-      padding: pad, borderRadius: 12, cursor: "pointer", minHeight: 44,
-      background: "transparent", color: t.coal,
-      border: `1px solid ${t.lineStrong}`,
-      fontFamily: f.sans, fontSize: 14, fontWeight: 500,
-    }}>{children}</button>
+      padding: pad, borderRadius: 12, minHeight: 44, height: "auto",
+      fontFamily: f.sans, fontSize: 14,
+    }}>{children}</Button>
   );
 }
 
@@ -262,17 +259,14 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
         </p>
       </div>
       <OutlineCta size="sm" onClick={onRefresh}>Refresh</OutlineCta>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={dismiss}
         aria-label="Dismiss resume freshness reminder"
-        style={{
-          flexShrink: 0, minWidth: 44, minHeight: 44, borderRadius: 8, cursor: "pointer",
-          background: "transparent", border: "none", color: t.inkMid,
-          fontFamily: f.sans, fontSize: 16, lineHeight: 1,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}
-      >×</button>
+        style={{ flexShrink: 0, minWidth: 44, minHeight: 44, color: t.inkMid, fontFamily: f.sans, fontSize: 16 }}
+      >×</Button>
     </div>
   );
 }
@@ -341,11 +335,10 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, lineHeight: 1.4 }}>
           Couldn&apos;t save your result. Please try again.
         </p>
-        <button
-          type="button" onClick={() => setStatus("open")}
-          style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo,
-            background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
-        >Retry</button>
+        <Button
+          type="button" variant="ghost" size="sm" onClick={() => setStatus("open")}
+          style={{ fontFamily: f.sans, fontSize: 12, color: t.indigo, flexShrink: 0 }}
+        >Retry</Button>
       </div>
     );
   }
@@ -375,10 +368,10 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
           <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
             {isCampus ? "How did your campus placement go?" : "How did your job search go?"}
           </p>
-          <button
-            type="button" onClick={dismiss} aria-label="Dismiss outcome prompt"
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: t.inkMid, fontSize: 16, lineHeight: 1, padding: 0, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
-          >×</button>
+          <Button
+            type="button" variant="ghost" size="icon" onClick={dismiss} aria-label="Dismiss outcome prompt"
+            style={{ color: t.inkMid, fontSize: 16, minWidth: 44, minHeight: 44 }}
+          >×</Button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(
@@ -440,17 +433,15 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
             </label>
           </div>
         )}
-        <button
+        <Button
           type="button" onClick={submit} disabled={busy}
           style={{
-            marginTop: 12, width: "100%", padding: "8px 0",
-            fontFamily: f.sans, fontSize: 13, fontWeight: 600,
-            background: t.indigo, color: t.white, border: "none", borderRadius: 8,
-            cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
+            marginTop: 12, width: "100%", height: "auto", padding: "8px 0",
+            fontFamily: f.sans, fontSize: 13,
           }}
         >
           {busy ? "Saving…" : "Share result"}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -843,11 +834,10 @@ export default function DashboardHome() {
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {realSessions.length === 0 && demoMode && <SampleDataPill />}
-                <button onClick={goToSessions} className="hsx-dh-btn hsx-dh-textlink" style={{
-                  fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo,
-                  background: "transparent", border: "none", cursor: "pointer",
-                  padding: "10px 14px", minHeight: 44, borderRadius: 8,
-                }}>View all <span aria-hidden>→</span></button>
+                <Button variant="ghost" onClick={goToSessions} className="hsx-dh-btn hsx-dh-textlink" style={{
+                  fontFamily: f.sans, fontSize: 13, color: t.indigo,
+                  padding: "10px 14px", minHeight: 44, height: "auto",
+                }}>View all <span aria-hidden>→</span></Button>
               </div>
             </div>
             <RecentSessionsList

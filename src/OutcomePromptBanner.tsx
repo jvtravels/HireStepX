@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { authHeaders } from "./supabase";
@@ -114,10 +115,7 @@ export default function OutcomePromptBanner() {
         <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, margin: 0, flex: 1 }}>
           Couldn&apos;t save your update. Please try again.
         </p>
-        <button onClick={() => setStage("filling")} style={{
-          fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian,
-          background: T.indigo, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
-        }}>Retry</button>
+        <Button onClick={() => setStage("filling")} size="sm" style={{ fontFamily: font.ui, fontSize: 12 }}>Retry</Button>
       </div>
     );
   }
@@ -148,14 +146,8 @@ export default function OutcomePromptBanner() {
           <strong style={{ color: c.ivory }}>How&apos;s your job search going?</strong> 30-second update — helps us show real outcomes (and the next person practicing what you did).
         </p>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onSkip} style={{
-            fontFamily: font.ui, fontSize: 12, color: c.stone, background: "transparent",
-            border: `1px solid ${c.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer",
-          }}>Not now</button>
-          <button onClick={() => setStage("filling")} style={{
-            fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian,
-            background: T.indigo, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
-          }}>Share update</button>
+          <Button onClick={onSkip} variant="outline" size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Not now</Button>
+          <Button onClick={() => setStage("filling")} size="sm" style={{ fontFamily: font.ui, fontSize: 12 }}>Share update</Button>
         </div>
       </div>
     );
@@ -219,18 +211,10 @@ export default function OutcomePromptBanner() {
       )}
 
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <button onClick={onSkip} style={{
-          fontFamily: font.ui, fontSize: 12, color: c.stone, background: "transparent",
-          border: `1px solid ${c.border}`, borderRadius: 6, padding: "8px 14px", cursor: "pointer",
-        }}>Cancel</button>
-        <button onClick={onSubmit} disabled={submitting} style={{
-          fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-          background: submitting ? `oklch(from ${T.indigo} l c h / 0.4)` : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
-          border: "none", borderRadius: 6, padding: "8px 18px",
-          cursor: submitting ? "default" : "pointer",
-        }}>
+        <Button onClick={onSkip} variant="outline" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Cancel</Button>
+        <Button onClick={onSubmit} disabled={submitting} style={{ fontFamily: font.ui, fontSize: 13 }}>
           {submitting ? "Saving…" : "Submit"}
-        </button>
+        </Button>
       </div>
     </div>
   );

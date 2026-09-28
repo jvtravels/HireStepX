@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL } from "./hiringMatchFormat";
@@ -167,17 +168,17 @@ export default function HiringActivityCard() {
           </div>
 
           {shortlisted > matches.length && (
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => router.push("/jobs")}
               style={{
-                marginTop: 12, width: "100%", padding: "8px 0", borderRadius: 8,
-                border: `1px solid ${t.lineStrong}`, background: "transparent", color: t.coal,
-                fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                marginTop: 12, width: "100%", height: "auto", padding: "8px 0",
+                fontFamily: f.sans, fontSize: 12.5,
               }}
             >
               View all {shortlisted} matches →
-            </button>
+            </Button>
           )}
         </>
       )}
