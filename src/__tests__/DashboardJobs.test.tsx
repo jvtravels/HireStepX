@@ -69,7 +69,7 @@ describe("DashboardJobs", () => {
     expect(within(table).getByText("Acme Corp")).toBeInTheDocument();
     expect(within(table).getByText(/Bengaluru/)).toBeInTheDocument();
     expect(within(table).getByText("Full-time")).toBeInTheDocument();
-    expect(within(table).getByText("87% INTERESTED")).toBeInTheDocument();
+    expect(within(table).getByText("87% MATCH")).toBeInTheDocument();
     expect(within(table).getByText(/Your practice history in backend roles/)).toBeInTheDocument();
     // The Figma table shows a short description snippet under the job title.
     expect(within(table).getByText("We're growing the payments platform team.")).toBeInTheDocument();
@@ -200,9 +200,11 @@ describe("DashboardJobs", () => {
     expect(within(dialog).getByText("No perks or benefits listed.")).toBeInTheDocument();
   });
 
-  it("stays on the loading skeleton and then settles on a fetch rejection", async () => {
+  it("shows a distinct error state (not the empty state) on a fetch rejection", async () => {
     global.fetch = vi.fn(() => Promise.reject(new Error("network down"))) as unknown as typeof fetch;
     render(<DashboardJobs />);
-    await waitFor(() => expect(screen.getByText(/No matches yet/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Couldn't load your matches/)).toBeInTheDocument());
+    expect(screen.queryByText(/No matches yet/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 });

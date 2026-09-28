@@ -18,12 +18,16 @@
    SessionsV2.tsx (Table, Input, Select, DropdownMenu-based FilterPill,
    Button) rather than hand-rolled table/select/button markup. */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PlusIcon,
   SearchIcon,
+  SearchXIcon,
   ChevronDownIcon,
+  Loader2Icon,
+  AlertCircleIcon,
+  BriefcaseIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +49,7 @@ import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f } from "./auth/_tokens";
+import { dur, ease } from "./_motion";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import JobDetailModal from "./JobDetailModal";
 
@@ -93,7 +98,7 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   experience: "Experience",
   jobType: "Job type",
   salary: "Salary",
-  interest: "Employer interest",
+  interest: "Match score",
   date: "Date",
 };
 
@@ -149,7 +154,9 @@ function FilterPill({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0 }}
+          style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
         >
           {display}
           <ChevronDownIcon size={12} aria-hidden="true" />
@@ -173,6 +180,7 @@ export default function DashboardJobs() {
   const router = useRouter();
   const [data, setData] = useState<HiringActivity | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [selected, setSelected] = useState<JobMatch | null>(null);
 
   const [search, setSearch] = useState("");
@@ -184,23 +192,38 @@ export default function DashboardJobs() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const headers = await authHeaders();
-        const res = await fetch("/api/candidate-hiring-activity?full=1", { headers });
-        const json = await res.json().catch(() => null);
-        if (!cancelled) {
-          if (res.ok && json) setData(json as HiringActivity);
-          setLoaded(true);
-        }
-      } catch {
-        if (!cancelled) setLoaded(true);
+  const loadMatches = useCallback(async (signal: { cancelled: boolean }) => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch("/api/candidate-hiring-activity?full=1", { headers });
+      const json = await res.json().catch(() => null);
+      if (signal.cancelled) return;
+      if (res.ok && json) {
+        setData(json as HiringActivity);
+        setFetchError(false);
+      } else {
+        setFetchError(true);
       }
-    })();
-    return () => { cancelled = true; };
+      setLoaded(true);
+    } catch {
+      if (!signal.cancelled) {
+        setFetchError(true);
+        setLoaded(true);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    const signal = { cancelled: false };
+    loadMatches(signal);
+    return () => { signal.cancelled = true; };
+  }, [loadMatches]);
+
+  const retry = useCallback(() => {
+    setLoaded(false);
+    setFetchError(false);
+    loadMatches({ cancelled: false });
+  }, [loadMatches]);
 
   const matches = useMemo(() => data?.recent || [], [data]);
 
@@ -276,24 +299,54 @@ export default function DashboardJobs() {
   );
 
   if (!loaded) {
-    return shell(null);
+    return shell(
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "64px 20px", flex: 1 }} role="status" aria-live="polite">
+        <Loader2Icon size={22} color={t.inkFaint} aria-hidden="true" style={{ animation: `spin 0.8s linear infinite` }} />
+        <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkFaint, margin: 0 }}>Loading your matches…</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>,
+    );
+  }
+
+  if (fetchError) {
+    return shell(
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "64px 20px", flex: 1 }} role="alert">
+        <AlertCircleIcon size={26} color={t.inkFaint} aria-hidden="true" />
+        <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>Couldn't load your matches</p>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, textAlign: "center", maxWidth: 320 }}>
+          Something went wrong reaching the server. Check your connection and try again.
+        </p>
+        <Button variant="outline" onClick={retry} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+          Retry
+        </Button>
+      </div>,
+    );
   }
 
   const shortlisted = data?.shortlistedCount ?? 0;
 
   const body = shell(
     shortlisted === 0 ? (
-      <div style={{ padding: 20 }}>
-        <div style={{ padding: 20, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 10 }}>
-          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-            No matches yet — we'll surface this the moment a role fits your profile.
-          </p>
-        </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "56px 24px", flex: 1, textAlign: "center" }}>
+        <BriefcaseIcon size={26} color={t.inkFaint} aria-hidden="true" />
+        <p style={{ fontFamily: f.sans, fontSize: 14.5, fontWeight: 600, color: t.coal, margin: 0 }}>No matches yet</p>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, lineHeight: 1.5, maxWidth: 380 }}>
+          Employers browse the talent roster and reach out when a role fits — there's no set schedule for this.
+          Your match score is driven by your practice history, so completing more sessions improves how you rank.
+        </p>
+        <Button
+          onClick={() => router.push("/interview")}
+          variant="outline"
+          style={{ marginTop: 4, borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
+        >
+          Start a practice session
+        </Button>
       </div>
     ) : (
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           <div style={{ padding: "16px 18px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
             <div style={{ position: "relative", flex: "1 1 240px", minWidth: 200 }}>
+              <label htmlFor="jobs-search" className="sr-only">Search jobs</label>
               <SearchIcon
                 size={14}
                 color={t.inkFaint}
@@ -301,6 +354,7 @@ export default function DashboardJobs() {
                 style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}
               />
               <Input
+                id="jobs-search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by job title, company, or location"
@@ -313,24 +367,42 @@ export default function DashboardJobs() {
             <FilterPill label="Industry" value={industryFilter} options={industryOptions} onChange={setIndustryFilter} />
           </div>
 
+          <div style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
           <Table aria-label="Job matches" className="table-fixed">
             <TableHeader>
-              <TableRow style={{ background: t.rowTint, height: 40 }}>
-                <SortableHead column="company" columnLabel={COLUMN_LABEL.company} defaultDirection="asc" sort={sort} onSortChange={setSort}>Company</SortableHead>
-                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" sort={sort} onSortChange={setSort}>Job title</SortableHead>
-                <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" sort={sort} onSortChange={setSort}>Location</SortableHead>
-                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-                <SortableHead column="jobType" columnLabel={COLUMN_LABEL.jobType} defaultDirection="asc" sort={sort} onSortChange={setSort}>Job type</SortableHead>
-                <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} sort={sort} onSortChange={setSort}>Salary</SortableHead>
-                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
-                <SortableHead column="date" columnLabel={COLUMN_LABEL.date} sort={sort} onSortChange={setSort}>Date</SortableHead>
+              <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
+                <SortableHead column="company" columnLabel={COLUMN_LABEL.company} defaultDirection="asc" width="16%" minWidth={160} sort={sort} onSortChange={setSort}>Company</SortableHead>
+                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="22%" minWidth={220} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+                <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+                <SortableHead column="jobType" columnLabel={COLUMN_LABEL.jobType} defaultDirection="asc" width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Job type</SortableHead>
+                <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} width="12%" minWidth={120} sort={sort} onSortChange={setSort}>Salary</SortableHead>
+                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="16%" minWidth={180} sort={sort} onSortChange={setSort}>Match score</SortableHead>
+                <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="6%" minWidth={90} sort={sort} onSortChange={setSort}>Date</SortableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageRows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} style={{ padding: "24px 14px", textAlign: "center", fontFamily: f.sans, fontSize: 13, color: t.inkFaint, whiteSpace: "normal" }}>
-                    No opportunities match these filters.
+                  <TableCell colSpan={8} style={{ padding: "40px 14px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                      <SearchXIcon size={22} color={t.inkFaint} aria-hidden="true" />
+                      <p style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, margin: 0 }}>No opportunities match these filters</p>
+                      <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>Try adjusting or clearing your filters.</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSearch("");
+                          setLocationFilter("");
+                          setJobTypeFilter("");
+                          setExperienceFilter("");
+                          setIndustryFilter("");
+                        }}
+                        style={{ marginTop: 4, borderRadius: 8, height: 32, fontFamily: f.sans, fontSize: 12.5, fontWeight: 500 }}
+                      >
+                        Clear filters
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -346,6 +418,7 @@ export default function DashboardJobs() {
                     key={i}
                     role="button"
                     tabIndex={0}
+                    aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
                     onClick={() => setSelected(r)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -353,10 +426,12 @@ export default function DashboardJobs() {
                         setSelected(r);
                       }
                     }}
-                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    style={{ cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
                   >
-                    <TableCell style={{ padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <TableCell style={{ width: "16%", minWidth: 160, padding: "12px 14px", fontSize: 13, color: t.inkSoft, verticalAlign: "top" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                         {r.companyLogoPath ? (
                           <img
                             src={r.companyLogoPath}
@@ -375,9 +450,9 @@ export default function DashboardJobs() {
                           </div>
                         )}
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: t.coal, whiteSpace: "nowrap" }}>{r.companyName}</div>
+                          <div style={{ fontWeight: 500, color: t.coal, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.companyName}</div>
                           {r.preferredIndustry && (
-                            <div style={{ fontSize: 11, color: t.inkFaint }}>{r.preferredIndustry}</div>
+                            <div style={{ fontSize: 11, color: t.inkFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.preferredIndustry}</div>
                           )}
                         </div>
                       </div>
@@ -425,25 +500,31 @@ export default function DashboardJobs() {
                     <TableCell style={{ padding: "12px 14px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
                         {r.unlocked ? (
-                          <span style={{
-                            fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
-                            background: t.cream, padding: "3px 9px", borderRadius: 999,
-                          }}>
+                          <span
+                            title="This employer has unlocked your profile and can reach out directly"
+                            style={{
+                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.indigoDeep,
+                              background: t.cream, padding: "3px 9px", borderRadius: 999,
+                            }}>
                             CONTACTED
                           </span>
                         ) : (
-                          <span style={{
-                            fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.successInk,
-                            background: t.success100, padding: "3px 9px", borderRadius: 999,
-                          }}>
-                            {r.matchScore}% INTERESTED
+                          <span
+                            title="A computed fit score based on your profile and practice history — not a signal that the employer has viewed or responded to you yet"
+                            style={{
+                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.successInk,
+                              background: t.success100, padding: "3px 9px", borderRadius: 999,
+                            }}>
+                            {r.matchScore}% MATCH
                           </span>
                         )}
                         {closed && !r.unlocked && (
-                          <span style={{
-                            fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
-                            background: t.cream, padding: "2px 8px", borderRadius: 999,
-                          }}>
+                          <span
+                            title="This role is no longer accepting candidates"
+                            style={{
+                              fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, color: t.inkFaint,
+                              background: t.cream, padding: "2px 8px", borderRadius: 999,
+                            }}>
                             ROLE CLOSED
                           </span>
                         )}
@@ -466,6 +547,7 @@ export default function DashboardJobs() {
               })}
             </TableBody>
           </Table>
+          </div>
 
           <TablePaginationFooter
             entityLabel="opportunity"

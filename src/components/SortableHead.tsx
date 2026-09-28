@@ -34,8 +34,9 @@ export function SortableHead<C extends string>({
   children: React.ReactNode;
 }) {
   const active = sort.column === column;
+  const ariaSort = active ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
   return (
-    <TableHead style={{ width, minWidth, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
+    <TableHead aria-sort={ariaSort} style={{ width, minWidth, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
       <button
         type="button"
         onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : defaultDirection })}
