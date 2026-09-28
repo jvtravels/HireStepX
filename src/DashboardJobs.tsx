@@ -98,7 +98,7 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   experience: "Experience",
   jobType: "Job type",
   salary: "Salary",
-  interest: "Match score",
+  interest: "Employer interest",
   date: "Date",
 };
 
@@ -268,7 +268,7 @@ export default function DashboardJobs() {
       <div>
         <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Jobs</h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-          Employers on our talent roster match to your profile and reach out directly — there's nothing to apply to here.
+          These are job opportunities where employers have shown interest in your profile.
         </p>
       </div>
       <Button
@@ -377,7 +377,7 @@ export default function DashboardJobs() {
                 <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Experience</SortableHead>
                 <SortableHead column="jobType" columnLabel={COLUMN_LABEL.jobType} defaultDirection="asc" width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Job type</SortableHead>
                 <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} width="12%" minWidth={120} sort={sort} onSortChange={setSort}>Salary</SortableHead>
-                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="16%" minWidth={180} sort={sort} onSortChange={setSort}>Match score</SortableHead>
+                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="16%" minWidth={180} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
                 <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="6%" minWidth={90} sort={sort} onSortChange={setSort}>Date</SortableHead>
               </TableRow>
             </TableHeader>
@@ -510,12 +510,12 @@ export default function DashboardJobs() {
                           </span>
                         ) : (
                           <span
-                            title="A computed fit score based on your profile and practice history — not a signal that the employer has viewed or responded to you yet"
+                            title="This employer has shown interest in your profile"
                             style={{
-                              fontFamily: f.mono, fontSize: 10.5, letterSpacing: 0.4, color: t.successInk,
-                              background: t.success100, padding: "3px 9px", borderRadius: 999,
+                              fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.successInk,
+                              background: t.success100, padding: "3px 10px", borderRadius: 999,
                             }}>
-                            {r.matchScore}% MATCH
+                            Interested
                           </span>
                         )}
                         {closed && !r.unlocked && (
