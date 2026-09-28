@@ -76,6 +76,18 @@
   --border: oklch(0.925 0.005 214.3);
   --input: oklch(0.925 0.005 214.3);
   --ring: oklch(0.723 0.014 214.4);
+
+  /* Button-only brand colors. --primary/--destructive above are shared by the
+     whole shadcn primitive set (checkbox, radio, calendar, ...) and stay
+     copper/red for those. Buttons use these instead so the actionable brand
+     color is indigo (see src/auth/_tokens.ts T.indigo) rather than the
+     editorial copper reserved for score/streak/achievement visuals. Values
+     mirror T.indigo/T.indigoDeep/T.error/T.errorInk exactly. */
+  --btn-primary: oklch(0.359 0.135 278.697);
+  --btn-primary-hover: oklch(0.257 0.086 281.288);
+  --btn-primary-foreground: oklch(1 0 0);
+  --btn-destructive: oklch(0.505 0.190 27.518);
+  --btn-destructive-hover: oklch(0.405 0.152 27.518);
   --chart-1: oklch(0.872 0.007 219.6);
   --chart-2: oklch(0.56 0.021 213.5);
   --chart-3: oklch(0.45 0.017 213.2);
