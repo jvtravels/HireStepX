@@ -18,9 +18,17 @@ import { describeMatch } from "./_requirement-match-helpers";
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const LOGO_BUCKET = "employer-logos";
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+// Mirrors employer-profile.ts's logoUrl() — logo_path is a storage-relative
+// path, not a servable URL, so the Jobs tab's <img src> needs it turned into
+// a full public-bucket URL exactly like the employer's own profile screen does.
+function logoUrl(logoPath: string | null): string | null {
+  return logoPath ? `${SUPABASE_URL}/storage/v1/object/public/${LOGO_BUCKET}/${logoPath}` : null;
 }
 
 interface MatchRow {
@@ -124,9 +132,10 @@ export default async function handler(req: Request): Promise<Response> {
       const skills = req?.skills || [];
       const locations = req?.locations?.length ? req.locations : req?.location ? [req.location] : [];
       return {
+        id: m.id,
         roleTitle: req?.title || "Open role",
         companyName: req?.employers?.company_name || "A HireStepX employer",
-        companyLogoPath: req?.employers?.logo_path || null,
+        companyLogoPath: logoUrl(req?.employers?.logo_path || null),
         companyWebsite: req?.employers?.website || null,
         location: locations.join(" / "),
         workMode: req?.work_mode || null,

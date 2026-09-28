@@ -54,6 +54,7 @@ import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE
 import JobDetailModal from "./JobDetailModal";
 
 export interface JobMatch {
+  id: string;
   roleTitle: string;
   companyName: string;
   companyLogoPath: string | null;
@@ -122,7 +123,10 @@ function compareRows(a: JobMatch, b: JobMatch, sort: Sort<SortColumn>): number {
     case "salary":
       return dir * ((a.budgetMax ?? a.budgetMin ?? 0) - (b.budgetMax ?? b.budgetMin ?? 0));
     case "interest":
-      return dir * (a.matchScore - b.matchScore);
+      // "Employer interest" is what the two badges in that column show
+      // (Contacted vs Interested), not the invisible matchScore — sorting by
+      // matchScore silently reordered rows by a number nobody on screen sees.
+      return dir * ((a.unlocked ? 1 : 0) - (b.unlocked ? 1 : 0));
     case "date":
       return dir * (new Date(a.matchedAt).getTime() - new Date(b.matchedAt).getTime());
   }
@@ -211,6 +215,7 @@ export default function DashboardJobs() {
   const [data, setData] = useState<HiringActivity | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [fetchError, setFetchError] = useState(false);
+  const [fetchStatus, setFetchStatus] = useState<number | null>(null);
   const [selected, setSelected] = useState<JobMatch | null>(null);
 
   const [search, setSearch] = useState("");
@@ -231,13 +236,16 @@ export default function DashboardJobs() {
       if (res.ok && json) {
         setData(json as HiringActivity);
         setFetchError(false);
+        setFetchStatus(null);
       } else {
         setFetchError(true);
+        setFetchStatus(res.status);
       }
       setLoaded(true);
     } catch {
       if (!signal.cancelled) {
         setFetchError(true);
+        setFetchStatus(null);
         setLoaded(true);
       }
     }
@@ -252,6 +260,7 @@ export default function DashboardJobs() {
   const retry = useCallback(() => {
     setLoaded(false);
     setFetchError(false);
+    setFetchStatus(null);
     loadMatches({ cancelled: false });
   }, [loadMatches]);
 
@@ -337,12 +346,20 @@ export default function DashboardJobs() {
   }
 
   if (fetchError) {
+    const message =
+      fetchStatus === 401 || fetchStatus === 403
+        ? "Your session has expired — please sign in again."
+        : fetchStatus === 429
+          ? "Too many requests — please wait a moment and try again."
+          : fetchStatus && fetchStatus >= 500
+            ? "Our server is having trouble right now. Please try again shortly."
+            : "Something went wrong reaching the server. Check your connection and try again.";
     return shell(
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "64px 20px", flex: 1 }} role="alert">
         <AlertCircleIcon size={26} color={t.inkFaint} aria-hidden="true" />
         <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>Couldn't load your matches</p>
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, textAlign: "center", maxWidth: 320 }}>
-          Something went wrong reaching the server. Check your connection and try again.
+          {message}
         </p>
         <Button variant="outline" onClick={retry} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
           Retry
@@ -395,7 +412,7 @@ export default function DashboardJobs() {
             <FilterPill label="Industry" value={industryFilter} options={industryOptions} onChange={setIndustryFilter} />
           </div>
 
-          <div style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
+          <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ overflow: "hidden", flex: 1, minHeight: 0 }}>
           <Table aria-label="Job matches" className="table-fixed">
             <TableHeader>
               <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
@@ -443,20 +460,23 @@ export default function DashboardJobs() {
                 const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
                 return (
                   <TableRow
-                    key={i}
+                    key={r.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
                     onClick={() => setSelected(r)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelected(r);
+                      }
+                    }}
+                    className="focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     style={{ cursor: "pointer", minHeight: 72, transition: `background ${dur.instant} ${ease.snap}` }}
                   >
                     <TableCell style={{ width: "20%", minWidth: 200, padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
-                      <button
-                        type="button"
-                        className="sr-only"
-                        onClick={() => setSelected(r)}
-                      >
-                        {`View details for ${r.roleTitle} at ${r.companyName}`}
-                      </button>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
                         {r.companyLogoPath ? (
                           <img
@@ -525,7 +545,7 @@ export default function DashboardJobs() {
                             Interested
                           </Badge>
                         )}
-                        {closed && !r.unlocked && (
+                        {closed && (
                           <Badge tone="neutral" title="This role is no longer accepting candidates">
                             Role closed
                           </Badge>

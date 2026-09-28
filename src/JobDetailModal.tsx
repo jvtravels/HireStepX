@@ -86,7 +86,7 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
               Interested
             </span>
           )}
-          {closed && !job.unlocked && (
+          {closed && (
             <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, padding: "4px 10px", borderRadius: 999 }}>
               Role closed
             </span>

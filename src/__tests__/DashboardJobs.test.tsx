@@ -31,6 +31,7 @@ describe("DashboardJobs", () => {
           unlockedCount: 0,
           recent: [
             {
+              id: "match-1",
               roleTitle: "Backend Engineer",
               companyName: "Acme Corp",
               companyLogoPath: null,
@@ -130,8 +131,8 @@ describe("DashboardJobs", () => {
           shortlistedCount: 2,
           unlockedCount: 0,
           recent: [
-            { ...baseRow, roleTitle: "Backend Engineer", companyName: "Acme Corp", location: "Bengaluru", matchedAt: "2026-09-20" },
-            { ...baseRow, roleTitle: "Frontend Engineer", companyName: "Globex", location: "Pune", matchedAt: "2026-09-21" },
+            { ...baseRow, id: "match-1", roleTitle: "Backend Engineer", companyName: "Acme Corp", location: "Bengaluru", matchedAt: "2026-09-20" },
+            { ...baseRow, id: "match-2", roleTitle: "Frontend Engineer", companyName: "Globex", location: "Pune", matchedAt: "2026-09-21" },
           ],
         }),
       }),
@@ -155,6 +156,7 @@ describe("DashboardJobs", () => {
           unlockedCount: 0,
           recent: [
             {
+              id: "match-1",
               roleTitle: "SDE II",
               companyName: "Beta Inc",
               companyLogoPath: null,
