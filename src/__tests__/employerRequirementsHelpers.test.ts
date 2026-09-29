@@ -117,15 +117,15 @@ describe("asBoundedWorkMode", () => {
 
 describe("buildRequirementsListResponse", () => {
   const rows = [
-    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, locations: ["Bengaluru"], open_positions: 2, work_mode: "hybrid", employment_type: "full-time", salary_type: "per-annum", preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: ["React", "Node"], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-01T10:00:00Z" },
-    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, locations: [], open_positions: null, work_mode: null, employment_type: null, salary_type: null, preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: [], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-02T10:00:00Z" },
+    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", stage: "ai_matching", experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, locations: ["Bengaluru"], open_positions: 2, work_mode: "hybrid", employment_type: "full-time", salary_type: "per-annum", preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: ["React", "Node"], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-01T10:00:00Z" },
+    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", stage: "ready_for_review", experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, locations: [], open_positions: null, work_mode: null, employment_type: null, salary_type: null, preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: [], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-02T10:00:00Z" },
   ];
 
   it("joins requirement rows with their match counts", () => {
     const counts = new Map([["req_1", 4]]);
     expect(buildRequirementsListResponse(rows, counts)).toEqual([
-      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, locations: ["Bengaluru"], openPositions: 2, workMode: "hybrid", employmentType: "full-time", salaryType: "per-annum", skills: ["React", "Node"], createdAt: "2026-08-01", candidateCount: 4, aiScreening: EMPTY_AI_SCREENING },
-      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, locations: [], openPositions: null, workMode: null, employmentType: null, salaryType: null, skills: [], createdAt: "2026-08-02", candidateCount: 0, aiScreening: EMPTY_AI_SCREENING },
+      { id: "req_1", title: "SDE II", location: "Bengaluru", noticePeriodPref: "30 days", status: "ready", stage: "ai_matching", experienceMin: 3, experienceMax: 6, dueDate: "2026-09-01", budgetMin: 18, budgetMax: 22, locations: ["Bengaluru"], openPositions: 2, workMode: "hybrid", employmentType: "full-time", salaryType: "per-annum", skills: ["React", "Node"], createdAt: "2026-08-01", candidateCount: 4, aiScreening: EMPTY_AI_SCREENING },
+      { id: "req_2", title: "PM", location: "Remote", noticePeriodPref: "Any", status: "zero", stage: "ready_for_review", experienceMin: null, experienceMax: null, dueDate: null, budgetMin: null, budgetMax: null, locations: [], openPositions: null, workMode: null, employmentType: null, salaryType: null, skills: [], createdAt: "2026-08-02", candidateCount: 0, aiScreening: EMPTY_AI_SCREENING },
     ]);
   });
 
@@ -138,7 +138,7 @@ describe("buildRequirementsListResponse", () => {
   });
 
   it("uses the given aiScreening summary for a requirement when present", () => {
-    const summary = { evaluated: 5, scoreLow: 42, scoreHigh: 88, topMatches: 2, strongAvgScore: 80, strongMatchInitials: ["AK"], strongMatchExtra: 1 };
+    const summary = { evaluated: 5, scoreLow: 42, scoreHigh: 88, topMatches: 2, strongAvgScore: 80, strongMatchInitials: ["AK"], strongMatchExtra: 1, strongMatches: [{ id: "c1", name: "Aisha Khan", initials: "AK", yearsExperience: 4, skills: ["React"] }] };
     const result = buildRequirementsListResponse(rows, new Map(), new Map([["req_1", summary]]));
     expect(result[0].aiScreening).toEqual(summary);
     expect(result[1].aiScreening).toEqual(EMPTY_AI_SCREENING);
@@ -324,24 +324,32 @@ describe("nameInitials", () => {
 });
 
 describe("buildAiScreeningByRequirement", () => {
-  it("resolves top candidate ids into initials using the names map", () => {
+  it("resolves top candidate ids into initials and detail using the details map", () => {
     const stats = new Map([
       ["req_1", { evaluated: 5, scoreLow: 40, scoreHigh: 90, topMatches: 2, strongAvgScore: 82, topCandidateIds: ["c1", "c2"], strongMatchExtra: 0 }],
     ]);
-    const names = new Map([["c1", "Aisha Khan"], ["c2", "Rahul Sharma"]]);
-    const result = buildAiScreeningByRequirement(stats, names);
+    const details = new Map([
+      ["c1", { name: "Aisha Khan", yearsExperience: 4, skills: ["React"] }],
+      ["c2", { name: "Rahul Sharma", yearsExperience: 6, skills: ["Node"] }],
+    ]);
+    const result = buildAiScreeningByRequirement(stats, details);
     expect(result.get("req_1")).toEqual({
       evaluated: 5, scoreLow: 40, scoreHigh: 90, topMatches: 2, strongAvgScore: 82,
       strongMatchInitials: ["AK", "RS"], strongMatchExtra: 0,
+      strongMatches: [
+        { id: "c1", name: "Aisha Khan", initials: "AK", yearsExperience: 4, skills: ["React"] },
+        { id: "c2", name: "Rahul Sharma", initials: "RS", yearsExperience: 6, skills: ["Node"] },
+      ],
     });
   });
 
-  it("falls back to ? initials for candidates missing from the names map", () => {
+  it("falls back to ? initials and blank detail for candidates missing from the details map", () => {
     const stats = new Map([
       ["req_1", { evaluated: 1, scoreLow: 70, scoreHigh: 70, topMatches: 1, strongAvgScore: 70, topCandidateIds: ["c1"], strongMatchExtra: 0 }],
     ]);
     const result = buildAiScreeningByRequirement(stats, new Map());
     expect(result.get("req_1")!.strongMatchInitials).toEqual(["?"]);
+    expect(result.get("req_1")!.strongMatches).toEqual([{ id: "c1", name: "", initials: "?", yearsExperience: null, skills: [] }]);
   });
 });
 

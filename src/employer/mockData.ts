@@ -52,11 +52,26 @@ export interface Candidate {
 
 export type RequirementStatus = "generating" | "ready" | "partial" | "zero" | "failed" | "closed";
 
+/** Manually-set hiring-pipeline stage — distinct from RequirementStatus,
+ *  which tracks AI matching/generation lifecycle. Mirrors RequirementStage
+ *  in server-handlers/_employer-requirements-helpers.ts. */
+export type RequirementStage = "ai_matching" | "ready_for_review" | "interviewing" | "hired";
+
 export type WorkMode = "remote" | "onsite" | "hybrid";
 
 export type EmploymentType = "full-time" | "part-time" | "contract" | "internship";
 
 export type SalaryType = "per-month" | "fixed" | "per-annum";
+
+/** One Strong Match candidate's real, non-fabricated detail — mirrors
+ *  StrongMatchCandidate in server-handlers/_employer-requirements-helpers.ts. */
+export interface StrongMatchCandidate {
+  id: string;
+  name: string;
+  initials: string;
+  yearsExperience: number | null;
+  skills: string[];
+}
 
 /** Jobs-table "AI Screening" summary — mirrors AiScreeningSummary in
  *  server-handlers/_employer-requirements-helpers.ts. */
@@ -68,6 +83,7 @@ export interface AiScreeningSummary {
   strongAvgScore: number | null;
   strongMatchInitials: string[];
   strongMatchExtra: number;
+  strongMatches: StrongMatchCandidate[];
 }
 
 export interface RequirementSummary {
@@ -76,6 +92,7 @@ export interface RequirementSummary {
   location: string;
   noticePeriodPref: string;
   status: RequirementStatus;
+  stage: RequirementStage;
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;

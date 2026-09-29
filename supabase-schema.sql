@@ -1694,6 +1694,9 @@ alter table employer_requirements add column if not exists availability text;
 alter table employer_requirements add column if not exists relevant_experience text;
 alter table employer_requirements add column if not exists portfolio_required boolean not null default false;
 alter table employer_requirements add column if not exists custom_skill_sets text[] not null default '{}';
+-- Manually-set hiring-pipeline stage, distinct from `status` (which tracks
+-- AI matching/generation lifecycle, not where the employer is in hiring).
+alter table employer_requirements add column if not exists stage text not null default 'ai_matching' check (stage in ('ai_matching', 'ready_for_review', 'interviewing', 'hired'));
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 
@@ -1710,11 +1713,13 @@ create table if not exists employer_requirement_activity (
   id uuid primary key default gen_random_uuid(),
   requirement_id uuid references employer_requirements(id) on delete cascade not null,
   employer_id uuid references employers(id) on delete cascade not null,
-  action text not null check (action in ('created', 'updated', 'archived', 'reopened')),
+  action text not null check (action in ('created', 'updated', 'archived', 'reopened', 'stage_changed')),
   detail text,
   created_at timestamptz not null default now()
 );
 create index if not exists idx_employer_requirement_activity_requirement on employer_requirement_activity(requirement_id, created_at desc);
+alter table employer_requirement_activity drop constraint if exists employer_requirement_activity_action_check;
+alter table employer_requirement_activity add constraint employer_requirement_activity_action_check check (action in ('created', 'updated', 'archived', 'reopened', 'stage_changed'));
 
 alter table employer_requirement_activity enable row level security;
 drop policy if exists "Employers view own requirement activity" on employer_requirement_activity;

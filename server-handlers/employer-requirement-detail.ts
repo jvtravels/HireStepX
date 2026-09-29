@@ -51,8 +51,10 @@ import {
   asBoundedEmploymentType,
   asBoundedSalaryType,
   asBoundedBoolean,
+  asBoundedStage,
   isValidRequirementInput,
   type RequirementRow,
+  type RequirementStage,
 } from "./_employer-requirements-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -291,9 +293,47 @@ async function handleStatusAction(
   }
 }
 
+async function handleStageAction(
+  requirementId: string,
+  userId: string,
+  stage: RequirementStage,
+  headers: Record<string, string>,
+): Promise<Response> {
+  try {
+    const existingRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage`,
+      { headers: serviceHeaders() },
+    );
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: string }>;
+    if (!existingRes.ok || !existingRows[0]) {
+      return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
+    }
+
+    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+      method: "PATCH",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ stage }),
+    });
+    if (!patchRes.ok) {
+      const t = await patchRes.text().catch(() => "");
+      slog.error("employer-requirement-detail stage action failed", { code: "employer_requirement_stage_action_failed", httpStatus: patchRes.status, body: t.slice(0, 200), userId, requirementId, stage });
+      return new Response(JSON.stringify({ error: "Failed to update requirement" }), { status: 500, headers });
+    }
+    const updated = (await patchRes.json()) as Array<{ id: string; stage: string }>;
+    await logRequirementActivity(requirementId, userId, "stage_changed");
+
+    return new Response(JSON.stringify({ id: requirementId, stage: updated[0]?.stage ?? stage }), { status: 200, headers });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirement-detail stage action threw", { code: "employer_requirement_stage_action_unexpected_error", error: msg.slice(0, 200), userId, requirementId, stage });
+    return new Response(JSON.stringify({ error: "Failed to update requirement" }), { status: 500, headers });
+  }
+}
+
 async function handlePatch(req: Request, requirementId: string, userId: string, headers: Record<string, string>): Promise<Response> {
   let body: {
     action?: unknown;
+    stage?: unknown;
     title?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
     budgetMin?: unknown; budgetMax?: unknown;
@@ -313,6 +353,14 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
 
   if (body.action === "archive" || body.action === "reopen") {
     return handleStatusAction(requirementId, userId, body.action, headers);
+  }
+
+  if (body.action === "set_stage") {
+    const stage = asBoundedStage(body.stage);
+    if (!stage) {
+      return new Response(JSON.stringify({ error: "Invalid stage" }), { status: 400, headers });
+    }
+    return handleStageAction(requirementId, userId, stage, headers);
   }
 
   const title = asBoundedString(body.title, 200);

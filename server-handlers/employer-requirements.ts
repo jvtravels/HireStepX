@@ -24,8 +24,10 @@ import {
   classifyRequirementStatus,
   rankAndCap,
   STRONG_MATCH_THRESHOLD,
+  extractSkills,
   type CandidatePoolRow,
 } from "./_requirement-match-helpers";
+import { extractResumeDetail } from "./_resume-detail-helpers";
 import {
   asBoundedString,
   asBoundedStringArray,
@@ -63,7 +65,7 @@ function serviceHeaders(): Record<string, string> {
 export async function logRequirementActivity(
   requirementId: string,
   employerId: string,
-  action: "created" | "updated" | "archived" | "reopened",
+  action: "created" | "updated" | "archived" | "reopened" | "stage_changed",
   detail?: string,
 ): Promise<void> {
   try {
@@ -111,7 +113,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -136,19 +138,24 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
         const matchStats = computeMatchStats(matchRows, STRONG_MATCH_THRESHOLD);
         const topCandidateIds = Array.from(new Set(Array.from(matchStats.values()).flatMap((s) => s.topCandidateIds)));
-        let namesById = new Map<string, string>();
+        let detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[] }>();
         if (topCandidateIds.length > 0) {
-          const nameIdParam = topCandidateIds.map((id) => encodeURIComponent(id)).join(",");
-          const namesRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles?id=in.(${nameIdParam})&select=id,name`,
+          const idParam2 = topCandidateIds.map((id) => encodeURIComponent(id)).join(",");
+          const profilesRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam2})&select=id,name,resume_data`,
             { headers: serviceHeaders() },
           );
-          if (namesRes.ok) {
-            const nameRows = (await namesRes.json().catch(() => [])) as Array<{ id: string; name: string }>;
-            namesById = new Map(nameRows.map((row) => [row.id, row.name]));
+          if (profilesRes.ok) {
+            const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; resume_data: unknown }>;
+            detailsById = new Map(
+              profileRows.map((row) => [
+                row.id,
+                { name: row.name, yearsExperience: extractResumeDetail(row.resume_data).yearsExperience, skills: extractSkills(row.resume_data) },
+              ]),
+            );
           }
         }
-        aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, namesById);
+        aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, detailsById);
       }
     }
 

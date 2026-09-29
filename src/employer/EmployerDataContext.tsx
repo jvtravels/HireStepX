@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
-import { RequirementSummary, Requirement, Candidate, WorkMode, EmploymentType, SalaryType } from "./mockData";
+import { RequirementSummary, Requirement, Candidate, WorkMode, EmploymentType, SalaryType, RequirementStage } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
@@ -30,7 +30,7 @@ export interface UnlockOrder {
 
 export interface RequirementActivity {
   id: string;
-  action: "created" | "updated" | "archived" | "reopened";
+  action: "created" | "updated" | "archived" | "reopened" | "stage_changed";
   detail: string | null;
   createdAt: string;
 }
@@ -110,6 +110,7 @@ interface EmployerDataContextValue {
   fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
   archiveRequirement: (id: string) => Promise<boolean>;
   reopenRequirement: (id: string) => Promise<boolean>;
+  updateRequirementStage: (id: string, stage: RequirementStage) => Promise<boolean>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   refreshRequirements: () => Promise<void>;
 }
@@ -331,6 +332,15 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return false;
   }, [refreshRequirements]);
 
+  const updateRequirementStage = useCallback(async (id: string, stage: RequirementStage) => {
+    const res = await apiFetch<{ stage: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { action: "set_stage", stage }, { method: "PATCH" });
+    if (res.ok) {
+      refreshRequirements();
+      return true;
+    }
+    return false;
+  }, [refreshRequirements]);
+
   const fetchRequirementActivity = useCallback(async (id: string): Promise<RequirementActivity[] | null> => {
     try {
       const headers = await authHeaders();
@@ -360,6 +370,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchRequirementDetail,
     archiveRequirement,
     reopenRequirement,
+    updateRequirementStage,
     fetchRequirementActivity,
     refreshRequirements,
   };

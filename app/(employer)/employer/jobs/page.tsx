@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +44,7 @@ import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import LoadingScreen from "@/_LoadingScreen";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementActivity } from "@/employer/EmployerDataContext";
-import { RequirementSummary, RequirementStatus } from "@/employer/mockData";
+import { RequirementSummary, RequirementStatus, RequirementStage } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { dur, ease } from "@/_motion";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
@@ -107,11 +108,12 @@ const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
   updated: "Details updated",
   archived: "Archived",
   reopened: "Reopened",
+  stage_changed: "Stage updated",
 };
 
 const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
 
-type SortColumn = "title" | "location" | "experience" | "status" | "dueDate" | "matches" | "topMatches" | "posted";
+type SortColumn = "title" | "location" | "experience" | "status" | "stage" | "dueDate" | "matches" | "topMatches" | "posted";
 const DEFAULT_SORT: Sort<SortColumn> = { column: "posted", direction: "desc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
@@ -119,6 +121,7 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   location: "Location",
   experience: "Experience",
   status: "Status",
+  stage: "Stage",
   dueDate: "Due date",
   matches: "AI Screening",
   topMatches: "Top Matches",
@@ -137,6 +140,8 @@ function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<So
       return dir * ((a.experienceMin ?? a.experienceMax ?? -1) - (b.experienceMin ?? b.experienceMax ?? -1));
     case "status":
       return dir * STATUS_LABEL[a.status].localeCompare(STATUS_LABEL[b.status]);
+    case "stage":
+      return dir * STAGE_LABEL[a.stage].localeCompare(STAGE_LABEL[b.stage]);
     case "dueDate":
       return dir * (due(a) - due(b));
     case "matches":
@@ -224,6 +229,22 @@ const STATUS_ICON: Record<RequirementStatus, typeof CircleIcon> = {
   closed: ArchiveIcon,
 };
 
+const STAGE_OPTIONS: RequirementStage[] = ["ai_matching", "ready_for_review", "interviewing", "hired"];
+
+const STAGE_LABEL: Record<RequirementStage, string> = {
+  ai_matching: "AI Matching",
+  ready_for_review: "Ready for Review",
+  interviewing: "Interviewing",
+  hired: "Hired",
+};
+
+const STAGE_TONE: Record<RequirementStage, BadgeTone> = {
+  ai_matching: "neutral",
+  ready_for_review: "info",
+  interviewing: "brand",
+  hired: "success",
+};
+
 function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
   const { color, background } = BADGE_TONE[tone];
   return (
@@ -249,6 +270,37 @@ function StatusBadge({ status }: { status: RequirementStatus }) {
       <StatusIcon size={12} className={status === "generating" ? "animate-spin" : undefined} aria-hidden="true" />
       {STATUS_LABEL[status]}
     </span>
+  );
+}
+
+/** Real, persisted hiring-pipeline stage — manually set by the employer,
+    distinct from the AI-generation Status column. Click to move the
+    posting forward via the row's own dropdown, no page navigation needed. */
+function StageCell({ requirement, onChange }: { requirement: RequirementSummary; onChange: (id: string, stage: RequirementStage) => void }) {
+  const { color, background } = BADGE_TONE[STAGE_TONE[requirement.stage]];
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+            color, background, padding: "3px 7px 3px 9px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
+          }}
+        >
+          {STAGE_LABEL[requirement.stage]}
+          <ChevronDownIcon size={11} aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {STAGE_OPTIONS.map((stage) => (
+          <DropdownMenuItem key={stage} disabled={stage === requirement.stage} onSelect={() => onChange(requirement.id, stage)}>
+            {STAGE_LABEL[stage]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -288,27 +340,50 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
 }
 
 /** "Strong Match" cell — overlapping avatar-initial chips for the candidates
-    scoring at/above STRONG_MATCH_THRESHOLD. The group's average score is
-    shown under Top Matches instead (see the canvas reference), since
-    strongAvgScore is the average across that same top-matches group. */
+    scoring at/above STRONG_MATCH_THRESHOLD. Hovering a chip shows that
+    candidate's real name, years of experience, and skills (from their
+    resume) — no fabricated data; a candidate missing profile detail just
+    shows initials with no card. The group's average score is shown under
+    Top Matches instead (see the canvas reference), since strongAvgScore is
+    the average across that same top-matches group. */
 function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
   if (aiScreening.evaluated === 0) return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>;
-  if (aiScreening.strongMatchInitials.length === 0) {
+  if (aiScreening.strongMatches.length === 0) {
     return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>;
   }
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
-      {aiScreening.strongMatchInitials.map((initials, i) => (
-        <span
-          key={i}
-          style={{
-            width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
-            marginLeft: i === 0 ? 0 : -8,
-          }}
-        >
-          {initials}
-        </span>
+      {aiScreening.strongMatches.map((candidate, i) => (
+        <HoverCard key={candidate.id} openDelay={150}>
+          <HoverCardTrigger asChild>
+            <span
+              style={{
+                width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
+                marginLeft: i === 0 ? 0 : -8, cursor: candidate.name ? "pointer" : "default",
+              }}
+            >
+              {candidate.initials}
+            </span>
+          </HoverCardTrigger>
+          {candidate.name && (
+            <HoverCardContent style={{ width: 220 }}>
+              <div style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal }}>{candidate.name}</div>
+              {candidate.yearsExperience != null && (
+                <div style={{ marginTop: 2, fontFamily: f.sans, fontSize: textSize.xs, color: t.inkSoft }}>
+                  {candidate.yearsExperience} {candidate.yearsExperience === 1 ? "year" : "years"} experience
+                </div>
+              )}
+              {candidate.skills.length > 0 && (
+                <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {candidate.skills.slice(0, 6).map((skill) => (
+                    <Badge key={skill} tone="neutral">{skill}</Badge>
+                  ))}
+                </div>
+              )}
+            </HoverCardContent>
+          )}
+        </HoverCard>
       ))}
       {aiScreening.strongMatchExtra > 0 && (
         <span
@@ -343,7 +418,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
 
 export default function EmployerJobsPage() {
   const router = useRouter();
-  const { requirements, requirementsLoading, archiveRequirement, reopenRequirement, fetchRequirementActivity } = useEmployerData();
+  const { requirements, requirementsLoading, archiveRequirement, reopenRequirement, updateRequirementStage, fetchRequirementActivity } = useEmployerData();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -673,12 +748,12 @@ export default function EmployerJobsPage() {
         <Table aria-label="Posted jobs" className="table-fixed">
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="18%" minWidth={200} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="15%" minWidth={190} sort={sort} onSortChange={setSort}>Job title</SortableHead>
               <SortableHead
                 column="status"
                 columnLabel={COLUMN_LABEL.status}
                 defaultDirection="asc"
-                width="10%"
+                width="9%"
                 minWidth={110}
                 sort={sort}
                 onSortChange={setSort}
@@ -687,9 +762,20 @@ export default function EmployerJobsPage() {
                 Status
               </SortableHead>
               <SortableHead
+                column="stage"
+                columnLabel={COLUMN_LABEL.stage}
+                width="10%"
+                minWidth={130}
+                sort={sort}
+                onSortChange={setSort}
+                after={<HeadInfo label="About stage">Where this posting is in your hiring pipeline — move it forward as you review candidates and interview.</HeadInfo>}
+              >
+                Stage
+              </SortableHead>
+              <SortableHead
                 column="matches"
                 columnLabel={COLUMN_LABEL.matches}
-                width="13%"
+                width="12%"
                 minWidth={140}
                 sort={sort}
                 onSortChange={setSort}
@@ -700,7 +786,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width="9%"
+                width="8%"
                 minWidth={90}
                 sort={sort}
                 onSortChange={setSort}
@@ -708,17 +794,17 @@ export default function EmployerJobsPage() {
               >
                 Top Matches
               </SortableHead>
-              <TableHead style={{ width: "11%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
+              <TableHead style={{ width: "10%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Strong Match
-                  <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria.</HeadInfo>
+                  <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
-              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="8%" minWidth={90} sort={sort} onSortChange={setSort}>Posted</SortableHead>
-              <TableHead style={{ width: "7%", minWidth: 64, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, textAlign: "right", paddingRight: 20 }}>Actions</TableHead>
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="6%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="7%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
+              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="7%" minWidth={90} sort={sort} onSortChange={setSort}>Posted</SortableHead>
+              <TableHead style={{ width: "6%", minWidth: 64, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, textAlign: "right", paddingRight: 20 }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -790,6 +876,9 @@ export default function EmployerJobsPage() {
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StatusBadge status={r.status} />
+                  </TableCell>
+                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    <StageCell requirement={r} onChange={updateRequirementStage} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.status === "generating" ? (

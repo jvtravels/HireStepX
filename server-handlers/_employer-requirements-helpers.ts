@@ -34,6 +34,18 @@ export interface RequirementRow {
   portfolio_required: boolean;
   custom_skill_sets: string[];
   created_at: string;
+  stage: string;
+}
+
+/** The four hiring-pipeline stages an employer can move a posting through,
+ *  independent of `status` (AI matching/generation lifecycle). */
+export const REQUIREMENT_STAGES = ["ai_matching", "ready_for_review", "interviewing", "hired"] as const;
+export type RequirementStage = (typeof REQUIREMENT_STAGES)[number];
+
+/** Validated read of a client-supplied stage value — anything outside the
+ *  four known stages returns null so callers can reject the request. */
+export function asBoundedStage(v: unknown): RequirementStage | null {
+  return typeof v === "string" && (REQUIREMENT_STAGES as readonly string[]).includes(v) ? (v as RequirementStage) : null;
 }
 
 /** Validated + length-capped read of a client-supplied field; returns "" for
@@ -137,6 +149,14 @@ export function asBoundedBudget(v: unknown): number | null {
 /** Jobs-table "AI Screening" summary for one requirement — evaluated count,
  *  score spread, and the strong-match (>= STRONG_MATCH_THRESHOLD) subset
  *  used for the Top Matches / Strong Match columns. */
+export interface StrongMatchCandidate {
+  id: string;
+  name: string;
+  initials: string;
+  yearsExperience: number | null;
+  skills: string[];
+}
+
 export interface AiScreeningSummary {
   evaluated: number;
   scoreLow: number | null;
@@ -145,6 +165,7 @@ export interface AiScreeningSummary {
   strongAvgScore: number | null;
   strongMatchInitials: string[];
   strongMatchExtra: number;
+  strongMatches: StrongMatchCandidate[];
 }
 
 export const EMPTY_AI_SCREENING: AiScreeningSummary = {
@@ -155,6 +176,7 @@ export const EMPTY_AI_SCREENING: AiScreeningSummary = {
   strongAvgScore: null,
   strongMatchInitials: [],
   strongMatchExtra: 0,
+  strongMatches: [],
 };
 
 /** How many strong-match avatar chips the Jobs table shows before folding
@@ -222,21 +244,27 @@ export function nameInitials(name: string): string {
 }
 
 /** Resolves each requirement's strong-match candidate IDs into display
- *  initials, once their names have been batch-fetched. */
+ *  initials and hover-card detail, once their profiles have been
+ *  batch-fetched (see buildStrongMatchDetailsById). */
 export function buildAiScreeningByRequirement(
   stats: Map<string, RequirementMatchStats>,
-  namesById: Map<string, string>,
+  detailsById: Map<string, Omit<StrongMatchCandidate, "id" | "initials">>,
 ): Map<string, AiScreeningSummary> {
   const result = new Map<string, AiScreeningSummary>();
   for (const [requirementId, s] of stats) {
+    const strongMatches = s.topCandidateIds.map((id): StrongMatchCandidate => {
+      const detail = detailsById.get(id) ?? { name: "", yearsExperience: null, skills: [] };
+      return { id, initials: nameInitials(detail.name), ...detail };
+    });
     result.set(requirementId, {
       evaluated: s.evaluated,
       scoreLow: s.scoreLow,
       scoreHigh: s.scoreHigh,
       topMatches: s.topMatches,
       strongAvgScore: s.strongAvgScore,
-      strongMatchInitials: s.topCandidateIds.map((id) => nameInitials(namesById.get(id) || "")),
+      strongMatchInitials: strongMatches.map((m) => m.initials),
       strongMatchExtra: s.strongMatchExtra,
+      strongMatches,
     });
   }
   return result;
@@ -269,6 +297,7 @@ export function buildRequirementsListResponse(
   createdAt: string;
   candidateCount: number;
   aiScreening: AiScreeningSummary;
+  stage: string;
 }> {
   return rows.map((r) => ({
     id: r.id,
@@ -276,6 +305,7 @@ export function buildRequirementsListResponse(
     location: r.location,
     noticePeriodPref: r.notice_period_pref,
     status: r.status,
+    stage: r.stage,
     experienceMin: r.experience_min ?? null,
     experienceMax: r.experience_max ?? null,
     dueDate: r.due_date ?? null,
