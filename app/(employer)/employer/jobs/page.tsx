@@ -843,9 +843,9 @@ export default function EmployerJobsPage() {
                   <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="8%" minWidth={130} sort={sort} onSortChange={setSort}>Experience</SortableHead>
               <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={100} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={130} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
               <TableHead style={{ width: "48px", minWidth: 48 }} aria-hidden="true" />
             </TableRow>
           </TableHeader>
@@ -971,7 +971,7 @@ export default function EmployerJobsPage() {
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                         <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
                         {r.aiScreening.strongAvgScore != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg evidence score</div>
+                          <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg evidence score</div>
                         )}
                       </div>
                     ) : (
