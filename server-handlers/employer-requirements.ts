@@ -197,8 +197,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const experienceMin = asBoundedExperience(body.experienceMin);
   const experienceMax = asBoundedExperience(body.experienceMax);
   const dueDate = asBoundedDueDate(body.dueDate);
-  const budgetMin = asBoundedBudget(body.budgetMin);
-  const budgetMax = asBoundedBudget(body.budgetMax);
+  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
+  const budgetMin = asBoundedBudget(body.budgetMin, salaryType);
+  const budgetMax = asBoundedBudget(body.budgetMax, salaryType);
   const locations = asBoundedStringArray(body.locations, 20, 100);
   const openPositions = asBoundedOpenPositions(body.openPositions);
   const workMode = asBoundedWorkMode(body.workMode);
@@ -210,7 +211,6 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
   const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
   const employmentType = asBoundedEmploymentType(body.employmentType) || "full-time";
-  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
   const preferredDomain = asBoundedString(body.preferredDomain, 120);
   const workSchedule = asBoundedString(body.workSchedule, 120);
   const availability = asBoundedString(body.availability, 60);
@@ -299,6 +299,13 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     requirement's final status. Returns that status. Any failure here is
     caught and recorded as a "failed" requirement rather than left stuck on
     "generating".
+
+    Also auto-advances `stage` from "ai_matching" to "ready_for_review" when
+    screening finds at least one strong match ("ready"/"partial"), so the
+    Jobs table's stage pill doesn't sit on "AI Matching" once there's
+    something to review. Conditioned on the current stage still being
+    ai_matching, so it never overrides a stage the employer already moved
+    forward by hand.
 
     Edit-safe: an already-unlocked match represents a real payment
     (employer-verify-unlock-payment.ts), so it's never rescored or deleted
@@ -393,6 +400,22 @@ export async function runMatching(requirementId: string, req: { title: string; l
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify({ status: finalStatus }),
     });
+
+    // Screening produced something worth looking at — auto-advance out of
+    // "AI Matching" so the employer isn't left staring at a stale stage.
+    // Conditioned on stage still being ai_matching (via the PostgREST filter,
+    // not a separate read) so a requirement the employer already moved
+    // forward manually — or re-scored after an edit — is never dragged back.
+    if (finalStatus === "ready" || finalStatus === "partial") {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&stage=eq.ai_matching`,
+        {
+          method: "PATCH",
+          headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ stage: "ready_for_review" }),
+        },
+      ).catch(() => {});
+    }
     return finalStatus;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

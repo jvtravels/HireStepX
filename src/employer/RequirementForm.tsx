@@ -57,6 +57,15 @@ const SALARY_TYPES: { value: SalaryType; label: string }[] = [
   { value: "per-annum", label: "Per Annum" },
 ];
 
+/** budgetMin/budgetMax's unit and valid range depend on salaryType — LPA
+    for per-annum roles, a raw INR amount for per-month/fixed ones. Mirrors
+    asBoundedBudget in server-handlers/_employer-requirements-helpers.ts. */
+const SALARY_UNIT: Record<SalaryType, { unitLabel: string; max: number; minPlaceholder: string; maxPlaceholder: string }> = {
+  "per-annum": { unitLabel: "LPA", max: 1000, minPlaceholder: "12", maxPlaceholder: "18" },
+  "per-month": { unitLabel: "₹/month", max: 1_00_00_000, minPlaceholder: "80000", maxPlaceholder: "120000" },
+  fixed: { unitLabel: "₹ fixed", max: 1_00_00_000, minPlaceholder: "45000", maxPlaceholder: "60000" },
+};
+
 export interface RequirementFormValues {
   title: string;
   locations: string[];
@@ -221,20 +230,20 @@ export function RequirementForm({
         <CheckboxGroup options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
       </div>
 
-      <div style={grid2}>
-        <div>
-          <FieldLabel>Minimum salary (LPA)</FieldLabel>
-          <input type="number" min={0} max={1000} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder="12" style={inputStyle} />
-        </div>
-        <div>
-          <FieldLabel>Maximum salary (LPA)</FieldLabel>
-          <input type="number" min={0} max={1000} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder="18" style={inputStyle} />
-        </div>
-      </div>
-
       <div>
         <FieldLabel>Salary type</FieldLabel>
         <CheckboxGroup options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
+      </div>
+
+      <div style={grid2}>
+        <div>
+          <FieldLabel>Minimum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
+          <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder={SALARY_UNIT[salaryType].minPlaceholder} style={inputStyle} />
+        </div>
+        <div>
+          <FieldLabel>Maximum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
+          <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder={SALARY_UNIT[salaryType].maxPlaceholder} style={inputStyle} />
+        </div>
       </div>
 
       <div style={grid2}>

@@ -14,7 +14,7 @@ import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE
 import type { JobMatch } from "./DashboardJobs";
 
 export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClose: () => void }) {
-  const comp = formatComp(job.budgetMin, job.budgetMax);
+  const comp = formatComp(job.budgetMin, job.budgetMax, job.salaryType);
   const exp = formatExperience(job.experienceMin, job.experienceMax);
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
   const jobType = job.employmentType ? EMPLOYMENT_TYPE_LABEL[job.employmentType] || job.employmentType : null;

@@ -375,8 +375,9 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   const experienceMin = asBoundedExperience(body.experienceMin);
   const experienceMax = asBoundedExperience(body.experienceMax);
   const dueDate = asBoundedDueDate(body.dueDate);
-  const budgetMin = asBoundedBudget(body.budgetMin);
-  const budgetMax = asBoundedBudget(body.budgetMax);
+  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
+  const budgetMin = asBoundedBudget(body.budgetMin, salaryType);
+  const budgetMax = asBoundedBudget(body.budgetMax, salaryType);
   const locations = asBoundedStringArray(body.locations, 20, 100);
   const openPositions = asBoundedOpenPositions(body.openPositions);
   const workMode = asBoundedWorkMode(body.workMode);
@@ -388,7 +389,6 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
   const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
   const employmentType = asBoundedEmploymentType(body.employmentType) || "full-time";
-  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
   const preferredDomain = asBoundedString(body.preferredDomain, 120);
   const workSchedule = asBoundedString(body.workSchedule, 120);
   const availability = asBoundedString(body.availability, 60);

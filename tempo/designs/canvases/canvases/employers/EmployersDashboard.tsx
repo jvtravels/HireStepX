@@ -6100,14 +6100,17 @@ export default function EmployersDashboard({
                         <div className="text-foreground text-sm font-medium">{o.location}</div>
                       </TableCell>
                       <TableCell className="align-middle whitespace-normal">
-                        <div
+                        <Badge
+                          variant={o.dueDate === "Overdue" ? "destructive" : "outline"}
                           className={cn(
-                            "text-sm font-medium tabular-nums",
-                            o.dueDate === "Overdue" ? "text-destructive" : "text-foreground"
+                            "font-medium tabular-nums",
+                            o.dueDate !== "Overdue" &&
+                              /^([0-6]) days left$/.test(o.dueDate) &&
+                              "border-amber-500/40 text-amber-700 dark:text-amber-400"
                           )}
                         >
                           {o.dueDate}
-                        </div>
+                        </Badge>
                       </TableCell>
                       <TableCell className="align-middle">
                         <DropdownMenu>

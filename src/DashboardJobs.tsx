@@ -50,7 +50,7 @@ import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
-import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
+import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL, type SalaryType } from "./hiringMatchFormat";
 import JobDetailModal from "./JobDetailModal";
 
 export interface JobMatch {
@@ -61,6 +61,7 @@ export interface JobMatch {
   companyWebsite: string | null;
   location: string;
   workMode: string | null;
+  salaryType: SalaryType | null;
   budgetMin: number | null;
   budgetMax: number | null;
   experienceMin: number | null;
@@ -454,7 +455,7 @@ export default function DashboardJobs() {
               {pageRows.map((r, i) => {
                 const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
                 const closed = r.status === "closed" || r.status === "failed";
-                const comp = formatComp(r.budgetMin, r.budgetMax);
+                const comp = formatComp(r.budgetMin, r.budgetMax, r.salaryType);
                 const exp = formatExperience(r.experienceMin, r.experienceMax);
                 const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
                 const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;

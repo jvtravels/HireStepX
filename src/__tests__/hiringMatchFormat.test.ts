@@ -43,6 +43,21 @@ describe("formatComp", () => {
   it("formats a single value when only max is present", () => {
     expect(formatComp(null, 18)).toBe("₹18L");
   });
+
+  it("defaults to LPA when salaryType is per-annum or omitted", () => {
+    expect(formatComp(10, 15, "per-annum")).toBe("₹10–15L");
+    expect(formatComp(12, null, null)).toBe("₹12L");
+  });
+
+  it("formats a raw INR amount with a /month suffix", () => {
+    expect(formatComp(80000, 120000, "per-month")).toBe("₹80,000–1,20,000/month");
+    expect(formatComp(80000, null, "per-month")).toBe("₹80,000/month");
+  });
+
+  it("formats a raw INR amount with a fixed suffix", () => {
+    expect(formatComp(45000, 60000, "fixed")).toBe("₹45,000–60,000 fixed");
+    expect(formatComp(null, 50000, "fixed")).toBe("₹50,000 fixed");
+  });
 });
 
 describe("formatExperience", () => {

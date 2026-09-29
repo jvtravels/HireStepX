@@ -14,6 +14,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { describeMatch } from "./_requirement-match-helpers";
+import { asBoundedSalaryType } from "./_employer-requirements-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -43,6 +44,7 @@ interface MatchRow {
     locations: string[] | null;
     status: string;
     work_mode: string | null;
+    salary_type: string | null;
     budget_min: number | null;
     budget_max: number | null;
     experience_min: number | null;
@@ -101,7 +103,7 @@ export default async function handler(req: Request): Promise<Response> {
     const matchesRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
         `&select=id,unlocked,unlocked_at,match_score,created_at,` +
-        `employer_requirements(title,location,locations,status,work_mode,budget_min,budget_max,experience_min,experience_max,skills,` +
+        `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
         `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
         `employers(company_name,logo_path,website))` +
         `&order=created_at.desc`,
@@ -139,6 +141,7 @@ export default async function handler(req: Request): Promise<Response> {
         companyWebsite: req?.employers?.website || null,
         location: locations.join(" / "),
         workMode: req?.work_mode || null,
+        salaryType: asBoundedSalaryType(req?.salary_type),
         budgetMin: req?.budget_min ?? null,
         budgetMax: req?.budget_max ?? null,
         experienceMin: req?.experience_min ?? null,

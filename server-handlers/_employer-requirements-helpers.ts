@@ -138,13 +138,15 @@ export function asBoundedDueDate(v: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : v;
 }
 
-/** Validated read of a client-supplied budget field, in whole INR lakhs
- *  per annum: whole numbers only, clamped to a plausible 0–1000 range.
- *  Returns null for anything else so it stores as a real SQL NULL, not a
- *  fabricated 0. */
-export function asBoundedBudget(v: unknown): number | null {
+/** Validated read of a client-supplied budget field: whole numbers only.
+ *  The unit depends on salaryType — "per-annum" stores whole INR lakhs
+ *  (clamped 0–1000, e.g. 12 = ₹12 LPA); "per-month"/"fixed" store a raw
+ *  INR amount (clamped 0–1,00,00,000, e.g. 80000 = ₹80,000). Returns null
+ *  for anything else so it stores as a real SQL NULL, not a fabricated 0. */
+export function asBoundedBudget(v: unknown, salaryType: "per-month" | "fixed" | "per-annum" = "per-annum"): number | null {
   if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
-  if (v < 0 || v > 1000) return null;
+  const max = salaryType === "per-annum" ? 1000 : 1_00_00_000;
+  if (v < 0 || v > max) return null;
   return v;
 }
 

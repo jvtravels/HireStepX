@@ -96,7 +96,7 @@ export interface RequirementSummary {
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
-  budgetMin: number | null; // INR lakhs per annum
+  budgetMin: number | null; // INR lakhs when salaryType is per-annum, else a raw INR amount
   budgetMax: number | null;
   salaryType: SalaryType | null;
   locations: string[];
@@ -121,7 +121,7 @@ export interface Requirement {
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
-  budgetMin: number | null; // INR lakhs per annum
+  budgetMin: number | null; // INR lakhs when salaryType is per-annum, else a raw INR amount
   budgetMax: number | null;
   salaryType: SalaryType | null;
   locations: string[];

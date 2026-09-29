@@ -11,13 +11,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
-import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL } from "./hiringMatchFormat";
+import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, type SalaryType } from "./hiringMatchFormat";
 
 interface HiringMatch {
   roleTitle: string;
   companyName: string;
   location: string;
   workMode: string | null;
+  salaryType: SalaryType | null;
   budgetMin: number | null;
   budgetMax: number | null;
   experienceMin: number | null;
@@ -100,7 +101,7 @@ export default function HiringActivityCard() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {matches.map((r, i) => {
-              const comp = formatComp(r.budgetMin, r.budgetMax);
+              const comp = formatComp(r.budgetMin, r.budgetMax, r.salaryType);
               const exp = formatExperience(r.experienceMin, r.experienceMax);
               const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
               return (

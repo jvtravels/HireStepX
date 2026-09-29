@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import {
   PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
-  EyeIcon, InfoIcon, LoaderCircleIcon,
+  EyeIcon, InfoIcon, LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,7 @@ import { RequirementSummary, RequirementStatus, RequirementStage } from "@/emplo
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { dur, ease } from "@/_motion";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
+import { formatNumber } from "@/utils";
 
 const RECENT_SEARCHES_KEY = "hirestepx-employer-jobs-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -78,12 +79,22 @@ function experienceLabel(req: RequirementSummary): string | null {
   return `Up to ${experienceMax} yrs`;
 }
 
+/** budgetMin/budgetMax's unit depends on salaryType — whole INR lakhs for
+    per-annum roles, a raw INR amount for per-month/fixed ones. Mirrors
+    asBoundedBudget in server-handlers/_employer-requirements-helpers.ts. */
 function budgetLabel(req: RequirementSummary): string | null {
-  const { budgetMin, budgetMax } = req;
+  const { budgetMin, budgetMax, salaryType } = req;
   if (budgetMin == null && budgetMax == null) return null;
-  if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
-  if (budgetMin != null) return `₹${budgetMin}+ LPA`;
-  return `Up to ₹${budgetMax} LPA`;
+  if (salaryType === "per-annum" || salaryType == null) {
+    if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
+    if (budgetMin != null) return `₹${budgetMin}+ LPA`;
+    return `Up to ₹${budgetMax} LPA`;
+  }
+  const suffix = salaryType === "per-month" ? "/month" : " fixed";
+  const fmt = (n: number) => `₹${formatNumber(n)}`;
+  if (budgetMin != null && budgetMax != null) return `${fmt(budgetMin)}–${formatNumber(budgetMax)}${suffix}`;
+  if (budgetMin != null) return `${fmt(budgetMin)}+${suffix}`;
+  return `Up to ${fmt(budgetMax as number)}${suffix}`;
 }
 
 function daysUntil(dueDate: string): number {
@@ -121,7 +132,7 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   location: "Location",
   experience: "Experience",
   stage: "Stage",
-  dueDate: "Due date",
+  dueDate: "Due Date",
   matches: "AI Screening",
   topMatches: "Top Matches",
 };
@@ -221,6 +232,15 @@ const STAGE_TONE: Record<RequirementStage, BadgeTone> = {
   hired: "success",
 };
 
+/** Leading stage glyph — mirrors the canvas's stageIcon map so the pill
+    reads at a glance instead of by color alone. */
+const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean | "true" | "false" }>> = {
+  ai_matching: LoaderCircleIcon,
+  ready_for_review: ClipboardListIcon,
+  interviewing: MessageSquareIcon,
+  hired: CheckCircle2Icon,
+};
+
 function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
   const { color, background } = BADGE_TONE[tone];
   return (
@@ -235,6 +255,7 @@ function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode 
     posting forward via the row's own dropdown, no page navigation needed. */
 function StageCell({ requirement, onChange }: { requirement: RequirementSummary; onChange: (id: string, stage: RequirementStage) => void }) {
   const { color, background } = BADGE_TONE[STAGE_TONE[requirement.stage]];
+  const StageIcon = STAGE_ICON[requirement.stage];
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -243,9 +264,10 @@ function StageCell({ requirement, onChange }: { requirement: RequirementSummary;
           onClick={(e) => e.stopPropagation()}
           style={{
             display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-            color, background, padding: "3px 7px 3px 9px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
+            color, background, padding: "3px 7px 3px 8px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
           }}
         >
+          <StageIcon size={11} className={requirement.stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
           {STAGE_LABEL[requirement.stage]}
           <ChevronDownIcon size={11} aria-hidden="true" />
         </button>
@@ -783,7 +805,7 @@ export default function EmployerJobsPage() {
               </TableHead>
               <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
               <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={100} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
               <TableHead style={{ width: "48px", minWidth: 48 }} aria-hidden="true" />
             </TableRow>
           </TableHeader>

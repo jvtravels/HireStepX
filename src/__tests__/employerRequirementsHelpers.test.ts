@@ -199,6 +199,13 @@ describe("asBoundedBudget", () => {
     expect(asBoundedBudget(Infinity)).toBeNull();
     expect(asBoundedBudget(NaN)).toBeNull();
   });
+
+  it("bounds per-month/fixed as a raw INR amount up to 1 crore", () => {
+    expect(asBoundedBudget(80000, "per-month")).toBe(80000);
+    expect(asBoundedBudget(1_00_00_000, "fixed")).toBe(1_00_00_000);
+    expect(asBoundedBudget(1_00_00_001, "per-month")).toBeNull();
+    expect(asBoundedBudget(-1, "fixed")).toBeNull();
+  });
 });
 
 describe("asBoundedDueDate", () => {
