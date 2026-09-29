@@ -919,8 +919,8 @@ export default function EmployerJobsPage() {
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StrongMatchCell aiScreening={r.aiScreening} />
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
-                    {exp || "Any"}
+                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    {exp ? <Badge tone="info">{exp}</Badge> : <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>Any</span>}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
