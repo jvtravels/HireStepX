@@ -25,6 +25,8 @@ import Employersdashboard, {
   EmployersDashboardCompare,
   EmployersDashboardOutcomeFeedback,
   EmployersDashboardSettings,
+  EmployersDashboardCreateOpportunity,
+  EmployersDashboardEditOpportunity,
 } from "./EmployersDashboard";
 
 export default function EmployersCanvas() {
@@ -139,7 +141,10 @@ export default function EmployersCanvas() {
         layout={{ x: 3756, y: 5266, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
       />
       {/* ── Row E — Candidate Profile pair, reached from the shortlist table
-          in the Opportunity Details grid above. ── */}
+          in the Opportunity Details grid above, plus the Create/Edit
+          Opportunity composer — Figma models these as dedicated screens; here
+          the same wizard is reached from the Dashboard's Create button /
+          a row's Edit menu, landed on directly via initialComposer. ── */}
       <Storyboard
         id="EmployersDashboardOpportunityDetailsCandidateProfileLocked"
         name="Candidate Profile — Locked"
@@ -152,10 +157,48 @@ export default function EmployersCanvas() {
         component={EmployersDashboardOpportunityDetailsCandidateProfileUnlocked}
         layout={{ x: 1878, y: 6660, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
       />
+      <Storyboard
+        id="EmployersDashboardCreateOpportunity"
+        name="Create Opportunity"
+        component={EmployersDashboardCreateOpportunity}
+        layout={{ x: 3756, y: 6660, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
+      />
+      <Storyboard
+        id="EmployersDashboardEditOpportunity"
+        name="Edit Opportunity"
+        component={EmployersDashboardEditOpportunity}
+        layout={{ x: 5634, y: 6660, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
+      />
       {/* ── Row F — Compare (dedicated full-page route, grounded in the real
-          requirements/[id]/compare route) beside Outcome Feedback. The
-          existing "Compare Dialog" storyboard above (row D3) models the same
-          feature as a modal — both are kept; a future cleanup should pick one. ── */}
+          requirements/[id]/compare route) and Outcome Feedback (grounded in
+          requirements/[id]/outcome), plus the Admin approvals queue that
+          gates a company's access to the Dashboard. The existing "Compare
+          Dialog" storyboard above (row D3) models the same compare feature
+          as a modal — both are kept; a future cleanup should pick one. ── */}
+      <Storyboard
+        id="EmployersDashboardCompare"
+        name="Compare Candidates (Routed Page)"
+        component={EmployersDashboardCompare}
+        layout={{ x: 0, y: 8014, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
+      />
+      <Storyboard
+        id="EmployersDashboardOutcomeFeedback"
+        name="Outcome Feedback"
+        component={EmployersDashboardOutcomeFeedback}
+        layout={{ x: 1878, y: 8014, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
+      />
+      <Storyboard
+        id="EmployersDashboardAdminApprovals"
+        name="Admin — Employer Approvals"
+        component={EmployersDashboardAdminApprovals}
+        layout={{ x: 3756, y: 8014, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
+      />
+      <Storyboard
+        id="EmployersDashboardAdminApprovalsEmpty"
+        name="Admin — Employer Approvals, Empty"
+        component={EmployersDashboardAdminApprovalsEmpty}
+        layout={{ x: 5634, y: 8014, width: 1728, height: 1024, intrinsicSizing: "root-element" }}
+      />
       {/* ── Row G — Settings, reached from the Dashboard nav. ── */}
       <Storyboard
         id="EmployersDashboardSettings"

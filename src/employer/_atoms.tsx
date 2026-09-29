@@ -692,15 +692,17 @@ export function TagAutocompleteInput({
 
 /** Groups related fields under a small-caps label with a hairline rule,
  *  so a long form reads as scannable sections instead of one flat list. */
-export function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+export function FormSection({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
-          {title}
-        </span>
-        <Divider />
-      </div>
+      {title && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
+            {title}
+          </span>
+          <Divider />
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
     </div>
   );

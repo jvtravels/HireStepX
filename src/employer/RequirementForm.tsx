@@ -202,7 +202,7 @@ export function RequirementForm({
   };
 
   const basicInfoFields = (
-    <FormSection title="Basic information">
+    <FormSection>
       <div>
         <FieldLabel required>Opportunity title</FieldLabel>
         <AutocompleteInput value={title} onChange={setTitle} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />

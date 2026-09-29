@@ -4980,6 +4980,7 @@ export default function EmployersDashboard({
   initialPurchaseHistory,
   initialUnlockConfirmation,
   initialProfileTarget,
+  initialComposer = null,
 }: {
   initialDetailsId?: string | null;
   /* Storyboard-only seeding forwarded straight to OpportunityDetailsView —
@@ -4992,6 +4993,11 @@ export default function EmployersDashboard({
   initialPurchaseHistory?: Array<{ batches: number[]; at: number }>;
   initialUnlockConfirmation?: string | null;
   initialProfileTarget?: string | null;
+  /* Opens the Create/Edit Opportunity composer on mount, pre-filled from the
+     matching row for "edit" — lets a storyboard land directly on the wizard
+     instead of requiring a click from the Dashboard. Absent for every real
+     caller (the real flow always opens it from a button). */
+  initialComposer?: { mode: "create" | "edit"; id: string | null } | null;
 } = {}) {
   const [rows, setRows] = React.useState<Opportunity[]>(initialOpportunities);
   const [selectedRows, setSelectedRows] = React.useState<Set<string>>(new Set());
@@ -5023,9 +5029,25 @@ export default function EmployersDashboard({
     }
   };
   const [hasUnreadNotifications, setHasUnreadNotifications] = React.useState(true);
-  const [composer, setComposer] = React.useState<{ mode: "create" | "edit"; id: string | null } | null>(null);
+  const [composer, setComposer] = React.useState<{ mode: "create" | "edit"; id: string | null } | null>(
+    initialComposer
+  );
   const [composerStep, setComposerStep] = React.useState<1 | 2>(1);
-  const [composerForm, setComposerForm] = React.useState<JobPostingFormState>(emptyJobPostingForm);
+  const [composerForm, setComposerForm] = React.useState<JobPostingFormState>(() => {
+    if (initialComposer?.mode === "edit" && initialComposer.id) {
+      const o = initialOpportunities.find((row) => row.id === initialComposer.id);
+      if (o) {
+        return {
+          ...emptyJobPostingForm,
+          title: o.title,
+          locations: o.location ? [o.location] : [],
+          description: o.description,
+          skills: o.requiredSkills,
+        };
+      }
+    }
+    return emptyJobPostingForm;
+  });
   const updateComposerForm = <K extends keyof JobPostingFormState>(key: K, value: JobPostingFormState[K]) =>
     setComposerForm((prev) => ({ ...prev, [key]: value }));
   const composerStep1Valid =
@@ -6739,6 +6761,19 @@ export function EmployersDashboardOpportunityDetailsCandidateProfileUnlocked() {
   return <EmployersDashboard initialDetailsId="8" initialPurchasedBatches={[0]} initialProfileTarget="AK" />;
 }
 
+/* Create / Edit Opportunity — the composer wizard (2-step: Basic information,
+   then Preferences & perks) normally only reaches the canvas through a click
+   on the Dashboard's "Create" button or a row's "Edit" menu item. These two
+   storyboards land directly on it via initialComposer, matching Figma's
+   dedicated Create/Edit Opportunity screens. */
+export function EmployersDashboardCreateOpportunity() {
+  return <EmployersDashboard initialComposer={{ mode: "create", id: null }} />;
+}
+
+export function EmployersDashboardEditOpportunity() {
+  return <EmployersDashboard initialComposer={{ mode: "edit", id: "8" }} />;
+}
+
 /* ═════════════════════════════════════════════════════════════════════════
    FULL-PAGE SCREEN SHELLS — shared chrome so every storyboard below renders
    as a complete 1728-wide browser screen (background + real nav/header),
@@ -6760,7 +6795,86 @@ export function EmployersDashboardOpportunityDetailsCandidateProfileUnlocked() {
 
 function PublicAuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <></>
+    <div style={shadcnDefaultTheme} className="bg-background text-foreground flex min-h-[1024px] w-[1728px] flex-col items-center justify-center gap-8 p-10">
+      <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+        <span className="text-copper">HireStep</span>X
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function AppShellSidebar({
+  items,
+  activeLabel,
+  collapsed,
+  onToggle,
+  footerLabel,
+}: {
+  items: { label: string; icon: React.ComponentType<{ className?: string }> }[];
+  activeLabel?: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  footerLabel: string;
+}) {
+  return (
+    <aside
+      className={cn(
+        "bg-sidebar text-sidebar-foreground border-sidebar-border flex shrink-0 flex-col gap-3 border-r p-3 transition-[width]",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      <div className={cn("flex items-center px-2 py-3", collapsed && "justify-center px-0")}>
+        {collapsed ? <HireStepXMark className="size-6" /> : <img src="/wordmark.png" alt="HireStepX" className="h-7 w-auto" />}
+      </div>
+      <div className="flex flex-1 flex-col gap-1">
+        {items.map(({ label, icon: Icon }) => (
+          <button
+            key={label}
+            data-active={label === activeLabel}
+            aria-label={label}
+            className={cn(
+              "flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-sm outline-none transition-colors",
+              collapsed && "justify-center px-0",
+              label === activeLabel
+                ? "bg-sidebar-primary/10 font-medium text-sidebar-primary"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Icon className="size-4" />
+            {!collapsed && <span>{label}</span>}
+          </button>
+        ))}
+      </div>
+      <div className="border-sidebar-border flex flex-col border-t pt-3">
+        <div className={cn("flex h-14 w-full items-center gap-2.5 rounded-md p-2.5 text-left text-sm", collapsed && "justify-center p-0")}>
+          <Avatar className="rounded-lg">
+            <AvatarFallback className="rounded-lg">
+              <HireStepXMark className="size-full" />
+            </AvatarFallback>
+          </Avatar>
+          {!collapsed && <span className="truncate font-medium">{footerLabel}</span>}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function AppShellHeader({ breadcrumbLabel, onToggleSidebar }: { breadcrumbLabel: string; onToggleSidebar: () => void }) {
+  return (
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <Button variant="ghost" size="icon" className="-ml-1 size-7" aria-label="Toggle sidebar" onClick={onToggleSidebar}>
+        <PanelLeft />
+      </Button>
+      <Separator orientation="vertical" className="mr-2 h-4" />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{breadcrumbLabel}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    </header>
   );
 }
 
@@ -6775,7 +6889,19 @@ function EmployerAppShell({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   return (
-    <></>
+    <div style={shadcnDefaultTheme} className="bg-background text-foreground flex h-[1024px] w-[1728px]">
+      <AppShellSidebar
+        items={navItems}
+        activeLabel={activeLabel}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed((v) => !v)}
+        footerLabel="Flexio Company"
+      />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AppShellHeader breadcrumbLabel={breadcrumbLabel} onToggleSidebar={() => setSidebarCollapsed((v) => !v)} />
+        <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+      </div>
+    </div>
   );
 }
 
@@ -6790,7 +6916,19 @@ function AdminAppShell({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   return (
-    <></>
+    <div style={shadcnDefaultTheme} className="bg-background text-foreground flex h-[1024px] w-[1728px]">
+      <AppShellSidebar
+        items={adminNavItems}
+        activeLabel={activeLabel}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed((v) => !v)}
+        footerLabel="Admin"
+      />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AppShellHeader breadcrumbLabel={breadcrumbLabel} onToggleSidebar={() => setSidebarCollapsed((v) => !v)} />
+        <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+      </div>
+    </div>
   );
 }
 
