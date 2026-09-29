@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { WorkMode, EmploymentType, SalaryType, Requirement } from "./mockData";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
+import { WorkMode, EmploymentType, SalaryType, Requirement, RequirementFormValues } from "./mockData";
+import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import {
   AutocompleteInput,
   Checkbox,
-  CheckboxGroup,
   Eyebrow,
   FieldLabel,
   FormSection,
   HelpText,
   OutlineCta,
   PrimaryCta,
+  SegmentedControl,
   TagAutocompleteInput,
   TagInput,
 } from "@/employer/_atoms";
@@ -26,13 +26,17 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 10,
   border: `1px solid ${t.line}`,
   fontFamily: f.sans,
-  fontSize: 14,
+  fontSize: textSize.md,
   boxSizing: "border-box",
 };
 
+/* Collapses to a single column on narrow viewports — grid2's callers sit
+   inside the console's max-width-1280 card, but the card itself is used
+   down to phone width, where two 1fr columns leave each input too narrow
+   to type into comfortably. */
 const grid2: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
   gap: 20,
 };
 
@@ -66,36 +70,7 @@ const SALARY_UNIT: Record<SalaryType, { unitLabel: string; max: number; minPlace
   fixed: { unitLabel: "₹ fixed", max: 1_00_00_000, minPlaceholder: "45000", maxPlaceholder: "60000" },
 };
 
-export interface RequirementFormValues {
-  title: string;
-  locations: string[];
-  noticePeriodPref?: string;
-  description?: string;
-  experienceMin?: number;
-  experienceMax?: number;
-  dueDate?: string;
-  budgetMin?: number;
-  budgetMax?: number;
-  openPositions?: number;
-  workMode?: WorkMode;
-  employmentType?: EmploymentType;
-  skills?: string[];
-  responsibilities?: string;
-  niceToHave?: string;
-  preferredIndustry?: string;
-  preferredColleges?: string[];
-  targetCompanies?: string[];
-  perksAndBenefits?: string[];
-  salaryType?: SalaryType;
-  preferredDomain?: string;
-  workSchedule?: string;
-  availability?: string;
-  relevantExperience?: string;
-  portfolioRequired?: boolean;
-  customSkillSets?: string[];
-  durationWeeks?: number;
-  hoursPerWeek?: number;
-}
+export type { RequirementFormValues } from "./mockData";
 
 function StepProgress({ step }: { step: 1 | 2 }) {
   return (
@@ -167,8 +142,18 @@ export function RequirementForm({
 
   const [submitting, setSubmitting] = useState(false);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const experienceRangeValid = !experienceMin.trim() || !experienceMax.trim() || Number(experienceMin) <= Number(experienceMax);
+  const budgetRangeValid = !budgetMin.trim() || !budgetMax.trim() || Number(budgetMin) <= Number(budgetMax);
+  const dueDateValid = !dueDate || dueDate >= today;
+
   const basicInfoValid =
-    title.trim().length > 1 && locations.length > 0 && description.trim().length >= MIN_DESCRIPTION_LENGTH;
+    title.trim().length > 1 &&
+    locations.length > 0 &&
+    description.trim().length >= MIN_DESCRIPTION_LENGTH &&
+    experienceRangeValid &&
+    budgetRangeValid &&
+    dueDateValid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,34 +212,40 @@ export function RequirementForm({
 
       <div>
         <FieldLabel>Employment type</FieldLabel>
-        <CheckboxGroup options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
+        <SegmentedControl options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
       </div>
 
       <div>
         <FieldLabel>Salary type</FieldLabel>
-        <CheckboxGroup options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
+        <SegmentedControl options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
       </div>
 
-      <div style={grid2}>
-        <div>
-          <FieldLabel>Minimum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
-          <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder={SALARY_UNIT[salaryType].minPlaceholder} style={inputStyle} />
+      <div>
+        <div style={grid2}>
+          <div>
+            <FieldLabel>Minimum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
+            <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder={SALARY_UNIT[salaryType].minPlaceholder} style={inputStyle} />
+          </div>
+          <div>
+            <FieldLabel>Maximum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
+            <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder={SALARY_UNIT[salaryType].maxPlaceholder} style={inputStyle} />
+          </div>
         </div>
-        <div>
-          <FieldLabel>Maximum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
-          <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder={SALARY_UNIT[salaryType].maxPlaceholder} style={inputStyle} />
-        </div>
+        {!budgetRangeValid && <HelpText tone="error">Minimum salary can't be greater than maximum salary.</HelpText>}
       </div>
 
-      <div style={grid2}>
-        <div>
-          <FieldLabel>Minimum experience (years)</FieldLabel>
-          <input type="number" min={0} max={40} value={experienceMin} onChange={(e) => setExperienceMin(e.target.value)} placeholder="2" style={inputStyle} />
+      <div>
+        <div style={grid2}>
+          <div>
+            <FieldLabel>Minimum experience (years)</FieldLabel>
+            <input type="number" min={0} max={40} value={experienceMin} onChange={(e) => setExperienceMin(e.target.value)} placeholder="2" style={inputStyle} />
+          </div>
+          <div>
+            <FieldLabel>Maximum experience (years)</FieldLabel>
+            <input type="number" min={0} max={40} value={experienceMax} onChange={(e) => setExperienceMax(e.target.value)} placeholder="5" style={inputStyle} />
+          </div>
         </div>
-        <div>
-          <FieldLabel>Maximum experience (years)</FieldLabel>
-          <input type="number" min={0} max={40} value={experienceMax} onChange={(e) => setExperienceMax(e.target.value)} placeholder="5" style={inputStyle} />
-        </div>
+        {!experienceRangeValid && <HelpText tone="error">Minimum experience can't be greater than maximum experience.</HelpText>}
       </div>
 
       <div>
@@ -266,7 +257,7 @@ export function RequirementForm({
       <div style={grid2}>
         <div>
           <FieldLabel>Opportunity type</FieldLabel>
-          <CheckboxGroup options={WORK_MODES} value={workMode} onChange={setWorkMode} />
+          <SegmentedControl options={WORK_MODES} value={workMode} onChange={setWorkMode} />
         </div>
         <div>
           <FieldLabel>Open positions</FieldLabel>
@@ -389,8 +380,12 @@ export function RequirementForm({
           </div>
           <div>
             <FieldLabel>Due date (optional)</FieldLabel>
-            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
-            <HelpText>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
+            <input type="date" min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
+            {dueDateValid ? (
+              <HelpText>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
+            ) : (
+              <HelpText tone="error">Due date can't be in the past.</HelpText>
+            )}
           </div>
         </div>
       </FormSection>
@@ -418,8 +413,8 @@ export function RequirementForm({
           <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 26 }}>
             {basicInfoFields}
             {preferencesFields}
-            {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
-            <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
+            {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.error, margin: 0 }}>{submitError}</p>}
+            <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 }}>
               Saving re-scores your shortlist against the current candidate pool. Candidates you've already unlocked stay unlocked.
             </p>
           </div>
@@ -460,7 +455,7 @@ export function RequirementForm({
           {step === 1 && basicInfoFields}
           {step === 2 && preferencesFields}
 
-          {submitError && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>}
+          {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.error, margin: 0 }}>{submitError}</p>}
 
           {step === 2 && (
             <OutlineCta onClick={() => setStep(1)}>Back</OutlineCta>

@@ -8,6 +8,8 @@ import {
   asBoundedOpenPositions,
   asBoundedWorkMode,
   isValidRequirementInput,
+  isValidRange,
+  isFutureDueDate,
   buildRequirementsListResponse,
   countMatchesByRequirement,
   computeMatchStats,
@@ -56,6 +58,45 @@ describe("isValidRequirementInput", () => {
 
   it("trims whitespace before checking description length", () => {
     expect(isValidRequirementInput("SDE II", ["Bengaluru"], `   ${jd}   `)).toBe(true);
+  });
+});
+
+describe("isValidRange", () => {
+  it("accepts min less than max", () => {
+    expect(isValidRange(2, 5)).toBe(true);
+  });
+
+  it("accepts min equal to max", () => {
+    expect(isValidRange(5, 5)).toBe(true);
+  });
+
+  it("rejects min greater than max", () => {
+    expect(isValidRange(6, 5)).toBe(false);
+  });
+
+  it("accepts either side being null", () => {
+    expect(isValidRange(null, 5)).toBe(true);
+    expect(isValidRange(5, null)).toBe(true);
+    expect(isValidRange(null, null)).toBe(true);
+  });
+});
+
+describe("isFutureDueDate", () => {
+  it("accepts null (no due date set)", () => {
+    expect(isFutureDueDate(null)).toBe(true);
+  });
+
+  it("accepts today", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    expect(isFutureDueDate(today)).toBe(true);
+  });
+
+  it("accepts a future date", () => {
+    expect(isFutureDueDate("2099-01-01")).toBe(true);
+  });
+
+  it("rejects a past date", () => {
+    expect(isFutureDueDate("2000-01-01")).toBe(false);
   });
 });
 

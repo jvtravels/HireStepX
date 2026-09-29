@@ -81,6 +81,21 @@ export function isValidRequirementInput(title: string, locations: string[], desc
   return title.length >= 2 && locations.length >= 1 && description.trim().length >= 20;
 }
 
+/** Rejects a min/max pair where min is greater than max. Either side being
+ *  null (not supplied, or out of the individual field's own valid range)
+ *  is fine — there's no ordering to violate. */
+export function isValidRange(min: number | null, max: number | null): boolean {
+  return min === null || max === null || min <= max;
+}
+
+/** Rejects a due date already in the past. null (no due date set) always
+ *  passes — comparison is against UTC midnight today so the boundary is
+ *  timezone-stable regardless of where the request originates. */
+export function isFutureDueDate(dueDate: string | null): boolean {
+  if (dueDate === null) return true;
+  return dueDate >= new Date().toISOString().slice(0, 10);
+}
+
 /** Validated read of a client-supplied open-positions count: whole numbers
  *  only, clamped to a plausible 1–500 range. Returns null for anything else
  *  so it stores as a real SQL NULL, not a fabricated default. */

@@ -365,8 +365,9 @@ export function TagInput({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 16,
-              height: 16,
+              width: 24,
+              height: 24,
+              margin: "-4px -6px -4px 0",
               border: "none",
               background: "transparent",
               color: t.inkFaint,
@@ -442,6 +443,19 @@ export function AutocompleteInput({
   React.useEffect(() => {
     if (filtered.length > 0 && inputRef.current) setRect(computeDropdownRect(inputRef.current));
   }, [filtered.length, focused, value]);
+
+  React.useEffect(() => {
+    if (filtered.length === 0) return;
+    const recompute = () => {
+      if (inputRef.current) setRect(computeDropdownRect(inputRef.current));
+    };
+    window.addEventListener("resize", recompute);
+    window.addEventListener("scroll", recompute, true);
+    return () => {
+      window.removeEventListener("resize", recompute);
+      window.removeEventListener("scroll", recompute, true);
+    };
+  }, [filtered.length]);
 
   const select = (s: string) => {
     onChange(s);
@@ -563,6 +577,19 @@ export function TagAutocompleteInput({
     if (filtered.length > 0 && containerRef.current) setRect(computeDropdownRect(containerRef.current));
   }, [filtered.length, focused, draft]);
 
+  React.useEffect(() => {
+    if (filtered.length === 0) return;
+    const recompute = () => {
+      if (containerRef.current) setRect(computeDropdownRect(containerRef.current));
+    };
+    window.addEventListener("resize", recompute);
+    window.addEventListener("scroll", recompute, true);
+    return () => {
+      window.removeEventListener("resize", recompute);
+      window.removeEventListener("scroll", recompute, true);
+    };
+  }, [filtered.length]);
+
   return (
     <div ref={containerRef}>
       <div
@@ -602,8 +629,9 @@ export function TagAutocompleteInput({
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 16,
-                height: 16,
+                width: 24,
+                height: 24,
+                margin: "-4px -6px -4px 0",
                 border: "none",
                 background: "transparent",
                 color: t.inkFaint,
@@ -752,78 +780,14 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-/** Checkbox-styled single-select — visually a row of checkboxes, but only
- *  one can be active at a time (used for closed-set fields the schema only
- *  stores one value for, e.g. salary type / opportunity type). */
-export function CheckboxGroup<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (next: T) => void;
-}) {
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-      {options.map((opt) => {
-        const selected = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            aria-pressed={selected}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: `1px solid ${selected ? t.indigo : t.line}`,
-              background: selected ? t.indigo100 : t.white,
-              cursor: "pointer",
-              fontFamily: f.sans,
-              fontSize: 13,
-              fontWeight: 500,
-              color: selected ? t.indigoDeep : t.coal,
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 16,
-                height: 16,
-                borderRadius: 4,
-                border: `1.5px solid ${selected ? t.indigo : t.lineStrong}`,
-                background: selected ? t.indigo : "transparent",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {selected && (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </span>
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 /** A single boolean checkbox toggle (e.g. "Portfolio required"). */
 export function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
   return (
     <button
       type="button"
+      role="checkbox"
       onClick={() => onChange(!checked)}
-      aria-pressed={checked}
+      aria-checked={checked}
       style={{
         display: "inline-flex",
         alignItems: "center",

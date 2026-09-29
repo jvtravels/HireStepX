@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
-import { RequirementSummary, Requirement, Candidate, WorkMode, EmploymentType, SalaryType, RequirementStage } from "./mockData";
+import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
@@ -45,66 +45,8 @@ interface EmployerDataContextValue {
   requirementsLoading: boolean;
   submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
-  addRequirement: (r: {
-    title: string;
-    locations: string[];
-    noticePeriodPref?: string;
-    description?: string;
-    experienceMin?: number;
-    experienceMax?: number;
-    dueDate?: string;
-    budgetMin?: number;
-    budgetMax?: number;
-    openPositions?: number;
-    workMode?: WorkMode;
-    employmentType?: EmploymentType;
-    skills?: string[];
-    responsibilities?: string;
-    niceToHave?: string;
-    preferredIndustry?: string;
-    preferredColleges?: string[];
-    targetCompanies?: string[];
-    perksAndBenefits?: string[];
-    salaryType?: SalaryType;
-    preferredDomain?: string;
-    workSchedule?: string;
-    availability?: string;
-    relevantExperience?: string;
-    portfolioRequired?: boolean;
-    customSkillSets?: string[];
-    durationWeeks?: number;
-    hoursPerWeek?: number;
-  }) => Promise<string | null>;
-  updateRequirement: (id: string, r: {
-    title: string;
-    locations: string[];
-    noticePeriodPref?: string;
-    description?: string;
-    experienceMin?: number;
-    experienceMax?: number;
-    dueDate?: string;
-    budgetMin?: number;
-    budgetMax?: number;
-    openPositions?: number;
-    workMode?: WorkMode;
-    employmentType?: EmploymentType;
-    skills?: string[];
-    responsibilities?: string;
-    niceToHave?: string;
-    preferredIndustry?: string;
-    preferredColleges?: string[];
-    targetCompanies?: string[];
-    perksAndBenefits?: string[];
-    salaryType?: SalaryType;
-    preferredDomain?: string;
-    workSchedule?: string;
-    availability?: string;
-    relevantExperience?: string;
-    portfolioRequired?: boolean;
-    customSkillSets?: string[];
-    durationWeeks?: number;
-    hoursPerWeek?: number;
-  }) => Promise<boolean>;
+  addRequirement: (r: RequirementFormValues) => Promise<string | null>;
+  updateRequirement: (id: string, r: RequirementFormValues) => Promise<boolean>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
     razorpay_order_id: string;
@@ -210,36 +152,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   // can resubmit via submitCompanyProfile, which POSTs a fresh "pending" row.
   const resetCompanyProfile = useCallback(() => setCompanyStatus("none"), []);
 
-  const addRequirement = useCallback(async (r: {
-    title: string;
-    locations: string[];
-    noticePeriodPref?: string;
-    description?: string;
-    experienceMin?: number;
-    experienceMax?: number;
-    dueDate?: string;
-    budgetMin?: number;
-    budgetMax?: number;
-    openPositions?: number;
-    workMode?: WorkMode;
-    employmentType?: EmploymentType;
-    skills?: string[];
-    responsibilities?: string;
-    niceToHave?: string;
-    preferredIndustry?: string;
-    preferredColleges?: string[];
-    targetCompanies?: string[];
-    perksAndBenefits?: string[];
-    salaryType?: SalaryType;
-    preferredDomain?: string;
-    workSchedule?: string;
-    availability?: string;
-    relevantExperience?: string;
-    portfolioRequired?: boolean;
-    customSkillSets?: string[];
-    durationWeeks?: number;
-    hoursPerWeek?: number;
-  }) => {
+  const addRequirement = useCallback(async (r: RequirementFormValues) => {
     const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
     if (res.ok && res.data) {
       refreshRequirements();
@@ -248,36 +161,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return null;
   }, [refreshRequirements]);
 
-  const updateRequirement = useCallback(async (id: string, r: {
-    title: string;
-    locations: string[];
-    noticePeriodPref?: string;
-    description?: string;
-    experienceMin?: number;
-    experienceMax?: number;
-    dueDate?: string;
-    budgetMin?: number;
-    budgetMax?: number;
-    openPositions?: number;
-    workMode?: WorkMode;
-    employmentType?: EmploymentType;
-    skills?: string[];
-    responsibilities?: string;
-    niceToHave?: string;
-    preferredIndustry?: string;
-    preferredColleges?: string[];
-    targetCompanies?: string[];
-    perksAndBenefits?: string[];
-    salaryType?: SalaryType;
-    preferredDomain?: string;
-    workSchedule?: string;
-    availability?: string;
-    relevantExperience?: string;
-    portfolioRequired?: boolean;
-    customSkillSets?: string[];
-    durationWeeks?: number;
-    hoursPerWeek?: number;
-  }) => {
+  const updateRequirement = useCallback(async (id: string, r: RequirementFormValues) => {
     const res = await apiFetch<{ id: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, r, { method: "PATCH" });
     if (res.ok && res.data) {
       refreshRequirements();

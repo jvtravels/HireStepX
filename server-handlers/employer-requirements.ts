@@ -42,6 +42,8 @@ import {
   asBoundedDurationWeeks,
   asBoundedHoursPerWeek,
   isValidRequirementInput,
+  isValidRange,
+  isFutureDueDate,
   buildRequirementsListResponse,
   countMatchesByRequirement,
   computeMatchStats,
@@ -223,6 +225,15 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
 
   if (!isValidRequirementInput(title, locations, description)) {
     return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
+  }
+  if (!isValidRange(experienceMin, experienceMax)) {
+    return new Response(JSON.stringify({ error: "Minimum experience can't be greater than maximum experience" }), { status: 400, headers });
+  }
+  if (!isValidRange(budgetMin, budgetMax)) {
+    return new Response(JSON.stringify({ error: "Minimum budget can't be greater than maximum budget" }), { status: 400, headers });
+  }
+  if (!isFutureDueDate(dueDate)) {
+    return new Response(JSON.stringify({ error: "Due date can't be in the past" }), { status: 400, headers });
   }
 
   try {

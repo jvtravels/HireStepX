@@ -146,3 +146,39 @@ export interface Requirement {
   createdAt: string;
   candidates: Candidate[];
 }
+
+/** Shape the create/edit requirement form submits — mirrors what
+    employer-requirements.ts (POST) and employer-requirement-detail.ts
+    (PATCH) accept. Single source of truth for RequirementForm and
+    EmployerDataContext.addRequirement/updateRequirement so the two never
+    drift apart. */
+export interface RequirementFormValues {
+  title: string;
+  locations: string[];
+  noticePeriodPref?: string;
+  description?: string;
+  experienceMin?: number;
+  experienceMax?: number;
+  dueDate?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  openPositions?: number;
+  workMode?: WorkMode;
+  employmentType?: EmploymentType;
+  skills?: string[];
+  responsibilities?: string;
+  niceToHave?: string;
+  preferredIndustry?: string;
+  preferredColleges?: string[];
+  targetCompanies?: string[];
+  perksAndBenefits?: string[];
+  salaryType?: SalaryType;
+  preferredDomain?: string;
+  workSchedule?: string;
+  availability?: string;
+  relevantExperience?: string;
+  portfolioRequired?: boolean;
+  customSkillSets?: string[];
+  durationWeeks?: number;
+  hoursPerWeek?: number;
+}
