@@ -402,7 +402,7 @@ export function RequirementForm({
     return (
       <form onSubmit={handleSubmit}>
         <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px clamp(16px, 5vw, 104px)", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
             <div>
               <Eyebrow tone="indigo">Edit opportunity</Eyebrow>
               <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" }}>
@@ -432,7 +432,7 @@ export function RequirementForm({
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-        <div style={{ padding: "16px clamp(16px, 5vw, 104px)", borderBottom: `1px solid ${t.line}` }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
               <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>
