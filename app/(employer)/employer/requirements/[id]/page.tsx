@@ -9,6 +9,7 @@ import { useToast } from "@/Toast";
 import { Candidate, RequirementStage } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
+import { STRONG_MATCH_THRESHOLD } from "../../../../../server-handlers/_requirement-match-helpers";
 import {
   Card,
   CandidateStatusChip,
@@ -58,8 +59,8 @@ function daysUntil(dueDate: string): number {
 // HireStepX has no interview-round data, but this is the closest genuine
 // equivalent: how many shared candidates land in each match-quality band.
 const scoreTiers: Array<{ key: string; label: string; min: number; max: number }> = [
-  { key: "strong", label: "Strong match", min: 85, max: 101 },
-  { key: "good", label: "Good match", min: 70, max: 85 },
+  { key: "strong", label: "Strong match", min: STRONG_MATCH_THRESHOLD, max: 101 },
+  { key: "good", label: "Good match", min: 70, max: STRONG_MATCH_THRESHOLD },
   { key: "fair", label: "Fair match", min: 50, max: 70 },
   { key: "low", label: "Low match", min: 0, max: 50 },
 ];

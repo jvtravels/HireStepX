@@ -35,14 +35,27 @@ export interface SessionRow {
   user_id: string;
   created_at: string;
   report_json: unknown;
+  type?: string;
 }
 
-/** Picks, per candidate user id, the most-recent session row (rows are
- *  expected pre-sorted newest-first by the caller's query, but this
- *  re-checks created_at defensively rather than trusting query order). */
+/** Mirrors skillFamily() in src/interviewAPI.ts: salary-negotiation sessions
+ *  score a disjoint skill set (anchoring, walk-away discipline, ...) that's
+ *  meaningless evidence for a hiring requirement, which is always evaluating
+ *  interview-family competence. Excluded here for the same reason that
+ *  function keeps the two families from bleeding into each other. */
+export function isNegotiationSession(type: string | undefined): boolean {
+  return (type || "").toLowerCase().includes("negotiation");
+}
+
+/** Picks, per candidate user id, the most-recent session row that's actually
+ *  relevant evidence for a hiring requirement — skipping salary-negotiation
+ *  sessions, whose skill dimensions don't describe interview performance.
+ *  Rows are expected pre-sorted newest-first by the caller's query, but this
+ *  re-checks created_at defensively rather than trusting query order. */
 export function latestSessionByUser(rows: SessionRow[]): Map<string, SessionRow> {
   const latest = new Map<string, SessionRow>();
   for (const row of rows) {
+    if (isNegotiationSession(row.type)) continue;
     const existing = latest.get(row.user_id);
     if (!existing || new Date(row.created_at).getTime() > new Date(existing.created_at).getTime()) {
       latest.set(row.user_id, row);

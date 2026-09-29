@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
 import type { RequirementStage, CandidateStatus } from "./mockData";
+import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
 
 /** Deterministic evenly-spaced sample, used to show a diverse slice of a
  *  suggestions list before the user has typed anything. */
@@ -113,7 +114,7 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
 }
 
 export function ScoreChip({ score }: { score: number }) {
-  const tone: PillTone = score >= 85 ? "success" : score >= 70 ? "copper" : "neutral";
+  const tone: PillTone = score >= STRONG_MATCH_THRESHOLD ? "success" : score >= 70 ? "copper" : "neutral";
   return (
     <div
       style={{

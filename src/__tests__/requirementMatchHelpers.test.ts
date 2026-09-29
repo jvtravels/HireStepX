@@ -86,15 +86,15 @@ describe("classifyRequirementStatus", () => {
   });
 
   it("returns partial for 1-2 strong matches", () => {
-    expect(classifyRequirementStatus([{ matchScore: 70 }, { matchScore: 20 }])).toBe("partial");
+    expect(classifyRequirementStatus([{ matchScore: 90 }, { matchScore: 20 }])).toBe("partial");
   });
 
   it("returns ready for 3+ strong matches", () => {
-    expect(classifyRequirementStatus([{ matchScore: 70 }, { matchScore: 65 }, { matchScore: 90 }])).toBe("ready");
+    expect(classifyRequirementStatus([{ matchScore: 88 }, { matchScore: 92 }, { matchScore: 90 }])).toBe("ready");
   });
 
-  it("does not count sub-60 scores as strong", () => {
-    expect(classifyRequirementStatus([{ matchScore: 59 }, { matchScore: 10 }])).toBe("zero");
+  it("does not count sub-85 scores as strong", () => {
+    expect(classifyRequirementStatus([{ matchScore: 84 }, { matchScore: 10 }])).toBe("zero");
   });
 });
 

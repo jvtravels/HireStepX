@@ -149,10 +149,13 @@ export function describeMatch(
 export type RequirementMatchStatus = "ready" | "partial" | "zero";
 
 /** A candidate is a "strong match" for a requirement at this matchScore or
-    above — shared by classifyRequirementStatus (requirement-level outcome)
-    and the Jobs table's AI Screening / Top Matches / Strong Match summary
-    (_employer-requirements-helpers.ts). */
-export const STRONG_MATCH_THRESHOLD = 60;
+    above — shared by classifyRequirementStatus (requirement-level outcome),
+    the Jobs table's AI Screening / Top Matches / Strong Match summary
+    (_employer-requirements-helpers.ts), and the requirement-detail page's
+    ScoreChip / scoreTiers (src/employer/_atoms.tsx). Must stay in sync with
+    those — a candidate the Jobs list calls "strong" but the detail page
+    colors as merely "fair" is the exact bug this constant exists to avoid. */
+export const STRONG_MATCH_THRESHOLD = 85;
 
 /** Classifies the overall requirement outcome from its scored candidates. */
 export function classifyRequirementStatus(matches: Array<{ matchScore: number }>): RequirementMatchStatus {

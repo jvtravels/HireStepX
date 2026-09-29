@@ -190,10 +190,16 @@ export default async function handler(req: Request): Promise<Response> {
       );
 
       const unlocked = m.unlocked;
+      /* Identity must never leave the server for a Locked match — masking
+         only in the client (candidate.unlocked ? name : "Candidate #...")
+         is cosmetic; anyone reading the network response sees the real
+         name/phone/LinkedIn regardless. Redact here, not just on render. */
+      const name = unlocked ? profile?.name || "Candidate" : `Candidate #${m.id.slice(0, 6)}`;
+      const resume = unlocked ? resumeDetail : { ...resumeDetail, phone: null, linkedin: null };
 
       return {
         id: m.id,
-        name: profile?.name || "Candidate",
+        name,
         targetRole: profile?.target_role || "Not specified",
         city: extractResumeLocation(profile?.resume_data) || "Not specified",
         matchScore: m.match_score,
@@ -204,7 +210,7 @@ export default async function handler(req: Request): Promise<Response> {
         skills: extractSkills(profile?.resume_data),
         unlocked,
         contact: unlocked && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
-        resume: resumeDetail,
+        resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
         interviewScheduledAt: m.interview_scheduled_at,

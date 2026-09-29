@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractEvidenceSkills, latestSessionByUser } from "../../server-handlers/_employer-candidate-evidence-helpers";
+import { extractEvidenceSkills, latestSessionByUser, isNegotiationSession } from "../../server-handlers/_employer-candidate-evidence-helpers";
 
 describe("extractEvidenceSkills", () => {
   it("extracts name + score pairs from a real report_json shape", () => {
@@ -50,5 +50,35 @@ describe("latestSessionByUser", () => {
 
   it("returns an empty map for no rows", () => {
     expect(latestSessionByUser([]).size).toBe(0);
+  });
+
+  it("skips a newer salary-negotiation session in favor of an older interview session", () => {
+    const rows = [
+      { user_id: "u1", created_at: "2026-03-01T00:00:00Z", report_json: { skills: [{ name: "Anchoring", score: 90 }] }, type: "salary-negotiation" },
+      { user_id: "u1", created_at: "2026-01-01T00:00:00Z", report_json: { skills: [{ name: "STAR structure", score: 70 }] }, type: "behavioral" },
+    ];
+    const latest = latestSessionByUser(rows);
+    expect(latest.get("u1")?.created_at).toBe("2026-01-01T00:00:00Z");
+  });
+
+  it("returns no session for a user when every row is negotiation-family", () => {
+    const rows = [
+      { user_id: "u1", created_at: "2026-03-01T00:00:00Z", report_json: {}, type: "Salary Negotiation" },
+      { user_id: "u1", created_at: "2026-01-01T00:00:00Z", report_json: {}, type: "salary-negotiation" },
+    ];
+    expect(latestSessionByUser(rows).has("u1")).toBe(false);
+  });
+});
+
+describe("isNegotiationSession", () => {
+  it("matches negotiation-family type strings case-insensitively", () => {
+    expect(isNegotiationSession("salary-negotiation")).toBe(true);
+    expect(isNegotiationSession("Salary Negotiation")).toBe(true);
+  });
+
+  it("does not match interview-family or missing types", () => {
+    expect(isNegotiationSession("behavioral")).toBe(false);
+    expect(isNegotiationSession(undefined)).toBe(false);
+    expect(isNegotiationSession("")).toBe(false);
   });
 });

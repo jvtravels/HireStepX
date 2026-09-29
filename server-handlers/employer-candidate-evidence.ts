@@ -81,8 +81,12 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
 
+    /* limit=20, not 1: the most recent session overall is frequently a
+       salary-negotiation practice run, which latestSessionByUser() skips.
+       Fetching a batch lets it fall through to the most recent session
+       that's actually interview evidence instead of returning none. */
     const sessionsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json&order=created_at.desc&limit=1`,
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type&order=created_at.desc&limit=20`,
       { headers: serviceHeaders() },
     );
     const sessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
