@@ -124,8 +124,11 @@ const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
 
 const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
 
-type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "matches" | "topMatches";
-const DEFAULT_SORT: Sort<SortColumn> = { column: "dueDate", direction: "asc" };
+type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "matches" | "topMatches" | "created";
+// Newest-posted-first — matches the order employer-requirements.ts already
+// returns (created_at.desc), so the initial render isn't silently reordered
+// by a due-date sort that's meaningless until a row actually has a due date.
+const DEFAULT_SORT: Sort<SortColumn> = { column: "created", direction: "desc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
   title: "Opportunity",
@@ -135,6 +138,7 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   dueDate: "Due Date",
   matches: "AI Screening",
   topMatches: "Top Matches",
+  created: "Date posted",
 };
 
 function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<SortColumn>): number {
@@ -155,6 +159,8 @@ function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<So
       return dir * (a.aiScreening.evaluated - b.aiScreening.evaluated);
     case "topMatches":
       return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches);
+    case "created":
+      return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 }
 
