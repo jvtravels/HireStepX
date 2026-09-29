@@ -32,11 +32,16 @@ const navItems: ShellNavItem[] = [
    same white bordered card so the body reads identically across sides. */
 const SELF_CARDED_ROUTES = ["/employer/jobs", "/employer/requirements/new"];
 
-/* RequirementForm (create + edit) renders its own header, progress bar,
-   and Card — wrapping it in the generic fallback card too produces a
-   nested double-card look. Edit's path is dynamic (/requirements/:id/edit). */
+/* Every requirement-scoped page (detail, edit, candidate detail, outcome
+   feedback, compare) renders its own header/Card layout designed to fill
+   the full main-content width. Wrapping any of them in the generic
+   fallback card too produces a nested double-card look AND visibly caps
+   the page at maxWidth:1280 instead of the width the page itself uses. */
 function isSelfCardedRoute(pathname: string): boolean {
-  return SELF_CARDED_ROUTES.includes(pathname) || /^\/employer\/requirements\/[^/]+\/edit$/.test(pathname);
+  return (
+    SELF_CARDED_ROUTES.includes(pathname) ||
+    /^\/employer\/requirements\/[^/]+(\/edit|\/outcome|\/compare|\/candidates\/[^/]+)?$/.test(pathname)
+  );
 }
 
 /* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
