@@ -373,20 +373,31 @@ export const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: n
     hire, so offering those stages as clickable options would let an
     employer "hire" against an empty shortlist. Shared by the jobs list
     (per-row) and the opportunity detail page (header) so the pipeline
-    reads identically everywhere it appears. */
+    reads identically everywhere it appears.
+
+    `frozen` covers a closed requirement: archiving only ever patches
+    `status`, never `stage` (see handleStatusAction in
+    employer-requirement-detail.ts), so a requirement archived while still
+    mid-matching keeps `stage: "ai_matching"` forever. Without this, a
+    closed posting shows a live spinning "AI Matching" pill next to its
+    "Closed" badge, implying matching is still running on something no
+    longer hiring. Frozen renders the label plain and static — no spin,
+    no dropdown — since the stage is stale by definition once closed. */
 export function StageCell({
   stage,
   hasEvaluatedCandidates,
   onChange,
+  frozen,
 }: {
   stage: RequirementStage;
   hasEvaluatedCandidates: boolean;
   onChange: (stage: RequirementStage) => void;
+  frozen?: boolean;
 }) {
   const { color, background } = BADGE_TONE[STAGE_TONE[stage]];
   const StageIcon = STAGE_ICON[stage];
 
-  if (!hasEvaluatedCandidates) {
+  if (frozen || !hasEvaluatedCandidates) {
     return (
       <span
         style={{
@@ -394,7 +405,7 @@ export function StageCell({
           color, background, padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
         }}
       >
-        <StageIcon size={11} className={stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+        <StageIcon size={11} className={!frozen && stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
         {STAGE_LABEL[stage]}
       </span>
     );

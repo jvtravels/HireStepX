@@ -689,6 +689,7 @@ export default function RequirementDetailPage() {
                     stage={requirement.stage}
                     hasEvaluatedCandidates={requirement.candidates.length > 0}
                     onChange={handleStageChange}
+                    frozen={requirement.status === "closed"}
                   />
                 </span>
               </TooltipTrigger>

@@ -1030,6 +1030,7 @@ export default function EmployerJobsPage() {
                       stage={r.stage}
                       hasEvaluatedCandidates={r.aiScreening.evaluated > 0}
                       onChange={(stage) => changeStage(r.id, stage)}
+                      frozen={isClosed}
                     />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
