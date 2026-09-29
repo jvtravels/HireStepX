@@ -24,7 +24,6 @@ import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 const navItems: ShellNavItem[] = [
   { id: "dashboard", label: "Dashboard", path: "/employer", icon: <LayoutDashboardIcon size={18} aria-hidden="true" /> },
   { id: "jobs", label: "Jobs", path: "/employer/jobs", icon: <BriefcaseIcon size={18} aria-hidden="true" /> },
-  { id: "settings", label: "Settings", path: "/employer/settings", icon: <SettingsIcon size={18} aria-hidden="true" /> },
 ];
 
 /* Candidate pages each own their body card (DashboardHome's grid,
