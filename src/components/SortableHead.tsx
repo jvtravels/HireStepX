@@ -46,7 +46,7 @@ export function SortableHead<C extends string>({
           type="button"
           onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : defaultDirection })}
           aria-label={`Sort by ${columnLabel}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-          style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ display: "flex", alignItems: "center", gap: 8, flex: after ? "0 0 auto" : 1, minWidth: 0, height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
@@ -57,7 +57,7 @@ export function SortableHead<C extends string>({
             <ChevronsUpDownIcon size={14} color={T.inkSoft} aria-hidden="true" />
           )}
         </button>
-        {after && <span style={{ paddingRight: 12, display: "flex", alignItems: "center" }}>{after}</span>}
+        {after && <span style={{ display: "flex", alignItems: "center" }}>{after}</span>}
       </div>
     </TableHead>
   );

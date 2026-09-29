@@ -16,7 +16,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, BriefcaseIcon,
+  PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
   EyeIcon, InfoIcon, LoaderCircleIcon,
 } from "lucide-react";
@@ -297,63 +297,99 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
 }
 
 /** "Strong Match" cell — overlapping avatar-initial chips for the candidates
-    scoring at/above STRONG_MATCH_THRESHOLD. Hovering a chip shows that
-    candidate's real name, years of experience, and skills (from their
-    resume) — no fabricated data; a candidate missing profile detail just
-    shows initials with no card. The group's average score is shown under
-    Top Matches instead (see the canvas reference), since strongAvgScore is
-    the average across that same top-matches group. */
+    scoring at/above STRONG_MATCH_THRESHOLD. Hovering the chip stack shows a
+    dark "Strong Matches" card (matches the canvas reference) listing each
+    real candidate's name, years of experience, and skills — no fabricated
+    data; candidates beyond the ones we have full profiles for are summed
+    into a trailing "+N more" line using the real count. The group's average
+    score is shown under Top Matches instead, since strongAvgScore is the
+    average across that same top-matches group. */
 function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
   if (aiScreening.evaluated === 0) return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>;
   if (aiScreening.strongMatches.length === 0) {
     return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>;
   }
   return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      {aiScreening.strongMatches.map((candidate, i) => (
-        <HoverCard key={candidate.id} openDelay={150}>
-          <HoverCardTrigger asChild>
+    <HoverCard openDelay={150}>
+      <HoverCardTrigger asChild>
+        <button
+          type="button"
+          aria-label={`${aiScreening.topMatches} strong match${aiScreening.topMatches === 1 ? "" : "es"} — view candidates`}
+          style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+        >
+          {aiScreening.strongMatches.map((candidate, i) => (
             <span
+              key={candidate.id}
               style={{
                 width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
-                marginLeft: i === 0 ? 0 : -8, cursor: candidate.name ? "pointer" : "default",
+                marginLeft: i === 0 ? 0 : -8,
               }}
             >
               {candidate.initials}
             </span>
-          </HoverCardTrigger>
-          {candidate.name && (
-            <HoverCardContent style={{ width: 220 }}>
-              <div style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal }}>{candidate.name}</div>
-              {candidate.yearsExperience != null && (
-                <div style={{ marginTop: 2, fontFamily: f.sans, fontSize: textSize.xs, color: t.inkSoft }}>
-                  {candidate.yearsExperience} {candidate.yearsExperience === 1 ? "year" : "years"} experience
-                </div>
-              )}
-              {candidate.skills.length > 0 && (
-                <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {candidate.skills.slice(0, 6).map((skill) => (
-                    <Badge key={skill} tone="neutral">{skill}</Badge>
-                  ))}
-                </div>
-              )}
-            </HoverCardContent>
+          ))}
+          {aiScreening.strongMatchExtra > 0 && (
+            <span
+              style={{
+                width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
+                marginLeft: -8,
+              }}
+            >
+              +{aiScreening.strongMatchExtra}
+            </span>
           )}
-        </HoverCard>
-      ))}
-      {aiScreening.strongMatchExtra > 0 && (
-        <span
-          style={{
-            width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
-            marginLeft: -8,
-          }}
-        >
-          +{aiScreening.strongMatchExtra}
-        </span>
-      )}
-    </div>
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent
+        side="bottom"
+        align="start"
+        style={{ width: 288, borderRadius: 12, border: `1px solid ${t.creamLine}`, background: t.coal, padding: 14, boxShadow: `0 12px 32px ${t.coalShadow}` }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: t.white, opacity: 0.6 }}>
+            Strong Matches
+          </span>
+          <span
+            style={{
+              width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, fontWeight: 600, color: t.coal, background: t.white,
+            }}
+          >
+            {aiScreening.topMatches}
+          </span>
+        </div>
+        <div style={{ marginTop: 10, borderTop: `1px solid ${t.creamLine}`, display: "flex", flexDirection: "column" }}>
+          {aiScreening.strongMatches.filter((candidate) => candidate.name).map((candidate, i, arr) => (
+            <div
+              key={candidate.id}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0",
+                borderBottom: i < arr.length - 1 ? `1px solid ${t.creamLine}` : "none",
+              }}
+            >
+              <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.white, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {candidate.name}
+                </span>
+                <span style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.white, opacity: 0.55, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {[candidate.yearsExperience != null ? `${candidate.yearsExperience} yrs` : null, ...candidate.skills.slice(0, 2)]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </div>
+              <ChevronRightIcon size={14} color={t.white} style={{ opacity: 0.25, flexShrink: 0 }} aria-hidden="true" />
+            </div>
+          ))}
+          {aiScreening.strongMatchExtra > 0 && (
+            <div style={{ padding: "10px 0 0", fontFamily: f.sans, fontSize: textSize.xs, color: t.white, opacity: 0.55 }}>
+              +{aiScreening.strongMatchExtra} more {aiScreening.strongMatchExtra === 1 ? "match" : "matches"}
+            </div>
+          )}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
