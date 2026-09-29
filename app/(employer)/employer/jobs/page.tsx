@@ -42,6 +42,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import LoadingScreen from "@/_LoadingScreen";
+import { useToast } from "@/Toast";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementActivity } from "@/employer/EmployerDataContext";
 import { RequirementSummary, RequirementStatus, RequirementStage } from "@/employer/mockData";
@@ -291,7 +292,7 @@ function StageCell({ requirement, onChange }: { requirement: RequirementSummary;
           onClick={(e) => e.stopPropagation()}
           style={{
             display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-            color, background, padding: "3px 7px 3px 8px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
+            color, background, padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
           }}
         >
           <StageIcon size={11} aria-hidden="true" />
@@ -317,7 +318,7 @@ function HeadInfo({ label, children }: { label: string; children: React.ReactNod
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
-          style={{ display: "inline-flex", alignItems: "center", color: t.inkFaint, background: "transparent", border: "none", cursor: "pointer", padding: 2 }}
+          style={{ display: "inline-flex", alignItems: "center", color: t.inkFaint, background: "transparent", border: "none", cursor: "pointer", padding: 8, margin: -6 }}
         >
           <InfoIcon size={12} aria-hidden="true" />
           <span className="sr-only">{label}</span>
@@ -460,6 +461,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
 
 export default function EmployerJobsPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { requirements, requirementsLoading, archiveRequirement, reopenRequirement, updateRequirementStage, fetchRequirementActivity } = useEmployerData();
 
   const [search, setSearch] = useState("");
@@ -568,7 +570,16 @@ export default function EmployerJobsPage() {
     const isClosed = archiveTarget.status === "closed";
     const ok = isClosed ? await reopenRequirement(archiveTarget.id) : await archiveRequirement(archiveTarget.id);
     setArchiveBusy(false);
-    if (ok) setArchiveTarget(null);
+    if (ok) {
+      setArchiveTarget(null);
+    } else {
+      toast(isClosed ? "Couldn't reopen this job — please try again" : "Couldn't archive this job — please try again", "error");
+    }
+  };
+
+  const changeStage = async (id: string, stage: RequirementStage) => {
+    const ok = await updateRequirementStage(id, stage);
+    if (!ok) toast("Couldn't update the stage — please try again", "error");
   };
 
   const heading = (
@@ -898,7 +909,7 @@ export default function EmployerJobsPage() {
                               <button
                                 type="button"
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ display: "inline-flex", color: t.inkFaint, background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                                style={{ display: "inline-flex", alignItems: "center", color: t.inkFaint, background: "none", border: "none", padding: 8, margin: -8, cursor: "pointer" }}
                               >
                                 <InfoIcon size={13} aria-hidden="true" />
                                 <span className="sr-only">Duration and hours details</span>
@@ -927,7 +938,7 @@ export default function EmployerJobsPage() {
                     )}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <StageCell requirement={r} onChange={updateRequirementStage} />
+                    <StageCell requirement={r} onChange={changeStage} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.status === "generating" ? (

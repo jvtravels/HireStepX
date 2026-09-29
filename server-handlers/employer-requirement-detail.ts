@@ -314,6 +314,20 @@ async function handleStageAction(
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
 
+    if (stage !== "ai_matching") {
+      const countRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id`,
+        { headers: { ...serviceHeaders(), Prefer: "count=exact", Range: "0-0" } },
+      );
+      const evaluated = Number(countRes.headers.get("content-range")?.split("/")[1] ?? "0");
+      if (!countRes.ok || !evaluated) {
+        return new Response(
+          JSON.stringify({ error: "Can't move to this stage until at least one candidate has been evaluated" }),
+          { status: 409, headers },
+        );
+      }
+    }
+
     const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
