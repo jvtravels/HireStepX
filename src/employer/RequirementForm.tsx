@@ -40,6 +40,16 @@ const grid2: React.CSSProperties = {
   gap: 20,
 };
 
+/* For short numeric fields (salary/experience min-max) — lets 4 fields
+   share a row on wide screens instead of each pair stretching a whole
+   half-width column for a 2-digit value, while still collapsing down
+   on narrow viewports like grid2. */
+const grid4: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+  gap: 20,
+};
+
 const MIN_DESCRIPTION_LENGTH = 20;
 
 const WORK_MODES: { value: WorkMode; label: string }[] = [
@@ -222,7 +232,7 @@ export function RequirementForm({
       </div>
 
       <div>
-        <div style={grid2}>
+        <div style={grid4}>
           <div>
             <FieldLabel>Minimum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
             <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder={SALARY_UNIT[salaryType].minPlaceholder} style={inputStyle} />
@@ -231,12 +241,6 @@ export function RequirementForm({
             <FieldLabel>Maximum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
             <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder={SALARY_UNIT[salaryType].maxPlaceholder} style={inputStyle} />
           </div>
-        </div>
-        {!budgetRangeValid && <HelpText tone="error">Minimum salary can't be greater than maximum salary.</HelpText>}
-      </div>
-
-      <div>
-        <div style={grid2}>
           <div>
             <FieldLabel>Minimum experience (years)</FieldLabel>
             <input type="number" min={0} max={40} value={experienceMin} onChange={(e) => setExperienceMin(e.target.value)} placeholder="2" style={inputStyle} />
@@ -246,6 +250,7 @@ export function RequirementForm({
             <input type="number" min={0} max={40} value={experienceMax} onChange={(e) => setExperienceMax(e.target.value)} placeholder="5" style={inputStyle} />
           </div>
         </div>
+        {!budgetRangeValid && <HelpText tone="error">Minimum salary can't be greater than maximum salary.</HelpText>}
         {!experienceRangeValid && <HelpText tone="error">Minimum experience can't be greater than maximum experience.</HelpText>}
       </div>
 
@@ -395,7 +400,7 @@ export function RequirementForm({
 
   if (mode === "edit") {
     return (
-      <form onSubmit={handleSubmit} style={{ maxWidth: 860, margin: "0 auto" }}>
+      <form onSubmit={handleSubmit}>
         <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
             <div>
@@ -425,7 +430,7 @@ export function RequirementForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 860, margin: "0 auto" }}>
+    <form onSubmit={handleSubmit}>
       <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
