@@ -18,9 +18,11 @@ import { useRouter } from "next/navigation";
 import {
   PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, BriefcaseIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
+  EyeIcon, InfoIcon, LoaderCircleIcon, CircleCheckIcon, CircleAlertIcon, CircleXIcon, CircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,12 +215,60 @@ const STATUS_TONE: Record<RequirementStatus, BadgeTone> = {
   closed: "neutral",
 };
 
+const STATUS_ICON: Record<RequirementStatus, typeof CircleIcon> = {
+  generating: LoaderCircleIcon,
+  ready: CircleCheckIcon,
+  partial: CircleAlertIcon,
+  zero: CircleIcon,
+  failed: CircleXIcon,
+  closed: ArchiveIcon,
+};
+
 function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
   const { color, background } = BADGE_TONE[tone];
   return (
     <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
       {children}
     </span>
+  );
+}
+
+/** Outline badge + icon, matching the canvas design's Stage-column treatment.
+    Kept on the real per-posting status (not a fabricated hiring-pipeline
+    stage — there's no interview/hire tracking in the data model yet). */
+function StatusBadge({ status }: { status: RequirementStatus }) {
+  const { color } = BADGE_TONE[STATUS_TONE[status]];
+  const StatusIcon = STATUS_ICON[status];
+  return (
+    <span
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 5, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+        color, border: `1px solid ${t.line}`, padding: "3px 9px 3px 7px", borderRadius: 999, whiteSpace: "nowrap",
+      }}
+    >
+      <StatusIcon size={12} className={status === "generating" ? "animate-spin" : undefined} aria-hidden="true" />
+      {STATUS_LABEL[status]}
+    </span>
+  );
+}
+
+function HeadInfo({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          style={{ display: "inline-flex", alignItems: "center", color: t.inkFaint, background: "transparent", border: "none", cursor: "pointer", padding: 2 }}
+        >
+          <InfoIcon size={12} aria-hidden="true" />
+          <span className="sr-only">{label}</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-64">
+        {children}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -619,18 +669,55 @@ export default function EmployerJobsPage() {
       )}
 
       <div style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
+        <TooltipProvider delayDuration={200}>
         <Table aria-label="Posted jobs" className="table-fixed">
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="19%" minWidth={200} sort={sort} onSortChange={setSort}>Job title</SortableHead>
-              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="18%" minWidth={200} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+              <SortableHead
+                column="status"
+                columnLabel={COLUMN_LABEL.status}
+                defaultDirection="asc"
+                width="10%"
+                minWidth={110}
+                sort={sort}
+                onSortChange={setSort}
+                after={<HeadInfo label="About status">Where this posting currently stands — generating candidates, matches ready, or closed to new applicants.</HeadInfo>}
+              >
+                Status
+              </SortableHead>
+              <SortableHead
+                column="matches"
+                columnLabel={COLUMN_LABEL.matches}
+                width="13%"
+                minWidth={140}
+                sort={sort}
+                onSortChange={setSort}
+                after={<HeadInfo label="About AI Screening">How many candidates the AI has evaluated against this requirement, and the score range across them.</HeadInfo>}
+              >
+                AI Screening
+              </SortableHead>
+              <SortableHead
+                column="topMatches"
+                columnLabel={COLUMN_LABEL.topMatches}
+                width="9%"
+                minWidth={90}
+                sort={sort}
+                onSortChange={setSort}
+                after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average evidence score.</HeadInfo>}
+              >
+                Top Matches
+              </SortableHead>
+              <TableHead style={{ width: "11%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  Strong Match
+                  <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria.</HeadInfo>
+                </div>
+              </TableHead>
               <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-              <SortableHead column="status" columnLabel={COLUMN_LABEL.status} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Status</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
-              <SortableHead column="matches" columnLabel={COLUMN_LABEL.matches} width="13%" minWidth={140} sort={sort} onSortChange={setSort}>AI Screening</SortableHead>
-              <SortableHead column="topMatches" columnLabel={COLUMN_LABEL.topMatches} width="8%" minWidth={90} sort={sort} onSortChange={setSort}>Top Matches</SortableHead>
-              <TableHead style={{ width: "11%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Strong Match</TableHead>
-              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="9%" minWidth={90} sort={sort} onSortChange={setSort}>Posted</SortableHead>
+              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
+              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="8%" minWidth={90} sort={sort} onSortChange={setSort}>Posted</SortableHead>
               <TableHead style={{ width: "7%", minWidth: 64, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, textAlign: "right", paddingRight: 20 }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -702,26 +789,22 @@ export default function EmployerJobsPage() {
                     )}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
-                    {mode && <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
-                  </TableCell>
-                  <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
-                    {exp || "Any"}
-                  </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
-                  </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <DueCell dueDate={r.dueDate} />
+                    <StatusBadge status={r.status} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.status === "generating" ? (
-                      <Badge tone="brand">Finding candidates</Badge>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <LoaderCircleIcon size={12} className="animate-spin" color={t.inkFaint} aria-hidden="true" />
+                        <Badge tone="brand">Finding candidates</Badge>
+                      </div>
                     ) : r.aiScreening.evaluated === 0 ? (
                       <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>
                     ) : (
                       <>
-                        <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.aiScreening.evaluated} evaluated</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>
+                          <EyeIcon size={13} color={t.inkFaint} aria-hidden="true" />
+                          {r.aiScreening.evaluated} evaluated
+                        </div>
                         {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
                           <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>
                             Score range {r.aiScreening.scoreLow}–{r.aiScreening.scoreHigh}%
@@ -746,6 +829,16 @@ export default function EmployerJobsPage() {
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StrongMatchCell aiScreening={r.aiScreening} />
+                  </TableCell>
+                  <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
+                    {exp || "Any"}
+                  </TableCell>
+                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
+                    {mode && <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
+                  </TableCell>
+                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    <DueCell dueDate={r.dueDate} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.createdAt}
@@ -784,6 +877,7 @@ export default function EmployerJobsPage() {
             })}
           </TableBody>
         </Table>
+        </TooltipProvider>
       </div>
 
       <TablePaginationFooter
