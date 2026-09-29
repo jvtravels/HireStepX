@@ -39,6 +39,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenu
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
@@ -215,17 +216,15 @@ function CandidateTableRow({
   candidate,
   requirementId,
   readOnly,
-  compareChecked,
-  onToggleCompare,
-  compareDisabled,
+  selected,
+  onToggleSelected,
   onUnlocked,
 }: {
   candidate: Candidate;
   requirementId: string;
   readOnly: boolean;
-  compareChecked: boolean;
-  onToggleCompare: () => void;
-  compareDisabled: boolean;
+  selected: boolean;
+  onToggleSelected: () => void;
   onUnlocked: (candidateId: string, name: string, email: string) => void;
 }) {
   const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
@@ -304,10 +303,10 @@ function CandidateTableRow({
         <TableCell style={{ width: 32 }}>
           <input
             type="checkbox"
-            checked={compareChecked}
-            disabled={compareDisabled && !compareChecked}
-            onChange={onToggleCompare}
-            title="Select to compare"
+            checked={selected}
+            onChange={onToggleSelected}
+            title="Select candidate"
+            aria-label={`Select ${candidate.unlocked ? candidate.name : `candidate #${candidate.id.slice(0, 6)}`}`}
             style={{ width: 16, height: 16 }}
           />
         </TableCell>
@@ -410,11 +409,16 @@ function CandidateTableRow({
 
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
-  const { fetchRequirementDetail, updateRequirement, updateRequirementStage } = useEmployerData();
+  const { fetchRequirementDetail, updateRequirement, updateRequirementStage, updateCandidateStatus } = useEmployerData();
   const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [compareIds, setCompareIds] = useState<string[]>([]);
+  // Backs both the 2-way Compare flow and bulk actions — Compare just reads
+  // this same set and only enables/fires when it holds exactly 2 ids.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
+  const [bulkRejectNote, setBulkRejectNote] = useState("");
+  const [bulkRejectSubmitting, setBulkRejectSubmitting] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<"candidates" | "description">("candidates");
   const [search, setSearch] = useState("");
@@ -505,8 +509,66 @@ export default function RequirementDetailPage() {
     );
   }
 
-  const toggleCompare = (id: string) => {
-    setCompareIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : prev.length < 2 ? [...prev, id] : prev));
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const applyCandidateUpdate = (matchId: string, patch: Partial<Candidate>) => {
+    setRequirement((prev) =>
+      prev ? { ...prev, candidates: prev.candidates.map((c) => (c.id !== matchId ? c : { ...c, ...patch })) } : prev
+    );
+  };
+
+  const handleBulkReject = async () => {
+    if (!requirement) return;
+    const targets = requirement.candidates.filter((c) => selectedIds.has(c.id));
+    const eligible = targets.filter((c) => c.candidateStatus !== "hired");
+    const skippedHiredCount = targets.length - eligible.length;
+    if (eligible.length === 0) {
+      setBulkRejectOpen(false);
+      toast("All selected candidates are already hired — nothing to reject", "error");
+      return;
+    }
+
+    const previousStatuses = new Map(eligible.map((c) => [c.id, c.candidateStatus] as const));
+    setBulkRejectSubmitting(true);
+    eligible.forEach((c) => applyCandidateUpdate(c.id, { candidateStatus: "rejected" }));
+
+    const note = bulkRejectNote.trim() || undefined;
+    const results = await Promise.allSettled(
+      eligible.map((c) => updateCandidateStatus(c.id, { candidateStatus: "rejected", note }))
+    );
+
+    let succeeded = 0;
+    let failed = 0;
+    results.forEach((result, i) => {
+      const ok = result.status === "fulfilled" && result.value;
+      if (ok) {
+        succeeded += 1;
+      } else {
+        failed += 1;
+        applyCandidateUpdate(eligible[i].id, { candidateStatus: previousStatuses.get(eligible[i].id)! });
+      }
+    });
+
+    setBulkRejectSubmitting(false);
+    setBulkRejectOpen(false);
+    setBulkRejectNote("");
+    setSelectedIds(new Set());
+
+    const skippedSuffix = skippedHiredCount > 0 ? ` (${skippedHiredCount} already hired, skipped)` : "";
+    if (failed === 0) {
+      toast(`${succeeded} candidate${succeeded === 1 ? "" : "s"} rejected${skippedSuffix}`, "success");
+    } else if (succeeded === 0) {
+      toast(`Couldn't reject any candidates — please try again${skippedSuffix}`, "error");
+    } else {
+      toast(`${succeeded} rejected, ${failed} failed — try again${skippedSuffix}`, "error");
+    }
   };
 
   const openExtendDeadline = () => {
@@ -872,16 +934,56 @@ export default function RequirementDetailPage() {
                   </span>
                 </Card>
               )}
-              {!readOnly && compareIds.length === 2 && (
-                <div style={{ marginBottom: 16 }}>
-                  <Link
-                    href={`/employer/requirements/${requirement.id}/compare?a=${compareIds[0]}&b=${compareIds[1]}`}
-                    style={{ textDecoration: "none" }}
-                  >
-                    <PrimaryCta size="sm">Compare selected candidates</PrimaryCta>
-                  </Link>
-                </div>
+              {!readOnly && selectedIds.size >= 2 && (
+                <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 16px" }}>
+                  <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
+                    {selectedIds.size} candidate{selectedIds.size === 1 ? "" : "s"} selected
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <Button type="button" variant="link" onClick={() => setSelectedIds(new Set())} style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto", padding: 0 }}>
+                      Clear selection
+                    </Button>
+                    <Button type="button" variant="destructive" size="sm" onClick={() => setBulkRejectOpen(true)}>
+                      Reject selected
+                    </Button>
+                    {selectedIds.size === 2 && (
+                      <Link
+                        href={`/employer/requirements/${requirement.id}/compare?a=${Array.from(selectedIds)[0]}&b=${Array.from(selectedIds)[1]}`}
+                        style={{ textDecoration: "none" }}
+                      >
+                        <PrimaryCta size="sm">Compare selected candidates</PrimaryCta>
+                      </Link>
+                    )}
+                  </div>
+                </Card>
               )}
+
+              <Dialog open={bulkRejectOpen} onOpenChange={(open) => { if (!bulkRejectSubmitting) setBulkRejectOpen(open); }}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Reject {selectedIds.size} candidate{selectedIds.size === 1 ? "" : "s"}?</DialogTitle>
+                    <DialogDescription>
+                      Marks the selected candidates as rejected for {requirement.title}. Candidates already marked hired are skipped. This can&apos;t be undone from here.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
+                    <Label htmlFor="bulk-reject-note">Reason (optional, applied to all)</Label>
+                    <Textarea
+                      id="bulk-reject-note"
+                      rows={3}
+                      value={bulkRejectNote}
+                      onChange={(e) => setBulkRejectNote(e.target.value)}
+                      placeholder="Anything you want on record about this decision…"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <OutlineCta onClick={() => setBulkRejectOpen(false)}>Cancel</OutlineCta>
+                    <Button type="button" variant="destructive" onClick={handleBulkReject} disabled={bulkRejectSubmitting}>
+                      {bulkRejectSubmitting ? "Rejecting…" : "Reject candidates"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
                 <Input
                   value={search}
@@ -944,9 +1046,8 @@ export default function RequirementDetailPage() {
                             candidate={c}
                             requirementId={requirement.id}
                             readOnly={readOnly}
-                            compareChecked={compareIds.includes(c.id)}
-                            compareDisabled={compareIds.length >= 2}
-                            onToggleCompare={() => toggleCompare(c.id)}
+                            selected={selectedIds.has(c.id)}
+                            onToggleSelected={() => toggleSelected(c.id)}
                             onUnlocked={handleUnlocked}
                           />
                         ))}
