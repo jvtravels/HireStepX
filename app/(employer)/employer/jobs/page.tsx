@@ -238,41 +238,38 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
 }
 
 /** "Strong Match" cell — overlapping avatar-initial chips for the candidates
-    scoring at/above STRONG_MATCH_THRESHOLD, plus the group's average score. */
+    scoring at/above STRONG_MATCH_THRESHOLD. The group's average score is
+    shown under Top Matches instead (see the canvas reference), since
+    strongAvgScore is the average across that same top-matches group. */
 function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
   if (aiScreening.evaluated === 0) return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>;
   if (aiScreening.strongMatchInitials.length === 0) {
     return <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>;
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", alignItems: "center" }}>
-        {aiScreening.strongMatchInitials.map((initials, i) => (
-          <span
-            key={i}
-            style={{
-              width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
-              marginLeft: i === 0 ? 0 : -8,
-            }}
-          >
-            {initials}
-          </span>
-        ))}
-        {aiScreening.strongMatchExtra > 0 && (
-          <span
-            style={{
-              width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 10, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
-              marginLeft: -8,
-            }}
-          >
-            +{aiScreening.strongMatchExtra}
-          </span>
-        )}
-      </div>
-      {aiScreening.strongAvgScore != null && (
-        <div style={{ fontSize: textSize.xs, color: t.successInk }}>{aiScreening.strongAvgScore}% avg evidence score</div>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      {aiScreening.strongMatchInitials.map((initials, i) => (
+        <span
+          key={i}
+          style={{
+            width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
+            marginLeft: i === 0 ? 0 : -8,
+          }}
+        >
+          {initials}
+        </span>
+      ))}
+      {aiScreening.strongMatchExtra > 0 && (
+        <span
+          style={{
+            width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 10, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
+            marginLeft: -8,
+          }}
+        >
+          +{aiScreening.strongMatchExtra}
+        </span>
       )}
     </div>
   );
@@ -737,7 +734,12 @@ export default function EmployerJobsPage() {
                     {r.aiScreening.evaluated === 0 ? (
                       <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>—</span>
                     ) : r.aiScreening.topMatches > 0 ? (
-                      <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                        <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
+                        {r.aiScreening.strongAvgScore != null && (
+                          <div style={{ fontSize: textSize.xs, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg evidence score</div>
+                        )}
+                      </div>
                     ) : (
                       <span style={{ fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>
                     )}
@@ -745,7 +747,7 @@ export default function EmployerJobsPage() {
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StrongMatchCell aiScreening={r.aiScreening} />
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", fontSize: textSize.sm, color: t.inkFaint, verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.createdAt}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>

@@ -72,7 +72,7 @@ function CompanyOnboarding() {
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-          We review every employer before they can browse the roster. Most companies hear back within one business day.
+          You'll get instant access to the candidate roster — no waiting on approval.
         </p>
       </div>
       <Card>
@@ -210,7 +210,7 @@ function CompanyOnboarding() {
                 }
               }}
             >
-              {submitted ? "Submitting…" : "Submit for approval"}
+              {submitted ? "Setting up…" : "Create company profile"}
             </PrimaryCta>
             {!submitted && missingFieldsHint && (
               <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: "8px 0 0", textAlign: "center" }}>
@@ -225,10 +225,9 @@ function CompanyOnboarding() {
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <Eyebrow tone="indigo">What happens next</Eyebrow>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
           {[
-            { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website. A logo speeds up review." },
-            { icon: <EmployerIcon.Clock />, title: "We review", body: "A human checks every employer. Most hear back in one business day." },
+            { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website. A logo helps candidates recognize you." },
             { icon: <EmployerIcon.Arrow />, title: "You post roles", body: "Get an AI-matched shortlist, scored on real interview performance." },
           ].map((step) => (
             <div key={step.title} style={{ textAlign: "center" }}>
