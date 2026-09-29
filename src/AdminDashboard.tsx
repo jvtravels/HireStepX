@@ -5,6 +5,7 @@ import { c, font, radius } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { EmptyState } from "./components/EmptyState";
 import { Button } from "./components/ui/button";
+import LoadingScreen from "./_LoadingScreen";
 
 /* ─── Token-based auth ─── */
 // Token lives in a React ref (memory only). The HttpOnly admin_token cookie is
@@ -4096,15 +4097,7 @@ export default function AdminDashboard() {
 
   // Loading auth
   if (authLoading) {
-    return (
-      <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.ui }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 32, height: 32, border: `3px solid ${c.border}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ color: c.stone, fontSize: 14 }}>Loading...</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Login screen
