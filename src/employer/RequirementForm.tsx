@@ -433,11 +433,13 @@ export function RequirementForm({
       <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div>
-              <Eyebrow tone="indigo">New requirement · step {step} of 2</Eyebrow>
-              <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>
                 {step === 1 ? "Basic information" : "Preferences & perks"}
               </h1>
+              <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 }}>
+                Step {step} of 2
+              </span>
             </div>
             <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
               <OutlineCta onClick={() => router.back()}>Cancel</OutlineCta>
