@@ -209,6 +209,11 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     );
   }
 
+  /* Settings has no navItems entry — it's only reachable via the account
+     menu dropdown, not the sidebar — so it must not fall through to
+     navItems[0] here, or the sidebar highlights "Dashboard" and the
+     breadcrumb reads "Dashboard" while the page itself says "Settings". */
+  const isSettingsRoute = pathname === "/employer/settings";
   const activeItem =
     navItems.find((item) =>
       item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
@@ -221,7 +226,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       homeHref="/employer"
       navAriaLabel="Employer navigation"
       navItems={navItems}
-      activeId={activeItem.id}
+      activeId={isSettingsRoute ? "" : activeItem.id}
       onNavigate={(path) => router.push(path)}
       account={{
         name: companyName || "Employer",
@@ -236,7 +241,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       }
       onLogout={handleLogout}
       breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
-      pageLabel={activeItem.label}
+      pageLabel={isSettingsRoute ? "Settings" : activeItem.label}
       isMobile={isMobile}
       mainId="employer-main"
       pageKey={pathname}
