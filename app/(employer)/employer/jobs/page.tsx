@@ -763,7 +763,7 @@ export default function EmployerJobsPage() {
         <Table aria-label="Posted jobs" className="table-fixed">
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="21%" minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="18%" minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
@@ -789,8 +789,8 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width="9%"
-                minWidth={90}
+                width="12%"
+                minWidth={140}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average evidence score.</HeadInfo>}

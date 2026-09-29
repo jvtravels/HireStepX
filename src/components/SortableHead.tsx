@@ -40,24 +40,28 @@ export function SortableHead<C extends string>({
   const active = sort.column === column;
   const ariaSort = active ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
   return (
-    <TableHead aria-sort={ariaSort} style={{ width, minWidth, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0 }}>
-      <div style={{ display: "flex", alignItems: "center" }}>
+    <TableHead aria-sort={ariaSort} style={{ width, minWidth, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
         <button
           type="button"
           onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : defaultDirection })}
           aria-label={`Sort by ${columnLabel}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-          style={{ display: "flex", alignItems: "center", gap: 8, flex: after ? "0 0 auto" : 1, minWidth: 0, height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
-          {children}
+          <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</span>
           {active ? (
-            sort.direction === "asc" ? <ChevronUpIcon size={14} aria-hidden="true" /> : <ChevronDownIcon size={14} aria-hidden="true" />
+            sort.direction === "asc" ? (
+              <ChevronUpIcon size={14} style={{ flexShrink: 0 }} aria-hidden="true" />
+            ) : (
+              <ChevronDownIcon size={14} style={{ flexShrink: 0 }} aria-hidden="true" />
+            )
           ) : (
-            <ChevronsUpDownIcon size={14} color={T.inkSoft} aria-hidden="true" />
+            <ChevronsUpDownIcon size={14} color={T.inkSoft} style={{ flexShrink: 0 }} aria-hidden="true" />
           )}
         </button>
-        {after && <span style={{ display: "flex", alignItems: "center" }}>{after}</span>}
+        {after && <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>{after}</span>}
       </div>
     </TableHead>
   );
