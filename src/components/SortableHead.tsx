@@ -46,7 +46,7 @@ export function SortableHead<C extends string>({
           type="button"
           onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : defaultDirection })}
           aria-label={`Sort by ${columnLabel}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-          style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, height: 40, padding: "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ display: "flex", alignItems: "center", gap: 8, flex: after ? "0 1 auto" : 1, minWidth: 0, height: 40, padding: after ? "0 4px 0 20px" : "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
