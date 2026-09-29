@@ -35,6 +35,8 @@ export interface RequirementRow {
   custom_skill_sets: string[];
   created_at: string;
   stage: string;
+  duration_weeks: number | null;
+  hours_per_week: number | null;
 }
 
 /** The four hiring-pipeline stages an employer can move a posting through,
@@ -143,6 +145,24 @@ export function asBoundedDueDate(v: unknown): string | null {
 export function asBoundedBudget(v: unknown): number | null {
   if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
   if (v < 0 || v > 1000) return null;
+  return v;
+}
+
+/** Validated read of a client-supplied contract/project duration, in whole
+ *  weeks: clamped to a plausible 1–104 range. Returns null for anything
+ *  else so it stores as a real SQL NULL, not a fabricated value. */
+export function asBoundedDurationWeeks(v: unknown): number | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
+  if (v < 1 || v > 104) return null;
+  return v;
+}
+
+/** Validated read of a client-supplied weekly-hours commitment: clamped to
+ *  a plausible 1–80 range. Returns null for anything else so it stores as
+ *  a real SQL NULL, not a fabricated value. */
+export function asBoundedHoursPerWeek(v: unknown): number | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
+  if (v < 1 || v > 80) return null;
   return v;
 }
 
@@ -298,6 +318,8 @@ export function buildRequirementsListResponse(
   candidateCount: number;
   aiScreening: AiScreeningSummary;
   stage: string;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
 }> {
   return rows.map((r) => ({
     id: r.id,
@@ -320,6 +342,8 @@ export function buildRequirementsListResponse(
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
     aiScreening: aiScreeningByRequirement.get(r.id) ?? EMPTY_AI_SCREENING,
+    durationWeeks: r.duration_weeks ?? null,
+    hoursPerWeek: r.hours_per_week ?? null,
   }));
 }
 

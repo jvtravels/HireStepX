@@ -104,6 +104,8 @@ export interface RequirementSummary {
   workMode: WorkMode | null;
   skills: string[];
   employmentType: EmploymentType | null;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
   createdAt: string;
   candidateCount: number;
   aiScreening: AiScreeningSummary;
@@ -139,6 +141,8 @@ export interface Requirement {
   targetCompanies: string[];
   perksAndBenefits: string[];
   employmentType: EmploymentType | null;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
   createdAt: string;
   candidates: Candidate[];
 }

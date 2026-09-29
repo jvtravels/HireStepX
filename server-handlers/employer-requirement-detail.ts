@@ -52,6 +52,8 @@ import {
   asBoundedSalaryType,
   asBoundedBoolean,
   asBoundedStage,
+  asBoundedDurationWeeks,
+  asBoundedHoursPerWeek,
   isValidRequirementInput,
   type RequirementRow,
   type RequirementStage,
@@ -110,7 +112,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -125,6 +127,7 @@ export default async function handler(req: Request): Promise<Response> {
       salary_type: string | null; preferred_domain: string | null; work_schedule: string | null;
       availability: string | null; relevant_experience: string | null; portfolio_required: boolean | null;
       custom_skill_sets: string[] | null;
+      duration_weeks: number | null; hours_per_week: number | null;
       created_at: string;
     }>;
     const requirement = reqRows[0];
@@ -231,6 +234,8 @@ export default async function handler(req: Request): Promise<Response> {
         perksAndBenefits: requirement.perks_and_benefits ?? [],
         employmentType: requirement.employment_type,
         salaryType: requirement.salary_type,
+        durationWeeks: requirement.duration_weeks,
+        hoursPerWeek: requirement.hours_per_week,
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
       }),
@@ -344,6 +349,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     salaryType?: unknown; preferredDomain?: unknown; workSchedule?: unknown;
     availability?: unknown; relevantExperience?: unknown; portfolioRequired?: unknown;
     customSkillSets?: unknown;
+    durationWeeks?: unknown; hoursPerWeek?: unknown;
   };
   try {
     body = await req.json();
@@ -389,6 +395,8 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   const relevantExperience = asBoundedString(body.relevantExperience, 120);
   const portfolioRequired = asBoundedBoolean(body.portfolioRequired);
   const customSkillSets = asBoundedStringArray(body.customSkillSets, 40, 60);
+  const durationWeeks = asBoundedDurationWeeks(body.durationWeeks);
+  const hoursPerWeek = asBoundedHoursPerWeek(body.hoursPerWeek);
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
@@ -422,6 +430,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         salary_type: salaryType, preferred_domain: preferredDomain, work_schedule: workSchedule,
         availability, relevant_experience: relevantExperience, portfolio_required: portfolioRequired,
         custom_skill_sets: customSkillSets,
+        duration_weeks: durationWeeks, hours_per_week: hoursPerWeek,
       }),
     });
     if (!patchRes.ok) {
@@ -465,6 +474,8 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         perksAndBenefits: requirement.perks_and_benefits ?? [],
         employmentType: requirement.employment_type ?? null,
         salaryType: requirement.salary_type ?? null,
+        durationWeeks: requirement.duration_weeks ?? null,
+        hoursPerWeek: requirement.hours_per_week ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

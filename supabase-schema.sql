@@ -1697,6 +1697,11 @@ alter table employer_requirements add column if not exists custom_skill_sets tex
 -- Manually-set hiring-pipeline stage, distinct from `status` (which tracks
 -- AI matching/generation lifecycle, not where the employer is in hiring).
 alter table employer_requirements add column if not exists stage text not null default 'ai_matching' check (stage in ('ai_matching', 'ready_for_review', 'interviewing', 'hired'));
+-- Contract/project length and weekly-hours commitment, shown in the Jobs
+-- table's Opportunity-column tooltip. Nullable — most postings won't set
+-- these (they only matter for contract/part-time roles).
+alter table employer_requirements add column if not exists duration_weeks integer;
+alter table employer_requirements add column if not exists hours_per_week integer;
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 

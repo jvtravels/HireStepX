@@ -72,6 +72,8 @@ interface EmployerDataContextValue {
     relevantExperience?: string;
     portfolioRequired?: boolean;
     customSkillSets?: string[];
+    durationWeeks?: number;
+    hoursPerWeek?: number;
   }) => Promise<string | null>;
   updateRequirement: (id: string, r: {
     title: string;
@@ -100,6 +102,8 @@ interface EmployerDataContextValue {
     relevantExperience?: string;
     portfolioRequired?: boolean;
     customSkillSets?: string[];
+    durationWeeks?: number;
+    hoursPerWeek?: number;
   }) => Promise<boolean>;
   createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
@@ -233,6 +237,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     relevantExperience?: string;
     portfolioRequired?: boolean;
     customSkillSets?: string[];
+    durationWeeks?: number;
+    hoursPerWeek?: number;
   }) => {
     const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
     if (res.ok && res.data) {
@@ -269,6 +275,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     relevantExperience?: string;
     portfolioRequired?: boolean;
     customSkillSets?: string[];
+    durationWeeks?: number;
+    hoursPerWeek?: number;
   }) => {
     const res = await apiFetch<{ id: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, r, { method: "PATCH" });
     if (res.ok && res.data) {

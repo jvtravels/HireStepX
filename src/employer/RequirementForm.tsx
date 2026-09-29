@@ -84,6 +84,8 @@ export interface RequirementFormValues {
   relevantExperience?: string;
   portfolioRequired?: boolean;
   customSkillSets?: string[];
+  durationWeeks?: number;
+  hoursPerWeek?: number;
 }
 
 function StepProgress({ step }: { step: 1 | 2 }) {
@@ -151,6 +153,8 @@ export function RequirementForm({
   const [perksAndBenefits, setPerksAndBenefits] = useState<string[]>(initial?.perksAndBenefits ?? []);
   const [noticePeriodPref, setNoticePeriodPref] = useState(initial?.noticePeriodPref ?? "Any");
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
+  const [durationWeeks, setDurationWeeks] = useState(initial?.durationWeeks != null ? String(initial.durationWeeks) : "");
+  const [hoursPerWeek, setHoursPerWeek] = useState(initial?.hoursPerWeek != null ? String(initial.hoursPerWeek) : "");
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -167,6 +171,8 @@ export function RequirementForm({
     const parsedBudgetMin = budgetMin.trim() ? Number(budgetMin) : undefined;
     const parsedBudgetMax = budgetMax.trim() ? Number(budgetMax) : undefined;
     const parsedOpenPositions = openPositions.trim() ? Number(openPositions) : undefined;
+    const parsedDurationWeeks = durationWeeks.trim() ? Number(durationWeeks) : undefined;
+    const parsedHoursPerWeek = hoursPerWeek.trim() ? Number(hoursPerWeek) : undefined;
     const ok = await onSubmit({
       title: title.trim(),
       locations,
@@ -194,6 +200,8 @@ export function RequirementForm({
       availability: availability.trim() || undefined,
       relevantExperience: relevantExperience.trim() || undefined,
       portfolioRequired,
+      durationWeeks: Number.isFinite(parsedDurationWeeks) ? parsedDurationWeeks : undefined,
+      hoursPerWeek: Number.isFinite(parsedHoursPerWeek) ? parsedHoursPerWeek : undefined,
     });
     if (!ok) {
       setSubmitting(false);
@@ -254,6 +262,18 @@ export function RequirementForm({
         <div>
           <FieldLabel>Open positions</FieldLabel>
           <input type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={inputStyle} />
+        </div>
+      </div>
+
+      <div style={grid2}>
+        <div>
+          <FieldLabel>Duration in weeks (optional)</FieldLabel>
+          <input type="number" min={1} max={104} value={durationWeeks} onChange={(e) => setDurationWeeks(e.target.value)} placeholder="12" style={inputStyle} />
+          <HelpText>For contract or project-based roles — shown to candidates alongside the pay rate.</HelpText>
+        </div>
+        <div>
+          <FieldLabel>Hours per week (optional)</FieldLabel>
+          <input type="number" min={1} max={80} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(e.target.value)} placeholder="20" style={inputStyle} />
         </div>
       </div>
 

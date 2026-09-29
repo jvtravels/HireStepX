@@ -117,7 +117,7 @@ type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "m
 const DEFAULT_SORT: Sort<SortColumn> = { column: "dueDate", direction: "asc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
-  title: "Job title",
+  title: "Opportunity",
   location: "Location",
   experience: "Experience",
   stage: "Stage",
@@ -705,7 +705,7 @@ export default function EmployerJobsPage() {
         <Table aria-label="Posted jobs" className="table-fixed">
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="21%" minWidth={190} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="21%" minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
@@ -804,11 +804,31 @@ export default function EmployerJobsPage() {
                       <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.title}</div>
                       {isClosed && <Badge tone="neutral">Closed</Badge>}
                     </div>
-                    {(budget || jobType || r.openPositions != null) && (
-                      <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 2 }}>
-                        {[jobType, budget, r.openPositions != null ? `${r.openPositions} ${r.openPositions === 1 ? "opening" : "openings"}` : null]
-                          .filter(Boolean)
-                          .join(" · ")}
+                    {(budget || jobType) && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: textSize.sm, color: t.inkFaint, marginTop: 2 }}>
+                        <span>{[budget, jobType].filter(Boolean).join(" · ")}</span>
+                        {(r.durationWeeks != null || r.hoursPerWeek != null) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{ display: "inline-flex", color: t.inkFaint, background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                              >
+                                <InfoIcon size={13} aria-hidden="true" />
+                                <span className="sr-only">Duration and hours details</span>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              {[
+                                r.durationWeeks != null ? `${r.durationWeeks} ${r.durationWeeks === 1 ? "week" : "weeks"}` : null,
+                                r.hoursPerWeek != null ? `${r.hoursPerWeek} hrs/week` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
                     )}
                     {r.skills.length > 0 && (

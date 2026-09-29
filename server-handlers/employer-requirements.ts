@@ -39,6 +39,8 @@ import {
   asBoundedEmploymentType,
   asBoundedSalaryType,
   asBoundedBoolean,
+  asBoundedDurationWeeks,
+  asBoundedHoursPerWeek,
   isValidRequirementInput,
   buildRequirementsListResponse,
   countMatchesByRequirement,
@@ -113,7 +115,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -181,6 +183,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     salaryType?: unknown; preferredDomain?: unknown; workSchedule?: unknown;
     availability?: unknown; relevantExperience?: unknown; portfolioRequired?: unknown;
     customSkillSets?: unknown;
+    durationWeeks?: unknown; hoursPerWeek?: unknown;
   };
   try {
     body = await req.json();
@@ -214,6 +217,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const relevantExperience = asBoundedString(body.relevantExperience, 120);
   const portfolioRequired = asBoundedBoolean(body.portfolioRequired);
   const customSkillSets = asBoundedStringArray(body.customSkillSets, 40, 60);
+  const durationWeeks = asBoundedDurationWeeks(body.durationWeeks);
+  const hoursPerWeek = asBoundedHoursPerWeek(body.hoursPerWeek);
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
@@ -244,6 +249,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         salary_type: salaryType, preferred_domain: preferredDomain, work_schedule: workSchedule,
         availability, relevant_experience: relevantExperience, portfolio_required: portfolioRequired,
         custom_skill_sets: customSkillSets,
+        duration_weeks: durationWeeks, hours_per_week: hoursPerWeek,
       }]),
     });
     if (!insertRes.ok) {
@@ -275,6 +281,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         skills: requirement.skills ?? [],
         employmentType: requirement.employment_type ?? null,
         salaryType: requirement.salary_type ?? null,
+        durationWeeks: requirement.duration_weeks ?? null,
+        hoursPerWeek: requirement.hours_per_week ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },
