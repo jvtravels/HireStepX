@@ -258,10 +258,31 @@ function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode 
 
 /** Real, persisted hiring-pipeline stage — manually set by the employer,
     distinct from the AI-generation Status column. Click to move the
-    posting forward via the row's own dropdown, no page navigation needed. */
+    posting forward via the row's own dropdown, no page navigation needed.
+
+    Non-interactive (plain badge, no dropdown) while the AI hasn't produced
+    any evaluated candidates yet — nothing exists to review, interview, or
+    hire, so offering those stages as clickable options would let an
+    employer "hire" against an empty shortlist. */
 function StageCell({ requirement, onChange }: { requirement: RequirementSummary; onChange: (id: string, stage: RequirementStage) => void }) {
   const { color, background } = BADGE_TONE[STAGE_TONE[requirement.stage]];
   const StageIcon = STAGE_ICON[requirement.stage];
+  const hasEvaluatedCandidates = requirement.aiScreening.evaluated > 0;
+
+  if (!hasEvaluatedCandidates) {
+    return (
+      <span
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+          color, background, padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
+        }}
+      >
+        <StageIcon size={11} className={requirement.stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+        {STAGE_LABEL[requirement.stage]}
+      </span>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -273,7 +294,7 @@ function StageCell({ requirement, onChange }: { requirement: RequirementSummary;
             color, background, padding: "3px 7px 3px 8px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
           }}
         >
-          <StageIcon size={11} className={requirement.stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+          <StageIcon size={11} aria-hidden="true" />
           {STAGE_LABEL[requirement.stage]}
           <ChevronDownIcon size={11} aria-hidden="true" />
         </button>
