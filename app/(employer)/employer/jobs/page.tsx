@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import {
   PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, BriefcaseIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
-  EyeIcon, InfoIcon, LoaderCircleIcon, CircleCheckIcon, CircleAlertIcon, CircleXIcon, CircleIcon,
+  EyeIcon, InfoIcon, LoaderCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,19 +113,17 @@ const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
 
 const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
 
-type SortColumn = "title" | "location" | "experience" | "status" | "stage" | "dueDate" | "matches" | "topMatches" | "posted";
-const DEFAULT_SORT: Sort<SortColumn> = { column: "posted", direction: "desc" };
+type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "matches" | "topMatches";
+const DEFAULT_SORT: Sort<SortColumn> = { column: "dueDate", direction: "asc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
   title: "Job title",
   location: "Location",
   experience: "Experience",
-  status: "Status",
   stage: "Stage",
   dueDate: "Due date",
   matches: "AI Screening",
   topMatches: "Top Matches",
-  posted: "Posted",
 };
 
 function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<SortColumn>): number {
@@ -138,8 +136,6 @@ function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<So
       return dir * locationText(a).localeCompare(locationText(b));
     case "experience":
       return dir * ((a.experienceMin ?? a.experienceMax ?? -1) - (b.experienceMin ?? b.experienceMax ?? -1));
-    case "status":
-      return dir * STATUS_LABEL[a.status].localeCompare(STATUS_LABEL[b.status]);
     case "stage":
       return dir * STAGE_LABEL[a.stage].localeCompare(STAGE_LABEL[b.stage]);
     case "dueDate":
@@ -148,8 +144,6 @@ function compareRows(a: RequirementSummary, b: RequirementSummary, sort: Sort<So
       return dir * (a.aiScreening.evaluated - b.aiScreening.evaluated);
     case "topMatches":
       return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches);
-    case "posted":
-      return dir * a.createdAt.localeCompare(b.createdAt);
   }
 }
 
@@ -211,24 +205,6 @@ const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
   error: { color: t.errorInk, background: t.error100 },
 };
 
-const STATUS_TONE: Record<RequirementStatus, BadgeTone> = {
-  generating: "brand",
-  ready: "success",
-  partial: "warning",
-  zero: "neutral",
-  failed: "error",
-  closed: "neutral",
-};
-
-const STATUS_ICON: Record<RequirementStatus, typeof CircleIcon> = {
-  generating: LoaderCircleIcon,
-  ready: CircleCheckIcon,
-  partial: CircleAlertIcon,
-  zero: CircleIcon,
-  failed: CircleXIcon,
-  closed: ArchiveIcon,
-};
-
 const STAGE_OPTIONS: RequirementStage[] = ["ai_matching", "ready_for_review", "interviewing", "hired"];
 
 const STAGE_LABEL: Record<RequirementStage, string> = {
@@ -250,25 +226,6 @@ function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode 
   return (
     <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
       {children}
-    </span>
-  );
-}
-
-/** Outline badge + icon, matching the canvas design's Stage-column treatment.
-    Kept on the real per-posting status (not a fabricated hiring-pipeline
-    stage — there's no interview/hire tracking in the data model yet). */
-function StatusBadge({ status }: { status: RequirementStatus }) {
-  const { color } = BADGE_TONE[STATUS_TONE[status]];
-  const StatusIcon = STATUS_ICON[status];
-  return (
-    <span
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 5, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-        color, border: `1px solid ${t.line}`, padding: "3px 9px 3px 7px", borderRadius: 999, whiteSpace: "nowrap",
-      }}
-    >
-      <StatusIcon size={12} className={status === "generating" ? "animate-spin" : undefined} aria-hidden="true" />
-      {STATUS_LABEL[status]}
     </span>
   );
 }
@@ -748,23 +705,11 @@ export default function EmployerJobsPage() {
         <Table aria-label="Posted jobs" className="table-fixed">
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="15%" minWidth={190} sort={sort} onSortChange={setSort}>Job title</SortableHead>
-              <SortableHead
-                column="status"
-                columnLabel={COLUMN_LABEL.status}
-                defaultDirection="asc"
-                width="9%"
-                minWidth={110}
-                sort={sort}
-                onSortChange={setSort}
-                after={<HeadInfo label="About status">Where this posting currently stands — generating candidates, matches ready, or closed to new applicants.</HeadInfo>}
-              >
-                Status
-              </SortableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="21%" minWidth={190} sort={sort} onSortChange={setSort}>Job title</SortableHead>
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
-                width="10%"
+                width="12%"
                 minWidth={130}
                 sort={sort}
                 onSortChange={setSort}
@@ -775,7 +720,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="matches"
                 columnLabel={COLUMN_LABEL.matches}
-                width="12%"
+                width="14%"
                 minWidth={140}
                 sort={sort}
                 onSortChange={setSort}
@@ -786,7 +731,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width="8%"
+                width="9%"
                 minWidth={90}
                 sort={sort}
                 onSortChange={setSort}
@@ -794,23 +739,22 @@ export default function EmployerJobsPage() {
               >
                 Top Matches
               </SortableHead>
-              <TableHead style={{ width: "10%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
+              <TableHead style={{ width: "11%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Strong Match
                   <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="6%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="7%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
-              <SortableHead column="posted" columnLabel={COLUMN_LABEL.posted} width="7%" minWidth={90} sort={sort} onSortChange={setSort}>Posted</SortableHead>
-              <TableHead style={{ width: "6%", minWidth: 64, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, textAlign: "right", paddingRight: 20 }}>Actions</TableHead>
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={100} sort={sort} onSortChange={setSort}>Due date</SortableHead>
+              <TableHead style={{ width: "48px", minWidth: 48 }} aria-hidden="true" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {pageRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} style={{ padding: "40px 14px" }}>
+                <TableCell colSpan={9} style={{ padding: "40px 14px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                     <SearchXIcon size={22} color={t.inkFaint} aria-hidden="true" />
                     <p style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, margin: 0 }}>
@@ -856,7 +800,10 @@ export default function EmployerJobsPage() {
                     <button type="button" className="sr-only" onClick={() => router.push(href)}>
                       {`View ${r.title}`}
                     </button>
-                    <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.title}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.title}</div>
+                      {isClosed && <Badge tone="neutral">Closed</Badge>}
+                    </div>
                     {(budget || jobType || r.openPositions != null) && (
                       <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 2 }}>
                         {[jobType, budget, r.openPositions != null ? `${r.openPositions} ${r.openPositions === 1 ? "opening" : "openings"}` : null]
@@ -873,9 +820,6 @@ export default function EmployerJobsPage() {
                         ))}
                       </div>
                     )}
-                  </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <StatusBadge status={r.status} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StageCell requirement={r} onChange={updateRequirementStage} />
@@ -928,9 +872,6 @@ export default function EmployerJobsPage() {
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <DueCell dueDate={r.dueDate} />
-                  </TableCell>
-                  <TableCell style={{ padding: "12px 20px", fontSize: textSize.md, fontWeight: 500, color: t.coal, verticalAlign: "top", whiteSpace: "normal" }}>
-                    {r.createdAt}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
