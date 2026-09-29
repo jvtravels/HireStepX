@@ -210,14 +210,15 @@ export function RequirementForm({
         <AutocompleteInput value={title} onChange={setTitle} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
       </div>
 
-      <div>
-        <FieldLabel>Employment type</FieldLabel>
-        <SegmentedControl options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
-      </div>
-
-      <div>
-        <FieldLabel>Salary type</FieldLabel>
-        <SegmentedControl options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
+      <div style={grid2}>
+        <div>
+          <FieldLabel>Employment type</FieldLabel>
+          <SegmentedControl options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
+        </div>
+        <div>
+          <FieldLabel>Salary type</FieldLabel>
+          <SegmentedControl options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
+        </div>
       </div>
 
       <div>
@@ -394,7 +395,7 @@ export function RequirementForm({
 
   if (mode === "edit") {
     return (
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ maxWidth: 860, margin: "0 auto" }}>
         <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
             <div>
@@ -424,7 +425,7 @@ export function RequirementForm({
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} style={{ maxWidth: 860, margin: "0 auto" }}>
       <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
