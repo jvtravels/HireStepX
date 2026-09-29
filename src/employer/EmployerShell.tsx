@@ -29,8 +29,12 @@ const navItems: ShellNavItem[] = [
 /* Candidate pages each own their body card (DashboardHome's grid,
    DashboardJobs' table shell). Employer routes that render a card
    themselves are listed here; every other employer page is wrapped in the
-   same white bordered card so the body reads identically across sides. */
-const SELF_CARDED_ROUTES = ["/employer/jobs", "/employer/requirements/new"];
+   same white bordered card so the body reads identically across sides.
+   /employer (its own maxWidth:1280 grid) and /employer/settings (its own
+   narrower Card) both own their layout already — wrapping either in the
+   fallback double-cards the page and, for the dashboard, caps it at the
+   same 1280 the fallback itself uses, just with less usable width inside. */
+const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings"];
 
 /* Every requirement-scoped page (detail, edit, candidate detail, outcome
    feedback, compare) renders its own header/Card layout designed to fill
