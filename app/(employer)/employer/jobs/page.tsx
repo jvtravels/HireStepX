@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import {
   PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
-  EyeIcon, InfoIcon, LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon,
+  EyeIcon, InfoIcon, LoaderCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
@@ -45,7 +49,8 @@ import LoadingScreen from "@/_LoadingScreen";
 import { useToast } from "@/Toast";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementActivity } from "@/employer/EmployerDataContext";
-import { RequirementSummary, RequirementStatus, RequirementStage } from "@/employer/mockData";
+import { RequirementSummary, RequirementStatus, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
+import { Badge, type BadgeTone, StageCell, STAGE_LABEL } from "@/employer/_atoms";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { dur, ease } from "@/_motion";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
@@ -124,6 +129,28 @@ const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
 };
 
 const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
+const ARCHIVE_REASONS = ["Position filled", "Budget cut", "Role on hold", "Other"];
+
+interface NumberRange {
+  min: string;
+  max: string;
+}
+
+const EMPTY_RANGE: NumberRange = { min: "", max: "" };
+
+/* A requirement's experience/salary is itself a range (experienceMin..Max) —
+   this overlaps that range against the filter's range rather than requiring
+   a single value to fall inside it, so a role spanning 2-5 yrs still matches
+   a "3-10" filter. */
+function rangesOverlap(reqMin: number | null, reqMax: number | null, filter: NumberRange): boolean {
+  if (!filter.min.trim() && !filter.max.trim()) return true;
+  if (reqMin == null && reqMax == null) return false;
+  const filterMin = filter.min.trim() ? Number(filter.min) : -Infinity;
+  const filterMax = filter.max.trim() ? Number(filter.max) : Infinity;
+  const lo = reqMin ?? reqMax ?? -Infinity;
+  const hi = reqMax ?? reqMin ?? Infinity;
+  return lo <= filterMax && hi >= filterMin;
+}
 
 type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "matches" | "topMatches" | "created";
 // Newest-posted-first — matches the order employer-requirements.ts already
@@ -213,101 +240,72 @@ function FilterPill({
   );
 }
 
-type BadgeTone = "neutral" | "success" | "brand" | "info" | "warning" | "error";
-const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
-  neutral: { color: t.inkSoft, background: t.creamSoft },
-  success: { color: t.successInk, background: t.success100 },
-  brand: { color: t.indigoDeep, background: t.indigo100 },
-  info: { color: t.info, background: t.info100 },
-  warning: { color: t.warningInk, background: t.warning100 },
-  error: { color: t.errorInk, background: t.error100 },
-};
-
-const STAGE_OPTIONS: RequirementStage[] = ["ai_matching", "ready_for_review", "interviewing", "hired"];
-
-const STAGE_LABEL: Record<RequirementStage, string> = {
-  ai_matching: "AI Matching",
-  ready_for_review: "Ready for Review",
-  interviewing: "Interviewing",
-  hired: "Hired",
-};
-
-const STAGE_TONE: Record<RequirementStage, BadgeTone> = {
-  ai_matching: "neutral",
-  ready_for_review: "info",
-  interviewing: "brand",
-  hired: "success",
-};
-
-/** Leading stage glyph — mirrors the canvas's stageIcon map so the pill
-    reads at a glance instead of by color alone. */
-const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean | "true" | "false" }>> = {
-  ai_matching: LoaderCircleIcon,
-  ready_for_review: ClipboardListIcon,
-  interviewing: MessageSquareIcon,
-  hired: CheckCircle2Icon,
-};
-
-function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
-  const { color, background } = BADGE_TONE[tone];
+function RangeFilterPopover({
+  label,
+  unit,
+  range,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  range: NumberRange;
+  onChange: (range: NumberRange) => void;
+}) {
+  const [draft, setDraft] = useState<NumberRange>(range);
+  const active = range.min.trim() !== "" || range.max.trim() !== "";
+  const display = active ? `${label}: ${range.min || "0"}–${range.max || "∞"} ${unit}` : label;
   return (
-    <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
-      {children}
-    </span>
-  );
-}
-
-/** Real, persisted hiring-pipeline stage — manually set by the employer,
-    distinct from the AI-generation Status column. Click to move the
-    posting forward via the row's own dropdown, no page navigation needed.
-
-    Non-interactive (plain badge, no dropdown) while the AI hasn't produced
-    any evaluated candidates yet — nothing exists to review, interview, or
-    hire, so offering those stages as clickable options would let an
-    employer "hire" against an empty shortlist. */
-function StageCell({ requirement, onChange }: { requirement: RequirementSummary; onChange: (id: string, stage: RequirementStage) => void }) {
-  const { color, background } = BADGE_TONE[STAGE_TONE[requirement.stage]];
-  const StageIcon = STAGE_ICON[requirement.stage];
-  const hasEvaluatedCandidates = requirement.aiScreening.evaluated > 0;
-
-  if (!hasEvaluatedCandidates) {
-    return (
-      <span
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-          color, background, padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
-        }}
-      >
-        <StageIcon size={11} className={requirement.stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
-        {STAGE_LABEL[requirement.stage]}
-      </span>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-            color, background, padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
-          }}
+    <Popover onOpenChange={(open) => { if (open) setDraft(range); }}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          style={{ borderRadius: 8, height: 44, gap: 8, background: t.white, color: active ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
         >
-          <StageIcon size={11} aria-hidden="true" />
-          {STAGE_LABEL[requirement.stage]}
-          <ChevronDownIcon size={11} aria-hidden="true" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        {STAGE_OPTIONS.map((stage) => (
-          <DropdownMenuItem key={stage} disabled={stage === requirement.stage} onSelect={() => onChange(requirement.id, stage)}>
-            {STAGE_LABEL[stage]}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {display}
+          <ChevronDownIcon size={12} aria-hidden="true" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" style={{ width: 220 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <Label htmlFor={`${label}-min`} className="text-xs">Min</Label>
+              <Input
+                id={`${label}-min`}
+                type="number"
+                value={draft.min}
+                onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
+                placeholder="0"
+                style={{ height: 36 }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Label htmlFor={`${label}-max`} className="text-xs">Max</Label>
+              <Input
+                id={`${label}-max`}
+                type="number"
+                value={draft.max}
+                onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
+                placeholder="Any"
+                style={{ height: 36 }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            {active && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(EMPTY_RANGE); onChange(EMPTY_RANGE); }}>
+                Clear
+              </Button>
+            )}
+            <Button type="button" size="sm" onClick={() => onChange(draft)}>
+              Apply
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -468,7 +466,10 @@ export default function EmployerJobsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [dueFilter, setDueFilter] = useState("");
+  const [experienceFilter, setExperienceFilter] = useState<NumberRange>(EMPTY_RANGE);
+  const [salaryFilter, setSalaryFilter] = useState<NumberRange>(EMPTY_RANGE);
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -479,6 +480,8 @@ export default function EmployerJobsPage() {
 
   const [archiveTarget, setArchiveTarget] = useState<RequirementSummary | null>(null);
   const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [archiveDisposition, setArchiveDisposition] = useState<ArchiveDisposition>("keep_candidates");
   const [historyTarget, setHistoryTarget] = useState<RequirementSummary | null>(null);
   const [historyItems, setHistoryItems] = useState<RequirementActivity[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -507,6 +510,11 @@ export default function EmployerJobsPage() {
     () => Array.from(new Set(requirements.map((r) => (r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null)).filter((v): v is string => !!v))).sort(),
     [requirements],
   );
+  const departmentOptions = useMemo(
+    () => Array.from(new Set(requirements.map((r) => r.department).filter((v): v is string => !!v))).sort(),
+    [requirements],
+  );
+  const hasAnyDepartment = departmentOptions.length > 0;
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
@@ -526,13 +534,16 @@ export default function EmployerJobsPage() {
       if (statusFilter && STATUS_LABEL[r.status] !== statusFilter) return false;
       if (locationFilter && !(r.locations.length > 0 ? r.locations : [r.location]).includes(locationFilter)) return false;
       if (jobTypeFilter && (r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null) !== jobTypeFilter) return false;
+      if (departmentFilter && r.department !== departmentFilter) return false;
       if (!matchesDueFilter(r, dueFilter)) return false;
+      if (!rangesOverlap(r.experienceMin, r.experienceMax, experienceFilter)) return false;
+      if (!rangesOverlap(r.budgetMin, r.budgetMax, salaryFilter)) return false;
       return true;
     });
     return [...list].sort((a, b) => compareRows(a, b, sort));
-  }, [requirements, search, statusFilter, locationFilter, jobTypeFilter, dueFilter, sort]);
+  }, [requirements, search, statusFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort]);
 
-  useEffect(() => { setPage(1); }, [search, statusFilter, locationFilter, jobTypeFilter, dueFilter, sort, rowsPerPage]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -543,7 +554,10 @@ export default function EmployerJobsPage() {
     setStatusFilter("");
     setLocationFilter("");
     setJobTypeFilter("");
+    setDepartmentFilter("");
     setDueFilter("");
+    setExperienceFilter(EMPTY_RANGE);
+    setSalaryFilter(EMPTY_RANGE);
   };
 
   const activeChips: Array<{ label: string; remove: () => void }> = [];
@@ -551,9 +565,19 @@ export default function EmployerJobsPage() {
   if (statusFilter) activeChips.push({ label: `Status: ${statusFilter}`, remove: () => setStatusFilter("") });
   if (locationFilter) activeChips.push({ label: `Location: ${locationFilter}`, remove: () => setLocationFilter("") });
   if (jobTypeFilter) activeChips.push({ label: `Job type: ${jobTypeFilter}`, remove: () => setJobTypeFilter("") });
+  if (departmentFilter) activeChips.push({ label: `Department: ${departmentFilter}`, remove: () => setDepartmentFilter("") });
   if (dueFilter) activeChips.push({ label: `Due: ${dueFilter}`, remove: () => setDueFilter("") });
+  if (experienceFilter.min || experienceFilter.max) {
+    activeChips.push({ label: `Experience: ${experienceFilter.min || "0"}–${experienceFilter.max || "∞"} yrs`, remove: () => setExperienceFilter(EMPTY_RANGE) });
+  }
+  if (salaryFilter.min || salaryFilter.max) {
+    activeChips.push({ label: `Salary: ${salaryFilter.min || "0"}–${salaryFilter.max || "∞"}`, remove: () => setSalaryFilter(EMPTY_RANGE) });
+  }
 
-  const onlySearchActive = search.trim() !== "" && !statusFilter && !locationFilter && !jobTypeFilter && !dueFilter;
+  const onlySearchActive =
+    search.trim() !== "" &&
+    !statusFilter && !locationFilter && !jobTypeFilter && !departmentFilter && !dueFilter &&
+    !experienceFilter.min && !experienceFilter.max && !salaryFilter.min && !salaryFilter.max;
 
   const openHistory = async (r: RequirementSummary) => {
     setHistoryTarget(r);
@@ -564,11 +588,19 @@ export default function EmployerJobsPage() {
     setHistoryLoading(false);
   };
 
+  const openArchive = (r: RequirementSummary) => {
+    setArchiveReason("");
+    setArchiveDisposition("keep_candidates");
+    setArchiveTarget(r);
+  };
+
   const confirmArchive = async () => {
     if (!archiveTarget) return;
     setArchiveBusy(true);
     const isClosed = archiveTarget.status === "closed";
-    const ok = isClosed ? await reopenRequirement(archiveTarget.id) : await archiveRequirement(archiveTarget.id);
+    const ok = isClosed
+      ? await reopenRequirement(archiveTarget.id)
+      : await archiveRequirement(archiveTarget.id, { archiveReason: archiveReason || undefined, archiveDisposition });
     setArchiveBusy(false);
     if (ok) {
       setArchiveTarget(null);
@@ -643,21 +675,58 @@ export default function EmployerJobsPage() {
     </Dialog>
   );
 
+  const archiveIsClosed = archiveTarget?.status === "closed";
+
   const archiveDialog = (
     <AlertDialog open={!!archiveTarget} onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{archiveTarget?.status === "closed" ? "Reopen this job?" : "Archive this job?"}</AlertDialogTitle>
+          <AlertDialogTitle>{archiveIsClosed ? "Reopen this job?" : "Archive this job?"}</AlertDialogTitle>
           <AlertDialogDescription>
-            {archiveTarget?.status === "closed"
+            {archiveIsClosed
               ? `"${archiveTarget?.title}" will go back to matching candidates and can be edited again.`
               : `"${archiveTarget?.title}" will be closed to new matches and can't be edited until you reopen it.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {!archiveIsClosed && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "4px 0" }}>
+            <div>
+              <Label htmlFor="archive-reason" className="mb-1.5">Reason for archiving (optional)</Label>
+              <Select value={archiveReason} onValueChange={setArchiveReason}>
+                <SelectTrigger id="archive-reason" className="w-full">
+                  <SelectValue placeholder="Select a reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ARCHIVE_REASONS.map((reason) => (
+                    <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-1.5">What happens to the remaining candidates?</Label>
+              <RadioGroup value={archiveDisposition} onValueChange={(v) => setArchiveDisposition(v as ArchiveDisposition)}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <RadioGroupItem value="keep_candidates" id="disposition-keep" style={{ marginTop: 2 }} />
+                  <Label htmlFor="disposition-keep" style={{ fontWeight: 400 }}>Keep candidate data — leave every candidate's status as-is</Label>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <RadioGroupItem value="reject_remaining" id="disposition-reject" style={{ marginTop: 2 }} />
+                  <div>
+                    <Label htmlFor="disposition-reject" style={{ fontWeight: 400 }}>Reject all remaining candidates</Label>
+                    <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: "2px 0 0" }}>
+                      Marks every candidate who isn't already hired, rejected, or marked not a fit as rejected.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={archiveBusy}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={confirmArchive} disabled={archiveBusy}>
-            {archiveBusy ? "Working…" : archiveTarget?.status === "closed" ? "Reopen" : "Archive"}
+            {archiveBusy ? "Working…" : archiveIsClosed ? "Reopen" : "Archive"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -778,7 +847,12 @@ export default function EmployerJobsPage() {
         <FilterPill label="Status" value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
         <FilterPill label="Location" value={locationFilter} options={locationOptions} onChange={setLocationFilter} />
         <FilterPill label="Job type" value={jobTypeFilter} options={jobTypeOptions} onChange={setJobTypeFilter} />
+        {hasAnyDepartment && (
+          <FilterPill label="Department" value={departmentFilter} options={departmentOptions} onChange={setDepartmentFilter} />
+        )}
         <FilterPill label="Due date" value={dueFilter} options={DUE_OPTIONS} onChange={setDueFilter} />
+        <RangeFilterPopover label="Experience" unit="yrs" range={experienceFilter} onChange={setExperienceFilter} />
+        <RangeFilterPopover label="Salary" unit="LPA" range={salaryFilter} onChange={setSalaryFilter} />
       </div>
 
       {activeChips.length > 0 && (
@@ -804,6 +878,9 @@ export default function EmployerJobsPage() {
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
               <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="18%" minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
+              {hasAnyDepartment && (
+                <TableHead style={{ width: "10%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
+              )}
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
@@ -852,7 +929,7 @@ export default function EmployerJobsPage() {
           <TableBody>
             {pageRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} style={{ padding: "40px 14px" }}>
+                <TableCell colSpan={hasAnyDepartment ? 10 : 9} style={{ padding: "40px 14px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                     <SearchXIcon size={22} color={t.inkFaint} aria-hidden="true" />
                     <p style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, margin: 0 }}>
@@ -939,8 +1016,21 @@ export default function EmployerJobsPage() {
                       </div>
                     )}
                   </TableCell>
+                  {hasAnyDepartment && (
+                    <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                      {r.department ? (
+                        <span style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.coal }}>{r.department}</span>
+                      ) : (
+                        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>—</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <StageCell requirement={r} onChange={changeStage} />
+                    <StageCell
+                      stage={r.stage}
+                      hasEvaluatedCandidates={r.aiScreening.evaluated > 0}
+                      onChange={(stage) => changeStage(r.id, stage)}
+                    />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.status === "generating" ? (
@@ -1002,7 +1092,7 @@ export default function EmployerJobsPage() {
                         <DropdownMenuItem disabled={isClosed} onSelect={() => router.push(`/employer/requirements/${r.id}/edit`)}>
                           <PencilIcon className="size-4" aria-hidden="true" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setArchiveTarget(r)}>
+                        <DropdownMenuItem onSelect={() => openArchive(r)}>
                           {isClosed ? (
                             <>
                               <ArchiveRestoreIcon className="size-4" aria-hidden="true" /> Reopen

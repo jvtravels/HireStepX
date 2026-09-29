@@ -6,19 +6,20 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, ScoreChip, SkillTag, Divider } from "@/employer/_atoms";
+import { Card, Eyebrow, ScoreChip, SkillTag, Divider, CandidateStatusChip } from "@/employer/_atoms";
 
 function CompareColumn({ candidate }: { candidate: Candidate }) {
   return (
     <Card style={{ flex: 1 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <ScoreChip score={candidate.matchScore} />
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal }}>
             {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
           </div>
           <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{candidate.targetRole} · {candidate.city}</div>
         </div>
+        {candidate.candidateStatus && <CandidateStatusChip status={candidate.candidateStatus} />}
       </div>
       <Divider />
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
@@ -30,6 +31,12 @@ function CompareColumn({ candidate }: { candidate: Candidate }) {
         )}
         <div>Roster score (lifetime): <strong style={{ color: t.coal }}>{candidate.rosterScore}</strong></div>
         <div>Practice sessions: <strong style={{ color: t.coal }}>{candidate.sessionsCompleted}</strong> · last active {candidate.lastActiveDaysAgo}d ago</div>
+        {candidate.interviewScheduledAt && (
+          <div>Interview scheduled: <strong style={{ color: t.coal }}>{new Date(candidate.interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</strong></div>
+        )}
+        {candidate.candidateStatusNote && (
+          <div style={{ fontSize: 12.5, color: t.inkFaint, marginTop: -4 }}>Note: {candidate.candidateStatusNote}</div>
+        )}
         <div>
           Skills:
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>

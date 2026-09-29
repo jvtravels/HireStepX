@@ -117,7 +117,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -175,7 +175,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
 async function handlePost(req: Request, userId: string, headers: Record<string, string>): Promise<Response> {
   let body: {
-    title?: unknown; location?: unknown; noticePeriodPref?: unknown; description?: unknown;
+    title?: unknown; location?: unknown; department?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
     budgetMin?: unknown; budgetMax?: unknown;
     locations?: unknown; openPositions?: unknown; workMode?: unknown; skills?: unknown;
@@ -194,6 +194,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   }
 
   const title = asBoundedString(body.title, 200);
+  const department = asBoundedString(body.department, 120) || null;
   const noticePeriodPref = asBoundedString(body.noticePeriodPref, 60) || "Any";
   const description = asBoundedString(body.description, 5000);
   const experienceMin = asBoundedExperience(body.experienceMin);
@@ -250,7 +251,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
       body: JSON.stringify([{
-        employer_id: userId, title, location, notice_period_pref: noticePeriodPref, description, status: "generating",
+        employer_id: userId, title, location, department, notice_period_pref: noticePeriodPref, description, status: "generating",
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,
@@ -281,6 +282,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         location: requirement.location,
         noticePeriodPref: requirement.notice_period_pref,
         status: finalStatus,
+        department: requirement.department ?? null,
         experienceMin: requirement.experience_min ?? null,
         experienceMax: requirement.experience_max ?? null,
         dueDate: requirement.due_date ?? null,

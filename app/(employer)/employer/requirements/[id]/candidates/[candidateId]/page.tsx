@@ -3,18 +3,121 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
+import { useEmployerData, Requirement, CandidateEvidence } from "@/employer/EmployerDataContext";
+import type { CandidateStatus } from "@/employer/mockData";
+import { useToast } from "@/Toast";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  CandidateStatusChip,
+  CANDIDATE_STATUS_LABEL,
   Card,
   Divider,
   EmployerIcon,
   HelpText,
+  OutlineCta,
   Pill,
+  PrimaryCta,
   ScoreChip,
   SkillTag,
 } from "@/employer/_atoms";
+
+/** Ordered happy-path pipeline — mirrors CANDIDATE_STATUS_LABEL's keys minus
+ *  the three terminal-negative outcomes, which render as a separate marker
+ *  instead of a step (there's no "further along" for a rejection). */
+const PIPELINE_STEPS: CandidateStatus[] = ["shortlisted", "interview_invited", "interviewing", "hired"];
+const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "no_response"];
+
+function HiringProgress({ status }: { status: CandidateStatus }) {
+  const isNegative = NEGATIVE_STATUSES.includes(status);
+  const currentIndex = isNegative ? -1 : PIPELINE_STEPS.indexOf(status);
+  return (
+    <div>
+      {PIPELINE_STEPS.map((step, i) => {
+        const reached = !isNegative && i <= currentIndex;
+        const isCurrent = !isNegative && i === currentIndex;
+        const isLast = i === PIPELINE_STEPS.length - 1;
+        return (
+          <div key={step} style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 10 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: reached ? t.indigo : t.creamSoft,
+                  border: `2px solid ${isCurrent ? t.indigo : reached ? t.indigo : t.line}`,
+                  flexShrink: 0,
+                  boxSizing: "border-box",
+                }}
+              />
+              {!isLast && <span style={{ width: 2, flex: 1, minHeight: 22, background: reached && i < currentIndex ? t.indigo : t.line }} />}
+            </div>
+            <div style={{ paddingBottom: isLast ? 0 : 20 }}>
+              <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: isCurrent ? 700 : 500, color: reached ? t.coal : t.inkFaint }}>
+                {CANDIDATE_STATUS_LABEL[step]}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      {isNegative && (
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 4 }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: t.error, flexShrink: 0 }} />
+          <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 700, color: t.error }}>{CANDIDATE_STATUS_LABEL[status]}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EvidencePanel({ evidence, loading }: { evidence: CandidateEvidence | null; loading: boolean }) {
+  if (loading) {
+    return <HelpText>Loading practice-session evidence…</HelpText>;
+  }
+  if (!evidence || evidence.skills.length === 0) {
+    return <HelpText>No practice session data yet.</HelpText>;
+  }
+  return (
+    <div>
+      {evidence.sessionDate && (
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginBottom: 14 }}>
+          From most recent practice session · {new Date(evidence.sessionDate).toLocaleDateString()}
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {evidence.skills.map((s) => (
+          <div key={s.name}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 4 }}>
+              <span>{s.name}</span>
+              <strong>{Math.round(s.score)}</strong>
+            </div>
+            <div style={{ height: 6, borderRadius: 999, background: t.line, overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${Math.max(0, Math.min(100, s.score))}%`,
+                  height: "100%",
+                  background: s.score >= 70 ? t.success : s.score >= 50 ? t.warning : t.error,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -74,11 +177,24 @@ function ContactBox({ icon, children }: { icon: React.ReactNode; children: React
 
 export default function CandidateDetailPage() {
   const params = useParams<{ id: string; candidateId: string }>();
-  const { fetchRequirementDetail } = useEmployerData();
+  const { fetchRequirementDetail, updateCandidateStatus, fetchCandidateEvidence } = useEmployerData();
+  const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"about" | "resume">("about");
+  const [activeTab, setActiveTab] = useState<"about" | "resume" | "evidence">("about");
   const [showBreakdown, setShowBreakdown] = useState(false);
+
+  const [evidence, setEvidence] = useState<CandidateEvidence | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteNote, setInviteNote] = useState("");
+  const [inviteDate, setInviteDate] = useState("");
+  const [inviteSubmitting, setInviteSubmitting] = useState(false);
+
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectNote, setRejectNote] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,6 +207,80 @@ export default function CandidateDetailPage() {
     load();
   }, [load]);
 
+  const candidate = requirement?.candidates.find((c) => c.id === params.candidateId);
+
+  useEffect(() => {
+    if (!candidate) return;
+    let active = true;
+    setEvidenceLoading(true);
+    fetchCandidateEvidence(candidate.id).then((e) => {
+      if (active) {
+        setEvidence(e);
+        setEvidenceLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+    // Depend on candidate?.id, not `candidate` itself — the candidate object
+    // is re-derived from `requirement` on every render (including the
+    // optimistic status patches below), and re-fetching evidence on those
+    // would be wasted network traffic for data that hasn't changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidate?.id, fetchCandidateEvidence]);
+
+  const applyCandidateUpdate = (matchId: string, patch: Partial<Requirement["candidates"][number]>) => {
+    setRequirement((prev) =>
+      prev ? { ...prev, candidates: prev.candidates.map((c) => (c.id !== matchId ? c : { ...c, ...patch })) } : prev,
+    );
+  };
+
+  const handleSendInvite = async () => {
+    if (!candidate) return;
+    const previousStatus = candidate.candidateStatus;
+    const previousNote = candidate.candidateStatusNote;
+    const previousScheduledAt = candidate.interviewScheduledAt;
+    setInviteSubmitting(true);
+    applyCandidateUpdate(candidate.id, {
+      candidateStatus: "interview_invited",
+      candidateStatusNote: inviteNote.trim() || previousNote,
+      interviewScheduledAt: inviteDate || previousScheduledAt,
+    });
+    const ok = await updateCandidateStatus(candidate.id, {
+      candidateStatus: "interview_invited",
+      note: inviteNote.trim() || undefined,
+      interviewScheduledAt: inviteDate || undefined,
+    });
+    setInviteSubmitting(false);
+    if (!ok) {
+      applyCandidateUpdate(candidate.id, { candidateStatus: previousStatus, candidateStatusNote: previousNote, interviewScheduledAt: previousScheduledAt });
+      toast("Couldn't send the invite — please try again", "error");
+      return;
+    }
+    toast("Interview invite sent", "success");
+    setInviteOpen(false);
+    setInviteNote("");
+    setInviteDate("");
+  };
+
+  const handleReject = async () => {
+    if (!candidate) return;
+    const previousStatus = candidate.candidateStatus;
+    const previousNote = candidate.candidateStatusNote;
+    setRejectSubmitting(true);
+    applyCandidateUpdate(candidate.id, { candidateStatus: "rejected", candidateStatusNote: rejectNote.trim() || previousNote });
+    const ok = await updateCandidateStatus(candidate.id, { candidateStatus: "rejected", note: rejectNote.trim() || undefined });
+    setRejectSubmitting(false);
+    if (!ok) {
+      applyCandidateUpdate(candidate.id, { candidateStatus: previousStatus, candidateStatusNote: previousNote });
+      toast("Couldn't reject the candidate — please try again", "error");
+      return;
+    }
+    toast("Candidate marked as rejected", "success");
+    setRejectOpen(false);
+    setRejectNote("");
+  };
+
   if (loading) {
     return (
       <Card style={{ textAlign: "center", padding: 48 }}>
@@ -98,8 +288,6 @@ export default function CandidateDetailPage() {
       </Card>
     );
   }
-
-  const candidate = requirement?.candidates.find((c) => c.id === params.candidateId);
 
   if (!requirement || !candidate) {
     return (
@@ -114,10 +302,13 @@ export default function CandidateDetailPage() {
 
   const resume = candidate.resume;
   const displayName = candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`;
-  const tabs: Array<{ key: "about" | "resume"; label: string }> = [
+  const tabs: Array<{ key: "about" | "resume" | "evidence"; label: string }> = [
     { key: "about", label: "About" },
     { key: "resume", label: "Resume" },
+    { key: "evidence", label: "Evidence" },
   ];
+  const canInvite = candidate.candidateStatus === "shortlisted";
+  const canReject = !["hired", "rejected", "not_a_fit"].includes(candidate.candidateStatus);
 
   return (
     <div>
@@ -231,6 +422,69 @@ export default function CandidateDetailPage() {
           </div>
         </Card>
       </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>Hiring status</span>
+          <CandidateStatusChip status={candidate.candidateStatus} />
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {canInvite && (
+            <PrimaryCta size="sm" onClick={() => setInviteOpen(true)}>
+              Send Interview Invite
+            </PrimaryCta>
+          )}
+          {canReject && (
+            <OutlineCta size="sm" onClick={() => setRejectOpen(true)}>
+              Reject Candidate
+            </OutlineCta>
+          )}
+        </div>
+      </div>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send interview invite</DialogTitle>
+            <DialogDescription>Marks {displayName} as invited to interview for {requirement.title}.</DialogDescription>
+          </DialogHeader>
+          <div style={{ display: "grid", gap: 14, padding: "4px 0" }}>
+            <div style={{ display: "grid", gap: 8 }}>
+              <Label htmlFor="invite-scheduled-at">Scheduled date (optional)</Label>
+              <Input id="invite-scheduled-at" type="date" value={inviteDate} onChange={(e) => setInviteDate(e.target.value)} />
+            </div>
+            <div style={{ display: "grid", gap: 8 }}>
+              <Label htmlFor="invite-note">Note (optional)</Label>
+              <Textarea id="invite-note" rows={3} value={inviteNote} onChange={(e) => setInviteNote(e.target.value)} placeholder="Anything you want on record about this invite…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <OutlineCta onClick={() => setInviteOpen(false)}>Cancel</OutlineCta>
+            <PrimaryCta onClick={handleSendInvite} disabled={inviteSubmitting}>
+              {inviteSubmitting ? "Sending…" : "Send invite"}
+            </PrimaryCta>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject this candidate?</DialogTitle>
+            <DialogDescription>Marks {displayName} as rejected for {requirement.title}. This can't be undone from here.</DialogDescription>
+          </DialogHeader>
+          <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
+            <Label htmlFor="reject-note">Reason (optional)</Label>
+            <Textarea id="reject-note" rows={3} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Anything you want on record about this decision…" />
+          </div>
+          <DialogFooter>
+            <OutlineCta onClick={() => setRejectOpen(false)}>Cancel</OutlineCta>
+            <Button type="button" variant="destructive" onClick={handleReject} disabled={rejectSubmitting}>
+              {rejectSubmitting ? "Rejecting…" : "Reject candidate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${t.line}`, margin: "20px 0 20px" }}>
         {tabs.map((tb) => (
@@ -362,6 +616,20 @@ export default function CandidateDetailPage() {
             )}
           </Card>
         </div>
+      )}
+
+      {activeTab === "about" && (
+        <Card style={{ marginTop: 16 }}>
+          <SectionTitle>Hiring Progress</SectionTitle>
+          <HiringProgress status={candidate.candidateStatus} />
+        </Card>
+      )}
+
+      {activeTab === "evidence" && (
+        <Card>
+          <SectionTitle>Evidence</SectionTitle>
+          <EvidencePanel evidence={evidence} loading={evidenceLoading} />
+        </Card>
       )}
 
       {activeTab === "resume" && (

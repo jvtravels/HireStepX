@@ -121,6 +121,7 @@ export function RequirementForm({
   const [step, setStep] = useState<1 | 2>(1);
 
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [department, setDepartment] = useState(initial?.department ?? "");
   const [locations, setLocations] = useState<string[]>(initial?.locations ?? []);
   const [openPositions, setOpenPositions] = useState(initial?.openPositions != null ? String(initial.openPositions) : "");
   const [workMode, setWorkMode] = useState<WorkMode>(initial?.workMode ?? "remote");
@@ -179,6 +180,7 @@ export function RequirementForm({
     const parsedHoursPerWeek = hoursPerWeek.trim() ? Number(hoursPerWeek) : undefined;
     const ok = await onSubmit({
       title: title.trim(),
+      department: department.trim() || undefined,
       locations,
       noticePeriodPref,
       description: description.trim(),
@@ -218,6 +220,11 @@ export function RequirementForm({
       <div>
         <FieldLabel required>Opportunity title</FieldLabel>
         <AutocompleteInput value={title} onChange={setTitle} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
+      </div>
+
+      <div>
+        <FieldLabel>Department (optional)</FieldLabel>
+        <input value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Engineering, Sales, Design…" style={inputStyle} />
       </div>
 
       <div style={grid2}>

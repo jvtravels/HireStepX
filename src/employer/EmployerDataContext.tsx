@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
-import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues } from "./mockData";
+import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
@@ -26,6 +26,16 @@ export interface UnlockOrder {
   keyId: string;
   name: string;
   description: string;
+}
+
+/** A candidate's actual per-skill scores from their most recent completed
+ *  practice session — mirrors EvidenceSkill in
+ *  server-handlers/_employer-candidate-evidence-helpers.ts. Empty `skills`
+ *  means no completed session has skill data yet, not a zero score. */
+export interface CandidateEvidence {
+  matchId: string;
+  skills: Array<{ name: string; score: number }>;
+  sessionDate: string | null;
 }
 
 export interface RequirementActivity {
@@ -54,9 +64,11 @@ interface EmployerDataContextValue {
     razorpay_signature: string;
   }) => Promise<{ name: string; contact: { email: string } } | null>;
   fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
-  archiveRequirement: (id: string) => Promise<boolean>;
+  archiveRequirement: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<boolean>;
   reopenRequirement: (id: string) => Promise<boolean>;
   updateRequirementStage: (id: string, stage: RequirementStage) => Promise<boolean>;
+  updateCandidateStatus: (matchId: string, payload: { candidateStatus: CandidateStatus; note?: string; interviewScheduledAt?: string }) => Promise<boolean>;
+  fetchCandidateEvidence: (matchId: string) => Promise<CandidateEvidence | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   refreshRequirements: () => Promise<void>;
 }
@@ -206,8 +218,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const archiveRequirement = useCallback(async (id: string) => {
-    const res = await apiFetch<{ status: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { action: "archive" }, { method: "PATCH" });
+  const archiveRequirement = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
+    const res = await apiFetch<{ status: string }>(
+      `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`,
+      { action: "archive", archiveReason: options?.archiveReason, archiveDisposition: options?.archiveDisposition },
+      { method: "PATCH" },
+    );
     if (res.ok) {
       refreshRequirements();
       return true;
@@ -232,6 +248,30 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
     return false;
   }, [refreshRequirements]);
+
+  const updateCandidateStatus = useCallback(async (
+    matchId: string,
+    payload: { candidateStatus: CandidateStatus; note?: string; interviewScheduledAt?: string },
+  ) => {
+    const res = await apiFetch<{ id: string; candidateStatus: string }>(
+      "/api/employer-candidate-status",
+      { matchId, candidateStatus: payload.candidateStatus, note: payload.note, interviewScheduledAt: payload.interviewScheduledAt },
+      { method: "PATCH" },
+    );
+    return res.ok;
+  }, []);
+
+  const fetchCandidateEvidence = useCallback(async (matchId: string): Promise<CandidateEvidence | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`/api/employer-candidate-evidence?matchId=${encodeURIComponent(matchId)}`, { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) return null;
+      return data as CandidateEvidence;
+    } catch {
+      return null;
+    }
+  }, []);
 
   const fetchRequirementActivity = useCallback(async (id: string): Promise<RequirementActivity[] | null> => {
     try {
@@ -263,6 +303,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     archiveRequirement,
     reopenRequirement,
     updateRequirementStage,
+    updateCandidateStatus,
+    fetchCandidateEvidence,
     fetchRequirementActivity,
     refreshRequirements,
   };
@@ -270,4 +312,4 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   return <EmployerDataContext.Provider value={value}>{children}</EmployerDataContext.Provider>;
 }
 
-export type { Requirement, RequirementSummary, Candidate };
+export type { Requirement, RequirementSummary, Candidate, CandidateStatus, ArchiveDisposition };

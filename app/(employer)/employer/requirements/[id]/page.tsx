@@ -3,15 +3,16 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ChevronDownIcon, LockIcon, RefreshCwIcon, AlertTriangleIcon, ClockIcon, BuildingIcon } from "lucide-react";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
-import { Candidate } from "@/employer/mockData";
+import { Candidate, RequirementStage } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
 import {
   Card,
+  CandidateStatusChip,
   Eyebrow,
-  EmployerIcon,
   HelpText,
   OutlineCta,
   Pill,
@@ -20,6 +21,8 @@ import {
   SkillTag,
   StatCell,
   StatusChip,
+  StageCell,
+  STAGE_LABEL,
 } from "@/employer/_atoms";
 import {
   Dialog,
@@ -29,6 +32,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,27 +70,20 @@ const tierColors: Record<string, string> = {
   low: t.inkFaintWeak,
 };
 
-const th: CSSProperties = {
-  textAlign: "left",
-  fontFamily: f.sans,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0.4,
-  textTransform: "uppercase",
-  color: t.inkFaint,
-  padding: "0 14px 12px",
+/** Tooltip copy per pipeline stage — mirrors the "why is this stage here"
+    hint the canvas surfaces next to the stage badge. */
+const STAGE_HINT: Record<RequirementStage, string> = {
+  ai_matching: "The AI is still scoring the practicing pool against this posting.",
+  ready_for_review: "Candidates have been scored — review the shortlist and unlock the ones worth contacting.",
+  interviewing: "You're actively interviewing candidates from this shortlist.",
+  hired: "This posting resulted in a hire.",
 };
 
-// Mirrors the search/filter toolbar on /employer/jobs (selectStyle) so the
-// two candidate-facing tables in the console share one input language.
-const toolbarInputStyle: CSSProperties = {
-  padding: "9px 12px",
-  borderRadius: 10,
-  border: `1px solid ${t.line}`,
-  background: t.white,
+const td: CSSProperties = {
   fontFamily: f.sans,
-  fontSize: 13,
+  fontSize: 13.5,
   color: t.coal,
+  verticalAlign: "top",
 };
 
 type ContactFilter = "all" | "locked" | "unlocked";
@@ -99,14 +100,40 @@ const sortOptions: Array<{ value: SortKey; label: string }> = [
   { value: "recent", label: "Most recently active" },
 ];
 
-const td: CSSProperties = {
-  padding: "14px",
-  borderTop: `1px solid ${t.line}`,
-  fontFamily: f.sans,
-  fontSize: 13.5,
-  color: t.coal,
-  verticalAlign: "top",
-};
+/** Dropdown-backed filter pill — mirrors FilterPill on /employer/jobs so the
+    two candidate-facing tables in the console share one filter language. */
+function FilterMenu<V extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: V;
+  options: Array<{ value: V; label: string }>;
+  onChange: (value: V) => void;
+}) {
+  const active = options.find((o) => o.value === value);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" style={{ borderRadius: 8, height: 40, gap: 8, background: t.white, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+          {active ? `${label}: ${active.label}` : label}
+          <ChevronDownIcon size={12} aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as V)}>
+          {options.map((o) => (
+            <DropdownMenuRadioItem key={o.value} value={o.value}>
+              {o.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -116,24 +143,11 @@ function initials(name: string): string {
 
 function CandidateAvatar({ name, unlocked }: { name: string; unlocked: boolean }) {
   return (
-    <div
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: "50%",
-        background: unlocked ? t.indigo100 : t.creamSoft,
-        color: unlocked ? t.indigoDeep : t.inkFaint,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: f.sans,
-        fontSize: 12,
-        fontWeight: 700,
-        flexShrink: 0,
-      }}
-    >
-      {unlocked ? initials(name) : "?"}
-    </div>
+    <Avatar>
+      <AvatarFallback style={{ background: unlocked ? t.indigo100 : t.creamSoft, color: unlocked ? t.indigoDeep : t.inkFaint, fontFamily: f.sans, fontWeight: 700 }}>
+        {unlocked ? initials(name) : "?"}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -166,14 +180,14 @@ function FailedState() {
   return (
     <Card style={{ textAlign: "center", padding: 48 }}>
       <div style={{ width: 40, height: 40, borderRadius: 10, background: t.error100, color: t.error, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-        <EmployerIcon.Alert />
+        <AlertTriangleIcon size={18} aria-hidden="true" />
       </div>
       <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching failed</h2>
       <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
         Something went wrong generating this shortlist. No charge was made — you can safely try again.
       </p>
       <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-        <PrimaryCta icon={<EmployerIcon.Refresh />}>Try again</PrimaryCta>
+        <PrimaryCta icon={<RefreshCwIcon size={14} aria-hidden="true" />}>Try again</PrimaryCta>
       </Link>
     </Card>
   );
@@ -274,6 +288,8 @@ function CandidateTableRow({
         ondismiss: function () { setUnlocking(false); },
       },
     });
+    // The global Window.Razorpay type (declared in dashboardComponents.tsx) types
+    // `on`'s callback as zero-arg; payment.failed actually passes a response object.
     (rzp as unknown as { on(event: string, cb: (r: unknown) => void): void }).on("payment.failed", function (response: unknown) {
       const errDetail = (response as { error?: { description?: string; reason?: string } })?.error;
       toast(errDetail?.description || errDetail?.reason || "Payment failed. Please try again.", "error");
@@ -283,9 +299,9 @@ function CandidateTableRow({
   };
 
   return (
-    <tr>
+    <TableRow>
       {!readOnly && (
-        <td style={{ ...td, width: 32 }}>
+        <TableCell style={{ width: 32 }}>
           <input
             type="checkbox"
             checked={compareChecked}
@@ -294,9 +310,9 @@ function CandidateTableRow({
             title="Select to compare"
             style={{ width: 16, height: 16 }}
           />
-        </td>
+        </TableCell>
       )}
-      <td style={td}>
+      <TableCell style={td}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <CandidateAvatar name={candidate.name} unlocked={candidate.unlocked} />
           <div>
@@ -313,20 +329,20 @@ function CandidateTableRow({
             </div>
           </div>
         </div>
-      </td>
-      <td style={td}>
+      </TableCell>
+      <TableCell style={td}>
         <ScoreChip score={candidate.matchScore} />
-      </td>
-      <td style={{ ...td, color: t.inkSoft }}>
+      </TableCell>
+      <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.rosterScore} roster · {candidate.sessionsCompleted} sessions
-      </td>
-      <td style={{ ...td, color: t.inkSoft }}>
+      </TableCell>
+      <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
-      </td>
-      <td style={{ ...td, color: t.inkSoft }}>
+      </TableCell>
+      <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.noticePeriod || <span style={{ color: t.inkFaint }}>—</span>}
-      </td>
-      <td style={{ ...td, color: t.inkSoft }}>
+      </TableCell>
+      <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.currentCtc ? (
           <>
             {candidate.resume.currentCtc}
@@ -335,8 +351,8 @@ function CandidateTableRow({
         ) : (
           <span style={{ color: t.inkFaint }}>—</span>
         )}
-      </td>
-      <td style={{ ...td, maxWidth: 220 }}>
+      </TableCell>
+      <TableCell style={{ ...td, maxWidth: 220 }}>
         {candidate.skills.length ? (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {candidate.skills.slice(0, 3).map((s) => (
@@ -351,11 +367,14 @@ function CandidateTableRow({
         ) : (
           <span style={{ color: t.inkFaint }}>—</span>
         )}
-      </td>
-      <td style={td}>
+      </TableCell>
+      <TableCell style={td}>
         <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
-      </td>
-      <td style={{ ...td, minWidth: 200 }}>
+      </TableCell>
+      <TableCell style={td}>
+        <CandidateStatusChip status={candidate.candidateStatus} />
+      </TableCell>
+      <TableCell style={{ ...td, minWidth: 200 }}>
         {candidate.unlocked ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
             <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal }}>{candidate.contact?.email}</span>
@@ -380,18 +399,18 @@ function CandidateTableRow({
             </div>
           </div>
         ) : (
-          <PrimaryCta size="sm" icon={<EmployerIcon.Lock />} onClick={() => setConfirming(true)}>
+          <PrimaryCta size="sm" icon={<LockIcon size={13} aria-hidden="true" />} onClick={() => setConfirming(true)}>
             Unlock — {displayPrice}
           </PrimaryCta>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
-  const { fetchRequirementDetail, updateRequirement } = useEmployerData();
+  const { fetchRequirementDetail, updateRequirement, updateRequirementStage } = useEmployerData();
   const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -457,6 +476,17 @@ export default function RequirementDetailPage() {
           }
         : prev
     );
+  };
+
+  const handleStageChange = async (stage: RequirementStage) => {
+    if (!requirement) return;
+    const previousStage = requirement.stage;
+    setRequirement((prev) => (prev ? { ...prev, stage } : prev));
+    const ok = await updateRequirementStage(requirement.id, stage);
+    if (!ok) {
+      setRequirement((prev) => (prev ? { ...prev, stage: previousStage } : prev));
+      toast("Couldn't update the stage — please try again", "error");
+    }
   };
 
   if (loading) {
@@ -533,16 +563,13 @@ export default function RequirementDetailPage() {
 
   return (
     <div>
-      {/* Mirrors the back-link on the candidate-detail page (rotated
-          EmployerIcon.Arrow) so both detail surfaces share one breadcrumb
-          language instead of a one-off pattern here. */}
+      {/* Mirrors the back-link on the candidate-detail page so both detail
+          surfaces share one breadcrumb language instead of a one-off pattern. */}
       <Link
         href="/employer/jobs"
         style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft, textDecoration: "none", marginBottom: 16 }}
       >
-        <span style={{ display: "inline-block", transform: "rotate(180deg)" }}>
-          <EmployerIcon.Arrow />
-        </span>
+        <ChevronDownIcon size={14} style={{ transform: "rotate(90deg)" }} aria-hidden="true" />
         Jobs
       </Link>
 
@@ -554,7 +581,7 @@ export default function RequirementDetailPage() {
             </Eyebrow>
             <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             {requirement.status !== "closed" && (
               <>
                 <Button
@@ -592,6 +619,18 @@ export default function RequirementDetailPage() {
                 </Link>
               </>
             )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <StageCell
+                    stage={requirement.stage}
+                    hasEvaluatedCandidates={requirement.candidates.length > 0}
+                    onChange={handleStageChange}
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-64">{STAGE_HINT[requirement.stage]}</TooltipContent>
+            </Tooltip>
             <StatusChip status={requirement.status} />
           </div>
         </div>
@@ -654,16 +693,16 @@ export default function RequirementDetailPage() {
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
           {expLabel && (
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-              <EmployerIcon.Clock /> {expLabel}
+              <ClockIcon size={13} aria-hidden="true" /> {expLabel}
             </span>
           )}
           {dueDaysLeft != null && (
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-              <EmployerIcon.Clock /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
+              <ClockIcon size={13} aria-hidden="true" /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
             </span>
           )}
           <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-            <EmployerIcon.Building /> Posted {requirement.createdAt}
+            <BuildingIcon size={13} aria-hidden="true" /> Posted {requirement.createdAt}
           </span>
         </div>
 
@@ -679,11 +718,12 @@ export default function RequirementDetailPage() {
               <div style={{ display: "flex", height: 6, borderRadius: 999, overflow: "hidden", background: t.line }}>
                 {tierCounts.map((tier) => (
                   tier.count > 0 && (
-                    <div
-                      key={tier.key}
-                      title={tier.label}
-                      style={{ width: `${(tier.count / requirement.candidates.length) * 100}%`, background: tierColors[tier.key] }}
-                    />
+                    <Tooltip key={tier.key}>
+                      <TooltipTrigger asChild>
+                        <div style={{ width: `${(tier.count / requirement.candidates.length) * 100}%`, background: tierColors[tier.key] }} />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">{tier.label} · {tier.count}</TooltipContent>
+                    </Tooltip>
                   )
                 ))}
               </div>
@@ -706,30 +746,12 @@ export default function RequirementDetailPage() {
         )}
       </Card>
 
-      <div role="tablist" style={{ display: "flex", gap: 24, borderBottom: `1px solid ${t.line}`, margin: "20px 0 16px" }}>
-        {(["candidates", "description"] as const).map((tabKey) => (
-          <button
-            key={tabKey}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tabKey}
-            onClick={() => setActiveTab(tabKey)}
-            style={{
-              padding: "10px 2px",
-              border: "none",
-              borderBottom: `2px solid ${activeTab === tabKey ? t.indigo : "transparent"}`,
-              background: "transparent",
-              color: activeTab === tabKey ? t.coal : t.inkSoft,
-              fontFamily: f.sans,
-              fontSize: 13.5,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {tabKey === "candidates" ? "Candidates" : "Job Description"}
-          </button>
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "candidates" | "description")} style={{ margin: "20px 0 16px" }}>
+        <TabsList variant="line" className="border-b" style={{ borderColor: t.line, width: "100%", justifyContent: "flex-start", gap: 24 }}>
+          <TabsTrigger value="candidates" style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600 }}>Candidates</TabsTrigger>
+          <TabsTrigger value="description" style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600 }}>Job Description</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {activeTab === "description" && (
         <Card>
@@ -776,6 +798,10 @@ export default function RequirementDetailPage() {
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Status</div>
               <div style={{ marginTop: 4 }}><StatusChip status={requirement.status} /></div>
+            </div>
+            <div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Pipeline stage</div>
+              <div style={{ marginTop: 4, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{STAGE_LABEL[requirement.stage]}</div>
             </div>
           </div>
 
@@ -856,53 +882,30 @@ export default function RequirementDetailPage() {
                   </Link>
                 </div>
               )}
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
-                <input
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
+                <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name, role, skill, or notice period…"
-                  style={{ ...toolbarInputStyle, flex: "1 1 220px", minWidth: 200 }}
+                  style={{ flex: "1 1 220px", minWidth: 200, height: 40 }}
                   aria-label="Search candidates"
                 />
-                <select
-                  value={contactFilter}
-                  onChange={(e) => setContactFilter(e.target.value as ContactFilter)}
-                  style={toolbarInputStyle}
-                  aria-label="Filter by contact status"
-                >
-                  {contactFilterOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <FilterMenu label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
                 {locationOptions.length > 1 && (
-                  <select
+                  <FilterMenu
+                    label="Location"
                     value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    style={toolbarInputStyle}
-                    aria-label="Filter by location"
-                  >
-                    <option value="all">All locations</option>
-                    {locationOptions.map((loc) => (
-                      <option key={loc} value={loc}>{loc}</option>
-                    ))}
-                  </select>
+                    options={[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))]}
+                    onChange={setLocationFilter}
+                  />
                 )}
-                <select
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value as SortKey)}
-                  style={toolbarInputStyle}
-                  aria-label="Sort candidates"
-                >
-                  {sortOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <FilterMenu label="Sort" value={sortKey} options={sortOptions} onChange={setSortKey} />
                 {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
                   <Button
                     type="button"
                     variant="link"
                     onClick={() => { setSearch(""); setContactFilter("all"); setLocationFilter("all"); }}
-                    style={{ ...toolbarInputStyle, background: "transparent", border: "none", fontWeight: 600, height: "auto" }}
+                    style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, height: "auto" }}
                   >
                     Clear filters
                   </Button>
@@ -918,22 +921,23 @@ export default function RequirementDetailPage() {
               ) : (
                 <Card pad={0} style={{ overflow: "hidden" }}>
                   <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1120 }}>
-                      <thead>
-                        <tr>
-                          {!readOnly && <th style={{ ...th, paddingTop: 20 }}></th>}
-                          <th style={{ ...th, paddingTop: 20 }}>Candidate</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Match</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Practice history</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Last active</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Notice period</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Current CTC</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Skills</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Status</th>
-                          <th style={{ ...th, paddingTop: 20 }}>Contact</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <Table style={{ minWidth: 1120 }}>
+                      <TableHeader>
+                        <TableRow>
+                          {!readOnly && <TableHead></TableHead>}
+                          <TableHead>Candidate</TableHead>
+                          <TableHead>Match</TableHead>
+                          <TableHead>Practice history</TableHead>
+                          <TableHead>Last active</TableHead>
+                          <TableHead>Notice period</TableHead>
+                          <TableHead>Current CTC</TableHead>
+                          <TableHead>Skills</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Pipeline</TableHead>
+                          <TableHead>Contact</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {filteredSorted.map((c) => (
                           <CandidateTableRow
                             key={c.id}
@@ -946,8 +950,8 @@ export default function RequirementDetailPage() {
                             onUnlocked={handleUnlocked}
                           />
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </Card>
               )}

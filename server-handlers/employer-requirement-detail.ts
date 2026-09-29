@@ -54,6 +54,7 @@ import {
   asBoundedStage,
   asBoundedDurationWeeks,
   asBoundedHoursPerWeek,
+  asArchiveDisposition,
   isValidRequirementInput,
   isValidRange,
   isFutureDueDate,
@@ -114,12 +115,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
     const reqRows = (await reqRes.json().catch(() => [])) as Array<{
-      id: string; title: string; location: string; notice_period_pref: string; description: string | null; status: string;
+      id: string; title: string; location: string; notice_period_pref: string; description: string | null; status: string; stage: string;
+      department: string | null; archive_reason: string | null; archive_disposition: string | null;
       experience_min: number | null; experience_max: number | null; due_date: string | null;
       budget_min: number | null; budget_max: number | null;
       locations: string[] | null; open_positions: number | null; work_mode: string | null; skills: string[] | null;
@@ -138,12 +140,13 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const matchesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at&order=match_score.desc`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at&order=match_score.desc`,
       { headers: serviceHeaders() },
     );
     if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
     const matches = (await matchesRes.json().catch(() => [])) as Array<{
       id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
+      candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
     }>;
 
     const candidateIds = matches.map((m) => m.candidate_user_id);
@@ -202,6 +205,9 @@ export default async function handler(req: Request): Promise<Response> {
         unlocked,
         contact: unlocked && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
         resume: resumeDetail,
+        candidateStatus: m.candidate_status,
+        candidateStatusNote: m.candidate_status_note,
+        interviewScheduledAt: m.interview_scheduled_at,
       };
     });
 
@@ -213,6 +219,10 @@ export default async function handler(req: Request): Promise<Response> {
         noticePeriodPref: requirement.notice_period_pref,
         description: requirement.description || "",
         status: requirement.status,
+        stage: requirement.stage,
+        department: requirement.department,
+        archiveReason: requirement.archive_reason,
+        archiveDisposition: requirement.archive_disposition,
         experienceMin: requirement.experience_min,
         experienceMax: requirement.experience_max,
         dueDate: requirement.due_date ? requirement.due_date.slice(0, 10) : null,
@@ -255,6 +265,8 @@ async function handleStatusAction(
   userId: string,
   action: "archive" | "reopen",
   headers: Record<string, string>,
+  archiveReason: string | null,
+  archiveDisposition: "keep_candidates" | "reject_remaining" | null,
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
@@ -274,10 +286,19 @@ async function handleStatusAction(
     }
 
     const nextStatus = action === "archive" ? "closed" : "generating";
+    const patchBody: Record<string, unknown> = { status: nextStatus };
+    if (action === "archive") {
+      patchBody.archive_reason = archiveReason;
+      patchBody.archive_disposition = archiveDisposition;
+    } else {
+      // Reopening clears the archive breadcrumbs so a later re-archive starts fresh.
+      patchBody.archive_reason = null;
+      patchBody.archive_disposition = null;
+    }
     const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify({ status: nextStatus }),
+      body: JSON.stringify(patchBody),
     });
     if (!patchRes.ok) {
       const t = await patchRes.text().catch(() => "");
@@ -286,6 +307,25 @@ async function handleStatusAction(
     }
     const updated = (await patchRes.json()) as Array<{ id: string; status: string }>;
     await logRequirementActivity(requirementId, userId, action === "archive" ? "archived" : "reopened");
+
+    if (action === "archive" && archiveDisposition === "reject_remaining") {
+      const activeStatuses = ["shortlisted", "interview_invited", "interviewing"].map((s) => `"${s}"`).join(",");
+      const bulkRejectRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&candidate_status=in.(${activeStatuses})`,
+        {
+          method: "PATCH",
+          headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ candidate_status: "rejected", candidate_status_updated_at: new Date().toISOString() }),
+        },
+      );
+      if (!bulkRejectRes.ok) {
+        const t = await bulkRejectRes.text().catch(() => "");
+        slog.error("employer-requirement-detail archive bulk-reject failed", { code: "employer_requirement_archive_bulk_reject_failed", httpStatus: bulkRejectRes.status, body: t.slice(0, 200), userId, requirementId });
+        // Archive itself already succeeded — surface the partial failure via
+        // logs only, rather than rolling back a status change the employer
+        // already asked for.
+      }
+    }
 
     let finalStatus = updated[0]?.status ?? nextStatus;
     if (action === "reopen") {
@@ -355,7 +395,9 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   let body: {
     action?: unknown;
     stage?: unknown;
-    title?: unknown; noticePeriodPref?: unknown; description?: unknown;
+    archiveReason?: unknown;
+    archiveDisposition?: unknown;
+    title?: unknown; department?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
     budgetMin?: unknown; budgetMax?: unknown;
     locations?: unknown; openPositions?: unknown; workMode?: unknown; skills?: unknown;
@@ -374,7 +416,9 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   }
 
   if (body.action === "archive" || body.action === "reopen") {
-    return handleStatusAction(requirementId, userId, body.action, headers);
+    const archiveReason = asBoundedString(body.archiveReason, 200) || null;
+    const archiveDisposition = asArchiveDisposition(body.archiveDisposition);
+    return handleStatusAction(requirementId, userId, body.action, headers, archiveReason, archiveDisposition);
   }
 
   if (body.action === "set_stage") {
@@ -386,6 +430,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   }
 
   const title = asBoundedString(body.title, 200);
+  const department = asBoundedString(body.department, 120) || null;
   const noticePeriodPref = asBoundedString(body.noticePeriodPref, 60) || "Any";
   const description = asBoundedString(body.description, 5000);
   const experienceMin = asBoundedExperience(body.experienceMin);
@@ -445,7 +490,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
       body: JSON.stringify({
-        title, location, notice_period_pref: noticePeriodPref, description, status: "generating",
+        title, location, department, notice_period_pref: noticePeriodPref, description, status: "generating",
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,
@@ -476,6 +521,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         location: requirement.location,
         noticePeriodPref: requirement.notice_period_pref,
         status: finalStatus,
+        department: requirement.department ?? null,
         experienceMin: requirement.experience_min ?? null,
         experienceMax: requirement.experience_max ?? null,
         dueDate: requirement.due_date ?? null,

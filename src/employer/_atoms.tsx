@@ -1,7 +1,10 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon, ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
+import type { RequirementStage, CandidateStatus } from "./mockData";
 
 /** Deterministic evenly-spaced sample, used to show a diverse slice of a
  *  suggestions list before the user has typed anything. */
@@ -277,6 +280,35 @@ export function StatusChip({ status }: { status: "generating" | "ready" | "parti
   return <Pill tone={m.tone}>{m.label}</Pill>;
 }
 
+/** Label + tone for a candidate's per-requirement hiring-pipeline status —
+ *  single source of truth so the candidate-detail page, the requirement
+ *  table column, and any future surface never drift on wording or color.
+ *  Mirrors CANDIDATE_STATUSES in
+ *  server-handlers/_employer-candidate-status-helpers.ts. */
+export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
+  shortlisted: "Shortlisted",
+  interview_invited: "Interview Invited",
+  interviewing: "Interviewing",
+  hired: "Hired",
+  rejected: "Rejected",
+  not_a_fit: "Not a fit",
+  no_response: "No response",
+};
+
+const CANDIDATE_STATUS_TONE: Record<CandidateStatus, PillTone> = {
+  shortlisted: "indigo",
+  interview_invited: "violet",
+  interviewing: "copper",
+  hired: "success",
+  rejected: "error",
+  not_a_fit: "neutral",
+  no_response: "neutral",
+};
+
+export function CandidateStatusChip({ status }: { status: CandidateStatus }) {
+  return <Pill tone={CANDIDATE_STATUS_TONE[status]}>{CANDIDATE_STATUS_LABEL[status]}</Pill>;
+}
+
 /** Colored dot + label — pipeline/stage indicator for opportunity and
  *  requirement tables (matching → review → interviewing → hired). */
 export function StageDot({ tone, label }: { tone: PillTone; label: string }) {
@@ -285,6 +317,112 @@ export function StageDot({ tone, label }: { tone: PillTone; label: string }) {
       <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: pillPalette[tone].fg, flexShrink: 0 }} />
       {label}
     </span>
+  );
+}
+
+export type BadgeTone = "neutral" | "success" | "brand" | "info" | "warning" | "error";
+const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
+  neutral: { color: t.inkSoft, background: t.creamSoft },
+  success: { color: t.successInk, background: t.success100 },
+  brand: { color: t.indigoDeep, background: t.indigo100 },
+  info: { color: t.info, background: t.info100 },
+  warning: { color: t.warningInk, background: t.warning100 },
+  error: { color: t.errorInk, background: t.error100 },
+};
+
+export function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
+  const { color, background } = BADGE_TONE[tone];
+  return (
+    <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
+      {children}
+    </span>
+  );
+}
+
+export const STAGE_OPTIONS: RequirementStage[] = ["ai_matching", "ready_for_review", "interviewing", "hired"];
+
+export const STAGE_LABEL: Record<RequirementStage, string> = {
+  ai_matching: "AI Matching",
+  ready_for_review: "Ready for Review",
+  interviewing: "Interviewing",
+  hired: "Hired",
+};
+
+export const STAGE_TONE: Record<RequirementStage, BadgeTone> = {
+  ai_matching: "neutral",
+  ready_for_review: "info",
+  interviewing: "brand",
+  hired: "success",
+};
+
+/** Leading stage glyph — a stage reads at a glance instead of by color alone. */
+export const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean | "true" | "false" }>> = {
+  ai_matching: LoaderCircleIcon,
+  ready_for_review: ClipboardListIcon,
+  interviewing: MessageSquareIcon,
+  hired: CheckCircle2Icon,
+};
+
+/** Real, persisted hiring-pipeline stage — manually set by the employer,
+    distinct from the AI-generation Status. Click to move a posting forward
+    via its own dropdown.
+
+    Non-interactive (plain badge, no dropdown) while the AI hasn't produced
+    any evaluated candidates yet — nothing exists to review, interview, or
+    hire, so offering those stages as clickable options would let an
+    employer "hire" against an empty shortlist. Shared by the jobs list
+    (per-row) and the opportunity detail page (header) so the pipeline
+    reads identically everywhere it appears. */
+export function StageCell({
+  stage,
+  hasEvaluatedCandidates,
+  onChange,
+}: {
+  stage: RequirementStage;
+  hasEvaluatedCandidates: boolean;
+  onChange: (stage: RequirementStage) => void;
+}) {
+  const { color, background } = BADGE_TONE[STAGE_TONE[stage]];
+  const StageIcon = STAGE_ICON[stage];
+
+  if (!hasEvaluatedCandidates) {
+    return (
+      <span
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+          color, background, padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
+        }}
+      >
+        <StageIcon size={11} className={stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+        {STAGE_LABEL[stage]}
+      </span>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+            color, background, padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
+          }}
+        >
+          <StageIcon size={11} aria-hidden="true" />
+          {STAGE_LABEL[stage]}
+          <ChevronDownIcon size={11} aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {STAGE_OPTIONS.map((opt) => (
+          <DropdownMenuItem key={opt} disabled={opt === stage} onSelect={() => onChange(opt)}>
+            {STAGE_LABEL[opt]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

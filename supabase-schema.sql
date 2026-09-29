@@ -1702,6 +1702,17 @@ alter table employer_requirements add column if not exists stage text not null d
 -- these (they only matter for contract/part-time roles).
 alter table employer_requirements add column if not exists duration_weeks integer;
 alter table employer_requirements add column if not exists hours_per_week integer;
+-- Free-text department label (2026-09-29) — employers type their own, no
+-- fixed enum: department taxonomies vary too much across employers to be
+-- worth a controlled list.
+alter table employer_requirements add column if not exists department text;
+-- Archive reason/disposition (2026-09-29) — captured when an employer
+-- archives a posting via the Jobs table row menu. archive_disposition
+-- drives whether the still-open candidate pipeline for this requirement
+-- gets bulk-rejected on archive (see employer-requirement-detail.ts
+-- handleStatusAction) or left as-is for the employer to keep working.
+alter table employer_requirements add column if not exists archive_reason text;
+alter table employer_requirements add column if not exists archive_disposition text check (archive_disposition in ('keep_candidates', 'reject_remaining'));
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 
@@ -1744,6 +1755,19 @@ create table if not exists requirement_matches (
 );
 
 create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
+
+-- Per-candidate hiring-pipeline status (2026-09-29) — distinct from the
+-- requirement-level `stage` above: this tracks where THIS candidate stands
+-- within the posting (shortlisted through hired/rejected), set by the
+-- employer via employer-candidate-status.ts. candidate_status_note carries
+-- free-text notes for both an interview-invite reason and a final-outcome
+-- note (see the outcome-feedback page) — one column, since only one note
+-- is ever "current" for a candidate at a time. interview_scheduled_at is
+-- optional and only meaningful once status is interview_invited/interviewing.
+alter table requirement_matches add column if not exists candidate_status text not null default 'shortlisted' check (candidate_status in ('shortlisted', 'interview_invited', 'interviewing', 'hired', 'rejected', 'not_a_fit', 'no_response'));
+alter table requirement_matches add column if not exists candidate_status_note text;
+alter table requirement_matches add column if not exists candidate_status_updated_at timestamptz;
+alter table requirement_matches add column if not exists interview_scheduled_at timestamptz;
 
 alter table requirement_matches enable row level security;
 -- Owner-only, scoped via the parent requirement's employer_id. No direct

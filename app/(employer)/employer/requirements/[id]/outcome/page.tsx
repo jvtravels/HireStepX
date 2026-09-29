@@ -2,27 +2,37 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
+import { useEmployerData, Requirement, CandidateStatus } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card, Eyebrow, FieldLabel, OutlineCta, PrimaryCta } from "@/employer/_atoms";
 
 const OUTCOMES = ["Hired", "Interviewing", "Not a fit", "No response yet"] as const;
 
+/** Maps this page's outcome labels to the candidate_status enum persisted
+ *  by employer-candidate-status.ts. */
+const OUTCOME_TO_CANDIDATE_STATUS: Record<(typeof OUTCOMES)[number], CandidateStatus> = {
+  "Hired": "hired",
+  "Interviewing": "interviewing",
+  "Not a fit": "not_a_fit",
+  "No response yet": "no_response",
+};
+
 export default function OutcomeFeedbackPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { fetchRequirementDetail } = useEmployerData();
+  const { fetchRequirementDetail, updateCandidateStatus } = useEmployerData();
   const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
   const candidateId = searchParams.get("candidate");
   const candidate = requirement?.candidates.find((c) => c.id === candidateId);
 
-  const [outcome, setOutcome] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<(typeof OUTCOMES)[number] | null>(null);
   const [notes, setNotes] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -54,9 +64,18 @@ export default function OutcomeFeedbackPage() {
     );
   }
 
-  const handleSubmit = () => {
-    // This feedback isn't persisted anywhere yet — it would feed the
-    // matching model's fairness/quality loop in a future pass.
+  const handleSubmit = async () => {
+    if (!outcome || !candidate) return;
+    setSubmitting(true);
+    const ok = await updateCandidateStatus(candidate.id, {
+      candidateStatus: OUTCOME_TO_CANDIDATE_STATUS[outcome],
+      note: notes.trim() || undefined,
+    });
+    setSubmitting(false);
+    if (!ok) {
+      toast("Couldn't save this outcome — try again", "error");
+      return;
+    }
     setSent(true);
     toast("Thanks — this helps us improve future shortlists", "success");
   };
@@ -117,8 +136,8 @@ export default function OutcomeFeedbackPage() {
               style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, resize: "vertical", boxSizing: "border-box" }}
             />
           </div>
-          <PrimaryCta full disabled={!outcome} onClick={handleSubmit}>
-            Submit feedback
+          <PrimaryCta full disabled={!outcome || submitting} onClick={handleSubmit}>
+            {submitting ? "Submitting…" : "Submit feedback"}
           </PrimaryCta>
         </div>
       </Card>

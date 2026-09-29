@@ -10,6 +10,9 @@ export interface RequirementRow {
   location: string;
   notice_period_pref: string;
   status: string;
+  department: string | null;
+  archive_reason: string | null;
+  archive_disposition: string | null;
   experience_min: number | null;
   experience_max: number | null;
   due_date: string | null;
@@ -126,6 +129,14 @@ export function asBoundedEmploymentType(v: unknown): "full-time" | "part-time" |
  *  garbage. */
 export function asBoundedSalaryType(v: unknown): "per-month" | "fixed" | "per-annum" | null {
   return v === "per-month" || v === "fixed" || v === "per-annum" ? v : null;
+}
+
+/** Validated read of a client-supplied archive disposition: must be one of
+ *  the two values the DB check constraint allows. Returns null for anything
+ *  else so callers can treat "no disposition chosen" (a plain archive, no
+ *  bulk candidate action) distinctly from an invalid value. */
+export function asArchiveDisposition(v: unknown): "keep_candidates" | "reject_remaining" | null {
+  return v === "keep_candidates" || v === "reject_remaining" ? v : null;
 }
 
 /** Validated read of a client-supplied boolean flag (e.g. "portfolio
@@ -320,6 +331,9 @@ export function buildRequirementsListResponse(
   location: string;
   noticePeriodPref: string;
   status: string;
+  department: string | null;
+  archiveReason: string | null;
+  archiveDisposition: string | null;
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
@@ -345,6 +359,9 @@ export function buildRequirementsListResponse(
     noticePeriodPref: r.notice_period_pref,
     status: r.status,
     stage: r.stage,
+    department: r.department ?? null,
+    archiveReason: r.archive_reason ?? null,
+    archiveDisposition: r.archive_disposition ?? null,
     experienceMin: r.experience_min ?? null,
     experienceMax: r.experience_max ?? null,
     dueDate: r.due_date ?? null,

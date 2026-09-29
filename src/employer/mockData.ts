@@ -34,6 +34,18 @@ export interface MatchBreakdown {
   locationMatch: number;
 }
 
+/** Per-candidate hiring-pipeline status against ONE requirement — distinct
+ *  from RequirementStage, which tracks the posting as a whole. Mirrors
+ *  CANDIDATE_STATUSES in server-handlers/_employer-candidate-status-helpers.ts. */
+export type CandidateStatus =
+  | "shortlisted"
+  | "interview_invited"
+  | "interviewing"
+  | "hired"
+  | "rejected"
+  | "not_a_fit"
+  | "no_response";
+
 export interface Candidate {
   id: string; // requirement_matches row id
   name: string;
@@ -48,6 +60,9 @@ export interface Candidate {
   unlocked: boolean;
   contact?: { email: string; phone?: string };
   resume?: CandidateResumeDetail;
+  candidateStatus: CandidateStatus;
+  candidateStatusNote: string | null;
+  interviewScheduledAt: string | null;
 }
 
 export type RequirementStatus = "generating" | "ready" | "partial" | "zero" | "failed" | "closed";
@@ -86,6 +101,11 @@ export interface AiScreeningSummary {
   strongMatches: StrongMatchCandidate[];
 }
 
+/** Disposition chosen when archiving a requirement — whether the
+ *  still-open candidate pipeline gets bulk-rejected or left untouched.
+ *  Mirrors the DB check constraint on employer_requirements.archive_disposition. */
+export type ArchiveDisposition = "keep_candidates" | "reject_remaining";
+
 export interface RequirementSummary {
   id: string;
   title: string;
@@ -93,6 +113,7 @@ export interface RequirementSummary {
   noticePeriodPref: string;
   status: RequirementStatus;
   stage: RequirementStage;
+  department: string | null;
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
@@ -118,6 +139,10 @@ export interface Requirement {
   noticePeriodPref: string;
   description: string;
   status: RequirementStatus;
+  stage: RequirementStage;
+  department: string | null;
+  archiveReason: string | null;
+  archiveDisposition: ArchiveDisposition | null;
   experienceMin: number | null;
   experienceMax: number | null;
   dueDate: string | null;
@@ -155,6 +180,7 @@ export interface Requirement {
 export interface RequirementFormValues {
   title: string;
   locations: string[];
+  department?: string;
   noticePeriodPref?: string;
   description?: string;
   experienceMin?: number;
