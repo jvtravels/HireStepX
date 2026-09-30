@@ -65,7 +65,7 @@ export default function EmployersLandingPage() {
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 96px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
         {[
           { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on interview-performance signal — coherence, STAR structure, technical depth — scored across their real practice sessions." },
-          { title: "Pay only to unlock a contact", body: "Browse match scores, skill breakdowns, and resume summaries for free. Unlock a candidate's email and phone for ₹999 (₹1,999 for a strong match) — no subscription, no upfront commitment." },
+          { title: "Pay only to unlock a contact", body: "Browse match scores, skill breakdowns, and resume summaries for free. Unlock a whole batch of 10 shortlisted candidates for ₹299, or a single candidate for ₹59 — no subscription, no upfront commitment." },
           { title: "Fair to candidates too", body: "Every shortlist runs through anti-gaming and fairness checks, and candidates consent to being surfaced before you ever see their name." },
         ].map((f2) => (
           <div key={f2.title} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24 }}>

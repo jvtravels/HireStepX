@@ -1,14 +1,20 @@
 /* Vercel Serverless Function — Employer Contact-Unlock Order Creation
  *
- * POST /api/employer-create-unlock-order { matchId } → creates a Razorpay
- * order for unlocking one candidate's contact details. Node runtime (not
- * edge) to reuse the same Buffer-based Basic-auth + HMAC verification path
- * as create-order.ts/verify-payment.ts — there is no edge-compatible
+ * POST /api/employer-create-unlock-order { mode: "single", matchId } or
+ * { mode: "batch", requirementId } → creates a Razorpay order for
+ * unlocking contact details. Node runtime (not edge) to reuse the same
+ * Buffer-based Basic-auth + HMAC verification path as
+ * create-order.ts/verify-payment.ts — there is no edge-compatible
  * precedent for Razorpay signature handling anywhere in this codebase.
  *
- * Price is tiered by match_score (see _unlock-pricing.ts) and resolved
- * server-side from the stored row — the client never supplies or confirms
- * an amount pre-charge.
+ * "single" charges UNLOCK_SINGLE_PRICE_PAISE for exactly one match.
+ * "batch" always targets the requirement's next not-fully-unlocked batch
+ * of UNLOCK_BUNDLE_SIZE candidates (by match_score rank) and charges the
+ * flat UNLOCK_BATCH_PRICE_PAISE for it — see _unlock-pricing.ts, the sole
+ * source of truth for amounts. The client never supplies or confirms an
+ * amount pre-charge; which matches a batch order actually covers is
+ * server-derived and written into the order's notes for verification to
+ * unlock later.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -21,7 +27,7 @@ import {
   supabaseAnonKey,
   supabaseServiceHeaders,
 } from "./_shared";
-import { unlockPriceForMatch } from "./_unlock-pricing";
+import { singleUnlockPrice, batchUnlockPrice, batchIndexForRank } from "./_unlock-pricing";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -88,40 +94,93 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
+  const mode = req.body?.mode === "batch" ? "batch" : "single";
   const matchId = typeof req.body?.matchId === "string" ? req.body.matchId.slice(0, 64) : "";
-  if (!matchId) {
+  const requirementId = typeof req.body?.requirementId === "string" ? req.body.requirementId.slice(0, 64) : "";
+  if (mode === "single" && !matchId) {
     return res.status(400).json({ error: "matchId is required" });
+  }
+  if (mode === "batch" && !requirementId) {
+    return res.status(400).json({ error: "requirementId is required" });
   }
 
   try {
-    const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_user_id,match_score,unlocked`,
-      { headers: supabaseServiceHeaders() },
-    );
-    if (!matchRes.ok) throw new Error(`match read failed: ${matchRes.status}`);
-    const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
-    const match = matchRows[0];
-    if (!match) {
-      return res.status(404).json({ error: "Match not found" });
-    }
-    if (match.unlocked) {
-      return res.status(409).json({ error: "This candidate is already unlocked" });
-    }
+    let price: { amountPaise: number; label: string };
+    let idempotencyKey: string;
+    let orderNotes: Record<string, string>;
 
-    const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(match.requirement_id)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
-      { headers: supabaseServiceHeaders() },
-    );
-    const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
-    if (!reqRes.ok || !reqRows[0]) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    if (reqRows[0].status === "closed") {
-      return res.status(409).json({ error: "This requirement is closed" });
-    }
+    if (mode === "single") {
+      const matchRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_user_id,match_score,unlocked`,
+        { headers: supabaseServiceHeaders() },
+      );
+      if (!matchRes.ok) throw new Error(`match read failed: ${matchRes.status}`);
+      const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
+      const match = matchRows[0];
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      if (match.unlocked) {
+        return res.status(409).json({ error: "This candidate is already unlocked" });
+      }
 
-    const price = unlockPriceForMatch(match.match_score);
-    const idempotencyKey = `order:${employerId}:unlock:${matchId}`;
+      const reqRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(match.requirement_id)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
+        { headers: supabaseServiceHeaders() },
+      );
+      const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
+      if (!reqRes.ok || !reqRows[0]) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      if (reqRows[0].status === "closed") {
+        return res.status(409).json({ error: "This requirement is closed" });
+      }
+
+      price = singleUnlockPrice();
+      idempotencyKey = `order:${employerId}:unlock:${matchId}`;
+      orderNotes = { employerId, mode: "single", matchIds: matchId };
+    } else {
+      const reqRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
+        { headers: supabaseServiceHeaders() },
+      );
+      const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
+      if (!reqRes.ok || !reqRows[0]) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      if (reqRows[0].status === "closed") {
+        return res.status(409).json({ error: "This requirement is closed" });
+      }
+
+      const matchesRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,unlocked&order=match_score.desc`,
+        { headers: supabaseServiceHeaders() },
+      );
+      if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
+      const matches = (await matchesRes.json().catch(() => [])) as Array<{ id: string; unlocked: boolean }>;
+
+      const batches = new Map<number, Array<{ id: string; unlocked: boolean }>>();
+      matches.forEach((m, i) => {
+        const b = batchIndexForRank(i);
+        if (!batches.has(b)) batches.set(b, []);
+        batches.get(b)!.push(m);
+      });
+      let nextBatch: Array<{ id: string; unlocked: boolean }> | null = null;
+      for (const [, rows] of Array.from(batches.entries()).sort((a, b) => a[0] - b[0])) {
+        if (rows.some((r) => !r.unlocked)) {
+          nextBatch = rows;
+          break;
+        }
+      }
+      if (!nextBatch) {
+        return res.status(409).json({ error: "All candidates are already unlocked" });
+      }
+      const targetMatchIds = nextBatch.filter((r) => !r.unlocked).map((r) => r.id);
+
+      price = batchUnlockPrice();
+      idempotencyKey = `order:${employerId}:unlockbatch:${requirementId}`;
+      orderNotes = { employerId, mode: "batch", matchIds: targetMatchIds.join(",") };
+    }
 
     if (UPSTASH_URL && UPSTASH_TOKEN) {
       try {
@@ -174,7 +233,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
     const receipt = `unlock_${Date.now()}`.slice(0, 40);
-    const notes: Record<string, string> = { employerId, matchId };
 
     const ac = new AbortController();
     const acTimer = setTimeout(() => ac.abort(), 10_000);
@@ -182,7 +240,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
       signal: ac.signal,
-      body: JSON.stringify({ amount: price.amountPaise, currency: "INR", receipt, notes }),
+      body: JSON.stringify({ amount: price.amountPaise, currency: "INR", receipt, notes: orderNotes }),
     });
     clearTimeout(acTimer);
 

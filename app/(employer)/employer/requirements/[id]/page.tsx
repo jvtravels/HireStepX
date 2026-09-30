@@ -10,6 +10,7 @@ import { Candidate, RequirementStage } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
 import { STRONG_MATCH_THRESHOLD } from "../../../../../server-handlers/_requirement-match-helpers";
+import { UNLOCK_BUNDLE_SIZE } from "../../../../../server-handlers/_unlock-pricing";
 import {
   Card,
   CandidateStatusChip,
@@ -230,14 +231,14 @@ function CandidateTableRow({
   const [confirming, setConfirming] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
-  // Display-only — mirrors the >= 60 threshold in
+  // Display-only — mirrors UNLOCK_SINGLE_PRICE_PAISE in
   // server-handlers/_unlock-pricing.ts, which is the sole source of truth
   // for the amount actually charged.
-  const displayPrice = candidate.matchScore >= 60 ? "₹1,999" : "₹999";
+  const displayPrice = "₹59";
 
   const handleConfirmUnlock = async () => {
     setUnlocking(true);
-    const order = await createUnlockOrder(candidate.id);
+    const order = await createUnlockOrder({ mode: "single", matchId: candidate.id });
     if (!order) {
       setUnlocking(false);
       toast("Couldn't start payment — please try again", "error");
@@ -274,12 +275,13 @@ function CandidateTableRow({
         });
         setUnlocking(false);
         setConfirming(false);
-        if (!result) {
+        const unlockedCandidate = result?.candidates[0];
+        if (!unlockedCandidate) {
           toast("Payment received but unlock failed — contact support@hirestepx.com", "error");
           return;
         }
-        onUnlocked(candidate.id, result.name, result.contact.email);
-        toast(`Unlocked ${result.name}'s contact details`, "success");
+        onUnlocked(unlockedCandidate.matchId, unlockedCandidate.name, unlockedCandidate.contact.email);
+        toast(`Unlocked ${unlockedCandidate.name}'s contact details`, "success");
       },
       modal: {
         ondismiss: function () { setUnlocking(false); },
@@ -405,6 +407,90 @@ function CandidateTableRow({
   );
 }
 
+function BatchUnlockBanner({
+  requirementId,
+  batchStart,
+  batchEnd,
+  onUnlocked,
+}: {
+  requirementId: string;
+  batchStart: number;
+  batchEnd: number;
+  onUnlocked: (candidates: Array<{ matchId: string; name: string; contact: { email: string } }>) => void;
+}) {
+  const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
+  const { toast } = useToast();
+  const [unlocking, setUnlocking] = useState(false);
+
+  const handleUnlockBatch = async () => {
+    setUnlocking(true);
+    const order = await createUnlockOrder({ mode: "batch", requirementId });
+    if (!order) {
+      setUnlocking(false);
+      toast("Couldn't start payment — please try again", "error");
+      return;
+    }
+
+    try {
+      await loadRazorpayScript();
+    } catch {
+      setUnlocking(false);
+      toast("Payment system failed to load. Check your connection and try again.", "error");
+      return;
+    }
+    if (!window.Razorpay) {
+      setUnlocking(false);
+      toast("Payment system not available. Please refresh and try again.", "error");
+      return;
+    }
+
+    const rzp = new window.Razorpay({
+      key: order.keyId,
+      amount: order.amount,
+      currency: order.currency,
+      name: order.name,
+      description: order.description,
+      order_id: order.orderId,
+      theme: { color: t.indigo },
+      method: { upi: true, card: true, netbanking: true, wallet: true },
+      handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+        const result = await verifyUnlockPayment({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        });
+        setUnlocking(false);
+        if (!result || result.candidates.length === 0) {
+          toast("Payment received but unlock failed — contact support@hirestepx.com", "error");
+          return;
+        }
+        onUnlocked(result.candidates);
+        toast(`Unlocked ${result.candidates.length} candidate${result.candidates.length === 1 ? "" : "s"}`, "success");
+      },
+      modal: {
+        ondismiss: function () { setUnlocking(false); },
+      },
+    });
+    (rzp as unknown as { on(event: string, cb: (r: unknown) => void): void }).on("payment.failed", function (response: unknown) {
+      const errDetail = (response as { error?: { description?: string; reason?: string } })?.error;
+      toast(errDetail?.description || errDetail?.reason || "Payment failed. Please try again.", "error");
+      setUnlocking(false);
+    });
+    rzp.open();
+  };
+
+  return (
+    <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "12px 16px", background: t.creamSoft }}>
+      <span style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>
+        Unlock candidates <strong>{batchStart}–{batchEnd}</strong> for a flat rate instead of one at a time.
+      </span>
+      <PrimaryCta size="sm" icon={<LockIcon size={13} aria-hidden="true" />} onClick={handleUnlockBatch} disabled={unlocking}>
+        {unlocking ? "Unlocking…" : "Unlock batch — ₹299"}
+      </PrimaryCta>
+    </Card>
+  );
+}
+
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
   const { fetchRequirementDetail, updateRequirement, updateRequirementStage, updateCandidateStatus } = useEmployerData();
@@ -479,6 +565,36 @@ export default function RequirementDetailPage() {
         : prev
     );
   };
+
+  const handleBatchUnlocked = (unlocked: Array<{ matchId: string; name: string; contact: { email: string } }>) => {
+    const byId = new Map(unlocked.map((u) => [u.matchId, u]));
+    setRequirement((prev) =>
+      prev
+        ? {
+            ...prev,
+            candidates: prev.candidates.map((c) => {
+              const u = byId.get(c.id);
+              return u ? { ...c, unlocked: true, name: u.name, contact: { email: u.contact.email } } : c;
+            }),
+          }
+        : prev
+    );
+  };
+
+  // Candidates arrive ranked by match_score descending (matches the server's
+  // fixed fetch order — see server-handlers/employer-requirement-detail.ts),
+  // so batch membership by position is stable regardless of local filtering.
+  const nextLockedBatch = (() => {
+    if (!requirement) return null;
+    const candidates = requirement.candidates;
+    for (let start = 0; start < candidates.length; start += UNLOCK_BUNDLE_SIZE) {
+      const batch = candidates.slice(start, start + UNLOCK_BUNDLE_SIZE);
+      if (batch.some((c) => !c.unlocked)) {
+        return { start: start + 1, end: start + batch.length };
+      }
+    }
+    return null;
+  })();
 
   const handleStageChange = async (stage: RequirementStage) => {
     if (!requirement) return;
@@ -932,6 +1048,14 @@ export default function RequirementDetailPage() {
                     This requirement is closed. Candidate details are read-only.
                   </span>
                 </Card>
+              )}
+              {!readOnly && nextLockedBatch && (
+                <BatchUnlockBanner
+                  requirementId={requirement.id}
+                  batchStart={nextLockedBatch.start}
+                  batchEnd={nextLockedBatch.end}
+                  onUnlocked={handleBatchUnlocked}
+                />
               )}
               {!readOnly && selectedIds.size >= 2 && (
                 <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 16px" }}>

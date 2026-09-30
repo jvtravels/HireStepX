@@ -58,3 +58,31 @@ export function buildUnlockResponsePayload(args: {
     contact: { email: args.profile?.email || "" },
   };
 }
+
+/** Parses the comma-joined matchIds note written at order-creation time
+ *  (employer-create-unlock-order.ts) into a deduped, non-empty id list —
+ *  capped well above UNLOCK_BUNDLE_SIZE so a malformed note can't balloon
+ *  the downstream match/profile lookups. */
+export function parseNotedMatchIds(raw: string): string[] {
+  const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return Array.from(new Set(ids)).slice(0, 20);
+}
+
+/** Batch counterpart to buildUnlockResponsePayload — one entry per unlocked
+ *  match, in the same order as `matchIds`. */
+export function buildBatchUnlockResponsePayload(args: {
+  matchIds: string[];
+  profileByMatchId: Map<string, { name?: string | null; email?: string | null } | undefined>;
+}): { unlocked: true; candidates: Array<{ matchId: string; name: string; contact: { email: string } }> } {
+  return {
+    unlocked: true,
+    candidates: args.matchIds.map((matchId) => {
+      const profile = args.profileByMatchId.get(matchId);
+      return {
+        matchId,
+        name: profile?.name || "Candidate",
+        contact: { email: profile?.email || "" },
+      };
+    }),
+  };
+}

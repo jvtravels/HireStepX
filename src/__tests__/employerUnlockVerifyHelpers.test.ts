@@ -5,6 +5,8 @@ import {
   verifyOrderOwnership,
   isClosedAndLocked,
   buildUnlockResponsePayload,
+  parseNotedMatchIds,
+  buildBatchUnlockResponsePayload,
 } from "../../server-handlers/_employer-unlock-verify-helpers";
 
 describe("validatePaymentIdsFormat", () => {
@@ -107,5 +109,46 @@ describe("buildUnlockResponsePayload", () => {
     expect(
       buildUnlockResponsePayload({ matchId: "match_2", profile: { name: null, email: null } }),
     ).toEqual({ matchId: "match_2", unlocked: true, name: "Candidate", contact: { email: "" } });
+  });
+});
+
+describe("parseNotedMatchIds", () => {
+  it("splits and trims a comma-joined id list", () => {
+    expect(parseNotedMatchIds("match_1, match_2 ,match_3")).toEqual(["match_1", "match_2", "match_3"]);
+  });
+
+  it("dedupes repeated ids", () => {
+    expect(parseNotedMatchIds("match_1,match_1,match_2")).toEqual(["match_1", "match_2"]);
+  });
+
+  it("drops empty entries from stray commas", () => {
+    expect(parseNotedMatchIds("match_1,,match_2,")).toEqual(["match_1", "match_2"]);
+  });
+
+  it("caps the result well above a single batch", () => {
+    const many = Array.from({ length: 30 }, (_, i) => `match_${i}`).join(",");
+    expect(parseNotedMatchIds(many)).toHaveLength(20);
+  });
+});
+
+describe("buildBatchUnlockResponsePayload", () => {
+  it("shapes one entry per matchId, in order", () => {
+    const profileByMatchId = new Map([
+      ["match_1", { name: "Priya Sharma", email: "priya@example.com" }],
+      ["match_2", { name: "Arjun Rao", email: "arjun@example.com" }],
+    ]);
+    expect(buildBatchUnlockResponsePayload({ matchIds: ["match_1", "match_2"], profileByMatchId })).toEqual({
+      unlocked: true,
+      candidates: [
+        { matchId: "match_1", name: "Priya Sharma", contact: { email: "priya@example.com" } },
+        { matchId: "match_2", name: "Arjun Rao", contact: { email: "arjun@example.com" } },
+      ],
+    });
+  });
+
+  it("falls back to safe defaults for a missing profile", () => {
+    expect(
+      buildBatchUnlockResponsePayload({ matchIds: ["match_1"], profileByMatchId: new Map() }),
+    ).toEqual({ unlocked: true, candidates: [{ matchId: "match_1", name: "Candidate", contact: { email: "" } }] });
   });
 });

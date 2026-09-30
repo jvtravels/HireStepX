@@ -1800,16 +1800,21 @@ create policy "Candidates view own matches" on requirement_matches
 -- feature" note above — employers are keyed by auth.users, not profiles).
 -- Mirrors payment_dedup's shape: service-role-only, no client policies —
 -- writes happen server-side in employer-verify-unlock-payment.ts.
+-- Exactly one of match_id (single-candidate unlock, ₹59) / match_ids
+-- (batch unlock, ₹299 for up to UNLOCK_BUNDLE_SIZE candidates in one
+-- Razorpay payment — see _unlock-pricing.ts) is set per row.
 create table if not exists employer_unlock_payments (
   id uuid primary key default gen_random_uuid(),
-  match_id uuid references requirement_matches(id) on delete cascade not null,
+  match_id uuid references requirement_matches(id) on delete cascade,
+  match_ids uuid[],
   employer_id uuid references employers(id) on delete cascade not null,
   razorpay_payment_id text unique not null,
   razorpay_order_id text default '',
   amount integer not null,
   currency text default 'INR',
   status text default 'completed',
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint employer_unlock_payments_match_xor check ((match_id is not null) <> (match_ids is not null))
 );
 
 create index if not exists idx_employer_unlock_payments_employer on employer_unlock_payments(employer_id, created_at desc);

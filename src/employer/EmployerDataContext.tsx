@@ -60,12 +60,12 @@ interface EmployerDataContextValue {
   resetCompanyProfile: () => void;
   addRequirement: (r: RequirementFormValues) => Promise<string | null>;
   updateRequirement: (id: string, r: RequirementFormValues) => Promise<boolean>;
-  createUnlockOrder: (matchId: string) => Promise<UnlockOrder | null>;
+  createUnlockOrder: (request: { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string }) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
-  }) => Promise<{ name: string; contact: { email: string } } | null>;
+  }) => Promise<{ candidates: Array<{ matchId: string; name: string; contact: { email: string } }> } | null>;
   fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
   archiveRequirement: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<boolean>;
   reopenRequirement: (id: string) => Promise<boolean>;
@@ -169,10 +169,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return false;
   }, [refreshRequirements]);
 
-  const createUnlockOrder = useCallback(async (matchId: string) => {
+  const createUnlockOrder = useCallback(async (
+    request: { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string },
+  ) => {
     const res = await apiFetch<UnlockOrder>(
       "/api/employer-create-unlock-order",
-      { matchId },
+      request,
       { method: "POST" },
     );
     if (res.ok && res.data) return res.data;
@@ -184,7 +186,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     razorpay_payment_id: string;
     razorpay_signature: string;
   }) => {
-    const res = await apiFetch<{ name: string; contact: { email: string } }>(
+    const res = await apiFetch<{ candidates: Array<{ matchId: string; name: string; contact: { email: string } }> }>(
       "/api/employer-verify-unlock-payment",
       payload,
       { method: "POST" },

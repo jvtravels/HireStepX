@@ -2,15 +2,19 @@
  *
  * POST /api/employer-verify-unlock-payment { razorpay_order_id,
  * razorpay_payment_id, razorpay_signature } → verifies the Razorpay HMAC
- * signature, re-derives matchId/employerId from the order's server-written
- * notes (never the client body), re-checks ownership + closed status, then
- * unlocks the match and returns the candidate's contact details.
+ * signature, re-derives mode/matchIds/employerId from the order's
+ * server-written notes (never the client body), re-checks ownership +
+ * closed status, then unlocks every match the order covers (one for
+ * "single" mode, up to UNLOCK_BUNDLE_SIZE for "batch") and returns their
+ * contact details.
  *
  * Node runtime — reuses the same crypto.createHmac/timingSafeEqual path as
  * verify-payment.ts via _payment-verification.ts. employer_unlock_payments'
  * unique constraint on razorpay_payment_id is the dedup lock: a retried
  * verify call for an already-processed payment gets a 409 on insert and is
- * answered idempotently rather than double-unlocking.
+ * answered idempotently rather than double-unlocking. One row per payment
+ * covers the whole set of matches (match_id for a single unlock, match_ids
+ * for a batch — see supabase-migrations/0015).
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -29,7 +33,8 @@ import {
   isOversizedRequest,
   verifyOrderOwnership,
   isClosedAndLocked,
-  buildUnlockResponsePayload,
+  parseNotedMatchIds,
+  buildBatchUnlockResponsePayload,
 } from "./_employer-unlock-verify-helpers";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -113,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
     const rzpAc = new AbortController();
     const rzpTimer = setTimeout(() => rzpAc.abort(), 8_000);
-    let orderData: { amount: number; notes?: { employerId?: string; matchId?: string } };
+    let orderData: { amount: number; notes?: { employerId?: string; mode?: string; matchIds?: string } };
     try {
       const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
         headers: { Authorization: `Basic ${rzpAuth}` },
@@ -126,31 +131,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const notedEmployerId = orderData.notes?.employerId || "";
-    const matchId = orderData.notes?.matchId || "";
-    if (!verifyOrderOwnership({ notedEmployerId, matchId, employerId })) {
+    const isBatch = orderData.notes?.mode === "batch";
+    const matchIds = parseNotedMatchIds(orderData.notes?.matchIds || "");
+    if (!verifyOrderOwnership({ notedEmployerId, matchId: matchIds.join(","), employerId }) || matchIds.length === 0) {
       console.error("Employer unlock order/employer mismatch for order", razorpay_order_id.slice(0, 8) + "...");
       return res.status(403).json({ error: "Forbidden" });
     }
 
+    const idParam = matchIds.map((id) => encodeURIComponent(id)).join(",");
     const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_user_id,unlocked`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${idParam})&select=id,requirement_id,candidate_user_id,unlocked`,
       { headers: supabaseServiceHeaders() },
     );
     const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
-    const match = matchRows[0];
-    if (!matchRes.ok || !match) {
+    if (!matchRes.ok || matchRows.length === 0 || matchRows.length !== matchIds.length) {
       return res.status(404).json({ error: "Match not found" });
+    }
+    const requirementId = matchRows[0].requirement_id;
+    if (matchRows.some((m) => m.requirement_id !== requirementId)) {
+      console.error("Employer unlock order spans multiple requirements for order", razorpay_order_id.slice(0, 8) + "...");
+      return res.status(400).json({ error: "Invalid order" });
     }
 
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(match.requirement_id)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
       { headers: supabaseServiceHeaders() },
     );
     const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
     if (!reqRes.ok || !reqRows[0]) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    if (isClosedAndLocked(reqRows[0].status, match.unlocked)) {
+    const allAlreadyUnlocked = matchRows.every((m) => m.unlocked);
+    if (isClosedAndLocked(reqRows[0].status, allAlreadyUnlocked)) {
       return res.status(409).json({ error: "This requirement is closed" });
     }
 
@@ -161,14 +173,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dedupRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_unlock_payments`, {
       method: "POST",
       headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
-      body: JSON.stringify({
-        match_id: matchId,
-        employer_id: employerId,
-        razorpay_payment_id,
-        razorpay_order_id,
-        amount: orderData.amount,
-        currency: "INR",
-      }),
+      body: JSON.stringify(
+        isBatch
+          ? { match_ids: matchIds, employer_id: employerId, razorpay_payment_id, razorpay_order_id, amount: orderData.amount, currency: "INR" }
+          : { match_id: matchIds[0], employer_id: employerId, razorpay_payment_id, razorpay_order_id, amount: orderData.amount, currency: "INR" },
+      ),
     });
     const alreadyProcessed = dedupRes.status === 409;
     if (!alreadyProcessed && dedupRes.status !== 201) {
@@ -177,9 +186,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Failed to record payment" });
     }
 
-    if (!match.unlocked) {
+    const stillLocked = matchRows.filter((m) => !m.unlocked).map((m) => m.id);
+    if (stillLocked.length > 0) {
+      const lockedIdParam = stillLocked.map((id) => encodeURIComponent(id)).join(",");
       const patchRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}`,
+        `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${lockedIdParam})`,
         {
           method: "PATCH",
           headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
@@ -193,14 +204,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    const candidateIdParam = matchRows.map((m) => encodeURIComponent(m.candidate_user_id)).join(",");
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(match.candidate_user_id)}&select=name,email`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=in.(${candidateIdParam})&select=id,name,email`,
       { headers: supabaseServiceHeaders() },
     );
-    const profileRows = (await profileRes.json().catch(() => [])) as Array<{ name: string; email: string }>;
-    const profile = profileRows[0];
+    const profileRows = (await profileRes.json().catch(() => [])) as Array<{ id: string; name: string; email: string }>;
+    const profileById = new Map(profileRows.map((p) => [p.id, p]));
+    const profileByMatchId = new Map(matchRows.map((m) => [m.id, profileById.get(m.candidate_user_id)]));
 
-    return res.status(200).json(buildUnlockResponsePayload({ matchId, profile }));
+    return res.status(200).json(buildBatchUnlockResponsePayload({ matchIds, profileByMatchId }));
   } catch (err) {
     console.error("employer-verify-unlock-payment error:", err);
     return res.status(500).json({ error: "Internal error" });
