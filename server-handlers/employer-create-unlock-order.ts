@@ -26,6 +26,7 @@ import {
   supabaseUrl,
   supabaseAnonKey,
   supabaseServiceHeaders,
+  verifyEmployerAuthToken,
 } from "./_shared";
 import { singleUnlockPrice, batchUnlockPrice, batchIndexForRank } from "./_unlock-pricing";
 
@@ -79,19 +80,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let employerId: string | undefined;
   const authToken = (req.headers.authorization || "").replace("Bearer ", "");
   if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
-    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${authToken}`, apikey: SUPABASE_ANON_KEY },
-    });
-    if (!authRes.ok) return res.status(401).json({ error: "Unauthorized" });
-    try {
-      const userData = await authRes.json();
-      employerId = userData.id;
-    } catch {
-      return res.status(401).json({ error: "Auth verification failed" });
-    }
+    const authResult = await verifyEmployerAuthToken(authToken, SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (authResult.kind === "auth-fail") return res.status(401).json({ error: "Unauthorized" });
+    if (authResult.kind === "transient") return res.status(401).json({ error: "Auth verification failed" });
+    employerId = authResult.employerId;
   }
   if (!employerId) {
     return res.status(401).json({ error: "Authentication required" });
+  }
+
+  // IP-only limiting lets one employer account, spread across a handful of
+  // IPs (corporate NAT, mobile network switches), exceed the intended
+  // per-account cap on order creation — pair it with a per-employer bucket
+  // the same way every edge-runtime endpoint does via withAuthAndRateLimit.
+  if (await isRateLimited(`user:${employerId}`, "employer-create-unlock-order", 15, 60_000)) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
   }
 
   const mode = req.body?.mode === "batch" ? "batch" : "single";

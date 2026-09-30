@@ -18,15 +18,23 @@ const supabaseUrl = vi.fn();
 const supabaseAnonKey = vi.fn();
 const supabaseServiceHeaders = vi.fn();
 
-vi.mock("../../server-handlers/_shared", () => ({
-  applyCorsHeaders: (...args: unknown[]) => applyCorsHeaders(...args),
-  handlePreflightAndMethod: (...args: unknown[]) => handlePreflightAndMethod(...args),
-  isRateLimited: (...args: unknown[]) => isRateLimited(...args),
-  getVercelClientIp: (...args: unknown[]) => getVercelClientIp(...args),
-  supabaseUrl: (...args: unknown[]) => supabaseUrl(...args),
-  supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...args),
-  supabaseServiceHeaders: (...args: unknown[]) => supabaseServiceHeaders(...args),
-}));
+vi.mock("../../server-handlers/_shared", async (importOriginal) => {
+  // verifyEmployerAuthToken is left as the REAL implementation (it's pure
+  // aside from calling global.fetch, which every test already mocks for the
+  // "auth check" call via authOk()/authFail() below) so existing tests keep
+  // driving auth through fetch responses rather than needing their own mock.
+  const actual = await importOriginal<typeof import("../../server-handlers/_shared")>();
+  return {
+    applyCorsHeaders: (...args: unknown[]) => applyCorsHeaders(...args),
+    handlePreflightAndMethod: (...args: unknown[]) => handlePreflightAndMethod(...args),
+    isRateLimited: (...args: unknown[]) => isRateLimited(...args),
+    getVercelClientIp: (...args: unknown[]) => getVercelClientIp(...args),
+    supabaseUrl: (...args: unknown[]) => supabaseUrl(...args),
+    supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...args),
+    supabaseServiceHeaders: (...args: unknown[]) => supabaseServiceHeaders(...args),
+    verifyEmployerAuthToken: actual.verifyEmployerAuthToken,
+  };
+});
 
 const { default: handler } = await import("../../server-handlers/employer-create-unlock-order");
 

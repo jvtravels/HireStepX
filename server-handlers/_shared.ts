@@ -974,6 +974,45 @@ export function supabaseAnonKey(): string {
   return SUPABASE_ANON_KEY;
 }
 
+/** Node-runtime counterpart to verifyAuth()'s transient-vs-permanent
+ *  distinction (see that function's doc comment for the full rationale) —
+ *  used by the Vercel serverless (non-edge) employer-unlock handlers, which
+ *  can't use the edge verifyAuth()/withAuthAndRateLimit() path because they
+ *  need Node's Buffer/crypto for Razorpay HMAC verification. Without a
+ *  retry, a single Supabase Auth 5xx blip would 401 an employer mid-payment
+ *  instead of riding it out like every other auth'd endpoint does. */
+export async function verifyEmployerAuthToken(
+  authToken: string,
+  supabaseUrlStr: string,
+  anonKey: string,
+): Promise<{ kind: "ok"; employerId: string } | { kind: "auth-fail" } | { kind: "transient" }> {
+  const tryOnce = async (): Promise<{ kind: "ok"; employerId: string } | { kind: "auth-fail" } | { kind: "transient" }> => {
+    try {
+      const res = await fetch(`${supabaseUrlStr}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${authToken}`, apikey: anonKey },
+      });
+      if (res.status === 401 || res.status === 403) return { kind: "auth-fail" };
+      if ((res.status >= 500 && res.status <= 599) || res.status === 408 || res.status === 429) {
+        return { kind: "transient" };
+      }
+      if (!res.ok) return { kind: "auth-fail" };
+      const userData = await res.json().catch(() => null);
+      if (!userData || typeof userData.id !== "string") return { kind: "auth-fail" };
+      return { kind: "ok", employerId: userData.id };
+    } catch {
+      return { kind: "transient" };
+    }
+  };
+
+  let result = await tryOnce();
+  if (result.kind === "transient") {
+    console.warn("[verifyEmployerAuthToken] transient (attempt 1) — retrying after 500ms");
+    await new Promise((r) => setTimeout(r, 500));
+    result = await tryOnce();
+  }
+  return result;
+}
+
 /* ─── Shared HTML Utilities ─── */
 
 /** Escape HTML special characters to prevent XSS in rendered output. */
