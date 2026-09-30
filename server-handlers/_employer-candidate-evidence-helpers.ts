@@ -47,15 +47,29 @@ export function isNegotiationSession(type: string | undefined): boolean {
   return (type || "").toLowerCase().includes("negotiation");
 }
 
+/** A session only counts as usable evidence once it's actually been scored —
+ *  `report_json` is written by /api/evaluate-session at completion, so a row
+ *  with no extractable skills is either still in progress, was abandoned
+ *  before evaluation, or genuinely has nothing to show. Distinguishing this
+ *  from "negotiation session" lets the picker below skip incomplete rows the
+ *  same way it skips off-topic ones. */
+function hasEvidence(row: SessionRow): boolean {
+  return extractEvidenceSkills(row.report_json).length > 0;
+}
+
 /** Picks, per candidate user id, the most-recent session row that's actually
- *  relevant evidence for a hiring requirement — skipping salary-negotiation
- *  sessions, whose skill dimensions don't describe interview performance.
- *  Rows are expected pre-sorted newest-first by the caller's query, but this
- *  re-checks created_at defensively rather than trusting query order. */
+ *  relevant, COMPLETED evidence for a hiring requirement — skipping
+ *  salary-negotiation sessions (disjoint skill dimensions) and skipping rows
+ *  that never made it to a scored report (abandoned/incomplete), so an
+ *  in-progress or abandoned attempt never shadows an older completed session
+ *  that has real skill data. Rows are expected pre-sorted newest-first by the
+ *  caller's query, but this re-checks created_at defensively rather than
+ *  trusting query order. */
 export function latestSessionByUser(rows: SessionRow[]): Map<string, SessionRow> {
   const latest = new Map<string, SessionRow>();
   for (const row of rows) {
     if (isNegotiationSession(row.type)) continue;
+    if (!hasEvidence(row)) continue;
     const existing = latest.get(row.user_id);
     if (!existing || new Date(row.created_at).getTime() > new Date(existing.created_at).getTime()) {
       latest.set(row.user_id, row);

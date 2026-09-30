@@ -39,17 +39,36 @@ describe("extractEvidenceSkills", () => {
 describe("latestSessionByUser", () => {
   it("picks the most recent row per user id regardless of input order", () => {
     const rows = [
-      { user_id: "u1", created_at: "2026-01-01T00:00:00Z", report_json: { skills: [] } },
+      { user_id: "u1", created_at: "2026-01-01T00:00:00Z", report_json: { skills: [{ name: "Old", score: 40 }] } },
       { user_id: "u1", created_at: "2026-03-01T00:00:00Z", report_json: { skills: [{ name: "A", score: 1 }] } },
-      { user_id: "u2", created_at: "2026-02-01T00:00:00Z", report_json: {} },
     ];
     const latest = latestSessionByUser(rows);
     expect(latest.get("u1")?.created_at).toBe("2026-03-01T00:00:00Z");
-    expect(latest.get("u2")?.created_at).toBe("2026-02-01T00:00:00Z");
   });
 
   it("returns an empty map for no rows", () => {
     expect(latestSessionByUser([]).size).toBe(0);
+  });
+
+  it("skips a newer abandoned/incomplete session (no report_json skills) in favor of an older completed one", () => {
+    // B-EMP?: an in-progress or abandoned session gets a `sessions` row but
+    // never a scored report_json, so picking strictly by created_at would
+    // surface "no evidence" for a candidate who actually has a completed,
+    // scored session sitting further back in their history.
+    const rows = [
+      { user_id: "u1", created_at: "2026-03-01T00:00:00Z", report_json: {} },
+      { user_id: "u1", created_at: "2026-01-01T00:00:00Z", report_json: { skills: [{ name: "STAR structure", score: 70 }] } },
+    ];
+    const latest = latestSessionByUser(rows);
+    expect(latest.get("u1")?.created_at).toBe("2026-01-01T00:00:00Z");
+  });
+
+  it("returns no session for a user when every row lacks scored skills", () => {
+    const rows = [
+      { user_id: "u2", created_at: "2026-02-01T00:00:00Z", report_json: {} },
+      { user_id: "u2", created_at: "2026-01-01T00:00:00Z", report_json: null },
+    ];
+    expect(latestSessionByUser(rows).has("u2")).toBe(false);
   });
 
   it("skips a newer salary-negotiation session in favor of an older interview session", () => {
