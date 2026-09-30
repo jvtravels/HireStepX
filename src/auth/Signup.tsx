@@ -521,6 +521,7 @@ export default function Signup() {
                   aria-busy={resending || undefined}
                   style={{
                     width: "100%",
+                    height: "auto",
                     fontFamily: f.sans,
                     fontSize: 15,
                     fontWeight: 500,

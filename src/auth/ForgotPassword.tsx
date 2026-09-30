@@ -314,6 +314,7 @@ export default function ForgotPassword() {
                   aria-busy={resending || undefined}
                   style={{
                     width: "100%",
+                    height: "auto",
                     fontFamily: f.sans,
                     fontSize: 15,
                     fontWeight: 500,
@@ -530,6 +531,7 @@ export default function ForgotPassword() {
                         className="hsx-login-cta"
                         style={{
                           width: "100%",
+                          height: "auto",
                           fontFamily: f.sans,
                           fontSize: 15,
                           fontWeight: 600,
