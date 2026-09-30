@@ -15,6 +15,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import {
   PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
@@ -58,6 +59,7 @@ import { formatNumber } from "@/utils";
 
 const RECENT_SEARCHES_KEY = "hirestepx-employer-jobs-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
+const MotionTableRow = motion.create(TableRow);
 
 function loadRecentSearches(): string[] {
   try {
@@ -966,7 +968,7 @@ export default function EmployerJobsPage() {
                 </TableCell>
               </TableRow>
             )}
-            {pageRows.map((r) => {
+            {pageRows.map((r, rowIndex) => {
               const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
               const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
               const exp = experienceLabel(r);
@@ -974,8 +976,12 @@ export default function EmployerJobsPage() {
               const href = `/employer/requirements/${r.id}`;
               const isClosed = r.status === "closed";
               return (
-                <TableRow
+                <MotionTableRow
                   key={r.id}
+                  layout="position"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1], delay: rowIndex * 0.03 }}
                   onClick={() => router.push(href)}
                   onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
@@ -1121,7 +1127,7 @@ export default function EmployerJobsPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                </TableRow>
+                </MotionTableRow>
               );
             })}
           </TableBody>

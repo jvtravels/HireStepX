@@ -1,5 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon, ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -399,33 +400,52 @@ export function StageCell({
 
   if (frozen || !hasEvaluatedCandidates) {
     return (
-      <span
+      <motion.span
+        layout
+        animate={{ backgroundColor: background, color }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-          color, background, padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
+          padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
         }}
       >
-        <StageIcon size={11} className={!frozen && stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={stage}
+            initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: "inline-flex" }}
+          >
+            <StageIcon size={11} className={!frozen && stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+          </motion.span>
+        </AnimatePresence>
         {STAGE_LABEL[stage]}
-      </span>
+      </motion.span>
     );
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
+        <motion.button
           type="button"
+          layout
           onClick={(e) => e.stopPropagation()}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          animate={{ backgroundColor: background, color }}
+          transition={{ duration: 0.16, ease: [0.2, 0.7, 0.2, 1] }}
           style={{
             display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
-            color, background, padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
+            padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
           }}
         >
           <StageIcon size={11} aria-hidden="true" />
           {STAGE_LABEL[stage]}
           <ChevronDownIcon size={11} aria-hidden="true" />
-        </button>
+        </motion.button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {STAGE_OPTIONS.map((opt) => (
