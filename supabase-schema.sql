@@ -1803,9 +1803,16 @@ create policy "Candidates view own matches" on requirement_matches
 -- Exactly one of match_id (single-candidate unlock, ₹59) / match_ids
 -- (batch unlock, ₹299 for up to UNLOCK_BUNDLE_SIZE candidates in one
 -- Razorpay payment — see _unlock-pricing.ts) is set per row.
+-- match_id intentionally does NOT cascade-delete: this table is a financial
+-- audit trail (a real Razorpay payment happened), and re-running matching
+-- (runMatching() in employer-requirements.ts replaces requirement_matches
+-- rows) must never silently erase paid-for records just because the match
+-- row it referenced was replaced. `on delete set null` preserves the payment
+-- row — amount/employer/razorpay id all stay intact — and just drops the
+-- now-dangling pointer to the deleted match.
 create table if not exists employer_unlock_payments (
   id uuid primary key default gen_random_uuid(),
-  match_id uuid references requirement_matches(id) on delete cascade,
+  match_id uuid references requirement_matches(id) on delete set null,
   match_ids uuid[],
   employer_id uuid references employers(id) on delete cascade not null,
   razorpay_payment_id text unique not null,
@@ -1818,6 +1825,15 @@ create table if not exists employer_unlock_payments (
 );
 
 create index if not exists idx_employer_unlock_payments_employer on employer_unlock_payments(employer_id, created_at desc);
+
+-- Idempotent upgrade for existing installs created before the fix above:
+-- the FK was originally `on delete cascade`, which deleted payment records
+-- whenever a match row was replaced (e.g. by re-running matching). Repoint
+-- it at `on delete set null` without touching any existing data.
+alter table employer_unlock_payments drop constraint if exists employer_unlock_payments_match_id_fkey;
+alter table employer_unlock_payments
+  add constraint employer_unlock_payments_match_id_fkey
+  foreign key (match_id) references requirement_matches(id) on delete set null;
 
 alter table employer_unlock_payments enable row level security;
 
