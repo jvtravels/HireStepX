@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractResumeDetail } from "../../server-handlers/_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock } from "../../server-handlers/_resume-detail-helpers";
 
 describe("extractResumeDetail", () => {
   it("returns an empty detail for null/non-object input", () => {
@@ -61,5 +61,48 @@ describe("extractResumeDetail", () => {
     });
     expect(detail.experience).toEqual([{ title: "Designer", company: "X", period: "2020" }]);
     expect(detail.education).toEqual([{ degree: "B.Tech", school: "IIT", year: "2018" }]);
+  });
+});
+
+describe("redactResumeDetailForLock", () => {
+  it("strips every identity-bearing field while preserving fit signals", () => {
+    const detail = extractResumeDetail({
+      topSkills: ["Figma"],
+      summary: "Product Manager at Meesho, drives strategy for Valmo.",
+      headline: "Senior PM @ Meesho",
+      seniorityLevel: "Senior",
+      yearsExperience: 6,
+      keyAchievements: ["Led a 4-person team"],
+      industries: ["E-commerce"],
+      experiences: [{ title: "Product Manager", company: "Meesho", start: "2022", end: "Present" }],
+      noticePeriod: "30 days",
+      currentCtc: "₹22 LPA",
+    });
+
+    const redacted = redactResumeDetailForLock(detail);
+
+    expect(redacted.summary).toBe("");
+    expect(redacted.headline).toBeNull();
+    expect(redacted.keyAchievements).toEqual([]);
+    expect(redacted.certifications).toEqual([]);
+    expect(redacted.linkedin).toBeNull();
+    expect(redacted.phone).toBeNull();
+    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "", period: "2022 – Present" }]);
+    expect(redacted.seniorityLevel).toBe("Senior");
+    expect(redacted.yearsExperience).toBe(6);
+    expect(redacted.industries).toEqual(["E-commerce"]);
+    expect(redacted.noticePeriod).toBe("30 days");
+    expect(redacted.currentCtc).toBe("₹22 LPA");
+  });
+
+  it("blanks the school field in education entries without dropping degree/year", () => {
+    const detail = extractResumeDetail({
+      skills: [],
+      education: [{ degree: "B.Tech", school: "IIT Bombay", year: "2018" }],
+    });
+
+    const redacted = redactResumeDetailForLock(detail);
+
+    expect(redacted.education).toEqual([{ degree: "B.Tech", school: "", year: "2018" }]);
   });
 });

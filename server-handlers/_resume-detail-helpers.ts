@@ -34,6 +34,28 @@ export interface ResumeDetail {
   currentCtc: string | null;
 }
 
+/** A locked candidate's free-text resume fields routinely name their
+    current employer and team (e.g. "Product Manager at Meesho... drives
+    product strategy for Valmo") — enough to identify the specific person on
+    LinkedIn without paying the unlock fee. Redacting only phone/linkedin
+    left this wide open (C7). Strip every field that names an employer,
+    school, or reads as free-text prose, keeping only what's useful for
+    gauging fit: seniority, years of experience, industries, self-reported
+    notice period / CTC, and generic (title-only) work/education history. */
+export function redactResumeDetailForLock(detail: ResumeDetail): ResumeDetail {
+  return {
+    ...detail,
+    summary: "",
+    headline: null,
+    keyAchievements: [],
+    certifications: [],
+    experience: detail.experience.map((e) => ({ ...e, company: "" })),
+    education: detail.education.map((e) => ({ ...e, school: "" })),
+    linkedin: null,
+    phone: null,
+  };
+}
+
 function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : [];
 }
