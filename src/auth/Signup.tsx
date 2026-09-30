@@ -738,10 +738,12 @@ export default function Signup() {
                   aria-busy={googleInFlight ? "true" : "false"}
                   style={{
                     width: "100%",
+                    height: "auto",
                     fontFamily: f.sans,
                     fontSize: 15,
                     fontWeight: 500,
                     gap: 12,
+                    padding: "16px 18px",
                     boxShadow: shadows.card,
                     opacity: googleInFlight || loading ? 0.7 : 1,
                   }}
