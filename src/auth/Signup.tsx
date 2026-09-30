@@ -221,14 +221,6 @@ export default function Signup() {
 
   const handleGoogle = useCallback(async () => {
     if (googleInFlight || loading) return;
-    if (isEmployerFlow) {
-      setCompanyNameTouched(true);
-      if (!companyNameValid) {
-        setError("Enter your company name below, then continue with Google.");
-        return;
-      }
-      storePendingEmployerProfile(companyName);
-    }
     setGoogleInFlight(true);
     setError(null);
     trackAuth({ type: "login_method_selected", method: "google" });
@@ -265,7 +257,7 @@ export default function Signup() {
       clearTimeout(fallback);
     }
     if (isMounted.current) setGoogleInFlight(false);
-  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted, isEmployerFlow, companyName, companyNameValid]);
+  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -708,45 +700,49 @@ export default function Signup() {
             className="hsx-login-form"
             style={{ width: "100%", maxWidth: 540 }}
           >
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="hsx-login-google"
-              onClick={handleGoogle}
-              disabled={googleInFlight || loading}
-              aria-busy={googleInFlight ? "true" : "false"}
-              style={{
-                width: "100%",
-                fontFamily: f.sans,
-                fontSize: 15,
-                fontWeight: 500,
-                gap: 12,
-                boxShadow: shadows.card,
-                opacity: googleInFlight || loading ? 0.7 : 1,
-              }}
-            >
-              <GoogleIcon />
-              {googleInFlight ? "Opening Google…" : "Continue with Google"}
-            </Button>
+            {!isEmployerFlow && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="hsx-login-google"
+                  onClick={handleGoogle}
+                  disabled={googleInFlight || loading}
+                  aria-busy={googleInFlight ? "true" : "false"}
+                  style={{
+                    width: "100%",
+                    fontFamily: f.sans,
+                    fontSize: 15,
+                    fontWeight: 500,
+                    gap: 12,
+                    boxShadow: shadows.card,
+                    opacity: googleInFlight || loading ? 0.7 : 1,
+                  }}
+                >
+                  <GoogleIcon />
+                  {googleInFlight ? "Opening Google…" : "Continue with Google"}
+                </Button>
 
-            <div
-              className="hsx-login-divider"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                margin: "20px 0",
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-              <span
-                style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}
-              >
-                or
-              </span>
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-            </div>
+                <div
+                  className="hsx-login-divider"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    margin: "20px 0",
+                  }}
+                >
+                  <div style={{ flex: 1, height: 1, background: t.line }} />
+                  <span
+                    style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}
+                  >
+                    or
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: t.line }} />
+                </div>
+              </>
+            )}
 
             {error && (
               <div
