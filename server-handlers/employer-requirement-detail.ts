@@ -140,7 +140,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const matchesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at&order=match_score.desc`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at&order=match_score.desc,id.asc`,
       { headers: serviceHeaders() },
     );
     if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);

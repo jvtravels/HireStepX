@@ -153,7 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const matchesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,unlocked&order=match_score.desc`,
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,unlocked&order=match_score.desc,id.asc`,
         { headers: supabaseServiceHeaders() },
       );
       if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
