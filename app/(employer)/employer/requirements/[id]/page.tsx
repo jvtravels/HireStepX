@@ -739,16 +739,6 @@ export default function RequirementDetailPage() {
 
   return (
     <div>
-      {/* Mirrors the back-link on the candidate-detail page so both detail
-          surfaces share one breadcrumb language instead of a one-off pattern. */}
-      <Link
-        href="/employer/jobs"
-        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft, textDecoration: "none", marginBottom: 16 }}
-      >
-        <ChevronDownIcon size={14} style={{ transform: "rotate(90deg)" }} aria-hidden="true" />
-        Jobs
-      </Link>
-
       <Card>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>

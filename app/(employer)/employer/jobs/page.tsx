@@ -877,15 +877,26 @@ export default function EmployerJobsPage() {
         <Table aria-label="Posted jobs" className="table-fixed" style={{ minWidth: 1080 }}>
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="18%" minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
+              {/* Percentages deliberately sum to ~91%, not 100% — the
+                  remaining room goes to the fixed 56px actions column below.
+                  table-fixed treats a header row whose declared widths add
+                  up to more than the table's own width as ambiguous, and
+                  different browsers resolve that by cramming/truncating
+                  columns rather than reporting an error — so every column
+                  here (and the trailing icon-only one) has to fit inside a
+                  single, explicit 100% budget instead of each being sized
+                  in isolation. Department's share folds into Opportunity's
+                  when there's no department data to show, so a hidden
+                  column doesn't leave its space stranded. */}
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={`${hasAnyDepartment ? 19 : 27}%`} minWidth={210} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
               {hasAnyDepartment && (
-                <TableHead style={{ width: "10%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
+                <TableHead style={{ width: "8%", minWidth: 110, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
               )}
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
-                width="12%"
-                minWidth={130}
+                width="10%"
+                minWidth={150}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About stage">Where this posting is in your hiring pipeline — move it forward as you review candidates and interview.</HeadInfo>}
@@ -895,8 +906,8 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="matches"
                 columnLabel={COLUMN_LABEL.matches}
-                width="14%"
-                minWidth={140}
+                width="12%"
+                minWidth={160}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About AI Screening">How many candidates the AI has evaluated against this requirement, and the score range across them.</HeadInfo>}
@@ -906,24 +917,24 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width="12%"
-                minWidth={140}
+                width="10%"
+                minWidth={150}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average evidence score.</HeadInfo>}
               >
                 Top Matches
               </SortableHead>
-              <TableHead style={{ width: "11%", minWidth: 120, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
+              <TableHead style={{ width: "9%", minWidth: 140, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Strong Match
                   <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="8%" minWidth={130} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={130} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
-              <TableHead style={{ width: "48px", minWidth: 48 }} aria-hidden="true" />
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={110} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={120} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
+              <TableHead style={{ width: 56, minWidth: 56 }} aria-hidden="true" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1082,10 +1093,10 @@ export default function EmployerJobsPage() {
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <DueCell dueDate={r.dueDate} />
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                  <TableCell style={{ padding: "12px 10px", verticalAlign: "top", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label={`Actions for ${r.title}`} style={{ height: 44, width: 44, color: t.inkFaint }}>
+                        <Button variant="ghost" size="icon" aria-label={`Actions for ${r.title}`} style={{ height: 36, width: 36, color: t.inkFaint }}>
                           <MoreVerticalIcon size={16} aria-hidden="true" />
                         </Button>
                       </DropdownMenuTrigger>
