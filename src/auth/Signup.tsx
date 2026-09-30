@@ -144,12 +144,15 @@ export default function Signup() {
   const isEmployerFlow = !!nextParam?.startsWith("/employer");
 
   // Validation
+  // Employers don't give a personal name — the company name (below) doubles
+  // as the account's display name, so "Your name" is skipped entirely for
+  // that flow rather than just reordered.
   const nameV = validateName(name);
   const emailV = validateEmail(email);
   const passwordV = validateSignupPassword(password);
   const companyNameValid = !isEmployerFlow || companyName.trim().length >= 2;
   const canSubmit =
-    nameV.valid &&
+    (isEmployerFlow || nameV.valid) &&
     emailV.valid &&
     passwordV.valid &&
     companyNameValid &&
@@ -262,7 +265,7 @@ export default function Signup() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      setNameTouched(true);
+      if (!isEmployerFlow) setNameTouched(true);
       setEmailTouched(true);
       setPasswordTouched(true);
       setCompanyNameTouched(true);
@@ -327,7 +330,7 @@ export default function Signup() {
       trackAuth({ type: "login_submitted", method: "email" });
       const start = Date.now();
       try {
-        const result = await signup(cleanEmail, name.trim(), password);
+        const result = await signup(cleanEmail, isEmployerFlow ? companyName.trim() : name.trim(), password);
         if (!isMounted.current) return;
         if (!result.success) {
           setError(mapAuthError(result.error));
@@ -772,26 +775,49 @@ export default function Signup() {
               className="hsx-login-form-fields"
               style={{ display: "flex", flexDirection: "column", gap: 18 }}
             >
-              <Field
-                label="Your name"
-                type="text"
-                name="name"
-                value={name}
-                onChange={(v) => {
-                  setName(v);
-                  if (error) setError(null);
-                }}
-                onFocus={() => setNameTouched(true)}
-                onAutofill={() => setNameTouched(true)}
-                autoComplete="name"
-                placeholder="Rahul Sharma"
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus={shouldAutoFocus}
-                enterKeyHint="next"
-                maxLength={NAME_MAX_LENGTH}
-                invalid={!!error || (nameTouched && !!nameV.message)}
-                errorMessage={nameError}
-              />
+              {isEmployerFlow ? (
+                <Field
+                  label="Company name"
+                  type="text"
+                  name="company-name"
+                  value={companyName}
+                  onChange={(v) => {
+                    setCompanyName(v);
+                    if (error) setError(null);
+                  }}
+                  onFocus={() => setCompanyNameTouched(true)}
+                  onAutofill={() => setCompanyNameTouched(true)}
+                  autoComplete="organization"
+                  placeholder="Acme Pvt Ltd"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus={shouldAutoFocus}
+                  enterKeyHint="next"
+                  maxLength={COMPANY_NAME_MAX_LENGTH}
+                  invalid={!!error || (companyNameTouched && !companyNameValid)}
+                  errorMessage={companyNameError}
+                />
+              ) : (
+                <Field
+                  label="Your name"
+                  type="text"
+                  name="name"
+                  value={name}
+                  onChange={(v) => {
+                    setName(v);
+                    if (error) setError(null);
+                  }}
+                  onFocus={() => setNameTouched(true)}
+                  onAutofill={() => setNameTouched(true)}
+                  autoComplete="name"
+                  placeholder="Rahul Sharma"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus={shouldAutoFocus}
+                  enterKeyHint="next"
+                  maxLength={NAME_MAX_LENGTH}
+                  invalid={!!error || (nameTouched && !!nameV.message)}
+                  errorMessage={nameError}
+                />
+              )}
               <Field
                 label="Email Address"
                 type="email"
@@ -811,27 +837,6 @@ export default function Signup() {
                 invalid={!!error || (emailTouched && !!emailV.message)}
                 errorMessage={emailError}
               />
-
-              {isEmployerFlow && (
-                <Field
-                  label="Company name"
-                  type="text"
-                  name="company-name"
-                  value={companyName}
-                  onChange={(v) => {
-                    setCompanyName(v);
-                    if (error) setError(null);
-                  }}
-                  onFocus={() => setCompanyNameTouched(true)}
-                  onAutofill={() => setCompanyNameTouched(true)}
-                  autoComplete="organization"
-                  placeholder="Acme Pvt Ltd"
-                  enterKeyHint="next"
-                  maxLength={COMPANY_NAME_MAX_LENGTH}
-                  invalid={!!error || (companyNameTouched && !companyNameValid)}
-                  errorMessage={companyNameError}
-                />
-              )}
 
               {/* Email typo suggestion — shown when domain is within
                   edit-distance 1-2 of a common provider. Click to apply. */}
@@ -979,21 +984,20 @@ export default function Signup() {
 
 
               {(() => {
-                // Three states: enabled CTA, in-flight (loading), or
-                // ghost-disabled (something incomplete). The ghost treatment
-                // signals "no action available" without looking dimmed-active.
-                const isGhost = !canSubmit && !loading;
-                const tooltip = isGhost
-                  ? !nameV.valid
-                    ? "Enter your name to continue"
+                const primaryFieldInvalid = isEmployerFlow ? !companyNameValid : !nameV.valid;
+                const tooltip = canSubmit
+                  ? undefined
+                  : primaryFieldInvalid
+                    ? isEmployerFlow
+                      ? "Enter your company name to continue"
+                      : "Enter your name to continue"
                     : !emailV.valid
                       ? "Enter a valid email to continue"
                       : !passwordV.valid
                         ? "Choose a password that meets the requirements"
                         : !termsAccepted
                           ? "Accept the Terms to continue"
-                          : "Complete the form to continue"
-                  : undefined;
+                          : "Complete the form to continue";
                 return (
                   <Button
                     type="submit"
@@ -1008,22 +1012,15 @@ export default function Signup() {
                       fontFamily: f.sans,
                       fontSize: 15,
                       fontWeight: 600,
-                      color: isGhost ? t.inkFaint : t.cream,
-                      background: isGhost ? t.creamSoft : t.indigo,
-                      border: isGhost
-                        ? `1px solid ${t.line}`
-                        : "1px solid transparent",
                       borderRadius: 10,
                       padding: "16px 18px",
-                      cursor: canSubmit ? "pointer" : "not-allowed",
                       marginTop: 8,
-                      boxShadow: isGhost ? "none" : shadows.cta,
+                      boxShadow: shadows.cta,
                       letterSpacing: 0.1,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 10,
-                      opacity: loading ? 0.95 : 1,
                     }}
                   >
                     {loading ? (
@@ -1054,20 +1051,19 @@ export default function Signup() {
                   </Button>
                 );
               })()}
-              {/* Trust strip — mirrors homepage social proof, sets expectation before first session */}
-              <p
-                style={{
-                  margin: "12px 0 0",
-                  textAlign: "center",
-                  fontSize: 12,
-                  color: t.inkFaint,
-                  letterSpacing: "0.01em",
-                }}
-              >
-                {isEmployerFlow
-                  ? "Free to post and free to browse your shortlist"
-                  : "2 sessions free · No card needed"}
-              </p>
+              {!isEmployerFlow && (
+                <p
+                  style={{
+                    margin: "12px 0 0",
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: t.inkFaint,
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  2 sessions free · No card needed
+                </p>
+              )}
             </form>
           </div>
         </main>
