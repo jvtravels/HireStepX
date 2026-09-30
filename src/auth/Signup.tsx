@@ -669,17 +669,35 @@ export default function Signup() {
                 color: t.coal,
               }}
             >
-              Practise like the{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                real thing
-              </em>
-              .
+              {isEmployerFlow ? (
+                <>
+                  Hire on{" "}
+                  <em
+                    style={{
+                      fontStyle: "italic",
+                      fontWeight: 400,
+                      color: t.copper,
+                    }}
+                  >
+                    proof
+                  </em>
+                  , not promises.
+                </>
+              ) : (
+                <>
+                  Practise like the{" "}
+                  <em
+                    style={{
+                      fontStyle: "italic",
+                      fontWeight: 400,
+                      color: t.copper,
+                    }}
+                  >
+                    real thing
+                  </em>
+                  .
+                </>
+              )}
             </h1>
             <p
               className="hsx-login-subtitle"
@@ -694,7 +712,7 @@ export default function Signup() {
               }}
             >
               {isEmployerFlow
-                ? "Set up your company and post your first role in minutes."
+                ? "Post a role and meet AI-interviewed candidates — already scored and ranked."
                 : "Start practising. Improve with every answer. One step closer to your next interview."}
             </p>
           </div>
