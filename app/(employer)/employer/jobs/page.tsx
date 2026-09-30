@@ -330,7 +330,7 @@ function HeadInfo({ label, children }: { label: string; children: React.ReactNod
 }
 
 function DueCell({ dueDate }: { dueDate: string | null }) {
-  if (!dueDate) return <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>—</span>;
+  if (!dueDate) return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>;
   const left = daysUntil(dueDate);
   const tone: BadgeTone = left < 0 ? "error" : left <= 7 ? "warning" : "neutral";
   const label = left < 0 ? `${Math.abs(left)}d overdue` : left === 0 ? "Due today" : `${left}d left`;
@@ -353,9 +353,9 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
     score is shown under Top Matches instead, since strongAvgScore is the
     average across that same top-matches group. */
 function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
-  if (aiScreening.evaluated === 0) return <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>—</span>;
+  if (aiScreening.evaluated === 0) return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>;
   if (aiScreening.strongMatches.length === 0) {
-    return <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>;
+    return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>None yet</span>;
   }
   return (
     <HoverCard openDelay={150}>
@@ -874,7 +874,7 @@ export default function EmployerJobsPage() {
 
       <div style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
         <TooltipProvider delayDuration={200}>
-        <Table aria-label="Posted jobs" className="table-fixed" style={{ minWidth: 1080 }}>
+        <Table aria-label="Posted jobs" className="table-fixed" style={{ minWidth: 1400 }}>
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
               {/* Percentages deliberately sum to ~91%, not 100% — the
@@ -887,7 +887,10 @@ export default function EmployerJobsPage() {
                   single, explicit 100% budget instead of each being sized
                   in isolation. Department's share folds into Opportunity's
                   when there's no department data to show, so a hidden
-                  column doesn't leave its space stranded. */}
+                  column doesn't leave its space stranded. Experience and Due
+                  Date carry a wider minWidth (150px) than their % share
+                  alone would give them below ~1400px, so their header
+                  labels don't truncate under SortableHead's ellipsis. */}
               <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={`${hasAnyDepartment ? 19 : 27}%`} minWidth={210} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
               {hasAnyDepartment && (
                 <TableHead style={{ width: "8%", minWidth: 110, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
@@ -895,7 +898,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
-                width="10%"
+                width="9%"
                 minWidth={150}
                 sort={sort}
                 onSortChange={setSort}
@@ -906,7 +909,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="matches"
                 columnLabel={COLUMN_LABEL.matches}
-                width="12%"
+                width="11%"
                 minWidth={160}
                 sort={sort}
                 onSortChange={setSort}
@@ -917,7 +920,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width="10%"
+                width="9%"
                 minWidth={150}
                 sort={sort}
                 onSortChange={setSort}
@@ -931,9 +934,9 @@ export default function EmployerJobsPage() {
                   <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="7%" minWidth={110} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={150} sort={sort} onSortChange={setSort}>Experience</SortableHead>
               <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="8%" minWidth={120} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="9%" minWidth={150} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
               <TableHead style={{ width: 56, minWidth: 56 }} aria-hidden="true" />
             </TableRow>
           </TableHeader>
@@ -991,7 +994,7 @@ export default function EmployerJobsPage() {
                       {isClosed && <Badge tone="neutral">Closed</Badge>}
                     </div>
                     {(budget || jobType) && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, marginTop: 2 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 2 }}>
                         <span>{[budget, jobType].filter(Boolean).join(" · ")}</span>
                         {(r.durationWeeks != null || r.hoursPerWeek != null) && (
                           <Tooltip>
@@ -1032,7 +1035,7 @@ export default function EmployerJobsPage() {
                       {r.department ? (
                         <span style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.coal }}>{r.department}</span>
                       ) : (
-                        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>—</span>
+                        <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>
                       )}
                     </TableCell>
                   )}
@@ -1051,7 +1054,7 @@ export default function EmployerJobsPage() {
                         <Badge tone="brand">Finding candidates</Badge>
                       </div>
                     ) : r.aiScreening.evaluated === 0 ? (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>—</span>
+                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>
                     ) : (
                       <>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>
@@ -1059,7 +1062,7 @@ export default function EmployerJobsPage() {
                           {r.aiScreening.evaluated} evaluated
                         </div>
                         {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>
+                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 1 }}>
                             Score range {r.aiScreening.scoreLow}–{r.aiScreening.scoreHigh}%
                           </div>
                         )}
@@ -1068,27 +1071,27 @@ export default function EmployerJobsPage() {
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.aiScreening.evaluated === 0 ? (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>—</span>
+                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>
                     ) : r.aiScreening.topMatches > 0 ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                         <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
                         {r.aiScreening.strongAvgScore != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg evidence score</div>
+                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg evidence score</div>
                         )}
                       </div>
                     ) : (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>None yet</span>
+                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>None yet</span>
                     )}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StrongMatchCell aiScreening={r.aiScreening} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    {exp ? <Badge tone="info">{exp}</Badge> : <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>Any</span>}
+                    {exp ? <Badge tone="info">{exp}</Badge> : <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>Any</span>}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
-                    {mode && <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
+                    {mode && <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <DueCell dueDate={r.dueDate} />
