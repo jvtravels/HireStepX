@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -94,6 +95,15 @@ export default function AppShellFrame({
   breadcrumbRoot, pageLabel, isMobile, mainId, pageKey, banners, overlays, children,
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
+
+  /* The scrollable content div below persists across navigations (only the
+     `pageKey`-keyed child inside it remounts), so its scrollTop carries over
+     from whatever page the user last scrolled — a new page can open already
+     scrolled past its own header. Reset it whenever pageKey changes. */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [pageKey]);
 
   return (
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
@@ -266,7 +276,7 @@ export default function AppShellFrame({
           </Breadcrumb>
         </header>
 
-        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
+        <div ref={scrollRef} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
           {banners}
           <div key={pageKey ?? undefined} className="dash-page-enter" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
             {children}
