@@ -34,21 +34,17 @@ export interface ResumeDetail {
   currentCtc: string | null;
 }
 
-/** A locked candidate's free-text resume fields routinely name their
-    current employer and team (e.g. "Product Manager at Meesho... drives
-    product strategy for Valmo") — enough to identify the specific person on
-    LinkedIn without paying the unlock fee. Redacting only phone/linkedin
-    left this wide open (C7). Strip every field that names an employer,
-    school, or reads as free-text prose, keeping only what's useful for
-    gauging fit: seniority, years of experience, industries, self-reported
-    notice period / CTC, and generic (title-only) work/education history. */
+/** Locking a candidate hides only their contact details and identity —
+    summary, headline, achievements, certifications, seniority, industries,
+    and self-reported notice period / CTC all stay visible so an employer
+    has enough to get impressed and pay to unlock. What must never leak
+    pre-unlock is how to find the person outside HireStepX: phone/LinkedIn,
+    and the specific employer/school names in their work and education
+    history (C7 — a name like "Meesho" combined with a title is enough to
+    identify someone on LinkedIn for free). */
 export function redactResumeDetailForLock(detail: ResumeDetail): ResumeDetail {
   return {
     ...detail,
-    summary: "",
-    headline: null,
-    keyAchievements: [],
-    certifications: [],
     experience: detail.experience.map((e) => ({ ...e, company: "" })),
     education: detail.education.map((e) => ({ ...e, school: "" })),
     linkedin: null,

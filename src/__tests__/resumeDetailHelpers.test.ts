@@ -65,7 +65,7 @@ describe("extractResumeDetail", () => {
 });
 
 describe("redactResumeDetailForLock", () => {
-  it("strips every identity-bearing field while preserving fit signals", () => {
+  it("hides only contact details and employer/school names, keeping everything else visible to impress the employer", () => {
     const detail = extractResumeDetail({
       topSkills: ["Figma"],
       summary: "Product Manager at Meesho, drives strategy for Valmo.",
@@ -81,10 +81,9 @@ describe("redactResumeDetailForLock", () => {
 
     const redacted = redactResumeDetailForLock(detail);
 
-    expect(redacted.summary).toBe("");
-    expect(redacted.headline).toBeNull();
-    expect(redacted.keyAchievements).toEqual([]);
-    expect(redacted.certifications).toEqual([]);
+    expect(redacted.summary).toBe("Product Manager at Meesho, drives strategy for Valmo.");
+    expect(redacted.headline).toBe("Senior PM @ Meesho");
+    expect(redacted.keyAchievements).toEqual(["Led a 4-person team"]);
     expect(redacted.linkedin).toBeNull();
     expect(redacted.phone).toBeNull();
     expect(redacted.experience).toEqual([{ title: "Product Manager", company: "", period: "2022 – Present" }]);
@@ -93,6 +92,15 @@ describe("redactResumeDetailForLock", () => {
     expect(redacted.industries).toEqual(["E-commerce"]);
     expect(redacted.noticePeriod).toBe("30 days");
     expect(redacted.currentCtc).toBe("₹22 LPA");
+  });
+
+  it("keeps certifications visible", () => {
+    const detail = extractResumeDetail({
+      skills: [],
+      certifications: ["Google UX Design"],
+    });
+
+    expect(redactResumeDetailForLock(detail).certifications).toEqual(["Google UX Design"]);
   });
 
   it("blanks the school field in education entries without dropping degree/year", () => {
