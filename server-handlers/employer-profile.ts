@@ -67,10 +67,37 @@ function asString(v: unknown, max: number): string {
   return typeof v === "string" ? v.slice(0, max) : "";
 }
 
+/** Deletes a stale logo object from Storage. Best-effort: a failure here
+    just leaves an orphaned file behind, which is a storage-hygiene issue,
+    not a correctness one — it must never fail the profile submission that's
+    already succeeded. */
+async function deleteLogoIfDifferent(userId: string, oldPath: string | null, newPath: string): Promise<void> {
+  if (!oldPath || oldPath === newPath) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${LOGO_BUCKET}/${oldPath}`, {
+      method: "DELETE",
+      headers: serviceHeaders(),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      slog.error("employer-profile stale logo delete failed", { code: "employer_profile_logo_delete_failed", httpStatus: res.status, body: errText.slice(0, 200), userId });
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-profile stale logo delete threw", { code: "employer_profile_logo_delete_error", error: msg.slice(0, 200), userId });
+  }
+}
+
 /** Uploads an optional logo to Storage and returns its bucket path, or null
     if no logo was submitted. Failures here are logged but never block the
     company-profile submission — a logo is a nice-to-have, not a requirement
-    for the approval flow. */
+    for the approval flow.
+    The storage path is derived from the content type's extension
+    (`<userId>/logo.<ext>`), so re-uploading in a different format (e.g. a
+    PNG replacing a previously-uploaded JPG) writes to a NEW path — `x-upsert`
+    only overwrites an exact path match, so the old file would otherwise be
+    left behind forever as an orphan. Callers must delete the previous
+    logo_path once the new one is persisted; see deleteLogoIfDifferent(). */
 async function uploadLogoIfPresent(userId: string, body: SubmitBody): Promise<string | null> {
   const logoBase64 = typeof body.logoBase64 === "string" ? body.logoBase64 : "";
   if (!logoBase64) return null;
@@ -206,6 +233,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const uploadedLogoPath = await uploadLogoIfPresent(userId, body);
     const existing = await fetchEmployer(userId);
     const logoPath = uploadedLogoPath ?? existing?.logo_path ?? null;
+    if (uploadedLogoPath) {
+      await deleteLogoIfDifferent(userId, existing?.logo_path ?? null, uploadedLogoPath);
+    }
     // A rejected employer resubmitting stays rejected — admin moderation
     // decides re-approval, this endpoint doesn't get to self-approve (C5).
     const status = existing?.status === "rejected" ? "rejected" : "approved";
