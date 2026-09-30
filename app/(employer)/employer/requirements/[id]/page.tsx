@@ -669,7 +669,6 @@ export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
   const {
     fetchRequirementDetail,
-    updateRequirement,
     updateRequirementStage,
     updateCandidateStatus,
     archiveRequirement,
@@ -691,9 +690,6 @@ export default function RequirementDetailPage() {
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("match");
-  const [extendOpen, setExtendOpen] = useState(false);
-  const [extendDate, setExtendDate] = useState("");
-  const [extendSaving, setExtendSaving] = useState(false);
   const [pipelineFilter, setPipelineFilter] = useState<"all" | "interviewing" | "hired">("all");
   const [evidenceMatchId, setEvidenceMatchId] = useState<string | null>(null);
   const [undoBanner, setUndoBanner] = useState<{ message: string; run: () => void } | null>(null);
@@ -907,44 +903,6 @@ export default function RequirementDetailPage() {
     }
   };
 
-  const openExtendDeadline = () => {
-    setExtendDate(requirement.dueDate || "");
-    setExtendOpen(true);
-  };
-
-  const handleExtendDeadline = async () => {
-    if (!extendDate) return;
-    setExtendSaving(true);
-    const ok = await updateRequirement(requirement.id, {
-      title: requirement.title,
-      locations: requirement.locations.length > 0 ? requirement.locations : [requirement.location],
-      noticePeriodPref: requirement.noticePeriodPref,
-      description: requirement.description,
-      experienceMin: requirement.experienceMin ?? undefined,
-      experienceMax: requirement.experienceMax ?? undefined,
-      dueDate: extendDate,
-      budgetMin: requirement.budgetMin ?? undefined,
-      budgetMax: requirement.budgetMax ?? undefined,
-      openPositions: requirement.openPositions ?? undefined,
-      workMode: requirement.workMode ?? undefined,
-      employmentType: requirement.employmentType ?? undefined,
-      skills: requirement.skills,
-      responsibilities: requirement.responsibilities,
-      niceToHave: requirement.niceToHave,
-      preferredIndustry: requirement.preferredIndustry,
-      preferredColleges: requirement.preferredColleges,
-      targetCompanies: requirement.targetCompanies,
-      perksAndBenefits: requirement.perksAndBenefits,
-    });
-    setExtendSaving(false);
-    if (ok) {
-      toast("Deadline updated — re-matching candidates", "success");
-      setExtendOpen(false);
-      load();
-    } else {
-      toast("Couldn't update the deadline — please try again", "error");
-    }
-  };
 
   const handleArchive = async () => {
     setArchiveSaving(true);
@@ -1014,24 +972,6 @@ export default function RequirementDetailPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             {requirement.status !== "closed" && (
               <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={openExtendDeadline}
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: t.indigo,
-                    background: "none",
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                    height: "auto",
-                  }}
-                >
-                  Extend deadline
-                </Button>
                 <Link
                   href={`/employer/requirements/${requirement.id}/edit`}
                   style={{
@@ -1112,33 +1052,6 @@ export default function RequirementDetailPage() {
             <StatusChip status={requirement.status} />
           </div>
         </div>
-
-        <Dialog open={extendOpen} onOpenChange={setExtendOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Extend deadline</DialogTitle>
-              <DialogDescription>
-                Pick a new due date for &ldquo;{requirement.title}&rdquo;. Candidates will be re-scored once it&apos;s saved.
-              </DialogDescription>
-            </DialogHeader>
-            <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
-              <Label htmlFor="extend-due-date">New due date</Label>
-              <Input
-                id="extend-due-date"
-                type="date"
-                value={extendDate}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setExtendDate(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <OutlineCta onClick={() => setExtendOpen(false)}>Cancel</OutlineCta>
-              <PrimaryCta onClick={handleExtendDeadline} disabled={!extendDate || extendSaving}>
-                {extendSaving ? "Saving…" : "Save new deadline"}
-              </PrimaryCta>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={archiveOpen} onOpenChange={(open) => { if (!archiveSaving) setArchiveOpen(open); }}>
           <DialogContent>
