@@ -227,24 +227,24 @@ function clearPendingReferralCode(): void {
 }
 
 /* ─── Employer company-profile capture/apply ───
-   An employer signs up at /signup?next=/employer with company name + website
-   entered right on the signup form (see src/auth/Signup.tsx) — there's no
-   session yet to authenticate the /api/employer-profile call with, so the
-   values are stashed here and applied once a real session exists, same
-   pattern as the referral code above. */
+   An employer signs up at /signup?next=/employer with just their company
+   name entered right on the signup form (see src/auth/Signup.tsx) — there's
+   no session yet to authenticate the /api/employer-profile call with, so the
+   value is stashed here and applied once a real session exists, same
+   pattern as the referral code above. Website is collected later, in
+   Settings, if the employer wants it on record. */
 const PENDING_EMPLOYER_PROFILE_KEY = "hirestepx_pending_employer_profile";
 
-interface PendingEmployerProfile { companyName: string; website: string }
+interface PendingEmployerProfile { companyName: string }
 
-/** Stash company name + website from the employer signup form for later
- *  application. No-ops if either is blank. Exported for Signup.tsx to call
- *  right before submitting the signup form. */
-export function storePendingEmployerProfile(companyName: string, website: string): void {
+/** Stash the company name from the employer signup form for later
+ *  application. No-ops if blank. Exported for Signup.tsx to call right
+ *  before submitting the signup form. */
+export function storePendingEmployerProfile(companyName: string): void {
   const name = companyName.trim();
-  const site = website.trim();
-  if (!name || !site) return;
+  if (!name) return;
   try {
-    localStorage.setItem(PENDING_EMPLOYER_PROFILE_KEY, JSON.stringify({ companyName: name, website: site }));
+    localStorage.setItem(PENDING_EMPLOYER_PROFILE_KEY, JSON.stringify({ companyName: name }));
   } catch { /* expected */ }
 }
 
@@ -255,8 +255,7 @@ function readPendingEmployerProfile(): PendingEmployerProfile | null {
     const parsed = JSON.parse(raw) as unknown;
     if (
       typeof parsed === "object" && parsed !== null &&
-      typeof (parsed as PendingEmployerProfile).companyName === "string" &&
-      typeof (parsed as PendingEmployerProfile).website === "string"
+      typeof (parsed as PendingEmployerProfile).companyName === "string"
     ) {
       return parsed as PendingEmployerProfile;
     }
@@ -353,7 +352,7 @@ async function applyPendingEmployerProfile(accessToken: string): Promise<void> {
     const res = await fetch("/api/employer-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify({ companyName: pending.companyName, website: pending.website }),
+      body: JSON.stringify({ companyName: pending.companyName }),
     });
     if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingEmployerProfile();
   } catch {

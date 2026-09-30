@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth, storePendingReferralCode, storePendingNextTarget, storePendingEmployerProfile } from "../AuthContext";
-import { isPlausibleWebsite } from "../employer/_companyProfileHelpers";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -56,7 +55,6 @@ const NAME_MAX_LENGTH = 40;
 const EMAIL_MAX_LENGTH = 254;
 const PASSWORD_MAX_LENGTH = 128;
 const COMPANY_NAME_MAX_LENGTH = 200;
-const COMPANY_WEBSITE_MAX_LENGTH = 300;
 
 export default function Signup() {
   const router = useRouter();
@@ -67,7 +65,6 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [companyWebsite, setCompanyWebsite] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsAttempted, setTermsAttempted] = useState(false);
@@ -75,7 +72,6 @@ export default function Signup() {
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [companyNameTouched, setCompanyNameTouched] = useState(false);
-  const [companyWebsiteTouched, setCompanyWebsiteTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleInFlight, setGoogleInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,13 +148,11 @@ export default function Signup() {
   const emailV = validateEmail(email);
   const passwordV = validateSignupPassword(password);
   const companyNameValid = !isEmployerFlow || companyName.trim().length >= 2;
-  const companyWebsiteValid = !isEmployerFlow || isPlausibleWebsite(companyWebsite);
   const canSubmit =
     nameV.valid &&
     emailV.valid &&
     passwordV.valid &&
     companyNameValid &&
-    companyWebsiteValid &&
     termsAccepted &&
     !loading;
 
@@ -172,10 +166,6 @@ export default function Signup() {
     : null;
   const companyNameError =
     companyNameTouched && !companyNameValid ? "Enter your company's name." : null;
-  const companyWebsiteError =
-    companyWebsiteTouched && !companyWebsiteValid
-      ? "Enter a full website URL, e.g. https://acme.com"
-      : null;
 
   const computeRedirect = useCallback(
     () =>
@@ -233,12 +223,11 @@ export default function Signup() {
     if (googleInFlight || loading) return;
     if (isEmployerFlow) {
       setCompanyNameTouched(true);
-      setCompanyWebsiteTouched(true);
-      if (!companyNameValid || !companyWebsiteValid) {
-        setError("Fill in your company details below, then continue with Google.");
+      if (!companyNameValid) {
+        setError("Enter your company name below, then continue with Google.");
         return;
       }
-      storePendingEmployerProfile(companyName, companyWebsite);
+      storePendingEmployerProfile(companyName);
     }
     setGoogleInFlight(true);
     setError(null);
@@ -276,7 +265,7 @@ export default function Signup() {
       clearTimeout(fallback);
     }
     if (isMounted.current) setGoogleInFlight(false);
-  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted, isEmployerFlow, companyName, companyWebsite, companyNameValid, companyWebsiteValid]);
+  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted, isEmployerFlow, companyName, companyNameValid]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -285,7 +274,6 @@ export default function Signup() {
       setEmailTouched(true);
       setPasswordTouched(true);
       setCompanyNameTouched(true);
-      setCompanyWebsiteTouched(true);
       setTermsAttempted(true);
       // Honeypot trip — silently no-op + fake success so bots get nothing
       // useful back. Don't even fire analytics — these aren't real submits.
@@ -341,7 +329,7 @@ export default function Signup() {
 
       const cleanEmail = sanitizeEmail(email);
       if (isEmployerFlow) {
-        storePendingEmployerProfile(companyName, companyWebsite);
+        storePendingEmployerProfile(companyName);
       }
       trackAuth({ type: "login_method_selected", method: "email" });
       trackAuth({ type: "login_submitted", method: "email" });
@@ -376,7 +364,7 @@ export default function Signup() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, companyWebsite],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName],
   );
 
   const handlePasswordVisibility = () => {
@@ -829,45 +817,24 @@ export default function Signup() {
               />
 
               {isEmployerFlow && (
-                <>
-                  <Field
-                    label="Company name"
-                    type="text"
-                    name="company-name"
-                    value={companyName}
-                    onChange={(v) => {
-                      setCompanyName(v);
-                      if (error) setError(null);
-                    }}
-                    onFocus={() => setCompanyNameTouched(true)}
-                    onAutofill={() => setCompanyNameTouched(true)}
-                    autoComplete="organization"
-                    placeholder="Acme Pvt Ltd"
-                    enterKeyHint="next"
-                    maxLength={COMPANY_NAME_MAX_LENGTH}
-                    invalid={!!error || (companyNameTouched && !companyNameValid)}
-                    errorMessage={companyNameError}
-                  />
-                  <Field
-                    label="Company website"
-                    type="text"
-                    name="company-website"
-                    value={companyWebsite}
-                    onChange={(v) => {
-                      setCompanyWebsite(v);
-                      if (error) setError(null);
-                    }}
-                    onFocus={() => setCompanyWebsiteTouched(true)}
-                    onAutofill={() => setCompanyWebsiteTouched(true)}
-                    autoComplete="url"
-                    placeholder="https://acme.com"
-                    inputMode="url"
-                    enterKeyHint="next"
-                    maxLength={COMPANY_WEBSITE_MAX_LENGTH}
-                    invalid={!!error || (companyWebsiteTouched && !companyWebsiteValid)}
-                    errorMessage={companyWebsiteError}
-                  />
-                </>
+                <Field
+                  label="Company name"
+                  type="text"
+                  name="company-name"
+                  value={companyName}
+                  onChange={(v) => {
+                    setCompanyName(v);
+                    if (error) setError(null);
+                  }}
+                  onFocus={() => setCompanyNameTouched(true)}
+                  onAutofill={() => setCompanyNameTouched(true)}
+                  autoComplete="organization"
+                  placeholder="Acme Pvt Ltd"
+                  enterKeyHint="next"
+                  maxLength={COMPANY_NAME_MAX_LENGTH}
+                  invalid={!!error || (companyNameTouched && !companyNameValid)}
+                  errorMessage={companyNameError}
+                />
               )}
 
               {/* Email typo suggestion — shown when domain is within

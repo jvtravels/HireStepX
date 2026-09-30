@@ -198,8 +198,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const website = asString(body.website, 300);
   const gstin = asString(body.gstin, 20);
 
-  if (companyName.length < 2 || website.length < 3) {
-    return new Response(JSON.stringify({ error: "companyName and website are required" }), { status: 400, headers });
+  if (companyName.length < 2) {
+    return new Response(JSON.stringify({ error: "companyName is required" }), { status: 400, headers });
   }
 
   try {
