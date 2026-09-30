@@ -93,8 +93,8 @@ describe("classifyRequirementStatus", () => {
     expect(classifyRequirementStatus([{ matchScore: 88 }, { matchScore: 92 }, { matchScore: 90 }])).toBe("ready");
   });
 
-  it("does not count sub-85 scores as strong", () => {
-    expect(classifyRequirementStatus([{ matchScore: 84 }, { matchScore: 10 }])).toBe("zero");
+  it("returns partial, not zero, when matches exist but none are strong", () => {
+    expect(classifyRequirementStatus([{ matchScore: 84 }, { matchScore: 55 }])).toBe("partial");
   });
 });
 

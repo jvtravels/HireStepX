@@ -162,12 +162,18 @@ export type RequirementMatchStatus = "ready" | "partial" | "zero";
     colors as merely "fair" is the exact bug this constant exists to avoid. */
 export const STRONG_MATCH_THRESHOLD = 85;
 
-/** Classifies the overall requirement outcome from its scored candidates. */
+/** Classifies the overall requirement outcome from its scored candidates.
+    `matches` is expected to already be floor-filtered (rankAndCap), so
+    "zero" means literally no candidate cleared that floor — not merely
+    "no strong (85+) match" — otherwise a requirement with several real,
+    reviewable 40-84 matches gets mislabeled "zero" and the employer UI
+    (which keys the candidates table's visibility off this status) hides
+    a non-empty shortlist entirely. */
 export function classifyRequirementStatus(matches: Array<{ matchScore: number }>): RequirementMatchStatus {
+  if (matches.length === 0) return "zero";
   const strong = matches.filter((m) => m.matchScore >= STRONG_MATCH_THRESHOLD).length;
   if (strong >= 3) return "ready";
-  if (strong >= 1) return "partial";
-  return "zero";
+  return "partial";
 }
 
 /** Keeps only candidates worth surfacing, ranked best first, capped so a
