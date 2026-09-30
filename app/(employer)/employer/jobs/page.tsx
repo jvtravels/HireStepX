@@ -874,32 +874,30 @@ export default function EmployerJobsPage() {
 
       <div style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
         <TooltipProvider delayDuration={200}>
-        <Table aria-label="Posted jobs" className="table-fixed" style={{ minWidth: 1400 }}>
+        <Table aria-label="Posted jobs" className="table-fixed" style={{ minWidth: hasAnyDepartment ? 1606 : 1596 }}>
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-              {/* Percentages deliberately sum to ~91%, not 100% — the
-                  remaining room goes to the fixed 56px actions column below.
-                  table-fixed treats a header row whose declared widths add
-                  up to more than the table's own width as ambiguous, and
-                  different browsers resolve that by cramming/truncating
-                  columns rather than reporting an error — so every column
-                  here (and the trailing icon-only one) has to fit inside a
-                  single, explicit 100% budget instead of each being sized
-                  in isolation. Department's share folds into Opportunity's
-                  when there's no department data to show, so a hidden
-                  column doesn't leave its space stranded. Experience and Due
-                  Date carry a wider minWidth (150px) than their % share
-                  alone would give them below ~1400px, so their header
-                  labels don't truncate under SortableHead's ellipsis. */}
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={`${hasAnyDepartment ? 19 : 27}%`} minWidth={210} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
+              {/* table-fixed computes column widths from these first-row
+                  declarations — but per-cell minWidth is NOT a reliable
+                  floor when a column's own width is a percentage: Chrome
+                  resolves the percentage against the table's rendered width
+                  and can land below minWidth, silently truncating
+                  SortableHead's ellipsis'd label (confirmed in production —
+                  "AI Screening"/"Top Matches"/"Location"/"Due Date" all
+                  clipped at typical viewport widths despite generous
+                  minWidth). Fixed pixel widths don't have that ambiguity:
+                  table-fixed honors them exactly, so every label gets
+                  guaranteed room regardless of viewport. Opportunity
+                  absorbs Department's pixels when there's no department
+                  data to show, so hidden-column space isn't stranded. */}
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={hasAnyDepartment ? 280 : 400} minWidth={210} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
               {hasAnyDepartment && (
-                <TableHead style={{ width: "8%", minWidth: 110, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
+                <TableHead style={{ width: 130, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
               )}
               <SortableHead
                 column="stage"
                 columnLabel={COLUMN_LABEL.stage}
-                width="9%"
-                minWidth={150}
+                width={180}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About stage">Where this posting is in your hiring pipeline — move it forward as you review candidates and interview.</HeadInfo>}
@@ -909,8 +907,7 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="matches"
                 columnLabel={COLUMN_LABEL.matches}
-                width="11%"
-                minWidth={160}
+                width={190}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About AI Screening">How many candidates the AI has evaluated against this requirement, and the score range across them.</HeadInfo>}
@@ -920,23 +917,22 @@ export default function EmployerJobsPage() {
               <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width="9%"
-                minWidth={150}
+                width={190}
                 sort={sort}
                 onSortChange={setSort}
                 after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average evidence score.</HeadInfo>}
               >
                 Top Matches
               </SortableHead>
-              <TableHead style={{ width: "9%", minWidth: 140, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
+              <TableHead style={{ width: 160, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Strong Match
                   <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
-              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={150} sort={sort} onSortChange={setSort}>Experience</SortableHead>
-              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width="9%" minWidth={150} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
+              <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width={140} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+              <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width={140} sort={sort} onSortChange={setSort}>Location</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width={140} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
               <TableHead style={{ width: 56, minWidth: 56 }} aria-hidden="true" />
             </TableRow>
           </TableHeader>
