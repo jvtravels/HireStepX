@@ -226,6 +226,48 @@ function clearPendingReferralCode(): void {
   try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch { /* expected */ }
 }
 
+/* ─── Employer company-profile capture/apply ───
+   An employer signs up at /signup?next=/employer with company name + website
+   entered right on the signup form (see src/auth/Signup.tsx) — there's no
+   session yet to authenticate the /api/employer-profile call with, so the
+   values are stashed here and applied once a real session exists, same
+   pattern as the referral code above. */
+const PENDING_EMPLOYER_PROFILE_KEY = "hirestepx_pending_employer_profile";
+
+interface PendingEmployerProfile { companyName: string; website: string }
+
+/** Stash company name + website from the employer signup form for later
+ *  application. No-ops if either is blank. Exported for Signup.tsx to call
+ *  right before submitting the signup form. */
+export function storePendingEmployerProfile(companyName: string, website: string): void {
+  const name = companyName.trim();
+  const site = website.trim();
+  if (!name || !site) return;
+  try {
+    localStorage.setItem(PENDING_EMPLOYER_PROFILE_KEY, JSON.stringify({ companyName: name, website: site }));
+  } catch { /* expected */ }
+}
+
+function readPendingEmployerProfile(): PendingEmployerProfile | null {
+  try {
+    const raw = localStorage.getItem(PENDING_EMPLOYER_PROFILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      typeof parsed === "object" && parsed !== null &&
+      typeof (parsed as PendingEmployerProfile).companyName === "string" &&
+      typeof (parsed as PendingEmployerProfile).website === "string"
+    ) {
+      return parsed as PendingEmployerProfile;
+    }
+    return null;
+  } catch { return null; }
+}
+
+function clearPendingEmployerProfile(): void {
+  try { localStorage.removeItem(PENDING_EMPLOYER_PROFILE_KEY); } catch { /* expected */ }
+}
+
 /* ─── Deferred-onboarding redirect (SEO signups only) ───
    Salary/questions SEO CTAs append ?next=/interview so that cohort can reach
    a session immediately after verifying instead of being forced through
@@ -296,6 +338,26 @@ async function applyPendingReferral(accessToken: string): Promise<void> {
     if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingReferralCode();
   } catch {
     /* transient — keep the pending code for the next SIGNED_IN */
+  }
+}
+
+/** Apply a captured employer company profile now that we have an
+ *  authenticated session — closes the "sign up as an employer" loop so a
+ *  new employer lands straight on an already-approved /employer dashboard
+ *  instead of the CompanyOnboarding form. Fire-and-forget, same
+ *  keep-on-5xx/clear-on-definitive-outcome shape as applyPendingReferral. */
+async function applyPendingEmployerProfile(accessToken: string): Promise<void> {
+  const pending = readPendingEmployerProfile();
+  if (!pending) return;
+  try {
+    const res = await fetch("/api/employer-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ companyName: pending.companyName, website: pending.website }),
+    });
+    if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingEmployerProfile();
+  } catch {
+    /* transient — keep the pending profile for the next SIGNED_IN */
   }
 }
 
@@ -1140,6 +1202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fire-and-forget; the server is idempotent for re-applies.
           if (session.access_token) {
             void applyPendingReferral(session.access_token);
+            void applyPendingEmployerProfile(session.access_token);
           }
           try {
             // Same connection-aware timeout guard as the restore path

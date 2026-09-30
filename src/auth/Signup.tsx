@@ -6,7 +6,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuth, storePendingReferralCode, storePendingNextTarget } from "../AuthContext";
+import { useAuth, storePendingReferralCode, storePendingNextTarget, storePendingEmployerProfile } from "../AuthContext";
+import { isPlausibleWebsite } from "../employer/_companyProfileHelpers";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -54,6 +55,8 @@ const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
 const NAME_MAX_LENGTH = 40;
 const EMAIL_MAX_LENGTH = 254;
 const PASSWORD_MAX_LENGTH = 128;
+const COMPANY_NAME_MAX_LENGTH = 200;
+const COMPANY_WEBSITE_MAX_LENGTH = 300;
 
 export default function Signup() {
   const router = useRouter();
@@ -63,12 +66,16 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsAttempted, setTermsAttempted] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [companyNameTouched, setCompanyNameTouched] = useState(false);
+  const [companyWebsiteTouched, setCompanyWebsiteTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleInFlight, setGoogleInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,14 +137,28 @@ export default function Signup() {
     }
   }, [resendCooldown, resending, email, name, isMounted]);
 
+  // Plan + redirect param preservation
+  const planParam = searchParams?.get("plan") ?? null;
+  const nextParam = searchParams?.get("next") ?? null;
+  // An employer reaches /signup via /login?next=/employer → "Sign up", or the
+  // homepage nav's employer-context links — same signal Login.tsx uses for
+  // its own copy swap. Collecting the company name (+ website) right here
+  // means a new employer lands on an already-approved dashboard instead of
+  // the separate CompanyOnboarding step after signup.
+  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+
   // Validation
   const nameV = validateName(name);
   const emailV = validateEmail(email);
   const passwordV = validateSignupPassword(password);
+  const companyNameValid = !isEmployerFlow || companyName.trim().length >= 2;
+  const companyWebsiteValid = !isEmployerFlow || isPlausibleWebsite(companyWebsite);
   const canSubmit =
     nameV.valid &&
     emailV.valid &&
     passwordV.valid &&
+    companyNameValid &&
+    companyWebsiteValid &&
     termsAccepted &&
     !loading;
 
@@ -149,10 +170,12 @@ export default function Signup() {
         ? "Password has leading or trailing spaces — check your paste."
         : null)
     : null;
-
-  // Plan + redirect param preservation
-  const planParam = searchParams?.get("plan") ?? null;
-  const nextParam = searchParams?.get("next") ?? null;
+  const companyNameError =
+    companyNameTouched && !companyNameValid ? "Enter your company's name." : null;
+  const companyWebsiteError =
+    companyWebsiteTouched && !companyWebsiteValid
+      ? "Enter a full website URL, e.g. https://acme.com"
+      : null;
 
   const computeRedirect = useCallback(
     () =>
@@ -208,6 +231,15 @@ export default function Signup() {
 
   const handleGoogle = useCallback(async () => {
     if (googleInFlight || loading) return;
+    if (isEmployerFlow) {
+      setCompanyNameTouched(true);
+      setCompanyWebsiteTouched(true);
+      if (!companyNameValid || !companyWebsiteValid) {
+        setError("Fill in your company details below, then continue with Google.");
+        return;
+      }
+      storePendingEmployerProfile(companyName, companyWebsite);
+    }
     setGoogleInFlight(true);
     setError(null);
     trackAuth({ type: "login_method_selected", method: "google" });
@@ -244,7 +276,7 @@ export default function Signup() {
       clearTimeout(fallback);
     }
     if (isMounted.current) setGoogleInFlight(false);
-  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted]);
+  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted, isEmployerFlow, companyName, companyWebsite, companyNameValid, companyWebsiteValid]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -252,6 +284,8 @@ export default function Signup() {
       setNameTouched(true);
       setEmailTouched(true);
       setPasswordTouched(true);
+      setCompanyNameTouched(true);
+      setCompanyWebsiteTouched(true);
       setTermsAttempted(true);
       // Honeypot trip — silently no-op + fake success so bots get nothing
       // useful back. Don't even fire analytics — these aren't real submits.
@@ -306,6 +340,9 @@ export default function Signup() {
       // disposable-email blocklist.
 
       const cleanEmail = sanitizeEmail(email);
+      if (isEmployerFlow) {
+        storePendingEmployerProfile(companyName, companyWebsite);
+      }
       trackAuth({ type: "login_method_selected", method: "email" });
       trackAuth({ type: "login_submitted", method: "email" });
       const start = Date.now();
@@ -339,7 +376,7 @@ export default function Signup() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, companyWebsite],
   );
 
   const handlePasswordVisibility = () => {
@@ -673,8 +710,9 @@ export default function Signup() {
                 textWrap: "balance",
               }}
             >
-              Start practising. Improve with every answer. One step closer to
-              your next interview.
+              {isEmployerFlow
+                ? "Set up your company and post your first role in minutes."
+                : "Start practising. Improve with every answer. One step closer to your next interview."}
             </p>
           </div>
 
@@ -789,6 +827,48 @@ export default function Signup() {
                 invalid={!!error || (emailTouched && !!emailV.message)}
                 errorMessage={emailError}
               />
+
+              {isEmployerFlow && (
+                <>
+                  <Field
+                    label="Company name"
+                    type="text"
+                    name="company-name"
+                    value={companyName}
+                    onChange={(v) => {
+                      setCompanyName(v);
+                      if (error) setError(null);
+                    }}
+                    onFocus={() => setCompanyNameTouched(true)}
+                    onAutofill={() => setCompanyNameTouched(true)}
+                    autoComplete="organization"
+                    placeholder="Acme Pvt Ltd"
+                    enterKeyHint="next"
+                    maxLength={COMPANY_NAME_MAX_LENGTH}
+                    invalid={!!error || (companyNameTouched && !companyNameValid)}
+                    errorMessage={companyNameError}
+                  />
+                  <Field
+                    label="Company website"
+                    type="text"
+                    name="company-website"
+                    value={companyWebsite}
+                    onChange={(v) => {
+                      setCompanyWebsite(v);
+                      if (error) setError(null);
+                    }}
+                    onFocus={() => setCompanyWebsiteTouched(true)}
+                    onAutofill={() => setCompanyWebsiteTouched(true)}
+                    autoComplete="url"
+                    placeholder="https://acme.com"
+                    inputMode="url"
+                    enterKeyHint="next"
+                    maxLength={COMPANY_WEBSITE_MAX_LENGTH}
+                    invalid={!!error || (companyWebsiteTouched && !companyWebsiteValid)}
+                    errorMessage={companyWebsiteError}
+                  />
+                </>
+              )}
 
               {/* Email typo suggestion — shown when domain is within
                   edit-distance 1-2 of a common provider. Click to apply. */}
@@ -990,7 +1070,7 @@ export default function Signup() {
                       </>
                     ) : (
                       <>
-                        Start practising free
+                        {isEmployerFlow ? "Create company account" : "Start practising free"}
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"
@@ -1021,7 +1101,9 @@ export default function Signup() {
                   letterSpacing: "0.01em",
                 }}
               >
-                2 sessions free · No card needed
+                {isEmployerFlow
+                  ? "Free to post and free to browse your shortlist"
+                  : "2 sessions free · No card needed"}
               </p>
             </form>
           </div>
