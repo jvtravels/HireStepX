@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronDownIcon, LockIcon, RefreshCwIcon, AlertTriangleIcon, ClockIcon, BuildingIcon } from "lucide-react";
-import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
+import { ChevronDownIcon, LockIcon, RefreshCwIcon, AlertTriangleIcon, ClockIcon, BuildingIcon, ArchiveIcon, Undo2Icon, HistoryIcon } from "lucide-react";
+import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
-import { Candidate, RequirementStage } from "@/employer/mockData";
+import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
 import { STRONG_MATCH_THRESHOLD } from "../../../../../server-handlers/_requirement-match-helpers";
@@ -43,6 +43,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -211,6 +212,21 @@ function loadRazorpayScript(): Promise<void> {
   });
 }
 
+/** Formats interview_scheduled_at as the pipeline substep text under a
+    candidate's status chip — real, non-fabricated scheduling data, not a
+    stand-in for round/format detail HireStepX doesn't track. */
+function interviewSubstep(candidate: Candidate): string | null {
+  if (candidate.candidateStatus !== "interview_invited" && candidate.candidateStatus !== "interviewing") return null;
+  if (!candidate.interviewScheduledAt) return null;
+  const when = new Date(candidate.interviewScheduledAt);
+  if (Number.isNaN(when.getTime())) return null;
+  const diffDays = Math.round((when.getTime() - Date.now()) / 86_400_000);
+  const dateLabel = when.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffDays < 0) return `Interview was ${dateLabel}`;
+  if (diffDays === 0) return `Interview today · ${dateLabel}`;
+  return `Interview ${dateLabel}`;
+}
+
 function CandidateTableRow({
   candidate,
   requirementId,
@@ -218,6 +234,7 @@ function CandidateTableRow({
   selected,
   onToggleSelected,
   onUnlocked,
+  onViewEvidence,
 }: {
   candidate: Candidate;
   requirementId: string;
@@ -225,6 +242,7 @@ function CandidateTableRow({
   selected: boolean;
   onToggleSelected: () => void;
   onUnlocked: (candidateId: string, name: string, email: string) => void;
+  onViewEvidence: () => void;
 }) {
   const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
   const { toast } = useToast();
@@ -371,7 +389,20 @@ function CandidateTableRow({
         <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
       </TableCell>
       <TableCell style={td}>
-        <CandidateStatusChip status={candidate.candidateStatus} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+          <CandidateStatusChip status={candidate.candidateStatus} />
+          {interviewSubstep(candidate) && (
+            <span style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint }}>{interviewSubstep(candidate)}</span>
+          )}
+          <Button
+            type="button"
+            variant="link"
+            onClick={onViewEvidence}
+            style={{ padding: 0, height: "auto", fontFamily: f.sans, fontSize: 11.5, fontWeight: 600 }}
+          >
+            View evidence report
+          </Button>
+        </div>
       </TableCell>
       <TableCell style={{ ...td, minWidth: 200 }}>
         {candidate.unlocked ? (
@@ -491,9 +522,160 @@ function BatchUnlockBanner({
   );
 }
 
+/** Mirrors EvidencePanel on the candidate-detail page — real per-skill
+    scores from the candidate's most recent completed practice session. */
+function EvidencePanel({ evidence, loading }: { evidence: CandidateEvidence | null; loading: boolean }) {
+  if (loading) return <HelpText>Loading practice-session evidence…</HelpText>;
+  if (!evidence || evidence.skills.length === 0) return <HelpText>No practice session data yet.</HelpText>;
+  return (
+    <div>
+      {evidence.sessionDate && (
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginBottom: 14 }}>
+          From most recent practice session · {new Date(evidence.sessionDate).toLocaleDateString()}
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {evidence.skills.map((s) => (
+          <div key={s.name}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 4 }}>
+              <span>{s.name}</span>
+              <strong>{Math.round(s.score)}</strong>
+            </div>
+            <div style={{ height: 6, borderRadius: 999, background: t.line, overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${Math.max(0, Math.min(100, s.score))}%`,
+                  height: "100%",
+                  background: s.score >= 70 ? t.success : s.score >= 50 ? t.warning : t.error,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EvidenceDialog({ matchId, onClose }: { matchId: string | null; onClose: () => void }) {
+  const { fetchCandidateEvidence } = useEmployerData();
+  const [evidence, setEvidence] = useState<CandidateEvidence | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!matchId) return;
+    let active = true;
+    setLoading(true);
+    setEvidence(null);
+    fetchCandidateEvidence(matchId).then((e) => {
+      if (active) {
+        setEvidence(e);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [matchId, fetchCandidateEvidence]);
+
+  return (
+    <Dialog open={matchId != null} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Evidence report</DialogTitle>
+          <DialogDescription>Per-skill scores from this candidate&apos;s most recent completed practice session.</DialogDescription>
+        </DialogHeader>
+        <EvidencePanel evidence={evidence} loading={loading} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Clickable pipeline breadcrumb — evaluated → interviewing → hired counts
+    for this requirement's candidates, filtering the table below on click.
+    Uses real candidateStatus values already fetched with the requirement. */
+function PipelineBreadcrumb({
+  candidates,
+  active,
+  onChange,
+}: {
+  candidates: Candidate[];
+  active: "all" | "interviewing" | "hired";
+  onChange: (next: "all" | "interviewing" | "hired") => void;
+}) {
+  const interviewingCount = candidates.filter((c) => c.candidateStatus === "interview_invited" || c.candidateStatus === "interviewing").length;
+  const hiredCount = candidates.filter((c) => c.candidateStatus === "hired").length;
+
+  const steps: Array<{ key: "all" | "interviewing" | "hired"; label: string }> = [
+    { key: "all", label: `${candidates.length} evaluated` },
+    { key: "interviewing", label: `${interviewingCount} interviewing` },
+    { key: "hired", label: `${hiredCount} hired` },
+  ];
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+      {steps.map((step, i) => (
+        <span key={step.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {i > 0 && <span style={{ color: t.inkFaint, fontSize: 13 }} aria-hidden="true">→</span>}
+          <button
+            type="button"
+            onClick={() => onChange(active === step.key ? "all" : step.key)}
+            style={{
+              fontFamily: f.sans,
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: active === step.key ? t.indigoDeep : t.inkSoft,
+              background: active === step.key ? t.indigo100 : t.creamSoft,
+              border: "none",
+              borderRadius: 999,
+              padding: "6px 12px",
+              cursor: "pointer",
+            }}
+          >
+            {step.label}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Auto-dismissing "Undo" banner for the one action on this page that can be
+    reversed without a page reload — a manual stage or bulk-status change.
+    Failures already revert automatically; this is for changes that
+    succeeded but the employer wants to take back. */
+function UndoBanner({ message, onUndo, onDismiss }: { message: string; onUndo: () => void; onDismiss: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 8000);
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+
+  return (
+    <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", background: t.indigo100 }}>
+      <span style={{ fontFamily: f.sans, fontSize: 13, color: t.indigoDeep }}>{message}</span>
+      <Button
+        type="button"
+        variant="link"
+        onClick={onUndo}
+        style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 700, color: t.indigoDeep, height: "auto", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
+      >
+        <Undo2Icon size={13} aria-hidden="true" /> Undo
+      </Button>
+    </Card>
+  );
+}
+
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
-  const { fetchRequirementDetail, updateRequirement, updateRequirementStage, updateCandidateStatus } = useEmployerData();
+  const {
+    fetchRequirementDetail,
+    updateRequirement,
+    updateRequirementStage,
+    updateCandidateStatus,
+    archiveRequirement,
+    reopenRequirement,
+    fetchUnlockHistory,
+  } = useEmployerData();
   const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -512,6 +694,17 @@ export default function RequirementDetailPage() {
   const [extendOpen, setExtendOpen] = useState(false);
   const [extendDate, setExtendDate] = useState("");
   const [extendSaving, setExtendSaving] = useState(false);
+  const [pipelineFilter, setPipelineFilter] = useState<"all" | "interviewing" | "hired">("all");
+  const [evidenceMatchId, setEvidenceMatchId] = useState<string | null>(null);
+  const [undoBanner, setUndoBanner] = useState<{ message: string; run: () => void } | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveReasonInput, setArchiveReasonInput] = useState("");
+  const [archiveDisposition, setArchiveDisposition] = useState<ArchiveDisposition>("keep_candidates");
+  const [archiveSaving, setArchiveSaving] = useState(false);
+  const [reopenSaving, setReopenSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [unlockHistory, setUnlockHistory] = useState<UnlockPurchase[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -545,13 +738,15 @@ export default function RequirementDetailPage() {
       if (contactFilter === "locked" && c.unlocked) return false;
       if (contactFilter === "unlocked" && !c.unlocked) return false;
       if (locationFilter !== "all" && c.city !== locationFilter) return false;
+      if (pipelineFilter === "interviewing" && c.candidateStatus !== "interview_invited" && c.candidateStatus !== "interviewing") return false;
+      if (pipelineFilter === "hired" && c.candidateStatus !== "hired") return false;
       if (!q) return true;
       const haystack = [c.unlocked ? c.name : "", c.targetRole, c.city, c.resume?.noticePeriod || "", ...c.skills].join(" ").toLowerCase();
       return haystack.includes(q);
     });
     const recency = (c: Candidate) => (c.lastActiveDaysAgo < 0 ? Number.POSITIVE_INFINITY : c.lastActiveDaysAgo);
     return filtered.sort((a, b) => (sortKey === "match" ? b.matchScore - a.matchScore : recency(a) - recency(b)));
-  }, [requirement, search, contactFilter, locationFilter, sortKey]);
+  }, [requirement, search, contactFilter, locationFilter, sortKey, pipelineFilter]);
 
   const handleUnlocked = (candidateId: string, name: string, email: string) => {
     setRequirement((prev) =>
@@ -604,7 +799,20 @@ export default function RequirementDetailPage() {
     if (!ok) {
       setRequirement((prev) => (prev ? { ...prev, stage: previousStage } : prev));
       toast("Couldn't update the stage — please try again", "error");
+      return;
     }
+    setUndoBanner({
+      message: `Stage changed to ${STAGE_LABEL[stage]}`,
+      run: async () => {
+        setUndoBanner(null);
+        setRequirement((prev) => (prev ? { ...prev, stage: previousStage } : prev));
+        const reverted = await updateRequirementStage(requirement.id, previousStage);
+        if (!reverted) {
+          setRequirement((prev) => (prev ? { ...prev, stage } : prev));
+          toast("Couldn't undo the stage change", "error");
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -660,10 +868,12 @@ export default function RequirementDetailPage() {
 
     let succeeded = 0;
     let failed = 0;
+    const succeededTargets: Candidate[] = [];
     results.forEach((result, i) => {
       const ok = result.status === "fulfilled" && result.value;
       if (ok) {
         succeeded += 1;
+        succeededTargets.push(eligible[i]);
       } else {
         failed += 1;
         applyCandidateUpdate(eligible[i].id, { candidateStatus: previousStatuses.get(eligible[i].id)! });
@@ -678,6 +888,18 @@ export default function RequirementDetailPage() {
     const skippedSuffix = skippedHiredCount > 0 ? ` (${skippedHiredCount} already hired, skipped)` : "";
     if (failed === 0) {
       toast(`${succeeded} candidate${succeeded === 1 ? "" : "s"} rejected${skippedSuffix}`, "success");
+      setUndoBanner({
+        message: `${succeeded} candidate${succeeded === 1 ? "" : "s"} rejected`,
+        run: async () => {
+          setUndoBanner(null);
+          succeededTargets.forEach((c) => applyCandidateUpdate(c.id, { candidateStatus: previousStatuses.get(c.id)! }));
+          const restoreResults = await Promise.allSettled(
+            succeededTargets.map((c) => updateCandidateStatus(c.id, { candidateStatus: previousStatuses.get(c.id)! }))
+          );
+          const restoreFailed = restoreResults.filter((r) => r.status !== "fulfilled" || !r.value).length;
+          if (restoreFailed > 0) toast(`Couldn't undo ${restoreFailed} of ${succeededTargets.length}`, "error");
+        },
+      });
     } else if (succeeded === 0) {
       toast(`Couldn't reject any candidates — please try again${skippedSuffix}`, "error");
     } else {
@@ -723,6 +945,48 @@ export default function RequirementDetailPage() {
       toast("Couldn't update the deadline — please try again", "error");
     }
   };
+
+  const handleArchive = async () => {
+    setArchiveSaving(true);
+    const ok = await archiveRequirement(requirement.id, {
+      archiveReason: archiveReasonInput.trim() || undefined,
+      archiveDisposition,
+    });
+    setArchiveSaving(false);
+    if (ok) {
+      toast("Requirement archived", "success");
+      setArchiveOpen(false);
+      setArchiveReasonInput("");
+      load();
+    } else {
+      toast("Couldn't archive this requirement — please try again", "error");
+    }
+  };
+
+  const handleReopen = async () => {
+    setReopenSaving(true);
+    const ok = await reopenRequirement(requirement.id);
+    setReopenSaving(false);
+    if (ok) {
+      toast("Requirement reopened — re-matching candidates", "success");
+      load();
+    } else {
+      toast("Couldn't reopen this requirement — please try again", "error");
+    }
+  };
+
+  const openUnlockHistory = () => {
+    setHistoryOpen(true);
+    if (unlockHistory != null) return;
+    setHistoryLoading(true);
+    fetchUnlockHistory().then((purchases) => {
+      setUnlockHistory(purchases ?? []);
+      setHistoryLoading(false);
+    });
+  };
+
+  const candidateIdSet = new Set(requirement.candidates.map((c) => c.id));
+  const relevantUnlockHistory = (unlockHistory ?? []).filter((p) => p.matchIds.some((id) => candidateIdSet.has(id)));
 
   const readOnly = requirement.status === "closed";
   const unlockedCount = requirement.candidates.filter((c) => c.unlocked).length;
@@ -783,8 +1047,55 @@ export default function RequirementDetailPage() {
                 >
                   Edit
                 </Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setArchiveOpen(true)}
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: t.inkSoft,
+                    background: "none",
+                    border: `1px solid ${t.line}`,
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    height: "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <ArchiveIcon size={13} aria-hidden="true" /> Archive
+                </Button>
               </>
             )}
+            {requirement.status === "closed" && (
+              <Button type="button" variant="outline" onClick={handleReopen} disabled={reopenSaving} style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto", padding: "6px 12px" }}>
+                {reopenSaving ? "Reopening…" : "Reopen"}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openUnlockHistory}
+              style={{
+                fontFamily: f.sans,
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: t.inkSoft,
+                background: "none",
+                border: `1px solid ${t.line}`,
+                borderRadius: 8,
+                padding: "6px 12px",
+                height: "auto",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <HistoryIcon size={13} aria-hidden="true" /> Unlock history
+            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
@@ -826,6 +1137,75 @@ export default function RequirementDetailPage() {
                 {extendSaving ? "Saving…" : "Save new deadline"}
               </PrimaryCta>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={archiveOpen} onOpenChange={(open) => { if (!archiveSaving) setArchiveOpen(open); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Archive &ldquo;{requirement.title}&rdquo;?</DialogTitle>
+              <DialogDescription>
+                Closes the posting to new unlocks. Candidates already unlocked stay unlocked — this only affects new activity.
+              </DialogDescription>
+            </DialogHeader>
+            <div style={{ display: "grid", gap: 14, padding: "4px 0" }}>
+              <div style={{ display: "grid", gap: 8 }}>
+                <Label htmlFor="archive-reason">Reason (optional)</Label>
+                <Textarea
+                  id="archive-reason"
+                  rows={2}
+                  value={archiveReasonInput}
+                  onChange={(e) => setArchiveReasonInput(e.target.value)}
+                  placeholder="Role filled, put on hold, etc…"
+                />
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                <Label>Still-open candidates</Label>
+                <RadioGroup value={archiveDisposition} onValueChange={(v) => setArchiveDisposition(v as ArchiveDisposition)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <RadioGroupItem value="keep_candidates" id="archive-keep" />
+                    <Label htmlFor="archive-keep" style={{ fontWeight: 400 }}>Leave their status as-is</Label>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <RadioGroupItem value="reject_remaining" id="archive-reject" />
+                    <Label htmlFor="archive-reject" style={{ fontWeight: 400 }}>Reject everyone still in the pipeline</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+            <DialogFooter>
+              <OutlineCta onClick={() => setArchiveOpen(false)}>Cancel</OutlineCta>
+              <Button type="button" variant="destructive" onClick={handleArchive} disabled={archiveSaving}>
+                {archiveSaving ? "Archiving…" : "Archive requirement"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Unlock history</DialogTitle>
+              <DialogDescription>Every contact unlock purchased against this requirement.</DialogDescription>
+            </DialogHeader>
+            {historyLoading ? (
+              <HelpText>Loading purchase history…</HelpText>
+            ) : relevantUnlockHistory.length === 0 ? (
+              <HelpText>No unlocks purchased for this requirement yet.</HelpText>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 320, overflowY: "auto" }}>
+                {relevantUnlockHistory.map((p) => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${t.line}` }}>
+                    <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>
+                      {p.matchIds.length > 1 ? `Batch of ${p.matchIds.length}` : "Single candidate"}
+                    </span>
+                    <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+                      ₹{(p.amount / 100).toFixed(0)} · {new Date(p.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
@@ -972,6 +1352,42 @@ export default function RequirementDetailPage() {
             </div>
           </div>
 
+          {(requirement.preferredDomain || requirement.workSchedule || requirement.availability || requirement.relevantExperience || requirement.portfolioRequired) && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 12 }}>Talent preferences</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+                {requirement.preferredDomain && (
+                  <div>
+                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Domain</div>
+                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.preferredDomain}</div>
+                  </div>
+                )}
+                {requirement.workSchedule && (
+                  <div>
+                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Work schedule</div>
+                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.workSchedule}</div>
+                  </div>
+                )}
+                {requirement.availability && (
+                  <div>
+                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Availability</div>
+                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.availability}</div>
+                  </div>
+                )}
+                {requirement.relevantExperience && (
+                  <div>
+                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Relevant experience</div>
+                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.relevantExperience}</div>
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Portfolio</div>
+                  <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.portfolioRequired ? "Required" : "Optional"}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {requirement.skills.length > 0 && (
             <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Skills</div>
@@ -1032,6 +1448,10 @@ export default function RequirementDetailPage() {
 
           {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
             <>
+              {undoBanner && (
+                <UndoBanner message={undoBanner.message} onUndo={undoBanner.run} onDismiss={() => setUndoBanner(null)} />
+              )}
+              <PipelineBreadcrumb candidates={requirement.candidates} active={pipelineFilter} onChange={setPipelineFilter} />
               {readOnly && (
                 <Card style={{ background: t.creamSoft, marginBottom: 16 }}>
                   <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
@@ -1162,6 +1582,7 @@ export default function RequirementDetailPage() {
                             selected={selectedIds.has(c.id)}
                             onToggleSelected={() => toggleSelected(c.id)}
                             onUnlocked={handleUnlocked}
+                            onViewEvidence={() => setEvidenceMatchId(c.id)}
                           />
                         ))}
                       </TableBody>
@@ -1169,6 +1590,7 @@ export default function RequirementDetailPage() {
                   </div>
                 </Card>
               )}
+              <EvidenceDialog matchId={evidenceMatchId} onClose={() => setEvidenceMatchId(null)} />
             </>
           )}
         </>

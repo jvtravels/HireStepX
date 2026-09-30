@@ -48,6 +48,17 @@ export interface RequirementActivity {
   createdAt: string;
 }
 
+/** One unlock purchase (single candidate or a batch of 10) — mirrors a row
+ *  in employer_unlock_payments. `matchIds` holds one id for a single-candidate
+ *  unlock, or the full batch for a bundle purchase. */
+export interface UnlockPurchase {
+  id: string;
+  matchIds: string[];
+  amount: number;
+  currency: string;
+  createdAt: string;
+}
+
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
@@ -73,6 +84,7 @@ interface EmployerDataContextValue {
   updateCandidateStatus: (matchId: string, payload: { candidateStatus: CandidateStatus; note?: string; interviewScheduledAt?: string }) => Promise<boolean>;
   fetchCandidateEvidence: (matchId: string) => Promise<CandidateEvidence | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
+  fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
   refreshRequirements: () => Promise<void>;
 }
 
@@ -274,6 +286,18 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const fetchUnlockHistory = useCallback(async (): Promise<UnlockPurchase[] | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch("/api/employer-unlock-history", { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.purchases) return null;
+      return data.purchases as UnlockPurchase[];
+    } catch {
+      return null;
+    }
+  }, []);
+
   const value: EmployerDataContextValue = {
     companyStatus,
     companyStatusLoading,
@@ -295,6 +319,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     updateCandidateStatus,
     fetchCandidateEvidence,
     fetchRequirementActivity,
+    fetchUnlockHistory,
     refreshRequirements,
   };
 
