@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
@@ -11,11 +11,14 @@ import { RequirementSummary, Requirement, Candidate, RequirementStage, Requireme
    employer-verify-unlock-payment.ts and the "Employer talent-roster
    feature" block in supabase-schema.sql.
 
-   Employer approval is a human review step in the admin panel (see
-   src/AdminDashboard.tsx "Employers" tab + server-handlers/admin-data.ts
-   "employers"/"approve-employer"/"reject-employer"). This context just
-   polls GET while status is "pending" so the console flips to the
-   dashboard once an admin approves it, without a manual refresh. */
+   Company profile submission is instantly approved (see handlePost in
+   employer-profile.ts) — there's no review queue to wait on. "pending"
+   stays in CompanyStatus only for any legacy row from before that change;
+   the UI treats it the same as "none". "rejected" is still real: an admin
+   can reject a profile after the fact from src/AdminDashboard.tsx
+   ("Employers" tab) via server-handlers/admin-data.ts's
+   "approve-employer"/"reject-employer" actions, which blocks posting via
+   the status check in employer-requirements.ts. */
 
 export type CompanyStatus = "none" | "pending" | "approved" | "rejected";
 
@@ -89,7 +92,6 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [companyWebsite, setCompanyWebsite] = useState("");
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoading, setRequirementsLoading] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshCompanyStatus = useCallback(async () => {
     try {
@@ -112,21 +114,6 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     refreshCompanyStatus();
   }, [refreshCompanyStatus]);
-
-  // Poll while pending so the console flips to the dashboard once the
-  // (currently lazy-auto-approve) review resolves, without a manual refresh.
-  useEffect(() => {
-    if (pollRef.current) {
-      clearTimeout(pollRef.current);
-      pollRef.current = null;
-    }
-    if (companyStatus === "pending") {
-      pollRef.current = setTimeout(refreshCompanyStatus, 4000);
-    }
-    return () => {
-      if (pollRef.current) clearTimeout(pollRef.current);
-    };
-  }, [companyStatus, refreshCompanyStatus]);
 
   const refreshRequirements = useCallback(async () => {
     if (companyStatus !== "approved") return;
@@ -161,7 +148,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
 
   // Server-side status stays "rejected" until a real resubmission lands —
   // this just lets the client show the onboarding form again so the user
-  // can resubmit via submitCompanyProfile, which POSTs a fresh "pending" row.
+  // can resubmit via submitCompanyProfile, which instantly re-approves.
   const resetCompanyProfile = useCallback(() => setCompanyStatus("none"), []);
 
   const addRequirement = useCallback(async (r: RequirementFormValues) => {

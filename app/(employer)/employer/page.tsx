@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/AuthContext";
-import { CopyEmailLink } from "@/_CopyEmailLink";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f, shadows } from "@/auth/_tokens";
 import {
@@ -131,7 +130,7 @@ function CompanyOnboarding() {
             {gstinFormatError ? (
               <HelpText tone="error">That doesn't look like a valid 15-character GSTIN.</HelpText>
             ) : (
-              <HelpText>Speeds up review — we verify registered businesses faster.</HelpText>
+              <HelpText>Helps us verify registered businesses faster.</HelpText>
             )}
           </div>
           <div>
@@ -256,25 +255,6 @@ function CompanyOnboarding() {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function CompanyPending() {
-  return (
-    <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
-      <div style={{ width: 48, height: 48, borderRadius: 12, background: t.indigo100, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: t.indigoDeep }}>
-        <EmployerIcon.Clock />
-      </div>
-      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>Your profile is under review</h1>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "0 0 20px" }}>
-        We typically approve genuine employers within one business day. You'll be able to post a requirement as
-        soon as you're approved — this page will update automatically.
-      </p>
-      <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>
-        Made a mistake in your details, or been waiting longer than a day?{" "}
-        <CopyEmailLink email="support@hirestepx.com" style={{ color: t.indigo, fontWeight: 600 }} />
-      </p>
     </div>
   );
 }
@@ -409,8 +389,11 @@ export default function EmployerHomePage() {
   const { companyStatus, companyStatusLoading } = useEmployerData();
 
   if (companyStatusLoading) return null;
-  if (companyStatus === "none") return <CompanyOnboarding />;
-  if (companyStatus === "pending") return <CompanyPending />;
+  // "pending" has no live path from signup anymore (see employer-profile.ts
+  // handlePost — every submission comes back "approved" instantly) but is
+  // kept in the type for any legacy row; treat it the same as "none" rather
+  // than showing a dead-end waiting screen.
+  if (companyStatus === "none" || companyStatus === "pending") return <CompanyOnboarding />;
   if (companyStatus === "rejected") return <CompanyRejected />;
   return <EmployerDashboard />;
 }

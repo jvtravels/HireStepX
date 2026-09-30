@@ -14,9 +14,8 @@ import {
 
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs it through the same POST /api/employer-profile
-   upsert onboarding uses, which always resets status to "pending" for a
-   fresh review — the banner below exists so an already-approved employer
-   isn't surprised by losing console access after a routine edit. */
+   upsert onboarding uses, which approves instantly — there's no review wait
+   and no risk of losing console access from a routine edit. */
 export default function EmployerSettingsPage() {
   const { companyName: savedName, companyWebsite: savedWebsite, companyLogoUrl, submitCompanyProfile } = useEmployerData();
   const [companyName, setCompanyName] = useState(savedName);
@@ -161,13 +160,11 @@ export default function EmployerSettingsPage() {
             )}
           </div>
 
-          <HelpText>Saving sends your profile for another review before changes go live on the roster.</HelpText>
-
           {saveError && (
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{saveError}</p>
           )}
           {saved && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.success, margin: 0 }}>Saved. Your profile is back under review.</p>
+            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.success, margin: 0 }}>Saved.</p>
           )}
 
           <PrimaryCta full disabled={!canSave} onClick={handleSave}>

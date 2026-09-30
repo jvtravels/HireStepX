@@ -4,7 +4,7 @@
  *      if the authenticated user has never submitted one). Includes
  *      logoUrl, a public Storage URL, when a logo was uploaded.
  * POST /api/employer-profile  { companyName, website, gstin?, logoBase64?,
- *      logoContentType? } → upserts a pending employer row (fresh
+ *      logoContentType? } → upserts an approved employer row (fresh
  *      submission or resubmission after rejection). logoBase64 is optional;
  *      omitting it on a resubmission keeps any previously uploaded logo.
  *
