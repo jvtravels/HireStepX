@@ -3,14 +3,32 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronDownIcon, LockIcon, RefreshCwIcon, AlertTriangleIcon, ClockIcon, BuildingIcon, ArchiveIcon, Undo2Icon, HistoryIcon } from "lucide-react";
+import {
+  LockIcon,
+  RefreshCwIcon,
+  AlertTriangleIcon,
+  ClockIcon,
+  BuildingIcon,
+  ArchiveIcon,
+  Undo2Icon,
+  HistoryIcon,
+  IndianRupeeIcon,
+  MapPinIcon,
+  ChevronRightIcon,
+  Building2Icon,
+  LayoutGridIcon,
+  CalendarIcon,
+  GraduationCapIcon,
+  FolderIcon,
+} from "lucide-react";
 import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
-import { STRONG_MATCH_THRESHOLD } from "../../../../../server-handlers/_requirement-match-helpers";
 import { UNLOCK_BUNDLE_SIZE } from "../../../../../server-handlers/_unlock-pricing";
+import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
+import { formatNumber } from "@/utils";
 import {
   Card,
   CandidateStatusChip,
@@ -21,7 +39,6 @@ import {
   PrimaryCta,
   ScoreChip,
   SkillTag,
-  StatCell,
   StatusChip,
   StageCell,
   STAGE_LABEL,
@@ -37,13 +54,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { FilterPill } from "@/components/FilterPill";
+import { SearchInput } from "@/components/SearchInput";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -56,23 +73,24 @@ function daysUntil(dueDate: string): number {
   return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
 }
 
-// Real match-score tiers (mirrors the >=85 / >=70 thresholds ScoreChip already
-// uses) standing in for the reference layout's interview-round pipeline —
-// HireStepX has no interview-round data, but this is the closest genuine
-// equivalent: how many shared candidates land in each match-quality band.
-const scoreTiers: Array<{ key: string; label: string; min: number; max: number }> = [
-  { key: "strong", label: "Strong match", min: STRONG_MATCH_THRESHOLD, max: 101 },
-  { key: "good", label: "Good match", min: 70, max: STRONG_MATCH_THRESHOLD },
-  { key: "fair", label: "Fair match", min: 50, max: 70 },
-  { key: "low", label: "Low match", min: 0, max: 50 },
-];
-
-const tierColors: Record<string, string> = {
-  strong: t.success,
-  good: t.indigo,
-  fair: t.warning,
-  low: t.inkFaintWeak,
-};
+/** budgetMin/budgetMax's unit depends on salaryType — whole INR lakhs for
+    per-annum roles, a raw INR amount for per-month/fixed ones. Mirrors
+    asBoundedBudget in server-handlers/_employer-requirements-helpers.ts and
+    budgetLabel in the jobs table. */
+function budgetLabel(req: Requirement): string | null {
+  const { budgetMin, budgetMax, salaryType } = req;
+  if (budgetMin == null && budgetMax == null) return null;
+  if (salaryType === "per-annum" || salaryType == null) {
+    if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
+    if (budgetMin != null) return `₹${budgetMin}+ LPA`;
+    return `Up to ₹${budgetMax} LPA`;
+  }
+  const suffix = salaryType === "per-month" ? "/month" : " fixed";
+  const fmt = (n: number) => `₹${formatNumber(n)}`;
+  if (budgetMin != null && budgetMax != null) return `${fmt(budgetMin)}–${formatNumber(budgetMax)}${suffix}`;
+  if (budgetMin != null) return `${fmt(budgetMin)}+${suffix}`;
+  return `Up to ${fmt(budgetMax as number)}${suffix}`;
+}
 
 /** Tooltip copy per pipeline stage — mirrors the "why is this stage here"
     hint the canvas surfaces next to the stage badge. */
@@ -103,41 +121,6 @@ const sortOptions: Array<{ value: SortKey; label: string }> = [
   { value: "match", label: "Best match" },
   { value: "recent", label: "Most recently active" },
 ];
-
-/** Dropdown-backed filter pill — mirrors FilterPill on /employer/jobs so the
-    two candidate-facing tables in the console share one filter language. */
-function FilterMenu<V extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: V;
-  options: Array<{ value: V; label: string }>;
-  onChange: (value: V) => void;
-}) {
-  const active = options.find((o) => o.value === value);
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" style={{ borderRadius: 8, height: 40, gap: 8, background: t.white, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
-          {active ? `${label}: ${active.label}` : label}
-          <ChevronDownIcon size={12} aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as V)}>
-          {options.map((o) => (
-            <DropdownMenuRadioItem key={o.value} value={o.value}>
-              {o.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -591,55 +574,6 @@ function EvidenceDialog({ matchId, onClose }: { matchId: string | null; onClose:
   );
 }
 
-/** Clickable pipeline breadcrumb — evaluated → interviewing → hired counts
-    for this requirement's candidates, filtering the table below on click.
-    Uses real candidateStatus values already fetched with the requirement. */
-function PipelineBreadcrumb({
-  candidates,
-  active,
-  onChange,
-}: {
-  candidates: Candidate[];
-  active: "all" | "interviewing" | "hired";
-  onChange: (next: "all" | "interviewing" | "hired") => void;
-}) {
-  const interviewingCount = candidates.filter((c) => c.candidateStatus === "interview_invited" || c.candidateStatus === "interviewing").length;
-  const hiredCount = candidates.filter((c) => c.candidateStatus === "hired").length;
-
-  const steps: Array<{ key: "all" | "interviewing" | "hired"; label: string }> = [
-    { key: "all", label: `${candidates.length} evaluated` },
-    { key: "interviewing", label: `${interviewingCount} interviewing` },
-    { key: "hired", label: `${hiredCount} hired` },
-  ];
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-      {steps.map((step, i) => (
-        <span key={step.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {i > 0 && <span style={{ color: t.inkFaint, fontSize: 13 }} aria-hidden="true">→</span>}
-          <button
-            type="button"
-            onClick={() => onChange(active === step.key ? "all" : step.key)}
-            style={{
-              fontFamily: f.sans,
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: active === step.key ? t.indigoDeep : t.inkSoft,
-              background: active === step.key ? t.indigo100 : t.creamSoft,
-              border: "none",
-              borderRadius: 999,
-              padding: "6px 12px",
-              cursor: "pointer",
-            }}
-          >
-            {step.label}
-          </button>
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /** Auto-dismissing "Undo" banner for the one action on this page that can be
     reversed without a page reload — a manual stage or bulk-status change.
     Failures already revert automatically; this is for changes that
@@ -689,8 +623,8 @@ export default function RequirementDetailPage() {
   const [search, setSearch] = useState("");
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("match");
   const [pipelineFilter, setPipelineFilter] = useState<"all" | "interviewing" | "hired">("all");
+  const [sortKey, setSortKey] = useState<SortKey>("match");
   const [evidenceMatchId, setEvidenceMatchId] = useState<string | null>(null);
   const [undoBanner, setUndoBanner] = useState<{ message: string; run: () => void } | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -742,7 +676,7 @@ export default function RequirementDetailPage() {
     });
     const recency = (c: Candidate) => (c.lastActiveDaysAgo < 0 ? Number.POSITIVE_INFINITY : c.lastActiveDaysAgo);
     return filtered.sort((a, b) => (sortKey === "match" ? b.matchScore - a.matchScore : recency(a) - recency(b)));
-  }, [requirement, search, contactFilter, locationFilter, sortKey, pipelineFilter]);
+  }, [requirement, search, contactFilter, locationFilter, pipelineFilter, sortKey]);
 
   const handleUnlocked = (candidateId: string, name: string, email: string) => {
     setRequirement((prev) =>
@@ -947,27 +881,63 @@ export default function RequirementDetailPage() {
   const relevantUnlockHistory = (unlockHistory ?? []).filter((p) => p.matchIds.some((id) => candidateIdSet.has(id)));
 
   const readOnly = requirement.status === "closed";
-  const unlockedCount = requirement.candidates.filter((c) => c.unlocked).length;
   const avgMatch = requirement.candidates.length
     ? Math.round(requirement.candidates.reduce((sum, c) => sum + c.matchScore, 0) / requirement.candidates.length)
     : 0;
   const expLabel = experienceLabel(requirement.experienceMin, requirement.experienceMax);
   const dueDaysLeft = requirement.dueDate ? daysUntil(requirement.dueDate) : null;
-  const tierCounts = scoreTiers.map((tier) => ({
-    ...tier,
-    count: requirement.candidates.filter((c) => c.matchScore >= tier.min && c.matchScore < tier.max).length,
-  }));
   const hasCandidates = requirement.candidates.length > 0 && requirement.status !== "generating";
+  const budget = budgetLabel(requirement);
+  const jobType = requirement.employmentType ? EMPLOYMENT_TYPE_LABEL[requirement.employmentType] || requirement.employmentType : null;
+  const workModeLabel = requirement.workMode ? WORK_MODE_LABEL[requirement.workMode] || requirement.workMode : null;
+  const interviewingCount = requirement.candidates.filter(
+    (c) => c.candidateStatus === "interview_invited" || c.candidateStatus === "interviewing",
+  ).length;
+  const hiredCount = requirement.candidates.filter((c) => c.candidateStatus === "hired").length;
+  const pipelineStages: Array<{ label: string; value: number; filterValue: "all" | "interviewing" | "hired" }> = [
+    { label: "shortlisted", value: requirement.candidates.length, filterValue: "all" },
+    { label: "interviewing", value: interviewingCount, filterValue: "interviewing" },
+    { label: "hired", value: hiredCount, filterValue: "hired" },
+  ];
+  const handlePipelineStageClick = (filterValue: "all" | "interviewing" | "hired") => {
+    setPipelineFilter((prev) => (prev === filterValue ? "all" : filterValue));
+  };
 
   return (
     <div>
-      <Card>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+      <Card style={{ flex: "3 1 560px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <Eyebrow tone="indigo">
-              {(requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location)} · {requirement.noticePeriodPref} notice
-            </Eyebrow>
+            <Eyebrow tone="indigo">{requirement.noticePeriodPref} notice</Eyebrow>
             <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>
+              {budget && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <IndianRupeeIcon size={14} color={t.inkFaint} aria-hidden="true" /> {budget}
+                </span>
+              )}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <MapPinIcon size={14} color={t.inkFaint} aria-hidden="true" />
+                {(requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location)}
+                {workModeLabel ? ` · ${workModeLabel}` : ""}
+              </span>
+              {expLabel && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <GraduationCapIcon size={14} color={t.inkFaint} aria-hidden="true" /> {expLabel}
+                </span>
+              )}
+              {(jobType || requirement.durationWeeks != null || requirement.hoursPerWeek != null) && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <ClockIcon size={14} color={t.inkFaint} aria-hidden="true" />
+                  {[
+                    jobType,
+                    requirement.durationWeeks != null ? `${requirement.durationWeeks} ${requirement.durationWeeks === 1 ? "week" : "weeks"}` : null,
+                    requirement.hoursPerWeek != null ? `${requirement.hoursPerWeek} hrs/week` : null,
+                  ].filter(Boolean).join(" · ")}
+                </span>
+              )}
+            </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             {requirement.status !== "closed" && (
@@ -1151,13 +1121,8 @@ export default function RequirementDetailPage() {
         )}
 
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-          {expLabel && (
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-              <ClockIcon size={13} aria-hidden="true" /> {expLabel}
-            </span>
-          )}
           {dueDaysLeft != null && (
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: dueDaysLeft < 0 ? t.error : t.inkFaint, fontWeight: dueDaysLeft < 0 ? 600 : 400 }}>
               <ClockIcon size={13} aria-hidden="true" /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
             </span>
           )}
@@ -1167,36 +1132,34 @@ export default function RequirementDetailPage() {
         </div>
 
         {hasCandidates ? (
-          <>
-            <div style={{ display: "flex", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-              <StatCell label="Candidates shared" value={String(requirement.candidates.length)} unit="" />
-              <StatCell label="Contacts unlocked" value={String(unlockedCount)} unit="" />
-              <StatCell label="Avg match score" value={String(avgMatch)} unit="/ 100" />
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
+              {pipelineStages.map((stage, i) => (
+                <span key={stage.label} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {i > 0 && <ChevronRightIcon size={14} color={t.inkFaintWeak} aria-hidden="true" />}
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => handlePipelineStageClick(stage.filterValue)}
+                    aria-pressed={pipelineFilter === stage.filterValue && stage.filterValue !== "all"}
+                    style={{
+                      padding: 0,
+                      height: "auto",
+                      fontFamily: f.sans,
+                      fontSize: 13,
+                      color: pipelineFilter === stage.filterValue && stage.filterValue !== "all" ? t.indigo : t.inkFaint,
+                      fontWeight: pipelineFilter === stage.filterValue && stage.filterValue !== "all" ? 600 : 400,
+                    }}
+                  >
+                    <span style={{ color: t.coal, fontWeight: 600 }}>{stage.value}</span> {stage.label}
+                  </Button>
+                </span>
+              ))}
             </div>
-
-            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ display: "flex", height: 6, borderRadius: 999, overflow: "hidden", background: t.line }}>
-                {tierCounts.map((tier) => (
-                  tier.count > 0 && (
-                    <Tooltip key={tier.key}>
-                      <TooltipTrigger asChild>
-                        <div style={{ width: `${(tier.count / requirement.candidates.length) * 100}%`, background: tierColors[tier.key] }} />
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{tier.label} · {tier.count}</TooltipContent>
-                    </Tooltip>
-                  )
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10 }}>
-                {tierCounts.map((tier) => (
-                  <span key={tier.key} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: tierColors[tier.key], flexShrink: 0 }} />
-                    {tier.count} {tier.label.toLowerCase()}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </>
+            <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
+              <span style={{ color: t.indigo, fontWeight: 600 }}>{avgMatch}%</span> avg match score
+            </span>
+          </div>
         ) : (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
             <HelpText>
@@ -1205,6 +1168,50 @@ export default function RequirementDetailPage() {
           </div>
         )}
       </Card>
+
+      <Card style={{ minWidth: 260, maxWidth: 340, flex: "1 1 260px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>Talent preferences</h2>
+          {requirement.status !== "closed" && (
+            <Link
+              href={`/employer/requirements/${requirement.id}/edit`}
+              style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.indigo, textDecoration: "none" }}
+            >
+              Edit
+            </Link>
+          )}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 16 }}>
+          {[
+            { Icon: Building2Icon, label: "Industry", value: requirement.preferredIndustry || "Not specified" },
+            { Icon: LayoutGridIcon, label: "Domain", value: requirement.preferredDomain || "Not specified" },
+            { Icon: CalendarIcon, label: "Availability", value: requirement.availability || "Not specified" },
+            { Icon: GraduationCapIcon, label: "Experience", value: requirement.relevantExperience || "Not specified" },
+          ].map(({ Icon, label, value }) => (
+            <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, color: t.inkFaint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon size={14} aria-hidden="true" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>{label}</span>
+                <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>{value}</span>
+              </div>
+            </div>
+          ))}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, color: t.inkFaint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <FolderIcon size={14} aria-hidden="true" />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Portfolio</span>
+              <Pill tone={requirement.portfolioRequired ? "indigo" : "neutral"}>
+                {requirement.portfolioRequired ? "Required" : "Optional"}
+              </Pill>
+            </div>
+          </div>
+        </div>
+      </Card>
+      </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "candidates" | "description")} style={{ margin: "20px 0 16px" }}>
         <TabsList variant="line" className="border-b" style={{ borderColor: t.line, width: "100%", justifyContent: "flex-start", gap: 24 }}>
@@ -1265,39 +1272,10 @@ export default function RequirementDetailPage() {
             </div>
           </div>
 
-          {(requirement.preferredDomain || requirement.workSchedule || requirement.availability || requirement.relevantExperience || requirement.portfolioRequired) && (
+          {requirement.workSchedule && (
             <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 12 }}>Talent preferences</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-                {requirement.preferredDomain && (
-                  <div>
-                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Domain</div>
-                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.preferredDomain}</div>
-                  </div>
-                )}
-                {requirement.workSchedule && (
-                  <div>
-                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Work schedule</div>
-                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.workSchedule}</div>
-                  </div>
-                )}
-                {requirement.availability && (
-                  <div>
-                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Availability</div>
-                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.availability}</div>
-                  </div>
-                )}
-                {requirement.relevantExperience && (
-                  <div>
-                    <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Relevant experience</div>
-                    <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.relevantExperience}</div>
-                  </div>
-                )}
-                <div>
-                  <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Portfolio</div>
-                  <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.portfolioRequired ? "Required" : "Optional"}</div>
-                </div>
-              </div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Work schedule</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.workSchedule}</div>
             </div>
           )}
 
@@ -1364,7 +1342,6 @@ export default function RequirementDetailPage() {
               {undoBanner && (
                 <UndoBanner message={undoBanner.message} onUndo={undoBanner.run} onDismiss={() => setUndoBanner(null)} />
               )}
-              <PipelineBreadcrumb candidates={requirement.candidates} active={pipelineFilter} onChange={setPipelineFilter} />
               {readOnly && (
                 <Card style={{ background: t.creamSoft, marginBottom: 16 }}>
                   <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
@@ -1431,23 +1408,24 @@ export default function RequirementDetailPage() {
                 </DialogContent>
               </Dialog>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
-                <Input
+                <SearchInput
+                  id="candidates-search"
+                  label="Search candidates"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={setSearch}
                   placeholder="Search by name, role, skill, or notice period…"
-                  style={{ flex: "1 1 220px", minWidth: 200, height: 40 }}
-                  aria-label="Search candidates"
+                  style={{ flex: "1 1 220px", minWidth: 200 }}
                 />
-                <FilterMenu label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
+                <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
                 {locationOptions.length > 1 && (
-                  <FilterMenu
+                  <FilterPill
                     label="Location"
                     value={locationFilter}
                     options={[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))]}
                     onChange={setLocationFilter}
                   />
                 )}
-                <FilterMenu label="Sort" value={sortKey} options={sortOptions} onChange={setSortKey} />
+                <FilterPill label="Sort" value={sortKey} options={sortOptions} onChange={setSortKey} />
                 {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
                   <Button
                     type="button"
