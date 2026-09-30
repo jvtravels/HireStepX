@@ -47,11 +47,16 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function intersectionRatio(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 || b.size === 0) return 0;
+/* Fraction of `candidateTokens` that also appears in `reqTokens` — i.e. how
+   much of the candidate's (small) role/skill vocabulary the job posting
+   covers. Dividing by reqTokens.size instead would crush this score for any
+   non-trivial job description, since a real JD's token count dwarfs a
+   candidate's target_role/skills token count almost by definition. */
+function intersectionRatio(reqTokens: Set<string>, candidateTokens: Set<string>): number {
+  if (reqTokens.size === 0 || candidateTokens.size === 0) return 0;
   let hits = 0;
-  for (const t of a) if (b.has(t)) hits++;
-  return hits / a.size;
+  for (const t of candidateTokens) if (reqTokens.has(t)) hits++;
+  return hits / candidateTokens.size;
 }
 
 /* resumeData is a StoredResume (see src/resumeParser.ts): fallback-type
