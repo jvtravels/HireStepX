@@ -566,7 +566,7 @@ export interface AuthContextType {
   isLoggedIn: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, name: string, password: string) => Promise<{ success: boolean; error?: string; userId?: string }>;
+  signup: (email: string, name: string, password: string, redirectPath?: string) => Promise<{ success: boolean; error?: string; userId?: string }>;
   loginWithGoogle: (returnTo?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
@@ -1201,7 +1201,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fire-and-forget; the server is idempotent for re-applies.
           if (session.access_token) {
             void applyPendingReferral(session.access_token);
-            void applyPendingEmployerProfile(session.access_token);
+            // Awaited (unlike the referral above) — the employer lands on
+            // /employer right after this handler resolves, and that route
+            // reads companyStatus on mount. Racing it would show the
+            // CompanyOnboarding form instead of the dashboard it just built.
+            await applyPendingEmployerProfile(session.access_token);
           }
           try {
             // Same connection-aware timeout guard as the restore path
@@ -1275,7 +1279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { unsubscribe?.(); };
   }, []);
 
-  const signup = useCallback(async (email: string, name: string, password: string): Promise<{ success: boolean; error?: string; userId?: string }> => {
+  const signup = useCallback(async (email: string, name: string, password: string, redirectPath?: string): Promise<{ success: boolean; error?: string; userId?: string }> => {
     track("signup_started");
     if (!supabaseConfigured) {
       // localStorage fallback
@@ -1328,7 +1332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await client.auth.signUp({
         email,
         password,
-        options: { data: metadata, emailRedirectTo: `${window.location.origin}/dashboard` },
+        options: { data: metadata, emailRedirectTo: `${window.location.origin}${redirectPath ?? "/dashboard"}` },
       });
 
       if (error) {

@@ -330,7 +330,12 @@ export default function Signup() {
       trackAuth({ type: "login_submitted", method: "email" });
       const start = Date.now();
       try {
-        const result = await signup(cleanEmail, isEmployerFlow ? companyName.trim() : name.trim(), password);
+        const result = await signup(
+          cleanEmail,
+          isEmployerFlow ? companyName.trim() : name.trim(),
+          password,
+          isEmployerFlow ? "/employer" : undefined,
+        );
         if (!isMounted.current) return;
         if (!result.success) {
           setError(mapAuthError(result.error));
