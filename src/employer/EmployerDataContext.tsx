@@ -67,7 +67,7 @@ interface EmployerDataContextValue {
   companyWebsite: string;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
-  submitCompanyProfile: (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
+  submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
   addRequirement: (r: RequirementFormValues) => Promise<string | null>;
   updateRequirement: (id: string, r: RequirementFormValues) => Promise<boolean>;
@@ -146,7 +146,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshRequirements();
   }, [refreshRequirements]);
 
-  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; gstin?: string; logoBase64?: string; logoContentType?: string }) => {
+  const submitCompanyProfile = useCallback(async (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => {
     const res = await apiFetch<{ status: CompanyStatus; companyName?: string; website?: string; logoUrl?: string | null }>("/api/employer-profile", fields, { method: "POST" });
     if (res.ok && res.data) {
       setCompanyStatus(res.data.status);

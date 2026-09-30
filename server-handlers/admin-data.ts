@@ -1230,7 +1230,6 @@ interface EmployerRow {
   id: string;
   company_name: string;
   website: string;
-  gstin: string | null;
   status: "pending" | "approved" | "rejected";
   submitted_at: string;
   approved_at: string | null;
@@ -1238,7 +1237,7 @@ interface EmployerRow {
 
 async function getEmployers() {
   const [employers, profiles] = await Promise.all([
-    fetchJSON<EmployerRow>("employers?select=id,company_name,website,gstin,status,submitted_at,approved_at&order=submitted_at.desc&limit=1000"),
+    fetchJSON<EmployerRow>("employers?select=id,company_name,website,status,submitted_at,approved_at&order=submitted_at.desc&limit=1000"),
     fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
   ]);
   const profileMap = new Map(profiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
@@ -1247,7 +1246,6 @@ async function getEmployers() {
     id: e.id,
     companyName: e.company_name,
     website: e.website,
-    gstin: e.gstin || null,
     status: e.status,
     submittedAt: e.submitted_at,
     approvedAt: e.approved_at,

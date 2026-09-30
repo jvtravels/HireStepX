@@ -3,7 +3,7 @@
  * GET  /api/employer-profile  → current employer row (or { status: "none" }
  *      if the authenticated user has never submitted one). Includes
  *      logoUrl, a public Storage URL, when a logo was uploaded.
- * POST /api/employer-profile  { companyName, website, gstin?, logoBase64?,
+ * POST /api/employer-profile  { companyName, website, logoBase64?,
  *      logoContentType? } → upserts an approved employer row (fresh
  *      submission or resubmission after rejection). logoBase64 is optional;
  *      omitting it on a resubmission keeps any previously uploaded logo.
@@ -48,7 +48,6 @@ interface EmployerRow {
   id: string;
   company_name: string;
   website: string;
-  gstin: string;
   logo_path: string | null;
   status: "pending" | "approved" | "rejected";
   submitted_at: string;
@@ -58,7 +57,6 @@ interface EmployerRow {
 interface SubmitBody {
   companyName?: unknown;
   website?: unknown;
-  gstin?: unknown;
   logoBase64?: unknown;
   logoContentType?: unknown;
 }
@@ -181,7 +179,7 @@ export default async function handler(req: Request): Promise<Response> {
 
 async function fetchEmployer(userId: string): Promise<EmployerRow | null> {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=id,company_name,website,gstin,logo_path,status,submitted_at,approved_at`,
+    `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=id,company_name,website,logo_path,status,submitted_at,approved_at`,
     { headers: serviceHeaders() },
   );
   if (!res.ok) throw new Error(`employer read failed: ${res.status}`);
@@ -201,7 +199,6 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
         status: row.status,
         companyName: row.company_name,
         website: row.website,
-        gstin: row.gstin,
         logoUrl: logoUrl(row.logo_path),
       }),
       { status: 200, headers },
@@ -223,7 +220,6 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
 
   const companyName = asString(body.companyName, 200);
   const website = asString(body.website, 300);
-  const gstin = asString(body.gstin, 20);
 
   if (companyName.length < 2) {
     return new Response(JSON.stringify({ error: "companyName is required" }), { status: 400, headers });
@@ -239,7 +235,6 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     // A rejected employer resubmitting stays rejected — admin moderation
     // decides re-approval, this endpoint doesn't get to self-approve (C5).
     const status = existing?.status === "rejected" ? "rejected" : "approved";
-    const finalGstin = gstin || existing?.gstin || "";
 
     const now = new Date().toISOString();
     const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
@@ -249,7 +244,6 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         id: userId,
         company_name: companyName,
         website,
-        gstin: finalGstin,
         logo_path: logoPath,
         status,
         submitted_at: now,
@@ -263,7 +257,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       return new Response(JSON.stringify({ error: "Failed to submit company profile" }), { status: 500, headers });
     }
 
-    return new Response(JSON.stringify({ status, companyName, website, gstin: finalGstin, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
+    return new Response(JSON.stringify({ status, companyName, website, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile POST threw", { code: "employer_profile_post_unexpected_error", error: msg.slice(0, 200), userId });

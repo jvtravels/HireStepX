@@ -1629,7 +1629,6 @@ create table if not exists employers (
   id uuid references auth.users on delete cascade primary key,
   company_name text not null default '',
   website text not null default '',
-  gstin text default '',
   -- Path within the `employer-logos` Storage bucket (public bucket, created
   -- manually — see runbook note next to `resume-files` — not this file),
   -- e.g. "{employer_id}/logo.png". NULL when no logo was uploaded.

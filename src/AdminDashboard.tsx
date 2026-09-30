@@ -207,7 +207,7 @@ export interface ReferralsData {
 export interface EmployersData {
   total: number; pending: number; approved: number; rejected: number;
   rows: Array<{
-    id: string; companyName: string; website: string; gstin: string | null;
+    id: string; companyName: string; website: string;
     status: "pending" | "approved" | "rejected";
     submittedAt: string; approvedAt: string | null;
     contactName: string; contactEmail: string;
@@ -3895,7 +3895,6 @@ export default function AdminDashboard() {
                 <tr>
                   <th style={thStyle}>Company</th>
                   <th style={thStyle}>Website</th>
-                  <th style={thStyle}>GSTIN</th>
                   <th style={thStyle}>Contact</th>
                   <th style={thStyle}>Submitted</th>
                   <th style={thStyle}>Action</th>
@@ -3908,7 +3907,6 @@ export default function AdminDashboard() {
                     <td style={{ ...tdStyle, fontSize: 12 }}>
                       <a href={e.website} target="_blank" rel="noopener noreferrer" style={{ color: T.indigo }}>{e.website}</a>
                     </td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{e.gstin || "—"}</td>
                     <td style={tdStyle}>
                       <div>{e.contactName}</div>
                       <div style={{ fontSize: 11, color: c.stone }}>{e.contactEmail}</div>

@@ -24,11 +24,3 @@ export function isPlausibleWebsite(value: string): boolean {
     return false;
   }
 }
-
-/* GSTIN is optional at signup — a website is enough on its own — but if
-   the employer enters one, validate the real 15-char format: 2-digit state
-   code, 10-char PAN, 1-char entity number, 'Z' by convention, 1-char
-   checksum. */
-export function isPlausibleGstin(value: string): boolean {
-  return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value.trim().toUpperCase());
-}
