@@ -702,9 +702,6 @@ export default function Login() {
               </div>
 
               {(() => {
-                // Three states: enabled CTA, in-flight (loading), or
-                // ghost-disabled (form not yet valid). The ghost treatment
-                // signals "no action available" without looking dimmed-active.
                 const isGhost = !canSubmit && !loading;
                 const tooltip = isGhost
                   ? !emailV.valid
@@ -724,28 +721,19 @@ export default function Login() {
                     className="hsx-login-cta"
                     style={{
                       width: "100%",
+                      height: "auto",
                       fontFamily: f.sans,
                       fontSize: 15,
                       fontWeight: 600,
-                      color: isGhost ? t.inkSoft : t.cream,
-                      background: isGhost ? t.creamSoft : t.indigo,
-                      /* lineStrong instead of line — more definition against
-                         the cream page background so the button reads as
-                         "waiting" rather than absent. */
-                      border: isGhost
-                        ? `1px solid ${t.lineStrong}`
-                        : "1px solid transparent",
                       borderRadius: 10,
                       padding: "16px 18px",
-                      cursor: canSubmit ? "pointer" : "not-allowed",
                       marginTop: 14,
-                      boxShadow: isGhost ? "none" : shadows.cta,
+                      boxShadow: shadows.cta,
                       letterSpacing: 0.1,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 10,
-                      opacity: loading ? 0.95 : 1,
                     }}
                   >
                     {loading ? (
