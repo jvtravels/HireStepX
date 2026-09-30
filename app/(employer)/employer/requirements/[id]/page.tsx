@@ -167,13 +167,10 @@ function ZeroMatchState() {
   return (
     <Card style={{ textAlign: "center", padding: 48 }}>
       <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>No matches yet</h2>
-      <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
+      <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: 0 }}>
         No candidates currently practicing on HireStepX match this requirement closely enough to shortlist.
         Try widening the location or notice period, or check back as more candidates practice this week.
       </p>
-      <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-        <OutlineCta>Post a broader requirement</OutlineCta>
-      </Link>
     </Card>
   );
 }
