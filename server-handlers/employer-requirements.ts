@@ -328,15 +328,24 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
 export async function runMatching(requirementId: string, req: { title: string; location: string; description: string }, ownerUserId: string): Promise<string> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at`,
       { headers: serviceHeaders() },
     );
     const existing = (await existingRes.json().catch(() => [])) as Array<{
       id: string; candidate_user_id: string; match_score: number; unlocked: boolean;
+      candidate_status: string | null; candidate_status_note: string | null; interview_scheduled_at: string | null;
     }>;
-    const unlockedMatches = existing.filter((m) => m.unlocked);
-    const unlockedCandidateIds = new Set(unlockedMatches.map((m) => m.candidate_user_id));
-    const staleMatchIds = existing.filter((m) => !m.unlocked).map((m) => m.id);
+    // A row the employer has already acted on — unlocked it, moved it off the
+    // default "shortlisted" stage, left a note, or scheduled an interview —
+    // is preserved as-is rather than deleted and re-inserted with a new id
+    // on every edit/reopen. Re-running matching would otherwise silently
+    // wipe pipeline state (status, note, interview date) an employer already
+    // set, and break any open tab/checkout referencing the old match id (C2).
+    const isTouched = (m: (typeof existing)[number]) =>
+      m.unlocked || (!!m.candidate_status && m.candidate_status !== "shortlisted") || !!m.candidate_status_note || !!m.interview_scheduled_at;
+    const preservedMatches = existing.filter(isTouched);
+    const preservedCandidateIds = new Set(preservedMatches.map((m) => m.candidate_user_id));
+    const staleMatchIds = existing.filter((m) => !isTouched(m)).map((m) => m.id);
     if (staleMatchIds.length > 0) {
       const idParam = staleMatchIds.map((id) => encodeURIComponent(id)).join(",");
       await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${idParam})`, {
@@ -354,8 +363,9 @@ export async function runMatching(requirementId: string, req: { title: string; l
       id: string; name: string; target_role: string | null; industry: string | null;
       resume_data: unknown; practice_timestamps: string[] | null;
     }>;
-    // Already-unlocked candidates keep their existing (paid-for) match row untouched.
-    const pool = poolRows.filter((p) => !unlockedCandidateIds.has(p.id));
+    // Candidates already touched (unlocked, or with pipeline progress) keep
+    // their existing match row untouched — they're excluded from re-scoring.
+    const pool = poolRows.filter((p) => !preservedCandidateIds.has(p.id));
 
     const scores = new Map<string, number>();
     const sessionCounts = new Map<string, number>();
@@ -405,7 +415,7 @@ export async function runMatching(requirementId: string, req: { title: string; l
     }
 
     const finalStatus = classifyRequirementStatus([
-      ...unlockedMatches.map((m) => ({ matchScore: m.match_score })),
+      ...preservedMatches.map((m) => ({ matchScore: m.match_score })),
       ...ranked,
     ]);
     await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {

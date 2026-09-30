@@ -177,8 +177,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const targetMatchIds = nextBatch.filter((r) => !r.unlocked).map((r) => r.id);
 
-      price = batchUnlockPrice();
-      idempotencyKey = `order:${employerId}:unlockbatch:${requirementId}`;
+      price = batchUnlockPrice(targetMatchIds.length);
+      // Scoped to the exact candidate set being purchased, not just the
+      // requirement — once this set is paid for, those match rows flip to
+      // unlocked and a follow-up "unlock next batch" computes a *different*
+      // targetMatchIds, so it naturally gets its own key instead of
+      // colliding with (and reusing) the just-paid order within the 90s
+      // dedup window (C4).
+      idempotencyKey = `order:${employerId}:unlockbatch:${requirementId}:${targetMatchIds.slice().sort().join(",")}`;
       orderNotes = { employerId, mode: "batch", matchIds: targetMatchIds.join(",") };
     }
 

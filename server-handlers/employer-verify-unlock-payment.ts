@@ -32,7 +32,6 @@ import {
   validatePaymentIdsFormat,
   isOversizedRequest,
   verifyOrderOwnership,
-  isClosedAndLocked,
   parseNotedMatchIds,
   buildBatchUnlockResponsePayload,
 } from "./_employer-unlock-verify-helpers";
@@ -45,11 +44,6 @@ interface MatchRow {
   requirement_id: string;
   candidate_user_id: string;
   unlocked: boolean;
-}
-
-interface RequirementRow {
-  id: string;
-  status: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -138,38 +132,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const idParam = matchIds.map((id) => encodeURIComponent(id)).join(",");
-    const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${idParam})&select=id,requirement_id,candidate_user_id,unlocked`,
-      { headers: supabaseServiceHeaders() },
-    );
-    const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
-    if (!matchRes.ok || matchRows.length === 0 || matchRows.length !== matchIds.length) {
-      return res.status(404).json({ error: "Match not found" });
-    }
-    const requirementId = matchRows[0].requirement_id;
-    if (matchRows.some((m) => m.requirement_id !== requirementId)) {
-      console.error("Employer unlock order spans multiple requirements for order", razorpay_order_id.slice(0, 8) + "...");
-      return res.status(400).json({ error: "Invalid order" });
-    }
-
-    const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
-      { headers: supabaseServiceHeaders() },
-    );
-    const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
-    if (!reqRes.ok || !reqRows[0]) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    const allAlreadyUnlocked = matchRows.every((m) => m.unlocked);
-    if (isClosedAndLocked(reqRows[0].status, allAlreadyUnlocked)) {
-      return res.status(409).json({ error: "This requirement is closed" });
-    }
-
-    // Dedup lock: employer_unlock_payments.razorpay_payment_id is unique.
-    // A 409 here means this payment was already recorded — respond
-    // idempotently with the current (already-unlocked) contact details
-    // instead of unlocking/inserting a second time.
+    // Record the payment BEFORE touching match rows. Razorpay has already
+    // captured the money by this point — a concurrent edit/reopen (which
+    // re-runs matching) can delete or replace the exact match rows this
+    // order's notes reference between order-creation and verification, and
+    // that must never make a captured payment vanish without a database
+    // record (C1). employer_unlock_payments.razorpay_payment_id's unique
+    // constraint is the dedup lock: a 409 here means this payment was
+    // already recorded — respond idempotently instead of double-processing.
     const dedupRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_unlock_payments`, {
       method: "POST",
       headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
@@ -186,6 +156,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Failed to record payment" });
     }
 
+    const idParam = matchIds.map((id) => encodeURIComponent(id)).join(",");
+    const matchRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${idParam})&select=id,requirement_id,candidate_user_id,unlocked`,
+      { headers: supabaseServiceHeaders() },
+    );
+    const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
+    if (!matchRes.ok || matchRows.length === 0) {
+      // Payment is already recorded above — the matches it was meant to
+      // unlock were removed from under it (e.g. a concurrent edit/reopen).
+      // Surface this as a reconciliation case rather than a bare 404 that
+      // implies nothing happened to the employer's money.
+      console.error("Employer unlock payment recorded but target matches are gone for order", razorpay_order_id.slice(0, 8) + "...");
+      return res.status(200).json({
+        unlocked: [],
+        partial: true,
+        message: "Payment received, but these candidates are no longer available (the job may have been edited). Contact support@hirestepx.com with this order id for a refund or credit.",
+        orderId: razorpay_order_id,
+      });
+    }
+    const requirementId = matchRows[0].requirement_id;
+    if (matchRows.some((m) => m.requirement_id !== requirementId)) {
+      console.error("Employer unlock order spans multiple requirements for order", razorpay_order_id.slice(0, 8) + "...");
+      return res.status(400).json({ error: "Invalid order" });
+    }
+
+    const missingCount = matchIds.length - matchRows.length;
     const stillLocked = matchRows.filter((m) => !m.unlocked).map((m) => m.id);
     if (stillLocked.length > 0) {
       const lockedIdParam = stillLocked.map((id) => encodeURIComponent(id)).join(",");
@@ -213,7 +209,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profileById = new Map(profileRows.map((p) => [p.id, p]));
     const profileByMatchId = new Map(matchRows.map((m) => [m.id, profileById.get(m.candidate_user_id)]));
 
-    return res.status(200).json(buildBatchUnlockResponsePayload({ matchIds, profileByMatchId }));
+    const payload = buildBatchUnlockResponsePayload({ matchIds: matchRows.map((m) => m.id), profileByMatchId });
+    if (missingCount > 0) {
+      return res.status(200).json({
+        ...payload,
+        partial: true,
+        message: `Payment received. ${missingCount} of ${matchIds.length} candidates could not be unlocked (the job may have been edited); contact support@hirestepx.com with this order id for a refund or credit on those.`,
+        orderId: razorpay_order_id,
+      });
+    }
+    return res.status(200).json(payload);
   } catch (err) {
     console.error("employer-verify-unlock-payment error:", err);
     return res.status(500).json({ error: "Internal error" });

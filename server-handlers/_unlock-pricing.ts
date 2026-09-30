@@ -20,8 +20,20 @@ export function singleUnlockPrice(): UnlockPrice {
   return { amountPaise: UNLOCK_SINGLE_PRICE_PAISE, label: "Unlock candidate" };
 }
 
-export function batchUnlockPrice(): UnlockPrice {
-  return { amountPaise: UNLOCK_BATCH_PRICE_PAISE, label: `Unlock batch of ${UNLOCK_BUNDLE_SIZE}` };
+const PER_CANDIDATE_BATCH_PAISE = Math.round(UNLOCK_BATCH_PRICE_PAISE / UNLOCK_BUNDLE_SIZE);
+
+/** `count` is how many still-locked candidates a batch order will actually
+    unlock. A full bucket of UNLOCK_BUNDLE_SIZE charges the flat batch price;
+    a smaller remainder (some of the bucket already individually unlocked, or
+    a final partial bucket) charges proportionally instead of the full flat
+    price for fewer candidates. */
+export function batchUnlockPrice(count: number = UNLOCK_BUNDLE_SIZE): UnlockPrice {
+  const clamped = Math.max(1, Math.min(count, UNLOCK_BUNDLE_SIZE));
+  const amountPaise = clamped === UNLOCK_BUNDLE_SIZE ? UNLOCK_BATCH_PRICE_PAISE : PER_CANDIDATE_BATCH_PAISE * clamped;
+  const label = clamped === UNLOCK_BUNDLE_SIZE
+    ? `Unlock batch of ${UNLOCK_BUNDLE_SIZE}`
+    : `Unlock ${clamped} candidate${clamped === 1 ? "" : "s"}`;
+  return { amountPaise, label };
 }
 
 /** Which fixed batch a candidate falls into, given their 0-based rank

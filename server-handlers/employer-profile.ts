@@ -204,8 +204,12 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
 
   try {
     const uploadedLogoPath = await uploadLogoIfPresent(userId, body);
-    const existing = uploadedLogoPath ? null : await fetchEmployer(userId);
+    const existing = await fetchEmployer(userId);
     const logoPath = uploadedLogoPath ?? existing?.logo_path ?? null;
+    // A rejected employer resubmitting stays rejected — admin moderation
+    // decides re-approval, this endpoint doesn't get to self-approve (C5).
+    const status = existing?.status === "rejected" ? "rejected" : "approved";
+    const finalGstin = gstin || existing?.gstin || "";
 
     const now = new Date().toISOString();
     const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
@@ -215,11 +219,11 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         id: userId,
         company_name: companyName,
         website,
-        gstin,
+        gstin: finalGstin,
         logo_path: logoPath,
-        status: "approved",
+        status,
         submitted_at: now,
-        approved_at: now,
+        approved_at: status === "approved" ? now : existing?.approved_at ?? null,
       }]),
     });
 
@@ -229,7 +233,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       return new Response(JSON.stringify({ error: "Failed to submit company profile" }), { status: 500, headers });
     }
 
-    return new Response(JSON.stringify({ status: "approved", companyName, website, gstin, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
+    return new Response(JSON.stringify({ status, companyName, website, gstin: finalGstin, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile POST threw", { code: "employer_profile_post_unexpected_error", error: msg.slice(0, 200), userId });
