@@ -1027,6 +1027,7 @@ export default function Signup() {
                     className="hsx-login-cta"
                     style={{
                       width: "100%",
+                      height: "auto",
                       fontFamily: f.sans,
                       fontSize: 15,
                       fontWeight: 600,
