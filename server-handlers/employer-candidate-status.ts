@@ -26,6 +26,7 @@ import {
   asCandidateStatus,
   asCandidateStatusNote,
   asInterviewScheduledAt,
+  isValidCandidateStatusTransition,
   type RequirementMatchRow,
 } from "./_employer-candidate-status-helpers";
 
@@ -101,22 +102,40 @@ export default async function handler(req: Request): Promise<Response> {
     // owns. Never trust a client-supplied requirement id for this — resolve
     // it from the match row itself, then verify the parent's employer_id.
     const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_status`,
       { headers: serviceHeaders() },
     );
-    const matchRows = (await matchRes.json().catch(() => [])) as Array<{ id: string; requirement_id: string }>;
+    const matchRows = (await matchRes.json().catch(() => [])) as Array<{ id: string; requirement_id: string; candidate_status: string }>;
     if (!matchRes.ok || !matchRows[0]) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
     const requirementId = matchRows[0].requirement_id;
+    const currentStatus = asCandidateStatus(matchRows[0].candidate_status);
 
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,status`,
       { headers: serviceHeaders() },
     );
-    const reqRows = (await reqRes.json().catch(() => [])) as Array<{ id: string }>;
+    const reqRows = (await reqRes.json().catch(() => [])) as Array<{ id: string; status: string }>;
     if (!reqRes.ok || !reqRows[0]) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
+    }
+    // A closed/archived requirement is done being worked — the "archive"
+    // action already resolved outstanding candidates (see
+    // handleStatusAction's reject_remaining path in
+    // employer-requirement-detail.ts). Reopening it is the only way back in.
+    if (reqRows[0].status === "closed") {
+      return new Response(JSON.stringify({ error: "This requirement is closed" }), { status: 409, headers });
+    }
+    // Guard against skipping stages, going backwards, or resurrecting a
+    // terminal outcome (hired/rejected/not_a_fit/no_response) — the pipeline
+    // only moves forward one step at a time, matching what the employer UI
+    // actually exposes.
+    if (!currentStatus || !isValidCandidateStatusTransition(currentStatus, candidateStatus)) {
+      return new Response(
+        JSON.stringify({ error: `Can't move a candidate from "${currentStatus ?? matchRows[0].candidate_status}" to "${candidateStatus}"` }),
+        { status: 409, headers },
+      );
     }
 
     const patchBody: Record<string, unknown> = {

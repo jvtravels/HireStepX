@@ -42,6 +42,39 @@ export function asInterviewScheduledAt(v: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+/** Allowed forward transitions in the per-candidate hiring pipeline. Built
+ *  from the two employer surfaces that drive status changes:
+ *  - the candidate detail page (app/(employer)/employer/requirements/[id]/
+ *    candidates/[candidateId]/page.tsx): "Invite" only shows from
+ *    `shortlisted`, and "Reject" shows from anything but the three terminal
+ *    states (hired/rejected/not_a_fit);
+ *  - the outcome-feedback page (.../outcome/page.tsx): records a final
+ *    outcome (hired/interviewing/not_a_fit/no_response) once an interview
+ *    has happened.
+ *  `hired`, `rejected`, `not_a_fit` and `no_response` are terminal — none of
+ *  the employer surfaces ever move a candidate out of them, so the pipeline
+ *  can't be pushed backwards (e.g. hired -> shortlisted) or skipped forward
+ *  (e.g. shortlisted -> hired) through a raw PATCH. A status "changing" to
+ *  its own current value is always allowed — that's just a note/interview
+ *  time update, not a transition. */
+const ALLOWED_TRANSITIONS: Record<CandidateStatus, readonly CandidateStatus[]> = {
+  shortlisted: ["interview_invited", "rejected", "not_a_fit"],
+  interview_invited: ["interviewing", "rejected", "not_a_fit", "no_response"],
+  interviewing: ["hired", "rejected", "not_a_fit", "no_response"],
+  hired: [],
+  rejected: [],
+  not_a_fit: [],
+  no_response: [],
+};
+
+/** Whether moving a candidate from `from` to `to` is a legal pipeline
+ *  transition. Same-status "transitions" (note/date-only updates) are
+ *  always allowed. */
+export function isValidCandidateStatusTransition(from: CandidateStatus, to: CandidateStatus): boolean {
+  if (from === to) return true;
+  return ALLOWED_TRANSITIONS[from].includes(to);
+}
+
 export interface RequirementMatchRow {
   id: string;
   requirement_id: string;
