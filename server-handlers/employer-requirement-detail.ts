@@ -435,61 +435,67 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     return handleStageAction(requirementId, userId, stage, headers);
   }
 
-  const title = asBoundedString(body.title, 200);
-  const department = asBoundedString(body.department, 120) || null;
-  const noticePeriodPref = asBoundedString(body.noticePeriodPref, 60) || "Any";
-  const description = asBoundedString(body.description, 5000);
-  const experienceMin = asBoundedExperience(body.experienceMin);
-  const experienceMax = asBoundedExperience(body.experienceMax);
-  const dueDate = asBoundedDueDate(body.dueDate);
-  const salaryType = asBoundedSalaryType(body.salaryType) || "per-annum";
-  const budgetMin = asBoundedBudget(body.budgetMin, salaryType);
-  const budgetMax = asBoundedBudget(body.budgetMax, salaryType);
-  const locations = asBoundedStringArray(body.locations, 20, 100);
-  const openPositions = asBoundedOpenPositions(body.openPositions);
-  const workMode = asBoundedWorkMode(body.workMode);
-  const skills = asBoundedStringArray(body.skills, 40, 60);
-  const responsibilities = asBoundedString(body.responsibilities, 2000);
-  const niceToHave = asBoundedString(body.niceToHave, 2000);
-  const preferredIndustry = asBoundedString(body.preferredIndustry, 120);
-  const preferredColleges = asBoundedStringArray(body.preferredColleges, 20, 100);
-  const targetCompanies = asBoundedStringArray(body.targetCompanies, 20, 100);
-  const perksAndBenefits = asBoundedStringArray(body.perksAndBenefits, 20, 100);
-  const employmentType = asBoundedEmploymentType(body.employmentType) || "full-time";
-  const preferredDomain = asBoundedString(body.preferredDomain, 120);
-  const workSchedule = asBoundedString(body.workSchedule, 120);
-  const availability = asBoundedString(body.availability, 60);
-  const relevantExperience = asBoundedString(body.relevantExperience, 120);
-  const portfolioRequired = asBoundedBoolean(body.portfolioRequired);
-  const customSkillSets = asBoundedStringArray(body.customSkillSets, 40, 60);
-  const durationWeeks = asBoundedDurationWeeks(body.durationWeeks);
-  const hoursPerWeek = asBoundedHoursPerWeek(body.hoursPerWeek);
-  const location = locations.join(", ");
-
-  if (!isValidRequirementInput(title, locations, description)) {
-    return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
-  }
-  if (!isValidRange(experienceMin, experienceMax)) {
-    return new Response(JSON.stringify({ error: "Minimum experience can't be greater than maximum experience" }), { status: 400, headers });
-  }
-  if (!isValidRange(budgetMin, budgetMax)) {
-    return new Response(JSON.stringify({ error: "Minimum budget can't be greater than maximum budget" }), { status: 400, headers });
-  }
-  if (!isFutureDueDate(dueDate)) {
-    return new Response(JSON.stringify({ error: "Due date can't be in the past" }), { status: 400, headers });
-  }
-
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=*`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<RequirementRow & { description: string | null }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
-    if (existingRows[0].status === "closed") {
+    const existing = existingRows[0];
+    if (existing.status === "closed") {
       return new Response(JSON.stringify({ error: "Closed requirements can't be edited" }), { status: 409, headers });
+    }
+
+    // A caller (e.g. the "extend deadline" modal, which only sends dueDate
+    // plus the required trio) legitimately omits fields it isn't changing —
+    // that must mean "leave as-is", not "reset to a hardcoded default" (C8:
+    // a partial PATCH was silently wiping department, salaryType, and the
+    // other optional fields to null/defaults on every unrelated edit).
+    const title = body.title !== undefined ? asBoundedString(body.title, 200) : existing.title;
+    const department = body.department !== undefined ? asBoundedString(body.department, 120) || null : existing.department;
+    const noticePeriodPref = body.noticePeriodPref !== undefined ? asBoundedString(body.noticePeriodPref, 60) || "Any" : existing.notice_period_pref;
+    const description = body.description !== undefined ? asBoundedString(body.description, 5000) : existing.description || "";
+    const experienceMin = body.experienceMin !== undefined ? asBoundedExperience(body.experienceMin) : existing.experience_min;
+    const experienceMax = body.experienceMax !== undefined ? asBoundedExperience(body.experienceMax) : existing.experience_max;
+    const dueDate = body.dueDate !== undefined ? asBoundedDueDate(body.dueDate) : existing.due_date;
+    const salaryType = (body.salaryType !== undefined ? asBoundedSalaryType(body.salaryType) : asBoundedSalaryType(existing.salary_type)) || "per-annum";
+    const budgetMin = body.budgetMin !== undefined ? asBoundedBudget(body.budgetMin, salaryType) : existing.budget_min;
+    const budgetMax = body.budgetMax !== undefined ? asBoundedBudget(body.budgetMax, salaryType) : existing.budget_max;
+    const locations = body.locations !== undefined ? asBoundedStringArray(body.locations, 20, 100) : existing.locations;
+    const openPositions = body.openPositions !== undefined ? asBoundedOpenPositions(body.openPositions) : existing.open_positions;
+    const workMode = body.workMode !== undefined ? asBoundedWorkMode(body.workMode) : existing.work_mode;
+    const skills = body.skills !== undefined ? asBoundedStringArray(body.skills, 40, 60) : existing.skills;
+    const responsibilities = body.responsibilities !== undefined ? asBoundedString(body.responsibilities, 2000) : existing.responsibilities;
+    const niceToHave = body.niceToHave !== undefined ? asBoundedString(body.niceToHave, 2000) : existing.nice_to_have;
+    const preferredIndustry = body.preferredIndustry !== undefined ? asBoundedString(body.preferredIndustry, 120) : existing.preferred_industry;
+    const preferredColleges = body.preferredColleges !== undefined ? asBoundedStringArray(body.preferredColleges, 20, 100) : existing.preferred_colleges;
+    const targetCompanies = body.targetCompanies !== undefined ? asBoundedStringArray(body.targetCompanies, 20, 100) : existing.target_companies;
+    const perksAndBenefits = body.perksAndBenefits !== undefined ? asBoundedStringArray(body.perksAndBenefits, 20, 100) : existing.perks_and_benefits;
+    const employmentType = body.employmentType !== undefined ? asBoundedEmploymentType(body.employmentType) || "full-time" : existing.employment_type || "full-time";
+    const preferredDomain = body.preferredDomain !== undefined ? asBoundedString(body.preferredDomain, 120) : existing.preferred_domain;
+    const workSchedule = body.workSchedule !== undefined ? asBoundedString(body.workSchedule, 120) : existing.work_schedule;
+    const availability = body.availability !== undefined ? asBoundedString(body.availability, 60) : existing.availability;
+    const relevantExperience = body.relevantExperience !== undefined ? asBoundedString(body.relevantExperience, 120) : existing.relevant_experience;
+    const portfolioRequired = body.portfolioRequired !== undefined ? asBoundedBoolean(body.portfolioRequired) : existing.portfolio_required;
+    const customSkillSets = body.customSkillSets !== undefined ? asBoundedStringArray(body.customSkillSets, 40, 60) : existing.custom_skill_sets;
+    const durationWeeks = body.durationWeeks !== undefined ? asBoundedDurationWeeks(body.durationWeeks) : existing.duration_weeks;
+    const hoursPerWeek = body.hoursPerWeek !== undefined ? asBoundedHoursPerWeek(body.hoursPerWeek) : existing.hours_per_week;
+    const location = locations.join(", ");
+
+    if (!isValidRequirementInput(title, locations, description)) {
+      return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
+    }
+    if (!isValidRange(experienceMin, experienceMax)) {
+      return new Response(JSON.stringify({ error: "Minimum experience can't be greater than maximum experience" }), { status: 400, headers });
+    }
+    if (!isValidRange(budgetMin, budgetMax)) {
+      return new Response(JSON.stringify({ error: "Minimum budget can't be greater than maximum budget" }), { status: 400, headers });
+    }
+    if (!isFutureDueDate(dueDate)) {
+      return new Response(JSON.stringify({ error: "Due date can't be in the past" }), { status: 400, headers });
     }
 
     const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
