@@ -953,6 +953,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (session.provider_token) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
           }
+          // Close the referral/employer-profile loops for sessions established
+          // directly from URL hash tokens (email verification / magic links).
+          // supabase-js resolves these via getSession() right here and fires
+          // onAuthStateChange with "INITIAL_SESSION" rather than "SIGNED_IN" for
+          // this path, so the equivalent calls in the SIGNED_IN branch below
+          // never run for a fresh signup landing straight off a verify link.
+          // Both helpers no-op when there's no pending data, so this is safe
+          // to run on every restore. Awaited (like the SIGNED_IN branch) since
+          // an employer lands on /employer immediately after and that route
+          // reads companyStatus on mount.
+          if (session.access_token) {
+            void applyPendingReferral(session.access_token);
+            await applyPendingEmployerProfile(session.access_token);
+          }
           // ── Fast render for returning users ──────────────────────────────────
           // On slow Indian mobile connections getProfile consistently hits the 5s
           // timeout, so every hard-refresh shows a full-page spinner for 5 seconds.
