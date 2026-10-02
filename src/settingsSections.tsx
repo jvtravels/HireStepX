@@ -702,6 +702,18 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{cycleLabel}</span>
             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{sessionsUsedLabel}</span>
           </div>
+          {usage && (
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.border}`,
+              fontFamily: font.ui, fontSize: 12, color: c.inkSoft,
+            }}>
+              <span>Resume parses this period</span>
+              <span style={{ fontWeight: 600, color: c.ink }}>
+                {usage.resume_parses.cap == null ? usage.resume_parses.count : `${Math.min(usage.resume_parses.count, usage.resume_parses.cap)} of ${usage.resume_parses.cap}`}
+              </span>
+            </div>
+          )}
         </div>
 
         <div style={{
@@ -743,14 +755,6 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
         </div>
       </div>
       {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{cancelMsg}</p>}
-      {usage && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
-          <span>Resume parses this period</span>
-          <span style={{ fontWeight: 600, color: c.ink }}>
-            {usage.resume_parses.cap == null ? usage.resume_parses.count : `${Math.min(usage.resume_parses.count, usage.resume_parses.cap)} of ${usage.resume_parses.cap}`}
-          </span>
-        </div>
-      )}
 
       {/* Payment history — same plan the usage above belongs to, so it
           lives in one section rather than a separate "Billing" block. */}
