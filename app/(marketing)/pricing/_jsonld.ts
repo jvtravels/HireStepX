@@ -22,7 +22,7 @@ const BREADCRUMB_SCHEMA = {
 const PRICING_TIERS = [
   { name: "Free",         price: "0",  description: "2 practice sessions, no card required",                          anchor: "free" },
   { name: "Per session",  price: "9",  description: "Single mock interview session, credit never expires",             anchor: "per-session" },
-  { name: "Sprint Pack",  price: "39", description: "5 sessions per month, auto-renews monthly, cancel any time",     anchor: "sprint-pack" },
+  { name: "Sprint Pack",  price: "39", description: "5 sessions, valid for 30 days, one-time purchase — buy again anytime", anchor: "sprint-pack" },
   // Monthly plan temporarily hidden — keep data here for when it returns
   // { name: "Monthly", price: "149", description: "40 sessions over 30 days", anchor: "monthly" },
 ] as const;

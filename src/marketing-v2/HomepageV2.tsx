@@ -2739,7 +2739,7 @@ export function PricingV2() {
           {[
             "2 free sessions, no card needed",
             "₹9 sessions never expire",
-            "Cancel Sprint Pack any time · UPI · cards",
+            "Sprint Pack is a one-time buy · UPI · cards",
           ].map((v) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span

@@ -45,7 +45,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
   },
   {
     q: "Is HireStepX AI mock interview free?",
-    a: "Yes. HireStepX includes 2 complete AI mock interview sessions for free, with no credit card required. Each free session is a full voice interview with STAR scoring, a detailed performance report, and a coached model answer for every question. After your 2 free sessions, additional sessions are ₹9 each (credits never expire) or ₹39/month for the Sprint Pack (5 sessions).",
+    a: "Yes. HireStepX includes 2 complete AI mock interview sessions for free, with no credit card required. Each free session is a full voice interview with STAR scoring, a detailed performance report, and a coached model answer for every question. After your 2 free sessions, additional sessions are ₹9 each (credits never expire) or ₹39 for a one-time Sprint Pack of 5 sessions, valid for 30 days.",
   },
   {
     q: "How is AI mock interview different from practicing with ChatGPT?",
