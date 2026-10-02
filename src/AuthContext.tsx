@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { Button } from "@/components/ui/button";
@@ -2186,8 +2186,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally { setRefreshing(false); }
   };
 
+  // Memoized so local state here (restoring/refreshing/sessionExpiryWarning)
+  // re-rendering AuthProvider doesn't force every useAuth() consumer in the
+  // app to re-render too — the same wide-blast-radius bug as the UIContext
+  // fix, except this wraps every authenticated route, so it hits mid-navigation.
+  const contextValue = useMemo(() => ({
+    user, isLoggedIn: !!user, loading, login, signup, loginWithGoogle, logout, updateUser, resetPassword,
+  }), [user, loading, login, signup, loginWithGoogle, logout, updateUser, resetPassword]);
+
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn: !!user, loading, login, signup, loginWithGoogle, logout, updateUser, resetPassword }}>
+    <AuthContext.Provider value={contextValue}>
       {/* Soft-delete restore banner */}
       {user?.deletedAt && (
         <div role="alert" style={{
