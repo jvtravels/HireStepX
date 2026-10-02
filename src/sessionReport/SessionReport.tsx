@@ -119,11 +119,13 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
   return (
     <div
       style={{
-        background: t.cream,
-        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        maxWidth: 1240,
+        margin: "0 auto",
         fontFamily: f.sans,
         color: t.coal,
-        padding: "20px 32px",
       }}
     >
       <Button
@@ -135,7 +137,8 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
           fontSize: 14,
           color: t.coal,
           gap: 8,
-          marginBottom: 32,
+          marginBottom: 16,
+          alignSelf: "flex-start",
         }}
       >
         ← {backLabel}
@@ -253,11 +256,13 @@ export function ErrorShell({
   return (
     <div
       style={{
-        background: t.cream,
-        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        maxWidth: 1240,
+        margin: "0 auto",
         fontFamily: f.sans,
         color: t.coal,
-        padding: "20px 32px",
       }}
     >
       <Button
@@ -269,12 +274,13 @@ export function ErrorShell({
           fontSize: 14,
           color: t.coal,
           gap: 8,
-          marginBottom: 32,
+          marginBottom: 16,
+          alignSelf: "flex-start",
         }}
       >
         ← {backLabel}
       </Button>
-      <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "120px auto 0", textAlign: "center" }}>
+      <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "80px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
           {hasPreliminary ? "Your session is saved" : "Couldn’t generate your report"}
         </h1>
@@ -1113,8 +1119,8 @@ export const SessionReport = memo(function SessionReport({
     // Retrying would produce the same 422, so we skip the retry CTA.
     if (errorMsg === "no_candidate_answers") {
       return (
-        <div style={{ background: t.cream, minHeight: "100vh", fontFamily: f.sans, color: t.coal, padding: "20px 32px" }}>
-          <Button type="button" variant="ghost" onClick={onBack} style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, gap: 6, marginBottom: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 1240, margin: "0 auto", fontFamily: f.sans, color: t.coal }}>
+          <Button type="button" variant="ghost" onClick={onBack} style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, gap: 6, marginBottom: 8, alignSelf: "flex-start" }}>
             ← {backLabel}
           </Button>
           <div style={{ maxWidth: 480, margin: "80px auto 0", textAlign: "center" }}>

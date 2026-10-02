@@ -479,14 +479,14 @@ export default function SessionReportView({
     return (
       <>
         <style>{SESSION_REPORT_STYLES}</style>
-        <div style={{ background: t.cream, minHeight: "100vh", fontFamily: f.sans, color: t.coal, paddingBottom: 48 }}>
-          <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: f.sans, color: t.coal, paddingBottom: 48 }}>
           <main
             id="ir-main"
             aria-label="HR Round report"
             className="ir-main-container"
-            style={{ maxWidth: 1240, margin: "0 auto", padding: "0 clamp(14px, 4vw, 32px)", display: "flex", flexDirection: "column", gap: 16 }}
+            style={{ maxWidth: 1240, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}
           >
+            <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
             <HrFullReport
               overallScore={data.overallScore}
               skills={data.skills}
@@ -527,8 +527,9 @@ export default function SessionReportView({
       <style>{SESSION_REPORT_STYLES}</style>
       <div
         style={{
-          background: t.cream,
-          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
           fontFamily: f.sans,
           color: t.coal,
           paddingBottom: 48,
@@ -540,20 +541,20 @@ export default function SessionReportView({
         <a href="#ir-section-hero" className="ir-skip-link">
           Skip to report
         </a>
-        <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
         <main
           id="ir-main"
           aria-label="Interview report"
           className="ir-main-container"
           style={{
             maxWidth: 1240,
+            width: "100%",
             margin: "0 auto",
-            padding: "0 clamp(14px, 4vw, 32px)",
             display: "flex",
             flexDirection: "column",
             gap: 16,
           }}
         >
+          <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
           <JumpNav showCoachNotes={
             !!(data.coaching ||
                (behaviouralCrossSessionInsights && behaviouralCrossSessionInsights.length > 0) ||

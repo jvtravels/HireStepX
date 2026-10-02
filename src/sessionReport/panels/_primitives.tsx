@@ -48,7 +48,7 @@ export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   const baseStyle = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`,
-    borderRadius: radius.pill, fontSize: 10, fontFamily: f.mono,
+    borderRadius: radius.pill, fontSize: 10, fontFamily: f.sans,
     color: t.inkSoft, letterSpacing: 0.3,
     textDecoration: "none",
   } as const;
@@ -238,14 +238,14 @@ export function HeaderChip({
       style={{
         display: "inline-block",
         padding: "3px 10px",
-        background: isAccent ? t.copperSoft : t.creamSoft,
-        color: isAccent ? t.copper : t.inkSoft,
+        background: isAccent ? t.indigoWash : t.creamSoft,
+        color: isAccent ? t.indigo : t.inkSoft,
         fontSize: 10,
         fontWeight: 700,
         letterSpacing: 0.8,
         borderRadius: radius.tile,
         textTransform: "uppercase",
-        fontFamily: f.mono,
+        fontFamily: f.sans,
         border: isAccent ? "none" : `1px solid ${t.line}`,
       }}
     >
@@ -284,7 +284,7 @@ export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside
       <span
         style={{
           fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
-          color: accent, fontFamily: f.mono,
+          color: accent, fontFamily: f.sans,
         }}
         aria-hidden
       >
@@ -334,7 +334,7 @@ export function SectionBand({
         style={{
           padding: "5px 11px", background: accent, color: t.white,
           fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
-          borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.mono,
+          borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.sans,
           flexShrink: 0,
         }}
       >
@@ -494,7 +494,7 @@ export function StatTile(props: StatTileProps) {
     const color = props.valueColor ?? t.coal;
     return (
       <div style={{ textAlign: "right" }}>
-        <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color, lineHeight: 1 }}>
+        <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.sans, color, lineHeight: 1 }}>
           {props.value}
           {props.denominator !== undefined && (
             <span style={{ color: t.inkFaint, fontWeight: 500 }}> / {props.denominator}</span>
@@ -510,7 +510,7 @@ export function StatTile(props: StatTileProps) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
         <div
           style={{
-            fontSize: 56, fontWeight: 700, fontFamily: f.mono,
+            fontSize: 56, fontWeight: 700, fontFamily: f.sans,
             color, letterSpacing: -2, lineHeight: 1,
           }}
         >
@@ -529,7 +529,7 @@ export function StatTile(props: StatTileProps) {
       </div>
       <div
         style={{
-          fontSize: 22, fontWeight: 700, fontFamily: f.mono,
+          fontSize: 22, fontWeight: 700, fontFamily: f.sans,
           color: t.coal, lineHeight: 1.1,
         }}
       >
@@ -541,7 +541,7 @@ export function StatTile(props: StatTileProps) {
         )}
       </div>
       {props.footnote && (
-        <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
+        <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.sans }}>
           {props.footnote}
         </div>
       )}

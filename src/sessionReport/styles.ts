@@ -43,40 +43,40 @@ export const SESSION_REPORT_STYLES = `
   .ir-highlight-quant  { background: rgba(21, 128, 61, 0.18); padding: 1px 3px; border-radius: 3px; color: #15803D; font-weight: 600; }
   .ir-highlight-first  { background: rgba(49, 46, 129, 0.10); padding: 1px 3px; border-radius: 3px; color: #312E81; }
   .ir-cta-primary {
-    background: #312E81; color: #FAF7F0; border: 1px solid transparent;
+    background: #312E81; color: #FAFAFA; border: 1px solid transparent;
     padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 13px;
     cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     transition: background 160ms ease, transform 160ms ease;
   }
   .ir-cta-primary:hover { background: #1E1B4B; transform: translateY(-1px); }
   .ir-cta-ghost {
-    background: transparent; color: #312E81; border: 1px solid #EBE5D2;
+    background: transparent; color: #312E81; border: 1px solid #E4E4E7;
     padding: 10px 18px; border-radius: 10px; font-weight: 500; font-size: 13px;
     cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     transition: border-color 160ms ease, background 160ms ease;
   }
-  .ir-cta-ghost:hover { border-color: #D6CDB5; background: rgba(255,255,255,0.6); }
+  .ir-cta-ghost:hover { border-color: #D4D4D8; background: rgba(255,255,255,0.6); }
   .ir-pill {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 6px 12px; border-radius: 999px;
-    background: #FFFFFF; border: 1px solid #EBE5D2;
+    background: #FFFFFF; border: 1px solid #E4E4E7;
     font-size: 12px; font-weight: 500;
   }
   .ir-tab-btn {
     background: transparent; border: none; cursor: pointer;
     padding: 8px 0; margin-right: 18px;
-    font-family: inherit; font-size: 13px; font-weight: 500; color: #5A5448;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: #52525B;
     border-bottom: 2px solid transparent;
     transition: color 160ms, border-color 160ms;
   }
-  .ir-tab-btn[aria-selected="true"] { color: #B45309; border-bottom-color: #B45309; }
+  .ir-tab-btn[aria-selected="true"] { color: #312E81; border-bottom-color: #312E81; }
   .ir-thumb-btn {
-    background: transparent; border: 1px solid #EBE5D2; border-radius: 8px;
-    padding: 6px 10px; cursor: pointer; color: #5A5448;
+    background: transparent; border: 1px solid #E4E4E7; border-radius: 8px;
+    padding: 6px 10px; cursor: pointer; color: #52525B;
     transition: border-color 160ms, color 160ms, background 160ms;
   }
-  .ir-thumb-btn:hover { border-color: #B45309; color: #B45309; }
-  .ir-thumb-btn.active { background: #F4E5D8; border-color: #B45309; color: #B45309; }
+  .ir-thumb-btn:hover { border-color: #312E81; color: #312E81; }
+  .ir-thumb-btn.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; }
 
   /* ─── Salary Negotiation full-report panels ───
      The salary-negotiation interview focus has its own dedicated
@@ -86,7 +86,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-section-band {
     display: flex; align-items: center; gap: 16px;
     padding: 18px 24px; border-radius: 12px;
-    margin: 24px 0 18px; border: 1px solid #EBE5D2;
+    margin: 24px 0 18px; border: 1px solid #E4E4E7;
   }
   .nfr-grid-2up {
     display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
@@ -95,7 +95,7 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
   }
   .nfr-panel {
-    background: #FFFFFF; border: 1px solid #EBE5D2;
+    background: #FFFFFF; border: 1px solid #E4E4E7;
     border-radius: 14px; padding: 22px;
     box-shadow: 0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04);
   }
@@ -113,18 +113,18 @@ export const SESSION_REPORT_STYLES = `
   .nfr-tldr {
     margin-bottom: 28px;
     border-top: 1px solid #B45309;
-    border-bottom: 1px solid #EBE5D2;
+    border-bottom: 1px solid #E4E4E7;
     padding: 22px 0 26px;
   }
   .nfr-tldr-eyebrow {
     font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; font-family: 'Geist Mono', monospace;
+    text-transform: uppercase; font-family: 'Geist Sans', sans-serif;
     color: #B45309;
     margin-bottom: 14px;
   }
   .nfr-tldr-verdict {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-size: 30px; line-height: 1.25; font-weight: 400;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 28px; line-height: 1.25; font-weight: 600;
     color: #0E0C08; letter-spacing: -0.4px;
     max-width: 760px;
     margin: 0 0 22px;
@@ -137,19 +137,19 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: minmax(140px, 1fr) auto;
     align-items: baseline; gap: 14px;
     padding: 12px 0;
-    border-top: 1px solid #EBE5D2;
+    border-top: 1px solid #E4E4E7;
   }
   .nfr-tldr-evidence-label {
-    font-size: 12px; color: #5A5448; line-height: 1.4;
+    font-size: 12px; color: #52525B; line-height: 1.4;
   }
   .nfr-tldr-evidence-value {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
     white-space: nowrap;
   }
   .nfr-tldr-evidence-hint {
     grid-column: 1 / -1;
-    font-size: 11px; color: #888070; line-height: 1.4;
+    font-size: 11px; color: #71717A; line-height: 1.4;
     margin-top: 2px;
   }
   .nfr-tldr-tone-good    { color: #15803D; }
@@ -159,7 +159,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-time-pill {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; background: #E5E2F2; color: #312E81;
-    border-radius: 5px; font-family: 'Geist Mono', monospace;
+    border-radius: 5px; font-family: 'Geist Sans', sans-serif;
     font-size: 11px; font-weight: 600;
     border: 1px solid #E5E2F2;
   }
@@ -187,12 +187,12 @@ export const SESSION_REPORT_STYLES = `
   .nfr-table th {
     padding: 11px 14px; font-size: 10px; font-weight: 700;
     letter-spacing: 0.8px; text-transform: uppercase;
-    color: #5A5448; text-align: left; background: #F4EFE3;
+    color: #52525B; text-align: left; background: #F4F4F5;
   }
   .nfr-table td { padding: 11px 14px; font-size: 13px; color: #0E0C08; }
-  .nfr-table tr { border-top: 1px solid #EBE5D2; }
+  .nfr-table tr { border-top: 1px solid #E4E4E7; }
   .nfr-table tr:first-child { border-top: none; }
-  .nfr-mono { font-family: 'Geist Mono', monospace; }
+  .nfr-mono { font-family: 'Geist Sans', sans-serif; }
   .nfr-pill {
     display: inline-block; padding: 3px 10px;
     font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
@@ -201,7 +201,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-pill-good { background: #DCFCE7; color: #15803D; }
   .nfr-pill-bad  { background: #FEE2E2; color: #B91C1C; }
   .nfr-pill-warn { background: rgba(180,83,9,0.12); color: #B45309; }
-  .nfr-pill-neutral { background: #F4EFE3; color: #0E0C08; }
+  .nfr-pill-neutral { background: #F4F4F5; color: #0E0C08; }
 
   /* ─── Shared NFR primitives (2026-05-26 audit) ───
      Three shapes carry most repeated chrome across the 15 panels:
@@ -214,11 +214,11 @@ export const SESSION_REPORT_STYLES = `
      tone-tinted backgrounds + a leading dot for tone cards. */
   .nfr-info-tile {
     padding: 14px 16px;
-    background: #F4EFE3;
-    border: 1px solid #EBE5D2;
+    background: #F4F4F5;
+    border: 1px solid #E4E4E7;
     border-radius: 10px;
     font-size: 13px;
-    color: #5A5448;
+    color: #52525B;
     line-height: 1.55;
   }
   .nfr-info-tile-compact { padding: 10px 14px; font-size: 12px; }
@@ -246,13 +246,13 @@ export const SESSION_REPORT_STYLES = `
   .nfr-eyebrow {
     font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase;
-    font-family: 'Geist Mono', monospace;
-    color: #5A5448;
+    font-family: 'Geist Sans', sans-serif;
+    color: #52525B;
   }
   .nfr-quote {
     padding: 12px 14px;
-    background: #F4EFE3;
-    border: 1px solid #EBE5D2;
+    background: #F4F4F5;
+    border: 1px solid #E4E4E7;
     border-radius: 10px;
     font-size: 13px;
     color: #0E0C08;
@@ -275,7 +275,7 @@ export const SESSION_REPORT_STYLES = `
      prior implementation hand-rolled the cream wash + bold label +
      larger mono value inline. */
   .nfr-table-total td {
-    background: #F4EFE3;
+    background: #F4F4F5;
     font-weight: 700;
     color: #0E0C08;
   }
@@ -295,14 +295,14 @@ export const SESSION_REPORT_STYLES = `
   .nfr-btn-primary:hover { background: #1E1B4B; }
   .nfr-btn-secondary {
     padding: 10px 18px; background: transparent; color: #0E0C08;
-    border: 1px solid #D6CDB5; border-radius: 8px;
+    border: 1px solid #D4D4D8; border-radius: 8px;
     font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
   .nfr-btn-secondary:hover { border-color: #312E81; color: #312E81; }
   .nfr-start-here {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 18px; margin-bottom: 16px;
-    background: rgba(180,83,9,0.08); border: 1px solid rgba(180,83,9,0.20);
+    background: rgba(49,46,129,0.06); border: 1px solid rgba(49,46,129,0.16);
     border-radius: 10px; font-size: 13px; color: #0E0C08;
   }
 
@@ -338,8 +338,6 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 768px) {
     .ir-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
     .ir-hero-grid > * { min-width: 0 !important; }
-    .ir-jump-nav { margin-left: -16px !important; margin-right: -16px !important; }
-    .ir-jump-nav-inner { padding: 0 16px !important; }
     .ir-skill-name { min-width: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ir-trend-strip { gap: 12px !important; padding: 12px 14px !important; }
     .ir-coach-notes-grid { grid-template-columns: 1fr !important; }
@@ -382,18 +380,18 @@ export const SESSION_REPORT_STYLES = `
   .ir-spark-line { stroke: #312E81; stroke-width: 1.5; fill: none; }
   .ir-spark-area { fill: rgba(49, 46, 129, 0.10); }
   .ir-spark-dot { fill: #312E81; }
-  .ir-spark-dot-current { fill: #B45309; r: 2.5; }
+  .ir-spark-dot-current { fill: #312E81; r: 2.5; }
 
   /* ─── Feedback survey expansion ─── */
   .ir-feedback-row { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ir-feedback-tag {
-    background: transparent; border: 1px solid #EBE5D2; border-radius: 999px;
-    padding: 5px 12px; cursor: pointer; color: #5A5448;
+    background: transparent; border: 1px solid #E4E4E7; border-radius: 999px;
+    padding: 5px 12px; cursor: pointer; color: #52525B;
     font-family: inherit; font-size: 12px; font-weight: 500;
     transition: all 160ms ease;
   }
-  .ir-feedback-tag:hover { border-color: #B45309; color: #B45309; }
-  .ir-feedback-tag.active { background: #F4E5D8; border-color: #B45309; color: #B45309; }
+  .ir-feedback-tag:hover { border-color: #312E81; color: #312E81; }
+  .ir-feedback-tag.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; }
 
   /* ─── Accessibility — focus rings + skip link ───
      Every interactive element gets a visible focus ring so keyboard
@@ -417,7 +415,7 @@ export const SESSION_REPORT_STYLES = `
     top: 8px;
     padding: 8px 16px;
     background: #312E81;
-    color: #FAF7F0;
+    color: #FAFAFA;
     text-decoration: none;
     border-radius: 8px;
     font-family: inherit;
@@ -427,7 +425,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-skip-link:focus {
     left: 8px;
-    outline: 2px solid #B45309;
+    outline: 2px solid #312E81;
     outline-offset: 2px;
   }
 
@@ -458,18 +456,16 @@ export const SESSION_REPORT_STYLES = `
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(250, 247, 240, 0.92);
-    backdrop-filter: saturate(140%) blur(8px);
-    -webkit-backdrop-filter: saturate(140%) blur(8px);
-    border-bottom: 1px solid #EBE5D2;
-    padding: 10px 0;
-    margin: 0 -32px 16px;
+    background: #FFFFFF;
+    border: 1px solid #E4E4E7;
+    border-radius: 12px;
+    padding: 6px;
+    margin: 0 0 16px;
   }
   .ir-jump-nav-inner {
     display: flex;
     gap: 4px;
     overflow-x: auto;
-    padding: 0 32px;
     scrollbar-width: none;
   }
   .ir-jump-nav-inner::-webkit-scrollbar { display: none; }
@@ -482,24 +478,24 @@ export const SESSION_REPORT_STYLES = `
     font-family: inherit;
     font-size: 12px;
     font-weight: 500;
-    color: #5A5448;
+    color: #52525B;
     text-decoration: none;
     white-space: nowrap;
     transition: color 160ms, background 160ms;
   }
   .ir-jump-link:hover { color: #312E81; background: #E5E2F2; }
   .ir-jump-link-num {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
-    color: #888070;
+    color: #71717A;
     font-weight: 700;
     letter-spacing: 0.06em;
   }
 
   /* ─── Section eyebrow numbers ───
      Each section card has a small "01" / "02" / "03" eyebrow so the
-     user has a sense of progression. Mono font, copper accent,
-     tightly tracked. */
+     user has a sense of progression. Sans, indigo accent, tightly
+     tracked. */
   .ir-section-eyebrow {
     display: flex;
     align-items: center;
@@ -507,16 +503,16 @@ export const SESSION_REPORT_STYLES = `
     margin-bottom: 16px;
   }
   .ir-section-num {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
     font-weight: 700;
-    color: #B45309;
+    color: #312E81;
     letter-spacing: 0.10em;
   }
   .ir-section-rule {
     flex: 1;
     height: 1px;
-    background: #EBE5D2;
+    background: #E4E4E7;
   }
 
   /* ─── Calibration banner ───
@@ -537,8 +533,8 @@ export const SESSION_REPORT_STYLES = `
     line-height: 1.4;
   }
   .ir-calibration-bands {
-    color: #5A5448;
-    font-family: 'Geist Mono', monospace;
+    color: #52525B;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
   }
 
@@ -554,8 +550,8 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 999px;
     background: rgba(180,83,9,0.08);
     color: #B45309;
-    border: 1px dashed rgba(180,83,9,0.40);
-    font-family: 'Geist Mono', monospace;
+    border: 1px solid rgba(180,83,9,0.40);
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -572,12 +568,12 @@ export const SESSION_REPORT_STYLES = `
     gap: 20px;
     padding: 14px 22px;
     background: linear-gradient(90deg, rgba(49,46,129,0.04), rgba(212,179,127,0.04));
-    border: 1px solid #EBE5D2;
+    border: 1px solid #E4E4E7;
     border-radius: 12px;
     flex-wrap: wrap;
   }
   .ir-trend-eyebrow {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
     font-weight: 700;
     color: #B45309;
@@ -592,10 +588,10 @@ export const SESSION_REPORT_STYLES = `
     font-size: 13px;
     color: #2A241B;
   }
-  .ir-trend-item-label { color: #5A5448; font-size: 12px; }
-  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'Geist Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'Geist Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-flat { color: #888070; font-weight: 600; font-family: 'Geist Mono', monospace; font-size: 12px; }
+  .ir-trend-item-label { color: #52525B; font-size: 12px; }
+  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
+  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
+  .ir-trend-delta-flat { color: #71717A; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
 
   /* ─── Per-Q inline pills (frequency + length verdict) ─── */
   .ir-q-meta-pill {
@@ -603,13 +599,13 @@ export const SESSION_REPORT_STYLES = `
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.04em;
     background: #FFFFFF;
-    border: 1px solid #EBE5D2;
-    color: #5A5448;
+    border: 1px solid #E4E4E7;
+    color: #52525B;
   }
   .ir-q-meta-pill.too-short  { color: #B91C1C; border-color: rgba(196,112,90,0.30); background: rgba(196,112,90,0.06); }
   .ir-q-meta-pill.too-long   { color: #B45309; border-color: rgba(180,83,9,0.30);  background: rgba(180,83,9,0.06); }
@@ -625,7 +621,7 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 999px;
     background: rgba(196,112,90,0.10);
     color: #B91C1C;
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -645,7 +641,7 @@ export const SESSION_REPORT_STYLES = `
     color: #2A241B;
   }
   .ir-redflag-item-title { color: #B91C1C; font-weight: 600; }
-  .ir-redflag-item-quote { color: #5A5448; font-style: italic; display: block; margin-top: 2px; }
+  .ir-redflag-item-quote { color: #52525B; font-style: italic; display: block; margin-top: 2px; }
 
   /* Likely follow-up callout (coach column, weak/partial only) */
   .ir-likely-followup {
@@ -661,7 +657,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-likely-followup-eyebrow {
     display: block;
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -694,14 +690,14 @@ export const SESSION_REPORT_STYLES = `
     gap: 14px;
   }
   .ir-coach-note-card {
-    background: #FAF7F0;
-    border: 1px solid #EBE5D2;
+    background: #FAFAFA;
+    border: 1px solid #E4E4E7;
     border-left: 3px solid #B45309;
     border-radius: 10px;
     padding: 14px 16px;
   }
   .ir-coach-note-eyebrow {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.10em;
@@ -710,8 +706,9 @@ export const SESSION_REPORT_STYLES = `
     margin-bottom: 6px;
   }
   .ir-coach-note-title {
-    font-family: 'Instrument Serif', serif;
-    font-size: 16px;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
     color: #2A241B;
     line-height: 1.3;
     margin: 0 0 6px;
@@ -719,7 +716,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-body {
     font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
-    color: #5A5448;
+    color: #52525B;
     line-height: 1.55;
     margin: 0;
   }
@@ -728,8 +725,8 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-card.persistent { border-left-color: #B45309; }
   .ir-coach-note-card.story-reuse { border-left-color: #312E81; }
   .ir-coach-note-card.story-reuse .ir-coach-note-eyebrow { color: #312E81; }
-  .ir-coach-note-card.blind-spot { border-left-color: #888070; }
-  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #5A5448; }
+  .ir-coach-note-card.blind-spot { border-left-color: #71717A; }
+  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #52525B; }
 
   /* ─── Thought-bubble timeline (collapsed by default) ─── */
   .ir-thought-toggle {
@@ -737,12 +734,12 @@ export const SESSION_REPORT_STYLES = `
     align-items: center;
     gap: 6px;
     background: transparent;
-    border: 1px dashed #D6CDB5;
+    border: 1px solid #D4D4D8;
     border-radius: 8px;
     padding: 8px 14px;
     font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
-    color: #5A5448;
+    color: #52525B;
     cursor: pointer;
     transition: border-color 160ms, color 160ms;
   }
@@ -752,7 +749,7 @@ export const SESSION_REPORT_STYLES = `
     height: 28px;
     border-radius: 6px;
     overflow: hidden;
-    border: 1px solid #EBE5D2;
+    border: 1px solid #E4E4E7;
     margin-top: 12px;
   }
   .ir-thought-seg-engaged   { background: rgba(21,128,61,0.40); }
@@ -763,7 +760,7 @@ export const SESSION_REPORT_STYLES = `
     margin-top: 10px;
     font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
-    color: #5A5448;
+    color: #52525B;
   }
   .ir-thought-legend-swatch {
     display: inline-block;
@@ -791,7 +788,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-bias-card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .ir-bias-count {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 18px; font-weight: 700; color: #312E81; line-height: 1;
   }
   .ir-bias-label {
@@ -801,7 +798,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-bias-example {
     display: block;
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 11px; color: #5A5448; font-style: italic;
+    font-size: 11px; color: #52525B; font-style: italic;
     margin: 4px 0 6px;
   }
   .ir-bias-tip {
@@ -813,19 +810,19 @@ export const SESSION_REPORT_STYLES = `
   .ir-poll-row {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: #5A5448;
+    font-size: 12px; color: #52525B;
   }
   .ir-poll-yes, .ir-poll-no {
     background: transparent;
-    border: 1px solid #EBE5D2;
+    border: 1px solid #E4E4E7;
     border-radius: 999px;
     padding: 4px 12px;
     cursor: pointer;
-    font-family: inherit; font-size: 12px; color: #5A5448;
+    font-family: inherit; font-size: 12px; color: #52525B;
     transition: all 160ms;
   }
-  .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #B45309; color: #B45309; }
-  .ir-poll-yes.active, .ir-poll-no.active { background: #F4E5D8; border-color: #B45309; color: #B45309; font-weight: 600; }
+  .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #312E81; color: #312E81; }
+  .ir-poll-yes.active, .ir-poll-no.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; font-weight: 600; }
 
   /* ─── Print styles ───
      PDF generation goes through window.print(). We hide chrome (jump

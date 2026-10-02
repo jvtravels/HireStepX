@@ -131,13 +131,21 @@ export const t = {
      here so the single source of truth owns it (zero visual change). */
   neutralInk: "#374151",
 
-  /* Lines */
-  line: "#EBE5D2",
-  lineStrong: "#D6CDB5",
+  /* Lines — 2026-10-02 retheme: these were hardcoded warm-tan hex, the
+     one place in this file that didn't re-derive from the shared scale.
+     That drift was the single biggest reason the report read as a
+     separate "editorial" system instead of matching Resume's cool-neutral
+     card borders, which consume T.line/T.lineStrong directly. */
+  line: T.line,
+  lineStrong: T.lineStrong,
 } as const;
 
 export const f = {
-  serif: F.serif,
+  /* 2026-10-02 retheme: Resume and the rest of the candidate app use
+     sans-only headlines; the report's serif display type was the other
+     half of the "doesn't look like Resume" gap. Alias rather than drop
+     `f.serif` so the ~19 call sites don't need touching. */
+  serif: F.sans,
   sans: F.sans,
   mono: F.mono,
 } as const;

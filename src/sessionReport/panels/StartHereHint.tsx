@@ -8,7 +8,7 @@ export const ANCHOR_PART_3 = "nfr-part-3";
 export const ANCHOR_PART_4 = "nfr-part-4";
 
 const anchorStyle: React.CSSProperties = {
-  color: t.copper,
+  color: t.indigo,
   textDecoration: "underline",
   textUnderlineOffset: 2,
   fontWeight: 600,
@@ -48,7 +48,7 @@ export function StartHereHint({ outcome, daysUntilInterview }: { outcome: Negoti
   return (
     <div className="nfr-start-here">
       <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden style={{ flexShrink: 0 }}>
-        <path d="M2 7h9M7 3l4 4-4 4" stroke={t.copper} strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M2 7h9M7 3l4 4-4 4" stroke={t.indigo} strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <span><strong>Start here:</strong> {body}</span>
     </div>

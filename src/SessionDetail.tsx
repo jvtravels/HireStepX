@@ -31,11 +31,15 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        background: T.cream,
-        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        width: "100%",
+        maxWidth: 1240,
+        margin: "0 auto",
         fontFamily: F.sans,
         color: T.coal,
-        padding: "20px 32px",
       }}
     >
       {children}
@@ -46,7 +50,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 export function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetry: () => void; onBack: () => void }) {
   return (
     <Shell>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
+      <div style={{ maxWidth: 560, margin: "80px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: F.sans, fontSize: 28, color: T.coal, margin: "0 0 12px", fontWeight: 600 }}>
           Couldn&apos;t load this session
         </h1>
@@ -81,7 +85,7 @@ export function LoadErrorScreen({ message, onRetry, onBack }: { message: string;
 export function NotFoundScreen({ onBack }: { onBack: () => void }) {
   return (
     <Shell>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
+      <div style={{ maxWidth: 560, margin: "80px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: F.sans, fontSize: 28, color: T.coal, margin: "0 0 12px", fontWeight: 600 }}>
           Session not found
         </h1>
