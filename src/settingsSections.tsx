@@ -45,6 +45,7 @@ const c = {
   warning100: t.warning100,
   cream: t.cream,
   creamSoft: t.creamSoft,
+  rowTint: t.rowTint,
 };
 const font = {
   display: fonts.serif,
@@ -397,11 +398,6 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
       </div>
 
       {/* ── Security + devices + logout — Figma's "Account" row group ── */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 4, fontFamily: font.ui, fontSize: 12, color: c.inkSoft, flexWrap: "wrap" }}>
-        <span>{email} · {isOAuthOnly ? "Google sign-in" : "Email and password"}</span>
-        <TinyChip tone="success">Verified</TinyChip>
-      </div>
-
       <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
         {!isOAuthOnly ? (
           <ActionRow
@@ -451,85 +447,22 @@ interface UsageResponse {
   coach_insights: null;
 }
 
-function UsageBar({ label, row }: { label: string; row: UsageRow }) {
-  const cap = row.cap;
-  const pct = cap && cap > 0 ? Math.min(100, Math.round((row.count / cap) * 100)) : 0;
-  const display = cap == null ? `${row.count}` : `${Math.min(row.count, cap)} of ${cap}`;
+/* Sentence-case pill with a leading dot — matches the plan-status card's
+   Figma spec, distinct from the uppercase-mono TinyChip used elsewhere. */
+function PlanStatusChip({ label, tone }: { label: string; tone: "success" | "warn" | "danger" }) {
+  const palette =
+    tone === "danger" ? { bg: c.error100, fg: c.ember } :
+    tone === "warn" ? { bg: c.indigo100, fg: c.indigo } :
+    { bg: c.success100, fg: c.sage };
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{label}</span>
-        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.inkSoft }}>{display}</span>
-      </div>
-      <div style={{ height: 6, borderRadius: 999, background: c.border, overflow: "hidden" }}>
-        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.indigo, transition: "width 0.4s ease" }} />
-      </div>
-    </div>
-  );
-}
-
-const UsageThisMonth = memo(function UsageThisMonth({
-  getAuthHeaders, planName,
-}: { getAuthHeaders: () => Promise<Record<string, string>>; planName?: string }) {
-  const [data, setData] = useState<UsageResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const headers = await getAuthHeaders();
-        const res = await fetch("/api/usage-this-month", { headers });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as UsageResponse;
-        if (!cancelled) setData(json);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load usage");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [getAuthHeaders]);
-
-  if (error) return null; // Fail quiet — usage is decorative, not gating.
-  if (!data) {
-    return <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>Loading usage…</span>;
-  }
-  // Label reflects the active plan so users see exactly what they're spending.
-  const mockLabel = planName ? `Sessions with ${planName}` : "Mock interviews completed";
-  return (
-    <div>
-      <UsageBar label={mockLabel} row={data.mock} />
-      <UsageBar label="Resume parses" row={data.resume_parses} />
-    </div>
-  );
-});
-
-/* Always-visible extra sessions row. Green when credits exist, muted when zero.
-   Gives users a persistent anchor to know purchased credits are a thing. */
-function ExtraSessionsInfoBox() {
-  const { creditBalance } = useDashboardSubscription();
-  const hasCredits = creditBalance > 0;
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "10px 14px", borderRadius: 8, marginTop: 4,
-      background: hasCredits ? c.success100 : t.copperWash,
-      border: hasCredits ? `1px solid ${t.successLine}` : `1px solid ${t.copperMid}`,
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: palette.fg,
+      background: palette.bg, borderRadius: 999, padding: "4px 10px",
     }}>
-      <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-        color: hasCredits ? t.successInk : c.reward }}>
-        {hasCredits ? (
-          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        ) : (
-          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        )}
-        Extra sessions available
-      </span>
-      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700,
-        color: hasCredits ? c.sage : c.reward, opacity: hasCredits ? 1 : 0.55 }}>
-        {creditBalance}
-      </span>
-    </div>
+      <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: palette.fg }} />
+      {label}
+    </span>
   );
 }
 
@@ -562,15 +495,8 @@ export interface PlanUsageSectionProps {
   showToast: (msg: string) => void;
   setShowUpgradeModal: (v: boolean) => void;
   authHeaders: () => Promise<Record<string, string>>;
-}
-
-export interface BillingTransactionsSectionProps {
-  authUser: PlanAuthUser | null;
   payments: PaymentRecord[];
   paymentsLoading: boolean;
-  exporting: boolean;
-  setExporting: (v: boolean) => void;
-  onExportCSV: () => void;
 }
 
 export interface DangerZoneSectionProps {
@@ -588,14 +514,6 @@ export interface DangerZoneSectionProps {
   authHeaders: () => Promise<Record<string, string>>;
 }
 
-/* ─── Plan & Data — editorial layout (matches canvas) ─── */
-const planCardOuter: React.CSSProperties = {
-  background: c.graphite,
-  border: `1px solid ${c.border}`,
-  borderRadius: 14,
-  boxShadow: shadow.sm,
-  padding: "24px 28px",
-};
 const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink };
 const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
 const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
@@ -648,10 +566,41 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
     confirmCancel, setConfirmCancel, cancelLoading, setCancelLoading, cancelMsg, setCancelMsg,
     authUpdateUser, showToast, setShowUpgradeModal,
     authHeaders: getAuthHeaders,
+    payments, paymentsLoading,
   } = props;
 
   const tier = authUser?.subscriptionTier || "free";
   const isPaid = tier !== "free";
+  const { creditBalance } = useDashboardSubscription();
+
+  const [usage, setUsage] = useState<UsageResponse | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/usage-this-month", { headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as UsageResponse;
+        if (!cancelled) setUsage(json);
+      } catch {
+        // Fail quiet — usage is decorative, not gating.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [getAuthHeaders]);
+
+  const sessionsCap = usage?.mock.cap ?? null;
+  const sessionsUsed = usage?.mock.count ?? 0;
+  const sessionsPct = sessionsCap && sessionsCap > 0 ? Math.min(100, Math.round((sessionsUsed / sessionsCap) * 100)) : 0;
+  const capLine = sessionsCap == null ? "Unlimited interview sessions" : `${sessionsCap} Interview Session${sessionsCap === 1 ? "" : "s"} / Month`;
+  const sessionsUsedLabel = sessionsCap == null ? `${sessionsUsed} sessions used` : `${Math.min(sessionsUsed, sessionsCap)} of ${sessionsCap} sessions used`;
+
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(payments.length / rowsPerPage));
+  const page_ = Math.min(page, totalPages);
+  const pageRows = payments.slice((page_ - 1) * rowsPerPage, page_ * rowsPerPage);
 
   let endDateLabel = "";
   let daysLeft = 0;
@@ -660,6 +609,16 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
     daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86400000));
     endDateLabel = new Date(authUser.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   }
+
+  const statusLabel = !isPaid ? "Free" : authUser?.cancelAtPeriodEnd ? "Cancelling" : authUser?.subscriptionPaused ? "Paused" : "Active";
+  const statusTone: "success" | "warn" | "danger" = authUser?.cancelAtPeriodEnd ? "danger" : authUser?.subscriptionPaused ? "warn" : "success";
+  const cycleLabel = isPaid && endDateLabel
+    ? (authUser?.cancelAtPeriodEnd
+        ? `Access remains until ${endDateLabel}`
+        : !authUser?.hasRecurringSubscription
+          ? `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack`
+          : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle`)
+    : "Resets at the start of each month";
 
   async function handleReactivate() {
     setCancelLoading(true); setCancelMsg("");
@@ -727,35 +686,38 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Status band for paid plans (inline, not a card) */}
-      {isPaid && endDateLabel && (
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          gap: 16, flexWrap: "wrap",
-          padding: "0 0 18px", borderBottom: `1px solid ${c.border}`,
-        }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={subHeaderTitle}>
-              {tierLabel}
-              {authUser?.cancelAtPeriodEnd && (
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.error100, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Cancelling</span>
-              )}
-              {!authUser?.cancelAtPeriodEnd && authUser?.subscriptionPaused && (
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.indigo100, color: c.indigo, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Paused</span>
-              )}
-            </div>
-            <div style={subHeaderHint}>
-              {authUser?.cancelAtPeriodEnd
-                ? `Access remains until ${endDateLabel}.`
-                : !authUser?.hasRecurringSubscription
-                  ? `Valid till ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack. One-time purchase — it won't renew automatically.`
-                  : `Renews ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle.`}
-            </div>
+      {/* Plan status + usage, and extra-session credits — one card, two
+          panels, since both describe the same subscription. */}
+      <div style={{ display: "flex", flexWrap: "wrap", border: `1px solid ${c.border}`, borderRadius: 14, overflow: "hidden", boxShadow: shadow.sm }}>
+        <div style={{ flex: "1 1 320px", minWidth: 0, background: c.graphite, padding: "24px 28px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 700, color: c.ink }}>{tierLabel}</span>
+            <PlanStatusChip label={statusLabel} tone={statusTone} />
           </div>
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            {!authUser?.hasRecurringSubscription ? (
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowUpgradeModal(true)} style={accSubtleBtn}>
-                Buy another pack
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, marginBottom: 18 }}>{capLine}</div>
+          <div style={{ height: 8, borderRadius: 999, background: c.border, overflow: "hidden" }}>
+            <div style={{ width: sessionsCap == null ? "100%" : `${sessionsPct}%`, height: "100%", background: c.ink, transition: "width 0.4s ease" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
+            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{cycleLabel}</span>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{sessionsUsedLabel}</span>
+          </div>
+        </div>
+
+        <div style={{
+          flex: "0 1 300px", minWidth: 240, background: c.creamSoft, borderLeft: `1px solid ${c.border}`,
+          padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10,
+        }}>
+          <div style={{ fontFamily: font.ui, fontSize: 17, fontWeight: 700, color: c.ink }}>{creditBalance} Extra Session{creditBalance === 1 ? "" : "s"}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>Available anytime · Never expire</div>
+          <div style={{ marginTop: 8 }}>
+            {!isPaid ? (
+              <Button type="button" variant="default" size="sm" onClick={() => setShowUpgradeModal(true)} style={indigoPrimaryBtn}>
+                Upgrade plan
+              </Button>
+            ) : !authUser?.hasRecurringSubscription ? (
+              <Button type="button" variant="default" size="sm" onClick={() => setShowUpgradeModal(true)} style={indigoPrimaryBtn}>
+                Renew Plan
               </Button>
             ) : authUser?.cancelAtPeriodEnd ? (
               <Button type="button" variant="outline" size="sm" disabled={cancelLoading} onClick={handleReactivate}
@@ -763,70 +725,35 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
                 {cancelLoading ? "Reactivating..." : "Reactivate"}
               </Button>
             ) : !confirmCancel ? (
-              <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <Button type="button" variant="outline" size="sm" onClick={handlePauseToggle} style={accSubtleBtn} disabled={cancelLoading}>
                   {authUser?.subscriptionPaused ? "Resume" : "Pause"}
                 </Button>
                 <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmCancel(true)} style={dangerSubtleBtn}>Cancel</Button>
-              </>
+              </div>
             ) : (
-              <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <Button type="button" variant="outline" size="sm" onClick={() => setConfirmCancel(false)} style={accSubtleBtn}>Keep plan</Button>
                 <Button type="button" variant="destructive" size="sm" disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
                   {cancelLoading ? "Cancelling..." : "Yes, cancel"}
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
-      )}
+      </div>
       {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{cancelMsg}</p>}
-
-      {/* This period — plan usage bars (no session-quota row; extra credits shown inline) */}
-      <div style={{ ...planCardOuter }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={subHeaderTitle}>This period</div>
-          <div style={subHeaderHint}>Completed interviews and resource usage for your active billing period.</div>
+      {usage && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
+          <span>Resume parses this period</span>
+          <span style={{ fontWeight: 600, color: c.ink }}>
+            {usage.resume_parses.cap == null ? usage.resume_parses.count : `${Math.min(usage.resume_parses.count, usage.resume_parses.cap)} of ${usage.resume_parses.cap}`}
+          </span>
         </div>
-        <UsageThisMonth
-          getAuthHeaders={getAuthHeaders}
-          planName={tier.charAt(0).toUpperCase() + tier.slice(1)}
-        />
-        <ExtraSessionsInfoBox />
-      </div>
-    </div>
-  );
-});
+      )}
 
-/* ═══════════════════════════════════════════════════════════════
-   BILLING & TRANSACTIONS SECTION
-   ═══════════════════════════════════════════════════════════════ */
-
-export const BillingTransactionsSection = memo(function BillingTransactionsSection(props: BillingTransactionsSectionProps) {
-  const { payments, paymentsLoading, exporting, setExporting, onExportCSV } = props;
-
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(payments.length / rowsPerPage));
-  const page_ = Math.min(page, totalPages);
-  const pageRows = payments.slice((page_ - 1) * rowsPerPage, page_ * rowsPerPage);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Export */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={keyValueLabel}>Export sessions</div>
-          <div style={keyValueValue}>CSV of every completed session: questions, your answers, scores, and the resume snapshot used.</div>
-        </div>
-        <Button type="button" variant="outline" size="sm" disabled={exporting}
-          onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
-          style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
-          {exporting ? "Exporting…" : "Export CSV"}
-        </Button>
-      </div>
-
-      {/* Payment history */}
+      {/* Payment history — same plan the usage above belongs to, so it
+          lives in one section rather than a separate "Billing" block. */}
       <div>
         <div style={{ marginBottom: 12 }}>
           <div style={subHeaderTitle}>Payment history</div>
@@ -840,11 +767,11 @@ export const BillingTransactionsSection = memo(function BillingTransactionsSecti
           <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, overflow: "hidden" }}>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Transaction Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
+                <TableRow style={{ background: c.rowTint }}>
+                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Description</TableHead>
+                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Transaction Date</TableHead>
+                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Amount</TableHead>
+                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -852,13 +779,13 @@ export const BillingTransactionsSection = memo(function BillingTransactionsSecti
                   const { dateLabel, amountDisplay, tone, purchaseTitle, subLine } = invoiceDetails(p);
                   return (
                     <TableRow key={p.id}>
-                      <TableCell>
+                      <TableCell style={{ padding: "12px 20px" }}>
                         <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</div>
                         {subLine && <div style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
                       </TableCell>
-                      <TableCell style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
-                      <TableCell style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
-                      <TableCell>
+                      <TableCell style={{ padding: "12px 20px", fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
+                      <TableCell style={{ padding: "12px 20px", fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
+                      <TableCell style={{ padding: "12px 20px" }}>
                         <div style={{
                           fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                           color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,

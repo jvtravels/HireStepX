@@ -38,8 +38,10 @@ const STYLE = `
 .cpr-tap:focus-visible { outline: 2px solid ${c.slate}; outline-offset: 2px; border-radius: ${radius.sm}px; }
 /* minmax(0, 1fr) not bare 1fr: a 1fr track is implicitly minmax(auto, 1fr),
    so the month-grid child's wide min-content expands the track past the
-   container and overflows the viewport at mobile widths. */
-.cpr-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: ${sp.xl}px; align-items: start; }
+   container and overflows the viewport at mobile widths. Main column leads,
+   utility rail trails at 280-360px — mirrors the dashboard home rail so the
+   two primary surfaces share one layout convention. */
+.cpr-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: ${sp.xl}px; align-items: start; }
 @media (max-width: 880px) {
   .cpr-grid { grid-template-columns: minmax(0, 1fr); }
   .cpr-header { flex-direction: column; align-items: flex-start; }
@@ -779,36 +781,42 @@ export default function CalendarPage() {
     <div style={{ fontFamily: font.ui, color: c.ivory, maxWidth: 1280, margin: "0 auto" }}>
       <style>{STYLE}</style>
 
-      {/* header */}
-      <div className="cpr-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.xl, marginBottom: sp["2xl"] }}>
-        <div>
-          <Eyebrow>Interview Readiness</Eyebrow>
-          <h1 style={{ fontFamily: font.ui, fontSize: 30, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>Calendar</h1>
-          <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
-            Every interview you log becomes a prep plan, not just a date.
-          </p>
-        </div>
-        <div className="cpr-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: sp.sm }}>
-          <button className="cpr-tap" onClick={openNewForm} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "12px 20px", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: "pointer", boxShadow: shadow.lg }}>
-            <Icon size={16}>{I.plus}</Icon> Add interview
-          </button>
-        </div>
-      </div>
+      {/* app-shell main container — same raised-card treatment as the other
+          dashboard surfaces (DashboardHome's .hsx-dh-grid, Settings' bordered
+          panel), so Calendar reads as one more room in the same house instead
+          of bare content loose on the page background. */}
+      <div style={{ background: c.carbon, border: `1px solid ${c.border}`, borderRadius: radius.lg, padding: "28px 32px 32px", boxSizing: "border-box" }}>
 
-      {/* interview switcher */}
-      {upcoming.length > 0 && (
-        <div style={{ display: "flex", gap: sp.sm, marginBottom: sp.xl, flexWrap: "wrap" }}>
-          {upcoming.map((ev) => {
-            const on = focused?.id === ev.id;
-            return (
-              <button key={ev.id} className="cpr-tap" aria-pressed={on} onClick={() => setFocusedId(ev.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, background: on ? c.carbon : "transparent", border: `1px solid ${on ? T.indigoRing : c.border}`, borderRadius: radius.md, padding: "10px 16px", cursor: "pointer", boxShadow: on ? shadow.sm : "none", transition: `background-color 0.15s ${ease.out}, border-color 0.15s ${ease.out}` }}>
-                <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>{ev.company || ev.title}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
-              </button>
-            );
-          })}
+        {/* header */}
+        <div className="cpr-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.xl, marginBottom: sp["2xl"] }}>
+          <div>
+            <Eyebrow>Interview Readiness</Eyebrow>
+            <h1 style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>Calendar</h1>
+            <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
+              Every interview you log becomes a prep plan, not just a date.
+            </p>
+          </div>
+          <div className="cpr-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: sp.sm }}>
+            <button className="cpr-tap" onClick={openNewForm} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "12px 20px", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+              <Icon size={16}>{I.plus}</Icon> Add interview
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* interview switcher */}
+        {upcoming.length > 0 && (
+          <div style={{ display: "flex", gap: sp.sm, marginBottom: sp.xl, flexWrap: "wrap", paddingBottom: sp.xl, borderBottom: `1px solid ${c.borderSubtle}` }}>
+            {upcoming.map((ev) => {
+              const on = focused?.id === ev.id;
+              return (
+                <button key={ev.id} className="cpr-tap" aria-pressed={on} onClick={() => setFocusedId(ev.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, background: on ? c.graphite : "transparent", border: `1px solid ${on ? T.indigoRing : c.border}`, borderRadius: radius.md, padding: "10px 16px", cursor: "pointer", boxShadow: on ? shadow.sm : "none", transition: `background-color 0.15s ${ease.out}, border-color 0.15s ${ease.out}` }}>
+                  <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>{ev.company || ev.title}</span>
+                  <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
       {/* Add/Edit modal — centered dialog over a dimmed, blurred scrim, matching
           the app's one dialog vocabulary (EndModal / UpgradeModal). Closes on
@@ -992,59 +1000,8 @@ export default function CalendarPage() {
       )}
 
       <div className="cpr-grid">
-        {/* left rail */}
-        <div style={{ display: "flex", flexDirection: "column", gap: sp.lg }}>
-          <Card pad={20}>
-            <MiniMonth events={events} focusedId={focused?.id || null} onDateClick={(date) => {
-              const hit = upcoming.find((e) => e.date === date) || reals.find((e) => e.date === date);
-              if (hit) setFocusedId(hit.id);
-            }} />
-          </Card>
-
-          <Card pad={20}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
-              <Icon size={15} stroke={T.indigo}>{I.bell}</Icon>
-              <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
-            </div>
-            {focused ? (
-              <>
-                <ReminderRow label="3 days before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 4320 * 60000)} />
-                <ReminderRow label="1 day before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 1440 * 60000)} />
-                <p style={{ fontSize: 11, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
-                  {focused.reminders ? `${describeReminders(heroStartUtc, Date.now())}. Toggle them when editing.` : "Reminders off for this interview. Toggle them when editing."}
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize: 12, color: c.stone, margin: 0, fontFamily: font.ui, lineHeight: 1.45 }}>
-                Log an interview to set email reminders.
-              </p>
-            )}
-          </Card>
-
-          <Card pad={20}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Icon size={16} stroke={c.slate}>{I.google}</Icon>
-                <h2 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, margin: 0 }}>Google Calendar</h2>
-              </div>
-              {googleConnected
-                ? <Pill bg={c.sageLight} fg={c.sage} icon={<Icon size={11}>{I.check}</Icon>}>2-way</Pill>
-                : <Pill bg={c.graphite} fg={c.stone} bd={c.border}>Off</Pill>}
-            </div>
-            <p style={{ fontSize: 12, color: c.stone, margin: "10px 0 0", lineHeight: 1.45, fontFamily: font.ui }}>
-              {googleConnected
-                ? "Synced. Interviews you log here appear on your Google Calendar, both ways."
-                : "Connect to sync your interviews both ways with Google Calendar."}
-            </p>
-            {!googleConnected && !googleUnavailable && (
-              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "9px 14px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
-                <Icon size={14} stroke={c.slate}>{I.google}</Icon> {googleBusy ? "Connecting…" : "Connect"}
-              </button>
-            )}
-          </Card>
-        </div>
-
-        {/* main column */}
+        {/* main column — leads, since practicing for the interview is the
+            page's job; the rail is supporting utility, not the headline. */}
         <div style={{ display: "flex", flexDirection: "column", gap: sp.xl }}>
           {focused ? (
             <>
@@ -1169,6 +1126,59 @@ export default function CalendarPage() {
             </Card>
           )}
         </div>
+
+        {/* utility rail — month at a glance, reminder state, Google sync */}
+        <div style={{ display: "flex", flexDirection: "column", gap: sp.lg }}>
+          <Card pad={20}>
+            <MiniMonth events={events} focusedId={focused?.id || null} onDateClick={(date) => {
+              const hit = upcoming.find((e) => e.date === date) || reals.find((e) => e.date === date);
+              if (hit) setFocusedId(hit.id);
+            }} />
+          </Card>
+
+          <Card pad={20}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
+              <Icon size={15} stroke={T.indigo}>{I.bell}</Icon>
+              <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
+            </div>
+            {focused ? (
+              <>
+                <ReminderRow label="3 days before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 4320 * 60000)} />
+                <ReminderRow label="1 day before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 1440 * 60000)} />
+                <p style={{ fontSize: 11, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
+                  {focused.reminders ? `${describeReminders(heroStartUtc, Date.now())}. Toggle them when editing.` : "Reminders off for this interview. Toggle them when editing."}
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: 12, color: c.stone, margin: 0, fontFamily: font.ui, lineHeight: 1.45 }}>
+                Log an interview to set email reminders.
+              </p>
+            )}
+          </Card>
+
+          <Card pad={20}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon size={16} stroke={c.slate}>{I.google}</Icon>
+                <h2 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, margin: 0 }}>Google Calendar</h2>
+              </div>
+              {googleConnected
+                ? <Pill bg={c.sageLight} fg={c.sage} icon={<Icon size={11}>{I.check}</Icon>}>2-way</Pill>
+                : <Pill bg={c.graphite} fg={c.stone} bd={c.border}>Off</Pill>}
+            </div>
+            <p style={{ fontSize: 12, color: c.stone, margin: "10px 0 0", lineHeight: 1.45, fontFamily: font.ui }}>
+              {googleConnected
+                ? "Synced. Interviews you log here appear on your Google Calendar, both ways."
+                : "Connect to sync your interviews both ways with Google Calendar."}
+            </p>
+            {!googleConnected && !googleUnavailable && (
+              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "9px 14px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
+                <Icon size={14} stroke={c.slate}>{I.google}</Icon> {googleBusy ? "Connecting…" : "Connect"}
+              </button>
+            )}
+          </Card>
+        </div>
+      </div>
       </div>
     </div>
   );

@@ -11,7 +11,6 @@ import {
   FlatSection,
   AccountSection,
   PlanUsageSection,
-  BillingTransactionsSection,
   DangerZoneSection,
 } from "./settingsSections";
 
@@ -26,7 +25,7 @@ const c = {
 export default function SettingsPage() {
   useDocTitle("Settings");
   const { user: authUser, logout: authLogout, updateUser: authUpdateUser, resetPassword } = useAuth();
-  const { persisted, updatePersisted: onUpdate, handleExportCSV: onExportCSV } = useDashboardCore();
+  const { persisted, updatePersisted: onUpdate } = useDashboardCore();
   const { dataLoading, showToast, setShowUpgradeModal } = useDashboardUI();
   const onLogout = () => { authLogout(); };
 
@@ -50,9 +49,6 @@ export default function SettingsPage() {
   // Password
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-
-  // Export
-  const [exporting, setExporting] = useState(false);
 
   // Billing history — loaded eagerly since the page is one long stacked
   // view now (no more "Plan" tab gating when it fetches).
@@ -113,15 +109,7 @@ export default function SettingsPage() {
             authUpdateUser={authUpdateUser} showToast={showToast}
             setShowUpgradeModal={setShowUpgradeModal}
             authHeaders={authHeaders}
-          />
-        </FlatSection>
-
-        <FlatSection title="Billing & Transactions">
-          <BillingTransactionsSection
-            authUser={authUser}
             payments={payments} paymentsLoading={paymentsLoading}
-            exporting={exporting} setExporting={setExporting}
-            onExportCSV={onExportCSV}
           />
         </FlatSection>
 

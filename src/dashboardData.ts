@@ -1390,15 +1390,15 @@ export async function fetchRecentSessionScores(
  * The trends are keyed off the engine's persisted skill_scores keys
  * (`anchoring`, `concessionStrategy`, …) — NOT the LLM report's display
  * skills, which use a different (generic) taxonomy and would not match
- * across sessions. Keys are humanized for display. When `negotiationOnly`
- * is set the rows are filtered to salary-negotiation sessions so the
- * panel shows one coherent skill set rather than mixing in behavioral /
- * HR-round skills. Best-effort: returns [] on any failure so the caller
- * simply omits the panel.
+ * across sessions. Keys are humanized for display. When `sessionType` is
+ * set, rows are filtered to sessions of that same type so the panel shows
+ * one coherent skill taxonomy rather than mixing e.g. negotiation skills
+ * with behavioral / HR-round skills. Best-effort: returns [] on any
+ * failure so the caller simply omits the panel.
  */
 export async function fetchSkillProgressTrends(
   opts: {
-    negotiationOnly?: boolean;
+    sessionType?: string;
     limit?: number;
     /* The session currently being viewed, with its AUTHORITATIVE (superset:
      * kernel-persisted OR transcript-recovered) candidate ask from the report
@@ -1412,7 +1412,7 @@ export async function fetchSkillProgressTrends(
     currentSession?: { id: string; candidateAsk: number | null };
   } = {},
 ): Promise<SkillTrend[]> {
-  const { negotiationOnly = false, limit = 30, currentSession } = opts;
+  const { sessionType, limit = 30, currentSession } = opts;
   try {
     const { getSupabase } = await import("./supabase");
     const {
@@ -1430,7 +1430,7 @@ export async function fetchSkillProgressTrends(
       .from("sessions")
       .select("id, created_at, skill_scores, target_company, type, focus")
       .eq("user_id", userId);
-    if (negotiationOnly) q = q.eq("type", "salary-negotiation");
+    if (sessionType) q = q.eq("type", sessionType);
     const { data, error } = await q
       .order("created_at", { ascending: false })
       .limit(limit);
