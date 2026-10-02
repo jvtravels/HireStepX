@@ -1007,7 +1007,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               preview: `Your ${tier} plan is live until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
               body:
                 title(`${tier} is`, { accentWord: "live." }) +
-                para(`Hi ${safeName}, your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. We'll renew it automatically so your practice never pauses.`) +
+                para(`Hi ${safeName}, your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. This is a one-time purchase — it won't auto-renew, so buy again anytime to keep practising after it ends.`) +
                 button("Start practising", `${APP_URL}/dashboard`),
             }),
           }),

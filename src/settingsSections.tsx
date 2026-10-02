@@ -947,18 +947,24 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <ExtraSessionsInfoBox />
       </div>
 
-      {/* Payment method — paid plans only */}
+      {/* Payment method — paid plans only; copy differs for one-time vs recurring */}
       {isPaid && (
         <div style={{ ...planCardOuter, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>
             <div style={keyValueLabel}>Payment method</div>
-            <div style={keyValueValue}>Razorpay handles every renewal. Update card or UPI from their dashboard.</div>
+            <div style={keyValueValue}>
+              {authUser?.hasRecurringSubscription
+                ? "Razorpay handles every renewal. Update card or UPI from their dashboard."
+                : "We don't store your card — each purchase is a one-time Razorpay checkout."}
+            </div>
           </div>
-          <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
-            style={{ ...accSubtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Manage on Razorpay
-            <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
+          {authUser?.hasRecurringSubscription && (
+            <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
+              style={{ ...accSubtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Manage on Razorpay
+              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          )}
         </div>
       )}
 
