@@ -435,7 +435,7 @@ export function PricingPageV2() {
       unit: "/ 5 sessions",
       sub: "Prep for your next interview",
       features: [
-        "5 sessions · valid for 30 days · cancel anytime",
+        "5 sessions · valid for 30 days · one-time purchase",
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
@@ -482,11 +482,11 @@ export function PricingPageV2() {
   const faqs: Array<[string, string]> = [
     [
       "Do plans auto-renew?",
-      "The Sprint Pack (₹39 for 5 sessions) renews automatically each month. Cancel any time from Settings before the next billing date and you won't be charged again. Per-session credits (₹9) never expire and never auto-renew: buy one and use it whenever.",
+      "No. Every HireStepX purchase, including the Sprint Pack, is a one-time payment — we never store your card for recurring billing and nothing renews automatically. The Sprint Pack (₹39 for 5 sessions) stays active for 30 days; buy another pack any time you need more, from the dashboard or Settings. Per-session credits (₹9) never expire either.",
     ],
     [
       "What happens to unused Sprint Pack sessions?",
-      "You get 5 fresh sessions each 30-day billing cycle, and they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 7 days of purchase.",
+      "You get 5 sessions valid for 30 days from purchase. If you don't use them all in that window, the unused sessions expire — there's no carryover and no auto-charge for a new pack. If you haven't started any sessions, you can request a full refund within 7 days of purchase.",
     ],
     [
       "Can I switch plans?",
@@ -656,7 +656,7 @@ export function PricingPageV2() {
                 </a>
                 {tier.name !== "Free" && (
                   <p style={{ margin: "10px 0 0", fontFamily: fonts.sans, fontSize: 11, textAlign: "center", color: tier.featured ? t.creamFaded : t.inkSoft }}>
-                    7-day refund if unused · cancel anytime
+                    {tier.name === "Sprint Pack" ? "7-day refund if unused · one-time purchase" : "7-day refund if unused · cancel anytime"}
                   </p>
                 )}
               </div>
@@ -1835,10 +1835,10 @@ export function TermsV2() {
       <p>One account per person. Don't share login credentials. Don't scrape, reverse-engineer, or attempt to extract our scoring rubrics, question banks, or model outputs at scale. Don't use the platform to impersonate real candidates or train third-party AI systems.</p>
 
       <h2>Payment</h2>
-      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) renews automatically each month; cancel any time before the next billing cycle to stop renewal. No other plan auto-renews.</p>
+      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) is a one-time purchase valid for 30 days — it does not auto-renew, and we never store your card for recurring billing. Buy another pack any time you want more sessions. No plan currently sold on HireStepX auto-renews.</p>
 
       <h2>Refunds</h2>
-      <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits are refundable within 7 days of purchase if the session has not started. Sprint Pack refunds depend on usage; cancel before the next cycle to avoid the next charge.</p>
+      <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits and Sprint Pack purchases are both refundable within 7 days of purchase if unused.</p>
 
       <h2>Acceptable use</h2>
       <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>
@@ -1864,8 +1864,8 @@ export function RefundPolicyV2() {
       <h2>Per-session purchase (₹9)</h2>
       <p>Refundable up to 7 days after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
 
-      <h2>Sprint Pack (₹39 / month)</h2>
-      <p>Full refund within 7 days of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge: your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
+      <h2>Sprint Pack (₹39 / 5 sessions)</h2>
+      <p>A one-time purchase, valid for 30 days — it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
 
       <h2>How to request a refund</h2>
       <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>

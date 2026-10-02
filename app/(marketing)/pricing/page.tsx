@@ -5,11 +5,11 @@ import { fetchProductRatingAggregate } from "../../../server-handlers/_product-r
 export const metadata: Metadata = {
   title: "Pricing: Start Free, ₹9 per session | HireStepX",
   description:
-    "2 free AI mock interviews, no card needed. ₹9 per session (credits never expire) or Sprint Pack: 5 sessions for ₹39/month. Pay by UPI, card, or netbanking.",
+    "2 free AI mock interviews, no card needed. ₹9 per session (credits never expire) or Sprint Pack: 5 sessions for ₹39, valid 30 days. Pay by UPI, card, or netbanking.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "HireStepX Pricing: Start Free, ₹9 per session",
-    description: "2 free AI mock interviews, no card needed. ₹9 per session or Sprint Pack: 5 sessions for ₹39/month. Pay by UPI, card, or netbanking.",
+    description: "2 free AI mock interviews, no card needed. ₹9 per session or Sprint Pack: 5 sessions for ₹39, valid 30 days. Pay by UPI, card, or netbanking.",
     url: "https://hirestepx.com/pricing",
     type: "website",
     siteName: "HireStepX",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "HireStepX Pricing: Start Free, ₹9 per session",
-    description: "2 free AI mock interviews, no card needed. ₹9 per session or Sprint Pack: 5 sessions for ₹39/month.",
+    description: "2 free AI mock interviews, no card needed. ₹9 per session or Sprint Pack: 5 sessions for ₹39, valid 30 days.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -45,7 +45,7 @@ const BREADCRUMB_SCHEMA = {
 const PRICING_TIERS = [
   { name: "Free",         price: "0",  description: "2 practice sessions, no card required",                          anchor: "free" },
   { name: "Per session",  price: "9",  description: "Single mock interview session, credit never expires",             anchor: "per-session" },
-  { name: "Sprint Pack",  price: "39", description: "5 sessions per month, auto-renews monthly, cancel any time",     anchor: "sprint-pack" },
+  { name: "Sprint Pack",  price: "39", description: "5 sessions, valid for 30 days, one-time purchase — buy again anytime", anchor: "sprint-pack" },
   // Monthly plan temporarily hidden — keep data here for when it returns
   // { name: "Monthly", price: "149", description: "40 sessions over 30 days", anchor: "monthly" },
 ] as const;

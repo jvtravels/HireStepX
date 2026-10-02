@@ -2776,7 +2776,7 @@ export function FAQV2() {
   const qs: Array<{ q: string; a: string }> = [
     {
       q: "What exactly is free? Do I need a card to start?",
-      a: "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions that renews monthly. Cancel the Sprint Pack any time before the next cycle.",
+      a: "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews.",
     },
     {
       q: "Will the AI understand my Indian English accent?",
@@ -2784,7 +2784,7 @@ export function FAQV2() {
     },
     {
       q: "Is ₹9 per session really it? What's the catch?",
-      a: "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, renews monthly, cancel any time before the next cycle. Built on Indian infrastructure at Indian costs. No hidden charges either way.",
+      a: "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way.",
     },
     {
       q: "Will my current company know I'm practicing?",
@@ -2935,9 +2935,9 @@ function StructuredData() {
   /* Mirrors FAQV2's `qs` array verbatim (below in this file) — keep the two
      in sync so the structured data matches the visible accordion exactly. */
   const faqs = [
-    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions that renews monthly. Cancel the Sprint Pack any time before the next cycle."],
+    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews."],
     ["Will the AI understand my Indian English accent?", "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
-    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, renews monthly, cancel any time before the next cycle. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
+    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
     ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
     ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones."],
     ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],

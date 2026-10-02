@@ -556,6 +556,10 @@ export interface User {
   subscriptionEnd?: string;
   cancelAtPeriodEnd?: boolean;
   subscriptionPaused?: boolean;
+  /** True only for a legacy/active recurring Razorpay subscription. New
+   *  paid purchases (Sprint Pack included) are one-time orders with no
+   *  subscription_id, so Settings must not offer Pause/Cancel for them. */
+  hasRecurringSubscription?: boolean;
   referralCode?: string;
   emailVerified: boolean;
   deletedAt?: string | null;
@@ -635,6 +639,7 @@ export function profileToUser(profile: Profile, session: Session): User {
     subscriptionEnd: profile.subscription_end || undefined,
     cancelAtPeriodEnd: profile.cancel_at_period_end || false,
     subscriptionPaused: !!profile.subscription_paused,
+    hasRecurringSubscription: !!profile.razorpay_subscription_id,
     referralCode: profile.referral_code || undefined,
     emailVerified:
       session.user.user_metadata?.custom_email_verified === true ||

@@ -618,6 +618,7 @@ export interface PlanSectionProps {
     subscriptionEnd?: string;
     cancelAtPeriodEnd?: boolean;
     subscriptionPaused?: boolean;
+    hasRecurringSubscription?: boolean;
     id?: string;
     signedInVia?: "google" | "email";
   } | null;
@@ -746,7 +747,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     confirmDelete, setConfirmDelete, deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
     exporting, setExporting, onExportCSV,
     payments, paymentsLoading,
-    authUpdateUser, showToast, onLogout,
+    authUpdateUser, showToast, onLogout, setShowUpgradeModal,
     authHeaders: getAuthHeaders,
   } = props;
 
@@ -898,13 +899,17 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={subHeaderHint}>
               {authUser?.cancelAtPeriodEnd
                 ? `Access remains until ${endDateLabel}.`
-                : tier === "starter"
-                  ? `Valid till ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack.`
+                : !authUser?.hasRecurringSubscription
+                  ? `Valid till ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack. One-time purchase — it won't renew automatically.`
                   : `Renews ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle.`}
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            {authUser?.cancelAtPeriodEnd ? (
+            {!authUser?.hasRecurringSubscription ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowUpgradeModal(true)} style={accSubtleBtn}>
+                Buy another pack
+              </Button>
+            ) : authUser?.cancelAtPeriodEnd ? (
               <Button type="button" variant="outline" size="sm" disabled={cancelLoading} onClick={handleReactivate}
                 style={{ ...successSubtleBtn, opacity: cancelLoading ? 0.6 : 1 }}>
                 {cancelLoading ? "Reactivating..." : "Reactivate"}
