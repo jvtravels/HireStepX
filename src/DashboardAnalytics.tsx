@@ -7,7 +7,7 @@ import { useDocTitle } from "./useDocTitle";
 import { useAuth } from "./AuthContext";
 import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
-import { useDashboardSessions, useDashboardCore, useDashboardUI, useDashboardSubscription } from "./DashboardContext";
+import { useDashboardSessions, useDashboardCore, useDashboardUIActions, useDashboardSubscription } from "./DashboardContext";
 import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
 import type { ResumeProfile } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
     readinessScore, currentStreak, overallStats, sessionsLoading,
   } = useDashboardSessions();
   const { handleStartSession, aiInsights, dailyChallenge, upcomingGoals, badges } = useDashboardCore();
-  const { setShowUpgradeModal } = useDashboardUI();
+  const { setShowUpgradeModal } = useDashboardUIActions();
   const { isFree, atSessionLimit } = useDashboardSubscription();
 
   const [rangeIdx, setRangeIdx] = useState(1); // default: 12 weeks
@@ -98,6 +98,69 @@ export default function AnalyticsPage() {
     return new Set(trend.filter(t => now - new Date(t.date).getTime() < weekMs).map(t => new Date(t.date).toDateString())).size;
   }, [trend]);
 
+  // All downstream aggregates derive from sessions/sk/trend/badges — memoized
+  // so an unrelated re-render (e.g. a toast firing elsewhere in the app via
+  // the shared UIContext) doesn't re-walk every session/week on every paint.
+  const derived = useMemo(() => {
+    const avgScore = sessions.length ? Math.round(sessions.reduce((s, sess) => s + sess.score, 0) / sessions.length) : 0;
+    const bestSession = [...sessions].sort((a, b) => b.score - a.score)[0];
+    const totalImprovement = sk.length > 0 ? sk.reduce((sum, s) => sum + (s.score - s.prev), 0) : 0;
+    const avgImprovement = sk.length > 0 ? Math.round(totalImprovement / sk.length) : 0;
+
+    const typeBreakdown = sessionTypes.filter(t => t !== "All").map(type => {
+      // campus-placement is stored as type="Behavioral" in the DB — the focus
+      // column distinguishes it. Reclassify for the breakdown so Campus
+      // Placement sessions don't inflate the Behavioral bucket.
+      const typeSessions = sessions.filter(s => {
+        if (type === "Campus Placement") return s.focus === "campus-placement";
+        if (s.focus === "campus-placement") return false;
+        return s.type === type;
+      });
+      return { type, count: typeSessions.length, avgScore: typeSessions.length ? Math.round(typeSessions.reduce((s, sess) => s + sess.score, 0) / typeSessions.length) : 0 };
+    }).filter(t => t.count > 0);
+
+    const prevAvgScore = prevSessions.length > 0 ? Math.round(prevSessions.reduce((s, sess) => s + sess.score, 0) / prevSessions.length) : null;
+
+    // Weakest interview type for recommendation
+    const weakestType = typeBreakdown.length > 0 ? [...typeBreakdown].sort((a, b) => a.avgScore - b.avgScore)[0] : null;
+
+    // Readiness breakdown
+    const latestScore = trend.length > 0 ? trend[trend.length - 1].score : 0;
+    const avgSkill = sk.length > 0 ? Math.round(sk.reduce((sum, s) => sum + s.score, 0) / sk.length) : 0;
+
+    // Weekly practice heatmap — respects selected date range
+    const heatmapWeeks = range.days === 0 ? 24 : Math.max(4, Math.ceil(range.days / 7));
+    const weeklyData: { week: string; sessions: number; avgScore: number }[] = [];
+    for (let w = heatmapWeeks - 1; w >= 0; w--) {
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - w * 7 - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      const weekSessions = sessions.filter(s => { const d = new Date(s.date); return d >= weekStart && d < weekEnd; });
+      weeklyData.push({
+        week: `${weekStart.getMonth() + 1}/${weekStart.getDate()}`,
+        sessions: weekSessions.length,
+        avgScore: weekSessions.length ? Math.round(weekSessions.reduce((s, sess) => s + sess.score, 0) / weekSessions.length) : 0,
+      });
+    }
+    const maxWeeklySessions = Math.max(...weeklyData.map(w => w.sessions), 1);
+
+    const earnedBadges = badges.filter(b => b.earned);
+    const nextBadge = badges.find(b => !b.earned && b.progress > 0);
+
+    return {
+      avgScore, bestSession, totalImprovement, avgImprovement, typeBreakdown,
+      prevAvgScore, weakestType, latestScore, avgSkill, weeklyData,
+      maxWeeklySessions, earnedBadges, nextBadge,
+    };
+  }, [sessions, sk, prevSessions, trend, range.days, badges]);
+  const {
+    avgScore, bestSession, avgImprovement, typeBreakdown,
+    prevAvgScore, weakestType, latestScore, avgSkill, weeklyData,
+    maxWeeklySessions, earnedBadges, nextBadge,
+  } = derived;
+
   if (sessionsLoading) return <DataLoadingSkeleton />;
   if (isFree) return <PaywallGate feature="Performance Analytics" onUpgrade={() => setShowUpgradeModal(true)} />;
 
@@ -125,32 +188,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  const avgScore = Math.round(sessions.reduce((s, sess) => s + sess.score, 0) / sessions.length);
-  const bestSession = [...sessions].sort((a, b) => b.score - a.score)[0];
-  const totalImprovement = sk.length > 0 ? sk.reduce((sum, s) => sum + (s.score - s.prev), 0) : 0;
-  const avgImprovement = sk.length > 0 ? Math.round(totalImprovement / sk.length) : 0;
-
-  const typeBreakdown = sessionTypes.filter(t => t !== "All").map(type => {
-    // campus-placement is stored as type="Behavioral" in the DB — the focus
-    // column distinguishes it. Reclassify for the breakdown so Campus
-    // Placement sessions don't inflate the Behavioral bucket.
-    const typeSessions = sessions.filter(s => {
-      if (type === "Campus Placement") return s.focus === "campus-placement";
-      if (s.focus === "campus-placement") return false;
-      return s.type === type;
-    });
-    return { type, count: typeSessions.length, avgScore: typeSessions.length ? Math.round(typeSessions.reduce((s, sess) => s + sess.score, 0) / typeSessions.length) : 0 };
-  }).filter(t => t.count > 0);
-
-  const prevAvgScore = prevSessions.length > 0 ? Math.round(prevSessions.reduce((s, sess) => s + sess.score, 0) / prevSessions.length) : null;
-
-  // Weakest interview type for recommendation
-  const weakestType = typeBreakdown.length > 0 ? [...typeBreakdown].sort((a, b) => a.avgScore - b.avgScore)[0] : null;
   const typeToUrlParam: Record<string, string> = { Behavioral: "behavioral", Strategic: "strategic", "Technical Leadership": "technical", "Case Study": "case-study", "Campus Placement": "campus-placement", "HR Round": "hr-round", Management: "management" };
-
-  // Readiness breakdown
-  const latestScore = trend.length > 0 ? trend[trend.length - 1].score : 0;
-  const avgSkill = sk.length > 0 ? Math.round(sk.reduce((sum, s) => sum + s.score, 0) / sk.length) : 0;
 
   // Targeted session start
   const startTargeted = (type?: string) => {
@@ -161,27 +199,6 @@ export default function AnalyticsPage() {
       router.push(type ? `/session/new?type=${type}` : "/session/new");
     }
   };
-
-  // Weekly practice heatmap — respects selected date range
-  const heatmapWeeks = range.days === 0 ? 24 : Math.max(4, Math.ceil(range.days / 7));
-  const weeklyData: { week: string; sessions: number; avgScore: number }[] = [];
-  for (let w = heatmapWeeks - 1; w >= 0; w--) {
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - w * 7 - weekStart.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    const weekSessions = sessions.filter(s => { const d = new Date(s.date); return d >= weekStart && d < weekEnd; });
-    weeklyData.push({
-      week: `${weekStart.getMonth() + 1}/${weekStart.getDate()}`,
-      sessions: weekSessions.length,
-      avgScore: weekSessions.length ? Math.round(weekSessions.reduce((s, sess) => s + sess.score, 0) / weekSessions.length) : 0,
-    });
-  }
-  const maxWeeklySessions = Math.max(...weeklyData.map(w => w.sessions), 1);
-
-  const earnedBadges = badges.filter(b => b.earned);
-  const nextBadge = badges.find(b => !b.earned && b.progress > 0);
 
   return (
     <div style={{ margin: "0 auto" }}>

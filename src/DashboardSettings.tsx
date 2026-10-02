@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
-import { useDashboardUI } from "./DashboardContext";
+import { useDashboardUIActions } from "./DashboardContext";
 import {
   PageHeader,
   FlatSection,
@@ -23,7 +23,7 @@ const c = {
 export default function SettingsPage() {
   useDocTitle("Settings");
   const { user: authUser, logout: authLogout, updateUser: authUpdateUser, resetPassword } = useAuth();
-  const { showToast, setShowUpgradeModal } = useDashboardUI();
+  const { showToast, setShowUpgradeModal } = useDashboardUIActions();
   const onLogout = () => { authLogout(); };
 
   // Danger zone

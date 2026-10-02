@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "./AuthContext";
-import { useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
+import { useDashboardSessions, useDashboardSubscription, useDashboardUIActions } from "./DashboardContext";
 import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
@@ -484,7 +484,7 @@ export default function DashboardHome() {
   useDocTitle("Dashboard");
   const core = useDashboardSessions();
   const { isFree, sessionsRemaining, creditBalance } = useDashboardSubscription();
-  const { setShowUpgradeModal } = useDashboardUI();
+  const { setShowUpgradeModal } = useDashboardUIActions();
 
   const displayName = useMemo(() => {
     const name = user?.name?.trim();

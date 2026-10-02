@@ -28,7 +28,7 @@ import {
 } from "./dashboardHelpers";
 import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
-import { useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
+import { useDashboardUIActions, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
 
 /* Scoped stylesheet — inline styles can't express :focus-visible, media
@@ -401,7 +401,7 @@ export default function CalendarPage() {
     router.push(qs ? `/session/new?${qs}` : "/session/new");
   };
   const { eventsLoading } = useDashboardSessions();
-  const { setShowUpgradeModal, showToast } = useDashboardUI();
+  const { setShowUpgradeModal, showToast } = useDashboardUIActions();
   const { isFree } = useDashboardSubscription();
   const { user } = useAuth();
   const [events, setEvents] = useState<InterviewEvent[]>(loadEvents);

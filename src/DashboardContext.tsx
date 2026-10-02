@@ -169,6 +169,19 @@ export interface UIContextValue {
   setCreditBalanceDirect: (newBalance: number) => void;
 }
 
+/** Stable-identity action functions split out of UIContextValue. Consumers
+ *  that only need to trigger UI (open upgrade modal, show a toast, refresh
+ *  credits) should use `useDashboardUIActions()` instead of `useDashboardUI()`
+ *  — this context's value never changes identity on toast/banner/syncError
+ *  churn, so those consumers skip the re-render entirely instead of
+ *  recomputing render output on every unrelated UI event. */
+export interface UIActionsContextValue {
+  setShowUpgradeModal: (v: boolean) => void;
+  showToast: (msg: string) => void;
+  refreshCreditBalance: () => void;
+  setCreditBalanceDirect: (newBalance: number) => void;
+}
+
 export interface CoreContextValue {
   persisted: PersistedState;
   updatePersisted: (updates: Partial<PersistedState>) => void;
@@ -207,6 +220,7 @@ export const SessionsContext = createContext<SessionsContextValue | null>(null);
  *  `<SubscriptionContext.Provider value={...}>` — see SessionsContext above. */
 export const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 export const UIContext = createContext<UIContextValue | null>(null);
+export const UIActionsContext = createContext<UIActionsContextValue | null>(null);
 /** Exported so canvas storyboards can supply a mock value directly via
  *  `<CoreContext.Provider value={...}>` — see SessionsContext above. */
 export const CoreContext = createContext<CoreContextValue | null>(null);
@@ -228,6 +242,16 @@ export function useDashboardSubscription() {
 export function useDashboardUI() {
   const ctx = useContext(UIContext);
   if (!ctx) throw new Error("useDashboardUI must be used within DashboardProvider");
+  return ctx;
+}
+
+/** Prefer this over `useDashboardUI()` when a component only needs to
+ *  trigger UI (open the upgrade modal, show a toast, refresh credits) and
+ *  doesn't read `toast`/`syncError`/`paymentBanner`/`isMobile` — see
+ *  UIActionsContextValue for why. */
+export function useDashboardUIActions() {
+  const ctx = useContext(UIActionsContext);
+  if (!ctx) throw new Error("useDashboardUIActions must be used within DashboardProvider");
   return ctx;
 }
 
@@ -932,6 +956,11 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     sessionsThisMonth, creditBalance, creditsLoaded,
   }), [isFree, isStarter, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, creditBalance, creditsLoaded]);
 
+  const uiActionsValue: UIActionsContextValue = useMemo(() => ({
+    setShowUpgradeModal, showToast, refreshCreditBalance,
+    setCreditBalanceDirect: setCreditBalance,
+  }), [showToast, refreshCreditBalance, setCreditBalance]);
+
   const uiValue: UIContextValue = useMemo(() => ({
     showUpgradeModal, setShowUpgradeModal,
     dataLoading, isMobile,
@@ -962,11 +991,13 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   return (
     <SessionsContext.Provider value={sessionsValue}>
       <SubscriptionContext.Provider value={subscriptionValue}>
+        <UIActionsContext.Provider value={uiActionsValue}>
         <UIContext.Provider value={uiValue}>
           <CoreContext.Provider value={coreValue}>
             {children}
           </CoreContext.Provider>
         </UIContext.Provider>
+        </UIActionsContext.Provider>
       </SubscriptionContext.Provider>
     </SessionsContext.Provider>
   );
