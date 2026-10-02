@@ -250,7 +250,7 @@ function WorkspaceHeader({
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <h1 style={{ fontFamily: font.ui, fontSize: 26, lineHeight: "32px", fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
-      <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", flex: "1 1 auto", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
         <SearchWithSuggestions
           id="sessions-search"
           label="Search sessions"
