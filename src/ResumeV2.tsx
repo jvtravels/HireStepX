@@ -229,10 +229,7 @@ function ResumeEmptyState({ onUpload, errorMsg }: { onUpload: () => void; errorM
         {errorMsg && (
           <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.error, margin: 0 }}>{errorMsg}</p>
         )}
-        <Button
-          onClick={onUpload}
-          style={{ background: T.indigo, color: T.white, fontFamily: font.ui, fontSize: S.base, fontWeight: 600, gap: 8, height: 44, borderRadius: 8 }}
-        >
+        <Button onClick={onUpload} size="lg" className="gap-2 h-11">
           <UploadIcon size={16} aria-hidden="true" />
           Upload resume
         </Button>

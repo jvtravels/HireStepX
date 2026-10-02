@@ -235,8 +235,8 @@ export default function AnalyticsPage() {
               </span>
             </div>
           </div>
-          <Button size="sm" onClick={() => startTargeted(typeToUrlParam[weakestType.type])}
-            style={{ background: T.indigo, color: c.obsidian, flexShrink: 0 }}>
+          <Button size="lg" onClick={() => startTargeted(typeToUrlParam[weakestType.type])}
+            style={{ flexShrink: 0 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21"/></svg>
             Start {weakestType.type}
           </Button>
@@ -300,8 +300,8 @@ export default function AnalyticsPage() {
           <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.chalk, marginBottom: 4 }}>{dailyChallenge.label}</span>
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, flex: 1 }}>{dailyChallenge.description}</span>
           {!dailyChallenge.completed && (
-            <Button size="sm" onClick={() => startTargeted(dailyChallenge.type)}
-              style={{ background: T.indigo, color: c.obsidian, marginTop: 12, alignSelf: "flex-start" }}
+            <Button size="lg" onClick={() => startTargeted(dailyChallenge.type)}
+              style={{ marginTop: 12, alignSelf: "flex-start" }}
             >
               Start Challenge
             </Button>

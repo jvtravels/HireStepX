@@ -986,16 +986,7 @@ export default function BehavioralFullReport({
         }}
       >
         <div style={{ fontSize: 13, color: t.inkSoft }}>{data.ctaSubcopy}</div>
-        <Button
-          type="button"
-          size="lg"
-          style={{
-            background: t.indigo,
-            color: t.white,
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
+        <Button type="button" size="lg">
           {data.ctaPrimaryLabel}
         </Button>
       </div>

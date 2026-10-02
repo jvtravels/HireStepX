@@ -217,8 +217,7 @@ function EmptyAnalytics() {
       <p style={{ fontFamily: f.sans, fontSize: 14.5, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Complete your first evaluated mock interview and this page fills with your target-specific readiness score, five pillars, blind spots, and a refresh queue.
       </p>
-      <Button type="button" variant="default" onClick={() => router.push("/session/new")} className="rix-btn rix-focus rix-tap"
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 20px", borderRadius: 999, border: "none", cursor: "pointer", background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600 }}>
+      <Button type="button" variant="default" size="lg" onClick={() => router.push("/session/new")} className="rix-btn rix-focus rix-tap gap-2 px-5 h-11">
         Start a mock interview <span aria-hidden="true">→</span>
       </Button>
     </CenterPane>
@@ -232,8 +231,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Something went wrong fetching your Readiness Index. This is usually transient. Try again in a moment.
       </p>
-      <Button type="button" variant="default" onClick={onRetry} className="rix-btn rix-focus rix-tap"
-        style={{ padding: "10px 20px", borderRadius: 999, border: "none", background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+      <Button type="button" variant="default" size="lg" onClick={onRetry} className="rix-btn rix-focus rix-tap px-5 h-11">
         Retry
       </Button>
     </CenterPane>

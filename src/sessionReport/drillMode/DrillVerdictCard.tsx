@@ -68,16 +68,7 @@ export function DrillVerdictCard({
         </span>
       </div>
       {onExit && (
-        <Button
-          type="button"
-          onClick={onExit}
-          style={{
-            background: t.indigo,
-            color: t.white,
-            fontFamily: f.sans,
-            fontWeight: 600,
-          }}
-        >
+        <Button type="button" size="lg" onClick={onExit}>
           Back to report
         </Button>
       )}

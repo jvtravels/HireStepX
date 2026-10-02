@@ -550,21 +550,7 @@ export default function EmployerJobsPage() {
           Every requirement you've posted, with the candidates HireStepX has matched to each.
         </p>
       </div>
-      <Button
-        onClick={() => router.push("/employer/requirements/new")}
-        style={{
-          background: t.indigo,
-          color: t.white,
-          borderRadius: 8,
-          padding: "12px 20px",
-          height: 44,
-          gap: 8,
-          fontFamily: f.sans,
-          fontSize: textSize.lg,
-          fontWeight: 600,
-          boxShadow: `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
-        }}
-      >
+      <Button size="lg" className="gap-2 px-5 h-11" onClick={() => router.push("/employer/requirements/new")}>
         <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
         Post a requirement
       </Button>
@@ -685,14 +671,9 @@ export default function EmployerJobsPage() {
           </p>
         </div>
         <Button
+          size="lg"
+          className="gap-2 px-[22px] h-11 mt-1"
           onClick={() => router.push("/employer/requirements/new")}
-          style={{
-            marginTop: 4, borderRadius: 8, height: 44, gap: 8, padding: "0 22px",
-            background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600,
-            transition: `background ${dur.instant} ${ease.snap}`,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = t.indigoDeep; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
         >
           <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
           Create your first listing
@@ -850,10 +831,8 @@ export default function EmployerJobsPage() {
                         {onlySearchActive ? "Clear search" : "Clear filters"}
                       </Button>
                       <Button
+                        className="h-10"
                         onClick={() => router.push("/employer/requirements/new")}
-                        style={{ borderRadius: 8, height: 40, gap: 6, background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, transition: `background ${dur.instant} ${ease.snap}` }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = t.indigoDeep; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = t.indigo; }}
                       >
                         <PlusIcon size={14} strokeWidth={2.5} aria-hidden="true" />
                         Create

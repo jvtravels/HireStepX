@@ -540,11 +540,13 @@ export default function ForgotPassword() {
                           border: isGhost
                             ? `1px solid ${t.line}`
                             : "1px solid transparent",
-                          borderRadius: 10,
+                          borderRadius: 8,
                           padding: "16px 18px",
                           cursor: canSubmit ? "pointer" : "not-allowed",
                           marginTop: 4,
-                          boxShadow: isGhost ? "none" : shadows.cta,
+                          boxShadow: isGhost
+                            ? "none"
+                            : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
                           letterSpacing: 0.1,
                           display: "flex",
                           alignItems: "center",

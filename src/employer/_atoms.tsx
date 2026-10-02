@@ -181,26 +181,47 @@ export function PrimaryCta({
   full?: boolean;
   type?: "button" | "submit";
 }) {
+  // Full-width CTAs (settings/outcome save bars) keep their own sizing —
+  // only the shape (radius/shadow) needs to track the shared Button.
+  if (full) {
+    return (
+      <Button
+        type={type}
+        variant="default"
+        onClick={onClick}
+        disabled={disabled}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          width: "100%",
+          height: size === "sm" ? 36 : 44,
+          padding: size === "sm" ? "0 18px" : "0 20px",
+          borderRadius: 8,
+          fontFamily: f.sans,
+          fontSize: size === "sm" ? 13 : 15,
+          fontWeight: 600,
+          boxShadow: disabled ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
+        }}
+      >
+        {children}
+        {icon}
+      </Button>
+    );
+  }
+
+  // Compact toolbar/card CTAs rely on the shared Button's canonical shape
+  // (radius/weight/font-size/shadow come from the `default` variant) instead
+  // of a bespoke inline style — same pattern as Sessions/Jobs CTAs.
   return (
     <Button
       type={type}
       variant="default"
+      size="lg"
+      className={size === "sm" ? "gap-2 px-4.5" : "gap-2 px-5 h-11"}
       onClick={onClick}
       disabled={disabled}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        width: full ? "100%" : undefined,
-        height: size === "sm" ? 36 : 44,
-        padding: size === "sm" ? "0 18px" : "0 20px",
-        borderRadius: 8,
-        fontFamily: f.sans,
-        fontSize: size === "sm" ? 13 : 15,
-        fontWeight: 600,
-        boxShadow: disabled ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
-      }}
     >
       {children}
       {icon}
