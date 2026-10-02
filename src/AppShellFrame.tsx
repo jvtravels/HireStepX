@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -99,9 +99,12 @@ export default function AppShellFrame({
   /* The scrollable content div below persists across navigations (only the
      `pageKey`-keyed child inside it remounts), so its scrollTop carries over
      from whatever page the user last scrolled — a new page can open already
-     scrolled past its own header. Reset it whenever pageKey changes. */
+     scrolled past its own header. Reset it whenever pageKey changes.
+     Must be a layout effect: a plain effect fires after paint, so the new
+     page would flash on-screen at the old scroll offset (its heading
+     clipped above the fold) for one frame before snapping to top. */
   const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [pageKey]);
 
@@ -134,8 +137,8 @@ export default function AppShellFrame({
         <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <SidebarHeader className="px-3 pt-4 pb-3">
           <Link href={homeHref} className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} className="group-data-[collapsible=icon]:hidden" style={{ height: 24, width: "auto" }} />
-            <Image src="/favicon.svg" alt="HireStepX" width={24} height={24} className="hidden group-data-[collapsible=icon]:block" style={{ height: 24, width: 24 }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} className="group-data-[collapsible=icon]:hidden" style={{ height: 32, width: "auto" }} />
+            <Image src="/favicon.svg" alt="HireStepX" width={28} height={28} className="hidden group-data-[collapsible=icon]:block" style={{ height: 28, width: 28 }} />
           </Link>
         </SidebarHeader>
 
