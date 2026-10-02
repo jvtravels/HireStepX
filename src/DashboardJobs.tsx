@@ -324,20 +324,7 @@ export default function DashboardJobs() {
           These are job opportunities where employers have shown interest in your profile.
         </p>
       </div>
-      <Button
-        onClick={() => router.push("/interview")}
-        style={{
-          background: t.indigo,
-          color: t.white,
-          borderRadius: 8,
-          padding: "12px 20px",
-          height: 44,
-          gap: 8,
-          fontSize: 15,
-          fontWeight: 600,
-          boxShadow: `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
-        }}
-      >
+      <Button size="lg" className="gap-2 px-4" onClick={() => router.push("/interview")}>
         <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
         Start session
       </Button>
