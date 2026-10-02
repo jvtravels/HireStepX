@@ -9,6 +9,7 @@ import { t, f, radius } from "../tokens";
 import { formatRoleWithLevel } from "../roleLabel";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
 import { ReportCardShell } from "./_primitives";
+import { Badge } from "@/components/ui/badge";
 import {
   CalibrationBanner,
   ReadinessHeadline,
@@ -35,10 +36,9 @@ export function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
         ? { label: "On Target", color: t.copper, bg: t.copperAccent }
         : { label: "Needs Work", color: t.error, bg: t.errorTint };
   return (
-    <span
+    <Badge
+      className="h-auto border-0"
       style={{
-        display: "inline-flex",
-        alignItems: "center",
         padding: "3px 10px",
         borderRadius: radius.pill,
         background: meta.bg,
@@ -49,7 +49,7 @@ export function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
       }}
     >
       {meta.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -120,10 +120,9 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
             <ScoreGauge score={data.overallScore} color={verdict.color} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
-            <span
+            <Badge
+              className="h-auto border-0"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
                 padding: "6px 14px",
                 borderRadius: radius.pill,
                 background: verdict.bg,
@@ -134,7 +133,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
               }}
             >
               {verdict.label}
-            </span>
+            </Badge>
             {data.scoreConfidence && data.scoreConfidence !== "high" && (
               <ScoreConfidenceChip level={data.scoreConfidence} note={data.scoreConfidenceNote} />
             )}

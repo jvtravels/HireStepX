@@ -6,6 +6,7 @@
 import { t, f, radius } from "../tokens";
 import type { Question } from "../types";
 import { SrSectionShell } from "./_primitives";
+import { Badge } from "@/components/ui/badge";
 
 export function TopScoreDriversSection({ questions }: { questions: Question[] }) {
   const severityWeight = (s: "high" | "medium" | "low"): number =>
@@ -82,7 +83,9 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
                   {r.explanation}
                 </p>
               </div>
-              <span
+              <Badge
+                variant="outline"
+                className="h-auto"
                 title={`${r.severity} severity — counts as ${impact} pt${impact === 1 ? "" : "s"}`}
                 style={{
                   fontFamily: f.mono,
@@ -90,7 +93,7 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
                   fontWeight: 600,
                   color: tone,
                   background: t.white,
-                  border: `1px solid ${tone}`,
+                  borderColor: tone,
                   borderRadius: radius.pill,
                   padding: "3px 9px",
                   whiteSpace: "nowrap",
@@ -99,7 +102,7 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
                 }}
               >
                 −{impact}
-              </span>
+              </Badge>
             </li>
           );
         })}

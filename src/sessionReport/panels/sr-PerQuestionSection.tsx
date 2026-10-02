@@ -15,6 +15,7 @@ import type { Question } from "../types";
 import { SectionEyebrow } from "./sr-JumpNav";
 import { QuestionDetail } from "./sr-QuestionDetail";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const BAND_META: Record<Question["band"], { label: string; color: string }> = {
   weak:     { label: "Weak",     color: t.error },
@@ -156,11 +157,9 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                     {q.redFlags.length} flag{q.redFlags.length === 1 ? "" : "s"}
                   </span>
                 )}
-                <span
-                  className="ir-q-trigger-band"
+                <Badge
+                  className="h-auto border-0 ir-q-trigger-band"
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
                     padding: "3px 10px",
                     borderRadius: radius.pill,
                     background: band.color === t.error ? t.errorTint : band.color === t.copper ? t.copperAccent : t.successTint,
@@ -171,7 +170,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                   }}
                 >
                   {band.label}
-                </span>
+                </Badge>
                 <span style={{ fontFamily: f.mono, fontSize: 13, color: t.coal, fontWeight: 600, minWidth: 60, textAlign: "right" }}>
                   {/* S6-B4 — a row with no genuine per-turn score (reconstructed
                       negotiation exchange) shows a neutral "—", never a
