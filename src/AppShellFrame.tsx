@@ -159,6 +159,7 @@ export default function AppShellFrame({
                       onClick={() => onNavigate(item.path)}
                       onMouseEnter={(e) => { onNavHover?.(item.id); if (!active) e.currentTarget.style.background = c.border; }}
                       onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                      onTouchStart={() => onNavHover?.(item.id)}
                       aria-label={item.label}
                       tooltip={item.label}
                       style={{

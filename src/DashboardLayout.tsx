@@ -60,7 +60,11 @@ const font = {
   mono: F.mono,
 } as const;
 
-/* ─── Prefetch route chunks on nav hover ─── */
+/* ─── Prefetch route JS chunks on nav hover/touch ───
+ * Pairs with router.prefetch(path) in the hover/touch handler below, which
+ * fetches the route's RSC payload — this map only warms the client chunk.
+ * Both are needed: router.prefetch alone doesn't pull in a dynamic()-wrapped
+ * client component's chunk, and the chunk import alone skips the route data. */
 const prefetchMap: Record<string, () => void> = {
   dashboard: () => { import("./DashboardHome"); },
   sessions: () => { import("./SessionsV2"); },
@@ -264,7 +268,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }))}
       activeId={activeNav}
       onNavigate={(path) => nav.push(path)}
-      onNavHover={(id) => prefetchMap[id]?.()}
+      onNavHover={(id) => {
+        prefetchMap[id]?.();
+        const path = allNavItems.find((item) => item.id === id)?.path;
+        if (path) nav.prefetch(path);
+      }}
       sidebarFooterExtra={
         <>
         {/* Plan Status — white card, indigo accents throughout. No tinted backgrounds;

@@ -64,10 +64,10 @@ export default function AnalyticsPage() {
     : undefined;
   const {
     recentSessions: allSessions, skills: sk, scoreTrend: trend,
-    readinessScore, currentStreak, overallStats,
+    readinessScore, currentStreak, overallStats, sessionsLoading,
   } = useDashboardSessions();
   const { handleStartSession, aiInsights, dailyChallenge, upcomingGoals, badges } = useDashboardCore();
-  const { dataLoading, setShowUpgradeModal } = useDashboardUI();
+  const { setShowUpgradeModal } = useDashboardUI();
   const { isFree, atSessionLimit } = useDashboardSubscription();
 
   const [rangeIdx, setRangeIdx] = useState(1); // default: 12 weeks
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
     return new Set(trend.filter(t => now - new Date(t.date).getTime() < weekMs).map(t => new Date(t.date).toDateString())).size;
   }, [trend]);
 
-  if (dataLoading) return <DataLoadingSkeleton />;
+  if (sessionsLoading) return <DataLoadingSkeleton />;
   if (isFree) return <PaywallGate feature="Performance Analytics" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   if (sessions.length === 0) {

@@ -14,7 +14,6 @@
 import { useMemo } from "react";
 import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
-import { useDashboardUI } from "./DashboardContext";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
 import LoadingScreen from "./_LoadingScreen";
 import { computeATSScore } from "./resumeAts";
@@ -241,8 +240,7 @@ function ResumeEmptyState({ onUpload, errorMsg }: { onUpload: () => void; errorM
 /* ── Root ── */
 
 export default function ResumeV2Screen() {
-  const { user } = useAuth();
-  const { dataLoading } = useDashboardUI();
+  const { user, loading: authLoading } = useAuth();
   const {
     phase,
     profile,
@@ -275,7 +273,7 @@ export default function ResumeV2Screen() {
   }, [profile]);
 
   let body: React.ReactNode;
-  if (dataLoading) {
+  if (authLoading) {
     body = <ResumeSkeleton />;
   } else if (!profile) {
     if (phase === "extracting" || phase === "analyzing") {

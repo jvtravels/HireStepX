@@ -4,7 +4,6 @@ import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
 import { useDashboardUI } from "./DashboardContext";
-import { DataLoadingSkeleton } from "./dashboardComponents";
 import {
   PageHeader,
   FlatSection,
@@ -24,7 +23,7 @@ const c = {
 export default function SettingsPage() {
   useDocTitle("Settings");
   const { user: authUser, logout: authLogout, updateUser: authUpdateUser, resetPassword } = useAuth();
-  const { dataLoading, showToast, setShowUpgradeModal } = useDashboardUI();
+  const { showToast, setShowUpgradeModal } = useDashboardUI();
   const onLogout = () => { authLogout(); };
 
   // Danger zone
@@ -41,16 +40,26 @@ export default function SettingsPage() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Billing history — loaded eagerly since the page is one long stacked
-  // view now (no more "Plan" tab gating when it fetches).
-  const [payments, setPayments] = useState<PaymentRecord[]>([]);
-  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  // view now (no more "Plan" tab gating when it fetches). Cache-first like
+  // DashboardContext's sessions/events: a tab switch back into Settings
+  // shows the last-known list instantly instead of a spinner, then
+  // refreshes from the network in the background.
+  const [payments, setPayments] = useState<PaymentRecord[]>(() => {
+    if (!authUser?.id) return [];
+    try {
+      const cached = localStorage.getItem(`hirestepx_cache_payments_${authUser.id}`);
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [paymentsLoading, setPaymentsLoading] = useState(payments.length === 0);
   useEffect(() => {
     if (!authUser?.id) return;
-    setPaymentsLoading(true);
-    getPaymentHistory(authUser.id).then(setPayments).finally(() => setPaymentsLoading(false));
+    const cacheKey = `hirestepx_cache_payments_${authUser.id}`;
+    getPaymentHistory(authUser.id).then(data => {
+      setPayments(data);
+      try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch { /* expected: localStorage may be unavailable */ }
+    }).finally(() => setPaymentsLoading(false));
   }, [authUser?.id]);
-
-  if (dataLoading) return <DataLoadingSkeleton />;
 
   const handlePasswordReset = async () => {
     if (!authUser?.email) return;
