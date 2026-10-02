@@ -122,8 +122,6 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        maxWidth: 1240,
-        margin: "0 auto",
         fontFamily: f.sans,
         color: t.coal,
       }}
@@ -259,8 +257,6 @@ export function ErrorShell({
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        maxWidth: 1240,
-        margin: "0 auto",
         fontFamily: f.sans,
         color: t.coal,
       }}
@@ -290,16 +286,7 @@ export function ErrorShell({
             : message}
         </p>
         {hasQualitativeNotes && preliminary && <PreliminaryCard p={preliminary} />}
-        <Button
-          type="button"
-          onClick={onRetry}
-          style={{
-            background: t.indigo,
-            color: t.cream,
-            fontFamily: f.sans,
-            fontWeight: 600,
-          }}
-        >
+        <Button type="button" size="lg" onClick={onRetry}>
           {hasPreliminary ? "Generate full report" : "Try again"}
         </Button>
       </div>
@@ -1119,7 +1106,7 @@ export const SessionReport = memo(function SessionReport({
     // Retrying would produce the same 422, so we skip the retry CTA.
     if (errorMsg === "no_candidate_answers") {
       return (
-        <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 1240, margin: "0 auto", fontFamily: f.sans, color: t.coal }}>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: f.sans, color: t.coal }}>
           <Button type="button" variant="ghost" onClick={onBack} style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, gap: 6, marginBottom: 8, alignSelf: "flex-start" }}>
             ← {backLabel}
           </Button>
@@ -1130,11 +1117,7 @@ export const SessionReport = memo(function SessionReport({
               It looks like your microphone wasn&apos;t captured during this session — the interview ran but no candidate audio reached our system.
               Check that your browser has mic permission, or use <strong>Text mode</strong> to type your answers instead.
             </p>
-            <Button
-              type="button"
-              onClick={onBack}
-              style={{ background: t.indigo, color: t.cream, fontFamily: f.sans, fontWeight: 600 }}
-            >
+            <Button type="button" size="lg" onClick={onBack}>
               Back to Dashboard
             </Button>
           </div>

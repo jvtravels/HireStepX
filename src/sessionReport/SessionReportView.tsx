@@ -141,7 +141,7 @@ function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: num
       {copy.ctaHref ? (
         <a href={copy.ctaHref} style={ctaStyle}>{copy.ctaLabel}</a>
       ) : (
-        <Button type="button" onClick={onUpgrade} style={ctaStyle}>{copy.ctaLabel}</Button>
+        <Button type="button" size="lg" className="px-5 shrink-0" onClick={onUpgrade}>{copy.ctaLabel}</Button>
       )}
     </div>
   );
@@ -482,7 +482,7 @@ export default function SessionReportView({
             id="ir-main"
             aria-label="HR Round report"
             className="ir-main-container"
-            style={{ maxWidth: 1240, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}
+            style={{ width: "100%", display: "flex", flexDirection: "column", gap: 16 }}
           >
             <HrFullReport
               overallScore={data.overallScore}
@@ -543,9 +543,7 @@ export default function SessionReportView({
           aria-label="Interview report"
           className="ir-main-container"
           style={{
-            maxWidth: 1240,
             width: "100%",
-            margin: "0 auto",
             display: "flex",
             flexDirection: "column",
             gap: 16,

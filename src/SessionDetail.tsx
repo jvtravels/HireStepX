@@ -36,8 +36,6 @@ function Shell({ children }: { children: React.ReactNode }) {
         flex: 1,
         minHeight: 0,
         width: "100%",
-        maxWidth: 1240,
-        margin: "0 auto",
         fontFamily: F.sans,
         color: T.coal,
       }}
@@ -61,11 +59,7 @@ export function LoadErrorScreen({ message, onRetry, onBack }: { message: string;
           {message}
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <Button
-            type="button"
-            onClick={onRetry}
-            style={{ background: T.indigo, color: T.cream, fontWeight: 600 }}
-          >
+          <Button type="button" size="lg" onClick={onRetry}>
             Try again
           </Button>
           <Button
@@ -92,11 +86,7 @@ export function NotFoundScreen({ onBack }: { onBack: () => void }) {
         <p style={{ fontSize: 14, color: T.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           We couldn&apos;t locate this session. It may have been deleted or hasn&apos;t synced yet.
         </p>
-        <Button
-          type="button"
-          onClick={onBack}
-          style={{ background: T.indigo, color: T.cream, fontWeight: 600 }}
-        >
+        <Button type="button" size="lg" onClick={onBack}>
           Back to Sessions
         </Button>
       </div>
